@@ -1,1 +1,3 @@
-# Portfolio Website\n\nA professional portfolio showcasing my transition from EHS to Python Development.
+# Portfolio Website
+
+A professional portfolio showcasing my transition to Python development.
