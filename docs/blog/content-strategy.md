@@ -26,9 +26,9 @@ This document outlines the content strategy for the portfolio blog, including ca
 - Industry insights
 
 ## Posting Schedule
-- Frequency: [Define here]
-- Best days to post: [Research and define]
-- Time commitment: [Hours per week]
+- Frequency: Weekly
+- Best days to post: Early morning (7-9) or just before lunch (11-12)
+- Time commitment: 1 hour minimum
 
 ## Content Pipeline
 
