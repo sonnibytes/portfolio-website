@@ -108,7 +108,7 @@ May need to flush some of these started concepts out into something to demo
 - Image optimization
 
 ## Content Calendar
-[Monthly planning grid]
+Post Weekly Initially, on Tuesdays
 
 ---
 Last Updated: 5/10/2025
