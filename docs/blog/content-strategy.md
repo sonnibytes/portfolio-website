@@ -25,6 +25,11 @@ This document outlines the content strategy for the portfolio blog, including ca
 - Job search experiences
 - Industry insights
 
+### 5. Suprise Project!
+- Misc projects from random inspiration
+- Interest that sparked it
+- Build & Development
+
 ## Posting Schedule
 - Frequency: Weekly
 - Best days to post: Early morning (7-9) or just before lunch (11-12)
@@ -33,10 +38,55 @@ This document outlines the content strategy for the portfolio blog, including ca
 ## Content Pipeline
 
 ### First 20 Blog Post Ideas
+May re-order...
+
+#### Category: Learning Journey
 1. My Journey from [Previous Field] to AI/ML
 2. Setting Up My Learning Path: Resources and Roadmap
+3. First Course: Havardx
+4. First Django Projects
+5. Intro to Data Science: Early Projects & Impressions
+6. Favorite Projects from 100 Days?
+7. RIP Bookmark Bar: Enter myRise Concept
+
+
+#### Category: Technical Deep Dives
+Good examples in myRise, things I've spent a lot of time on..
+
+1. GitHub API: Building the Dashboard
+2. My First Package: textinsights
+3. Intro to Task Threading & Loading Bar
+4. Open AI or Llama API App w Gradio Interface
+5. Walk Throughs:
+    - Hangman
+    - Pong
+    - Flask Tic-Tac-Toe
+
+
+#### Category: Project Documentation
+1. The Vision: My Portfolio
+2. Lessons Learned: Should've Started Blog Earlier
 3. Building This Portfolio: The Planning Process
-4. [Continue list...]
+
+
+#### Category: Career Transition
+1. Learning to Navigate Corporate
+    - Humble beginnings, no real corporate experience
+    - First Database on AirTable & I didn't even know it
+    - RT and my love for data and data visualization
+2. Job Search Monthly Progress Updates
+    - What I Tried this month
+    - Cool tech, sites, projects I've discovered
+
+
+#### Category: Surprise Project!
+May need to flush some of these started concepts out into something to demo
+1. Harvestella via Django
+2. League API?
+3. SDS Parser
+4. Arduino Fiddling
+5. PyGame, Unity
+
 
 ## Content Guidelines
 
