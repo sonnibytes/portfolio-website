@@ -17,6 +17,8 @@ This document outlines the technical architecture for integrating a blog into th
    - API communication if needed
 
 ### Decision: Integrated Approach
+Additional Pros:
+Django framework allows for modular development, so scaling/adding/etc much more manageable longterm.
 
 ## Technical Specification
 
@@ -65,6 +67,42 @@ Possible Thoughts for Later:
 ### Dependencies
 Django
 ....
+
+#### Potential Django Packages
+Resources:
+[Django Blog Packages Comparison](https://djangopackages.org/grids/g/blog/?csrfmiddlewaretoken=6uEpLfmIJgFGnE4xiBgzaJnBIHIHx5Xnua6KixFHAcrB00qnYr5RJ5kXkFize8Cs&python3=on&sort=score)
+
+1. django-blog-zinnia: 
+    - **Impression**: Sketchy...lots of dead links and securiguard file just for the demo seems like a red flag
+    - demo wanted to install securiguard file? Malware?
+2. Wagtail
+    - **Impression**: Seems kind of heavy for my needs, option to integrate later if it feels necessary
+    - Seems a popular choice
+    - Nice admin interface
+    - It's sitewide generally, with option to integrate into existing site
+3. Mezzanine
+    - **Impression**: Seems great but don't think it's still maintained, docs site is down and discussions last updated in mid-2024 commented on it not being maintained.
+    - SEO-friendly urls and metadata
+    - Save as draft and preview on site
+    - Scheduled Publishing
+    - In-line page editing
+    - Don't think it's still maintained
+4. DjangoCMS-Blog
+    - **Impression**: 
+    - Front-end editing
+    - Multisite: posts can be visible in one or more django sites on the same project
+5. Django-Cast
+    - **Impression**: Good Option, but still more than I need right now.
+    - Integration option
+    - Targeted to podcasts and blog posts
+    - Posts, comments models and more
+    - pagination, thorough templating
+    - Build w wagtail
+    - Categories and Tags (Beta)
+
+### Decision: Think can build custom for now.
+
+Don't really need support for multiple authors, comments, reactions initially. Think I can start with a simpler custom setup and can always integrate something more complex if needed down the line.
 
 _____________________________
 
