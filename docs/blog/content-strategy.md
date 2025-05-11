@@ -91,9 +91,9 @@ May need to flush some of these started concepts out into something to demo
 ## Content Guidelines
 
 ### Tone and Voice
-- [Define your writing style]
-- [Target audience]
-- [Key messaging]
+- TONE: Fun, learning, not an expert but learning?
+- TARGET AUDIENCE: Help someone possibly facing a similar path - future me because who can remember
+- KEY MESSAGE: Positive, but not perfect. I'm excited about data and learning the industry. Sometimes I hit a wall, but I alwways learn something. 
 
 ### Post Structure Template
 - Introduction (hook)
@@ -111,5 +111,5 @@ May need to flush some of these started concepts out into something to demo
 [Monthly planning grid]
 
 ---
-Last Updated: [Today's date]
+Last Updated: 5/10/2025
 Document Status: In Progress
