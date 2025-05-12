@@ -25,7 +25,7 @@ This document outlines the content strategy for the portfolio blog, including ca
 - Job search experiences
 - Industry insights
 
-### 5. Suprise Project!
+### 5. Neural Sparks
 - Misc projects from random inspiration
 - Interest that sparked it
 - Build & Development
@@ -79,7 +79,7 @@ Good examples in myRise, things I've spent a lot of time on..
     - Cool tech, sites, projects I've discovered
 
 
-#### Category: Surprise Project!
+#### Category: Neural Sparks
 May need to flush some of these started concepts out into something to demo
 1. Harvestella via Django
 2. League API?
@@ -111,5 +111,5 @@ May need to flush some of these started concepts out into something to demo
 Post Weekly Initially, on Tuesdays
 
 ---
-Last Updated: 5/10/2025
+Last Updated: 5/12/2025
 Document Status: In Progress
