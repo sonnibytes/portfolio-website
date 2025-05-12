@@ -41,7 +41,7 @@ Similar to homepage, just filter by marked archived?
 ## Mobile Responsive Design
 
 ### Mobile Blog Homepage
-[Mobile wireframe]
+Single column of blog posts wireframe
 
 ### Mobile Post Detail
 [Mobile wireframe]
@@ -49,11 +49,11 @@ Similar to homepage, just filter by marked archived?
 ## Component Specifications
 
 ### Post Card Component
-- Title (h3)
-- Excerpt (150 characters)
+- Title (h3) (Orbitron)
+- Excerpt (150 characters) (JetBrains Mono)
 - Meta info (date, category, reading time)
 - Thumbnail image (optional)
-- Read more link
+- Read more link ("Access Transmission")
 
 ### Navigation Integration
 - Blog link in main nav
