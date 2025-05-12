@@ -6,50 +6,37 @@ This document contains wireframes and design specifications for the blog integra
 ## Design Principles
 - Clean, readable layout
 - Focus on content
-- Consistent with portfolio design
+- Consistent with portfolio design (tech hub or interface)
 - Mobile-first approach
+- Blog = DATA::LOGS
 
 ## Page Wireframes
 
 ### 1. Blog Homepage
-[ASCII wireframe or description]
-+---------------------------+
-|    Portfolio Nav Bar      |
-+---------------------------+
-|                           |
-|    Blog Hero Section      |
-|    "My Learning Journey"  |
-|                           |
-+---------------------------+
-| Recent Posts              |
-| +-------+ +-------+       |
-| | Post  | | Post  |       |
-| | Card  | | Card  |       |
-| +-------+ +-------+       |
-| +-------+ +-------+       |
-| | Post  | | Post  |       |
-| | Card  | | Card  |       |
-| +-------+ +-------+       |
-+---------------------------+
-| Categories | Archive      |
-+---------------------------+
-|    Portfolio Footer       |
-+---------------------------+
+Inspo
+![Data::Logs Header](./assets/posts-header.png)
+![Posts Cards Gallery](./assets/posts-card.png)
+
+SVGs
+![Posts Cards Gallery](./assets/tech-blog-final-design.svg)
 
 **Components**:
-- Hero section with blog title and description
+- Hero section with blog title and description (Recent Posts)
 - Post cards (title, excerpt, date, category)
-- Sidebar with categories and archive
+- Sidebar with categories and archive (include on all blog pages)
 - Pagination
 
 ### 2. Blog Post Detail
-[Layout description/wireframe]
+- Header Img, Details, and blog content.
+
+SVGs
+![Detail Blog Post Wireframe](./assets/blog-post-detail-wireframe.svg)
 
 ### 3. Category/Tag Pages
-[Layout description/wireframe]
+Similar to Blog Homepage, just filtered by Category/Tag
 
 ### 4. Archive Page
-[Layout description/wireframe]
+Similar to homepage, just filter by marked archived?
 
 ## Mobile Responsive Design
 
@@ -74,7 +61,7 @@ This document contains wireframes and design specifications for the blog integra
 - Breadcrumbs on post pages
 
 ---
-Last Updated: [Today's date]
+Last Updated: 5/12/2025
 Document Status: In Progress
 
 
