@@ -12,11 +12,15 @@ class Category(models.Model):
     """Category model for oraganizing blog posts."""
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, max_length=100)
-    code = models.CharField(max_length=2, 
+    code = models.CharField(max_length=2,
                             help_text="Two-letter code for display in hexagon")
     description = models.TextField(blank=True)
-    color = models.CharField(max_length=7, default="#00f0ff", help_text="Hex color code (e.g., #00f0ff)")
-    icon = models.CharField(max_length=50, blank=True, help_text="Font Awesome icon name (e.g., fa-book-open)")
+    color = models.CharField(
+        max_length=7, default="#00f0ff",
+        help_text="Hex color code (e.g., #00f0ff)")
+    icon = models.CharField(
+        max_length=50, blank=True,
+        help_text="Font Awesome icon name (e.g., fa-book-open)")
 
     class Meta:
         verbose_name_plural = "categories"
@@ -121,7 +125,7 @@ class Post(models.Model):
         return markdownify(self.content)
 
     def get_code_filename(self):
-        """Return a suitable filename for the featured code block based on content."""
+        """Return suitable filename for featured codeblock based on content."""
         # Map category codes to appropriate filenames
         category_to_filename = {
             'LJ': 'learning_journey.py',    # Learning Journey
@@ -140,7 +144,7 @@ class Post(models.Model):
         # Default to the category code's filename if available
         if self.category.code in category_to_filename:
             return category_to_filename[self.category.code]
-        
+
         # Fallback based on title
         title_lower = self.title.lower()
         if 'python' in title_lower:
