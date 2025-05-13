@@ -29,20 +29,25 @@ Django framework allows for modular development, so scaling/adding/etc much more
 #### Post Model
 - title (char)
 - excerpt (char) - for previews
-- image (img) - for cards/header
-- date (date) - created date
+- featured_image (img) - for cards/header
+- status (char/select['draft' or 'published'])
+- created (datetime) - created date
+- updated (datetime) - updated date
+- published (datetime) - published date
 - slug (slug)
 - content (text)
-- readtime (int)
+- reading_time (int)
 - tags (many-to-many) - FK
 - category (one-to-many) - FK
+- author (FK to built-in User)
 
 #### Category Model
 - name (char)
 - slug (slug)
+- description (text)
 
 #### Tag Model
-- caption (char)
+- name (char)
 - slug (slug)
 
 
@@ -107,7 +112,7 @@ Don't really need support for multiple authors, comments, reactions initially. T
 
 _____________________________
 
-Last Updated: 5/12/2025
+Last Updated: 5/13/2025
 
 Document Status: In Progress...
 
