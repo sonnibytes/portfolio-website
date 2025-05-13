@@ -55,4 +55,32 @@ class PostAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('name', 'post', 'created', 'approved')
+    list_filter = ('approved', 'created')
+    search_fields = ('name', 'email', 'content')
+    actions = ['approve_comment']
 
+    def approve_comment(self, request, queryset):
+        queryset.update(approved=True)
+    approve_comment.short_desciption = "Approve selected comments"
+
+
+@admin.register(Series)
+class SeriesAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug', 'get_posts_count')
+    prepopulated_fields = {'slug': ('title',)}
+    search_fields = ('title', 'description')
+
+    def get_posts_count(self, obj):
+        return obj.post.count()
+    get_posts_count.short_description = 'Posts'
+
+
+@admin.register(SeriesPost)
+class SeriesPostAdmin(admin.ModelAdmin):
+    list_display = ('series', 'post', 'order')
+    list_filter = ('series',)
+    raw_id_fields = ('post',)
+    ordering = ('series', 'order')
