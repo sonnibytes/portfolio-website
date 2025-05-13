@@ -33,6 +33,7 @@ Django framework allows for modular development, so scaling/adding/etc much more
 - date (date) - created date
 - slug (slug)
 - content (text)
+- readtime (int)
 - tags (many-to-many) - FK
 - category (one-to-many) - FK
 
@@ -61,7 +62,7 @@ Blog App Components:
 - Hosting?
 
 Possible Thoughts for Later:
-- Later add "X minute read" feature?
+- Later add "X minute read" feature? Updated to include in initial model
 - Translation feature
 
 ### Dependencies
@@ -106,7 +107,7 @@ Don't really need support for multiple authors, comments, reactions initially. T
 
 _____________________________
 
-Last Updated: 5/10/2025
+Last Updated: 5/12/2025
 
 Document Status: In Progress...
 
