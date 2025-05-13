@@ -23,9 +23,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("admin/", admin.site.urls),
     # Core app URLs (homepage, about, contact)
-    # path("", include("core.urls")),
+    path("", include("core.urls")),
     # Projects app URLs
-    # path("projects/", include("projects.urls")),
+    path("projects/", include("projects.urls")),
     # Blog app URLs
     path("blog/", include("blog.urls", namespace="blog")),
     path("markdownx/", include("markdownx.urls")),
