@@ -29,14 +29,18 @@ Django framework allows for modular development, so scaling/adding/etc much more
 #### Post Model
 - title (char)
 - excerpt (char) - for previews
-- featured_image (img) - for cards/header
+- thumbnail (img) - for cards
+- banner_image (img) for banner
 - status (char/select['draft' or 'published'])
 - created (datetime) - created date
 - updated (datetime) - updated date
-- published (datetime) - published date
+- published_date (datetime) - published date
 - slug (slug)
-- content (text)
-- reading_time (int)
+- content (markdownx field)
+- featured (bool) for blog homepage
+- featured_code (text) - code to display on featured terminal card
+- show_toc (bool) - show table of contents on post page
+- reading_time (pos int)
 - tags (many-to-many) - FK
 - category (one-to-many) - FK
 - author (FK to built-in User)
@@ -44,6 +48,7 @@ Django framework allows for modular development, so scaling/adding/etc much more
 #### Category Model
 - name (char)
 - slug (slug)
+- code (char) -- two-letter code for hexagons
 - description (text)
 
 #### Tag Model
