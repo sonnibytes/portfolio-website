@@ -177,3 +177,73 @@ class Post(models.Model):
 
         # Return the mapped icon text or category code
         return category_to_icon.get(self.category.code, self.category.code)
+
+
+class Comment(models.Model):
+    """Model for blog post comments."""
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='comments')
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    content = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    approved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created']
+
+    def __str__(self):
+        return f"Comment by {self.name} on {self.post}"
+
+
+class PostView(models.Model):
+    """Model to track post views for popularity metrics."""
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='views')
+    ip_address = models.GenericIPAddressField()
+    viewed_on = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-viewed_on']
+        unique_together = ('post', 'ip_address')
+
+    def __str__(self):
+        return f"View on {self.post} from {self.ip_address}"
+
+
+class Series(models.Model):
+    """Model for creating blog post series."""
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name_plural = "Series"
+        ordering = ['title']
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('blog:series', args=[self.slug])
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super(Series, self).save(*args, **kwargs)
+
+
+class SeriesPost(models.Model):
+    """Model for associating posts with a series and ordering them."""
+    series = models.ForeignKey(
+        Series, on_delete=models.CASCADE, related_name='posts')
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='series_associations')
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ('series', 'post')
+
+    def __str__(self):
+        return f"{self.post} in {self.series} (#{self.order})"

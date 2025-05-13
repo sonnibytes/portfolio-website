@@ -55,6 +55,28 @@ Django framework allows for modular development, so scaling/adding/etc much more
 - name (char)
 - slug (slug)
 
+#### Comment Model (blog comments)
+- post - FK
+- name (char)
+- email (email)
+- content (text)
+- created (datetime)
+- approved (bool)
+
+#### PostView model (track views)
+- post - FK
+- ip_address (ip)
+- viewed_on (datetime)
+
+#### Series model (create post series)
+- title (char)
+- slug (slug)
+- description (text)
+
+#### SeriesPost model (associate posts with a series and order them)
+- series - FK
+- post - FK
+- order (pos sm int)
 
 ### URL Structure
 `/blog/` - Blog Homepage <br>
