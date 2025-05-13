@@ -8,5 +8,5 @@ urlpatterns = [
     path("category/<slug:slug>/",
          views.CategoryView.as_view(), name="category"),
     path("tag/<slug:slug>/", views.TagView.as_view(), name="tag"),
-    path("archive/", views.ArchiveView(), name="archive"),
+    path("archive/", views.ArchiveView.as_view(), name="archive"),
 ]
