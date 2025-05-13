@@ -1,1 +1,56 @@
-# Search results page
+ <!-- Search results page -->
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block blog_content %}
+<!-- Search Results Banner -->
+<section class="search-banner">
+    <div class="search-icon">
+        <i class="fas fa-search"></i>
+    </div>
+    
+    <h1 class="search-title">Search Results</h1>
+    
+    <div class="search-container">
+        <form action="{% url 'blog:search' %}" method="get">
+            <div class="search-bar">
+                <input type="text" name="q" value="{{ query }}" placeholder="Search articles...">
+                <button type="submit" class="search-button">⌕</button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="search-stats">
+        {% if query %}
+            {{ posts.count }} results for "{{ query }}"
+        {% else %}
+            Enter a search term above
+        {% endif %}
+    </div>
+</section>
+
+<!-- Search Results -->
+{% if posts %}
+<section class="blog-posts-section">
+    <div class="post-grid">
+        {% for post in posts %}
+            {% include "blog/includes/post_card.html" with post=post %}
+        {% endfor %}
+    </div>
+    
+    {% include "blog/includes/pagination.html" with page_obj=page_obj %}
+</section>
+{% elif query %}
+<div class="no-results">
+    <div class="no-results-icon">
+        <i class="fas fa-file-circle-question"></i>
+    </div>
+    <h2 class="no-results-title">No Results Found</h2>
+    <p class="no-results-message">
+        We couldn't find any posts matching your search term "{{ query }}".
+        Try using different keywords or browse categories.
+    </p>
+    <a href="{% url 'blog:post_list' %}" class="cta-button">Browse All Posts</a>
+</div>
+{% endif %}
+{% endblock %}

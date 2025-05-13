@@ -1,1 +1,24 @@
-# Pagination controls
+ <!-- Pagination controls -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" class="pagination-link">← PREV</a>
+    {% else %}
+    <span class="pagination-link disabled">← PREV</span>
+    {% endif %}
+    
+    {% for i in page_obj.paginator.page_range %}
+        {% if i == page_obj.number %}
+        <span class="pagination-number active">{{ i }}</span>
+        {% elif i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+        <a href="?page={{ i }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" class="pagination-number">{{ i }}</a>
+        {% endif %}
+    {% endfor %}
+    
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" class="pagination-link">NEXT →</a>
+    {% else %}
+    <span class="pagination-link disabled">NEXT →</span>
+    {% endif %}
+</div>
+{% endif %}

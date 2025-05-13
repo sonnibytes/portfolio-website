@@ -1,1 +1,50 @@
-# Category listing page
+ <!-- Category listing page -->
+ {% extends "blog/base.html" %}
+ {% load static %}
+ 
+ {% block blog_content %}
+ <!-- Category Title Banner -->
+ <section class="category-banner">
+     <div class="category-hex category-{{ category.slug }}">
+         {{ category.code }}
+     </div>
+     
+     <h1 class="category-title">{{ category.name }}</h1>
+     
+     <p class="category-description">{{ category.description }}</p>
+     
+     <div class="category-stats">
+         {{ posts.count }} POSTS
+     </div>
+ </section>
+ 
+ <!-- Filter & Sort Section -->
+ <section class="filter-section">
+     <div class="filter-pills">
+         <a href="?sort=latest" class="filter-pill {% if request.GET.sort == 'latest' or not request.GET.sort %}active{% endif %}">LATEST</a>
+         <a href="?sort=popular" class="filter-pill {% if request.GET.sort == 'popular' %}active{% endif %}">POPULAR</a>
+         <a href="?filter=tutorials" class="filter-pill {% if request.GET.filter == 'tutorials' %}active{% endif %}">TUTORIALS</a>
+     </div>
+     
+     <div class="sort-dropdown">
+         <select name="sort" onchange="location = this.value;">
+             <option value="?sort=newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>SORT BY: NEWEST</option>
+             <option value="?sort=oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>SORT BY: OLDEST</option>
+             <option value="?sort=a-z" {% if request.GET.sort == 'a-z' %}selected{% endif %}>SORT BY: A-Z</option>
+         </select>
+     </div>
+ </section>
+ 
+ <!-- Blog Posts Grid -->
+ <section class="blog-posts-section">
+     <div class="post-grid">
+         {% for post in posts %}
+             {% include "blog/includes/post_card.html" with post=post %}
+         {% empty %}
+             <p class="no-posts-message">No posts found in this category. Check back soon!</p>
+         {% endfor %}
+     </div>
+     
+     {% include "blog/includes/pagination.html" with page_obj=page_obj %}
+ </section>
+ {% endblock %}

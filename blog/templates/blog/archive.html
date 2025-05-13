@@ -1,1 +1,71 @@
-# Archive page by date
+ <!-- Archive page by date -->
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block blog_content %}
+<!-- Archive Banner -->
+<section class="archive-banner">
+    <div class="archive-icon">
+        <i class="fas fa-calendar-days"></i>
+    </div>
+    
+    <h1 class="archive-title">
+        {% if month %}
+            {{ month|date:"F Y" }} Archives
+        {% else %}
+            {{ year }} Archives
+        {% endif %}
+    </h1>
+    
+    <div class="archive-stats">
+        {{ posts.count }} posts
+    </div>
+</section>
+
+<!-- Archive Timeline -->
+<section class="archive-timeline">
+    <div class="timeline-header">
+        <h2 class="timeline-title">Time Machine</h2>
+        <div class="timeline-divider"></div>
+    </div>
+    
+    <div class="timeline-navigation">
+        <!-- Year navigation -->
+        <div class="year-nav">
+            {% for archive_year in archive_years %}
+                <a href="{% url 'blog:archive_year' year=archive_year.year %}" 
+                   class="year-link {% if archive_year.year == year|add:'0' %}active{% endif %}">
+                    {{ archive_year.year }}
+                </a>
+            {% endfor %}
+        </div>
+        
+        <!-- Month navigation (if year is selected) -->
+        {% if year and not month %}
+            <div class="month-nav">
+                {% for archive_month in archive_months %}
+                    {% if archive_month.year == year|add:'0' %}
+                        <a href="{% url 'blog:archive_month' year=archive_month.year month=archive_month.month %}" 
+                           class="month-link">
+                            {{ archive_month.date|date:"M" }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Archive Posts -->
+<section class="blog-posts-section">
+    <div class="post-grid">
+        {% for post in posts %}
+            {% include "blog/includes/post_card.html" with post=post %}
+        {% empty %}
+            <p class="no-posts-message">No posts found for this time period.</p>
+        {% endfor %}
+    </div>
+    
+    {% include "blog/includes/pagination.html" with page_obj=page_obj %}
+</section>
+{% endblock %}

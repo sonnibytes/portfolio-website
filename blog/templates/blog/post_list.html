@@ -1,1 +1,79 @@
-# Blog homepage with post cards
+ <!-- Blog homepage with post cards -->
+ {% extends "blog/base.html" %}
+ {% load static %}
+ 
+ {% block blog_content %}
+ <!-- Category Navigation Section -->
+ <section class="categories-section">
+     <h2 class="section-title">Categories</h2>
+     
+     <div class="categories-list">
+         {% for category in categories %}
+         <div class="category-hex category-{{ category.slug }}">
+             <a href="{% url 'blog:category' slug=category.slug %}">
+                 {{ category.code }}
+             </a>
+         </div>
+         {% endfor %}
+     </div>
+     
+     <div class="search-container">
+         <form action="{% url 'blog:search' %}" method="get">
+             <div class="search-bar">
+                 <input type="text" name="q" placeholder="Search articles...">
+                 <button type="submit" class="search-button">⌕</button>
+             </div>
+         </form>
+     </div>
+ </section>
+ 
+ {% if featured_post %}
+ <!-- Featured Post Section -->
+ <section class="featured-post">
+     <div class="featured-post-container">
+         <div class="featured-post__left">
+             <div class="featured-badge">FEATURED POST</div>
+             <h1 class="featured-title">{{ featured_post.title }}</h1>
+             <div class="featured-divider"></div>
+             <p class="featured-description">{{ featured_post.excerpt }}</p>
+             <div class="featured-meta">
+                 <div class="author-avatar">{{ featured_post.author.get_initials }}</div>
+                 <span class="author-name">{{ featured_post.author.get_full_name }}</span>
+                 <span class="post-date">{{ featured_post.published_date|date:"M d, Y" }}</span>
+             </div>
+             <a href="{% url 'blog:post_detail' slug=featured_post.slug %}" class="featured-link">ACCESS TRANSMISSION →</a>
+         </div>
+         <div class="featured-post__right">
+             <!-- Terminal-style code block -->
+             <div class="code-block">
+                 <div class="code-header">
+                     <div class="terminal-button red"></div>
+                     <div class="terminal-button yellow"></div>
+                     <div class="terminal-button green"></div>
+                     <span class="filename">{{ featured_post.get_code_filename }}</span>
+                 </div>
+                 <div class="code-content">
+                     {{ featured_post.get_featured_code|safe }}
+                 </div>
+             </div>
+         </div>
+     </div>
+ </section>
+ {% endif %}
+ 
+ <!-- Blog Posts Section -->
+ <section class="blog-posts-section">
+     <h2 class="section-title">Latest Articles</h2>
+     <div class="section-divider"></div>
+     
+     <div class="post-grid">
+         {% for post in posts %}
+             {% include "blog/includes/post_card.html" with post=post %}
+         {% empty %}
+             <p class="no-posts-message">No posts found. Check back soon!</p>
+         {% endfor %}
+     </div>
+     
+     {% include "blog/includes/pagination.html" with page_obj=page_obj %}
+ </section>
+ {% endblock %}

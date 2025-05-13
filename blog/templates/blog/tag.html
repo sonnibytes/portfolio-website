@@ -1,1 +1,53 @@
-# Tag listing page
+ <!-- Tag listing page -->
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block blog_content %}
+<!-- Tag Title Banner -->
+<section class="tag-banner">
+    <div class="tag-pill">
+        {{ tag.name }}
+    </div>
+    
+    <h1 class="tag-title">Tagged Posts</h1>
+    
+    <p class="tag-description">Showing all posts related to {{ tag.name }}</p>
+    
+    <div class="tag-stats">
+        {{ posts.count }} POSTS
+    </div>
+</section>
+
+<!-- Filter & Related Tags Section -->
+<section class="filter-section">
+    <div class="filter-pills">
+        <a href="?sort=latest" class="filter-pill {% if request.GET.sort == 'latest' or not request.GET.sort %}active{% endif %}">LATEST</a>
+        <a href="?sort=popular" class="filter-pill {% if request.GET.sort == 'popular' %}active{% endif %}">POPULAR</a>
+    </div>
+    
+    {% if related_tags %}
+    <div class="related-tags">
+        <span class="related-tags-label">RELATED TAGS:</span>
+        
+        {% for related_tag in related_tags %}
+        <a href="{% url 'blog:tag' slug=related_tag.slug %}" class="related-tag-pill">
+            {{ related_tag.name }}
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+
+<!-- Blog Posts Grid -->
+<section class="blog-posts-section">
+    <div class="post-grid">
+        {% for post in posts %}
+            {% include "blog/includes/post_card.html" with post=post highlight_tag=tag %}
+        {% empty %}
+            <p class="no-posts-message">No posts found with this tag. Check back soon!</p>
+        {% endfor %}
+    </div>
+    
+    {% include "blog/includes/pagination.html" with page_obj=page_obj %}
+</section>
+{% endblock %}
