@@ -98,7 +98,7 @@ class Post(models.Model):
     tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
 
     class Meta:
-        ordering = ['-published']
+        ordering = ['-published_date']
 
     def __str__(self):
         return self.title

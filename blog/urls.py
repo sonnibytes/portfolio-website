@@ -14,3 +14,5 @@ urlpatterns = [
          views.ArchiveView.as_view(), name="archive_month"),
     path("search/", views.SearchView.as_view(), name="search"),
 ]
+
+app_name = 'blog'

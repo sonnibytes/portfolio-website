@@ -29,7 +29,7 @@ class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'published_date'
     filter_horizontal = ('tags',)
     readonly_fields = ('reading_time',)
-    ordering = ('status', '-published')
+    ordering = ('status', '-published_date')
 
     fieldsets = (
         (None, {
