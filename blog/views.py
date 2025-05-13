@@ -1,5 +1,5 @@
-from django.views.generic import ListView, DetailView, TemplateView
-from django.shortcuts import get_object_or_404, render
+from django.views.generic import ListView, DetailView
+from django.shortcuts import get_object_or_404
 from django.db.models import Count
 from .models import Post, Category, Tag
 
@@ -9,7 +9,7 @@ class PostListView(ListView):
     model = Post
     template_name = "blog/post_list.html"
     context_object_name = "posts"
-    paginate_by = 6 # 6 posts per page (2 rows of 3)
+    paginate_by = 6  # 6 posts per page (2 rows of 3)
 
     def get_queryset(self):
         return Post.objects.filter(

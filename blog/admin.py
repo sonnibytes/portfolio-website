@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Category, Tag, Comment, Series, SeriesPost, PostView
+from .models import Post, Category, Tag, Comment, Series, SeriesPost
 from django.utils import timezone
 
 
