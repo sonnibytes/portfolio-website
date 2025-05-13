@@ -12,7 +12,8 @@ class PostListView(ListView):
     paginate_by = 6 # 6 posts per page (2 rows of 3)
 
     def get_queryset(self):
-        return Post.objects.filter(status="published").order_by("-published_date")
+        return Post.objects.filter(
+            status="published").order_by("-published_date")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -145,5 +146,29 @@ class ArchiveView(ListView):
         context['year'] = year
         context['month'] = month
         return context
-    
-    
+
+
+class SearchView(ListView):
+    """View for search results."""
+    template_name = 'blog/search.html'
+    context_object_name = 'posts'
+    paginate_by = 6
+
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        if query:
+            return Post.objects.filter(
+                title__icontains=query
+            ) | Post.objects.filter(
+                content__icontains=query
+            ) | Post.objects.filter(
+                tags__name__icontains=query
+            ).distinct().filter(
+                status='published'
+            ).order_by('-published_date')
+        return Post.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get('q', '')
+        return context
