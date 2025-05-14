@@ -1,6 +1,6 @@
 /**
  * ML DEVLOG - Blog JavaScript
- * Enhanced syntax highlighter with multiple language support
+ * Syntax highlighting without typing animations
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return applyPatterns(code, patterns);
     }
-    
+
     // Markdown syntax highlighting
     function highlightMarkdown(code) {
         const patterns = [
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return applyPatterns(processedCode, otherPatterns);
     }
-    
+
     // JSON syntax highlighting
     function highlightJSON(code) {
         const patterns = [
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return applyPatterns(code, patterns);
     }
-    
+
     // SQL syntax highlighting
     function highlightSQL(code) {
         const patterns = [
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return applyPatterns(processedCode, patterns);
     }
-    
+
     // Bash/Shell syntax highlighting
     function highlightBash(code) {
         const patterns = [
@@ -257,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return applyPatterns(code, patterns);
     }
-    
+
     // Helper function to apply patterns
     function applyPatterns(code, patterns) {
         let result = code;
@@ -280,62 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return result;
     }
-    
-    // Rest of the code from earlier (terminal typing effect, etc.)
-    function addTerminalEffect() {
-        const featuredCodeBlock = document.querySelector('.featured-post-card .code-content pre code');
-        if (featuredCodeBlock) {
-            const originalCode = featuredCodeBlock.innerHTML;
-            
-            // Only apply effect if there's actual code
-            if (originalCode && originalCode !== '# No code available') {
-                featuredCodeBlock.innerHTML = '';
-                
-                // Split code into lines
-                const codeLines = originalCode.split('\n');
-                let lineIndex = 0;
-                let charIndex = 0;
-                
-                // Type out each character
-                const typeInterval = setInterval(() => {
-                    if (lineIndex < codeLines.length) {
-                        const line = codeLines[lineIndex];
-                        
-                        if (charIndex < line.length) {
-                            // Append next character
-                            featuredCodeBlock.innerHTML += line[charIndex];
-                            charIndex++;
-                        } else {
-                            // End of line, add newline and move to next line
-                            featuredCodeBlock.innerHTML += '\n';
-                            lineIndex++;
-                            charIndex = 0;
-                            
-                            // Apply syntax highlighting to the current content
-                            highlightSyntax();
-                        }
-                    } else {
-                        // End of code, clear interval
-                        clearInterval(typeInterval);
-                        
-                        // Final highlighting pass
-                        highlightSyntax();
-                    }
-                }, 30); // Adjust typing speed as needed
-            } else {
-                // If no code, just apply highlighting
-                highlightSyntax();
-            }
-        } else {
-            // If not featured code block, just apply highlighting for all code blocks
-            highlightSyntax();
-        }
-    }
-    
-    // Initialize effects
-    highlightSyntax();
-    setTimeout(addTerminalEffect, 1000); // Small delay to ensure DOM is ready
-    
+
     // Add copy code functionality
     function addCopyButtons() {
         const codeBlocks = document.querySelectorAll('.code-block');
@@ -373,7 +318,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Add copy functionality after a delay to ensure the DOM is fully loaded
-    setTimeout(addCopyButtons, 1500);
+
+    // Initialize functionality
+    highlightSyntax();
+    addCopyButtons();
 });
