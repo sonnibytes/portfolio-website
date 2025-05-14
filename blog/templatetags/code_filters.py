@@ -18,12 +18,9 @@ def highlight_code(code, language=None):
         # If a language is specified, get the appropriate lexer
         if language:
             lexer = get_lexer_by_name(language, stripall=True)
-           
         # Otherwise, use a simple text lexer with no highlighting
         else:
             lexer = TextLexer()
-         
-        print(f"LANGUAGE: {language} - Lexer: {lexer}")
 
         # Create an HTML formatter with a 'monokai' style
         # This is a dark style that works well with your theme
