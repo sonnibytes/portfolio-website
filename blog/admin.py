@@ -32,21 +32,22 @@ class PostAdmin(admin.ModelAdmin):
     ordering = ('status', '-published_date')
 
     fieldsets = (
-        (None, {
-            'fields': ('title', 'slug', 'author', 'content')
-        }),
-        ('Meta Information', {
-            'fields': ('excerpt', 'category', 'tags', 'featured')
-        }),
-        ('Images', {
-            'fields': ('thumbnail', 'banner_image')
-        }),
-        ('Featured Content', {
-            'fields': ('featured_code', 'show_toc')
-        }),
-        ('Publication', {
-            'fields': ('status', 'published_date', 'reading_time')
-        }),
+        ("Basic Information", {
+            "fields": ("title", "slug", "author", "content"),
+            }),
+        ("Meta Information", {
+            "fields": ("excerpt", "category", "tags", "show_toc"),
+             }),
+        ("Images", {
+            "fields": ("thumbnail", "banner_image"),
+            }),
+        ("Featured Content", {
+            "fields": ("featured", "featured_code", "featured_code_format"),
+            "classes": ('collapse',),
+            }),
+        ("Publication", {
+            "fields": ("status", "published_date", "reading_time"),
+            }),
     )
 
     def save_model(self, request, obj, form, change):
