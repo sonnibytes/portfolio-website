@@ -145,37 +145,21 @@ class Post(models.Model):
 
     def get_code_filename(self):
         """Return suitable filename for featured codeblock based on content."""
-        # Map category codes to appropriate filenames
-        category_to_filename = {
-            'LJ': 'learning_journey.py',    # Learning Journey
-            'TD': 'deep_dive.py',           # Technical Deep Dive
-            'PD': 'proj_doc.md',            # Project Documentation
-            'CT': 'career_path.md',         # Career Transition
-            'NS': 'neural_spark.txt',       # Neural Sparks
-            # Add technical category codes for spcific languages/technologies
-            'PY': 'python_example.py',      # Python
-            'JS': 'javascript_example.js',  # JavaScript
-            'ML': 'ml_model.py',            # Machine Learning
-            'AI': 'ai_model.py',            # AI
-            'DS': 'data_analysis.py',       # Data Science
+        # Map code formats to appropriate filenames
+        format_to_filename = {
+            'python': 'example.py',
+            'javascript': 'script.js',
+            'html': 'index.html',
+            'css': 'styles.css',
+            'terminal': 'terminal.sh',
+            'markdown': 'readme.md',
+            'json': 'data.json',
+            'sql': 'query.sql',
+            'bash': 'script.sh',
+            'plaintext': 'file.txt',
         }
-
-        # Default to the category code's filename if available
-        if self.category.code in category_to_filename:
-            return category_to_filename[self.category.code]
-
-        # Fallback based on title
-        title_lower = self.title.lower()
-        if 'python' in title_lower:
-            return 'python_example.py'
-        elif 'javascript' in title_lower or 'js' in title_lower:
-            return 'javascript_example.js'
-        elif 'machine learning' in title_lower or 'ml' in title_lower:
-            return 'ml_model.py'
-        elif 'django' in title_lower:
-            return 'django_example.py'
-        # General fall back
-        return 'code_snippet.txt'
+        # Return the appropriate filename based on format
+        return format_to_filename.get(self.featured_code_format, 'code.txt')
 
     def get_icon_text(self):
         """Return text to display as icon if no image available."""
@@ -186,12 +170,6 @@ class Post(models.Model):
             "PD": "📋",  # Project Documentation - clipboard
             "CT": "🚀",  # Career Transition - rocket
             "NS": "💡",  # Neural Sparks - light bulb
-            # Technical categories can remain as text
-            "PY": "PY",
-            "JS": "JS",
-            "ML": "ML",
-            "AI": "AI",
-            "DS": "DS",
         }
 
         # Return the mapped icon text or category code
