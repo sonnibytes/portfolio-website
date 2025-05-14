@@ -63,6 +63,20 @@ class Post(models.Model):
         ('published', 'Published'),
     )
 
+    # Code format options
+    CODE_FORMAT_CHOICES = (
+        ("python", "Python"),
+        ("javascript", "JavaScript"),
+        ("html", "HTML"),
+        ("css", "CSS"),
+        ("terminal", "Terminal"),
+        ("markdown", "Markdown"),
+        ("json", "JSON"),
+        ("sql", "SQL"),
+        ("bash", "Bash/Shell"),
+        ("plaintext", "Plain Text"),
+    )
+
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
     excerpt = models.TextField(
@@ -77,6 +91,11 @@ class Post(models.Model):
         help_text="Large banner img for post header (1200x400px recommended)")
     featured_code = models.TextField(
         blank=True, help_text="Code snippet to display in featured section")
+    featured_code_format = models.CharField(
+        max_length=20,
+        choices=CODE_FORMAT_CHOICES,
+        default='python',
+        help_text="Programming language for syntac highlighting")
     show_toc = models.BooleanField(
         default=True, help_text="Show table of contents on post page")
     status = models.CharField(
