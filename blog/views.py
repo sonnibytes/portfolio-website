@@ -105,12 +105,12 @@ class TagView(ListView):
         context['tag'] = self.tag
 
         # Get related tags that appear together with this tag
-        tag_posts = Post.objects.filter(tags=self.tags)
+        tag_posts = Post.objects.filter(tags=self.tag)
         related_tags = Tag.objects.filter(
-            post__in=tag_posts
+            posts__in=tag_posts
         ).exclude(id=self.tag.id).annotate(
-            post_count=Count('post')
-        ).order_by('-post_count')[:3]
+            posts_count=Count('posts')
+        ).order_by('-posts_count')[:3]
 
         context['related_tags'] = related_tags
         return context

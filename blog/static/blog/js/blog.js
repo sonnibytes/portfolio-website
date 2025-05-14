@@ -145,47 +145,47 @@ document.addEventListener('DOMContentLoaded', function() {
         readingTimeElement.textContent = readingTime + ' min read';
     }
 
-    // Typing Animation JavaScript
-    // Get the page header h1 element with typing animation class
-    const headerText = document.querySelector('h1.typing-animation');
+    // // Typing Animation JavaScript
+    // // Get the page header h1 element with typing animation class
+    // const headerText = document.querySelector('h1.typing-animation');
   
-    if (headerText) {
-    // Store the original content
-    const originalContent = headerText.innerHTML;
+    // if (headerText) {
+    // // Store the original content
+    // const originalContent = headerText.innerHTML;
     
-    // Initialize the animation
-    initTypingAnimation(headerText, originalContent);
-    }
+    // // Initialize the animation
+    // initTypingAnimation(headerText, originalContent);
+    // }
     
-    function initTypingAnimation() {
-      // Add the animation class
-      logoText.classList.add('typing-animation');
+    // function initTypingAnimation() {
+    //   // Add the animation class
+    //   logoText.classList.add('typing-animation');
       
-      // Set initial state (empty)
-      logoText.textContent = '';
+    //   // Set initial state (empty)
+    //   logoText.textContent = '';
       
-      // Start the typing sequence after a short delay
-      setTimeout(() => {
-        startTypingSequence();
-      }, 500);
-    }
+    //   // Start the typing sequence after a short delay
+    //   setTimeout(() => {
+    //     startTypingSequence();
+    //   }, 500);
+    // }
     
-    function startTypingSequence() {
-      // Reset to original HTML content when restarting the animation
-      logoText.innerHTML = originalContent;
+    // function startTypingSequence() {
+    //   // Reset to original HTML content when restarting the animation
+    //   logoText.innerHTML = originalContent;
       
-      // Set up a restart of the animation after it completes
-      setTimeout(() => {
-        // Remove the class briefly
-        logoText.classList.remove('typing-animation');
+    //   // Set up a restart of the animation after it completes
+    //   setTimeout(() => {
+    //     // Remove the class briefly
+    //     logoText.classList.remove('typing-animation');
         
-        // Force reflow to restart animation
-        void logoText.offsetWidth;
+    //     // Force reflow to restart animation
+    //     void logoText.offsetWidth;
         
-        // Start the process again
-        initTypingAnimation();
-      }, 5000); // Total animation duration including pauses
-    }
+    //     // Start the process again
+    //     initTypingAnimation();
+    //   }, 5000); // Total animation duration including pauses
+    // }
 
     // Add category color variables to post cards
     const categoryElements = document.querySelectorAll('[class*="category-"]');
