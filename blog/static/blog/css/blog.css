@@ -1,14 +1,37 @@
 /* 
  * ML DEVLOG - Blog Styles
- * Enhanced with Bootstrap integration
+ * Complete CSS with syntax highlighting and terminal effects
+ * (Typing animations removed)
  */
 
-/* Blog Content Area */
+/* ========= BASE VARIABLES ========= */
+:root {
+    --color-background: #0a0a1a;
+    --color-cyan: #00f0ff;
+    --color-purple: #7928ca;
+    --color-text: #e5e5e5;
+    --color-text-secondary: #aaaaaa;
+    --color-card-bg: #121212;
+    --color-nav-bg: #1a1a1a;
+    --color-code-bg: #1e1e1e;
+    --color-code-header: #2a2a2a;
+    --color-divider: #2a2a2a;
+    
+    --font-heading: 'Orbitron', sans-serif;
+    --font-body: 'JetBrains Mono', monospace;
+    
+    --border-radius-small: 8px;
+    --border-radius-large: 15px;
+    
+    --transition-speed: 0.3s;
+}
+
+/* ========= BLOG CONTENT AREA ========= */
 .blog-content {
     margin-top: 1rem;
 }
 
-/* Category Hexagons */
+/* ========= CATEGORY HEXAGONS ========= */
 .categories-container {
     display: flex;
     flex-wrap: wrap;
@@ -73,12 +96,13 @@
     color: var(--color-text-secondary);
 }
 
-/* Featured Post Card */
+/* ========= FEATURED POST CARD ========= */
 .featured-post-card {
-    border: 1px solid rgba(0, 240, 255, 0.1);
-    transition: all var(--transition-speed) ease;
-    position: relative;
+    border: none;
+    border-radius: 0.5rem;
     overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 .featured-post-card::before {
@@ -88,7 +112,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    border-radius: var(--border-radius-small);
+    border-radius: 0.5rem;
     padding: 2px;
     background: linear-gradient(135deg, var(--color-cyan), var(--color-purple));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -107,21 +131,23 @@
     bottom: 0;
     background: linear-gradient(45deg, var(--color-cyan) 0%, var(--color-purple) 25%, var(--color-cyan) 50%, var(--color-purple) 75%, var(--color-cyan) 100%);
     opacity: 0.05;
-    border-radius: var(--border-radius-small);
+    border-radius: 0.5rem;
     pointer-events: none;
 }
 
 .featured-badge {
     color: var(--color-cyan);
     font-size: 0.8rem;
-    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
 }
 
 .featured-divider {
     height: 2px;
     width: 100px;
     background: linear-gradient(90deg, var(--color-cyan), var(--color-purple));
-    margin-bottom: 1.5rem;
+    margin: 1rem 0;
 }
 
 .author-avatar {
@@ -134,33 +160,51 @@
     align-items: center;
     justify-content: center;
     font-size: 0.8rem;
+    font-family: var(--font-body);
 }
 
 .featured-link {
     color: var(--color-cyan);
+    text-decoration: none;
     font-size: 0.9rem;
-    transition: all var(--transition-speed) ease;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
 }
 
 .featured-link:hover {
-    text-shadow: 0 0 5px rgba(0, 240, 255, 0.7);
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.7);
+    color: var(--color-cyan);
 }
 
-/* Code Block */
+.featured-link i {
+    transition: transform 0.3s ease;
+}
+
+.featured-link:hover i {
+    transform: translateX(4px);
+}
+
+/* ========= CODE TERMINAL STYLING ========= */
 .code-block {
-    background-color: var(--color-code-bg);
-    border-radius: var(--border-radius-small);
+    background-color: #1e1e1e;
+    border-radius: 0.5rem;
     overflow: hidden;
     height: 100%;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
 .code-header {
-    background-color: var(--color-code-header);
+    background-color: #2a2a2a;
     padding: 0.5rem 1rem;
     display: flex;
     align-items: center;
+    border-bottom: 1px solid #333;
 }
 
 .terminal-button {
@@ -168,6 +212,7 @@
     height: 12px;
     border-radius: 50%;
     margin-right: 6px;
+    position: relative;
 }
 
 .terminal-button.red {
@@ -183,29 +228,173 @@
 }
 
 .filename {
-    margin-left: 0.5rem;
+    margin-left: 0.8rem;
     font-size: 0.8rem;
-    color: var(--color-text-secondary);
+    color: #808080;
+    font-family: var(--font-body);
 }
 
 .code-content {
     padding: 1rem;
     overflow-x: auto;
     flex-grow: 1;
+    position: relative;
+}
+
+.code-content::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    opacity: 0.5;
+    z-index: 0;
 }
 
 .code-content pre {
     margin: 0;
-    height: 100%;
+    padding: 0;
+    background: transparent;
+    position: relative;
+    z-index: 1;
 }
 
 .code-content code {
-    font-family: var(--font-body);
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.9rem;
     line-height: 1.5;
+    color: #d4d4d4;
 }
 
-/* Post Cards */
+/* Add lighting effect to terminal */
+.code-block::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-cyan), var(--color-purple));
+    opacity: 0.7;
+    z-index: 2;
+}
+
+/* Static cursor instead of blinking */
+.code-content::before {
+    content: "";
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    width: 8px;
+    height: 16px;
+    background-color: #d4d4d4;
+    z-index: 3;
+}
+
+/* Copy button style */
+.copy-button {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: #808080;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.copy-button:hover {
+    color: var(--color-cyan);
+}
+
+/* ========= SYNTAX HIGHLIGHTING ========= */
+/* Python Syntax Highlighting */
+.language-python .keyword { color: #569cd6; }
+.language-python .function { color: #dcdcaa; }
+.language-python .string { color: #ce9178; }
+.language-python .comment { color: #6a9955; }
+.language-python .class { color: #4ec9b0; }
+.language-python .number { color: #b5cea8; }
+.language-python .operator { color: #d4d4d4; }
+.language-python .builtin { color: #4ec9b0; }
+
+/* JavaScript Syntax Highlighting */
+.language-javascript .keyword { color: #569cd6; }
+.language-javascript .function { color: #dcdcaa; }
+.language-javascript .string { color: #ce9178; }
+.language-javascript .comment { color: #6a9955; }
+.language-javascript .class { color: #4ec9b0; }
+.language-javascript .number { color: #b5cea8; }
+.language-javascript .operator { color: #d4d4d4; }
+.language-javascript .builtin { color: #4ec9b0; }
+
+/* HTML Syntax Highlighting */
+.language-html .tag { color: #569cd6; }
+.language-html .attr-name { color: #9cdcfe; }
+.language-html .string { color: #ce9178; }
+.language-html .comment { color: #6a9955; }
+.language-html .doctype { color: #808080; }
+
+/* CSS Syntax Highlighting */
+.language-css .property { color: #9cdcfe; }
+.language-css .value { color: #ce9178; }
+.language-css .color { color: #b5cea8; }
+.language-css .class-selector { color: #dcdcaa; }
+.language-css .id-selector { color: #569cd6; }
+.language-css .at-rule { color: #c586c0; }
+.language-css .comment { color: #6a9955; }
+
+/* Terminal Syntax Highlighting */
+.language-terminal .command { color: #569cd6; }
+.language-terminal .command-name { color: #dcdcaa; }
+.language-terminal .path { color: #ce9178; }
+.language-terminal .argument { color: #9cdcfe; }
+.language-terminal .string { color: #ce9178; }
+.language-terminal .comment { color: #6a9955; }
+.language-terminal .prompt { color: #00f0ff; }
+
+/* Markdown Syntax Highlighting */
+.language-markdown .heading { color: #569cd6; font-weight: bold; }
+.language-markdown .bold { color: #dcdcaa; font-weight: bold; }
+.language-markdown .italic { color: #dcdcaa; font-style: italic; }
+.language-markdown .link-text { color: #9cdcfe; }
+.language-markdown .link-url { color: #ce9178; }
+.language-markdown .blockquote { color: #888888; }
+.language-markdown .list-item { color: #c586c0; }
+.language-markdown .code-text { color: #4ec9b0; }
+.language-markdown .codeblock { color: #4ec9b0; }
+
+/* JSON Syntax Highlighting */
+.language-json .property { color: #9cdcfe; }
+.language-json .string { color: #ce9178; }
+.language-json .number { color: #b5cea8; }
+.language-json .keyword { color: #569cd6; }
+
+/* SQL Syntax Highlighting */
+.language-sql .keyword { color: #569cd6; }
+.language-sql .string { color: #ce9178; }
+.language-sql .number { color: #b5cea8; }
+.language-sql .comment { color: #6a9955; }
+.language-sql .identifier { color: #9cdcfe; }
+
+/* Bash/Shell Syntax Highlighting */
+.language-bash .prompt { color: #00f0ff; }
+.language-bash .keyword { color: #c586c0; }
+.language-bash .command { color: #dcdcaa; }
+.language-bash .string { color: #ce9178; }
+.language-bash .comment { color: #6a9955; }
+.language-bash .variable { color: #9cdcfe; }
+.language-bash .argument { color: #b5cea8; }
+
+/* ========= POST CARDS ========= */
 .post-card {
     height: 100%;
     transition: all var(--transition-speed) ease;
@@ -301,7 +490,7 @@
     transform: translateX(5px);
 }
 
-/* Section Title */
+/* ========= SECTION STYLING ========= */
 .section-title {
     position: relative;
     display: inline-block;
@@ -313,7 +502,7 @@
     background: linear-gradient(90deg, var(--color-cyan), var(--color-purple));
 }
 
-/* Pagination */
+/* ========= PAGINATION ========= */
 .pagination {
     display: flex;
     justify-content: center;
@@ -353,90 +542,30 @@
     background-color: transparent;
 }
 
-/* Styling for the Page Header with Typing Animation
-/* 
-/* Page header container */
-/* .page-header {
-    margin-top: 2rem;
-    margin-bottom: 3rem;
-    position: relative;
-  }
-  
-  /* Enhanced typing animation specifically for the header h1 */
-  /* h1.typing-animation {
-    display: inline-block;
-    font-family: var(--font-heading);
-    font-weight: 700;
-    letter-spacing: 0.1em; 
-    overflow: hidden;
-    white-space: nowrap;
-    margin: 0 auto;
-    border-right: 0.15em solid transparent;
-    animation: 
-      typing 3.5s steps(9, end),
-      blink-caret-header 0.75s step-end infinite;
-    animation-iteration-count: infinite;
-  } */
-  
-  /* Typing effect specifically for the header */
-  /* @keyframes typing {
-    0% { width: 0; border-right-color: var(--color-cyan); }
-    40% { width: 100%; border-right-color: var(--color-cyan); }
-    85% { width: 100%; border-right-color: var(--color-cyan); }
-    100% { width: 0; border-right-color: transparent; }
-  } */
-  
-  /* Blinking cursor effect */
-  /* @keyframes blink-caret-header {
-    from, to { border-right-color: transparent; }
-    50% { border-right-color: var(--color-cyan); }
-  } */
-  
-  /* Add glow effect to the header when typing is happening */
-  /* h1.typing-animation {
-    text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
-  } */
-  
-  /* Purple text specifically for DEVLOG part of header */
-  /* h1.typing-animation .text-purple {
-    color: var(--color-purple);
-    text-shadow: 0 0 10px rgba(121, 40, 202, 0.4);
-  }
-   */
-  /* Add subtle background effects */
-  .page-header::before {
-    content: '';
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-    border-radius: 50%;
-    z-index: -1;
-  }
-  
-  /* Add responsive adjustments */
-  /* @media (max-width: 768px) {
-    h1.typing-animation {
-      font-size: 2.5rem;
-    }
-  }
-  
-  @media (max-width: 576px) {
-    h1.typing-animation {
-      font-size: 2rem;
-    }
-  } */
-  
-  /* Make sure the subheadline has proper spacing */
-  .page-header .lead {
-    margin-top: 1rem;
-    opacity: 0.7;
-  } */ */ */
+/* ========= CUSTOM UTILITY CLASSES ========= */
+.text-cyan {
+    color: var(--color-cyan) !important;
+}
 
-/* Responsive Adjustments */
+.text-purple {
+    color: var(--color-purple) !important;
+}
+
+.btn-outline-cyan {
+    color: var(--color-cyan);
+    border-color: var(--color-cyan);
+    background-color: transparent;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-cyan:hover {
+    color: #000;
+    background-color: var(--color-cyan);
+    border-color: var(--color-cyan);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+/* ========= RESPONSIVE ADJUSTMENTS ========= */
 @media (max-width: 992px) {
     .categories-container {
         justify-content: space-around;
@@ -445,16 +574,16 @@
     .post-card .card-text {
         min-height: auto;
     }
+
+    .code-block {
+        margin-top: 2rem;
+        height: 300px;
+    }
 }
 
 @media (max-width: 768px) {
     .featured-post-card .row {
         flex-direction: column;
-    }
-    
-    .code-block {
-        margin-top: 2rem;
-        height: 300px;
     }
 }
 
