@@ -1,58 +1,59 @@
  <!-- Blog homepage with post cards -->
  {% extends "blog/base.html" %}
  {% load static %}
+ {% load code_filters %}
  
  {% block blog_content %}
- <!-- Page Header (without typing animation) -->
- <div class="page-header text-center mb-5">
-     <h1 class="display-4">ML<span class="text-purple">DEVLOG</span></h1>
-     <p class="lead text-muted">Exploring the world of machine learning and AI development</p>
- </div>
- 
- <!-- Featured Post Section -->
- <div class="featured-post-section mb-5">
-     {% if featured_post %}
-     <div class="card featured-post-card bg-dark bg-opacity-50">
-         <div class="card-body p-4">
-             <div class="row">
-                 <div class="col-lg-6">
-                     <div class="featured-badge mb-2">FEATURED POST</div>
-                     <h2 class="card-title">{{ featured_post.title }}</h2>
-                     <div class="featured-divider"></div>
-                     <p class="card-text text-light-50 mb-4">{{ featured_post.excerpt }}</p>
-                     
-                     <div class="d-flex align-items-center mb-3">
-                         <div class="author-avatar me-2">
-                             {{ featured_post.author.first_name|first }}{{ featured_post.author.last_name|first }}
-                         </div>
-                         <span class="text-light me-2">{{ featured_post.author.get_full_name }}</span>
-                         <span class="text-muted mx-2">|</span>
-                         <span class="text-muted">{{ featured_post.published_date|date:"M d, Y" }}</span>
-                     </div>
-                     
-                     <a href="{{ featured_post.get_absolute_url }}" class="featured-link">
-                         ACCESS TRANSMISSION <i class="fas fa-arrow-right ms-1"></i>
-                     </a>
-                 </div>
-                 
-                 <div class="col-lg-6">
-                     <div class="code-block">
-                         <div class="code-header">
-                             <div class="terminal-button red"></div>
-                             <div class="terminal-button yellow"></div>
-                             <div class="terminal-button green"></div>
-                             <span class="filename">{{ featured_post.get_code_filename }}</span>
-                         </div>
-                         <div class="code-content">
-                             <pre><code class="language-{{ featured_post.featured_code_format }}">{{ featured_post.featured_code|default:"# No code available" }}</code></pre>
-                         </div>
-                     </div>
-                 </div>
-             </div>
-         </div>
-     </div>
-     {% endif %}
- </div>
+ <!-- Page Header -->
+<div class="page-header text-center mb-5">
+    <h1 class="display-4">ML<span class="text-purple">DEVLOG</span></h1>
+    <p class="lead text-muted">Exploring the world of machine learning and AI development</p>
+</div>
+
+<!-- Featured Post Section -->
+<div class="featured-post-section mb-5">
+    {% if featured_post %}
+    <div class="card featured-post-card bg-dark bg-opacity-50">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="featured-badge mb-2">FEATURED POST</div>
+                    <h2 class="card-title">{{ featured_post.title }}</h2>
+                    <div class="featured-divider"></div>
+                    <p class="card-text text-light-50 mb-4">{{ featured_post.excerpt }}</p>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="author-avatar me-2">
+                            {{ featured_post.author.first_name|first }}{{ featured_post.author.last_name|first }}
+                        </div>
+                        <span class="text-light me-2">{{ featured_post.author.get_full_name }}</span>
+                        <span class="text-muted mx-2">|</span>
+                        <span class="text-muted">{{ featured_post.published_date|date:"M d, Y" }}</span>
+                    </div>
+                    
+                    <a href="{{ featured_post.get_absolute_url }}" class="featured-link">
+                        ACCESS TRANSMISSION <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="terminal-button red"></div>
+                            <div class="terminal-button yellow"></div>
+                            <div class="terminal-button green"></div>
+                            <span class="filename">{{ featured_post.get_code_filename }}</span>
+                        </div>
+                        <div class="code-content">
+                            <pre>{{ featured_post.featured_code|highlight_code:featured_post.featured_code_format }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
  
  <!-- Categories Section -->
  <div class="mb-4">
