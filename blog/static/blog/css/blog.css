@@ -46,8 +46,8 @@
     justify-content: center;
     margin-bottom: 1rem;
 }
-
-.category-hex {
+/* Main category container hexagon */
+.categories-container .category-hex {
     --category-color: var(--color-cyan); /* Default color */
     position: relative;
     width: 60px;
@@ -58,19 +58,20 @@
     font-family: var(--font-body);
     font-weight: 700;
     transition: all var(--transition-speed) ease;
-}
-
-.category-hex::before {
+  }
+  
+/* Category container hexagon background */
+.categories-container .category-hex::before {
     content: '';
     position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: var(--color-card-bg);
+    inset: 0; /* shorthand for top, right, bottom, left */
+    background-color: var(--color-card-bg, #121212);
     clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
     z-index: -1;
-}
-
-.category-hex::after {
+  }
+  
+/* Category container hexagon border */
+.categories-container .category-hex::after {
     content: '';
     position: absolute;
     top: -2px;
@@ -80,23 +81,25 @@
     background: var(--category-color, var(--color-cyan));
     clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
     z-index: -2;
-}
-
-.category-hex a {
+  }
+  
+.categories-container .category-hex a {
     color: var(--category-color, var(--color-cyan));
     text-decoration: none;
-}
-
-.category-hex:hover {
+    position: relative;
+    z-index: 1;
+  }
+  
+.categories-container .category-hex:hover {
     transform: scale(1.05);
     filter: drop-shadow(0 0 5px var(--category-color, var(--color-cyan)));
-}
-
+  }
+  
 .category-name {
     font-size: 0.75rem;
     margin-top: 0.5rem;
     color: var(--color-text-secondary);
-}
+  }
 
 /* ========= FEATURED POST CARD ========= */
 .featured-post-card {
@@ -326,165 +329,238 @@
 }
 
 /* ====================START POLYGON CARD=================== */
+/* HUD-style Post Card Styles */
 .post-card {
     position: relative;
-    background-color: rgba(18, 18, 18, 0.5); /* Translucent background */
-    padding: 2rem;
-    margin-bottom: 2rem;
-    transition: all 0.3s ease;
     height: 100%;
-    z-index: 1;
+    background-color: rgba(10, 10, 26, 0.7);
+    transition: all 0.3s ease;
+    /* Clip path for polygon shape */
+    clip-path: polygon(
+      0% 0%,                    /* top left */
+      95% 0%,                   /* top right (indent) */
+      100% 5%,                  /* top right corner */
+      100% 100%,                /* bottom right */
+      5% 100%,                  /* bottom left (indent) */
+      0% 95%                    /* bottom left corner */
+    );
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(0, 0, 0, 0.2);
   }
   
   /* Neon border effect */
   .post-card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, #00f0ff, #7928ca);
-    z-index: -1;
-    
-    /* Same polygon shape for both card and border */
+    top: 3px;
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
+    background: transparent;
     clip-path: polygon(
-      0% 20px,
-      20px 0%,
-      calc(100% - 20px) 0%,
-      100% 20px,
-      100% calc(100% - 20px),
-      calc(100% - 20px) 100%,
-      20px 100%,
-      0% calc(100% - 20px)
+      0% 0%,
+      94% 0%,
+      99% 5%,
+      99% 99%,
+      5% 99%,
+      0% 94%
     );
-    
-    /* Neon glow effect */
-    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+    border: 2px solid transparent;
+    border-image: linear-gradient(135deg, var(--color-cyan), var(--color-purple)) 1;
+    pointer-events: none;
+    z-index: 1;
   }
   
-  /* Inner background - slightly smaller than border */
-  .post-card::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    right: 2px;
-    bottom: 2px;
-    background-color: rgba(18, 18, 18, 0.5); /* Same translucent background */
-    z-index: -1;
-    
-    /* Slightly smaller polygon to create border effect */
-    clip-path: polygon(
-      0% 18px,
-      18px 0%,
-      calc(100% - 18px) 0%,
-      100% 18px,
-      100% calc(100% - 18px),
-      calc(100% - 18px) 100%,
-      18px 100%,
-      0% calc(100% - 18px)
-    );
-  }
-/* ====================== END POLYGON CARD ================ */
-
-
-/* ========= POST CARDS ========= */
-/* .post-card {
-    height: 100%;
-    transition: all var(--transition-speed) ease;
-    border: 1px solid rgba(0, 240, 255, 0.1);
-    position: relative;
-}
-
-.post-card:hover {
+  /* Card hover effect */
+  .post-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-} */
-
- .post-image {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 
+                0 0 15px rgba(0, 240, 255, 0.3);
+  }
+  
+  /* Image section */
+  .post-image-container {
+    position: relative;
     height: 150px;
     overflow: hidden;
-}
-
-.post-image img {
+  }
+  
+  .post-image-pattern {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-}
-
-.post-image-pattern {
-    background-color: var(--color-code-bg);
-}
-
-
-.image-placeholder {
-    width: 60px;
-    height: 60px;
-    background-color: rgba(0, 240, 255, 0.1);
-    border-radius: var(--border-radius-small);
+    background-color: rgba(30, 30, 46, 0.6);
+    background-image: 
+      repeating-linear-gradient(0deg, 
+        rgba(0, 240, 255, 0.05) 0px, 
+        rgba(0, 240, 255, 0.05) 1px, 
+        transparent 1px, 
+        transparent 5px);
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.image-icon {
-    font-size: 1.5rem;
-}
-
+  }
+  
+  /* Dashed divider */
+  .post-divider-dashed {
+    height: 1px;
+    background-image: linear-gradient(to right, var(--color-cyan) 50%, transparent 50%);
+    background-size: 20px 1px;
+    background-repeat: repeat-x;
+    margin: 0;
+    opacity: 0.5;
+  }
+  
+/* Post card hexagon styling (new, specific to post cards) */
+.category-hex-overlay {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 2;
+  }
+  /* Post card hexagon */
 .post-card .category-hex {
+    --category-color: var(--color-cyan); /* Default color */
+    position: relative;
     width: 40px;
     height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.8rem;
-}
-
-.post-card .card-title {
-    min-height: 3rem;
-}
-
-.post-card .card-text {
-    min-height: 4rem;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-}
-
-.tag-pill {
-    padding: 0.2rem 0.6rem;
-    background-color: rgba(0, 240, 255, 0.1);
-    border-radius: 999px;
+    filter: drop-shadow(0 0 5px var(--category-color, var(--color-cyan)));
+    transition: all 0.3s ease;
+  }
+  
+  /* Post card hexagon background */
+  .post-card .category-hex::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(10, 10, 26, 0.7);
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    z-index: -1;
+  }
+  
+  /* Post card hexagon border */
+  .post-card .category-hex::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: var(--category-color, var(--color-cyan));
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    z-index: -2;
+  }
+  
+  .post-card .category-hex a,
+  .post-card .category-hex span {
+    position: relative;
+    z-index: 1;
+    color: var(--category-color, var(--color-cyan));
+    text-decoration: none;
+  }
+  
+  .post-card .category-hex:hover {
+    filter: drop-shadow(0 0 8px var(--category-color, var(--color-cyan)));
+    transform: scale(1.05);
+  }
+  
+  /* Post content section */
+  .post-content {
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* HUD corner accents */
+  .hud-corner {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    border: 1px solid var(--color-cyan);
+    opacity: 0.7;
+  }
+  
+  .hud-corner-tl {
+    top: 5px;
+    left: 5px;
+    border-right: none;
+    border-bottom: none;
+  }
+  
+  .hud-corner-tr {
+    top: 5px;
+    right: 5px;
+    border-left: none;
+    border-bottom: none;
+  }
+  
+  .hud-corner-bl {
+    bottom: 5px;
+    left: 5px;
+    border-right: none;
+    border-top: none;
+  }
+  
+  .hud-corner-br {
+    bottom: 5px;
+    right: 5px;
+    border-left: none;
+    border-top: none;
+  }
+  
+  /* Tag pills */
+  .tag-pill {
+    background-color: rgba(30, 30, 46, 0.6);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    padding: 0.15rem 0.5rem;
     font-size: 0.7rem;
+    border-radius: 3px;
     color: var(--color-cyan);
-    transition: all var(--transition-speed) ease;
-}
-
-.tag-pill:hover {
-    background-color: rgba(0, 240, 255, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .tag-pill:hover {
+    background-color: rgba(0, 240, 255, 0.1);
+    border-color: var(--color-cyan);
     color: var(--color-cyan);
-}
-
-.post-divider {
-    height: 1px;
-    background-color: var(--color-divider);
-}
-
-.post-link {
-    color: var(--color-cyan);
+  }
+  
+  /* Post date */
+  .post-date {
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+    font-family: var(--font-body);
+    letter-spacing: 0.5px;
+  }
+  
+  /* Access link */
+  .post-link {
     font-size: 0.8rem;
-}
-
-.post-link:hover {
+    color: var(--color-cyan);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  .post-link:hover {
     text-shadow: 0 0 5px rgba(0, 240, 255, 0.7);
-}
-
-.post-link .arrow {
-    transition: transform var(--transition-speed) ease;
-}
-
-.post-link:hover .arrow {
+  }
+  
+  .post-link .arrow {
+    transition: transform 0.3s ease;
+    margin-left: 5px;
+  }
+  
+  .post-link:hover .arrow {
     transform: translateX(5px);
-}
+  }
 
 /* ========= SECTION STYLING ========= */
 .section-title {
