@@ -1,56 +1,77 @@
- <!-- Search results page -->
 {% extends "blog/base.html" %}
 {% load static %}
 
 {% block blog_content %}
-<!-- Search Results Banner -->
-<section class="search-banner">
-    <div class="search-icon">
-        <i class="fas fa-search"></i>
-    </div>
+<!-- Search Results Header -->
+<div class="list-page-header">
+  <!-- HUD corner accents -->
+  <div class="hud-corner hud-corner-tl"></div>
+  <div class="hud-corner hud-corner-tr"></div>
+  <div class="hud-corner hud-corner-bl"></div>
+  <div class="hud-corner hud-corner-br"></div>
+  
+  <!-- Search title with query and counter -->
+  <h1 class="list-page-title">
+    Search Results: "{{ query }}"
+    <span class="digital-counter">{{ posts.count }} MATCHES</span>
+  </h1>
+  
+  <!-- Search form -->
+  <div class="search-form-container mt-4">
+    <form action="{% url 'blog:search' %}" method="get" class="d-flex">
+      <input type="text" name="q" value="{{ query }}" class="search-input" placeholder="Search for posts...">
+      <button type="submit" class="search-button ml-2">
+        <i class="fas fa-search mr-1"></i> SEARCH
+      </button>
+    </form>
+  </div>
+  
+  <!-- Search filters if needed -->
+  <div class="list-filter-bar">
+    <span class="filter-label">FILTER:</span>
+    <a href="?q={{ query }}&sort=relevance" class="filter-pill {% if current_sort == 'relevance' %}active{% endif %}">Relevance</a>
+    <a href="?q={{ query }}&sort=latest" class="filter-pill {% if current_sort == 'latest' %}active{% endif %}">Latest</a>
+    <a href="?q={{ query }}&sort=oldest" class="filter-pill {% if current_sort == 'oldest' %}active{% endif %}">Oldest</a>
     
-    <h1 class="search-title">Search Results</h1>
-    
-    <div class="search-container">
-        <form action="{% url 'blog:search' %}" method="get">
-            <div class="search-bar">
-                <input type="text" name="q" value="{{ query }}" placeholder="Search articles...">
-                <button type="submit" class="search-button">⌕</button>
-            </div>
-        </form>
-    </div>
-    
-    <div class="search-stats">
-        {% if query %}
-            {{ posts.count }} results for "{{ query }}"
-        {% else %}
-            Enter a search term above
-        {% endif %}
-    </div>
-</section>
-
-<!-- Search Results -->
-{% if posts %}
-<section class="blog-posts-section">
-    <div class="post-grid">
-        {% for post in posts %}
-            {% include "blog/includes/post_card.html" with post=post %}
-        {% endfor %}
-    </div>
-    
-    {% include "blog/includes/pagination.html" with page_obj=page_obj %}
-</section>
-{% elif query %}
-<div class="no-results">
-    <div class="no-results-icon">
-        <i class="fas fa-file-circle-question"></i>
-    </div>
-    <h2 class="no-results-title">No Results Found</h2>
-    <p class="no-results-message">
-        We couldn't find any posts matching your search term "{{ query }}".
-        Try using different keywords or browse categories.
-    </p>
-    <a href="{% url 'blog:post_list' %}" class="cta-button">Browse All Posts</a>
+    {% if categories %}
+      <span class="filter-label ml-4">CATEGORY:</span>
+      <a href="?q={{ query }}" class="filter-pill {% if not category %}active{% endif %}">All</a>
+      {% for cat in categories %}
+        <a href="?q={{ query }}&category={{ cat.slug }}" 
+           class="filter-pill {% if category == cat.slug %}active{% endif %}">
+          {{ cat.name }}
+        </a>
+      {% endfor %}
+    {% endif %}
+  </div>
 </div>
+
+<!-- Posts Grid -->
+<div class="row g-4">
+  {% for post in posts %}
+    <div class="col-lg-4 col-md-6 mb-4">
+      {% include "blog/includes/post_card.html" with post=post %}
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="no-results">
+        <div class="no-results-icon"><i class="fas fa-search"></i></div>
+        <h3 class="no-results-title">No results found</h3>
+        <p class="no-results-message">Your search for "{{ query }}" did not match any posts.</p>
+        <p class="no-results-suggestions">Suggestions:</p>
+        <ul class="no-results-list">
+          <li>Check your spelling</li>
+          <li>Try more general keywords</li>
+          <li>Try different keywords</li>
+        </ul>
+        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-cyan mt-3">Back to Blog</a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+  {% include "blog/includes/pagination.html" %}
 {% endif %}
 {% endblock %}
