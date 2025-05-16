@@ -90,6 +90,12 @@ class CategoryView(ListView):
         return context
 
 
+class TagListView(ListView):
+    model = Tag
+    template_name = 'blog/tags.html'
+    context_object_name = 'tags'
+
+
 class TagView(ListView):
     """View for posts filtered by tag."""
     model = Post
