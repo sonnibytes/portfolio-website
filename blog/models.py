@@ -141,8 +141,16 @@ class Post(models.Model):
         super(Post, self).save(*args, **kwargs)
 
     def rendered_content(self):
-        """Return the content field as HTML."""
-        return markdownify(self.content)
+        """Return content field as HTML with heading IDs for TOC linking."""
+        html_content = markdownify(self.content)
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        # Add IDs to headings
+        for h in soup.find_all(['h2', 'h3', 'h4']):
+            if not h.get('id'):
+                h['id'] = slugify(h.get_text())
+
+        return str(soup)
 
     def get_code_filename(self):
         """Return suitable filename for featured codeblock based on content."""
