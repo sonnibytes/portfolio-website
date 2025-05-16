@@ -219,8 +219,37 @@
       <button type="submit" class="btn btn-primary">Save Post</button>
       <a href="{% if post %}{% url 'blog:post_detail' slug=post.slug %}{% else %}{% url 'blog:post_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
     </div>
+      {% comment %} Preview Toggle  {% endcomment %}
+      <div class="preview-toggle">
+        <button type="button" class="btn btn-outline-cyan" id="toggle-preview">
+          <i class="fas fa-eye me-1"></i> Toggle Preview
+        </button>
+      </div>
+      {% comment %} End Preview Toggle  {% endcomment %}
   </form>
 </div>
+
+<!-- Add this after the form -->
+<div class="post-preview" id="post-preview" style="display: none;">
+    <h2 class="preview-title">Preview</h2>
+    <div class="preview-content">
+      <h1 id="preview-post-title"></h1>
+      
+      <div class="post-meta preview-meta">
+        <span class="post-date">
+          <i class="fas fa-calendar-alt me-1"></i> Today
+        </span>
+        <span class="post-meta-divider">|</span>
+        <span class="post-reading-time">
+          <i class="fas fa-clock me-1"></i> <span id="preview-reading-time">0</span> min read
+        </span>
+      </div>
+      
+      <div class="preview-body">
+        <!-- Preview content will be inserted here -->
+      </div>
+    </div>
+  </div>
 
 {% endblock %}
 
@@ -294,5 +323,259 @@ document.addEventListener('DOMContentLoaded', function() {
     lastVisibleSection.after(addButton);
   }
 });
+
+// Add to the existing script in post_form.html
+// Preview functionality
+const togglePreviewBtn = document.getElementById('toggle-preview');
+const previewSection = document.getElementById('post-preview');
+const previewTitle = document.getElementById('preview-post-title');
+const previewBody = document.querySelector('.preview-body');
+const previewReadingTime = document.getElementById('preview-reading-time');
+
+if (togglePreviewBtn && previewSection) {
+  togglePreviewBtn.addEventListener('click', function() {
+    if (previewSection.style.display === 'none') {
+      updatePreview();
+      previewSection.style.display = 'block';
+      togglePreviewBtn.innerHTML = '<i class="fas fa-eye-slash me-1"></i> Hide Preview';
+      
+      // Scroll to preview
+      setTimeout(() => {
+        previewSection.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      previewSection.style.display = 'none';
+      togglePreviewBtn.innerHTML = '<i class="fas fa-eye me-1"></i> Toggle Preview';
+    }
+  });
+  
+  // Update preview when content changes
+  const formInputs = document.querySelectorAll('input, textarea, select');
+  formInputs.forEach(input => {
+    input.addEventListener('change', updatePreview);
+    if (input.tagName === 'TEXTAREA') {
+      input.addEventListener('keyup', debounce(updatePreview, 500));
+    }
+  });
+  
+  function updatePreview() {
+    // Update title
+    const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+    previewTitle.textContent = titleInput.value || 'Post Title';
+    
+    // Build markdown content
+    let markdownContent = '';
+    
+    // Introduction
+    const introInput = document.getElementById('{{ form.introduction.id_for_label }}');
+    if (introInput && introInput.value) {
+      markdownContent += introInput.value + '\n\n';
+    }
+    
+    // Sections
+    for (let i = 1; i <= 5; i++) {
+      const titleInput = document.querySelector(`[id$=section_${i}_title]`);
+      const contentInput = document.querySelector(`[id$=section_${i}_content]`);
+      
+      if (titleInput && contentInput && titleInput.value) {
+        markdownContent += `## ${titleInput.value}\n\n`;
+        if (contentInput.value) {
+          markdownContent += contentInput.value + '\n\n';
+        }
+      }
+    }
+    
+    // Code snippet
+    const codeInput = document.getElementById('{{ form.code_snippet.id_for_label }}');
+    const langInput = document.getElementById('{{ form.code_language.id_for_label }}');
+    
+    if (codeInput && langInput && codeInput.value) {
+      markdownContent += '```' + langInput.value + '\n';
+      markdownContent += codeInput.value + '\n';
+      markdownContent += '```\n\n';
+    }
+    
+    // Conclusion
+    const conclusionInput = document.getElementById('{{ form.conclusion.id_for_label }}');
+    if (conclusionInput && conclusionInput.value) {
+      markdownContent += '## Conclusion\n\n';
+      markdownContent += conclusionInput.value + '\n\n';
+    }
+    
+    // Raw markdown override
+    const toggleRawMd = document.getElementById('toggle-raw-markdown');
+    const rawMdInput = document.getElementById('{{ form.content.id_for_label }}');
+    
+    if (toggleRawMd && toggleRawMd.checked && rawMdInput && rawMdInput.value) {
+      markdownContent = rawMdInput.value;
+    }
+    
+    // Convert markdown to HTML
+    fetch('/markdownx/markdownify/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCsrfToken(),
+      },
+      body: 'content=' + encodeURIComponent(markdownContent)
+    })
+    .then(response => response.json())
+    .then(data => {
+      previewBody.innerHTML = data.content;
+      
+      // Update reading time (very rough estimate)
+      const wordCount = markdownContent.split(/\s+/).length;
+      previewReadingTime.textContent = Math.max(1, Math.round(wordCount / 200));
+      
+      // Syntax highlight code blocks
+      document.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+      });
+    });
+  }
+  
+  // Helper to get CSRF token
+  function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+  }
+  
+  // Debounce function to limit how often a function is called
+  function debounce(func, wait) {
+    let timeout;
+    return function() {
+      const context = this;
+      const args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        func.apply(context, args);
+      }, wait);
+    };
+  }
+}
+
+// Add to the existing script in post_form.html
+// Auto-save functionality
+const autoSaveKey = 'blog_post_autosave_{{ post.id|default:"new" }}';
+const autoSaveStatus = document.createElement('div');
+autoSaveStatus.className = 'auto-save-status';
+autoSaveStatus.innerHTML = '<i class="fas fa-sync"></i> Auto-save ready';
+document.querySelector('.form-actions').appendChild(autoSaveStatus);
+
+// Load auto-saved content
+function loadAutoSavedContent() {
+  const savedData = localStorage.getItem(autoSaveKey);
+  if (savedData) {
+    try {
+      const data = JSON.parse(savedData);
+      const timestamp = new Date(data.timestamp);
+      const now = new Date();
+      const diff = Math.floor((now - timestamp) / 1000 / 60); // Minutes
+      
+      // Only restore if less than 1 day old
+      if (diff < 1440) {
+        // Ask user if they want to restore
+        if (confirm(`Restore auto-saved draft from ${diff < 60 ? diff + ' minutes' : Math.floor(diff/60) + ' hours'} ago?`)) {
+          // Restore form data
+          Object.keys(data.formData).forEach(key => {
+            const input = document.querySelector(`[name="${key}"]`);
+            if (input) {
+              if (input.type === 'checkbox') {
+                input.checked = data.formData[key] === 'true';
+              } else if (input.tagName === 'SELECT' && input.multiple) {
+                // Handle multi-select
+                const values = data.formData[key].split(',');
+                Array.from(input.options).forEach(option => {
+                  option.selected = values.includes(option.value);
+                });
+              } else {
+                input.value = data.formData[key];
+              }
+            }
+          });
+          
+          // Update UI
+          if (featuredCheckbox) {
+            featuredCodeSection.style.display = featuredCheckbox.checked ? 'block' : 'none';
+          }
+          
+          autoSaveStatus.innerHTML = '<i class="fas fa-check-circle"></i> Restored auto-saved draft';
+          autoSaveStatus.classList.add('restored');
+          
+          setTimeout(() => {
+            autoSaveStatus.classList.remove('restored');
+          }, 3000);
+        }
+      } else {
+        // Clear old autosave
+        localStorage.removeItem(autoSaveKey);
+      }
+    } catch (e) {
+      console.error('Error loading auto-saved content', e);
+      localStorage.removeItem(autoSaveKey);
+    }
+  }
+}
+
+// Auto-save form content
+function autoSaveContent() {
+  const form = document.querySelector('form.structured-form');
+  if (!form) return;
+  
+  const formData = {};
+  const formElements = form.elements;
+  
+  for (let i = 0; i < formElements.length; i++) {
+    const element = formElements[i];
+    if (element.name && element.name !== 'csrfmiddlewaretoken') {
+      if (element.type === 'checkbox') {
+        formData[element.name] = element.checked.toString();
+      } else if (element.tagName === 'SELECT' && element.multiple) {
+        const selectedValues = Array.from(element.selectedOptions).map(option => option.value).join(',');
+        formData[element.name] = selectedValues;
+      } else {
+        formData[element.name] = element.value;
+      }
+    }
+  }
+  
+  const saveData = {
+    formData: formData,
+    timestamp: new Date().toISOString()
+  };
+  
+  localStorage.setItem(autoSaveKey, JSON.stringify(saveData));
+  
+  // Update status
+  autoSaveStatus.innerHTML = '<i class="fas fa-check-circle"></i> Auto-saved';
+  autoSaveStatus.classList.add('saved');
+  
+  setTimeout(() => {
+    autoSaveStatus.classList.remove('saved');
+    autoSaveStatus.innerHTML = '<i class="fas fa-sync"></i> Auto-save ready';
+  }, 2000);
+}
+
+// Set up auto-save
+let autoSaveTimer;
+const formInputs = document.querySelectorAll('input, textarea, select');
+formInputs.forEach(input => {
+  input.addEventListener('change', () => {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(autoSaveContent, 1000);
+  });
+  
+  if (input.tagName === 'TEXTAREA') {
+    input.addEventListener('keyup', () => {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(autoSaveContent, 3000);
+    });
+  }
+});
+
+// Load auto-saved content when page loads
+loadAutoSavedContent();
+
+// Set up auto-save interval
+setInterval(autoSaveContent, 60000); // Auto-save every minute
 </script>
 {% endblock %}
