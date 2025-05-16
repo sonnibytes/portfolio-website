@@ -1,9 +1,10 @@
 {% extends "blog/base.html" %}
 {% load static %}
+{% load blog_tags %}
 
 {% block blog_content %}
 <!-- Archive List Header -->
-<div class="list-page-header" style="border: 2px solid red;">
+<div class="list-page-header">
   <!-- HUD corner accents -->
   <div class="hud-corner hud-corner-tl"></div>
   <div class="hud-corner hud-corner-tr"></div>
@@ -19,36 +20,67 @@
     {% else %}
       Archive
     {% endif %}
-    <span class="digital-counter">{{ posts.count }} POSTS</span>
+    <span class="digital-counter">{{ paginator.count|default:posts.count }} POSTS</span>
   </h1>
   
-  <!-- Debugging label -->
-  <p style="color: red; font-weight: bold; margin: 1rem 0;">TIMELINE SHOULD APPEAR BELOW THIS TEXT</p>
+  <!-- Futuristic Time Navigator -->
+<div class="time-navigator">
+  <div class="time-navigator-header">
+    <div class="header-line"></div>
+    <h3 class="time-nav-title">TIME NAVIGATOR</h3>
+    <div class="header-line"></div>
+  </div>
   
-  <!-- Simple Archive Timeline -->
-  <div class="simple-timeline" style="border: 2px dashed yellow; padding: 1rem; margin: 1rem 0;">
-    <h3 style="color: yellow;">Years:</h3>
-    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0;">
-      {% for year_item in years %}
-        <a href="{% url 'blog:archive_year' year=year_item %}" 
-           style="{% if year == year_item %}color: cyan; border: 1px solid cyan;{% else %}color: white;{% endif %} padding: 0.5rem; background: rgba(0,0,0,0.5);">
+  <!-- Years Row -->
+  <div class="years-container">
+    {% for year_item in years %}
+      <a href="{% url 'blog:archive_year' year=year_item %}" 
+         class="year-block {% if year == year_item %}active{% endif %} {% if year_item == current_year %}current{% endif %}">
+        <div class="time-block-content">
           {{ year_item }}
-        </a>
-      {% endfor %}
-    </div>
-    
-    {% if year %}
-      <h3 style="color: yellow; margin-top: 1rem;">Months for {{ year }}:</h3>
-      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0;">
+          {% if year_counts %}
+            <span class="count-badge">{{ year_counts|get_item:year_item|default:'0' }}</span>
+          {% endif %}
+        </div>
+        <div class="time-marker"></div>
+      </a>
+      
+      <!-- Year divider after each year except the last one -->
+      {% if not forloop.last %}
+        <div class="year-divider"></div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  
+  <!-- Months Row (if year is selected) -->
+  {% if year %}
+    <div class="months-section">
+      <!-- L-shaped connector with nodes -->
+      <div class="months-connector">
+        <div class="months-connector-node-top"></div>
+        <div class="months-connector-node-middle"></div>
+        <div class="months-connector-node-bottom"></div>
+      </div>
+      
+      <div class="months-container">
         {% for month_num, month_name in months %}
-          <a href="{% url 'blog:archive_month' year=year month=month_num %}"
-             style="{% if month == month_num %}color: purple; border: 1px solid purple;{% else %}color: white;{% endif %} padding: 0.3rem; background: rgba(0,0,0,0.5);">
-            {{ month_name }}
+          <a href="{% url 'blog:archive_month' year=year month=month_num %}" 
+             class="month-block {% if month == month_num %}active{% endif %} {% if year == current_year and month_num == current_month %}current{% endif %}">
+            <div class="time-block-content">
+              {{ month_name|slice:":3" }}
+              {% if month_counts %}
+                <span class="count-badge">{{ month_counts|get_item:month_num|default:'0' }}</span>
+              {% endif %}
+            </div>
+            <div class="time-marker"></div>
           </a>
         {% endfor %}
       </div>
-    {% endif %}
-  </div>
+    </div>
+  {% endif %}
+  
+  <!-- Timeline scan animation -->
+  <div class="timeline-scan-line"></div>
 </div>
 
 <!-- Posts Grid -->

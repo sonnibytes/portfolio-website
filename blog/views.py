@@ -125,8 +125,8 @@ class ArchiveView(ListView):
     paginate_by = 6
 
     # Define the start date for timeline (April 2025)
-    start_year = 2025
-    start_month = 4
+    start_year = 2024
+    start_month = 11
 
     def get_queryset(self):
         year = self.kwargs.get('year')
