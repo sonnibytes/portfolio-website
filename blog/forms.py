@@ -19,23 +19,23 @@ class PostForm(forms.ModelForm):
     # Fields for each main section (up to 5 sections)
     section_1_title = forms.CharField(max_length=200, required=False)
     section_1_content = forms.CharField(
-        widget=forms.Textarea(attr={'rows': 6}), required=False)
+        widget=forms.Textarea(attrs={'rows': 6}), required=False)
 
     section_2_title = forms.CharField(max_length=200, required=False)
     section_2_content = forms.CharField(
-        widget=forms.Textarea(attr={"rows": 6}), required=False)
+        widget=forms.Textarea(attrs={"rows": 6}), required=False)
 
     section_3_title = forms.CharField(max_length=200, required=False)
     section_3_content = forms.CharField(
-        widget=forms.Textarea(attr={"rows": 6}), required=False)
+        widget=forms.Textarea(attrs={"rows": 6}), required=False)
 
     section_4_title = forms.CharField(max_length=200, required=False)
     section_4_content = forms.CharField(
-        widget=forms.Textarea(attr={"rows": 6}), required=False)
+        widget=forms.Textarea(attrs={"rows": 6}), required=False)
 
     section_5_title = forms.CharField(max_length=200, required=False)
     section_5_content = forms.CharField(
-        widget=forms.Textarea(attr={"rows": 6}), required=False)
+        widget=forms.Textarea(attrs={"rows": 6}), required=False)
 
     # Field for code snippet (with language selection)
     code_snippet = forms.CharField(
