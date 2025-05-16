@@ -141,6 +141,31 @@
         </div>
       </div>
     </div>
+
+    <!-- Add this before the form section for post content -->
+    <div class="form-section">
+        <h2 class="section-title">Media Upload</h2>
+        
+        <div class="drop-zone" id="image-drop-zone">
+        <div class="drop-zone-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <div class="drop-zone-prompt">Drag & drop an image or click to browse</div>
+        <input type="file" id="image-upload" class="drop-zone-input" accept="image/*" style="display: none;">
+        </div>
+        
+        <div class="image-preview-container" style="display: none;">
+        <h3>Image Preview</h3>
+        <div class="image-preview"></div>
+        <div class="image-url-container mt-3">
+            <label>Markdown Image Link:</label>
+            <input type="text" id="image-markdown-link" class="form-control" readonly>
+            <button type="button" class="btn btn-sm btn-outline-cyan mt-2" id="copy-image-link">
+            <i class="fas fa-copy"></i> Copy to Clipboard
+            </button>
+        </div>
+        </div>
+    </div>
     
     <!-- Post Content Sections -->
     <div class="form-section">
@@ -577,5 +602,122 @@ loadAutoSavedContent();
 
 // Set up auto-save interval
 setInterval(autoSaveContent, 60000); // Auto-save every minute
+
+// Add to the existing script in post_form.html
+// Image upload and handling
+const dropZone = document.getElementById('image-drop-zone');
+const imageUpload = document.getElementById('image-upload');
+const imagePreviewContainer = document.querySelector('.image-preview-container');
+const imagePreview = document.querySelector('.image-preview');
+const imageMarkdownLink = document.getElementById('image-markdown-link');
+const copyImageLinkBtn = document.getElementById('copy-image-link');
+
+if (dropZone && imageUpload) {
+  // Handle click on drop zone
+  dropZone.addEventListener('click', () => {
+    imageUpload.click();
+  });
+  
+  // Handle file select
+  imageUpload.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      handleImageUpload(this.files[0]);
+    }
+  });
+  
+  // Handle drag and drop
+  ['dragover', 'dragenter'].forEach(eventName => {
+    dropZone.addEventListener(eventName, e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+  });
+  
+  ['dragleave', 'dragend'].forEach(eventName => {
+    dropZone.addEventListener(eventName, e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+    });
+  });
+  
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleImageUpload(e.dataTransfer.files[0]);
+    }
+  });
+  
+  // Copy markdown link
+  if (copyImageLinkBtn) {
+    copyImageLinkBtn.addEventListener('click', () => {
+      imageMarkdownLink.select();
+      document.execCommand('copy');
+      
+      // Show feedback
+      const originalText = copyImageLinkBtn.innerHTML;
+      copyImageLinkBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      
+      setTimeout(() => {
+        copyImageLinkBtn.innerHTML = originalText;
+      }, 2000);
+    });
+  }
+  
+  // Function to handle image upload
+  function handleImageUpload(file) {
+    // Check if file is an image
+    if (!file.type.match('image.*')) {
+      alert('Please select an image file');
+      return;
+    }
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    // Show loading state
+    dropZone.innerHTML = '<div class="spinner-border text-info" role="status"><span class="visually-hidden">Loading...</span></div>';
+    
+    // Upload the file
+    fetch('/blog/upload/image/', {
+      method: 'POST',
+      body: formData,
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Show the image preview
+      imagePreview.innerHTML = `<img src="${data.url}" alt="${file.name}" class="img-fluid">`;
+      imagePreviewContainer.style.display = 'block';
+      
+      // Set the markdown link
+      imageMarkdownLink.value = `![${file.name}](${data.url})`;
+      
+      // Reset drop zone
+      dropZone.innerHTML = `
+        <div class="drop-zone-icon">
+          <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <div class="drop-zone-prompt">Drag & drop an image or click to browse</div>
+      `;
+    })
+    .catch(error => {
+      console.error('Error uploading image:', error);
+      dropZone.innerHTML = `
+        <div class="drop-zone-icon text-danger">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="drop-zone-prompt text-danger">Error uploading image. Please try again.</div>
+      `;
+    });
+  }
+}
 </script>
 {% endblock %}
