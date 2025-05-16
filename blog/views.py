@@ -1,19 +1,24 @@
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, View
 from django.views.generic.edit import CreateView, UpdateView
-from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import csrf_protect
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.db.models import Count
 from .models import Post, Category, Tag
 from .forms import PostForm
 from datetime import datetime
 import calendar
+import os
+from uuid import uuid4
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
-    """Class-based view for creating a new blog post with structured sections."""
+    """Class-based view for creating new blog post with structured sections."""
     model = Post
     form_class = PostForm
     template_name = 'blog/post_form.html'
@@ -111,6 +116,40 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse_lazy('blog:post_detail', kwargs={'slug': self.object.slug})
+
+
+class ImageUploadView(LoginRequiredMixin, View):
+    """Class-based view for handling image uploads for posts."""
+
+    @method_decorator(csrf_protect)
+    def post(self, request, *args, **kwargs):
+        if request.FILES.get('image'):
+            image = request.FILES['images']
+
+            # Generate a unique filename
+            ext = os.path.splittext(image.name)[1]
+            filename = f"{uuid4().hex}{ext}"
+
+            # Create the upload path
+            upload_path = os.path.join('blog', 'uploads', filename)
+
+            # Save the file
+            from django.core.files.storage import default_storage
+            file_path = default_storage.save(upload_path, image)
+
+            # Get the url
+            file_url = default_storage.url(file_path)
+
+            return JsonResponse({
+                'success': True,
+                'url': file_url,
+                'name': image.name
+            })
+
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request'
+        }, status=400)
 
 
 class PostListView(ListView):
