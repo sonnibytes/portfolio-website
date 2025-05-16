@@ -1,53 +1,75 @@
- <!-- Tag listing page -->
 {% extends "blog/base.html" %}
 {% load static %}
 
 {% block blog_content %}
-<!-- Tag Title Banner -->
-<section class="tag-banner">
-    <div class="tag-pill">
-        {{ tag.name }}
-    </div>
-    
-    <h1 class="tag-title">Tagged Posts</h1>
-    
-    <p class="tag-description">Showing all posts related to {{ tag.name }}</p>
-    
-    <div class="tag-stats">
-        {{ posts.count }} POSTS
-    </div>
-</section>
+<!-- Tag List Header -->
+<div class="list-page-header">
+  <!-- HUD corner accents -->
+  <div class="hud-corner hud-corner-tl"></div>
+  <div class="hud-corner hud-corner-tr"></div>
+  <div class="hud-corner hud-corner-bl"></div>
+  <div class="hud-corner hud-corner-br"></div>
+  
+  <!-- Tag Visualization -->
+  <div class="tag-display mb-4">
+    <span class="tag-pill" style="font-size: 1.2rem; padding: 0.5rem 1.5rem; margin-right: 1rem;">{{ tag.name }}</span>
+  </div>
 
-<!-- Filter & Related Tags Section -->
-<section class="filter-section">
-    <div class="filter-pills">
-        <a href="?sort=latest" class="filter-pill {% if request.GET.sort == 'latest' or not request.GET.sort %}active{% endif %}">LATEST</a>
-        <a href="?sort=popular" class="filter-pill {% if request.GET.sort == 'popular' %}active{% endif %}">POPULAR</a>
-    </div>
+  <!-- Tag title with digital counter -->
+  <h1 class="list-page-title">
+    Tagged Posts
+    <span class="digital-counter">{{ posts.count }} POSTS</span>
+  </h1>
+  
+  <!-- Related tags -->
+  <div class="related-tags mt-4 mb-2">
+    <span class="filter-label">RELATED TAGS:</span>
+    {% for related_tag in related_tags %}
+      <a href="{% url 'blog:tag' slug=related_tag.slug %}" class="filter-pill">{{ related_tag.name }}</a>
+    {% empty %}
+      <span class="text-muted">No related tags found</span>
+    {% endfor %}
+  </div>
+  
+  <!-- List filters -->
+  <div class="list-filter-bar">
+    <span class="filter-label">FILTER:</span>
+    <a href="?sort=latest" class="filter-pill {% if current_sort == 'latest' %}active{% endif %}">Latest</a>
+    <a href="?sort=popular" class="filter-pill {% if current_sort == 'popular' %}active{% endif %}">Popular</a>
+    <a href="?sort=oldest" class="filter-pill {% if current_sort == 'oldest' %}active{% endif %}">Oldest</a>
     
-    {% if related_tags %}
-    <div class="related-tags">
-        <span class="related-tags-label">RELATED TAGS:</span>
-        
-        {% for related_tag in related_tags %}
-        <a href="{% url 'blog:tag' slug=related_tag.slug %}" class="related-tag-pill">
-            {{ related_tag.name }}
-        </a>
-        {% endfor %}
+    <!-- Sort dropdown -->
+    <div class="sort-container">
+      <select class="sort-dropdown" onchange="location = this.value;">
+        <option value="" disabled selected>SORT BY</option>
+        <option value="?sort=latest" {% if current_sort == 'latest' %}selected{% endif %}>Newest First</option>
+        <option value="?sort=oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+        <option value="?sort=popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
+      </select>
     </div>
-    {% endif %}
-</section>
+  </div>
+</div>
 
-<!-- Blog Posts Grid -->
-<section class="blog-posts-section">
-    <div class="post-grid">
-        {% for post in posts %}
-            {% include "blog/includes/post_card.html" with post=post highlight_tag=tag %}
-        {% empty %}
-            <p class="no-posts-message">No posts found with this tag. Check back soon!</p>
-        {% endfor %}
+<!-- Posts Grid -->
+<div class="row g-4">
+  {% for post in posts %}
+    <div class="col-lg-4 col-md-6 mb-4">
+      {% include "blog/includes/post_card.html" with post=post %}
     </div>
-    
-    {% include "blog/includes/pagination.html" with page_obj=page_obj %}
-</section>
+  {% empty %}
+    <div class="col-12">
+      <div class="no-results">
+        <div class="no-results-icon"><i class="fas fa-tag"></i></div>
+        <h3 class="no-results-title">No posts found</h3>
+        <p class="no-results-message">No posts are currently tagged with "{{ tag.name }}".</p>
+        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-cyan">Back to Blog</a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+  {% include "blog/includes/pagination.html" %}
+{% endif %}
 {% endblock %}

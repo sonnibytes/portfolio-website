@@ -1,50 +1,63 @@
- <!-- Category listing page -->
- {% extends "blog/base.html" %}
- {% load static %}
- 
- {% block blog_content %}
- <!-- Category Title Banner -->
- <section class="category-banner">
-     <div class="category-hex category-{{ category.slug }}">
-         {{ category.code }}
-     </div>
-     
-     <h1 class="category-title">{{ category.name }}</h1>
-     
-     <p class="category-description">{{ category.description }}</p>
-     
-     <div class="category-stats">
-         {{ posts.count }} POSTS
-     </div>
- </section>
- 
- <!-- Filter & Sort Section -->
- <section class="filter-section">
-     <div class="filter-pills">
-         <a href="?sort=latest" class="filter-pill {% if request.GET.sort == 'latest' or not request.GET.sort %}active{% endif %}">LATEST</a>
-         <a href="?sort=popular" class="filter-pill {% if request.GET.sort == 'popular' %}active{% endif %}">POPULAR</a>
-         <a href="?filter=tutorials" class="filter-pill {% if request.GET.filter == 'tutorials' %}active{% endif %}">TUTORIALS</a>
-     </div>
-     
-     <div class="sort-dropdown">
-         <select name="sort" onchange="location = this.value;">
-             <option value="?sort=newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>SORT BY: NEWEST</option>
-             <option value="?sort=oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>SORT BY: OLDEST</option>
-             <option value="?sort=a-z" {% if request.GET.sort == 'a-z' %}selected{% endif %}>SORT BY: A-Z</option>
-         </select>
-     </div>
- </section>
- 
- <!-- Blog Posts Grid -->
- <section class="blog-posts-section">
-     <div class="post-grid">
-         {% for post in posts %}
-             {% include "blog/includes/post_card.html" with post=post %}
-         {% empty %}
-             <p class="no-posts-message">No posts found in this category. Check back soon!</p>
-         {% endfor %}
-     </div>
-     
-     {% include "blog/includes/pagination.html" with page_obj=page_obj %}
- </section>
- {% endblock %}
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block blog_content %}
+<!-- Category List Header -->
+<div class="list-page-header">
+  <!-- HUD corner accents -->
+  <div class="hud-corner hud-corner-tl"></div>
+  <div class="hud-corner hud-corner-tr"></div>
+  <div class="hud-corner hud-corner-bl"></div>
+  <div class="hud-corner hud-corner-br"></div>
+  
+  <!-- Category title with digital counter -->
+  <h1 class="list-page-title">
+    Category: {{ category.name }}
+    <span class="digital-counter">{{ posts.count }} POSTS</span>
+  </h1>
+  
+  <!-- Category description -->
+  <p class="list-page-description">{{ category.description }}</p>
+  
+  <!-- List filters -->
+  <div class="list-filter-bar">
+    <span class="filter-label">FILTER:</span>
+    <a href="?sort=latest" class="filter-pill {% if current_sort == 'latest' %}active{% endif %}">Latest</a>
+    <a href="?sort=popular" class="filter-pill {% if current_sort == 'popular' %}active{% endif %}">Popular</a>
+    <a href="?sort=oldest" class="filter-pill {% if current_sort == 'oldest' %}active{% endif %}">Oldest</a>
+    
+    <!-- Sort dropdown -->
+    <div class="sort-container">
+      <select class="sort-dropdown" onchange="location = this.value;">
+        <option value="" disabled selected>SORT BY</option>
+        <option value="?sort=latest" {% if current_sort == 'latest' %}selected{% endif %}>Newest First</option>
+        <option value="?sort=oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+        <option value="?sort=popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Posts Grid -->
+<div class="row g-4">
+  {% for post in posts %}
+    <div class="col-lg-4 col-md-6 mb-4">
+      {% include "blog/includes/post_card.html" with post=post %}
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="no-results">
+        <div class="no-results-icon"><i class="fas fa-folder-open"></i></div>
+        <h3 class="no-results-title">No posts found</h3>
+        <p class="no-results-message">No posts are currently available in this category.</p>
+        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-cyan">Back to Blog</a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+  {% include "blog/includes/pagination.html" %}
+{% endif %}
+{% endblock %}
