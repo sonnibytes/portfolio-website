@@ -6,6 +6,7 @@ from django.utils import timezone
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 import re
+from bs4 import BeautifulSoup
 
 
 class Category(models.Model):
@@ -174,6 +175,29 @@ class Post(models.Model):
 
         # Return the mapped icon text or category code
         return category_to_icon.get(self.category.code, self.category.code)
+
+    def get_headings(self):
+        """Extract headings from rendered content for table of contents."""
+        if not self.show_toc:
+            return []
+
+        html_content = markdownify(self.content)
+        soup = BeautifulSoup(html_content, 'html.parser')
+        headings = []
+
+        # Find all h2 and h3 tags
+        for h in soup.find_all(['h2', 'h3']):
+            # Generate ID from heading text
+            heading_id = slugify(h.get_text())
+            # Add ID attribute to the heading
+            h['id'] = heading_id
+            headings.append({
+                'level': int(h.name[1]),  # Get heading level
+                'text': h.get_text(),
+                'id': heading_id
+            })
+
+        return headings
 
 
 class Comment(models.Model):
