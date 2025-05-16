@@ -150,7 +150,7 @@ class ImageUploadView(LoginRequiredMixin, View):
             'success': False,
             'error': 'Invalid request'
         }, status=400)
-    
+
 
 class TagSuggestionsView(View):
     """Class-based view for getting tag suggestions."""
