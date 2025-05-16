@@ -29,22 +29,54 @@ Django framework allows for modular development, so scaling/adding/etc much more
 #### Post Model
 - title (char)
 - excerpt (char) - for previews
-- image (img) - for cards/header
-- date (date) - created date
+- thumbnail (img) - for cards
+- banner_image (img) for banner
+- status (char/select['draft' or 'published'])
+- created (datetime) - created date
+- updated (datetime) - updated date
+- published_date (datetime) - published date
 - slug (slug)
-- content (text)
-- readtime (int)
+- content (markdownx field)
+- featured (bool) for blog homepage
+- featured_code (text) - code to display on featured terminal card
+- show_toc (bool) - show table of contents on post page
+- reading_time (pos int)
 - tags (many-to-many) - FK
 - category (one-to-many) - FK
+- author (FK to built-in User)
 
 #### Category Model
 - name (char)
 - slug (slug)
+- code (char) -- two-letter code for hexagons
+- description (text)
 
 #### Tag Model
-- caption (char)
+- name (char)
 - slug (slug)
 
+#### Comment Model (blog comments)
+- post - FK
+- name (char)
+- email (email)
+- content (text)
+- created (datetime)
+- approved (bool)
+
+#### PostView model (track views)
+- post - FK
+- ip_address (ip)
+- viewed_on (datetime)
+
+#### Series model (create post series)
+- title (char)
+- slug (slug)
+- description (text)
+
+#### SeriesPost model (associate posts with a series and order them)
+- series - FK
+- post - FK
+- order (pos sm int)
 
 ### URL Structure
 `/blog/` - Blog Homepage <br>
@@ -107,7 +139,7 @@ Don't really need support for multiple authors, comments, reactions initially. T
 
 _____________________________
 
-Last Updated: 5/12/2025
+Last Updated: 5/13/2025
 
 Document Status: In Progress...
 

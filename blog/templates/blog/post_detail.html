@@ -1,0 +1,142 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block blog_content %}
+<!-- Post Detail Container -->
+<div class="post-detail-container">
+  <!-- HUD corner accents -->
+  <div class="hud-corner hud-corner-tl"></div>
+  <div class="hud-corner hud-corner-tr"></div>
+  <div class="hud-corner hud-corner-bl"></div>
+  <div class="hud-corner hud-corner-br"></div>
+  
+  <!-- Post Header Banner -->
+  <div class="post-header-banner">
+    <div class="post-header-bg">
+      {% if post.banner_image %}
+        {% comment %} <img src="{{ post.banner_image.url }}" alt="{{ post.title }}"> {% endcomment %}
+      {% endif %}
+    </div>
+    <div class="post-header-overlay"></div>
+    
+    <!-- Category HUD Display -->
+<div class="category-hud-display">
+    <!-- Hexagon Icon -->
+    <a href="{% url 'blog:category' slug=post.category.slug %}">
+      <div class="category-hex" style="--category-color: {{ post.category.color|default:'var(--color-cyan)' }}">
+        {{ post.category.code }}
+      </div>
+    </a>
+    
+    <!-- Connector Line -->
+    <div class="category-hud-connector"></div>
+    
+    <!-- High-Tech Category Name -->
+    <div class="category-hud-name" style="--category-color: {{ post.category.color|default:'var(--color-cyan)' }}">
+      <!-- Decorative brackets -->
+      <div class="category-hud-bracket bracket-tl"></div>
+      <div class="category-hud-bracket bracket-tr"></div>
+      <div class="category-hud-bracket bracket-bl"></div>
+      <div class="category-hud-bracket bracket-br"></div>
+      
+      <!-- Category name -->
+      {{ post.category.name }}
+    </div>
+  </div>
+    
+    <!-- Post Header Content -->
+    <div class="post-header-content">
+  
+      
+      <!-- Author Info -->
+      <div class="post-author-info">
+        <div class="author-avatar">
+          {{ post.author.first_name|first }}{{ post.author.last_name|first }}
+        </div>
+        <span class="author-name">{{ post.author.get_full_name }}</span>
+      </div>
+      
+      <!-- Post Meta -->
+      <div class="post-meta">
+        <span class="post-date">
+          <i class="fas fa-calendar-alt me-1"></i> {{ post.published_date|date:"F d, Y" }} // SID: {{ post.id|stringformat:"04d" }}
+        </span>
+        <span class="post-meta-divider">|</span>
+        <span class="post-reading-time">
+          <i class="fas fa-clock me-1"></i> {{ post.reading_time }} min read
+        </span>
+      </div>
+      <h1 class="post-title">{{ post.title }}</h1>
+      
+      <!-- Post Tags -->
+      <div class="post-tags">
+        {% for tag in post.tags.all %}
+          <a href="{% url 'blog:tag' slug=tag.slug %}" class="tag-pill">{{ tag.name }}</a>
+        {% endfor %}
+      </div>
+      
+    </div>
+  </div>
+  
+  <!-- Dashed Divider -->
+  <div class="post-divider-dashed"></div>
+  
+  <!-- Post Content Section -->
+  <div class="post-content">
+    {% if post.show_toc and post.get_headings %}
+      <!-- Table of Contents -->
+      <div class="toc-container">
+        <h2 class="toc-title">Table of Contents</h2>
+        <ul class="toc-list">
+          {% for heading in post.get_headings %}
+            <li><a href="#{{ heading.id }}">{{ heading.text }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    
+    <!-- Rendered Markdown Content -->
+    <div class="post-content-body">
+      {{ post.rendered_content|safe }}
+    </div>
+  </div>
+</div>
+
+<!-- Post Navigation -->
+<div class="post-navigation">
+  {% if previous_post %}
+    <a href="{{ previous_post.get_absolute_url }}" class="post-nav-link">
+      <span class="post-nav-label">← Previous</span>
+      <span class="post-nav-title">{{ previous_post.title }}</span>
+    </a>
+  {% else %}
+    <div></div>
+  {% endif %}
+  
+  {% if next_post %}
+    <a href="{{ next_post.get_absolute_url }}" class="post-nav-link text-end">
+      <span class="post-nav-label">Next →</span>
+      <span class="post-nav-title">{{ next_post.title }}</span>
+    </a>
+  {% else %}
+    <div></div>
+  {% endif %}
+</div>
+
+<!-- Related Posts Section -->
+{% if related_posts %}
+<div class="related-posts-section mt-5">
+  <h2 class="section-title h4 mb-3">Related Articles</h2>
+  <div class="section-divider mb-4"></div>
+  
+  <div class="row g-4">
+    {% for related_post in related_posts %}
+      <div class="col-md-4">
+        <!-- Include the updated post card template -->
+        {% include "blog/includes/post_card.html" with post=related_post %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
