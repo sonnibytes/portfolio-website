@@ -1,0 +1,298 @@
+{% extends "blog/base.html" %}
+{% load static %}
+
+{% block blog_content %}
+<div class="form-container post-form">
+  <!-- HUD corner accents -->
+  <div class="hud-corner hud-corner-tl"></div>
+  <div class="hud-corner hud-corner-tr"></div>
+  <div class="hud-corner hud-corner-bl"></div>
+  <div class="hud-corner hud-corner-br"></div>
+  
+  <h1 class="form-title">{{ title }}</h1>
+  
+  <form method="post" enctype="multipart/form-data" class="structured-form">
+    {% csrf_token %}
+    
+    <div class="form-section">
+      <h2 class="section-title">Post Details</h2>
+      
+      <div class="form-row">
+        <div class="form-group col-md-8">
+          <label for="{{ form.title.id_for_label }}">Title</label>
+          {{ form.title }}
+          {% if form.title.errors %}
+            <div class="form-error">{{ form.title.errors }}</div>
+          {% endif %}
+        </div>
+        
+        <div class="form-group col-md-4">
+          <label for="{{ form.status.id_for_label }}">Status</label>
+          {{ form.status }}
+          {% if form.status.errors %}
+            <div class="form-error">{{ form.status.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group col-md-8">
+          <label for="{{ form.excerpt.id_for_label }}">Excerpt</label>
+          {{ form.excerpt }}
+          <small class="form-text text-muted">{{ form.excerpt.help_text }}</small>
+          {% if form.excerpt.errors %}
+            <div class="form-error">{{ form.excerpt.errors }}</div>
+          {% endif %}
+        </div>
+        
+        <div class="form-group col-md-4">
+          <label for="{{ form.category.id_for_label }}">Category</label>
+          {{ form.category }}
+          {% if form.category.errors %}
+            <div class="form-error">{{ form.category.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group col-md-12">
+          <label for="{{ form.tags.id_for_label }}">Tags</label>
+          {{ form.tags }}
+          {% if form.tags.errors %}
+            <div class="form-error">{{ form.tags.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <label for="{{ form.thumbnail.id_for_label }}">Thumbnail Image</label>
+          {{ form.thumbnail }}
+          <small class="form-text text-muted">{{ form.thumbnail.help_text }}</small>
+          {% if form.thumbnail.errors %}
+            <div class="form-error">{{ form.thumbnail.errors }}</div>
+          {% endif %}
+          {% if post.thumbnail %}
+            <div class="current-image">
+              <img src="{{ post.thumbnail.url }}" alt="Current thumbnail" class="img-thumbnail">
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="form-group col-md-6">
+          <label for="{{ form.banner_image.id_for_label }}">Banner Image</label>
+          {{ form.banner_image }}
+          <small class="form-text text-muted">{{ form.banner_image.help_text }}</small>
+          {% if form.banner_image.errors %}
+            <div class="form-error">{{ form.banner_image.errors }}</div>
+          {% endif %}
+          {% if post.banner_image %}
+            <div class="current-image">
+              <img src="{{ post.banner_image.url }}" alt="Current banner" class="img-thumbnail">
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group col-md-4">
+          <div class="form-check">
+            {{ form.featured }}
+            <label class="form-check-label" for="{{ form.featured.id_for_label }}">
+              Featured Post
+            </label>
+            <small class="form-text text-muted">{{ form.featured.help_text }}</small>
+          </div>
+        </div>
+        
+        <div class="form-group col-md-4">
+          <div class="form-check">
+            {{ form.show_toc }}
+            <label class="form-check-label" for="{{ form.show_toc.id_for_label }}">
+              Show Table of Contents
+            </label>
+            <small class="form-text text-muted">{{ form.show_toc.help_text }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Featured Code Section (only visible when featured is checked) -->
+    <div class="form-section featured-code-section" style="display: none;">
+      <h2 class="section-title">Featured Code Snippet</h2>
+      
+      <div class="form-row">
+        <div class="form-group col-md-9">
+          <label for="{{ form.featured_code.id_for_label }}">Featured Code</label>
+          {{ form.featured_code }}
+          <small class="form-text text-muted">{{ form.featured_code.help_text }}</small>
+          {% if form.featured_code.errors %}
+            <div class="form-error">{{ form.featured_code.errors }}</div>
+          {% endif %}
+        </div>
+        
+        <div class="form-group col-md-3">
+          <label for="{{ form.featured_code_format.id_for_label }}">Code Language</label>
+          {{ form.featured_code_format }}
+          <small class="form-text text-muted">{{ form.featured_code_format.help_text }}</small>
+          {% if form.featured_code_format.errors %}
+            <div class="form-error">{{ form.featured_code_format.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Post Content Sections -->
+    <div class="form-section">
+      <h2 class="section-title">Post Content</h2>
+      
+      <!-- Introduction -->
+      <div class="form-row">
+        <div class="form-group col-md-12">
+          <label for="{{ form.introduction.id_for_label }}">Introduction</label>
+          {{ form.introduction }}
+          <small class="form-text text-muted">{{ form.introduction.help_text }}</small>
+        </div>
+      </div>
+      
+      <!-- Content Sections -->
+      {% for i in "12345" %}
+      <div class="content-section" id="section-{{ i }}">
+        <div class="form-row">
+          <div class="form-group col-md-12">
+            <label for="{{ form.section_i_title.id_for_label }}">Section {{ i }} Title</label>
+            {{ form|get_field:"section_"|add:i|add:"_title" }}
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group col-md-12">
+            <label for="{{ form.section_i_content.id_for_label }}">Section {{ i }} Content</label>
+            {{ form|get_field:"section_"|add:i|add:"_content" }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      
+      <!-- Code Snippet -->
+      <div class="form-row">
+        <div class="form-group col-md-9">
+          <label for="{{ form.code_snippet.id_for_label }}">Code Snippet</label>
+          {{ form.code_snippet }}
+        </div>
+        
+        <div class="form-group col-md-3">
+          <label for="{{ form.code_language.id_for_label }}">Code Language</label>
+          {{ form.code_language }}
+        </div>
+      </div>
+      
+      <!-- Conclusion -->
+      <div class="form-row">
+        <div class="form-group col-md-12">
+          <label for="{{ form.conclusion.id_for_label }}">Conclusion</label>
+          {{ form.conclusion }}
+          <small class="form-text text-muted">{{ form.conclusion.help_text }}</small>
+        </div>
+      </div>
+      
+      <!-- Raw Markdown (optional/advanced) -->
+      <div class="form-row">
+        <div class="form-group col-md-12">
+          <label>
+            <input type="checkbox" id="toggle-raw-markdown"> 
+            Advanced: Edit Raw Markdown
+          </label>
+          <div id="raw-markdown-container" style="display: none;">
+            <label for="{{ form.content.id_for_label }}">Raw Markdown Content</label>
+            {{ form.content }}
+            <small class="form-text text-muted">Edit the raw markdown content directly (this will override the structured sections).</small>
+            {% if form.content.errors %}
+              <div class="form-error">{{ form.content.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save Post</button>
+      <a href="{% if post %}{% url 'blog:post_detail' slug=post.slug %}{% else %}{% url 'blog:post_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Toggle featured code section visibility based on featured checkbox
+  const featuredCheckbox = document.getElementById('{{ form.featured.id_for_label }}');
+  const featuredCodeSection = document.querySelector('.featured-code-section');
+  
+  if (featuredCheckbox && featuredCodeSection) {
+    // Initial state
+    featuredCodeSection.style.display = featuredCheckbox.checked ? 'block' : 'none';
+    
+    // Toggle on change
+    featuredCheckbox.addEventListener('change', function() {
+      featuredCodeSection.style.display = this.checked ? 'block' : 'none';
+    });
+  }
+  
+  // Toggle raw markdown editor
+  const toggleRawMarkdown = document.getElementById('toggle-raw-markdown');
+  const rawMarkdownContainer = document.getElementById('raw-markdown-container');
+  
+  if (toggleRawMarkdown && rawMarkdownContainer) {
+    toggleRawMarkdown.addEventListener('change', function() {
+      rawMarkdownContainer.style.display = this.checked ? 'block' : 'none';
+    });
+  }
+  
+  // Hide empty sections initially
+  const contentSections = document.querySelectorAll('.content-section');
+  let visibleSections = 1; // Always show at least section 1
+  
+  contentSections.forEach((section, index) => {
+    const titleInput = section.querySelector('input[id$="_title"]');
+    const contentTextarea = section.querySelector('textarea[id$="_content"]');
+    
+    if (index > 0) { // Skip section 1
+      if ((titleInput && titleInput.value) || (contentTextarea && contentTextarea.value)) {
+        visibleSections = index + 1;
+      } else {
+        section.style.display = 'none';
+      }
+    }
+  });
+  
+  // Add "Add Section" button after the last visible section
+  const lastVisibleSection = document.getElementById(`section-${visibleSections}`);
+  if (lastVisibleSection && visibleSections < 5) {
+    const addButton = document.createElement('button');
+    addButton.type = 'button';
+    addButton.className = 'btn btn-outline-cyan mt-3 mb-4';
+    addButton.textContent = 'Add Section';
+    addButton.addEventListener('click', function() {
+      if (visibleSections < 5) {
+        document.getElementById(`section-${visibleSections + 1}`).style.display = 'block';
+        visibleSections++;
+        
+        // Move button after newly visible section
+        if (visibleSections < 5) {
+          this.parentNode.removeChild(this);
+          document.getElementById(`section-${visibleSections}`).after(this);
+        } else {
+          this.parentNode.removeChild(this);
+        }
+      }
+    });
+    
+    lastVisibleSection.after(addButton);
+  }
+});
+</script>
+{% endblock %}
