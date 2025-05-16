@@ -1,9 +1,42 @@
 from django.views.generic import ListView, DetailView
-from django.shortcuts import get_object_or_404, redirect
+from django.views.generic.edit import CreateView, UpdateView
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.contrib import messages
+from django.utils import timezone
 from django.db.models import Count
 from .models import Post, Category, Tag
+from .forms import PostForm
 from datetime import datetime
 import calendar
+
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    """Class-based view for creating a new blog post with structured sections."""
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/post_form.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Create Post'
+        return context
+
+    def form_valid(self, form):
+        # Set the author to current user
+        form.instance.author = self.request.user
+
+        # Set publication date if status is published
+        if form.instance.status == 'published' and not form.instance.published_date:
+            form.instance.published_date = timezone.now()
+
+        # Add success message
+        messages.success(self.request, "Post created successfully!")
+        return super().form_valid(form)
+
+    def get_successs_url(self):
+        return reverse_lazy('blog:post_detail', kwargs={'slug': self.object.slug})
 
 
 class PostListView(ListView):
