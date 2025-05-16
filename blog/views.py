@@ -150,6 +150,20 @@ class ImageUploadView(LoginRequiredMixin, View):
             'success': False,
             'error': 'Invalid request'
         }, status=400)
+    
+
+class TagSuggestionsView(View):
+    """Class-based view for getting tag suggestions."""
+
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('q', '').strip()
+        if query:
+            # Find matching tags
+            tags = Tag.objects.filter(name__icontains=query)[:10]
+            return JsonResponse({
+                'tags': [{'id': tag.id, 'name': tag.name} for tag in tags]
+            })
+        return JsonResponse({'tags': []})
 
 
 class PostListView(ListView):
