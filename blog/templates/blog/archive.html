@@ -3,7 +3,7 @@
 
 {% block blog_content %}
 <!-- Archive List Header -->
-<div class="list-page-header">
+<div class="list-page-header" style="border: 2px solid red;">
   <!-- HUD corner accents -->
   <div class="hud-corner hud-corner-tl"></div>
   <div class="hud-corner hud-corner-tr"></div>
@@ -19,27 +19,35 @@
     {% else %}
       Archive
     {% endif %}
-    <span class="digital-counter">{{ posts.count }} LOG{{ posts.count|pluralize|upper }} FOUND</span>
+    <span class="digital-counter">{{ posts.count }} POSTS</span>
   </h1>
   
-  <!-- Archive timeline -->
-  <div class="archive-timeline mb-4">
-    {% for year_item in years %}
-      <a href="{% url 'blog:archive_year' year=year_item %}" 
-         class="filter-pill {% if year == year_item %}active{% endif %}">
-        {{ year_item }}
-      </a>
-      {% if year == year_item %}
-        <div class="archive-months mt-2 mb-3 ml-4">
-          {% for month_num, month_name in months %}
-            <a href="{% url 'blog:archive_month' year=year month=month_num %}" 
-               class="filter-pill {% if month == month_num %}active{% endif %}">
-              {{ month_name }}
-            </a>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endfor %}
+  <!-- Debugging label -->
+  <p style="color: red; font-weight: bold; margin: 1rem 0;">TIMELINE SHOULD APPEAR BELOW THIS TEXT</p>
+  
+  <!-- Simple Archive Timeline -->
+  <div class="simple-timeline" style="border: 2px dashed yellow; padding: 1rem; margin: 1rem 0;">
+    <h3 style="color: yellow;">Years:</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0;">
+      {% for year_item in years %}
+        <a href="{% url 'blog:archive_year' year=year_item %}" 
+           style="{% if year == year_item %}color: cyan; border: 1px solid cyan;{% else %}color: white;{% endif %} padding: 0.5rem; background: rgba(0,0,0,0.5);">
+          {{ year_item }}
+        </a>
+      {% endfor %}
+    </div>
+    
+    {% if year %}
+      <h3 style="color: yellow; margin-top: 1rem;">Months for {{ year }}:</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0;">
+        {% for month_num, month_name in months %}
+          <a href="{% url 'blog:archive_month' year=year month=month_num %}"
+             style="{% if month == month_num %}color: purple; border: 1px solid purple;{% else %}color: white;{% endif %} padding: 0.3rem; background: rgba(0,0,0,0.5);">
+            {{ month_name }}
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
   </div>
 </div>
 
@@ -53,17 +61,17 @@
     <div class="col-12">
       <div class="no-results">
         <div class="no-results-icon"><i class="fas fa-calendar-alt"></i></div>
-        <h3 class="no-results-title">No logs found</h3>
+        <h3 class="no-results-title">No posts found</h3>
         <p class="no-results-message">
           {% if year and month %}
-            No logs found dated {{ month_name }} {{ year }}.
+            No posts were published in {{ month_name }} {{ year }}.
           {% elif year %}
-            No logs found dated {{ year }}.
+            No posts were published in {{ year }}.
           {% else %}
-            No logs available in the archive.
+            No posts available in the archive.
           {% endif %}
         </p>
-        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-cyan">Back to DEVLOGs</a>
+        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-cyan">Back to Blog</a>
       </div>
     </div>
   {% endfor %}
