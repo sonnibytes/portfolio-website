@@ -59,3 +59,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the copy functionality
     addCopyButtons();
 });
+
+// Initialize Bootstrap dropdowns
+document.addEventListener('DOMContentLoaded', function() {
+    var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+    var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+      return new bootstrap.Dropdown(dropdownToggleEl);
+    });
+    
+    // For desktop: Show dropdown on hover
+    var dropdownHoverElements = document.querySelectorAll('.dropdown');
+    
+    dropdownHoverElements.forEach(function(element) {
+      element.addEventListener('mouseenter', function() {
+        if (window.innerWidth >= 992) { // Only on desktop
+          var dropdownToggle = this.querySelector('.dropdown-toggle');
+          var dropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
+          if (dropdown) {
+            dropdown.show();
+          }
+        }
+      });
+      
+      element.addEventListener('mouseleave', function() {
+        if (window.innerWidth >= 992) { // Only on desktop
+          var dropdownToggle = this.querySelector('.dropdown-toggle');
+          var dropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
+          if (dropdown) {
+            dropdown.hide();
+          }
+        }
+      });
+    });
+  });
