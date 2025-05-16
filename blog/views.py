@@ -39,6 +39,80 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return reverse_lazy('blog:post_detail', kwargs={'slug': self.object.slug})
 
 
+class PostUpdateView(LoginRequiredMixin, UpdateView):
+    """Class-based view for editing an existing blog post."""
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/post_form.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Post'
+        context['post'] = self.object
+        return context
+
+    def dispatch(self, request, *args, **kwargs):
+        # Check if user is the author and has permission
+        self.object = self.get_object()
+        if self.object.author != request.user and not request.user.is_staff:
+            messages.error(request, "You don't have permission to edit this post.")
+            return redirect('blog:post_detail', slug=self.object.slug)
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        # Set publication date if status is published and doesn't have one
+        if form.instance.status == 'published' and not form.instance.published_date:
+            form.instance.published_date = timezone.now()
+
+        # Add success message
+        messages.success(self.request, "Post updated successfully!")
+        return super().form_valid(form)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+
+        # Prepare form initial data from content (for sections)
+        if self.object and self.object.content:
+            # Extract sections from markdown content to populate the form
+            content_lines = self.object.content.split("\n\n")
+            intro_lines = []
+            current_section = 0
+
+            for i, line in enumerate(content_lines):
+                # Skip empty lines
+                if not line.strip():
+                    continue
+
+                # Check if line is a heading
+                if line.startswith("## "):
+                    current_section += 1
+                    if current_section <= 5:
+                        form.initial[f"section_{current_section}_title"] = line[3:].strip()
+
+                        # Get the content for this section (all lines until next heading)
+                        section_content = []
+                        j = i + 1
+                        while j < len(content_lines) and not content_lines[j].startswith("## "):
+                            if content_lines[j].strip():  # Skip empty lines
+                                section_content.append(content_lines[j])
+                            j += 1
+
+                        form.initial[f"section_{current_section}_content"] = "\n\n".join(section_content)
+
+                # If we haven't encountered heading yet, it's introduction
+                elif current_section == 0 and not line.startswith("```"):
+                    intro_lines.append(line)
+
+            # Set intro field
+            if intro_lines:
+                form.initial['introduction'] = "\n\n".join(intro_lines)
+
+        return form
+
+    def get_success_url(self):
+        return reverse_lazy('blog:post_detail', kwargs={'slug': self.object.slug})
+
+
 class PostListView(ListView):
     """View for the blog homepage showing latest posts."""
     model = Post
