@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.db.models import Count
+from markdownx.utils import markdownify
 
 from datetime import datetime
 import calendar
@@ -147,6 +148,8 @@ class CategoryView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
+        # Add this line to track active category
+        context['category_slug'] = self.kwargs['slug']
         return context
 
 
@@ -349,9 +352,15 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
     template_name = "blog/admin/post_form.html"
-    success_url = reverse_lazy('blog:post_list')
+
+    def get_success_url(self):
+        return reverse('blog:post_detail', kwargs={'slug': self.object.slug})
 
     def form_valid(self, form):
+        # Only save if not a preview request
+        if 'is_preview' in self.request.POST and self.request.POST['is_preview'] == '1':
+            return self.form_invalid(form)
+
         # Set the author to current user
         form.instance.author = self.request.user
 
@@ -365,10 +374,10 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         print("=" * 50)
 
         # Hand preview mode - don't save if just previewing
-        if 'show_preview' in form.cleaned_data and form.cleaned_data['show_preview']:
-            return self.render_to_response(self.get_context_data(form=form))
+        # if 'show_preview' in form.cleaned_data and form.cleaned_data['show_preview']:
+            # return self.render_to_response(self.get_context_data(form=form))
 
-        # Set publication date if status is published
+        # Set publication date if status is published and no date
         if form.instance.status == "published" and not form.instance.published_date:
             form.instance.published_date = timezone.now()
 
@@ -386,11 +395,26 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         context["submit_text"] = "Create Post"
 
         # Handle Preview mode
-        if self.request.POST.get('show_preview'):
+        if self.request.method == 'POST' and 'is_preview' in self.request.POST and self.request.POST['is_preview'] == '1':
             context['preview'] = True
-            context['post'] = self.request.POST
+            # context['post'] = self.request.POST
+            content = self.request.POST.get('content', '')
             # Extract headings for preview TOC
-            context['headings'] = self.extract_headings(self.request.POST.get('content', ''))
+            context['headings'] = self.extract_headings(content)
+
+            # # Extract headings from content
+            # content = self.request.POST.get('content', '')
+            # headings = []
+
+            # # Extract headings w Regex
+
+            # Convert content to HTML for preview
+            context['preview_content'] = markdownify(content)
+
+            # Pass temp form values back
+            if 'temp_content' in self.request.POST:
+                context['form'].data = self.request.POST.copy()
+                context['form'].data['content'] = self.request.POST.get('temp_content', '')
 
         return context
 
@@ -426,6 +450,10 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("blog:post_detail", kwargs={"slug": self.object.slug})
 
     def form_valid(self, form):
+        # Only save if not a preview request
+        if 'is_preview' in self.request.POST and self.request.POST['is_preview'] == '1':
+            return self.form_invalid(form)
+
         # DEBUG: Print the raw reuqest POST data and form cleaned_data
         print("=" * 50)
         print("FORM SUBMITTED")
@@ -436,7 +464,6 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         print("Content Field BEFORE Save:")
         print(form.instance.content)
         print("=" * 50)
-
 
         # Set publication date if status is published and doesn't have one
         if form.instance.status == "published" and not form.instance.published_date:
@@ -462,22 +489,40 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         post = self.get_object()
         series_post = SeriesPost.objects.filter(post=post).first()
         if series_post:
-            context['initial_series'] = series_post.series
-            context['initial_series_order'] = series_post.order
+            context["initial_series"] = series_post.series
+            context["initial_series_order"] = series_post.order
 
-        # Add preview context if requested
-        if self.request.POST.get('show_preview'):
+        # For preview funtionality
+        if self.request.method == 'POST' and 'is_preview' in self.request.POST and self.request.POST['is_preview'] == '1':
             context['preview'] = True
-            post_data = {
-                'title': self.request.POST.get('title', ''),
-                'content': self.request.POST.get('content', ''),
-                'excerpt': self.request.POST.get('excerpt', ''),
-            }
-            context['post_preview'] = post_data
-            # Extract headings for preview TOC
-            context['headings'] = self.extract_headings(post_data['content'])
+
+            # Extract headings from content
+            content = self.request.POST.get('content', '')
+            context['headings'] = self.extract_headings(content)
+
+            # Convert content to HTML for preview
+            context['preview_content'] = markdownify(content)
+
+            # Pass temp form values back
+            if 'temp_content' in self.request.POST:
+                context['form'].data = self.request.POST.copy()
+                context['form'].data['content'] = self.request.POST.get('temp_content', '')
 
         return context
+
+        # # Add preview context if requested
+        # if self.request.POST.get('show_preview'):
+        #     context['preview'] = True
+        #     post_data = {
+        #         'title': self.request.POST.get('title', ''),
+        #         'content': self.request.POST.get('content', ''),
+        #         'excerpt': self.request.POST.get('excerpt', ''),
+        #     }
+        #     context['post_preview'] = post_data
+        #     # Extract headings for preview TOC
+        #     context['headings'] = self.extract_headings(post_data['content'])
+
+        # return context
 
     def extract_headings(self, markdown_content):
         """Extract headings from markdown content for table of contents preview."""
@@ -496,6 +541,7 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
                     'text': text,
                     'id': heading_id
                 })
+        return headings
 
 
     # def dispatch(self, request, *args, **kwargs):
