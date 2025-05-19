@@ -143,4 +143,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       });
     }
+});
+  
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle TOC link clicks for smooth scrolling with offset for the fixed header
+  const tocLinks = document.querySelectorAll('.toc-link');
+  const headerHeight = document.querySelector('.site-header')?.offsetHeight || 80;
+
+  tocLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          const targetId = this.getAttribute('href');
+          const targetElement = document.querySelector(targetId);
+          
+          if (targetElement) {
+              // Calculate position with offset for header
+              const elementPosition = targetElement.getBoundingClientRect().top;
+              const offsetPosition = elementPosition + window.pageYOffset - headerHeight - 20; // 20px extra padding
+              
+              // Scroll smoothly to the element
+              window.scrollTo({
+                  top: offsetPosition,
+                  behavior: 'smooth'
+              });
+              
+              // Update URL hash after scrolling
+              history.pushState(null, null, targetId);
+          }
+      });
   });
+});
