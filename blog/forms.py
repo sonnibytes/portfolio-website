@@ -8,36 +8,34 @@ from .models import Post, Category, Tag, Series, SeriesPost
 class PostForm(forms.ModelForm):
     """Form for creating and editing posts/logs."""
 
-    ######################### CONTENT FIELDS #########################
-
-    # Use MarkdownxFormField for content with better widget
-    content = MarkdownxFormField(
-        widget=MarkdownxWidget(
-            attrs={
-                "class": "form-control markdown-editor",
-                "rows": 25,
-                "placeholder": "Write your post content here using Markdown...",
-            }
-        )
-    )
+    # ================= CONTENT FIELDS =================
 
     # Category as a select field with empty option
     category = forms.ModelChoiceField(
         queryset=Category.objects.all(),
         required=True,
         empty_label="Select a Category",
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
-
-    ######################### TAG FIELDS #########################
 
     # Tags as a multiple select field
     tags = forms.ModelMultipleChoiceField(
-        queryset=Tag.objects.all().order_by('name'),
+        queryset=Tag.objects.all().order_by("name"),
         required=False,
-        widget=forms.SelectMultiple(attrs={
-            'class': 'form-select tags-select',
-            'size': '5'})
+        widget=forms.SelectMultiple(
+            attrs={"class": "form-select tags-select", "size": "5"}
+        ),
+    )
+
+    # Enhanced content field w markdown
+    content = MarkdownxFormField(
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control markdown-editor",
+                "rows": 25,
+                "placeholder": "Write post content here using Markdown...",
+            }
+        )
     )
 
     # Create a new tag field
@@ -50,8 +48,6 @@ class PostForm(forms.ModelForm):
             }
         ),
     )
-
-    ######################### SERIES FIELDS #########################
 
     # Series field
     series = forms.ModelChoiceField(
@@ -82,72 +78,6 @@ class PostForm(forms.ModelForm):
         })
     )
 
-    ######################### PREVIEW TOGGLE #########################
-
-    # Preview toggle for the form
-    show_preview = forms.BooleanField(
-        required=False,
-        initial=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        })
-    )
-
-
-
-    # # Add a field for the intro section
-    # introduction = forms.CharField(
-    #     widget=forms.Textarea(attrs={'rows': 4}),
-    #     help_text="Brief introduction to post (auto formatted as <p>)",
-    #     required=False
-    # )
-
-    # # Fields for each main section (up to 5 sections)
-    # section_1_title = forms.CharField(max_length=200, required=False)
-    # section_1_content = forms.CharField(
-    #     widget=forms.Textarea(attrs={'rows': 6}), required=False)
-
-    # section_2_title = forms.CharField(max_length=200, required=False)
-    # section_2_content = forms.CharField(
-    #     widget=forms.Textarea(attrs={"rows": 6}), required=False)
-
-    # section_3_title = forms.CharField(max_length=200, required=False)
-    # section_3_content = forms.CharField(
-    #     widget=forms.Textarea(attrs={"rows": 6}), required=False)
-
-    # section_4_title = forms.CharField(max_length=200, required=False)
-    # section_4_content = forms.CharField(
-    #     widget=forms.Textarea(attrs={"rows": 6}), required=False)
-
-    # section_5_title = forms.CharField(max_length=200, required=False)
-    # section_5_content = forms.CharField(
-    #     widget=forms.Textarea(attrs={"rows": 6}), required=False)
-
-    # # Field for code snippet (with language selection)
-    # code_snippet = forms.CharField(
-    #     widget=forms.Textarea(attrs={'rows': 8, 'class': 'code-editor'}),
-    #     required=False
-    # )
-    # code_language = forms.ChoiceField(
-    #     choices=[
-    #         ('python', 'Python'),
-    #         ('javascript', 'JavaScript'),
-    #         ('html', 'HTML'),
-    #         ('css', 'CSS'),
-    #         ('bash', 'Bash/Shell'),
-    #         ('sql', 'SQL'),
-    #         ('json', 'JSON'),
-    #     ],
-    #     required=False
-    # )
-
-    # # Field for conclusion
-    # conclusion = forms.CharField(
-    #     widget=forms.Textarea(attrs={'rows': 4}),
-    #     help_text="Conclusion or summary of the post",
-    #     required=False
-    # )
-
     class Meta:
         model = Post
         fields = [
@@ -174,11 +104,6 @@ class PostForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Brief description for post cards and previews'
             }),
-            # 'content': forms.Textarea(attrs={
-            #     'class': 'form-control markdown-editor',
-            #     'rows': 25,
-            #     'placeholder': 'Write your post content here using Markdown...'
-            # }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
@@ -260,10 +185,8 @@ class PostForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit=True):
-        """
-        Override save method to compile structured content from sections
-        into a single markdown document with proper heading levels.
-        """
+        """Save the post and handle tags and series."""
+        
         post = super().save(commit=False)
 
         if commit:
