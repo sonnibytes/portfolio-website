@@ -29,7 +29,7 @@ class PostForm(forms.ModelForm):
 
     # Enhanced content field w markdown
     content = MarkdownxFormField(
-        widget=forms.Textarea(
+        widget=MarkdownxWidget(
             attrs={
                 "class": "form-control markdown-editor",
                 "rows": 25,
@@ -92,7 +92,8 @@ class PostForm(forms.ModelForm):
             "featured_code",
             "featured_code_format",
             "show_toc",
-            "published_date"
+            "published_date",
+            "content",
         ]
         widgets = {
             'title': forms.TextInput(attrs={
@@ -186,7 +187,7 @@ class PostForm(forms.ModelForm):
 
     def save(self, commit=True):
         """Save the post and handle tags and series."""
-        
+
         post = super().save(commit=False)
 
         if commit:

@@ -6,4 +6,5 @@ register = template.Library()
 
 @register.filter
 def markdownify(text):
+    """Filter to convert markdown text to HTML using markdownx util"""
     return mark_safe(md(text))
