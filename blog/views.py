@@ -19,7 +19,7 @@ import re
 from uuid import uuid4
 
 from .models import Post, Category, Tag, Series, SeriesPost
-from .forms import PostForm
+from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 
 
 class PostListView(ListView):
@@ -108,7 +108,7 @@ class PostDetailView(DetailView):
         context['headings'] = headings
 
         return context
-    
+
     def extract_headings(self, markdown_content):
         """Extract headings from markdown content for table of contents."""
         headings = []
@@ -547,6 +547,102 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     """View for creating a new category."""
+
+    model = Category
+    form_class = CategoryForm
+    template_name = 'blog/admin/category_form.html'
+    success_url = reverse_lazy('blog:category_list')
+
+    def form_valid(self, form):
+        # Generate sluf from name if not provided
+        if not form.instance.slug:
+            form.instance.slug = slugify(form.instance.name)
+
+        messages.success(self.request, 'Category created successfully!')
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Create New Category'
+        context['submit_text'] = 'Create Category'
+        return context
+    
+class CategoryUpdateView(LoginRequiredMixin, UpdateView):
+    """View for updating an existing category."""
+
+    model = Category
+    form_class = CategoryForm
+    template_name = 'blog/admin/category_form.html'
+    success_url = reverse_lazy('blog:category_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Category updated successfully!')
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Category'
+        context['submit_text'] = 'Update Category'
+        return context
+
+
+class CategoryListView(LoginRequiredMixin, ListView):
+    """View for listing all categories with post counts."""
+
+    model = Category
+    template_name = 'blog/admin/category_list.html'
+    context_object_name = 'categories'
+
+    def get_queryset(self):
+        return Category.objects.annotate(post_count=Count('posts')).order_by('name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Manage Categories'
+        return context
+
+
+class CategoryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """View for deleting a category."""
+
+    model = Category
+    template_name = 'blog/admin/category_confirm_delete.html'
+    success_url = reverse_lazy('blog:category_list')
+
+    def test_func(self):
+        """Only allows superuser to delete categories."""
+        return self.request.user.is_superuser
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Delete Category'
+        return context
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Category deleted successfully!')
+        return super().delete(request, *args, **kwargs)
+    
+
+class DashboardView(LoginRequiredMixin, ListView):
+    """Dashboard view for logs management."""
+    
+    model = Post
+    template_name = 'blog/admin/dashboard.html'
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        return Post.objects.all().order_by('-created')[:10]
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'DEVLOGs Dashboard'
+        context['post_count'] = Post.objects.count()
+        context['published_count'] = Post.objects.filter(status='published').count()
+        context['draft_count'] = Post.objects.filter(status='draft').count()
+        context['category_count'] = Category.objects.count()
+        context['tag_count'] = Tag.objects.count()
+        return context
+
 
 # class ImageUploadView(LoginRequiredMixin, View):
 #     """Class-based view for handling image uploads for posts."""
