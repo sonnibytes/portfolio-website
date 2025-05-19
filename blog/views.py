@@ -1,4 +1,4 @@
-from django.views.generic import ListView, DetailView, View, DeleteView, FormView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, DeleteView, CreateView, UpdateView
 from django.views.generic.detail import SingleObjectMixin
 # from django.views.generic.edit import CreateView, UpdateView
 from django.views.decorators.csrf import csrf_protect
@@ -343,7 +343,7 @@ class SearchView(ListView):
         context['query'] = self.request.GET.get('q', '')
         return context
 
-################### ADMIN VIEWS FOR POST MANAGEMENT #######################
+# ===================== ADMIN VIEWS FOR POST MANAGEMENT =====================
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
@@ -357,13 +357,6 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return reverse('blog:post_detail', kwargs={'slug': self.object.slug})
 
     def form_valid(self, form):
-        # Only save if not a preview request
-        if 'is_preview' in self.request.POST and self.request.POST['is_preview'] == '1':
-            return self.form_invalid(form)
-
-        # Set the author to current user
-        form.instance.author = self.request.user
-
         # DEBUG: Print form data and POST Data
         print("=" * 50)
         print("FORM SUBMITTED")
@@ -373,9 +366,8 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         pprint.pprint(form.cleaned_data)
         print("=" * 50)
 
-        # Hand preview mode - don't save if just previewing
-        # if 'show_preview' in form.cleaned_data and form.cleaned_data['show_preview']:
-            # return self.render_to_response(self.get_context_data(form=form))
+        # Set the author to current user
+        form.instance.author = self.request.user
 
         # Set publication date if status is published and no date
         if form.instance.status == "published" and not form.instance.published_date:
@@ -393,50 +385,27 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context["title"] = "Create New Post"
         context["submit_text"] = "Create Post"
-
-        # Handle Preview mode
-        if self.request.method == 'POST' and 'is_preview' in self.request.POST and self.request.POST['is_preview'] == '1':
-            context['preview'] = True
-            # context['post'] = self.request.POST
-            content = self.request.POST.get('content', '')
-            # Extract headings for preview TOC
-            context['headings'] = self.extract_headings(content)
-
-            # # Extract headings from content
-            # content = self.request.POST.get('content', '')
-            # headings = []
-
-            # # Extract headings w Regex
-
-            # Convert content to HTML for preview
-            context['preview_content'] = markdownify(content)
-
-            # Pass temp form values back
-            if 'temp_content' in self.request.POST:
-                context['form'].data = self.request.POST.copy()
-                context['form'].data['content'] = self.request.POST.get('temp_content', '')
-
         return context
 
-    def extract_headings(self, markdown_content):
-        """Extract headings from markdown content for table of contents preview."""
-        headings = []
-        # Regular expression to find headings in markdown
-        heading_pattern = r'^(#{1,3})\s+(.+)$'
+    # def extract_headings(self, markdown_content):
+    #     """Extract headings from markdown content for table of contents preview."""
+    #     headings = []
+    #     # Regular expression to find headings in markdown
+    #     heading_pattern = r'^(#{1,3})\s+(.+)$'
 
-        for line in markdown_content.split('\n'):
-            match = re.match(heading_pattern, line.strip())
-            if match:
-                level = len(match.group(1))
-                text = match.group(2).strip()
-                heading_id = slugify(text)
-                headings.append({
-                    'level': level,
-                    'text': text,
-                    'id': heading_id
-                })
+    #     for line in markdown_content.split('\n'):
+    #         match = re.match(heading_pattern, line.strip())
+    #         if match:
+    #             level = len(match.group(1))
+    #             text = match.group(2).strip()
+    #             heading_id = slugify(text)
+    #             headings.append({
+    #                 'level': level,
+    #                 'text': text,
+    #                 'id': heading_id
+    #             })
 
-        return headings
+    #     return headings
 
 
 class PostUpdateView(LoginRequiredMixin, UpdateView):
@@ -450,10 +419,6 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("blog:post_detail", kwargs={"slug": self.object.slug})
 
     def form_valid(self, form):
-        # Only save if not a preview request
-        if 'is_preview' in self.request.POST and self.request.POST['is_preview'] == '1':
-            return self.form_invalid(form)
-
         # DEBUG: Print the raw reuqest POST data and form cleaned_data
         print("=" * 50)
         print("FORM SUBMITTED")
@@ -492,56 +457,26 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
             context["initial_series"] = series_post.series
             context["initial_series_order"] = series_post.order
 
-        # For preview funtionality
-        if self.request.method == 'POST' and 'is_preview' in self.request.POST and self.request.POST['is_preview'] == '1':
-            context['preview'] = True
-
-            # Extract headings from content
-            content = self.request.POST.get('content', '')
-            context['headings'] = self.extract_headings(content)
-
-            # Convert content to HTML for preview
-            context['preview_content'] = markdownify(content)
-
-            # Pass temp form values back
-            if 'temp_content' in self.request.POST:
-                context['form'].data = self.request.POST.copy()
-                context['form'].data['content'] = self.request.POST.get('temp_content', '')
-
         return context
 
-        # # Add preview context if requested
-        # if self.request.POST.get('show_preview'):
-        #     context['preview'] = True
-        #     post_data = {
-        #         'title': self.request.POST.get('title', ''),
-        #         'content': self.request.POST.get('content', ''),
-        #         'excerpt': self.request.POST.get('excerpt', ''),
-        #     }
-        #     context['post_preview'] = post_data
-        #     # Extract headings for preview TOC
-        #     context['headings'] = self.extract_headings(post_data['content'])
+    # def extract_headings(self, markdown_content):
+    #     """Extract headings from markdown content for table of contents preview."""
+    #     headings = []
+    #     # Regex to find headings
+    #     heading_pattern = r'^(#{1,3})\s+(.+)$'
 
-        # return context
-
-    def extract_headings(self, markdown_content):
-        """Extract headings from markdown content for table of contents preview."""
-        headings = []
-        # Regex to find headings
-        heading_pattern = r'^(#{1,3})\s+(.+)$'
-
-        for line in markdown_content.split('\n'):
-            match = re.match(heading_pattern, line.strip())
-            if match:
-                level = len(match.group(1))
-                text = match.group(2).strip()
-                heading_id = slugify(text)
-                headings.append({
-                    'level': level,
-                    'text': text,
-                    'id': heading_id
-                })
-        return headings
+    #     for line in markdown_content.split('\n'):
+    #         match = re.match(heading_pattern, line.strip())
+    #         if match:
+    #             level = len(match.group(1))
+    #             text = match.group(2).strip()
+    #             heading_id = slugify(text)
+    #             headings.append({
+    #                 'level': level,
+    #                 'text': text,
+    #                 'id': heading_id
+    #             })
+    #     return headings
 
 
     # def dispatch(self, request, *args, **kwargs):
@@ -601,13 +536,12 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
 
     #     return form
 
-
-class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class PostDeleteView(LoginRequiredMixin, DeleteView):
     """View for deleting logs post."""
 
     model = Post
     template_name = 'blog/admin/post_confirm_delete.html'
-    success_url = reverse_lazy('blog:post_list')
+    success_url = reverse_lazy('blog:dashboard')
 
     def test_func(self):
         """Only allows author or admin to delete post."""
@@ -633,7 +567,7 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('blog:category_list')
 
     def form_valid(self, form):
-        # Generate sluf from name if not provided
+        # Generate slug from name if not provided
         if not form.instance.slug:
             form.instance.slug = slugify(form.instance.name)
 
@@ -682,7 +616,7 @@ class CategoryListView(LoginRequiredMixin, ListView):
         return context
 
 
-class CategoryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class CategoryDeleteView(LoginRequiredMixin, DeleteView):
     """View for deleting a category."""
 
     model = Category
@@ -696,9 +630,27 @@ class CategoryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Delete Category'
+
+        # Get posts that would be affected
+        affected_posts = Post.objects.filter(category=self.object)
+        context['affected_posts'] = affected_posts
+        context['affected_count'] = affected_posts.count()
+
         return context
 
     def delete(self, request, *args, **kwargs):
+        # Check if posts should be reassigned or deleted
+        if 'reassign' in request.POST:
+            new_category_id = request.POST.get('new_category')
+            if new_category_id:
+                try:
+                    new_category = Category.objects.get(id=new_category_id)
+                    Post.objects.filter(category=self.get_object()).update(category=new_category)
+                    messages.success(request, f'Posts reassigned to {new_category.name}')
+                except Category.DoesNotExist:
+                    messages.error(request, 'Selected category does not exist')
+                    return redirect(request.path)
+
         messages.success(request, 'Category deleted successfully!')
         return super().delete(request, *args, **kwargs)
 
