@@ -329,3 +329,60 @@ class PostForm(forms.ModelForm):
         #     self.save_m2m()
 
         # return post
+
+class CategoryForm(forms.ModelForm):
+    """Form for creating and editing categories."""
+    class Meta:
+        model = Category
+        fields = ['name', 'code', 'description', 'color', 'icon']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+            'code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'maxlength': 2,
+                'placeholder': 'Two-letter code'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control color-picker',
+                'type': 'color',
+                'value': '#00f0ff'
+            }),
+            'icon': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Font Awesome class (e.g., fa-code)'
+            }),
+        }
+
+
+class TagForm(forms.ModelForm):
+    """Form for creating and editing tags."""
+    class Meta:
+        model = Tag
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+        }
+
+
+class SeriesForm(forms.ModelForm):
+    """Form for creating and editing series."""
+    class Meta:
+        model = Series
+        fields = ['title', 'description']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3
+            }),
+        }
