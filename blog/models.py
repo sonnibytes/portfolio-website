@@ -96,7 +96,7 @@ class Post(models.Model):
         max_length=20,
         choices=CODE_FORMAT_CHOICES,
         default='python',
-        help_text="Programming language for syntac highlighting")
+        help_text="Programming language for syntax highlighting")
     show_toc = models.BooleanField(
         default=True, help_text="Show table of contents on post page")
     status = models.CharField(
@@ -129,28 +129,37 @@ class Post(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+
+        # If publishing for first time, set published_date
         if self.status == 'published' and not self.published_date:
             self.published_date == timezone.now()
+
         # Calculate reading time
         if self.content:
             # Avg reading speed: 200 words per minute
             word_count = len(re.findall(r'\w+', self.content))
             self.reading_time = max(1, round(word_count / 200))
+
+        # Generate excerpt from content if not provided
         if not self.excerpt and self.content:
-            self.excerpt = self.content[:200] + '...'
+            # Strip markdown and get first 150 characters
+            plain_text = re.sub(r'#|\*|\[|\]|\(|\)|_|`', '', self.content)
+            self.excerpt = plain_text[:150] + '...' if len(plain_text) > 150 else plain_text
+
         super(Post, self).save(*args, **kwargs)
 
     def rendered_content(self):
-        """Return content field as HTML with heading IDs for TOC linking."""
-        html_content = markdownify(self.content)
-        soup = BeautifulSoup(html_content, 'html.parser')
+        """Return content field as HTML."""
+        return markdownify(self.content)
+        # html_content = markdownify(self.content)
+        # soup = BeautifulSoup(html_content, 'html.parser')
 
-        # Add IDs to headings
-        for h in soup.find_all(['h2', 'h3', 'h4']):
-            if not h.get('id'):
-                h['id'] = slugify(h.get_text())
+        # # Add IDs to headings
+        # for h in soup.find_all(['h2', 'h3', 'h4']):
+        #     if not h.get('id'):
+        #         h['id'] = slugify(h.get_text())
 
-        return str(soup)
+        # return str(soup)
 
     def get_code_filename(self):
         """Return suitable filename for featured codeblock based on content."""
@@ -185,27 +194,78 @@ class Post(models.Model):
         return category_to_icon.get(self.category.code, self.category.code)
 
     def get_headings(self):
-        """Extract headings from rendered content for table of contents."""
-        if not self.show_toc:
-            return []
-
-        html_content = markdownify(self.content)
-        soup = BeautifulSoup(html_content, 'html.parser')
+        """Extract headings from markdown content for table of contents."""
         headings = []
+        # Regular expression to find headings in markdown
+        heading_pattern = r'^(#{1,3})\s+(.+)$'
 
-        # Find all h2 and h3 tags
-        for h in soup.find_all(['h2', 'h3']):
-            # Generate ID from heading text
-            heading_id = slugify(h.get_text())
-            # Add ID attribute to the heading
-            h['id'] = heading_id
-            headings.append({
-                'level': int(h.name[1]),  # Get heading level
-                'text': h.get_text(),
-                'id': heading_id
-            })
+        for line in self.content.split('\n'):
+            match = re.match(heading_pattern, line.strip())
+            if match:
+                level = len(match.group(1))
+                text = match.group(2).strip()
+                # Create an ID from heading text for anchor links
+                heading_id = slugify(text)
+                headings.append({
+                    'level': level,
+                    'text': text,
+                    'id': heading_id,
+                })
 
         return headings
+
+        # if not self.show_toc:
+        #     return []
+
+        # html_content = markdownify(self.content)
+        # soup = BeautifulSoup(html_content, 'html.parser')
+        # headings = []
+
+        # # Find all h2 and h3 tags
+        # for h in soup.find_all(['h2', 'h3']):
+        #     # Generate ID from heading text
+        #     heading_id = slugify(h.get_text())
+        #     # Add ID attribute to the heading
+        #     h['id'] = heading_id
+        #     headings.append({
+        #         'level': int(h.name[1]),  # Get heading level
+        #         'text': h.get_text(),
+        #         'id': heading_id
+        #     })
+
+        # return headings
+
+    # Handle Series
+    def is_in_series(self):
+        """Check if post is part of a series."""
+        return SeriesPost.objects.filter(post=self).exists()
+
+    def get_series(self):
+        """Get the series this post belongs to, if any."""
+        series_post = SeriesPost.objects.filter(post=self).first()
+        if series_post:
+            return series_post.series
+        return None
+
+    def get_series_order(self):
+        """Get the order of this post in its series, if any."""
+        series_post = SeriesPost.objects.filter(post=self).first()
+        if series_post:
+            return series_post.order
+        return None
+
+    def get_similar_posts(self, count=3):
+        """Get simimlar posts based on tags."""
+        post_tags_ids = self.tags.values_list('id', flat=True)
+        similar_posts = Post.objects.filter(
+            tags__in=post_tags_ids,
+            status='published'
+        ).exclude(id=self.id).distinct()
+
+        # Return posts ordered by number of matching tags
+        return similar_posts.annotate(
+            same_tags=models.Count('tags')
+        ).order_by('-same_tags')[:count]
 
 
 class Comment(models.Model):
