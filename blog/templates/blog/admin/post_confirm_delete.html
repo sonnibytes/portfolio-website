@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Delete Post | ML DEVLOG Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'blog/css/blog.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row my-4">
+        <div class="col-12">
+            <h1 class="admin-title">{{ title }}</h1>
+            <div class="admin-breadcrumb mb-4">
+                <a href="{% url 'blog:dashboard' %}">Dashboard</a> / 
+                <a href="{% url 'blog:post_edit' slug=post.slug %}">{{ post.title }}</a> / 
+                Delete
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="admin-card">
+                <div class="text-center mb-4">
+                    <div class="delete-icon mb-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2>Confirm Deletion</h2>
+                    <p class="text-danger">This action cannot be undone.</p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <p>Are you sure you want to delete the post:</p>
+                    <p class="fw-bold">"{{ post.title }}"</p>
+                    
+                    {% if post.status == 'published' %}
+                    <div class="mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> This post is currently published and visible to readers.
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <form method="post" class="text-center">
+                    {% csrf_token %}
+                    
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a href="{% url 'blog:post_edit' slug=post.slug %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i> Delete Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
