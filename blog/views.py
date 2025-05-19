@@ -1,6 +1,6 @@
-from django.views.generic import ListView, DetailView, View, DeleteView, FormView
+from django.views.generic import ListView, DetailView, View, DeleteView, FormView, CreateView, UpdateView
 from django.views.generic.detail import SingleObjectMixin
-from django.views.generic.edit import CreateView, UpdateView
+# from django.views.generic.edit import CreateView, UpdateView
 from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -115,7 +115,7 @@ class PostDetailView(DetailView):
         # Regular expression to find headings in markdown
         heading_pattern = r'^(#{1,3})\s+(.+)$'
 
-        for line in markdown_content.splits('\n'):
+        for line in markdown_content.split('\n'):
             match = re.match(heading_pattern, line.strip())
             if match:
                 level = len(match.group(1))

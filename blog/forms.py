@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
+from markdownx.widgets import MarkdownxWidget
 from .models import Post, Category, Tag, Series, SeriesPost
 
 
@@ -11,7 +12,7 @@ class PostForm(forms.ModelForm):
 
     # Use MarkdownxFormField for content with better widget
     content = MarkdownxFormField(
-        widget=forms.Textarea(
+        widget=MarkdownxWidget(
             attrs={
                 "class": "form-control markdown-editor",
                 "rows": 25,
@@ -19,7 +20,7 @@ class PostForm(forms.ModelForm):
             }
         )
     )
-    
+
     # Category as a select field with empty option
     category = forms.ModelChoiceField(
         queryset=Category.objects.all(),
@@ -173,6 +174,11 @@ class PostForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Brief description for post cards and previews'
             }),
+            # 'content': forms.Textarea(attrs={
+            #     'class': 'form-control markdown-editor',
+            #     'rows': 25,
+            #     'placeholder': 'Write your post content here using Markdown...'
+            # }),
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
@@ -232,7 +238,7 @@ class PostForm(forms.ModelForm):
         )
 
         return series
-    
+
     def clean(self):
         """Validate form data."""
 
