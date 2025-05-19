@@ -445,7 +445,7 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
             context['headings'] = self.extract_headings(post_data['content'])
 
         return context
-    
+
     def extract_headings(self, markdown_content):
         """Extract headings from markdown content for table of contents preview."""
         headings = []
@@ -543,7 +543,7 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Post deleted successfully!')
         return super().delete(request, *args, **kwargs)
-    
+
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     """View for creating a new category."""
@@ -560,13 +560,14 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
 
         messages.success(self.request, 'Category created successfully!')
         return super().form_valid(form)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Create New Category'
         context['submit_text'] = 'Create Category'
         return context
-    
+
+
 class CategoryUpdateView(LoginRequiredMixin, UpdateView):
     """View for updating an existing category."""
 
@@ -612,27 +613,27 @@ class CategoryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         """Only allows superuser to delete categories."""
         return self.request.user.is_superuser
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Delete Category'
         return context
-    
+
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Category deleted successfully!')
         return super().delete(request, *args, **kwargs)
-    
+
 
 class DashboardView(LoginRequiredMixin, ListView):
     """Dashboard view for logs management."""
-    
+
     model = Post
     template_name = 'blog/admin/dashboard.html'
     context_object_name = 'posts'
 
     def get_queryset(self):
         return Post.objects.all().order_by('-created')[:10]
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'DEVLOGs Dashboard'
