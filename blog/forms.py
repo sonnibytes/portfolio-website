@@ -1,6 +1,7 @@
 from django import forms
+from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
-from .models import Post, Category, Tag
+from .models import Post, Category, Tag, Series, SeriesPost
 
 
 class PostForm(forms.ModelForm):

@@ -1,4 +1,5 @@
 from django import template
+from django.template.defaultfilters import stringfilter
 
 register = template.Library()
 
@@ -16,6 +17,7 @@ def get_field(form, field_name):
 
 
 @register.filter
+@stringfilter
 def add(value, arg):
     """Concatenate strings."""
     return value + arg
