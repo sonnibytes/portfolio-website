@@ -31,8 +31,17 @@
                     {% if form.errors %}
                     <div class="alert alert-danger">
                         <strong>Error!</strong> Please correct the errors below.
+                        <ul>
+                            {% for field, errors in form.errors.items %}
+                                <li>{{ field }}: {{ errors|join:", " }}</li>
+                            {% endfor %}
+                        </ul>
                     </div>
                     {% endif %}
+
+                     <!-- Hidden field to detect if this is a preview submission -->
+                     <input type="hidden" name="is_preview" id="is_preview" value="{% if preview %}1{% else %}0{% endif %}">
+                    
                     
                     <!-- Post Title -->
                     <div class="mb-4">
@@ -190,7 +199,7 @@
                     <!-- Form Actions -->
                     <div class="d-flex justify-content-between">
                         <div>
-                            <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
+                            <button type="submit" class="btn btn-primary" id="save-button">{{ submit_text }}</button>
                             <a href="{% if form.instance.pk %}{{ form.instance.get_absolute_url }}{% else %}{% url 'blog:post_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
                         </div>
                         {% if form.instance.pk %}
@@ -225,7 +234,7 @@
                     
                     <div class="preview-content">
                         {% comment %} removed markdownify filter here  {% endcomment %}
-                        {{ form.instance.content|markdownify }}
+                        {{ preview_content|safe }}
                     </div>
                 </div>
             </div>
@@ -237,26 +246,75 @@
 
 {% block admin_js %}
 {{ form.media }}
-<script src="{% static 'markdownx/js/markdownx.js' %}"></script>
+{% comment %} <script src="{% static 'markdownx/js/markdownx.js' %}"></script> {% endcomment %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-submit form when preview checkbox changes
+    // Get references to relevant elements
+    const form = document.getElementById('post-form');
     const previewCheckbox = document.getElementById('{{ form.show_preview.id_for_label }}');
+    const isPreviewField = document.getElementById('is_preview');
+    const saveButton = document.getElementById('save-button');
+    const contentField = document.querySelector('.markdownx-editor');
+    
+    // Store current content when page loads
+    let currentContent = contentField ? contentField.value : '';
+    
+    // Handle preview checkbox change
     if (previewCheckbox) {
         previewCheckbox.addEventListener('change', function() {
-            document.getElementById('post-form').submit();
+            // Set the preview flag to true
+            isPreviewField.value = '1';
+            
+            // Create a temporary input to hold the current content
+            const tempContent = document.createElement('input');
+            tempContent.type = 'hidden';
+            tempContent.name = 'temp_content';
+            tempContent.value = contentField ? contentField.value : '';
+            form.appendChild(tempContent);
+            
+            // Submit the form for preview
+            form.submit();
         });
     }
     
-    // Initialize MarkdownX editor
-    document.querySelectorAll('.markdownx-editor').forEach(function(editor) {
-        editor.addEventListener('input', function() {
-            // Update preview
-            if (previewCheckbox && previewCheckbox.checked) {
-                document.getElementById('post-form').submit();
+    // Handle form submission
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            // Only if this is a save action (not a preview), verify content
+            if (saveButton === event.submitter) {
+                isPreviewField.value = '0';
+                
+                // Ensure content field value is correctly set
+                if (contentField && contentField.value !== currentContent) {
+                    // Update current content
+                    currentContent = contentField.value;
+                }
             }
         });
-    });
+    }
+    
+    // Track changes to the content field
+    if (contentField) {
+        contentField.addEventListener('input', function() {
+            currentContent = this.value;
+        });
+        
+        // Disable the markdownx auto-submit on change
+        // This is a bit of a hack, but it prevents the constant POSTs
+        const originalAjax = window.XMLHttpRequest.prototype.send;
+        window.XMLHttpRequest.prototype.send = function() {
+            // Check if this is a markdownify request
+            if (this._url && this._url.includes('/markdownx/markdownify/')) {
+                // Only allow markdownify requests when preview is enabled
+                if (previewCheckbox && previewCheckbox.checked) {
+                    return originalAjax.apply(this, arguments);
+                }
+                // Otherwise block them
+                return;
+            }
+            return originalAjax.apply(this, arguments);
+        };
+    }
 });
 </script>
 {% endblock %}

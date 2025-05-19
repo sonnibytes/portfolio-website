@@ -17,6 +17,7 @@ import calendar
 import os
 import re
 from uuid import uuid4
+import pprint
 
 from .models import Post, Category, Tag, Series, SeriesPost
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
@@ -354,6 +355,19 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         # Set the author to current user
         form.instance.author = self.request.user
 
+        # DEBUG: Print form data and POST Data
+        print("=" * 50)
+        print("FORM SUBMITTED")
+        print("POST Data:")
+        pprint.pprint(dict(self.request.POST))
+        print("Cleaned Data:")
+        pprint.pprint(form.cleaned_data)
+        print("=" * 50)
+
+        # Hand preview mode - don't save if just previewing
+        if 'show_preview' in form.cleaned_data and form.cleaned_data['show_preview']:
+            return self.render_to_response(self.get_context_data(form=form))
+
         # Set publication date if status is published
         if form.instance.status == "published" and not form.instance.published_date:
             form.instance.published_date = timezone.now()
@@ -371,7 +385,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         context["title"] = "Create New Post"
         context["submit_text"] = "Create Post"
 
-        # Add preview context if requested
+        # Handle Preview mode
         if self.request.POST.get('show_preview'):
             context['preview'] = True
             context['post'] = self.request.POST
@@ -412,13 +426,32 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("blog:post_detail", kwargs={"slug": self.object.slug})
 
     def form_valid(self, form):
+        # DEBUG: Print the raw reuqest POST data and form cleaned_data
+        print("=" * 50)
+        print("FORM SUBMITTED")
+        print("POST Data:")
+        pprint.pprint(dict(self.request.POST))
+        print("Cleaned Data:")
+        pprint.pprint(form.cleaned_data)
+        print("Content Field BEFORE Save:")
+        print(form.instance.content)
+        print("=" * 50)
+
+
         # Set publication date if status is published and doesn't have one
         if form.instance.status == "published" and not form.instance.published_date:
             form.instance.published_date = timezone.now()
 
-        # Add success message
+        # Save form and redirect & Add success message
+        response = super().form_valid(form)
+
+        # DEBUG AFTER SAVE
+        print("Content Field AFTER Save:")
+        print(self.object.content)
+        print("=" * 50)
+
         messages.success(self.request, "Post updated successfully!")
-        return super().form_valid(form)
+        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
