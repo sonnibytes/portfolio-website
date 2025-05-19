@@ -330,6 +330,7 @@ class PostForm(forms.ModelForm):
 
         # return post
 
+
 class CategoryForm(forms.ModelForm):
     """Form for creating and editing categories."""
     class Meta:
