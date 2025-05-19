@@ -123,6 +123,7 @@ class PostDetailView(DetailView):
                 level = len(match.group(1))
                 text = match.group(2).strip()
                 # Create ID from heading text for anchor links
+                # Using same splugify function as markdownify filter
                 heading_id = slugify(text)
                 headings.append({
                     'level': level,
