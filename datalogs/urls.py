@@ -1,7 +1,16 @@
 from django.urls import path
 from . import views
 
+
+app_name = "datalogs"
+
 urlpatterns = [
+    path("", views.DataLogListView.as_view(), name="datalogs"),
+    path("tag/<slug:tag>/", views.DataLogTagView.as_view(), name="datalogs_by_tag"),
+    path("<slug:slug>/", views.DataLogDetailView.as_view(), name="datalog_detail"),
+]
+
+# urlpatterns = [
     # Public blog urls - Post views
     # path("", views.PostListView.as_view(), name="post_list"),
     # path("post/<slug:slug>/", views.PostDetailView.as_view(), name="post_detail"),
@@ -34,9 +43,9 @@ urlpatterns = [
     # path("admin/category/new/", views.CategoryCreateView.as_view(), name="category_create"),
     # path("admin/category/<slug:slug>/edit/", views.CategoryUpdateView.as_view(), name="category_edit"),
     # path("admin/category/<slug:slug>/delete/", views.CategoryDeleteView.as_view(), name="category_delete"),
-]
+# ]
 
-app_name = 'datalogs'
+# app_name = 'datalogs'
 
     # path("post/create/", views.PostCreateView.as_view(), name="post_create"),
     # path("post/<slug:slug>/edit/", views.PostUpdateView.as_view(), name="post_edit"),
