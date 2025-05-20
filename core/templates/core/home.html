@@ -1,170 +1,58 @@
-<!-- core/templates/core/home.html -->
 {% extends 'base.html' %}
 
-{% block title %}Command Center | Tech Command Center{% endblock %}
+{% block title %}Command Center | Tech Portfolio{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-  <!-- Main System Status -->
-  <div class="tech-container md:col-span-2">
-    <div class="tech-header">SYSTEM_STATUS</div>
-    <div class="flex items-center justify-center py-8">
-      <div class="circular-progress">
-        <div class="circular-progress-inner">
-          <div class="text-2xl font-bold">93%</div>
-          <div class="text-xs">OPERATIONAL</div>
-        </div>
-      </div>
-    </div>
-    <div class="grid grid-cols-2 gap-4 mt-6">
-      <div>
-        <div class="text-xs mb-1">PYTHON_RUNTIME:</div>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" data-width="95" style="width: 0%"></div>
-        </div>
-        <div class="text-right text-xs mt-1">95%</div>
-      </div>
-      <div>
-        <div class="text-xs mb-1">DJANGO_FRAMEWORK:</div>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" data-width="90" style="width: 0%"></div>
-        </div>
-        <div class="text-right text-xs mt-1">90%</div>
-      </div>
-      <div>
-        <div class="text-xs mb-1">DATA_SCIENCE:</div>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" data-width="85" style="width: 0%"></div>
-        </div>
-        <div class="text-right text-xs mt-1">85%</div>
-      </div>
-      <div>
-        <div class="text-xs mb-1">WEB_DEVELOPMENT:</div>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" data-width="88" style="width: 0%"></div>
-        </div>
-        <div class="text-right text-xs mt-1">88%</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Systems Status Panel -->
+  <div class="lg:col-span-2">
+    <div class="tech-container">
+      <div class="tech-header">SYSTEM_STATUS</div>
+      <div class="tech-container-content">
+        <!-- React mount point -->
+        <div id="systems-dashboard"></div>
       </div>
     </div>
   </div>
   
-  <!-- Status Summary -->
-  <div class="tech-container">
-    <div class="tech-header">LATEST_ACTIVITY</div>
-    <div class="waveform"></div>
-    
-    <div class="mt-4">
-      <div class="data-readout">
-        <div class="data-readout-label">SYSTEMS:</div>
-        <div class="progress-bar flex-1">
-          <div class="progress-bar-fill" data-width="80" style="width: 0%"></div>
-        </div>
-        <div class="ml-2 text-xs">{{ project_count }}</div>
-      </div>
-      <div class="data-readout">
-        <div class="data-readout-label">DATA_LOGS:</div>
-        <div class="progress-bar flex-1">
-          <div class="progress-bar-fill" data-width="65" style="width: 0%"></div>
-        </div>
-        <div class="ml-2 text-xs">{{ blog_count }}</div>
-      </div>
-      <div class="data-readout">
-        <div class="data-readout-label">COMM_SIGNALS:</div>
-        <div class="progress-bar flex-1">
-          <div class="progress-bar-fill" data-width="50" style="width: 0%"></div>
-        </div>
-        <div class="ml-2 text-xs">ACTIVE</div>
-      </div>
-    </div>
-    
-    <div class="mt-6">
-      <div class="text-xs mb-2">LAST_UPDATE:</div>
-      <div class="text-sm font-bold text-accent-coral">{% now "Y-m-d H:i:s" %}</div>
-    </div>
-  </div>
-  
-  <!-- Featured System -->
-  <div class="tech-container md:col-span-2">
-    <div class="tech-header">FEATURED_SYSTEM</div>
-    <div class="system-card mt-4">
-      <div class="corner-decoration top-left"></div>
-      <div class="corner-decoration top-right"></div>
-      <div class="corner-decoration bottom-left"></div>
-      <div class="corner-decoration bottom-right"></div>
-      
-      <h3 class="text-lg mb-2 text-accent-coral">{{ featured_project.title }}</h3>
-      <p class="text-sm opacity-80 mb-4">{{ featured_project.description|truncatewords:40 }}</p>
-      
-      <div class="grid grid-cols-3 gap-2 mb-4">
-        {% for tech in featured_project.technologies %}
-        <div class="text-xs">
-          <div class="flex items-center">
-            <div class="w-2 h-2 bg-accent-coral rounded-full mr-1"></div>
-            {{ tech.name }}
+  <!-- Recent DataLogs Panel -->
+  <div class="lg:col-span-1">
+    <div class="tech-container">
+      <div class="tech-header">RECENT_DATALOGS</div>
+      <div class="tech-container-content">
+        {% for post in recent_posts %}
+        <div class="datalog-entry mb-4">
+          <div class="datalog-entry-header">
+            <div class="datalog-title">{{ post.title }}</div>
+            <div class="datalog-date">{{ post.created_at|date:"M d, Y" }}</div>
+          </div>
+          <div class="datalog-content">
+            <p class="text-sm opacity-80 mb-2">{{ post.excerpt|truncatechars:100 }}</p>
+            <a href="{% url 'datalogs:datalog_detail' post.slug %}" class="button-tech text-xs">ACCESS_LOG</a>
           </div>
         </div>
         {% endfor %}
       </div>
-      
-      <a href="{% url 'systems:system_detail' featured_project.slug %}" class="button-tech text-sm">VIEW_SYSTEM_DETAILS</a>
     </div>
-  </div>
-  
-  <!-- Recent Logs -->
-  <div class="tech-container">
-    <div class="tech-header">RECENT_DATA_LOGS</div>
-    
-    {% for post in recent_posts %}
-    <div class="mb-3 pb-3 {% if not forloop.last %}border-b border-accent-teal border-opacity-30{% endif %}">
-      <div class="text-sm text-accent-coral">{{ post.title|truncatechars:30 }}</div>
-      <div class="text-xs opacity-70">{{ post.created_at }}</div>
-      <a href="{% url 'datalogs:datalog_detail' post.slug %}" class="text-xs hover:text-accent-coral">ACCESS_LOG >></a>
-    </div>
-    {% endfor %}
   </div>
 </div>
+{% endblock %}
 
-<!-- Technical Summary -->
-<div class="tech-container mt-6">
-  <div class="tech-header">DEVELOPER_OVERVIEW</div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div class="md:col-span-2">
-      <p class="mb-4">Specialized Python developer with expertise in Django web frameworks and data-driven applications. System capabilities include backend architecture, API development, and database optimization.</p>
-      
-      <div class="mt-6">
-        <a href="{% url 'core:about' %}" class="button-tech mr-4">VIEW_DEVELOPER_PROFILE</a>
-        <a href="{% url 'core:contact' %}" class="button-tech">ESTABLISH_COMM_LINK</a>
-      </div>
-    </div>
-    
-    <div>
-      <div class="flex justify-around items-end h-full">
-        <div class="flex flex-col items-center">
-          <div class="text-xs mb-2">PYTHON</div>
-          <div class="skill-bar">
-            <div class="skill-level" style="height: 90%;">
-              <div class="skill-marker"></div>
-            </div>
-          </div>
-        </div>
-        <div class="flex flex-col items-center">
-          <div class="text-xs mb-2">DJANGO</div>
-          <div class="skill-bar">
-            <div class="skill-level" style="height: 85%;">
-              <div class="skill-marker"></div>
-            </div>
-          </div>
-        </div>
-        <div class="flex flex-col items-center">
-          <div class="text-xs mb-2">DATA</div>
-          <div class="skill-bar">
-            <div class="skill-level" style="height: 75%;">
-              <div class="skill-marker"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+{% block extra_js %}
+<script>
+  // Pass Django data to React (optional)
+  window.systemsData = {
+    totalSystems: {{ project_count|default:0 }},
+    activeProjects: {{ active_project_count|default:0 }},
+    completedProjects: {{ completed_project_count|default:0 }},
+    // Add any other data from your Django views
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const systemsDashboardContainer = document.getElementById('systems-dashboard');
+    if (systemsDashboardContainer) {
+      ReactDOM.render(React.createElement(SystemsDashboard, { data: window.systemsData }), systemsDashboardContainer);
+    }
+  });
+</script>
 {% endblock %}
