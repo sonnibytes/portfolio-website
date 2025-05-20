@@ -1,11 +1,147 @@
-{% extends "base.html" %}
-{% load static %}
+<!-- 6. About Page (developer_profile.html) -->
+{% extends 'base.html' %}
 
-{% block title %}About | Sonni Gunnels{% endblock %}
+{% block title %}Developer Profile | Tech Command Center{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Welcome to my Portfolio</h1>
-    <p>This is the homepage.</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <!-- Developer Stats -->
+  <div class="tech-container">
+    <div class="tech-header">DEVELOPER_STATS</div>
+    
+    <div class="flex justify-center py-6">
+      <div class="circular-progress">
+        <div class="circular-progress-inner">
+          <div class="text-xl font-bold">DEV</div>
+          <div class="text-xs">PROFILE</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-6">
+      <div class="data-readout">
+        <div class="data-readout-label">NAME:</div>
+        <div>{{ profile.name }}</div>
+      </div>
+      
+      <div class="data-readout">
+        <div class="data-readout-label">ROLE:</div>
+        <div>{{ profile.title }}</div>
+      </div>
+      
+      <div class="data-readout">
+        <div class="data-readout-label">LOCATION:</div>
+        <div>{{ profile.location }}</div>
+      </div>
+      
+      <div class="data-readout">
+        <div class="data-readout-label">EXPERIENCE:</div>
+        <div>{{ profile.years_experience }} YRS</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Developer Bio -->
+  <div class="tech-container md:col-span-2">
+    <div class="tech-header">DEVELOPER_PROFILE</div>
+    
+    <div class="text-sm mb-6">
+      {{ profile.bio|linebreaks }}
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <div class="text-sm font-bold mb-2">TECHNICAL_SPECIALIZATION</div>
+        <ul class="text-sm">
+          {% for specialty in profile.specialties.all %}
+          <li class="mb-1 flex items-start">
+            <span class="text-accent-coral mr-2">></span>
+            {{ specialty.name }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      
+      <div>
+        <div class="text-sm font-bold mb-2">DEVELOPMENT_FOCUS</div>
+        <ul class="text-sm">
+          {% for focus in profile.focus_areas.all %}
+          <li class="mb-1 flex items-start">
+            <span class="text-accent-coral mr-2">></span>
+            {{ focus.name }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Skill Visualization -->
+  <div class="tech-container md:col-span-3">
+    <div class="tech-header">SKILL_METRICS</div>
+    
+    <div class="flex justify-around items-end py-8">
+      {% for skill in profile.skills.all %}
+      <div class="flex flex-col items-center">
+        <div class="text-xs mb-2">{{ skill.name|upper }}</div>
+        <div class="skill-bar">
+          <div class="skill-level" style="height: {{ skill.proficiency }}%;">
+            <div class="skill-marker"></div>
+          </div>
+        </div>
+        <div class="text-xs mt-2">{{ skill.proficiency }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Education & Experience -->
+  <div class="tech-container md:col-span-3">
+    <div class="tech-header">CAREER_TIMELINE</div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+      <div>
+        <div class="text-sm font-bold mb-4">EDUCATION_DATA</div>
+        
+        {% for education in profile.education.all %}
+        <div class="mb-4 pb-4 {% if not forloop.last %}border-b border-accent-teal border-opacity-30{% endif %}">
+          <div class="text-sm text-accent-coral">{{ education.degree }}</div>
+          <div class="text-sm">{{ education.institution }}</div>
+          <div class="text-xs opacity-70">{{ education.year_start }} - {{ education.year_end }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      
+      <div>
+        <div class="text-sm font-bold mb-4">EXPERIENCE_DATA</div>
+        
+        {% for job in profile.experience.all %}
+        <div class="mb-4 pb-4 {% if not forloop.last %}border-b border-accent-teal border-opacity-30{% endif %}">
+          <div class="text-sm text-accent-coral">{{ job.position }}</div>
+          <div class="text-sm">{{ job.company }}</div>
+          <div class="text-xs opacity-70">{{ job.year_start }} - {% if job.current %}PRESENT{% else %}{{ job.year_end }}{% endif %}</div>
+          <div class="text-xs mt-2">{{ job.description|truncatewords:30 }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Section -->
+<div class="tech-container mt-6">
+  <div class="tech-header">CONTACT_PROTOCOLS</div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+    {% for contact in profile.contact_methods.all %}
+    <a href="{{ contact.url }}" target="_blank" class="border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 p-4 flex items-center">
+      <div class="w-3 h-3 bg-accent-coral rounded-full mr-3 pulse"></div>
+      <div>
+        <div class="text-sm">{{ contact.name|upper }}</div>
+        <div class="text-xs opacity-70">{{ contact.handle }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

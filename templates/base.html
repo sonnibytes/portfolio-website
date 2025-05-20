@@ -1,108 +1,406 @@
-{% load static %}
+<!-- base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Tech Command Center{% endblock %}</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-dark: #051e3e;
+      --primary: #0b3954;
+      --accent-teal: #00c2cb;
+      --accent-coral: #ff7b73;
+      --accent-yellow: #ffb563;
+      --grid-color: rgba(0, 194, 203, 0.15);
+    }
     
-    <!-- SEO Meta Tags -->
-    <title>{% block title %}Sonni Gunnels | ML/AI Developer Portfolio{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Portfolio of Sonni Gunnels, a developer focused on machine learning and AI applications.{% endblock %}">
+    body {
+      background-color: var(--primary-dark);
+      color: var(--accent-teal);
+      font-family: 'Courier New', monospace;
+      background-image: 
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 20px 20px;
+      position: relative;
+    }
     
-    <!-- Open Graph / Social Media Meta Tags -->
-    <meta property="og:title" content="{% block og_title %}Sonni Gunnels | ML/AI Developer Portfolio{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}Portfolio of Sonni Gunnels, a developer focused on machine learning and AI applications.{% endblock %}">
-    <meta property="og:image" content="{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:type" content="website">
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, transparent 0%, var(--primary-dark) 70%);
+      z-index: -1;
+    }
     
-    <!-- Favicon -->
-    <link rel="icon" href="{% static 'images/favicon.ico' %}">
-    <link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
+    .tech-container {
+      border: 1px solid var(--accent-teal);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(0, 194, 203, 0.3);
+      position: relative;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
     
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    .tech-container::before {
+      content: "";
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border: 1px solid var(--accent-teal);
+      border-radius: 4px;
+      opacity: 0.3;
+      z-index: -1;
+    }
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=JetBrains+Mono:wght@100;200;300;400;500;700&display=swap" rel="stylesheet">
+    .tech-header {
+      position: relative;
+      padding-left: 20px;
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    .tech-header::before {
+      content: ">";
+      position: absolute;
+      left: 0;
+      color: var(--accent-coral);
+    }
     
-    <!-- Base CSS -->
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/header.css' %}">
+    .circular-progress {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent-coral) 0%, var(--accent-teal) 30%, transparent 30%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     
-    <!-- Page-specific CSS -->
-     
-    {% block extra_css %}{% endblock %}
-</head>
+    .circular-progress::before {
+      content: "";
+      position: absolute;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background-color: var(--primary-dark);
+    }
+    
+    .circular-progress-inner {
+      position: relative;
+      z-index: 1;
+      font-size: 1.5rem;
+      color: var(--accent-teal);
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background-color: rgba(0, 194, 203, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--accent-teal);
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: width 0.5s ease;
+    }
+    
+    .data-readout {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .data-readout-label {
+      font-size: 0.8rem;
+      color: var(--accent-teal);
+      width: 120px;
+    }
+    
+    .navigation {
+      border-bottom: 1px solid var(--accent-teal);
+      margin-bottom: 30px;
+      padding: 10px 0;
+    }
+    
+    .nav-link {
+      color: var(--accent-teal);
+      margin-right: 20px;
+      position: relative;
+      padding-bottom: 5px;
+    }
+    
+    .nav-link:hover, .nav-link.active {
+      color: var(--accent-coral);
+    }
+    
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background-color: var(--accent-coral);
+      transition: width 0.3s ease;
+    }
+    
+    .nav-link:hover::after, .nav-link.active::after {
+      width: 100%;
+    }
+    
+    .system-card {
+      border: 1px solid var(--accent-teal);
+      border-radius: 2px;
+      padding: 15px;
+      margin-bottom: 20px;
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .system-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 194, 203, 0.4);
+    }
+    
+    .system-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background-color: var(--accent-coral);
+    }
+    
+    .corner-decoration {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-color: var(--accent-teal);
+      opacity: 0.7;
+    }
+    
+    .corner-decoration.top-left {
+      top: -1px;
+      left: -1px;
+      border-top: 1px solid;
+      border-left: 1px solid;
+    }
+    
+    .corner-decoration.top-right {
+      top: -1px;
+      right: -1px;
+      border-top: 1px solid;
+      border-right: 1px solid;
+    }
+    
+    .corner-decoration.bottom-left {
+      bottom: -1px;
+      left: -1px;
+      border-bottom: 1px solid;
+      border-left: 1px solid;
+    }
+    
+    .corner-decoration.bottom-right {
+      bottom: -1px;
+      right: -1px;
+      border-bottom: 1px solid;
+      border-right: 1px solid;
+    }
 
-<body class="{% block body_class %}grid-pattern{% endblock %}">
-    <!-- Header -->
-   {% include "includes/header.html" %}
+    .datalog-entry {
+      border: 1px solid var(--accent-teal);
+      border-radius: 2px;
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+    }
     
-    <!-- Main Content -->
-    <main class="site-main">
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    {% block content %}{% endblock %}
-                </div>
-            </div>
+    .datalog-entry-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid rgba(0, 194, 203, 0.3);
+    }
+    
+    .datalog-title {
+      font-size: 1.2rem;
+      color: var(--accent-coral);
+    }
+    
+    .datalog-date {
+      font-size: 0.8rem;
+      color: var(--accent-teal);
+      opacity: 0.8;
+    }
+    
+    .waveform {
+      height: 30px;
+      background-image: linear-gradient(
+        0deg,
+        transparent 45%,
+        var(--accent-teal) 45%, var(--accent-teal) 55%,
+        transparent 55%
+      );
+      background-size: 3px 100%;
+      opacity: 0.5;
+      margin: 10px 0;
+    }
+    
+    .button-tech {
+      background-color: transparent;
+      border: 1px solid var(--accent-teal);
+      color: var(--accent-teal);
+      padding: 8px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.3s ease;
+    }
+    
+    .button-tech:hover {
+      background-color: rgba(0, 194, 203, 0.1);
+    }
+    
+    .button-tech::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 2px;
+      background-color: var(--accent-coral);
+      animation: button-scan 2s linear infinite;
+    }
+    
+    @keyframes button-scan {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    .pulse {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent-coral);
+      animation: pulse 2s ease infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      70% { transform: scale(2); opacity: 0; }
+      100% { transform: scale(1); opacity: 0; }
+    }
+
+    .skill-bar {
+      height: 150px;
+      width: 6px;
+      background-color: rgba(0, 194, 203, 0.2);
+      border-radius: 3px;
+      position: relative;
+      margin: 0 15px;
+    }
+    
+    .skill-level {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background-color: var(--accent-coral);
+      border-radius: 3px 3px 0 0;
+    }
+    
+    .skill-marker {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background-color: white;
+      border-radius: 50%;
+      left: -3px;
+      transform: translateY(50%);
+    }
+  </style>
+</head>
+<body>
+  <div class="container mx-auto px-4 py-8">
+    <header class="mb-8">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold">TECH COMMAND CENTER <span class="text-xs opacity-70">v1.0.3</span></h1>
+          <div class="text-sm opacity-70">// Developer Operations Interface</div>
         </div>
+        <div class="flex items-center">
+          <div class="mr-4 flex items-center">
+            <div class="w-3 h-3 bg-green-400 rounded-full mr-2 pulse"></div>
+            <span class="text-xs">SYSTEM ONLINE</span>
+          </div>
+          <div class="text-xs opacity-70">{% now "Y-m-d H:i:s" %}</div>
+        </div>
+      </div>
+      <nav class="navigation mt-6">
+        <a href="{% url 'home' %}" class="nav-link {% if request.path == '/' %}active{% endif %}">COMMAND_CENTER</a>
+        <a href="{% url 'systems' %}" class="nav-link {% if 'projects' in request.path %}active{% endif %}">SYSTEMS</a>
+        <a href="{% url 'datalogs' %}" class="nav-link {% if 'blog' in request.path %}active{% endif %}">DATA_LOGS</a>
+        <a href="{% url 'about' %}" class="nav-link {% if 'about' in request.path %}active{% endif %}">DEVELOPER_PROFILE</a>
+        <a href="{% url 'contact' %}" class="nav-link {% if 'contact' in request.path %}active{% endif %}">COMM_TERMINAL</a>
+      </nav>
+    </header>
+    
+    <main>
+      {% block content %}{% endblock %}
     </main>
     
-    <!-- Footer -->
-    <footer class="site-footer mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="footer-info">
-                        <div class="footer-logo">
-                            <span class="logo-text">ML<span class="logo-highlight">DEVLOG</span></span>
-                        </div>
-                        <p class="footer-tagline">Transforming data into intelligent solutions</p>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 text-md-end">
-                    <div class="footer-social">
-                        <a href="https://github.com/ksg-dev" target="_blank" class="social-link" aria-label="GitHub">
-                            <i class="fab fa-github"></i>
-                        </a>
-                        <a href="https://linkedin.com/in/sonni-gunnels" target="_blank" class="social-link" aria-label="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                        <a href="https://twitter.com/yourusername" target="_blank" class="social-link" aria-label="Twitter">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <p class="copyright">&copy; {% now "Y" %} Sonni Gunnels. All rights reserved.</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <div class="footer-links">
-                        <a href="{% url 'core:privacy' %}">Privacy Policy</a>
-                        <a href="{% url 'core:terms' %}">Terms of Service</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <footer class="mt-12 pt-6 border-t border-accent-teal text-xs text-center opacity-70">
+      <div class="mb-2">// TECH COMMAND CENTER TERMINAL //</div>
+      <div>SYSTEM ID: DEV-PORTFOLIO-v1.0.3 | &copy; {% now "Y" %}</div>
     </footer>
-    
-    <!-- Bootstrap JavaScript Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Base JavaScript -->
-    <script src="{% static 'js/base.js' %}"></script>
-    <script src="{% static 'js/header.js' %}"></script>
+  </div>
 
-    <!-- Page-specific JavaScript -->
-    {% block extra_js %}{% endblock %}
+  <script>
+    // Add futuristic animations and interactions
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create random pulse dots throughout the interface
+      for (let i = 0; i < 5; i++) {
+        createPulseDot();
+      }
+      
+      // Initialize progress bars with animation
+      const progressBars = document.querySelectorAll('.progress-bar-fill');
+      progressBars.forEach(bar => {
+        const targetWidth = bar.getAttribute('data-width');
+        setTimeout(() => {
+          bar.style.width = targetWidth + '%';
+        }, 300);
+      });
+    });
+    
+    function createPulseDot() {
+      const pulse = document.createElement('div');
+      pulse.classList.add('pulse');
+      pulse.style.top = Math.random() * 100 + '%';
+      pulse.style.left = Math.random() * 100 + '%';
+      document.body.appendChild(pulse);
+      
+      // Remove and recreate the pulse dot after animation
+      setTimeout(() => {
+        pulse.remove();
+        createPulseDot();
+      }, 4000);
+    }
+  </script>
 </body>
 </html>

@@ -1,0 +1,71 @@
+<!-- 4. Blog List Page (datalogs.html) -->
+{% extends 'base.html' %}
+
+{% block title %}Data Logs | Tech Command Center{% endblock %}
+
+{% block content %}
+<div class="tech-container">
+  <div class="tech-header">DATA_LOGS</div>
+  <div class="text-sm mb-6">
+    <span class="text-accent-coral">{{ posts.count }}</span> logs available in database
+  </div>
+  
+  <div class="flex flex-wrap gap-4 mb-6">
+    <a href="{% url 'datalogs' %}" class="text-xs px-3 py-1 border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 {% if not selected_tag %}bg-accent-teal bg-opacity-10{% endif %}">ALL_LOGS</a>
+    
+    {% for tag in tags %}
+    <a href="{% url 'datalogs_by_tag' tag.slug %}" class="text-xs px-3 py-1 border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 {% if selected_tag == tag %}bg-accent-teal bg-opacity-10{% endif %}">{{ tag.name|upper }}</a>
+    {% endfor %}
+  </div>
+  
+  <div class="grid grid-cols-1 gap-6">
+    {% for post in posts %}
+    <div class="datalog-entry">
+      <div class="datalog-entry-header">
+        <div class="datalog-title">{{ post.title }}</div>
+        <div class="datalog-date">{{ post.created_at|date:"Y-m-d H:i" }}</div>
+      </div>
+      
+      <div class="text-sm opacity-80 mb-4">{{ post.excerpt|truncatewords:40 }}</div>
+      
+      <div class="flex justify-between items-center">
+        <a href="{% url 'post_detail' post.slug %}" class="button-tech text-xs">ACCESS_FULL_LOG</a>
+        
+        <div class="flex gap-2">
+          {% for tag in post.tags.all %}
+          <div class="text-xs px-2 py-1 bg-accent-teal bg-opacity-10 border border-accent-teal">{{ tag.name|upper }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="flex justify-between items-center mt-6 text-xs">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="button-tech">
+      << PREV_PAGE
+    </a>
+    {% else %}
+    <div class="button-tech opacity-50" disabled>
+      << PREV_PAGE
+    </div>
+    {% endif %}
+    
+    <div>PAGE {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</div>
+    
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="button-tech">
+      NEXT_PAGE >>
+    </a>
+    {% else %}
+    <div class="button-tech opacity-50" disabled>
+      NEXT_PAGE >>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

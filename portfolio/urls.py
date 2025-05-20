@@ -24,10 +24,10 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Core app URLs (homepage, about, contact)
     path("", include("core.urls")),
-    # Projects app URLs
-    path("projects/", include("projects.urls")),
-    # Blog app URLs
-    path("blog/", include("blog.urls", namespace="blog")),
+    # Systems (Projects) app URLs
+    path("systems/", include("systems.urls")),
+    # Datalogs (Blog) app URLs
+    path("datalogs/", include("datalogs.urls", namespace="datalogs")),
     path("markdownx/", include("markdownx.urls")),
 ]
 

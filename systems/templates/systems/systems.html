@@ -1,0 +1,59 @@
+<!-- 2. Projects Page (systems.html) -->
+{% extends 'base.html' %}
+
+{% block title %}Systems | Tech Command Center{% endblock %}
+
+{% block content %}
+<div class="tech-container">
+  <div class="tech-header">SYSTEMS_OVERVIEW</div>
+  <div class="text-sm mb-6">Displaying <span class="text-accent-coral">{{ projects.count }}</span> operational systems</div>
+  
+  <div class="flex flex-wrap gap-4 mb-6">
+    <a href="{% url 'systems' %}" class="text-xs px-3 py-1 border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 {% if not selected_category %}bg-accent-teal bg-opacity-10{% endif %}">ALL_SYSTEMS</a>
+    
+    {% for category in categories %}
+    <a href="{% url 'systems_by_category' category.slug %}" class="text-xs px-3 py-1 border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 {% if selected_category == category %}bg-accent-teal bg-opacity-10{% endif %}">{{ category.name|upper }}</a>
+    {% endfor %}
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for project in projects %}
+    <div class="system-card">
+      <div class="corner-decoration top-left"></div>
+      <div class="corner-decoration top-right"></div>
+      <div class="corner-decoration bottom-left"></div>
+      <div class="corner-decoration bottom-right"></div>
+      
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="text-lg text-accent-coral">{{ project.title }}</h3>
+        <div class="circular-progress" style="width: 40px; height: 40px;">
+          <div class="circular-progress-inner">
+            <div class="text-xs">
+              {{ project.completion_percentage }}%
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <p class="text-sm opacity-80 mb-4">{{ project.description|truncatewords:30 }}</p>
+      
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        {% for tech in project.technologies.all %}
+        <div class="text-xs">
+          <div class="flex items-center">
+            <div class="w-2 h-2 bg-accent-teal rounded-full mr-1"></div>
+            {{ tech.name }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      
+      <div class="flex justify-between items-center">
+        <a href="{% url 'project_detail' project.slug %}" class="button-tech text-xs">VIEW_SYSTEM</a>
+        <div class="text-xs opacity-70">ID: SYS-{{ project.id }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 # blog/context_processors.py
 
-from blog.models import Post, Category
+from datalogs.models import Post, Category
 
 
 def blog_context(request):

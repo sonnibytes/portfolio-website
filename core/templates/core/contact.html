@@ -1,11 +1,92 @@
-{% extends "base.html" %}
-{% load static %}
+<!-- 7. Contact Page (comm_terminal.html) -->
+{% extends 'base.html' %}
 
-{% block title %}Contact | Sonni Gunnels{% endblock %}
+{% block title %}Communication Terminal | Tech Command Center{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Welcome to my Portfolio</h1>
-    <p>This is the homepage.</p>
+<div class="tech-container">
+  <div class="tech-header">COMMUNICATION_TERMINAL</div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+      <div class="text-sm mb-6">
+        Establish a direct communication link with the developer. All transmission protocols are secure.
+      </div>
+      
+      <form method="post" action="{% url 'contact' %}" class="mt-4">
+        {% csrf_token %}
+        
+        <div class="mb-4">
+          <label for="name" class="block text-xs mb-1">IDENTIFIER:</label>
+          <input type="text" id="name" name="name" required class="w-full bg-transparent border border-accent-teal px-3 py-2 focus:outline-none focus:border-accent-coral">
+        </div>
+        
+        <div class="mb-4">
+          <label for="email" class="block text-xs mb-1">COMM_CHANNEL:</label>
+          <input type="email" id="email" name="email" required class="w-full bg-transparent border border-accent-teal px-3 py-2 focus:outline-none focus:border-accent-coral">
+        </div>
+        
+        <div class="mb-4">
+          <label for="subject" class="block text-xs mb-1">TRANSMISSION_SUBJECT:</label>
+          <input type="text" id="subject" name="subject" required class="w-full bg-transparent border border-accent-teal px-3 py-2 focus:outline-none focus:border-accent-coral">
+        </div>
+        
+        <div class="mb-4">
+          <label for="message" class="block text-xs mb-1">MESSAGE_DATA:</label>
+          <textarea id="message" name="message" rows="6" required class="w-full bg-transparent border border-accent-teal px-3 py-2 focus:outline-none focus:border-accent-coral"></textarea>
+        </div>
+        
+        <button type="submit" class="button-tech">TRANSMIT_MESSAGE</button>
+      </form>
+    </div>
+    
+    <div>
+      <div class="tech-container h-full flex flex-col">
+        <div class="text-sm font-bold mb-4">TRANSMISSION_STATUS</div>
+        
+        <div class="flex-1 flex flex-col justify-center items-center">
+          <div class="circular-progress" style="width: 120px; height: 120px;">
+            <div class="circular-progress-inner">
+              <div class="text-xs">COMM</div>
+              <div class="text-xl font-bold">READY</div>
+            </div>
+          </div>
+          
+          <div class="text-xs mt-6 opacity-70 text-center">
+            SECURE CHANNEL ESTABLISHED<br>
+            AWAITING TRANSMISSION
+          </div>
+        </div>
+        
+        <div class="mt-6">
+          <div class="text-xs font-bold mb-2">ALTERNATIVE_CHANNELS:</div>
+          
+          <div class="grid grid-cols-2 gap-2">
+            {% for contact in profile.contact_methods.all %}
+            <a href="{{ contact.url }}" target="_blank" class="border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 p-2 text-center text-xs">
+              {{ contact.name|upper }}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Response Messages -->
+{% if messages %}
+<div class="tech-container mt-6">
+  <div class="tech-header">TRANSMISSION_REPORT</div>
+  
+  {% for message in messages %}
+  <div class="p-4 {% if message.tags == 'success' %}border-accent-teal{% else %}border-accent-coral{% endif %} border bg-opacity-10 text-sm">
+    <div class="flex items-center">
+      <div class="w-3 h-3 {% if message.tags == 'success' %}bg-accent-teal{% else %}bg-accent-coral{% endif %} rounded-full mr-3 pulse"></div>
+      {{ message }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 {% endblock %}
