@@ -1,6 +1,6 @@
 # blog/context_processors.py
 
-from datalogs.models import Post, Category
+from datalogs.models import DataLog, Category
 
 
 def blog_context(request):
@@ -9,5 +9,5 @@ def blog_context(request):
     """
     return {
         "categories": Category.objects.all(),
-        "total_logs_count": Post.objects.filter(status="published").count(),
+        "total_logs_count": DataLog.objects.filter(status="published").count(),
     }
