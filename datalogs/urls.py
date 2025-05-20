@@ -36,7 +36,7 @@ urlpatterns = [
     path("admin/category/<slug:slug>/delete/", views.CategoryDeleteView.as_view(), name="category_delete"),
 ]
 
-app_name = 'blog'
+app_name = 'datalogs'
 
     # path("post/create/", views.PostCreateView.as_view(), name="post_create"),
     # path("post/<slug:slug>/edit/", views.PostUpdateView.as_view(), name="post_edit"),
