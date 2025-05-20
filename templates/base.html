@@ -1,11 +1,21 @@
-<!-- base.html -->
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Tech Command Center{% endblock %}</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  
+  <!-- Custom CSS -->
   <style>
     :root {
       --primary-dark: #051e3e;
@@ -19,7 +29,7 @@
     body {
       background-color: var(--primary-dark);
       color: var(--accent-teal);
-      font-family: 'Courier New', monospace;
+      font-family: 'Share Tech Mono', monospace;
       background-image: 
         linear-gradient(var(--grid-color) 1px, transparent 1px),
         linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
@@ -333,7 +343,52 @@
       left: -3px;
       transform: translateY(50%);
     }
+    
+    /* Markdown content styling */
+    .blog-content h2 {
+      font-size: 1.5rem;
+      color: var(--accent-coral);
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .blog-content h3 {
+      font-size: 1.2rem;
+      color: var(--accent-teal);
+      margin-top: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+    
+    .blog-content p {
+      margin-bottom: 1rem;
+    }
+    
+    .blog-content ul, .blog-content ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .blog-content li {
+      margin-bottom: 0.5rem;
+    }
+    
+    .blog-content code {
+      font-family: 'Share Tech Mono', monospace;
+      background-color: rgba(0, 194, 203, 0.1);
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+    
+    .blog-content pre {
+      background-color: rgba(0, 194, 203, 0.1);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 2px;
+      overflow-x: auto;
+    }
   </style>
+  
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
   <div class="container mx-auto px-4 py-8">
@@ -352,11 +407,11 @@
         </div>
       </div>
       <nav class="navigation mt-6">
-        <a href="{% url 'home' %}" class="nav-link {% if request.path == '/' %}active{% endif %}">COMMAND_CENTER</a>
-        <a href="{% url 'systems' %}" class="nav-link {% if 'projects' in request.path %}active{% endif %}">SYSTEMS</a>
-        <a href="{% url 'datalogs' %}" class="nav-link {% if 'blog' in request.path %}active{% endif %}">DATA_LOGS</a>
-        <a href="{% url 'about' %}" class="nav-link {% if 'about' in request.path %}active{% endif %}">DEVELOPER_PROFILE</a>
-        <a href="{% url 'contact' %}" class="nav-link {% if 'contact' in request.path %}active{% endif %}">COMM_TERMINAL</a>
+        <a href="{% url 'core:home' %}" class="nav-link {% if request.path == '/' %}active{% endif %}">COMMAND_CENTER</a>
+        <a href="{% url 'systems:systems' %}" class="nav-link {% if 'systems' in request.path %}active{% endif %}">SYSTEMS</a>
+        <a href="{% url 'datalogs:datalogs' %}" class="nav-link {% if 'datalogs' in request.path %}active{% endif %}">DATA_LOGS</a>
+        <a href="{% url 'core:about' %}" class="nav-link {% if 'developer-profile' in request.path %}active{% endif %}">DEVELOPER_PROFILE</a>
+        <a href="{% url 'core:contact' %}" class="nav-link {% if 'comm-terminal' in request.path %}active{% endif %}">COMM_TERMINAL</a>
       </nav>
     </header>
     
@@ -370,6 +425,7 @@
     </footer>
   </div>
 
+  <!-- Core JavaScript -->
   <script>
     // Add futuristic animations and interactions
     document.addEventListener('DOMContentLoaded', function() {
@@ -402,5 +458,7 @@
       }, 4000);
     }
   </script>
+  
+  {% block extra_js %}{% endblock %}
 </body>
 </html>

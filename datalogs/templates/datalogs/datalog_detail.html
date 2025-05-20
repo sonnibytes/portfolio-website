@@ -1,4 +1,4 @@
-<!-- 5. Blog Detail Page (datalog_detail.html) -->
+<!-- datalogs/templates/datalogs/datalog_detail.html -->
 {% extends 'base.html' %}
 
 {% block title %}{{ post.title }} | Data Logs{% endblock %}
@@ -10,7 +10,7 @@
   <div class="mb-6">
     <h1 class="text-xl text-accent-coral mb-2">{{ post.title }}</h1>
     <div class="flex justify-between items-center text-xs opacity-70">
-      <div>TIMESTAMP: {{ post.created_at|date:"Y-m-d H:i:s" }}</div>
+      <div>TIMESTAMP: {{ post.created_at }}</div>
       <div>LOG_ID: BLG-{{ post.id }}</div>
     </div>
   </div>
@@ -27,26 +27,26 @@
   
   <div class="flex justify-between items-center mt-6">
     <div class="flex gap-2">
-      {% for tag in post.tags.all %}
+      {% for tag in post.tags %}
       <div class="text-xs px-2 py-1 bg-accent-teal bg-opacity-10 border border-accent-teal">{{ tag.name|upper }}</div>
       {% endfor %}
     </div>
     
-    <a href="{% url 'datalogs' %}" class="button-tech text-xs">RETURN_TO_DATALOGS</a>
+    <a href="{% url 'datalogs:datalogs' %}" class="button-tech text-xs">RETURN_TO_DATALOGS</a>
   </div>
 </div>
 
 <!-- Related Logs -->
-{% if related_posts %}
+{% if post.related_posts %}
 <div class="tech-container mt-6">
   <div class="tech-header">RELATED_DATA_LOGS</div>
   
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-    {% for related in related_posts %}
+    {% for related in post.related_posts %}
     <div class="border border-accent-teal border-opacity-30 p-4">
       <div class="text-sm text-accent-coral mb-1">{{ related.title }}</div>
-      <div class="text-xs opacity-70 mb-2">{{ related.created_at|date:"Y-m-d" }}</div>
-      <a href="{% url 'post_detail' related.slug %}" class="text-xs hover:text-accent-coral">ACCESS_LOG >></a>
+      <div class="text-xs opacity-70 mb-2">{{ related.created_at }}</div>
+      <a href="{% url 'datalogs:datalog_detail' related.slug %}" class="text-xs hover:text-accent-coral">ACCESS_LOG >></a>
     </div>
     {% endfor %}
   </div>

@@ -1,4 +1,4 @@
-<!-- 2. Projects Page (systems.html) -->
+<!-- systems/templates/systems/systems.html -->
 {% extends 'base.html' %}
 
 {% block title %}Systems | Tech Command Center{% endblock %}
@@ -6,13 +6,13 @@
 {% block content %}
 <div class="tech-container">
   <div class="tech-header">SYSTEMS_OVERVIEW</div>
-  <div class="text-sm mb-6">Displaying <span class="text-accent-coral">{{ projects.count }}</span> operational systems</div>
+  <div class="text-sm mb-6">Displaying <span class="text-accent-coral">{{ projects|length }}</span> operational systems</div>
   
   <div class="flex flex-wrap gap-4 mb-6">
-    <a href="{% url 'systems' %}" class="text-xs px-3 py-1 border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 {% if not selected_category %}bg-accent-teal bg-opacity-10{% endif %}">ALL_SYSTEMS</a>
+    <a href="{% url 'systems:systems' %}" class="text-xs px-3 py-1 border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 {% if not selected_category %}bg-accent-teal bg-opacity-10{% endif %}">ALL_SYSTEMS</a>
     
     {% for category in categories %}
-    <a href="{% url 'systems_by_category' category.slug %}" class="text-xs px-3 py-1 border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 {% if selected_category == category %}bg-accent-teal bg-opacity-10{% endif %}">{{ category.name|upper }}</a>
+    <a href="{% url 'systems:systems_by_category' category.slug %}" class="text-xs px-3 py-1 border border-accent-teal hover:bg-accent-teal hover:bg-opacity-10 {% if selected_category == category %}bg-accent-teal bg-opacity-10{% endif %}">{{ category.name|upper }}</a>
     {% endfor %}
   </div>
   
@@ -38,7 +38,7 @@
       <p class="text-sm opacity-80 mb-4">{{ project.description|truncatewords:30 }}</p>
       
       <div class="grid grid-cols-3 gap-2 mb-4">
-        {% for tech in project.technologies.all %}
+        {% for tech in project.technologies %}
         <div class="text-xs">
           <div class="flex items-center">
             <div class="w-2 h-2 bg-accent-teal rounded-full mr-1"></div>
@@ -49,7 +49,7 @@
       </div>
       
       <div class="flex justify-between items-center">
-        <a href="{% url 'project_detail' project.slug %}" class="button-tech text-xs">VIEW_SYSTEM</a>
+        <a href="{% url 'systems:system_detail' project.slug %}" class="button-tech text-xs">VIEW_SYSTEM</a>
         <div class="text-xs opacity-70">ID: SYS-{{ project.id }}</div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-<!-- 3. Project Detail Page (system_detail.html) -->
+<!-- systems/templates/systems/system_detail.html -->
 {% extends 'base.html' %}
 
 {% block title %}{{ project.title }} | Systems{% endblock %}
@@ -28,7 +28,7 @@
       
       <div class="mb-6">
         <div class="text-sm font-bold mb-2">SYSTEM_SPECIFICATIONS</div>
-        <div class="text-sm">{{ project.content|linebreaks }}</div>
+        <div class="text-sm blog-content">{{ project.content|linebreaks }}</div>
       </div>
       
       {% if project.github_url or project.live_url %}
@@ -48,7 +48,7 @@
       <div class="tech-container">
         <div class="text-sm font-bold mb-4">TECHNOLOGY_STACK</div>
         
-        {% for tech in project.technologies.all %}
+        {% for tech in project.technologies %}
         <div class="mb-3">
           <div class="flex justify-between text-xs mb-1">
             <div>{{ tech.name }}</div>
@@ -71,12 +71,12 @@
         
         <div class="data-readout">
           <div class="data-readout-label">CREATED:</div>
-          <div>{{ project.created_at|date:"Y-m-d" }}</div>
+          <div>{{ project.created_at }}</div>
         </div>
         
         <div class="data-readout">
           <div class="data-readout-label">LAST_UPDATE:</div>
-          <div>{{ project.updated_at|date:"Y-m-d" }}</div>
+          <div>{{ project.updated_at }}</div>
         </div>
         
         <div class="data-readout">
@@ -89,11 +89,12 @@
 </div>
 
 <!-- Project Images/Screenshots -->
+{% if project.images %}
 <div class="tech-container mt-6">
   <div class="tech-header">SYSTEM_VISUALIZATION</div>
   
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-    {% for image in project.images.all %}
+    {% for image in project.images %}
     <div class="border border-accent-teal p-1">
       <img src="{{ image.image.url }}" alt="{{ project.title }} - Screenshot {{ forloop.counter }}" class="w-full">
       <div class="text-xs mt-2 opacity-70">// VISUAL_DATA_{{ forloop.counter }} //</div>
@@ -101,4 +102,5 @@
     {% endfor %}
   </div>
 </div>
+{% endif %}
 {% endblock %}

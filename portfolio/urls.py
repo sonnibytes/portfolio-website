@@ -25,7 +25,7 @@ urlpatterns = [
     # Core app URLs (homepage, about, contact)
     path("", include("core.urls")),
     # Systems (Projects) app URLs
-    path("systems/", include("systems.urls")),
+    path("systems/", include("systems.urls"), namespace='systems'),
     # Datalogs (Blog) app URLs
     path("datalogs/", include("datalogs.urls", namespace="datalogs")),
     path("markdownx/", include("markdownx.urls")),
