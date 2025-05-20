@@ -91,4 +91,86 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     });
+});
+  
+// Add to blog.js
+
+// Table of Contents highlight on scroll
+document.addEventListener('DOMContentLoaded', function() {
+    const tocLinks = document.querySelectorAll('.toc-item a');
+    const headings = document.querySelectorAll('.post-content-body h2, .post-content-body h3');
+    
+    if (tocLinks.length > 0 && headings.length > 0) {
+      // Smooth scrolling for TOC links
+      tocLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          const targetId = this.getAttribute('href');
+          const targetElement = document.querySelector(targetId);
+          
+          if (targetElement) {
+            // Get header height for offset
+            const headerHeight = document.querySelector('.site-header').offsetHeight;
+            
+            window.scrollTo({
+              top: targetElement.offsetTop - headerHeight - 20,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+      
+      // Highlight active TOC item on scroll
+      window.addEventListener('scroll', function() {
+        // Get current scroll position
+        const scrollPosition = window.scrollY + window.innerHeight / 3;
+        
+        // Iterate through headings to find current section
+        headings.forEach(heading => {
+          if (heading.offsetTop <= scrollPosition) {
+            // Remove active class from all TOC items
+            tocLinks.forEach(link => {
+              link.classList.remove('active');
+            });
+            
+            // Find the corresponding TOC link and add active class
+            const correspondingLink = document.querySelector(`.toc-item a[href="#${heading.id}"]`);
+            if (correspondingLink) {
+              correspondingLink.classList.add('active');
+            }
+          }
+        });
+      });
+    }
+});
+  
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle TOC link clicks for smooth scrolling with offset for the fixed header
+  const tocLinks = document.querySelectorAll('.toc-link');
+  const headerHeight = document.querySelector('.site-header')?.offsetHeight || 80;
+
+  tocLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          const targetId = this.getAttribute('href');
+          const targetElement = document.querySelector(targetId);
+          
+          if (targetElement) {
+              // Calculate position with offset for header
+              const elementPosition = targetElement.getBoundingClientRect().top;
+              const offsetPosition = elementPosition + window.pageYOffset - headerHeight - 20; // 20px extra padding
+              
+              // Scroll smoothly to the element
+              window.scrollTo({
+                  top: offsetPosition,
+                  behavior: 'smooth'
+              });
+              
+              // Update URL hash after scrolling
+              history.pushState(null, null, targetId);
+          }
+      });
   });
+});

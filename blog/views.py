@@ -1,9 +1,27 @@
-from django.views.generic import ListView, DetailView
-from django.shortcuts import get_object_or_404, redirect
+from django.views.generic import ListView, DetailView, DeleteView, CreateView, UpdateView
+from django.views.generic.detail import SingleObjectMixin
+# from django.views.generic.edit import CreateView, UpdateView
+from django.views.decorators.csrf import csrf_protect
+from django.http import JsonResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse_lazy, reverse
+from django.contrib import messages
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.utils.text import slugify
 from django.db.models import Count
-from .models import Post, Category, Tag
+from markdownx.utils import markdownify
+
 from datetime import datetime
 import calendar
+import os
+import re
+from uuid import uuid4
+import pprint
+
+from .models import Post, Category, Tag, Series, SeriesPost
+from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 
 
 class PostListView(ListView):
@@ -62,13 +80,57 @@ class PostDetailView(DetailView):
         except Post.DoesNotExist:
             next_post = None
 
+        # Get series information if applicable
+        series_post = SeriesPost.objects.filter(post=post).first()
+        if series_post:
+            series = series_post.series
+            series_posts = SeriesPost.objects.filter(series=series).order_by('order')
+
+            # Get next and previous posts in series
+            next_in_series = series_posts.filter(order__gt=series_post.order).first()
+            prev_in_series = series_posts.filter(order__lt=series_post.order).last()
+
+            context.update({
+                'in_series': True,
+                'series': series,
+                'series_post': series_post,
+                'next_in_series': next_in_series.post if next_in_series else None,
+                'prev_in_series': prev_in_series.post if prev_in_series else None,
+                'series_posts': [sp.post for sp in series_posts],
+            })
+
         context.update({
             'related_posts': related_posts,
             'previous_post': previous_post,
             'next_post': next_post,
         })
 
+        # Extract headings for Table of Contents
+        headings = self.extract_headings(post.content)
+        context['headings'] = headings
+
         return context
+
+    def extract_headings(self, markdown_content):
+        """Extract headings from markdown content for table of contents."""
+        headings = []
+        # Regular expression to find headings in markdown
+        heading_pattern = r'^(#{1,3})\s+(.+)$'
+
+        for line in markdown_content.split('\n'):
+            match = re.match(heading_pattern, line.strip())
+            if match:
+                level = len(match.group(1))
+                text = match.group(2).strip()
+                # Create ID from heading text for anchor links
+                # Using same splugify function as markdownify filter
+                heading_id = slugify(text)
+                headings.append({
+                    'level': level,
+                    'text': text,
+                    'id': heading_id
+                })
+        return headings
 
 
 class CategoryView(ListView):
@@ -87,6 +149,8 @@ class CategoryView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
+        # Add this line to track active category
+        context['category_slug'] = self.kwargs['slug']
         return context
 
 
@@ -279,3 +343,377 @@ class SearchView(ListView):
         context = super().get_context_data(**kwargs)
         context['query'] = self.request.GET.get('q', '')
         return context
+
+# ===================== ADMIN VIEWS FOR POST MANAGEMENT =====================
+
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    """View for creating new post."""
+
+    model = Post
+    form_class = PostForm
+    template_name = "blog/admin/post_form.html"
+
+    def get_success_url(self):
+        return reverse('blog:post_detail', kwargs={'slug': self.object.slug})
+
+    def form_valid(self, form):
+        # DEBUG: Print form data and POST Data
+        print("=" * 50)
+        print("FORM SUBMITTED")
+        print("POST Data:")
+        pprint.pprint(dict(self.request.POST))
+        print("Cleaned Data:")
+        pprint.pprint(form.cleaned_data)
+        print("=" * 50)
+
+        # Set the author to current user
+        form.instance.author = self.request.user
+
+        # Set publication date if status is published and no date
+        if form.instance.status == "published" and not form.instance.published_date:
+            form.instance.published_date = timezone.now()
+
+        # If no slug, generate from title
+        if not form.instance.slug:
+            form.instance.slug = slugify(form.instance.title)
+
+        # Add success message
+        messages.success(self.request, "Post created successfully!")
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Create New Post"
+        context["submit_text"] = "Create Post"
+        return context
+
+    # def extract_headings(self, markdown_content):
+    #     """Extract headings from markdown content for table of contents preview."""
+    #     headings = []
+    #     # Regular expression to find headings in markdown
+    #     heading_pattern = r'^(#{1,3})\s+(.+)$'
+
+    #     for line in markdown_content.split('\n'):
+    #         match = re.match(heading_pattern, line.strip())
+    #         if match:
+    #             level = len(match.group(1))
+    #             text = match.group(2).strip()
+    #             heading_id = slugify(text)
+    #             headings.append({
+    #                 'level': level,
+    #                 'text': text,
+    #                 'id': heading_id
+    #             })
+
+    #     return headings
+
+
+class PostUpdateView(LoginRequiredMixin, UpdateView):
+    """View for editing an existing blog post."""
+
+    model = Post
+    form_class = PostForm
+    template_name = "blog/admin/post_form.html"
+
+    def get_success_url(self):
+        return reverse("blog:post_detail", kwargs={"slug": self.object.slug})
+
+    def form_valid(self, form):
+        # DEBUG: Print the raw reuqest POST data and form cleaned_data
+        print("=" * 50)
+        print("FORM SUBMITTED")
+        print("POST Data:")
+        pprint.pprint(dict(self.request.POST))
+        print("Cleaned Data:")
+        pprint.pprint(form.cleaned_data)
+        print("Content Field BEFORE Save:")
+        print(form.instance.content)
+        print("=" * 50)
+
+        # Set publication date if status is published and doesn't have one
+        if form.instance.status == "published" and not form.instance.published_date:
+            form.instance.published_date = timezone.now()
+
+        # Save form and redirect & Add success message
+        response = super().form_valid(form)
+
+        # DEBUG AFTER SAVE
+        print("Content Field AFTER Save:")
+        print(self.object.content)
+        print("=" * 50)
+
+        messages.success(self.request, "Post updated successfully!")
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Edit Post"
+        context["submit_text"] = "Update Post"
+
+        # Get series info
+        post = self.get_object()
+        series_post = SeriesPost.objects.filter(post=post).first()
+        if series_post:
+            context["initial_series"] = series_post.series
+            context["initial_series_order"] = series_post.order
+
+        return context
+
+    # def extract_headings(self, markdown_content):
+    #     """Extract headings from markdown content for table of contents preview."""
+    #     headings = []
+    #     # Regex to find headings
+    #     heading_pattern = r'^(#{1,3})\s+(.+)$'
+
+    #     for line in markdown_content.split('\n'):
+    #         match = re.match(heading_pattern, line.strip())
+    #         if match:
+    #             level = len(match.group(1))
+    #             text = match.group(2).strip()
+    #             heading_id = slugify(text)
+    #             headings.append({
+    #                 'level': level,
+    #                 'text': text,
+    #                 'id': heading_id
+    #             })
+    #     return headings
+
+
+    # def dispatch(self, request, *args, **kwargs):
+    #     # Check if user is the author and has permission
+    #     self.object = self.get_object()
+    #     if self.object.author != request.user and not request.user.is_staff:
+    #         messages.error(request, "You don't have permission to edit this post.")
+    #         return redirect("blog:post_detail", slug=self.object.slug)
+    #     return super().dispatch(request, *args, **kwargs)
+
+    
+
+    # def get_form(self, form_class=None):
+    #     form = super().get_form(form_class)
+
+    #     # Prepare form initial data from content (for sections)
+    #     if self.object and self.object.content:
+    #         # Extract sections from markdown content to populate the form
+    #         content_lines = self.object.content.split("\n\n")
+    #         intro_lines = []
+    #         current_section = 0
+
+    #         for i, line in enumerate(content_lines):
+    #             # Skip empty lines
+    #             if not line.strip():
+    #                 continue
+
+    #             # Check if line is a heading
+    #             if line.startswith("## "):
+    #                 current_section += 1
+    #                 if current_section <= 5:
+    #                     form.initial[f"section_{current_section}_title"] = line[
+    #                         3:
+    #                     ].strip()
+
+    #                     # Get the content for this section (all lines until next heading)
+    #                     section_content = []
+    #                     j = i + 1
+    #                     while j < len(content_lines) and not content_lines[
+    #                         j
+    #                     ].startswith("## "):
+    #                         if content_lines[j].strip():  # Skip empty lines
+    #                             section_content.append(content_lines[j])
+    #                         j += 1
+
+    #                     form.initial[f"section_{current_section}_content"] = (
+    #                         "\n\n".join(section_content)
+    #                     )
+
+    #             # If we haven't encountered heading yet, it's introduction
+    #             elif current_section == 0 and not line.startswith("```"):
+    #                 intro_lines.append(line)
+
+    #         # Set intro field
+    #         if intro_lines:
+    #             form.initial["introduction"] = "\n\n".join(intro_lines)
+
+    #     return form
+
+class PostDeleteView(LoginRequiredMixin, DeleteView):
+    """View for deleting logs post."""
+
+    model = Post
+    template_name = 'blog/admin/post_confirm_delete.html'
+    success_url = reverse_lazy('blog:dashboard')
+
+    def test_func(self):
+        """Only allows author or admin to delete post."""
+        post = self.get_object()
+        return self.request.user == post.author or self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Delete Post'
+        return context
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Post deleted successfully!')
+        return super().delete(request, *args, **kwargs)
+
+
+class CategoryCreateView(LoginRequiredMixin, CreateView):
+    """View for creating a new category."""
+
+    model = Category
+    form_class = CategoryForm
+    template_name = 'blog/admin/category_form.html'
+    success_url = reverse_lazy('blog:category_list')
+
+    def form_valid(self, form):
+        # Generate slug from name if not provided
+        if not form.instance.slug:
+            form.instance.slug = slugify(form.instance.name)
+
+        messages.success(self.request, 'Category created successfully!')
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Create New Category'
+        context['submit_text'] = 'Create Category'
+        return context
+
+
+class CategoryUpdateView(LoginRequiredMixin, UpdateView):
+    """View for updating an existing category."""
+
+    model = Category
+    form_class = CategoryForm
+    template_name = 'blog/admin/category_form.html'
+    success_url = reverse_lazy('blog:category_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Category updated successfully!')
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit Category'
+        context['submit_text'] = 'Update Category'
+        return context
+
+
+class CategoryListView(LoginRequiredMixin, ListView):
+    """View for listing all categories with post counts."""
+
+    model = Category
+    template_name = 'blog/admin/category_list.html'
+    context_object_name = 'categories'
+
+    def get_queryset(self):
+        return Category.objects.annotate(post_count=Count('posts')).order_by('name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Manage Categories'
+        return context
+
+
+class CategoryDeleteView(LoginRequiredMixin, DeleteView):
+    """View for deleting a category."""
+
+    model = Category
+    template_name = 'blog/admin/category_confirm_delete.html'
+    success_url = reverse_lazy('blog:category_list')
+
+    def test_func(self):
+        """Only allows superuser to delete categories."""
+        return self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Delete Category'
+
+        # Get posts that would be affected
+        affected_posts = Post.objects.filter(category=self.object)
+        context['affected_posts'] = affected_posts
+        context['affected_count'] = affected_posts.count()
+
+        return context
+
+    def delete(self, request, *args, **kwargs):
+        # Check if posts should be reassigned or deleted
+        if 'reassign' in request.POST:
+            new_category_id = request.POST.get('new_category')
+            if new_category_id:
+                try:
+                    new_category = Category.objects.get(id=new_category_id)
+                    Post.objects.filter(category=self.get_object()).update(category=new_category)
+                    messages.success(request, f'Posts reassigned to {new_category.name}')
+                except Category.DoesNotExist:
+                    messages.error(request, 'Selected category does not exist')
+                    return redirect(request.path)
+
+        messages.success(request, 'Category deleted successfully!')
+        return super().delete(request, *args, **kwargs)
+
+
+class DashboardView(LoginRequiredMixin, ListView):
+    """Dashboard view for logs management."""
+
+    model = Post
+    template_name = 'blog/admin/dashboard.html'
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        return Post.objects.all().order_by('-created')[:10]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'DEVLOGs Dashboard'
+        context['post_count'] = Post.objects.count()
+        context['published_count'] = Post.objects.filter(status='published').count()
+        context['draft_count'] = Post.objects.filter(status='draft').count()
+        context['category_count'] = Category.objects.count()
+        context['tag_count'] = Tag.objects.count()
+        return context
+
+
+# class ImageUploadView(LoginRequiredMixin, View):
+#     """Class-based view for handling image uploads for posts."""
+
+#     @method_decorator(csrf_protect)
+#     def post(self, request, *args, **kwargs):
+#         if request.FILES.get("image"):
+#             image = request.FILES["images"]
+
+#             # Generate a unique filename
+#             ext = os.path.splittext(image.name)[1]
+#             filename = f"{uuid4().hex}{ext}"
+
+#             # Create the upload path
+#             upload_path = os.path.join("blog", "uploads", filename)
+
+#             # Save the file
+#             from django.core.files.storage import default_storage
+
+#             file_path = default_storage.save(upload_path, image)
+
+#             # Get the url
+#             file_url = default_storage.url(file_path)
+
+#             return JsonResponse({"success": True, "url": file_url, "name": image.name})
+
+#         return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+# class TagSuggestionsView(View):
+#     """Class-based view for getting tag suggestions."""
+
+#     def get(self, request, *args, **kwargs):
+#         query = request.GET.get("q", "").strip()
+#         if query:
+#             # Find matching tags
+#             tags = Tag.objects.filter(name__icontains=query)[:10]
+#             return JsonResponse(
+#                 {"tags": [{"id": tag.id, "name": tag.name} for tag in tags]}
+#             )
+#         return JsonResponse({"tags": []})
