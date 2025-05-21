@@ -1,22 +1,36 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
 from django.utils.text import slugify
+from markdownx.models import MarkdownxField
+from markdownx.utils import markdownify
 
 
-class Profile(models.Model):
-    """Dev profile info."""
+class CorePage(models.Model):
+    """Model for static pages like privacy policy, etc."""
 
-    name = models.CharField(max_length=100)
-    title = models.CharField(max_length=200, help_text="Your professional title")
-    bio = models.TextField()
-    headshot = models.ImageField(upload_to="profile/", null=True, blank=True)
-    location = models.CharField(max_length=100)
-    years_experience = models.PositiveIntegerField(default=0)
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
+    content = MarkdownxField()
+    meta_description = models.CharField(
+        max_length=160,
+        help_text="SEO meta description")
+    is_published = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['title']
 
     def __str__(self):
-        return self.name
+        self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    def rendered_content(self):
+        """Return content as rendered HTML."""
+        return markdownify(self.content)
 
 
 class Skill(models.Model):
@@ -24,46 +38,25 @@ class Skill(models.Model):
 
     CATEGORY_CHOICES = (
         ("languages", "Programming Languages"),
-        ("frameworks", "Frameworks"),
-        ("tools", "Tools & Software"),
-        ("data", "Data Technologies"),
+        ("frameworks", "Frameworks & Libraries"),
+        ("tools", "Tools & Technologies"),
+        ("databases", "Databases"),
+        ("other", "Other Skills"),
     )
 
-    name = models.CharField(max_length=100)
-    proficiency = models.PositiveIntegerField(help_text="Proficiency level (0-100)")
+    name = models.CharField(max_length=50)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    description = models.CharField(max_length=255, blank=True)
-    years = models.PositiveIntegerField(default=1, help_text="Years of experience")
-    profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="skills"
+    description = models.TextField(blank=True)
+    proficiency = models.IntegerField(
+        choices=[(i, i) for i in range(1, 6)],
+        help_text="Skill level from 1-5"
     )
-
-    def __str__(self):
-        return f"{self.name} ({self.proficiency}%)"
-
-
-class Specialty(models.Model):
-    """Technical specialties."""
-
-    name = models.CharField(max_length=100)
-    profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="specialties"
-    )
+    icon = models.CharField(max_length=50, blank=True, help_text="Font Awesome icon name (e.g., fa-python)")
+    color = models.CharField(max_length=7, default="#00f0ff", help_text="Hex color code")
+    display_order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        verbose_name_plural = "Specialties"
-
-    def __str__(self):
-        return self.name
-
-
-class FocusArea(models.Model):
-    """Developer focus areas."""
-
-    name = models.CharField(max_length=100)
-    profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="focus_areas"
-    )
+        ordering = ['category', 'display_order']
 
     def __str__(self):
         return self.name
@@ -72,54 +65,76 @@ class FocusArea(models.Model):
 class Education(models.Model):
     """Educational background."""
 
-    degree = models.CharField(max_length=200)
-    institution = models.CharField(max_length=200)
-    year_start = models.PositiveIntegerField()
-    year_end = models.PositiveIntegerField(null=True, blank=True)
+    institution = models.CharField(max_length=100)
+    degree = models.CharField(max_length=100)
+    field_of_study = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
-    profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="education"
-    )
+    is_current = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ["-year_end", "-year_start"]
+        ordering = ["-end_date", "-start_date"]
+        verbose_name_plural = "Education"
 
     def __str__(self):
-        return f"{self.degree} at {self.institution}"
+        return f"{self.degree} from {self.institution}"
 
 
 class Experience(models.Model):
     """Work experience."""
 
-    position = models.CharField(max_length=200)
-    company = models.CharField(max_length=200)
-    year_start = models.PositiveIntegerField()
-    year_end = models.PositiveIntegerField(null=True, blank=True)
-    current = models.BooleanField(default=False)
+    company = models.CharField(max_length=100)
+    position = models.CharField(max_length=100)
     description = models.TextField()
-    profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="experience"
-    )
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
+    technologies = models.CharField(max_length=200, blank=True, help_text="Comma-separated list of technologies used")
 
     class Meta:
-        ordering = ["-current", "-year_end", "-year_start"]
+        ordering = ["-end_date", "-start_date"]
 
     def __str__(self):
         return f"{self.position} at {self.company}"
 
+    def get_technologies_list(self):
+        """Return technologies as a list."""
+        if self.technologies:
+            return [tech.strip() for tech in self.technologies.split(",")]
+        return []
 
-class ContactMethod(models.Model):
-    """Contact methods/social links."""
+
+class Contact(models.Model):
+    """Model for contact form submissions."""
+
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Message from {self.name} - {self.created_at.strftime('%Y-%m-%d')}"
+
+
+class SocialLink(models.Model):
+    """Model for social media and external profile links."""
 
     name = models.CharField(max_length=50)
     url = models.URLField()
     handle = models.CharField(max_length=100, blank=True)
     icon = models.CharField(
-        max_length=50, blank=True, help_text="CSS class for icon (e.g., 'fa-github')"
+        max_length=50, blank=True, help_text="Font Awesome icon name (e.g., 'fa-github')"
     )
-    profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="contact_methods"
-    )
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order']
 
     def __str__(self):
         return self.name

@@ -4,9 +4,9 @@ from . import views
 app_name = 'core'
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('about/', views.about, name='about'),
-    path('contact/', views.contact, name='contact'),
+    path('', views.HomeView.as_view(), name='home'),
+    path('developer-profile/', views.DeveloperProfileView.as_view(), name='about'),
+    path('communication/', views.CommTerminalView.as_view(), name='contact'),
     path('privacy/', views.privacy, name='privacy'),
     path('terms/', views.terms, name='terms'),
 ]
