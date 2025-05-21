@@ -23,10 +23,10 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // ===== FORM VALIDATION =====
     initFormValidation();
-  });
-  
-  // ===== NAVBAR FUNCTIONALITY =====
-  function initNavbar() {
+});
+
+// ===== NAVBAR FUNCTIONALITY =====
+function initNavbar() {
     const navbar = document.querySelector('.navbar');
     const mobileToggle = document.querySelector('.navbar-mobile-toggle');
     const navbarMenu = document.querySelector('.navbar-menu');
@@ -42,53 +42,53 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     }
     
-    // Mobile menu toggle
-    if (mobileToggle && navbarMenu) {
-      mobileToggle.addEventListener('click', function() {
-        navbarMenu.classList.toggle('active');
-        // Toggle icon if using font awesome or similar
-        if (this.querySelector('i')) {
-          this.querySelector('i').classList.toggle('fa-bars');
-          this.querySelector('i').classList.toggle('fa-times');
-        }
-      });
-      
-      // Observe all elements with animation class
-      animatedElements.forEach(element => {
-        observer.observe(element);
-      });
-    }
-    
-    // Init typing animations for elements with .typing-animation class
-    const typingElements = document.querySelectorAll('.typing-animation');
-    
-    typingElements.forEach(element => {
-      // Store original text to be animated
-      const originalText = element.textContent;
-      // Clear text initially
-      element.textContent = '';
-      
-      // Set a short delay before starting animation
-      setTimeout(() => {
-        element.textContent = originalText;
-      }, 500);
+// Mobile menu toggle
+if (mobileToggle && navbarMenu) {
+    mobileToggle.addEventListener('click', function() {
+      navbarMenu.classList.toggle('active');
+      // Toggle icon if using font awesome or similar
+      if (this.querySelector('i')) {
+        this.querySelector('i').classList.toggle('fa-bars');
+        this.querySelector('i').classList.toggle('fa-times');
+      }
     });
     
-    // Initialize scanning effects
-    const scanningElements = document.querySelectorAll('.scanning-effect');
-    // No additional initialization needed as scanning effect is CSS-only
-    
-    // Initialize glitch text effect
-    const glitchElements = document.querySelectorAll('.glitch-text');
-    // No additional initialization needed as glitch effect is CSS-only
-    
-    // Initialize pulse effect
-    const pulseElements = document.querySelectorAll('.pulse-effect');
-    // No additional initialization needed as pulse effect is CSS-only
+    // Observe all elements with animation class
+    animatedElements.forEach(element => {
+      observer.observe(element);
+    });
   }
   
-  // ===== DATA VISUALIZATION DEMOS =====
-  function initDataVisualizations() {
+  // Init typing animations for elements with .typing-animation class
+  const typingElements = document.querySelectorAll('.typing-animation');
+  
+  typingElements.forEach(element => {
+    // Store original text to be animated
+    const originalText = element.textContent;
+    // Clear text initially
+    element.textContent = '';
+    
+    // Set a short delay before starting animation
+    setTimeout(() => {
+      element.textContent = originalText;
+    }, 500);
+  });
+
+  // Initialize scanning effects
+  const scanningElements = document.querySelectorAll('.scanning-effect');
+  // No additional initialization needed as scanning effect is CSS-only
+  
+  // Initialize glitch text effect
+  const glitchElements = document.querySelectorAll('.glitch-text');
+  // No additional initialization needed as glitch effect is CSS-only
+  
+  // Initialize pulse effect
+  const pulseElements = document.querySelectorAll('.pulse-effect');
+  // No additional initialization needed as pulse effect is CSS-only
+}
+  
+// ===== DATA VISUALIZATION DEMOS =====
+function initDataVisualizations() {
     // Circle Gauge Initialization
     initCircleGauges();
     
@@ -102,8 +102,8 @@ document.addEventListener("DOMContentLoaded", function() {
     initDataGrids();
   }
   
-  // Initialize Circle Gauges
-  function initCircleGauges() {
+// Initialize Circle Gauges
+function initCircleGauges() {
     const gauges = document.querySelectorAll('.circle-gauge');
     
     gauges.forEach(gauge => {
@@ -127,8 +127,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Initialize Bar Charts
-  function initBarCharts() {
+// Initialize Bar Charts
+function initBarCharts() {
     const barCharts = document.querySelectorAll('.bar-chart');
     
     barCharts.forEach(chart => {
@@ -149,8 +149,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Initialize Waveform Visualizations
-  function initWaveforms() {
+// Initialize Waveform Visualizations
+function initWaveforms() {
     const waveforms = document.querySelectorAll('.waveform');
     
     waveforms.forEach(waveform => {
@@ -174,8 +174,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Create bars for waveform visualization
-  function createWaveformBars(waveform, values) {
+// Create bars for waveform visualization
+function createWaveformBars(waveform, values) {
     waveform.innerHTML = ''; // Clear existing content
     
     values.forEach(value => {
@@ -189,8 +189,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Animate waveform with continuous random changes
-  function animateWaveform(waveform) {
+// Animate waveform with continuous random changes
+function animateWaveform(waveform) {
     const bars = waveform.querySelectorAll('.waveform-bar');
     
     setInterval(() => {
@@ -202,8 +202,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 100); // Update every 100ms for a fluid animation
   }
   
-  // Initialize Data Grids
-  function initDataGrids() {
+// Initialize Data Grids
+function initDataGrids() {
     const dataGrids = document.querySelectorAll('.data-grid');
     
     dataGrids.forEach(grid => {
@@ -232,8 +232,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // ===== CODE BLOCKS =====
-  function initCodeBlocks() {
+// ===== CODE BLOCKS =====
+function initCodeBlocks() {
     const codeBlocks = document.querySelectorAll('.code-block');
     
     codeBlocks.forEach(block => {
@@ -290,8 +290,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
   
-  // ===== HEX CATEGORIES =====
-  function initHexCategories() {
+// ===== HEX CATEGORIES =====
+function initHexCategories() {
     const categoryHexes = document.querySelectorAll('.category-hex');
     
     categoryHexes.forEach(hex => {
@@ -314,8 +314,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // ===== FORM VALIDATION =====
-  function initFormValidation() {
+// ===== FORM VALIDATION =====
+function initFormValidation() {
     const forms = document.querySelectorAll('form.needs-validation');
     
     forms.forEach(form => {
@@ -360,10 +360,10 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // ===== UTILITY FUNCTIONS =====
-  
-  // Debounce function to limit how often a function is called
-  function debounce(func, wait) {
+// ===== UTILITY FUNCTIONS =====
+
+// Debounce function to limit how often a function is called
+function debounce(func, wait) {
     let timeout;
     return function() {
       const context = this;
@@ -375,8 +375,8 @@ document.addEventListener("DOMContentLoaded", function() {
     };
   }
   
-  // Throttle function to limit the rate at which a function is executed
-  function throttle(func, limit) {
+// Throttle function to limit the rate at which a function is executed
+function throttle(func, limit) {
     let inThrottle;
     return function() {
       const context = this;
@@ -389,13 +389,13 @@ document.addEventListener("DOMContentLoaded", function() {
     };
   }
   
-  // Generate a random number between min and max
-  function randomBetween(min, max) {
+// Generate a random number between min and max
+function randomBetween(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
   }
   
-  // Check if an element is in viewport
-  function isInViewport(element) {
+// Check if an element is in viewport
+function isInViewport(element) {
     const rect = element.getBoundingClientRect();
     return (
       rect.top >= 0 &&
@@ -405,15 +405,15 @@ document.addEventListener("DOMContentLoaded", function() {
     );
   }
   
-  // Format number with comma separators
-  function formatNumber(num) {
+// Format number with comma separators
+function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
   
-  // ===== OPTIONAL: HUD DATA ANIMATION DEMOS =====
-  
-  // Initialize HUD-style data animation if elements exist
-  document.addEventListener("DOMContentLoaded", function() {
+// ===== OPTIONAL: HUD DATA ANIMATION DEMOS =====
+
+// Initialize HUD-style data animation if elements exist
+document.addEventListener("DOMContentLoaded", function() {
     if (document.querySelector('.hud-data-counter')) {
       initHUDDataCounters();
     }
@@ -423,8 +423,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
   
-  // Animate number counters with HUD style
-  function initHUDDataCounters() {
+// Animate number counters with HUD style
+function initHUDDataCounters() {
     const counters = document.querySelectorAll('.hud-data-counter');
     
     counters.forEach(counter => {
@@ -457,8 +457,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Initialize radar charts
-  function initRadarCharts() {
+// Initialize radar charts
+function initRadarCharts() {
     const radarCharts = document.querySelectorAll('.radar-chart');
     
     radarCharts.forEach(chart => {
@@ -474,8 +474,8 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Create SVG-based radar chart
-  function createSVGRadarChart(container, values, labels, maxValue) {
+// Create SVG-based radar chart
+function createSVGRadarChart(container, values, labels, maxValue) {
     // Clear container
     container.innerHTML = '';
     
@@ -578,21 +578,23 @@ document.addEventListener("DOMContentLoaded", function() {
     
     container.appendChild(svg);
   }
-  // Close mobile menu when clicking outside
-      document.addEventListener('click', function(event) {
-        if (navbarMenu.classList.contains('active') && 
-            !navbarMenu.contains(event.target) && 
-            !mobileToggle.contains(event.target)) {
-          navbarMenu.classList.remove('active');
-          
-          // Reset icon if using font awesome
-          if (mobileToggle.querySelector('i')) {
-            mobileToggle.querySelector('i').classList.add('fa-bars');
-            mobileToggle.querySelector('i').classList.remove('fa-times');
-          }
-        }
-      });
+  
+// Close mobile menu when clicking outside
+document.addEventListener('click', function(event) {
+    if (navbarMenu.classList.contains('active') && 
+        !navbarMenu.contains(event.target) && 
+        !mobileToggle.contains(event.target)) {
+      navbarMenu.classList.remove('active');
+      
+      // Reset icon if using font awesome
+      if (mobileToggle.querySelector('i')) {
+        mobileToggle.querySelector('i').classList.add('fa-bars');
+        mobileToggle.querySelector('i').classList.remove('fa-times');
+      }
     }
+  });
+}
+
     
     // Handle smooth scrolling for anchor links
     const anchorLinks = document.querySelectorAll('a[href^="#"]:not([href="#"])');
@@ -626,7 +628,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       });
     });
-  }
+  
   
   // ===== ANIMATION INITIALIZATION =====
   function initAnimations() {
@@ -646,4 +648,6 @@ document.addEventListener("DOMContentLoaded", function() {
             observer.unobserve(entry.target);
           }
         });
-      }, { threshold: 0.2 });
+          }, { threshold: 0.2 });
+        }
+      }
