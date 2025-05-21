@@ -1,0 +1,47 @@
+<!-- core/templates/core/includes/data_visualization.html -->
+{% if type == 'radar' %}
+<div class="radar-chart" 
+     data-values="{{ data.values|join:',' }}" 
+     data-labels="{{ data.labels|join:',' }}" 
+     data-max="{{ options.max_value|default:'100' }}">
+</div>
+{% elif type == 'bar' %}
+<div class="bar-chart-container">
+    <div class="bar-chart" style="height: {{ options.height|default:'150px' }}">
+        {% for value in data.values %}
+        <div class="bar" data-value="{{ value }}" 
+             style="height: {{ value|multiply:100|divisibleby:data.max_value }}%"
+             title="{{ data.labels|get_item:forloop.counter0 }}: {{ value }}">
+        </div>
+        {% endfor %}
+    </div>
+    {% if data.labels %}
+    <div class="bar-chart-labels">
+        {% for label in data.labels %}
+        <div class="bar-chart-label">{{ label }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% elif type == 'data_grid' %}
+<div class="data-grid-container">
+    <div class="data-grid" 
+         data-random="{{ options.random|default:'true' }}" 
+         data-animate="{{ options.animate|default:'true' }}"
+         style="grid-template-columns: repeat({{ options.columns|default:'20' }}, 1fr); 
+                grid-template-rows: repeat({{ options.rows|default:'20' }}, 1fr);">
+    </div>
+</div>
+{% elif type == 'circle_gauge' %}
+<div class="circle-gauge" data-percent="{{ data.value }}">
+    <svg viewBox="0 0 120 120">
+        <circle class="background" cx="60" cy="60" r="50"></circle>
+        <circle class="progress" cx="60" cy="60" r="50" 
+                style="stroke-dashoffset: {{ 314.16|multiply:data.value|divisibleby:'100'|subtract_from:314.16 }}"></circle>
+    </svg>
+    <div class="value">{{ data.value }}%</div>
+    {% if data.label %}
+    <div class="gauge-label">{{ data.label }}</div>
+    {% endif %}
+</div>
+{% endif %}
