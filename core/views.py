@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.shortcuts import render
 
-from .models import Profile, Skill, Specialty, FocusArea, Education, Experience, ContactMethod
+from .models import CorePage, Skill, Education, Experience, Contact, SocialLink
 
 # If create contact form later uncomment below
 # from .forms import ContactForm
@@ -21,7 +21,7 @@ class HomeView(TemplateView):
         context = super().get_context_data(**kwargs)
 
         context['title'] = "Dashboard"
-        context['project_count'] = 
+        context['project_count']
         context['post_count']
         context['experience_years']
 
@@ -32,7 +32,7 @@ class HomeView(TemplateView):
 
 class DeveloperProfileView(TemplateView):
     """Dev profile/about page."""
-    model = Profile
+    
     template_name = 'core/developer-profile.html'
 
     # Profile / Bio
@@ -50,9 +50,9 @@ class CommTerminalView(FormView):
     """Contact form styled as communication terminal."""
     template_name = 'core/communication.html'
 
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
+    def get_context_data(self, **kwargs) -> dict[str, any]:
         context = super().get_context_data(**kwargs)
-        context["profile"] =  Profile....
+        context["profile"]
         return context
     
     def form_valid(self, form):
