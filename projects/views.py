@@ -441,7 +441,7 @@ class TechnologyUsageAPIView(ListView):
         for tech in Technology.objects.annotate(
             usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
         ).filter(usage_count__gt=0).order_by('-usage_count'):
-            
+
             tech_stats.append({
                 'name': tech.name,
                 'slug': tech.slug,
@@ -456,4 +456,76 @@ class TechnologyUsageAPIView(ListView):
             'total_technologies': len(tech_stats)
         })
 
+# ===================== SEARCH AND FILTER VIEWS =====================
+class SystemSearchView(ListView):
+    """Advanced search functionality for systems."""
+
+    model = SystemModule
+    template_name = "projects/system_search.html"
+    context_object_name = "systems"
+    paginate_by = 12
+
+    def get_queryset(self):
+        queryset = SystemModule.objects.filter(
+            status__in=['deployed', 'published']
+        ).select_related('system_type').prefetch_related('technologies')
+
+        # Search query
+        query = self.request.GET.get('q')
+        if query:
+            queryset = queryset.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(technical_details__icontains=query) |
+                Q(technologies__name__icontains=query) |
+                Q(system_type__name__icontains=query)
+            ).distinct()
+
+        # Advanced filters
+        system_type_filter = self.request.GET.get('system_type')
+        if system_type_filter:
+            queryset = queryset.filter(system_type__slug=system_type_filter)
+
+        technology_filter = self.request.GET.get('technology')
+        if technology_filter:
+            queryset = queryset.filter(technologies__slug=technology_filter)
+
+        complexity_filter = self.request.GET.get('complexity')
+        if complexity_filter:
+            queryset = queryset.filter(complexity=complexity_filter)
+        
+        status_filter = self.requst.GET.get('status')
+        if status_filter and status_filter in ['deployed', 'published']:
+            queryset = queryset.filter(status=status_filter)
+        
+        # Sorting
+        sort_by = self.request.GET.get('sort', '-created')
+        valid_sorts = ['-created', 'title', '-completion_percent', 'complexity', '-updated']
+        if sort_by in valid_sorts:
+            queryset = queryset.order_by(sort_by)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Search parameters
+        context['query'] = self.request.GET.get('q', '')
+        context['total_results'] = self.get_queryset().count()
+
+        # Filter options
+        context['system_types'] = SystemType.objects.all()
+        context['technologies'] = Technology.objects.all().order_by('category', 'name')
+        context['complexity_choices'] = SystemModule.COMPLEXITY_CHOICES
+
+        # Current filter values
+        context['current_filters'] = {
+            'system_type': self.request.GET.get('system_type', ''),
+            'technology': self.request.GET.get('technology', ''),
+            'complexity': self.request.GET.get('complexity', ''),
+            'status': self.request.GET.get('status', ''),
+            'sort': self.request.GET.get('sort', '-created'),
+        }
+
+        return context
 
