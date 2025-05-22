@@ -105,9 +105,9 @@ class SystemDetailView(DetailView):
         system = self.get_object()
 
         # Get related blog posts - will need to be tweaked with new join model
-        context['related_posts'] = Post.objects.filter(
-            status='published', related_projects=system
-        ).exclude(id=system.id)
+        # context['related_posts'] = Post.objects.filter(
+        #     status='published', related_projects=system
+        # ).exclude(id=system.id)
 
         # Get similar systems based on system type and technologies
         similar_systems = SystemModule.objects.filter(
@@ -115,32 +115,31 @@ class SystemDetailView(DetailView):
         ).exclude(id=system.id)
 
         # Filter by same system type if available
-        if system.system_type:
-            similar_systems = similar_systems.filter(
-                system_type=system.system_type
-            )
+        # if system.system_type:
+        #     similar_systems = similar_systems.filter(
+        #         system_type=system.system_type
+        #     )
         
-        # Filter by shared technologies
-        tech_ids = system.technologies.values_list('id', flat=True)
-        if tech_ids:
-            similar_systems = similar_systems.filter(
-                technologies__id__in=tech_ids
-            ).distinct()
+        # # Filter by shared technologies
+        # tech_ids = system.technologies.values_list('id', flat=True)
+        # if tech_ids:
+        #     similar_systems = similar_systems.filter(
+        #         technologies__id__in=tech_ids
+        #     ).distinct()
         
-        context['similar_systems'] = similar_systems[:3]
+        # context['similar_systems'] = similar_systems[:3]
 
-        # Get all images for the gallery
-        context['gallery_images'] = system.imgaes.all()
+        # # Get all images for the gallery
+        # context['gallery_images'] = system.imgaes.all()
 
-        # Get all features
-        context['features'] = system.features/all()
+        # # Get all features
+        # context['features'] = system.features/all()
 
-        # Determine if the user is author/staff for edit permissions
-        context['is_author'] = (
-            self.request.user.is_authenticated and
-            (self.request.user == system.author or self.request.user.is_staff)
-        )
+        # # Determine if the user is author/staff for edit permissions
+        # context['is_author'] = (
+        #     self.request.user.is_authenticated and
+        #     (self.request.user == system.author or self.request.user.is_staff)
+        # )
 
         return context
-    
     
