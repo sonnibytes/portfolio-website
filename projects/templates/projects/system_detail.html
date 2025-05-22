@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+{% load static %}
+{% load core_tags %}
+
+{% block title %}{{ system.title }} | Systems | ML DEVLOG{% endblock %}
+{% block meta_description %}{{ system.excerpt|default:system.title }} - Technical specifications and implementation details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'projects/css/system_detail.css' %}">
+{% endblock %}
+
+{% block body_class %}system-detail-page grid-pattern{% endblock %}
+
+{% block content %}
+<!-- System Header HUD -->
+<section class="system-header-section">
+    <div class="container">
+        <!-- Navigation Breadcrumbs -->
+        <nav class="system-breadcrumbs">
+            <a href="{% url 'projects:system_list' %}" class="breadcrumb-link">
+                <i class="fas fa-arrow-left"></i> SYSTEMS INDEX
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">{{ system.system_id }}</span>
+        </nav>
+        
+        <div class="system-header-container">
+            <!-- System Status Panel -->
+            <div class="system-status-panel">
+                <div class="status-indicator" style="--status-color: {{ system.get_status_color }}">
+                    <div class="status-pulse"></div>
+                </div>
+                <div class="status-info">
+                    <div class="status-label">SYSTEM STATUS</div>
+                    <div class="status-value">{{ system.get_status_display|upper }}</div>
+                </div>
+            </div>
+            
+            <!-- Main System Info -->
+            <div class="system-main-info">
+                <div class="system-id-display">{{ system.system_id }}</div>
+                <h1 class="system-title">{{ system.title }}</h1>
+                {% if system.subtitle %}
+                <div class="system-subtitle">{{ system.subtitle }}</div>
+                {% endif %}
+                <div class="system-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-calendar-plus"></i> 
+                        INITIATED: {{ system.start_date|date:"M d, Y"|default:"CLASSIFIED" }}
+                    </span>
+                    {% if system.deployment_date %}
+                    <span class="meta-item">
+                        <i class="fas fa-rocket"></i> 
+                        DEPLOYED: {{ system.deployment_date|date:"M d, Y" }}
+                    </span>
+                    {% endif %}
+                    <span class="meta-item">
+                        <i class="fas fa-layer-group"></i> 
+                        COMPLEXITY: {{ system.get_complexity_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- System Actions -->
+            <div class="system-actions-panel">
+                {% if system.live_url %}
+                <a href="{{ system.live_url }}" target="_blank" class="action-btn primary">
+                    <i class="fas fa-external-link-alt"></i> LIVE SYSTEM
+                </a>
+                {% endif %}
+                {% if system.demo_url %}
+                <a href="{{ system.demo_url }}" target="_blank" class="action-btn secondary">
+                    <i class="fas fa-play"></i> DEMO
+                </a>
+                {% endif %}
+                {% if system.github_url %}
+                <a href="{{ system.github_url }}" target="_blank" class="action-btn tertiary">
+                    <i class="fab fa-github"></i> SOURCE
+                </a>
+                {% endif %}
+                {% if system.documentation_url %}
+                <a href="{{ system.documentation_url }}" target="_blank" class="action-btn quaternary">
+                    <i class="fas fa-book"></i> DOCS
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- System Banner -->
+{% if system.banner_image %}
+<section class="system-banner-section">
+    <div class="banner-container">
+        <img src="{{ system.banner_image.url }}" alt="{{ system.title }}" class="system-banner">
+        <div class="banner-overlay">
+            <div class="scan-line-banner"></div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- System Dashboard -->
+<section class="system-dashboard-section">
+    <div class="container">
+        <div class="row">
+            <!-- Main Content Column -->
+            <div class="col-lg-8">
+                <!-- System Overview -->
+                <div class="system-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">SYSTEM OVERVIEW</h2>
+                        <div class="panel-divider"></div>
+                    </div>
+                    <div class="panel-content">
+                        {{ system.rendered_description|safe }}
+                    </div>
+                </div>
+                
+                <!-- Technical Specifications -->
+                {% if system.technical_details %}
+                <div class="system-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">TECHNICAL SPECIFICATIONS</h2>
+                        <div class="panel-divider"></div>
+                    </div>
+                    <div class="panel-content">
+                        {{ system.rendered_technical_details|safe }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- System Features -->
+                {% if core_features or advanced_features or other_features %}
+                <div class="system-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">SYSTEM FEATURES</h2>
+                        <div class="panel-divider"></div>
+                    </div>
+                    <div class="panel-content">
+                        <!-- Core Features -->
+                        {% if core_features %}
+                        <div class="features-section">
+                            <h3 class="features-section-title">CORE FEATURES</h3>
+                            <div class="features-grid">
+                                {% for feature in core_features %}
+                                <div class="feature-item">
+                                    <div class="feature-icon" style="--feature-color: {{ feature.get_status_color }}">
+                                        <i class="fas {{ feature.icon|default:'fa-check' }}"></i>
+                                    </div>
+                                    <div class="feature-content">
+                                        <h4 class="feature-title">{{ feature.title }}</h4>
+                                        <p class="feature-description">{{ feature.description }}</p>
+                                        <div class="feature-status" style="--status-color: {{ feature.get_status_color }}">
+                                            {{ feature.get_implementation_status_display }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Advanced Features -->
+                        {% if advanced_features %}
+                        <div class="features-section">
+                            <h3 class="features-section-title">ADVANCED FEATURES</h3>
+                            <div class="features-grid">
+                                {% for feature in advanced_features %}
+                                <div class="feature-item">
+                                    <div class="feature-icon" style="--feature-color: {{ feature.get_status_color }}">
+                                        <i class="fas {{ feature.icon|default:'fa-cog' }}"></i>
+                                    </div>
+                                    <div class="feature-content">
+                                        <h4 class="feature-title">{{ feature.title }}</h4>
+                                        <p class="feature-description">{{ feature.description }}</p>
+                                        <div class="feature-status" style="--status-color: {{ feature.get_status_color }}">
+                                            {{ feature.get_implementation_status_display }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Other Features -->
+                        {% if other_features %}
+                        <div class="features-section">
+                            <h3 class="features-section-title">ADDITIONAL FEATURES</h3>
+                            <div class="features-grid">
+                                {% for feature in other_features %}
+                                <div class="feature-item">
+                                    <div class="feature-icon" style="--feature-color: {{ feature.get_status_color }}">
+                                        <i class="fas {{ feature.icon|default:'fa-plus' }}"></i>
+                                    </div>
+                                    <div class="feature-content">
+                                        <h4 class="feature-title">{{ feature.title }}</h4>
+                                        <p class="feature-description">{{ feature.description }}</p>
+                                        <div class="feature-status" style="--status-color: {{ feature.get_status_color }}">
+                                            {{ feature.get_implementation_status_display }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Development Challenges -->
+                {% if system.challenges %}
+                <div class="system-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">DEVELOPMENT CHALLENGES</h2>
+                        <div class="panel-divider"></div>
+                    </div>
+                    <div class="panel-content">
+                        {{ system.rendered_challenges|safe }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- System Gallery -->
+                {% if system_images %}
+                <div class="system-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">SYSTEM GALLERY</h2>
+                        <div class="panel-divider"></div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="system-gallery">
+                            {% for image in system_images %}
+                            <div class="gallery-item" data-type="{{ image.image_type }}">
+                                <img src="{{ image.image.url }}" alt="{{ image.caption|default:system.title }}" class="gallery-image" onclick="openLightbox(this)">
+                                {% if image.caption %}
+                                <div class="gallery-caption">{{ image.caption }}</div>
+                                {% endif %}
+                                <div class="gallery-type-badge">{{ image.get_image_type_display }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Future Enhancements -->
+                {% if system.future_enhancements %}
+                <div class="system-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">FUTURE ENHANCEMENTS</h2>
+                        <div class="panel-divider"></div>
+                    </div>
+                    <div class="panel-content">
+                        {{ system.rendered_future_enhancements|safe }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Sidebar Column -->
+            <div class="col-lg-4">
+                <!-- System Metrics HUD -->
+                <div class="metrics-hud">
+                    <div class="hud-header">
+                        <h3 class="hud-title">SYSTEM METRICS</h3>
+                        <div class="hud-divider"></div>
+                    </div>
+                    <div class="hud-content">
+                        <!-- Progress Gauge -->
+                        <div class="metric-gauge">
+                            <div class="gauge-container">
+                                <div class="gauge-circle">
+                                    <svg viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="45" class="gauge-bg"></circle>
+                                        <circle cx="50" cy="50" r="45" class="gauge-progress" 
+                                                style="--progress: {{ system.completion_percent }}"></circle>
+                                    </svg>
+                                    <div class="gauge-value">{{ system.completion_percent }}%</div>
+                                    <div class="gauge-label">COMPLETION</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Performance Metrics -->
+                        {% if current_metrics %}
+                        <div class="performance-metrics">
+                            {% for metric in current_metrics %}
+                            <div class="metric-item">
+                                <div class="metric-label">{{ metric.metric_name|upper }}</div>
+                                <div class="metric-value">
+                                    {{ metric.metric_value }}{{ metric.metric_unit }}
+                                </div>
+                                <div class="metric-bar">
+                                    <div class="metric-fill" style="width: {{ metric.metric_value|multiply:1 }}%"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- System Stats -->
+                        <div class="system-stats">
+                            <div class="stat-row">
+                                <span class="stat-label">SYSTEM TYPE</span>
+                                <span class="stat-value">{{ system.system_type.name|default:"UNCLASSIFIED" }}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">PRIORITY</span>
+                                <span class="stat-value">{{ system.get_priority_display }}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">LAST UPDATED</span>
+                                <span class="stat-value">{{ system.updated|date:"M d, Y" }}</span>
+                            </div>
+                            {% if system.performance_score %}
+                            <div class="stat-row">
+                                <span class="stat-label">PERFORMANCE</span>
+                                <span class="stat-value">{{ system.performance_score }}/100</span>
+                            </div>
+                            {% endif %}
+                            {% if system.uptime_percentage %}
+                            <div class="stat-row">
+                                <span class="stat-label">UPTIME</span>
+                                <span class="stat-value">{{ system.uptime_percentage }}%</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Technology Stack -->
+                <div class="tech-stack-hud">
+                    <div class="hud-header">
+                        <h3 class="hud-title">TECHNOLOGY STACK</h3>
+                        <div class="hud-divider"></div>
+                    </div>
+                    <div class="hud-content">
+                        {% for category, techs in technologies_by_category.items %}
+                        <div class="tech-category">
+                            <h4 class="tech-category-title">{{ category|upper }}</h4>
+                            <div class="tech-items">
+                                {% for tech in techs %}
+                                <div class="tech-item" style="--tech-color: {{ tech.color }}">
+                                    {% if tech.icon %}
+                                    <i class="fab {{ tech.icon }}"></i>
+                                    {% endif %}
+                                    <span class="tech-name">{{ tech.name }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Related Development Logs -->
+                {% if related_logs %}
+                <div class="related-logs-hud">
+                    <div class="hud-header">
+                        <h3 class="hud-title">DEVELOPMENT LOGS</h3>
+                        <div class="hud-divider"></div>
+                    </div>
+                    <div class="hud-content">
+                        {% for log_entry in related_logs %}
+                        <div class="log-entry">
+                            <div class="log-header">
+                                <span class="log-id">{{ log_entry.log_entry_id }}</span>
+                                <span class="log-type">{{ log_entry.get_connection_type_display }}</span>
+                            </div>
+                            <a href="{{ log_entry.post.get_absolute_url }}" class="log-title">
+                                {{ log_entry.post.title }}
+                            </a>
+                            <div class="log-meta">
+                                <span class="log-date">{{ log_entry.logged_at|date:"M d, Y" }}</span>
+                                <span class="log-priority" style="--priority-color: {{ log_entry.get_status_color }}">
+                                    {{ log_entry.get_priority_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="logs-footer">
+                            <a href="{% url 'blog:post_list' %}?system={{ system.slug }}" class="view-all-logs">
+                                VIEW ALL LOGS <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Related Systems -->
+                {% if related_systems %}
+                <div class="related-systems-hud">
+                    <div class="hud-header">
+                        <h3 class="hud-title">RELATED SYSTEMS</h3>
+                        <div class="hud-divider"></div>
+                    </div>
+                    <div class="hud-content">
+                        {% for related in related_systems %}
+                        <div class="related-system-item">
+                            <div class="related-system-header">
+                                <span class="related-system-id">{{ related.system_id }}</span>
+                                <span class="related-system-status" style="--status-color: {{ related.get_status_color }}">
+                                    {{ related.get_status_display }}
+                                </span>
+                            </div>
+                            <a href="{{ related.get_absolute_url }}" class="related-system-title">
+                                {{ related.title }}
+                            </a>
+                            <div class="related-system-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {{ related.completion_percent }}%"></div>
+                                </div>
+                                <span class="progress-text">{{ related.completion_percent }}%</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- System Navigation -->
+<section class="system-navigation-section">
+    <div class="container">
+        <div class="navigation-container">
+            {% if previous_system %}
+            <a href="{{ previous_system.get_absolute_url }}" class="nav-link prev">
+                <div class="nav-direction">
+                    <i class="fas fa-chevron-left"></i> PREVIOUS SYSTEM
+                </div>
+                <div class="nav-system-info">
+                    <span class="nav-system-id">{{ previous_system.system_id }}</span>
+                    <span class="nav-system-title">{{ previous_system.title }}</span>
+                </div>
+            </a>
+            {% else %}
+            <div class="nav-spacer"></div>
+            {% endif %}
+            
+            <a href="{% url 'projects:system_list' %}" class="nav-link center">
+                <i class="fas fa-th-large"></i>
+                <span>SYSTEMS INDEX</span>
+            </a>
+            
+            {% if next_system %}
+            <a href="{{ next_system.get_absolute_url }}" class="nav-link next">
+                <div class="nav-direction">
+                    NEXT SYSTEM <i class="fas fa-chevron-right"></i>
+                </div>
+                <div class="nav-system-info">
+                    <span class="nav-system-id">{{ next_system.system_id }}</span>
+                    <span class="nav-system-title">{{ next_system.title }}</span>
+                </div>
+            </a>
+            {% else %}
+            <div class="nav-spacer"></div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Lightbox Modal -->
+<div id="lightbox" class="lightbox">
+    <div class="lightbox-content">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-image" id="lightbox-img">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'projects/js/systems.js' %}"></script>
+<script>
+// Lightbox functionality
+function openLightbox(img) {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCaption = document.getElementById('lightbox-caption');
+    
+    lightbox.style.display = 'block';
+    lightboxImg.src = img.src;
+    lightboxCaption.textContent = img.alt;
+}
+
+// Close lightbox
+document.querySelector('.lightbox-close').onclick = function() {
+    document.getElementById('lightbox').style.display = 'none';
+}
+
+document.getElementById('lightbox').onclick = function(event) {
+    if (event.target === this) {
+        this.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

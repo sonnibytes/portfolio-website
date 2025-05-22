@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% load static %}
+{% load core_tags %}
+
+{% block title %}{{ system_type.name }} Systems | ML DEVLOG{% endblock %}
+{% block meta_description %}{{ system_type.description|default:system_type.name }} systems and projects in the ML DEVLOG portfolio{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'projects/css/system_type.css' %}">
+{% endblock %}
+
+{% block body_class %}system-type-page grid-pattern{% endblock %}
+
+{% block content %}
+<!-- System Type Header -->
+<section class="system-type-header-section">
+    <div class="container">
+        <!-- Navigation Breadcrumbs -->
+        <nav class="system-breadcrumbs">
+            <a href="{% url 'projects:system_list' %}" class="breadcrumb-link">
+                <i class="fas fa-arrow-left"></i> SYSTEMS INDEX
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">{{ system_type.name|upper }}</span>
+        </nav>
+        
+        <div class="system-type-hero">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="type-icon-container">
+                        <div class="type-icon-hex" style="--type-color: {{ system_type.color }}">
+                            {% if system_type.icon %}
+                            <i class="fas {{ system_type.icon }}"></i>
+                            {% else %}
+                            <span class="type-code">{{ system_type.code }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <h1 class="system-type-title">
+                        {{ system_type.name|upper }}
+                        <span class="type-subtitle">System Classification</span>
+                    </h1>
+                    
+                    {% if system_type.description %}
+                    <p class="system-type-description">{{ system_type.description }}</p>
+                    {% endif %}
+                    
+                    <!-- Type Stats -->
+                    <div class="type-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">{{ total_systems }}</div>
+                            <div class="stat-label">SYSTEMS</div>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ avg_completion|floatformat:0 }}%</div>
+                            <div class="stat-label">AVG COMPLETION</div>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ common_technologies|length }}</div>
+                            <div class="stat-label">TECHNOLOGIES</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="type-visual">
+                        <!-- Technology Radar Chart -->
+                        <div class="tech-radar-container">
+                            <div class="radar-chart" 
+                                 data-values="{% for tech in common_technologies|slice:':6' %}{{ tech.usage_count }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                 data-labels="{% for tech in common_technologies|slice:':6' %}{{ tech.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                 data-max="{{ common_technologies.0.usage_count|default:10 }}">
+                            </div>
+                            <div class="radar-title">TECHNOLOGY USAGE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Common Technologies Section -->
+{% if common_technologies %}
+<section class="common-technologies-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">TECHNOLOGY STACK</h2>
+            <div class="section-subtitle">Most frequently used technologies in {{ system_type.name|lower }} systems</div>
+            <div class="section-divider"></div>
+        </div>
+        
+        <div class="technologies-grid">
+            {% for tech in common_technologies %}
+            <div class="tech-card" style="--tech-color: {{ tech.color }}">
+                <div class="tech-icon">
+                    {% if tech.icon %}
+                    <i class="fab {{ tech.icon }}"></i>
+                    {% else %}
+                    <i class="fas fa-code"></i>
+                    {% endif %}
+                </div>
+                <div class="tech-info">
+                    <h3 class="tech-name">{{ tech.name }}</h3>
+                    <div class="tech-category">{{ tech.get_category_display }}</div>
+                    <div class="tech-usage">
+                        <span class="usage-count">{{ tech.usage_count }}</span>
+                        <span class="usage-label">systems</span>
+                    </div>
+                </div>
+                <div class="tech-progress">
+                    <div class="progress-ring">
+                        <svg viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="16" class="progress-bg"></circle>
+                            <circle cx="18" cy="18" r="16" class="progress-bar" 
+                                    style="--progress: {{ tech.usage_count|multiply:100|divisibleby:total_systems }}"></circle>
+                        </svg>
+                        <div class="progress-text">{{ tech.usage_count|multiply:100|divisibleby:total_systems|floatformat:0 }}%</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Systems Grid -->
+<section class="systems-grid-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">{{ system_type.name|upper }} SYSTEMS</h2>
+            <div class="section-subtitle">{{ total_systems }} active system{{ total_systems|pluralize }} in this classification</div>
+            <div class="section-divider"></div>
+        </div>
+        
+        <div class="systems-grid">
+            {% for system in systems %}
+            <div class="system-card" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
+                <!-- System Header -->
+                <div class="system-card-header">
+                    <div class="system-id-badge">{{ system.system_id }}</div>
+                    <div class="system-status" style="--status-color: {{ system.get_status_color }}">
+                        <div class="status-dot"></div>
+                        {{ system.get_status_display }}
+                    </div>
+                </div>
+                
+                <!-- System Image -->
+                <div class="system-image">
+                    {% if system.thumbnail %}
+                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
+                    {% else %}
+                    <div class="image-placeholder">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Complexity Indicator -->
+                    <div class="complexity-indicator">
+                        <div class="complexity-bars">
+                            {% for i in "12345" %}
+                            <div class="complexity-bar {% if forloop.counter <= system.complexity %}active{% endif %}"></div>
+                            {% endfor %}
+                        </div>
+                        <span class="complexity-label">COMPLEXITY</span>
+                    </div>
+                </div>
+                
+                <!-- System Info -->
+                <div class="system-info">
+                    <h3 class="system-name">{{ system.title }}</h3>
+                    <p class="system-excerpt">{{ system.excerpt|truncatewords:12 }}</p>
+                    
+                    <!-- Progress Display -->
+                    <div class="progress-display">
+                        <div class="progress-header">
+                            <span class="progress-label">DEVELOPMENT PROGRESS</span>
+                            <span class="progress-percentage">{{ system.completion_percent }}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="--progress: {{ system.completion_percent }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Key Technologies -->
+                    <div class="system-technologies">
+                        {% for tech in system.technologies.all|slice:":4" %}
+                        <span class="tech-pill" style="--tech-color: {{ tech.color }}">
+                            {{ tech.name }}
+                        </span>
+                        {% endfor %}
+                        {% if system.technologies.count > 4 %}
+                        <span class="tech-pill more">+{{ system.technologies.count|add:"-4" }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- System Actions -->
+                    <div class="system-actions">
+                        <a href="{{ system.get_absolute_url }}" class="action-btn primary">
+                            <i class="fas fa-search"></i> ANALYZE
+                        </a>
+                        {% if system.live_url %}
+                        <a href="{{ system.live_url }}" target="_blank" class="action-btn secondary">
+                            <i class="fas fa-external-link-alt"></i> ACCESS
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- HUD Effects -->
+                <div class="system-scan-line"></div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="no-systems-message">
+                    <div class="no-systems-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3>NO SYSTEMS FOUND</h3>
+                    <p>No {{ system_type.name|lower }} systems are currently available.</p>
+                    <a href="{% url 'projects:system_list' %}" class="btn btn-outline">VIEW ALL SYSTEMS</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Back to Systems -->
+        <div class="back-to-systems">
+            <a href="{% url 'projects:system_list' %}" class="back-link">
+                <i class="fas fa-arrow-left"></i> BACK TO SYSTEMS INDEX
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'projects/js/system_type.js' %}"></script>
+{% endblock %}

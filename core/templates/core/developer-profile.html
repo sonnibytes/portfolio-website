@@ -1,11 +1,590 @@
 {% extends "base.html" %}
 {% load static %}
+{% load core_tags %}
 
-{% block title %}About | Sonni Gunnels{% endblock %}
+{% block title %}Developer Profile | ML DEVLOG{% endblock %}
+{% block meta_description %}Explore Sonni Gunnels' developer profile - skills, systems, and tech insights visualized through interactive dashboards{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/about.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}">
+{% endblock %}
+
+{% block body_class %}about-page dashboard-page{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Welcome to my Portfolio</h1>
-    <p>This is the homepage.</p>
-</div>
+<!-- Developer Profile Header -->
+<section class="profile-header-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-3 col-md-4">
+                <div class="profile-image-container tech-frame scanning-effect">
+                    <img src="{% static 'images/profile.jpg' %}" alt="Sonni Gunnels" class="profile-image">
+                    <div class="profile-image-scan-line"></div>
+                    <div class="profile-status">
+                        <span class="status-indicator pulse-effect"></span>
+                        <span class="status-text">Online</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-9 col-md-8">
+                <div class="profile-header">
+                    <h1 class="profile-name">
+                        <span class="text-gradient">Sonni</span> 
+                        <span class="text-purple">Gunnels</span>
+                    </h1>
+                    <div class="profile-title">Python Developer & ML Engineer</div>
+                    <div class="profile-meta">
+                        <div class="profile-meta-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Birmingham, Alabama, USA</span>
+                        </div>
+                        <div class="profile-meta-item">
+                            <i class="fas fa-microchip"></i>
+                            <span>{{ total_systems }} Active Systems</span>
+                        </div>
+                        <div class="profile-meta-item">
+                            <i class="fas fa-file-alt"></i>
+                            <span>{{ total_logs_count }} DEVLOGs</span>
+                        </div>
+                        <div class="profile-meta-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>{{ coding_years|default:"3" }} Years of Development</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <a href="{% url 'core:contact' %}" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i> Initialize Contact
+                        </a>
+                        <a href="{% url 'core:resume' %}" class="btn btn-outline">
+                            <i class="fas fa-file-alt me-2"></i> Access Resume
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Profile Overview Section -->
+<section class="profile-section">
+    <div class="container">
+        <!-- Bio and Expertise -->
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="profile-card tech-frame scanning-effect">
+                    <div class="profile-card-header">
+                        <h2 class="profile-card-title">
+                            <i class="fas fa-user-circle me-2"></i> Developer Profile
+                        </h2>
+                    </div>
+                    <div class="profile-card-body">
+                        <p>As a Python developer with a focus on machine learning, I blend analytical thinking with a passion for creating intelligent solutions. With a background in systems development, I've built a comprehensive portfolio of ML projects and web applications.</p>
+                        <p>I'm driven by the opportunity to turn complex data into actionable insights, whether through ML models, data visualization, or intuitive system interfaces.</p>
+                        <p>ML DEVLOG represents my journey through the world of programming and artificial intelligence, showcasing systems and insights from my development experiences.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="profile-card tech-frame">
+                    <div class="profile-card-header">
+                        <h2 class="profile-card-title">
+                            <i class="fas fa-star me-2"></i> Core Expertise
+                        </h2>
+                    </div>
+                    <div class="profile-card-body">
+                        <div class="expertise-area">
+                            <div class="expertise-item">
+                                <div class="expertise-icon" style="--color: var(--color-cyan)">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div class="expertise-content">
+                                    <h3 class="expertise-title">Machine Learning</h3>
+                                    <p class="expertise-desc">Model development, training, and optimization</p>
+                                </div>
+                            </div>
+                            <div class="expertise-item">
+                                <div class="expertise-icon" style="--color: var(--color-purple)">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <div class="expertise-content">
+                                    <h3 class="expertise-title">Data Science</h3>
+                                    <p class="expertise-desc">Data analysis, visualization, and interpretation</p>
+                                </div>
+                            </div>
+                            <div class="expertise-item">
+                                <div class="expertise-icon" style="--color: var(--color-coral)">
+                                    <i class="fas fa-laptop-code"></i>
+                                </div>
+                                <div class="expertise-content">
+                                    <h3 class="expertise-title">System Development</h3>
+                                    <p class="expertise-desc">Building interactive applications and APIs</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Stats Dashboard -->
+        <div class="dashboard-section">
+            <div class="row">
+                <div class="col-12">
+                    {% section_header "Tech Stats Dashboard" "Interactive overview of skills and system metrics" %}
+                </div>
+            </div>
+
+            <!-- Skill Radar Chart -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="dashboard-card tech-frame">
+                        <div class="dashboard-card-header">
+                            <h3 class="dashboard-card-title">
+                                <i class="fas fa-chart-radar me-2"></i> Skill Proficiency
+                            </h3>
+                            <div class="card-actions">
+                                <button class="btn-card-action" data-bs-toggle="tooltip" title="View Details">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="dashboard-card-body">
+                            <div class="skill-radar-container">
+                                <div class="radar-chart-wrapper" 
+                                     data-skills="Python,Machine Learning,Data Analysis,System Development,API Design,Cloud Services"
+                                     data-values="90,85,88,82,85,78">
+                                    <!-- Radar chart will be rendered here via JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technology Usage Stats -->
+                <div class="col-lg-6">
+                    <div class="dashboard-card tech-frame">
+                        <div class="dashboard-card-header">
+                            <h3 class="dashboard-card-title">
+                                <i class="fas fa-code me-2"></i> Technology Usage
+                            </h3>
+                            <div class="card-actions">
+                                <button class="btn-card-action" data-bs-toggle="tooltip" title="View Details">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="dashboard-card-body">
+                            {% for tech in top_technologies %}
+                            <div class="tech-usage-item">
+                                <div class="tech-usage-info">
+                                    <div class="tech-name">{{ tech.name }}</div>
+                                    <div class="tech-count">{{ tech.systems_count }} systems</div>
+                                </div>
+                                <div class="tech-usage-bar">
+                                    <div class="tech-usage-progress" style="width: {{ tech.percentage }}%; --bar-color: {{ tech.color }}"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Metrics and Activity -->
+            <div class="row g-4">
+                <!-- System Metrics -->
+                <div class="col-lg-4">
+                    <div class="dashboard-card tech-frame">
+                        <div class="dashboard-card-header">
+                            <h3 class="dashboard-card-title">
+                                <i class="fas fa-chart-pie me-2"></i> System Metrics
+                            </h3>
+                        </div>
+                        <div class="dashboard-card-body">
+                            <div class="metric-tiles">
+                                <div class="metric-tile">
+                                    <div class="metric-value">{{ systems_completed|default:"5" }}</div>
+                                    <div class="metric-label">Deployed</div>
+                                </div>
+                                <div class="metric-tile">
+                                    <div class="metric-value">{{ systems_in_progress|default:"2" }}</div>
+                                    <div class="metric-label">In Progress</div>
+                                </div>
+                                <div class="metric-tile">
+                                    <div class="metric-value">{{ avg_system_duration|default:"3.2" }}</div>
+                                    <div class="metric-label">Avg Duration</div>
+                                </div>
+                                <div class="metric-tile">
+                                    <div class="metric-value">{{ languages_used|default:"8" }}</div>
+                                    <div class="metric-label">Languages</div>
+                                </div>
+                            </div>
+                            
+                            <div class="system-categories-chart">
+                                <!-- System categories distribution chart will render here -->
+                                <div class="chart-container" id="systemCategoriesChart">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GitHub Activity -->
+                <div class="col-lg-4">
+                    <div class="dashboard-card tech-frame">
+                        <div class="dashboard-card-header">
+                            <h3 class="dashboard-card-title">
+                                <i class="fab fa-github me-2"></i> GitHub Activity
+                            </h3>
+                        </div>
+                        <div class="dashboard-card-body">
+                            <div class="github-stats">
+                                <div class="github-stat">
+                                    <div class="github-stat-value">{{ github_repos|default:"12" }}</div>
+                                    <div class="github-stat-label">Repositories</div>
+                                </div>
+                                <div class="github-stat">
+                                    <div class="github-stat-value">{{ github_stars|default:"48" }}</div>
+                                    <div class="github-stat-label">Stars</div>
+                                </div>
+                                <div class="github-stat">
+                                    <div class="github-stat-value">{{ github_forks|default:"15" }}</div>
+                                    <div class="github-stat-label">Forks</div>
+                                </div>
+                                <div class="github-stat">
+                                    <div class="github-stat-value">{{ github_contributions|default:"847" }}</div>
+                                    <div class="github-stat-label">Contributions</div>
+                                </div>
+                            </div>
+                            <div class="github-activity-chart">
+                                <div class="contribution-graph" id="contributionGraph">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card-footer text-center">
+                            <a href="https://github.com/ksg-dev" target="_blank" class="btn btn-sm btn-outline">
+                                <i class="fab fa-github me-1"></i> View GitHub Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DEVLOGs Activity -->
+                <div class="col-lg-4">
+                    <div class="dashboard-card tech-frame">
+                        <div class="dashboard-card-header">
+                            <h3 class="dashboard-card-title">
+                                <i class="fas fa-file-alt me-2"></i> DEVLOG Stats
+                            </h3>
+                        </div>
+                        <div class="dashboard-card-body">
+                            <div class="logs-stats">
+                                <div class="logs-stat">
+                                    <div class="logs-stat-value">{{ total_logs_count }}</div>
+                                    <div class="logs-stat-label">Total Logs</div>
+                                </div>
+                                <div class="logs-stat">
+                                    <div class="logs-stat-value">{{ total_categories }}</div>
+                                    <div class="logs-stat-label">Categories</div>
+                                </div>
+                                <div class="logs-stat">
+                                    <div class="logs-stat-value">{{ total_tags|default:"24" }}</div>
+                                    <div class="logs-stat-label">Tags</div>
+                                </div>
+                                <div class="logs-stat">
+                                    <div class="logs-stat-value">{{ logs_avg_reading_time|default:"4.2" }}</div>
+                                    <div class="logs-stat-label">Avg Read Time</div>
+                                </div>
+                            </div>
+                            
+                            <div class="logs-category-distribution">
+                                <h4 class="small-heading">Category Distribution</h4>
+                                <div class="category-bars">
+                                    {% for category in log_categories %}
+                                    <div class="category-bar-item">
+                                        <div class="category-bar-label">{{ category.name }}</div>
+                                        <div class="category-bar-container">
+                                            <div class="category-bar-progress" style="width: {{ category.percentage }}%; background-color: {{ category.color }}"></div>
+                                        </div>
+                                        <div class="category-bar-count">{{ category.count }}</div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="category-bar-item">
+                                        <div class="category-bar-label">Development</div>
+                                        <div class="category-bar-container">
+                                            <div class="category-bar-progress" style="width: 75%; background-color: var(--color-cyan)"></div>
+                                        </div>
+                                        <div class="category-bar-count">12</div>
+                                    </div>
+                                    <div class="category-bar-item">
+                                        <div class="category-bar-label">Learning</div>
+                                        <div class="category-bar-container">
+                                            <div class="category-bar-progress" style="width: 60%; background-color: var(--color-purple)"></div>
+                                        </div>
+                                        <div class="category-bar-count">8</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dashboard-card-footer text-center">
+                            <a href="{% url 'blog:post_list' %}" class="btn btn-sm btn-outline">
+                                <i class="fas fa-book-open me-1"></i> View All DEVLOGs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills Details Section -->
+        <div class="skills-section" id="skills">
+            <div class="row">
+                <div class="col-12">
+                    {% section_header "Technical Skills" "Detailed breakdown by category" %}
+                </div>
+            </div>
+            
+            <div class="skills-container">
+                <!-- Programming Languages -->
+                {% if skill_categories.languages %}
+                <div class="skill-category mb-5">
+                    <div class="skill-category-header">
+                        <h3 class="skill-category-title">{{ skill_categories.languages.label }}</h3>
+                        <div class="skill-category-divider"></div>
+                    </div>
+                    
+                    <div class="row g-4">
+                        {% for skill in skill_categories.languages.skills %}
+                        <div class="col-lg-6">
+                            <div class="skill-card tech-frame">
+                                <div class="skill-header">
+                                    {% if skill.icon %}
+                                    <div class="skill-icon"><i class="fas {{ skill.icon }}" style="color: {{ skill.color }}"></i></div>
+                                    {% endif %}
+                                    <h4 class="skill-name">{{ skill.name }}</h4>
+                                    <div class="skill-level">{{ skill.proficiency }}/5</div>
+                                </div>
+                                
+                                <div class="skill-progress-container">
+                                    <div class="progress-indicator">
+                                        <div class="progress-bar" style="width: {{ skill.proficiency|multiply:20 }}%; background: linear-gradient(90deg, {{ skill.color }}, var(--color-purple))"></div>
+                                    </div>
+                                </div>
+                                
+                                {% if skill.description %}
+                                <p class="skill-description">{{ skill.description }}</p>
+                                {% endif %}
+                                
+                                <!-- Systems using this skill -->
+                                {% if skill.systems.count > 0 %}
+                                <div class="skill-systems">
+                                    <div class="skill-systems-label">{{ skill.systems.count }} System{{ skill.systems.count|pluralize }}</div>
+                                    <div class="skill-systems-list">
+                                        {% for system in skill.systems.all|slice:":3" %}
+                                        <a href="{{ system.get_absolute_url }}" class="skill-system-badge">{{ system.system_id }}</a>
+                                        {% endfor %}
+                                        {% if skill.systems.count > 3 %}
+                                        <span class="skill-system-badge more">+{{ skill.systems.count|add:"-3" }} more</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Other skill categories -->
+                {% for category, data in skill_categories.items %}
+                    {% if category != 'languages' %}
+                    <div class="skill-category mb-5">
+                        <div class="skill-category-header">
+                            <h3 class="skill-category-title">{{ data.label }}</h3>
+                            <div class="skill-category-divider"></div>
+                        </div>
+                        
+                        <div class="row g-4">
+                            {% for skill in data.skills %}
+                            <div class="col-lg-6">
+                                <div class="skill-card tech-frame">
+                                    <div class="skill-header">
+                                        {% if skill.icon %}
+                                        <div class="skill-icon"><i class="fas {{ skill.icon }}" style="color: {{ skill.color }}"></i></div>
+                                        {% endif %}
+                                        <h4 class="skill-name">{{ skill.name }}</h4>
+                                        <div class="skill-level">{{ skill.proficiency }}/5</div>
+                                    </div>
+                                    
+                                    <div class="skill-progress-container">
+                                        <div class="progress-indicator">
+                                            <div class="progress-bar" style="width: {{ skill.proficiency|multiply:20 }}%; background: linear-gradient(90deg, {{ skill.color }}, var(--color-purple))"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if skill.description %}
+                                    <p class="skill-description">{{ skill.description }}</p>
+                                    {% endif %}
+                                    
+                                    <!-- Systems using this skill -->
+                                    {% if skill.systems.count > 0 %}
+                                    <div class="skill-systems">
+                                        <div class="skill-systems-label">{{ skill.systems.count }} System{{ skill.systems.count|pluralize }}</div>
+                                        <div class="skill-systems-list">
+                                            {% for system in skill.systems.all|slice:":3" %}
+                                            <a href="{{ system.get_absolute_url }}" class="skill-system-badge">{{ system.system_id }}</a>
+                                            {% endfor %}
+                                            {% if skill.systems.count > 3 %}
+                                            <span class="skill-system-badge more">+{{ skill.systems.count|add:"-3" }} more</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Experience Timeline -->
+        <div class="experience-section" id="experience">
+            <div class="row">
+                <div class="col-12">
+                    {% section_header "Professional Experience" "Career journey and system development history" %}
+                </div>
+            </div>
+            
+            <div class="timeline-container">
+                {% for experience in experiences %}
+                <div class="timeline-item {% cycle 'left' 'right' %}">
+                    <div class="timeline-content tech-frame">
+                        <div class="timeline-header">
+                            <h3 class="timeline-title">{{ experience.position }}</h3>
+                            <div class="timeline-company">{{ experience.company }}</div>
+                        </div>
+                        
+                        <div class="timeline-date">
+                            <span class="date-label">{{ experience.start_date|date:"M Y" }} — {% if experience.is_current %}Present{% else %}{{ experience.end_date|date:"M Y" }}{% endif %}</span>
+                            <span class="duration-label">{{ experience.start_date|get_experience_duration:experience.end_date }}</span>
+                        </div>
+                        
+                        <div class="timeline-body">
+                            <p>{{ experience.description|linebreaks }}</p>
+                        </div>
+                        
+                        {% if experience.technologies %}
+                        <div class="timeline-tech">
+                            <div class="tech-tags">
+                                {% for tech in experience.get_technologies_list %}
+                                <span class="tech-tag">{{ tech }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Related Systems -->
+                        {% if experience.related_systems.exists %}
+                        <div class="timeline-systems">
+                            <h4 class="timeline-systems-title">Related Systems:</h4>
+                            <div class="timeline-system-badges">
+                                {% for system in experience.related_systems.all %}
+                                <a href="{{ system.get_absolute_url }}" class="system-badge">
+                                    {{ system.system_id }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center">
+                    <p>Professional experience will be added soon.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Education Section -->
+        <div class="education-section" id="education">
+            <div class="row">
+                <div class="col-12">
+                    {% section_header "Education" "Academic background and certifications" %}
+                </div>
+            </div>
+            
+            <div class="education-container">
+                <div class="row g-4">
+                    {% for edu in education %}
+                    <div class="col-lg-6">
+                        <div class="education-card tech-frame">
+                            <div class="education-header">
+                                <h3 class="education-degree">{{ edu.degree }}</h3>
+                                <div class="education-field">{{ edu.field_of_study }}</div>
+                                <div class="education-institution">{{ edu.institution }}</div>
+                            </div>
+                            
+                            <div class="education-date">
+                                <span class="date-label">{{ edu.start_date|date:"Y" }} — {% if edu.is_current %}Present{% else %}{{ edu.end_date|date:"Y" }}{% endif %}</span>
+                            </div>
+                            
+                            {% if edu.description %}
+                            <div class="education-description">
+                                <p>{{ edu.description }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center">
+                        <p>Education details will be added soon.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Connect Section -->
+        <div class="connect-section" id="connect">
+            <div class="row">
+                <div class="col-12">
+                    {% section_header "Connect" "Find me on various platforms" %}
+                </div>
+            </div>
+            
+            <div class="connect-container text-center">
+                <div class="social-icons with-labels">
+                    {% for link in social_links %}
+                    <a href="{{ link.url }}" target="_blank" class="social-icon" aria-label="{{ link.name }}">
+                        <i class="fab {{ link.icon }}"></i>
+                        <span class="social-name">{{ link.name }}</span>
+                    </a>
+                    {% empty %}
+                    <p>Social links will be added soon.</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="connect-cta mt-5">
+                    <p>Interested in collaborating on a system or have a question?</p>
+                    <a href="{% url 'core:contact' %}" class="btn btn-primary">Initialize Contact</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script> 
+<script src="{% static 'core/js/about.js' %}"></script>
+<script src="{% static 'core/js/dashboard.js' %}"></script>
 {% endblock %}

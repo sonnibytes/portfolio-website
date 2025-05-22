@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Systems Overview | ML DEVLOG{% endblock %}
+{% block meta_description %}Explore Python, Machine Learning, and AI systems developed by Sonni Gunnels{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'projects/css/systems.css' %}">
+{% endblock %}
+
+{% block body_class %}systems-page grid-pattern{% endblock %}
+
+{% block content %}
+<!-- Systems HUD Header -->
+<section class="systems-hero-section">
+    <div class="container">
+        <!-- HUD Corner Accents -->
+        <div class="hud-corner hud-corner-tl"></div>
+        <div class="hud-corner hud-corner-tr"></div>
+        <div class="hud-corner hud-corner-bl"></div>
+        <div class="hud-corner hud-corner-br"></div>
+        
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="systems-title">
+                    SYSTEM<span class="text-purple">MODULES</span>
+                    <span class="systems-subtitle">Active Project Catalog</span>
+                </h1>
+                <div class="systems-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ total_systems }}</div>
+                        <div class="stat-label">DEPLOYED</div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ systems_in_development }}</div>
+                        <div class="stat-label">IN DEV</div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ avg_completion|floatformat:0 }}%</div>
+                        <div class="stat-label">AVG COMPLETE</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="systems-visual">
+                    <!-- System Status Display -->
+                    <div class="status-display">
+                        <div class="status-ring">
+                            <div class="status-indicator active"></div>
+                            <div class="status-text">ALL SYSTEMS OPERATIONAL</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Systems Showcase -->
+{% if featured_systems %}
+<section class="featured-systems-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">FEATURED SYSTEMS</h2>
+            <div class="section-divider"></div>
+        </div>
+        
+        <div class="featured-systems-grid">
+            {% for system in featured_systems %}
+            <div class="featured-system-card">
+                <div class="system-header">
+                    <div class="system-id">{{ system.system_id }}</div>
+                    <div class="system-status" style="--status-color: {{ system.get_status_color }}">
+                        {{ system.get_status_display }}
+                    </div>
+                </div>
+                
+                <div class="system-image">
+                    {% if system.featured_image %}
+                    <img src="{{ system.featured_image.url }}" alt="{{ system.title }}">
+                    {% else %}
+                    <div class="image-placeholder">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="system-content">
+                    <h3 class="system-title">{{ system.title }}</h3>
+                    <p class="system-excerpt">{{ system.excerpt }}</p>
+                    
+                    <div class="system-metrics">
+                        <div class="metric">
+                            <span class="metric-label">COMPLEXITY</span>
+                            <span class="metric-value">{{ system.get_complexity_display }}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">PROGRESS</span>
+                            <span class="metric-value">{{ system.completion_percent }}%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-tech">
+                        {% for tech in system.technologies.all|slice:":4" %}
+                        <span class="tech-badge" style="--tech-color: {{ tech.color }}">
+                            {{ tech.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    
+                    <a href="{{ system.get_absolute_url }}" class="system-access-btn">
+                        ACCESS SYSTEM <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Systems Filter HUD -->
+<section class="systems-filter-section">
+    <div class="container">
+        <div class="filter-hud">
+            <!-- Filter Controls -->
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label class="filter-label">SYSTEM TYPE</label>
+                    <select class="filter-select" onchange="updateFilters()">
+                        <option value="">ALL TYPES</option>
+                        {% for type in system_types %}
+                        <option value="{{ type.slug }}" {% if current_type == type.slug %}selected{% endif %}>
+                            {{ type.name }} ({{ type.systems_count }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">TECHNOLOGY</label>
+                    <select class="filter-select" onchange="updateFilters()">
+                        <option value="">ALL TECH</option>
+                        {% for tech in technologies %}
+                        <option value="{{ tech.slug }}" {% if current_tech == tech.slug %}selected{% endif %}>
+                            {{ tech.name }} ({{ tech.systems_count }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">SORT BY</label>
+                    <select class="filter-select" onchange="updateFilters()">
+                        <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>NEWEST FIRST</option>
+                        <option value="title" {% if current_sort == 'title' %}selected{% endif %}>NAME A-Z</option>
+                        <option value="-completion_percent" {% if current_sort == '-completion_percent' %}selected{% endif %}>COMPLETION</option>
+                        <option value="complexity" {% if current_sort == 'complexity' %}selected{% endif %}>COMPLEXITY</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">SEARCH</label>
+                    <div class="search-input-container">
+                        <input type="text" class="search-input" placeholder="SEARCH SYSTEMS..." value="{{ current_search }}">
+                        <button class="search-btn" onclick="executeSearch()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Filter Tags -->
+            <div class="quick-filters">
+                <span class="filter-label">QUICK FILTERS:</span>
+                {% for type in system_types|slice:":5" %}
+                <a href="?type={{ type.slug }}" class="quick-filter-tag {% if current_type == type.slug %}active{% endif %}"
+                   style="--filter-color: {{ type.color }}">
+                    {{ type.code }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Systems Grid -->
+<section class="systems-grid-section">
+    <div class="container">
+        <div class="systems-grid">
+            {% for system in systems %}
+            <div class="system-card" data-system-type="{{ system.system_type.slug }}" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
+                <!-- System Header -->
+                <div class="system-card-header">
+                    <div class="system-id-badge">{{ system.system_id }}</div>
+                    <div class="system-type-hex" style="--type-color: {{ system.system_type.color }}">
+                        {{ system.system_type.code }}
+                    </div>
+                </div>
+                
+                <!-- System Image -->
+                <div class="system-image">
+                    {% if system.thumbnail %}
+                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
+                    {% else %}
+                    <div class="image-placeholder">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Status Overlay -->
+                    <div class="status-overlay">
+                        <div class="status-indicator" style="--status-color: {{ system.get_status_color }}"></div>
+                        <span class="status-text">{{ system.get_status_display }}</span>
+                    </div>
+                </div>
+                
+                <!-- System Info -->
+                <div class="system-info">
+                    <h3 class="system-name">{{ system.title }}</h3>
+                    <p class="system-description">{{ system.excerpt|truncatewords:15 }}</p>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-container">
+                        <div class="progress-label">
+                            <span>COMPLETION</span>
+                            <span>{{ system.completion_percent }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ system.completion_percent }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Technologies -->
+                    <div class="system-technologies">
+                        {% for tech in system.technologies.all|slice:":3" %}
+                        <span class="tech-pill" style="--tech-color: {{ tech.color }}">
+                            {% if tech.icon %}<i class="fab {{ tech.icon }}"></i>{% endif %}
+                            {{ tech.name }}
+                        </span>
+                        {% endfor %}
+                        {% if system.technologies.count > 3 %}
+                        <span class="tech-pill more">+{{ system.technologies.count|add:"-3" }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- System Actions -->
+                    <div class="system-actions">
+                        <a href="{{ system.get_absolute_url }}" class="action-btn primary">
+                            <i class="fas fa-eye"></i> VIEW SYSTEM
+                        </a>
+                        {% if system.live_url %}
+                        <a href="{{ system.live_url }}" target="_blank" class="action-btn secondary">
+                            <i class="fas fa-external-link-alt"></i> LIVE DEMO
+                        </a>
+                        {% endif %}
+                        {% if system.github_url %}
+                        <a href="{{ system.github_url }}" target="_blank" class="action-btn tertiary">
+                            <i class="fab fa-github"></i> CODE
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- HUD Scanning Effect -->
+                <div class="scan-line"></div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="no-systems-message">
+                    <div class="no-systems-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>NO SYSTEMS FOUND</h3>
+                    <p>No systems match your current filter criteria. Try adjusting your filters or search terms.</p>
+                    <a href="{% url 'projects:system_list' %}" class="btn btn-outline">CLEAR FILTERS</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination-container">
+            <nav class="pagination-nav">
+                {% if page_obj.has_previous %}
+                <a href="?page=1" class="page-link first">&laquo;&laquo;</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="page-link prev">&laquo;</a>
+                {% endif %}
+                
+                <span class="page-info">
+                    PAGE {{ page_obj.number }} OF {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="page-link next">&raquo;</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link last">&raquo;&raquo;</a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'projects/js/systems.js' %}"></script>
+<script>
+// Filter and search functionality
+function updateFilters() {
+    const typeFilter = document.querySelector('select[onchange="updateFilters()"]').value;
+    const techFilter = document.querySelectorAll('select[onchange="updateFilters()"]')[1].value;
+    const sortFilter = document.querySelectorAll('select[onchange="updateFilters()"]')[2].value;
+    
+    const url = new URL(window.location);
+    url.searchParams.set('type', typeFilter);
+    url.searchParams.set('tech', techFilter);
+    url.searchParams.set('sort', sortFilter);
+    
+    window.location.href = url.toString();
+}
+
+function executeSearch() {
+    const searchTerm = document.querySelector('.search-input').value;
+    const url = new URL(window.location);
+    url.searchParams.set('search', searchTerm);
+    window.location.href = url.toString();
+}
+
+// Allow Enter key to trigger search
+document.querySelector('.search-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        executeSearch();
+    }
+});
+</script>
+{% endblock %}

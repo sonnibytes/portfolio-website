@@ -6,6 +6,7 @@ from django.utils import timezone
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 import re
+from datetime import timedelta
 from bs4 import BeautifulSoup
 
 
@@ -223,7 +224,7 @@ class Post(models.Model):
         return headings
 
     def get_system_connections(self):
-        """Get all system connections with metadata"""
+        """Get all system connection with metadata."""
         return self.system_connections.all().select_related("system")
 
     def get_primary_system(self):
@@ -232,6 +233,24 @@ class Post(models.Model):
             "-priority", "-completion_impact"
         ).first()
         return connection.system if connection else None
+
+    def get_system_connections_by_type(self):
+        """Get all system connections grouped by type."""
+        connections = {}
+        for connection in self.system_connections.all():
+            conn_type = connection.connection_type
+            if conn_type not in connections:
+                connections[conn_type] = []
+            connections[conn_type].append(connection)
+        return connections
+
+    def has_system_connections(self):
+        """Check if post has any system connections."""
+        return self.system_connections.exists()
+
+    def get_related_systems(self):
+        """Get all related systems for this post."""
+        return [conn.system for conn in self.system_connections.all()]
 
     # Handle Series
     def is_in_series(self):
@@ -339,8 +358,8 @@ class SeriesPost(models.Model):
 # Connection to Systems/Projects
 class SystemLogEntry(models.Model):
     """
-    Connection model between blog posts and projects with additional metadata.
-    Represents how a log entry relates to a specific system/project.
+    Enhanced connection model between blog posts and systems with HUD-style metadata.
+    Represents how a DEVLOG entry relates to a specific system/project.
     """
 
     CONNECTION_TYPES = (
@@ -350,7 +369,12 @@ class SystemLogEntry(models.Model):
         ("update", "System Update"),
         ("troubleshooting", "Troubleshooting"),
         ("review", "System Review"),
-        ("enhancement", "Enhancement Log"),
+        ("enhancement", "Feature Enhancement"),
+        ("deployment", "Deployment Log"),
+        ("testing", "Testing Results"),
+        ("performance", "Performance Analysis"),
+        ("security", "Security Assessment"),
+        ("integration", "Integration Notes"),
     )
 
     PRIORITY_LEVELS = (
@@ -358,6 +382,13 @@ class SystemLogEntry(models.Model):
         (2, "Normal"),
         (3, "High"),
         (4, "Critical"),
+    )
+
+    LOG_STATUS = (
+        ("draft", "Draft"),
+        ("active", "Active"),
+        ("resolved", "Resolved"),
+        ("archived", "Archived"),
     )
 
     post = models.ForeignKey(
@@ -372,17 +403,29 @@ class SystemLogEntry(models.Model):
         max_length=20, choices=CONNECTION_TYPES, default="development"
     )
     priority = models.IntegerField(choices=PRIORITY_LEVELS, default=2)
+    log_status = models.CharField(
+        max_length=20,
+        choices=LOG_STATUS,
+        default='active'
+    )
+
+    # HUD-style identifiers
     log_entry_id = models.CharField(
-        max_length=20, blank=True, help_text="Auto-generated log entry ID"
+        max_length=20, blank=True, help_text="Auto-generated log entry ID (e.g. SYS-001-LOG-042)"
     )
 
     # Timestamps for the HUD feel
     logged_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this log entry was resolved/completed."
+    )
 
-    # Additional metadata
-    version_number = models.CharField(
-        max_length=20, blank=True, help_text="System version this log relates to"
+    # Impact metrics
+    system_version = models.CharField(
+        max_length=20, blank=True, help_text="System version this log relates to (e.g. v1.2.3)"
     )
     completion_impact = models.DecimalField(
         max_digits=5,
@@ -391,15 +434,41 @@ class SystemLogEntry(models.Model):
         help_text="How much this log entry contributed to project completion (%)",
     )
 
+    # Technical details
+    affected_components = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Comma-separated list of affected system components"
+    )
+
+    # For HUD dashboard display
+    performance_impact = models.CharField(
+        max_length=20,
+        choices=[
+            ('positive', 'Positive Impact'),
+            ('negative', 'Negative Impact'),
+            ('neutral', 'No Impact'),
+            ('unknown', 'Unknown'),
+        ],
+        default='neutral'
+    )
+
     class Meta:
         ordering = ["-logged_at"]
         unique_together = ["post", "system"]
+        verbose_name = "System Log Entry"
+        verbose_name_plural = "System Log Entries"
 
     def save(self, *args, **kwargs):
         if not self.log_entry_id:
             # Generate HUD-style log entry ID
             count = SystemLogEntry.objects.filter(system=self.system).count()
             self.log_entry_id = f"{self.system.system_id}-LOG-{count + 1:03d}"
+
+        # Auto-resolve based on post status
+        if self.post.status == 'published' and self.log_status == 'draft':
+            self.log_status = 'active'
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -407,6 +476,12 @@ class SystemLogEntry(models.Model):
 
     def get_status_color(self):
         """Return color based on priority for HUD styling"""
+        if self.log_status == 'resolved':
+            return '#27c93f'  # Green
+        elif self.log_status == 'archived':
+            return '#666666'  # Gray
+        
+        # Priority-based colors for active logs
         colors = {
             1: "#5edfff",  # Low - Light Blue
             2: "#00f0ff",  # Normal - Cyan
@@ -414,3 +489,37 @@ class SystemLogEntry(models.Model):
             4: "#ff6b8b",  # Critical - Coral
         }
         return colors.get(self.priority, "#00f0ff")
+    
+    def get_connection_icon(self):
+        """Return appropriate icon for connection type."""
+        icons = {
+            "development": "fa-code",
+            "documentation": "fa-file-alt",
+            "analysis": "fa-chart-line",
+            "update": "fa-sync-alt",
+            "troubleshooting": "fa-bug",
+            "review": "fa-search",
+            "enhancement": "fa-plus-circle",
+            "deployment": "fa-rocket",
+            "testing": "fa-vial",
+            "performance": "fa-tachometer-alt",
+            "security": "fa-shield-alt",
+            "integration": "fa-plug",
+        }
+        return icons.get(self.connection_type, "fa-file-alt")
+
+    def get_affected_components_list(self):
+        """Return affected components as a list."""
+        now = timezone.now()
+        diff = now - self.logged_at
+
+        if diff.days > 0:
+            return f"{diff.days} days ago"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours} hours ago"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes} minutes ago"
+        else:
+            return "Just now"
