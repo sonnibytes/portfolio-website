@@ -104,7 +104,7 @@ class SystemModule(models.Model):
     )
     featured = models.BooleanField(
         default=False, help_text="Feature this project on the homepage")
-    
+
     # Content Fields
     content = MarkdownxField()
     challenges = MarkdownxField(blank=True)
@@ -177,7 +177,7 @@ class SystemModule(models.Model):
 
     def get_absolute_url(self):
         return reverse("projects:system_detail", args=[self.slug])
- 
+
     def save(self, *args, **kwargs):
         # Auto-generate slug if not provided
         if not self.slug:
