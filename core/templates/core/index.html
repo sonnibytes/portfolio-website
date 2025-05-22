@@ -34,8 +34,8 @@
                         <div class="terminal-cursor"></div>
                     </div>
                     <div class="hero-buttons">
-                        <a href="{% url 'core:about' %}" class="btn btn-primary">Learn More <i class="fas fa-arrow-right ms-2"></i></a>
-                        <a href="{% url 'projects:project_list' %}" class="btn btn-outline">View Projects</a>
+                        <a href="{% url 'core:about' %}" class="btn btn-primary">Access Profile <i class="fas fa-arrow-right ms-2"></i></a>
+                        <a href="{% url 'projects:system_list' %}" class="btn btn-outline">View Systems</a>
                     </div>
                 </div>
             </div>
@@ -52,91 +52,163 @@
     </div>
 </section>
 
-<!-- Featured Projects Section -->
-<section class="featured-projects-section">
+<!-- System Status Dashboard -->
+<section class="system-status-section">
     <div class="container">
-        <h2 class="section-title text-center">Featured Projects</h2>
-        <div class="section-subtitle text-center mb-5">Recent endeavors in code and AI</div>
+        <div class="dashboard-grid">
+            <div class="status-card">
+                <div class="status-header">
+                    <h3 class="status-title">ACTIVE SYSTEMS</h3>
+                    <div class="status-indicator operational"></div>
+                </div>
+                <div class="status-value">{{ featured_systems.count }}</div>
+                <div class="status-label">Deployed</div>
+            </div>
+            
+            <div class="status-card">
+                <div class="status-header">
+                    <h3 class="status-title">DEVLOG ENTRIES</h3>
+                    <div class="status-indicator active"></div>
+                </div>
+                <div class="status-value">{{ latest_posts.count }}</div>
+                <div class="status-label">Recent Logs</div>
+            </div>
+            
+            <div class="status-card">
+                <div class="status-header">
+                    <h3 class="status-title">TECH STACK</h3>
+                    <div class="status-indicator scanning"></div>
+                </div>
+                <div class="status-value">{{ skill_categories.count }}</div>
+                <div class="status-label">Categories</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Systems Section -->
+<section class="featured-systems-section">
+    <div class="container">
+        <h2 class="section-title text-center">Featured Systems</h2>
+        <div class="section-subtitle text-center mb-5">Core system modules and active deployments</div>
         
         <div class="row">
-            {% for project in featured_projects %}
+            {% for system in featured_systems %}
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="project-card card-hover">
-                    <div class="project-image">
-                        {% if project.image %}
-                        <img src="{{ project.image.url }}" alt="{{ project.title }}" class="img-fluid">
+                <div class="system-card card-hover">
+                    <div class="system-header">
+                        <div class="system-id">{{ system.system_id }}</div>
+                        <div class="system-type-hex" style="--type-color: {{ system.system_type.color }}">
+                            {{ system.system_type.code }}
+                        </div>
+                    </div>
+                    
+                    <div class="system-image">
+                        {% if system.featured_image %}
+                        <img src="{{ system.featured_image.url }}" alt="{{ system.title }}" class="img-fluid">
                         {% else %}
                         <div class="image-placeholder">
-                            <i class="fas fa-code"></i>
+                            <i class="fas fa-microchip"></i>
                         </div>
                         {% endif %}
-                    </div>
-                    <div class="project-content">
-                        <h3 class="project-title">{{ project.title }}</h3>
-                        <p class="project-excerpt">{{ project.short_description }}</p>
                         
-                        <div class="tech-stack">
-                            {% for tech in project.get_technologies_list %}
-                            <span class="tech-tag">{{ tech }}</span>
-                            {% endfor %}
+                        <!-- Status Overlay -->
+                        <div class="status-overlay">
+                            <div class="status-indicator" style="--status-color: {{ system.get_status_color }}"></div>
+                            <span class="status-text">{{ system.get_status_display }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-content">
+                        <h3 class="system-title">{{ system.title }}</h3>
+                        <p class="system-excerpt">{{ system.excerpt }}</p>
+                        
+                        <div class="system-metrics">
+                            <div class="metric">
+                                <span class="metric-label">COMPLEXITY</span>
+                                <span class="metric-value">{{ system.get_complexity_display }}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">PROGRESS</span>
+                                <span class="metric-value">{{ system.completion_percent }}%</span>
+                            </div>
                         </div>
                         
-                        <a href="{{ project.get_absolute_url }}" class="project-link">View Project <i class="fas fa-arrow-right"></i></a>
+                        <div class="tech-stack">
+                            {% for tech in system.technologies.all|slice:":4" %}
+                            <span class="tech-tag" style="--tech-color: {{ tech.color }}">
+                                {{ tech.name }}
+                            </span>
+                            {% endfor %}
+                            {% if system.technologies.count > 4 %}
+                            <span class="tech-tag more">+{{ system.technologies.count|add:"-4" }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <a href="{{ system.get_absolute_url }}" class="system-link">Access System <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
             {% empty %}
             <div class="col-12 text-center">
-                <p>No projects to showcase yet. Check back soon!</p>
+                <p>No active systems to display. Check back soon!</p>
             </div>
             {% endfor %}
         </div>
         
         <div class="text-center mt-4">
-            <a href="{% url 'projects:project_list' %}" class="btn btn-outline">All Projects</a>
+            <a href="{% url 'projects:system_list' %}" class="btn btn-outline">All Systems</a>
         </div>
     </div>
 </section>
 
-<!-- Latest Blog Posts Section -->
-<section class="latest-posts-section">
+<!-- Latest DEVLOGs Section -->
+<section class="latest-logs-section">
     <div class="container">
         <h2 class="section-title text-center">Latest DEVLOGs</h2>
-        <div class="section-subtitle text-center mb-5">Technical insights and learning journey</div>
+        <div class="section-subtitle text-center mb-5">System documentation and development insights</div>
         
         <div class="row">
             {% for post in latest_posts %}
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="post-card tech-frame">
-                    <div class="post-image">
+                <div class="log-card tech-frame">
+                    <div class="log-header">
+                        <div class="log-id">LOG-{{ forloop.counter|stringformat:"03d" }}</div>
+                        <div class="log-category-hex" style="--category-color: {{ post.category.color|default:'var(--color-cyan)' }}">
+                            {{ post.category.code }}
+                        </div>
+                    </div>
+                    
+                    <div class="log-image">
                         {% if post.thumbnail %}
                         <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" class="img-fluid">
                         {% else %}
                         <div class="image-placeholder">
-                            <span class="image-icon">[ NO VISUAL DATA ]</span>
+                            <span class="log-icon">[ DATA ENTRY ]</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="log-content">
+                        <h3 class="log-title">{{ post.title }}</h3>
+                        <p class="log-excerpt">{{ post.excerpt }}</p>
+                        
+                        <div class="log-meta">
+                            <span class="log-date"><i class="far fa-calendar-alt"></i> {{ post.published_date|date:"M d, Y" }}</span>
+                            <span class="log-time"><i class="far fa-clock"></i> {{ post.reading_time }} min read</span>
+                        </div>
+                        
+                        <!-- System Connections -->
+                        {% if post.get_system_connections %}
+                        <div class="log-systems">
+                            <span class="systems-label">CONNECTED SYSTEMS:</span>
+                            {% for connection in post.get_system_connections|slice:":2" %}
+                            <span class="system-badge">{{ connection.system.system_id }}</span>
+                            {% endfor %}
                         </div>
                         {% endif %}
                         
-                        <!-- Overlaid Category Hexagon -->
-                        <div class="category-hex-overlay">
-                            <a href="{% url 'blog:category' slug=post.category.slug %}">
-                                <div class="category-hex" style="--category-color: {{ post.category.color|default:'var(--color-cyan)' }}">
-                                    {{ post.category.code }}
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="post-content">
-                        <h3 class="post-title">{{ post.title }}</h3>
-                        <p class="post-excerpt">{{ post.excerpt }}</p>
-                        
-                        <div class="post-meta">
-                            <span class="post-date"><i class="far fa-calendar-alt"></i> {{ post.published_date|date:"M d, Y" }}</span>
-                            <span class="post-time"><i class="far fa-clock"></i> {{ post.reading_time }} min read</span>
-                        </div>
-                        
-                        <a href="{{ post.get_absolute_url }}" class="post-link">Read Log <i class="fas fa-arrow-right"></i></a>
+                        <a href="{{ post.get_absolute_url }}" class="log-link">Access Log <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
@@ -156,19 +228,19 @@
 <!-- Skills Overview Section -->
 <section class="skills-section">
     <div class="container">
-        <h2 class="section-title text-center">Skills & Expertise</h2>
-        <div class="section-subtitle text-center mb-5">Technical proficiencies and competencies</div>
+        <h2 class="section-title text-center">Technical Proficiencies</h2>
+        <div class="section-subtitle text-center mb-5">Core competencies and system knowledge</div>
         
         <div class="skills-dashboard">
             <div class="row">
-                {% for category in skill_categories %}
+                {% for category, label in skill_categories %}
                 <div class="col-md-4 mb-4">
                     <div class="skill-category-card">
                         <div class="skill-category-header">
-                            <h3 class="skill-category-title">{{ category.1 }}</h3>
+                            <h3 class="skill-category-title">{{ label }}</h3>
                         </div>
                         <div class="skill-category-content">
-                            {% for skill in skills_by_category|get_item:category.0 %}
+                            {% for skill in skills_by_category|get_item:category %}
                             <div class="skill-item">
                                 <div class="skill-name">{{ skill.name }}</div>
                                 <div class="skill-bar">
@@ -184,7 +256,53 @@
         </div>
         
         <div class="text-center mt-4">
-            <a href="{% url 'core:about' %}#skills" class="btn btn-outline">View All Skills</a>
+            <a href="{% url 'core:about' %}#skills" class="btn btn-outline">Full Profile</a>
+        </div>
+    </div>
+</section>
+
+<!-- System Performance Dashboard -->
+<section class="performance-dashboard-section">
+    <div class="container">
+        <h2 class="section-title text-center">System Performance</h2>
+        <div class="section-subtitle text-center mb-5">Real-time system metrics and status</div>
+        
+        <div class="performance-grid">
+            <div class="performance-card">
+                <div class="performance-header">
+                    <h3 class="performance-title">UPTIME</h3>
+                    <div class="performance-indicator operational"></div>
+                </div>
+                <div class="performance-value">99.8%</div>
+                <div class="performance-trend">↗ +0.2% from last month</div>
+            </div>
+            
+            <div class="performance-card">
+                <div class="performance-header">
+                    <h3 class="performance-title">RESPONSE TIME</h3>
+                    <div class="performance-indicator good"></div>
+                </div>
+                <div class="performance-value">142ms</div>
+                <div class="performance-trend">↘ -15ms improvement</div>
+            </div>
+            
+            <div class="performance-card">
+                <div class="performance-header">
+                    <h3 class="performance-title">THROUGHPUT</h3>
+                    <div class="performance-indicator excellent"></div>
+                </div>
+                <div class="performance-value">1.2K</div>
+                <div class="performance-trend">requests/minute</div>
+            </div>
+            
+            <div class="performance-card">
+                <div class="performance-header">
+                    <h3 class="performance-title">ERROR RATE</h3>
+                    <div class="performance-indicator excellent"></div>
+                </div>
+                <div class="performance-value">0.02%</div>
+                <div class="performance-trend">↘ -0.01% reduction</div>
+            </div>
         </div>
     </div>
 </section>
@@ -193,9 +311,9 @@
 <section class="contact-cta-section">
     <div class="container">
         <div class="cta-container tech-frame scanning-effect">
-            <h2 class="cta-title">Let's Work Together</h2>
-            <p class="cta-text">Have a project in mind or looking to hire a Python developer?</p>
-            <a href="{% url 'core:contact' %}" class="btn btn-primary">Get in Touch</a>
+            <h2 class="cta-title">Initiate Communication Protocol</h2>
+            <p class="cta-text">Ready to collaborate on your next project or system deployment?</p>
+            <a href="{% url 'core:contact' %}" class="btn btn-primary">Open Channel</a>
         </div>
     </div>
 </section>

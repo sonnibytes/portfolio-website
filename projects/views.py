@@ -65,12 +65,12 @@ class SystemModuleListView(ListView):
         # System types for filtering
         context['system_types'] = SystemType.objects.annotate(
             system_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(systems_count__gt=0)
+        ).filter(system_count__gt=0)
 
         # Technologies for filtering
         context['technologies'] = Technology.objects.annotate(
             system_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(systems_count__gt=0).order_by('category', 'name')
+        ).filter(system_count__gt=0).order_by('category', 'name')
 
         # Featured systems for hero section
         context['featured_systems'] = SystemModule.objects.filter(
