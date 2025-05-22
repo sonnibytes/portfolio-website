@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_protect
 from .models import CorePage, Skill, Education, Experience, SocialLink
 from .forms import ContactForm
 from blog.models import Post
-from projects.models import Project
+from projects.models import SystemModule
 
 
 class HomeView(TemplateView):
@@ -24,7 +24,7 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Get featured projects, limit 3
-        context['featured_projects'] = Project.objects.filter(
+        context['featured_projects'] = SystemModule.objects.filter(
             status='published', featured=True
         ).order_by('-created')[:3]
 
