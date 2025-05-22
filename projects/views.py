@@ -393,4 +393,67 @@ class SystemModuleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView
 
         return context
 
+# ===================== API/AJAX VIEWS =====================
+
+class SystemMetricsAPIView(DetailView):
+    """API endopint for real-time system metrics (for HUD dashboard)."""
+
+    model = SystemModule
+
+    def get(self, request, *args, **kwargs):
+        system = self.get_object()
+
+        # Get current metrics
+        metrics = {}
+        for metric in system.metrics.filter(is_current=True):
+            metrics[metric.metric_name] = {
+                'value': float(metrics.metric_value),
+                'unit': metric.metric_unit,
+                'type': metrics.metric_type,
+                'timestamp': metric.timestamp.isoformat()
+            }
+        
+        # Add computed metrics
+        metrics.update({
+            'completion_progress': system.get_development_progress(),
+            'status': system.status,
+            'status_color': system.get_status_color(),
+            'complexity_visual': system.get_complexity_display(),
+            'related_logs_count': system.get_related_logs.count(),
+        })
+
+        return JsonResponse({
+            'system_id': system.system_id,
+            'title': system.title,
+            'metrics': metrics,
+            'last_updated': timezone.now().isoformat()
+        })
+
+
+class TechnologyUsageAPIView(ListView):
+    """API endpoint for tech usage statistics."""
+
+    model = Technology
+
+    def get(self, request, *args, **kwargs):
+        # Get tech usage stats
+        tech_stats = []
+        for tech in Technology.objects.annotate(
+            usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+        ).filter(usage_count__gt=0).order_by('-usage_count'):
+            
+            tech_stats.append({
+                'name': tech.name,
+                'slug': tech.slug,
+                'usage_count': tech.usage_count,
+                'color': tech.color,
+                'icon': tech.icon,
+                'category': tech.category,
+            })
+
+        return JsonResponse({
+            'technologies': tech_stats,
+            'total_technologies': len(tech_stats)
+        })
+
 
