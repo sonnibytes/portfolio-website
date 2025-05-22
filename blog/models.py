@@ -108,6 +108,7 @@ class Post(models.Model):
         default=0, editable=False,
         help_text="Estimated reading time in minutes")
     content = MarkdownxField()
+    
     # Relationship Fields
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="posts"
@@ -116,6 +117,14 @@ class Post(models.Model):
         Category, on_delete=models.CASCADE, null=True, related_name="posts"
         )
     tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
+    # Connection to Systems/Projects
+    related_systems = models.ManyToManyField(
+        "projects.SystemModule",
+        through="SystemLogEntry",
+        blank=True,
+        related_name="related_posts",
+        help_text="Systems this log entry relates to",
+    )
 
     class Meta:
         ordering = ['-published_date']
@@ -213,26 +222,16 @@ class Post(models.Model):
 
         return headings
 
-        # if not self.show_toc:
-        #     return []
+    def get_system_connections(self):
+        """Get all system connections with metadata"""
+        return self.system_connections.all().select_related("system")
 
-        # html_content = markdownify(self.content)
-        # soup = BeautifulSoup(html_content, 'html.parser')
-        # headings = []
-
-        # # Find all h2 and h3 tags
-        # for h in soup.find_all(['h2', 'h3']):
-        #     # Generate ID from heading text
-        #     heading_id = slugify(h.get_text())
-        #     # Add ID attribute to the heading
-        #     h['id'] = heading_id
-        #     headings.append({
-        #         'level': int(h.name[1]),  # Get heading level
-        #         'text': h.get_text(),
-        #         'id': heading_id
-        #     })
-
-        # return headings
+    def get_primary_system(self):
+        """Get the highest priority system connection"""
+        connection = self.system_connections.order_by(
+            "-priority", "-completion_impact"
+        ).first()
+        return connection.system if connection else None
 
     # Handle Series
     def is_in_series(self):
@@ -335,3 +334,83 @@ class SeriesPost(models.Model):
 
     def __str__(self):
         return f"{self.post} in {self.series} (#{self.order})"
+
+
+# Connection to Systems/Projects
+class SystemLogEntry(models.Model):
+    """
+    Connection model between blog posts and projects with additional metadata.
+    Represents how a log entry relates to a specific system/project.
+    """
+
+    CONNECTION_TYPES = (
+        ("development", "Development Log"),
+        ("documentation", "Technical Documentation"),
+        ("analysis", "System Analysis"),
+        ("update", "System Update"),
+        ("troubleshooting", "Troubleshooting"),
+        ("review", "System Review"),
+        ("enhancement", "Enhancement Log"),
+    )
+
+    PRIORITY_LEVELS = (
+        (1, "Low"),
+        (2, "Normal"),
+        (3, "High"),
+        (4, "Critical"),
+    )
+
+    post = models.ForeignKey(
+        "Post", on_delete=models.CASCADE, related_name="system_connections"
+    )
+    system = models.ForeignKey(
+        "projects.SystemModule", on_delete=models.CASCADE, related_name="log_entries"
+    )
+
+    # Connection metadata
+    connection_type = models.CharField(
+        max_length=20, choices=CONNECTION_TYPES, default="development"
+    )
+    priority = models.IntegerField(choices=PRIORITY_LEVELS, default=2)
+    log_entry_id = models.CharField(
+        max_length=20, blank=True, help_text="Auto-generated log entry ID"
+    )
+
+    # Timestamps for the HUD feel
+    logged_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Additional metadata
+    version_number = models.CharField(
+        max_length=20, blank=True, help_text="System version this log relates to"
+    )
+    completion_impact = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0.00,
+        help_text="How much this log entry contributed to project completion (%)",
+    )
+
+    class Meta:
+        ordering = ["-logged_at"]
+        unique_together = ["post", "system"]
+
+    def save(self, *args, **kwargs):
+        if not self.log_entry_id:
+            # Generate HUD-style log entry ID
+            count = SystemLogEntry.objects.filter(system=self.system).count()
+            self.log_entry_id = f"{self.system.system_id}-LOG-{count + 1:03d}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.log_entry_id}: {self.post.title}"
+
+    def get_status_color(self):
+        """Return color based on priority for HUD styling"""
+        colors = {
+            1: "#5edfff",  # Low - Light Blue
+            2: "#00f0ff",  # Normal - Cyan
+            3: "#ffbd2e",  # High - Yellow
+            4: "#ff6b8b",  # Critical - Coral
+        }
+        return colors.get(self.priority, "#00f0ff")
