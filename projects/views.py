@@ -529,3 +529,86 @@ class SystemSearchView(ListView):
 
         return context
 
+# ===================== SHOWCASE VIEWS =====================
+
+class FeaturedSystemsView(ListView):
+    """Showcase of featured systems for portfolio."""
+
+    model = SystemModule
+    template_name = "projects/featured_systems.html"
+    context_object_name = "featured_systems"
+
+    def get_queryset(self):
+        return (
+            SystemModule.objects.filter(
+                featured=True, status__in=["deployed", "published"]
+            )
+            .select_related("system_type")
+            .prefetch_related("technologies")
+            .order_by("-created")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Portfolio stats for showcase
+        context["portfolio_stats"] = {
+            "total_systems": SystemModule.objects.filter(
+                status__in=["deployed", "published"]
+            ).count(),
+            "technologies_used": Technology.objects.filter(
+                systems__status__in=["deployed", "published"]
+            )
+            .distinct()
+            .count(),
+            "system_types": SystemType.objects.filter(
+                systems__status__in=["deployed", "published"]
+            )
+            .distinct()
+            .count(),
+            "lines_of_code": 50000,  # You can calculate this or set manually
+            "years_experience": 3,  # Update as needed
+        }
+
+        # Technology highlights
+        context["top_technologies"] = (
+            Technology.objects.annotate(
+                usage_count=Count(
+                    "systems", filter=Q(systems__status__in=["deployed", "published"])
+                )
+            )
+            .filter(usage_count__gt=0)
+            .order_by("-usage_count")[:8]
+        )
+
+        return context
+
+
+class SystemTimelineView(ListView):
+    """Timeline view of system development."""
+
+    model = SystemModule
+    template_name = "projects/system_timeline.html"
+    context_object_name = "systems"
+
+    def get_queryset(self):
+        return (
+            SystemModule.objects.filter(status__in=["deployed", "published"])
+            .select_related("system_type")
+            .order_by("-start_date", "-created")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Group systems by year for timeline display
+        systems_by_year = {}
+        for system in context["systems"]:
+            year = system.start_date.year if system.start_date else system.created.year
+            if year not in systems_by_year:
+                systems_by_year[year] = []
+            systems_by_year[year].append(system)
+
+        context["systems_by_year"] = dict(sorted(systems_by_year.items(), reverse=True))
+
+        return context
