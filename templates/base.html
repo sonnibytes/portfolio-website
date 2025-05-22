@@ -1,108 +1,143 @@
+<!----->
+ * ML DEVLOG - Base HTML
+ * Base template for new futuristic HUD-themed design system
+ * Version: 1.1.0
+ ------>
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}ML DEVLOG - Python, Machine Learning and AI Development Portfolio{% endblock %}">
     
-    <!-- SEO Meta Tags -->
-    <title>{% block title %}Sonni Gunnels | ML/AI Developer Portfolio{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Portfolio of Sonni Gunnels, a developer focused on machine learning and AI applications.{% endblock %}">
-    
-    <!-- Open Graph / Social Media Meta Tags -->
-    <meta property="og:title" content="{% block og_title %}Sonni Gunnels | ML/AI Developer Portfolio{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}Portfolio of Sonni Gunnels, a developer focused on machine learning and AI applications.{% endblock %}">
-    <meta property="og:image" content="{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:type" content="website">
+    <title>{% block title %}ML DEVLOG | Sonni Gunnels{% endblock %}</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="{% static 'images/favicon.ico' %}">
-    <link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+
+     <!-- Bootstrap CSS -->
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=JetBrains+Mono:wght@100;200;300;400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Base CSS -->
+    <!-- Base Stylesheet -->
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/header.css' %}">
+    {% comment %} <link rel="stylesheet" href="{% static 'css/header.css' %}"> {% endcomment %}
     
-    <!-- Page-specific CSS -->
-     
+    <!-- Optional: Syntax Highlighting for Code Blocks (Prism.js or Highlight.js) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/themes/prism-tomorrow.min.css">
+    
+    <!-- Additional stylesheets -->
     {% block extra_css %}{% endblock %}
 </head>
-
-<body class="{% block body_class %}grid-pattern{% endblock %}">
-    <!-- Header -->
-   {% include "includes/header.html" %}
+<body class="grid-pattern {% block body_class %}{% endblock %}">
+    <!-- HUD-Style Header Navigation -->
+    <header class="navbar">
+        <div class="container navbar-container">
+            <a href="{% url 'core:home' %}" class="navbar-logo">
+                <span class="navbar-logo-text">ML<span style="color: var(--color-purple);">DEVLOG</span></span>
+            </a>
+            
+            <nav class="navbar-menu">
+                <a href="{% url 'core:home' %}" class="nav-link {% if request.resolver_match.view_name == 'core:home' %}active{% endif %}">Home</a>
+                <a href="{% url 'blog:post_list' %}" class="nav-link {% if 'blog' in request.resolver_match.app_name %}active{% endif %}">DEVLOGs</a>
+                <a href="{% url 'projects:project_list' %}" class="nav-link {% if 'projects' in request.resolver_match.app_name %}active{% endif %}">Projects</a>
+                <a href="{% url 'core:about' %}" class="nav-link {% if request.resolver_match.view_name == 'core:about' %}active{% endif %}">About</a>
+                <a href="{% url 'core:contact' %}" class="nav-link {% if request.resolver_match.view_name == 'core:contact' %}active{% endif %}">Contact</a>
+            </nav>
+            
+            <button class="navbar-mobile-toggle" aria-label="Toggle navigation">
+                <i class="fa fa-bars"></i>
+            </button>
+        </div>
+    </header>
     
     <!-- Main Content -->
-    <main class="site-main">
+    <main>
+        {% block pre_content %}{% endblock %}
+        
         <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    {% block content %}{% endblock %}
-                </div>
-            </div>
+            {% block content %}{% endblock %}
         </div>
+        
+        {% block post_content %}{% endblock %}
     </main>
     
-    <!-- Footer -->
-    <footer class="site-footer mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="footer-info">
-                        <div class="footer-logo">
-                            <span class="logo-text">ML<span class="logo-highlight">DEVLOG</span></span>
-                        </div>
-                        <p class="footer-tagline">Transforming data into intelligent solutions</p>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 text-md-end">
-                    <div class="footer-social">
-                        <a href="https://github.com/ksg-dev" target="_blank" class="social-link" aria-label="GitHub">
-                            <i class="fab fa-github"></i>
-                        </a>
-                        <a href="https://linkedin.com/in/sonni-gunnels" target="_blank" class="social-link" aria-label="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                        <a href="https://twitter.com/yourusername" target="_blank" class="social-link" aria-label="Twitter">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                    </div>
+    <!-- HUD-Style Footer -->
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-col">
+                <h3 class="footer-title">ML DEVLOG</h3>
+                <p class="footer-text">Transforming data into intelligent solutions through Python, Machine Learning and AI development.</p>
+                <div class="footer-social">
+                    <a href="https://github.com/ksg-dev" class="social-icon" aria-label="GitHub">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://linkedin.com/in/sonni-gunnels" class="social-icon" aria-label="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="#" class="social-icon" aria-label="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
                 </div>
             </div>
             
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <p class="copyright">&copy; {% now "Y" %} Sonni Gunnels. All rights reserved.</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <div class="footer-links">
-                        <a href="{% url 'core:privacy' %}">Privacy Policy</a>
-                        <a href="{% url 'core:terms' %}">Terms of Service</a>
-                    </div>
-                </div>
+            <div class="footer-col">
+                <h3 class="footer-title">Navigation</h3>
+                <ul class="footer-links">
+                    <li><a href="{% url 'core:home' %}">Home</a></li>
+                    <li><a href="{% url 'blog:post_list' %}">DEVLOGs</a></li>
+                    <li><a href="{% url 'projects:project_list' %}">Projects</a></li>
+                    <li><a href="{% url 'core:about' %}">About</a></li>
+                    <li><a href="{% url 'core:contact' %}">Contact</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-col">
+                <h3 class="footer-title">Categories</h3>
+                <ul class="footer-links">
+                    {% for category in categories %}
+                    <li><a href="{% url 'blog:category' slug=category.slug %}">{{ category.name }}</a></li>
+                    {% empty %}
+                    <li><a href="{% url 'blog:post_list' %}">All DEVLOGs</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <div class="container footer-bottom">
+            <div class="footer-copyright">
+                &copy; {% now "Y" %} Sonni Gunnels. All rights reserved.
+            </div>
+            <div class="footer-bottom-links">
+                <a href="{% url 'core:privacy' %}">Privacy Policy</a>
+                <a href="{% url 'core:terms' %}">Terms of Service</a>
             </div>
         </div>
     </footer>
     
-    <!-- Bootstrap JavaScript Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <!-- Base JavaScript -->
     <script src="{% static 'js/base.js' %}"></script>
-    <script src="{% static 'js/header.js' %}"></script>
+    <script src="{% static 'js/hud-data-stream.js' %}"></script>
 
-    <!-- Page-specific JavaScript -->
+     <!-- Bootstrap JavaScript Bundle with Popper -->
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Prism.js for Code Syntax Highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/components/prism-bash.min.js"></script>
+    
+    <!-- Additional scripts -->
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Resume | ML DEVLOG{% endblock %}
+{% block meta_description %}Professional resume of Sonni Gunnels - Python Developer and ML Engineer{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/resume.css' %}">
+{% endblock %}
+
+{% block body_class %}resume-page {% endblock %}
+
+{% block content %}
+<section class="resume-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <!-- Resume Header -->
+                <div class="resume-header tech-frame">
+                    <div class="resume-title-container">
+                        <h1 class="resume-title">Sonni Gunnels</h1>
+                        <p class="resume-subtitle">Python Developer & ML Engineer</p>
+                        <div class="resume-divider"></div>
+                    </div>
+                    
+                    <div class="resume-contact">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>hello@mldevlog.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Birmingham, Alabama, USA</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-globe"></i>
+                            <span>mldevlog.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fab fa-github"></i>
+                            <span>github.com/ksg-dev</span>
+                        </div>
+                    </div>
+                    
+                    <div class="resume-actions">
+                        <a href="{% static 'docs/sonni_gunnels_resume.pdf' %}" class="btn btn-primary" download>
+                            <i class="fas fa-download me-2"></i> Download PDF
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Professional Summary -->
+                <div class="resume-section-container">
+                    <h2 class="resume-section-title">Professional Summary</h2>
+                    <div class="resume-divider"></div>
+                    <p class="resume-summary">
+                        Python Developer and ML Engineer with expertise in developing data-driven applications.
+                        Specializing in machine learning, data analysis, and web application development with
+                        Django and FastAPI. Passionate about creating efficient and intelligent solutions to
+                        complex problems.
+                    </p>
+                </div>
+                
+                <!-- Skills Section -->
+                <div class="resume-section-container">
+                    <h2 class="resume-section-title">Technical Skills</h2>
+                    <div class="resume-divider"></div>
+                    
+                    <div class="skills-list">
+                        {% regroup skills by category as grouped_skills %}
+                        
+                        {% for group in grouped_skills %}
+                        <div class="skill-group">
+                            <h3 class="skill-group-title">{{ group.grouper|title }}</h3>
+                            <div class="skill-tags">
+                                {% for skill in group.list %}
+                                <span class="skill-tag">{{ skill.name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Experience Section -->
+                <div class="resume-section-container">
+                    <h2 class="resume-section-title">Professional Experience</h2>
+                    <div class="resume-divider"></div>
+                    
+                    <div class="experience-list">
+                        {% for experience in experiences %}
+                        <div class="experience-item">
+                            <div class="experience-header">
+                                <div class="experience-title-block">
+                                    <h3 class="experience-title">{{ experience.position }}</h3>
+                                    <div class="experience-company">{{ experience.company }}</div>
+                                </div>
+                                <div class="experience-date">
+                                    <span>{{ experience.start_date|date:"M Y" }} — {% if experience.is_current %}Present{% else %}{{ experience.end_date|date:"M Y" }}{% endif %}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="experience-description">
+                                {{ experience.description|linebreaks }}
+                            </div>
+                            
+                            {% if experience.technologies %}
+                            <div class="experience-tech">
+                                <strong>Technologies:</strong>
+                                <div class="tech-tags">
+                                    {% for tech in experience.get_technologies_list %}
+                                    <span class="tech-tag">{{ tech }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <p class="text-center">Professional experience will be added soon.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Education Section -->
+                <div class="resume-section-container">
+                    <h2 class="resume-section-title">Education</h2>
+                    <div class="resume-divider"></div>
+                    
+                    <div class="education-list">
+                        {% for edu in education %}
+                        <div class="education-item">
+                            <div class="education-header">
+                                <div class="education-title-block">
+                                    <h3 class="education-degree">{{ edu.degree }}</h3>
+                                    <div class="education-details">
+                                        <span class="education-field">{{ edu.field_of_study }}</span> - 
+                                        <span class="education-institution">{{ edu.institution }}</span>
+                                    </div>
+                                </div>
+                                <div class="education-date">
+                                    <span>{{ edu.start_date|date:"Y" }} — {% if edu.is_current %}Present{% else %}{{ edu.end_date|date:"Y" }}{% endif %}</span>
+                                </div>
+                            </div>
+                            
+                            {% if edu.description %}
+                            <div class="education-description">
+                                {{ edu.description }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <p class="text-center">Education details will be added soon.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Certifications Section (optional) -->
+                <div class="resume-section-container">
+                    <h2 class="resume-section-title">Certifications</h2>
+                    <div class="resume-divider"></div>
+                    
+                    <div class="certifications-list">
+                        <!-- Placeholder for certifications -->
+                        <div class="certification-item">
+                            <div class="certification-header">
+                                <h3 class="certification-name">Machine Learning Specialization</h3>
+                                <div class="certification-issuer">Coursera/Stanford</div>
+                                <div class="certification-date">2023</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

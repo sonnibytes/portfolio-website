@@ -4,9 +4,15 @@ from . import views
 app_name = 'core'
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('about/', views.about, name='about'),
-    path('contact/', views.contact, name='contact'),
-    path('privacy/', views.privacy, name='privacy'),
-    path('terms/', views.terms, name='terms'),
+    # Main pages
+    path('', views.HomeView.as_view(), name='home'),
+    path('developer-profile/', views.DeveloperProfileView.as_view(), name='about'),
+    path('communication/', views.CommTerminalView.as_view(), name='contact'),
+    path('communication/success/', views.ContactSuccessView.as_view(), name='contact_success'),
+    path('resume/', views.ResumeView.as_view(), name='resume'),
+    # Static pages
+    path('privacy/', views.PrivacyView.as_view(), name='privacy'),
+    path('terms/', views.TermsView.as_view(), name='terms'),
+    # Dynamic page from database
+    path('page/<slug:slug>/', views.CorePageView.as_view(), name='page'),
 ]

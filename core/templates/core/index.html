@@ -1,11 +1,206 @@
 {% extends "base.html" %}
 {% load static %}
+{% load core_tags %}
+{% load blog_tags %}
 
-{% block title %}Home | Sonni Gunnels{% endblock %}
+{% block title %}ML DEVLOG | Sonni Gunnels{% endblock %}
+{% block meta_description %}ML DEVLOG - Python, Machine Learning and AI Development Portfolio of Sonni Gunnels{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/home.css' %}">
+{% endblock %}
+
+{% block body_class %}home-page {% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Welcome to my Portfolio</h1>
-    <p>This is the homepage.</p>
-</div>
+<!-- Hero Section with Terminal-like Introduction -->
+<section class="hero-section scanning-effect">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="text-gradient">ML</span><span class="text-purple">DEVLOG</span>
+                        <br>
+                        <span class="subtitle typing-animation">Python & ML Engineer</span>
+                    </h1>
+                    <div class="hero-text terminal-effect">
+                        <p class="terminal-line">$ whoami</p>
+                        <p class="terminal-output">Sonni Gunnels - Python Developer & ML Engineer</p>
+                        <p class="terminal-line">$ cat skills.txt</p>
+                        <p class="terminal-output">Python • Machine Learning • Data Science • Django • FastAPI • AI</p>
+                        <p class="terminal-line">$ ./execute mission</p>
+                        <p class="terminal-output">Transforming data into intelligent solutions...</p>
+                        <div class="terminal-cursor"></div>
+                    </div>
+                    <div class="hero-buttons">
+                        <a href="{% url 'core:about' %}" class="btn btn-primary">Learn More <i class="fas fa-arrow-right ms-2"></i></a>
+                        <a href="{% url 'projects:project_list' %}" class="btn btn-outline">View Projects</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="hero-visual">
+                    <!-- Visualization or illustration relevant to your work -->
+                    <div class="radar-chart" data-values="85,80,90,75,70,85" data-labels="Python,ML,Data,API,Frontend,Cloud" data-max="100"></div>
+                    <div class="data-grid-container">
+                        <div class="data-grid" data-random="true" data-animate="true"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Projects Section -->
+<section class="featured-projects-section">
+    <div class="container">
+        <h2 class="section-title text-center">Featured Projects</h2>
+        <div class="section-subtitle text-center mb-5">Recent endeavors in code and AI</div>
+        
+        <div class="row">
+            {% for project in featured_projects %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="project-card card-hover">
+                    <div class="project-image">
+                        {% if project.image %}
+                        <img src="{{ project.image.url }}" alt="{{ project.title }}" class="img-fluid">
+                        {% else %}
+                        <div class="image-placeholder">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="project-content">
+                        <h3 class="project-title">{{ project.title }}</h3>
+                        <p class="project-excerpt">{{ project.short_description }}</p>
+                        
+                        <div class="tech-stack">
+                            {% for tech in project.get_technologies_list %}
+                            <span class="tech-tag">{{ tech }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <a href="{{ project.get_absolute_url }}" class="project-link">View Project <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No projects to showcase yet. Check back soon!</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'projects:project_list' %}" class="btn btn-outline">All Projects</a>
+        </div>
+    </div>
+</section>
+
+<!-- Latest Blog Posts Section -->
+<section class="latest-posts-section">
+    <div class="container">
+        <h2 class="section-title text-center">Latest DEVLOGs</h2>
+        <div class="section-subtitle text-center mb-5">Technical insights and learning journey</div>
+        
+        <div class="row">
+            {% for post in latest_posts %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="post-card tech-frame">
+                    <div class="post-image">
+                        {% if post.thumbnail %}
+                        <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" class="img-fluid">
+                        {% else %}
+                        <div class="image-placeholder">
+                            <span class="image-icon">[ NO VISUAL DATA ]</span>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Overlaid Category Hexagon -->
+                        <div class="category-hex-overlay">
+                            <a href="{% url 'blog:category' slug=post.category.slug %}">
+                                <div class="category-hex" style="--category-color: {{ post.category.color|default:'var(--color-cyan)' }}">
+                                    {{ post.category.code }}
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="post-content">
+                        <h3 class="post-title">{{ post.title }}</h3>
+                        <p class="post-excerpt">{{ post.excerpt }}</p>
+                        
+                        <div class="post-meta">
+                            <span class="post-date"><i class="far fa-calendar-alt"></i> {{ post.published_date|date:"M d, Y" }}</span>
+                            <span class="post-time"><i class="far fa-clock"></i> {{ post.reading_time }} min read</span>
+                        </div>
+                        
+                        <a href="{{ post.get_absolute_url }}" class="post-link">Read Log <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No logs published yet. Check back soon!</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'blog:post_list' %}" class="btn btn-outline">All DEVLOGs</a>
+        </div>
+    </div>
+</section>
+
+<!-- Skills Overview Section -->
+<section class="skills-section">
+    <div class="container">
+        <h2 class="section-title text-center">Skills & Expertise</h2>
+        <div class="section-subtitle text-center mb-5">Technical proficiencies and competencies</div>
+        
+        <div class="skills-dashboard">
+            <div class="row">
+                {% for category in skill_categories %}
+                <div class="col-md-4 mb-4">
+                    <div class="skill-category-card">
+                        <div class="skill-category-header">
+                            <h3 class="skill-category-title">{{ category.1 }}</h3>
+                        </div>
+                        <div class="skill-category-content">
+                            {% for skill in skills_by_category|get_item:category.0 %}
+                            <div class="skill-item">
+                                <div class="skill-name">{{ skill.name }}</div>
+                                <div class="skill-bar">
+                                    <div class="skill-progress" style="width: {{ skill.proficiency|multiply:20 }}%"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'core:about' %}#skills" class="btn btn-outline">View All Skills</a>
+        </div>
+    </div>
+</section>
+
+<!-- Contact CTA Section -->
+<section class="contact-cta-section">
+    <div class="container">
+        <div class="cta-container tech-frame scanning-effect">
+            <h2 class="cta-title">Let's Work Together</h2>
+            <p class="cta-text">Have a project in mind or looking to hire a Python developer?</p>
+            <a href="{% url 'core:contact' %}" class="btn btn-primary">Get in Touch</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'core/js/home.js' %}"></script>
 {% endblock %}
