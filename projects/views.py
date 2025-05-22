@@ -233,7 +233,7 @@ class TechnologyDetailView(DetailView):
         return context
 
 
-class SystemDashboardView(ListView):
+class SystemsDashboardView(ListView):
     """HUD-style dashboard overview of all systems."""
 
     model = SystemModule
@@ -292,6 +292,7 @@ class SystemDashboardView(ListView):
 
 # ===================== ADMIN/MANAGEMENT VIEWS =====================
 
+
 class SystemModuleCreateView(LoginRequiredMixin, CreateView):
     """Create a new system module."""
 
@@ -308,7 +309,7 @@ class SystemModuleCreateView(LoginRequiredMixin, CreateView):
         form.instance.author = self.request.user
         messages.success(self.request, f"System '{form.instance.title}' created successfully!")
         return super().form_valid(form)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = "Create New System"
@@ -395,6 +396,7 @@ class SystemModuleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView
 
 # ===================== API/AJAX VIEWS =====================
 
+
 class SystemMetricsAPIView(DetailView):
     """API endopint for real-time system metrics (for HUD dashboard)."""
 
@@ -412,7 +414,7 @@ class SystemMetricsAPIView(DetailView):
                 'type': metrics.metric_type,
                 'timestamp': metric.timestamp.isoformat()
             }
-        
+
         # Add computed metrics
         metrics.update({
             'completion_progress': system.get_development_progress(),
@@ -457,6 +459,8 @@ class TechnologyUsageAPIView(ListView):
         })
 
 # ===================== SEARCH AND FILTER VIEWS =====================
+
+
 class SystemSearchView(ListView):
     """Advanced search functionality for systems."""
 
@@ -493,19 +497,19 @@ class SystemSearchView(ListView):
         complexity_filter = self.request.GET.get('complexity')
         if complexity_filter:
             queryset = queryset.filter(complexity=complexity_filter)
-        
+
         status_filter = self.requst.GET.get('status')
         if status_filter and status_filter in ['deployed', 'published']:
             queryset = queryset.filter(status=status_filter)
-        
+
         # Sorting
         sort_by = self.request.GET.get('sort', '-created')
         valid_sorts = ['-created', 'title', '-completion_percent', 'complexity', '-updated']
         if sort_by in valid_sorts:
             queryset = queryset.order_by(sort_by)
-        
+
         return queryset
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -530,6 +534,7 @@ class SystemSearchView(ListView):
         return context
 
 # ===================== SHOWCASE VIEWS =====================
+
 
 class FeaturedSystemsView(ListView):
     """Showcase of featured systems for portfolio."""
