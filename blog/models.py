@@ -108,7 +108,7 @@ class Post(models.Model):
         default=0, editable=False,
         help_text="Estimated reading time in minutes")
     content = MarkdownxField()
-    
+
     # Relationship Fields
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="posts"

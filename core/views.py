@@ -38,10 +38,10 @@ class HomeView(TemplateView):
             'category', flat=True
         ).distinct()
 
-        context['title'] = "Dashboard"
-        context['project_count']
-        context['post_count']
-        context['experience_years']
+        # context['title'] = "Dashboard"
+        # context['project_count']
+        # context['post_count']
+        # context['experience_years']
 
         return context
 

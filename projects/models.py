@@ -174,10 +174,10 @@ class SystemModule(models.Model):
 
     def __str__(self):
         return self.title
-    
+
     def get_absolute_url(self):
         return reverse("projects:system_detail", args=[self.slug])
-    
+ 
     def save(self, *args, **kwargs):
         # Auto-generate slug if not provided
         if not self.slug:
