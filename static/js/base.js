@@ -36,9 +36,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // ===== NAVBAR FUNCTIONALITY =====
 function initNavbar() {
-  const navbar = document.querySelector('.navbar');
-  const mobileToggle = document.querySelector('.navbar-mobile-toggle');
-  const navbarMenu = document.querySelector('.navbar-menu');
+  const navbar = document.querySelector('.hud-header');
+  const mobileToggle = document.querySelector('.mobile-menu-toggle');
+  const navbarMenu = document.querySelector('.hud-nav');
   
   // Handle navbar background on scroll
   if (navbar) {
