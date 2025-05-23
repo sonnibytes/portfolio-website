@@ -1,0 +1,85 @@
+<!----
+ * AURA Portfolio - Pagination Component
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.0.1 - Optimized for Component Architecture
+---->
+
+{% if is_paginated %}
+<div class="hud-pagination">
+    <div class="pagination-info">
+        <span class="page-info">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+        <span class="item-info">
+            ({{ page_obj.start_index }}—{{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries)
+        </span>
+    </div>
+    
+    <nav class="pagination-nav" aria-label="Pagination">
+        <!-- First Page -->
+        {% if page_obj.has_previous %}
+            <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+               class="page-link" title="First Page">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+        {% else %}
+            <span class="page-link disabled">
+                <i class="fas fa-angle-double-left"></i>
+            </span>
+        {% endif %}
+        
+        <!-- Previous Page -->
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+               class="page-link" title="Previous Page">
+                <i class="fas fa-angle-left"></i>
+            </a>
+        {% else %}
+            <span class="page-link disabled">
+                <i class="fas fa-angle-left"></i>
+            </span>
+        {% endif %}
+        
+        <!-- Page Numbers -->
+        <div class="page-numbers">
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="page-link current">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+                       class="page-link">{{ num }}</a>
+                {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                    <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+                       class="page-link">{{ num }}</a>
+                {% elif num == page_obj.number|add:'-4' or num == page_obj.number|add:'4' %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+        <!-- Next Page -->
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+               class="page-link" title="Next Page">
+                <i class="fas fa-angle-right"></i>
+            </a>
+        {% else %}
+            <span class="page-link disabled">
+                <i class="fas fa-angle-right"></i>
+            </span>
+        {% endif %}
+        
+        <!-- Last Page -->
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+               class="page-link" title="Last Page">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+        {% else %}
+            <span class="page-link disabled">
+                <i class="fas fa-angle-double-right"></i>
+            </span>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}

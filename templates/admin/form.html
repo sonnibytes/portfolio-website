@@ -1,0 +1,188 @@
+<!----
+ * AURA Portfolio - Generic Admin Form Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.0.1 - Optimized for Component Architecture
+---->
+
+{% extends "admin/admin_base.html" %}
+{% load static %}
+
+{% block admin_breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-item active">{{ form_title|default:"Form" }}</span>
+{% endblock %}
+
+{% block admin_title %}{{ form_title|default:"Form" }}{% endblock %}
+{% block admin_subtitle %}{{ form_subtitle|default:"Complete the form below to continue" }}{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Form Container -->
+        <div class="glass-card admin-form-container">
+            <div class="form-header">
+                <h2 class="form-title">
+                    <i class="fas fa-edit me-2"></i>
+                    {{ form_title|default:"Form" }}
+                </h2>
+                {% if form_description %}
+                <p class="form-description">{{ form_description }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Form Messages -->
+            {% if messages %}
+            <div class="form-messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Main Form -->
+            <form method="post" enctype="multipart/form-data" class="aura-form" id="adminForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="form-errors">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <!-- Form Fields -->
+                <div class="form-sections">
+                    {% for field in form %}
+                    <div class="form-group {% if field.errors %}has-error{% endif %}">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            {% if field.field.required %}
+                            <i class="fas fa-asterisk required-indicator me-1"></i>
+                            {% endif %}
+                            {{ field.label }}
+                        </label>
+                        
+                        <div class="form-field-container">
+                            {% if field.field.widget.input_type == 'select' %}
+                                {{ field|add_class:"hud-select" }}
+                            {% elif field.field.widget.input_type == 'textarea' %}
+                                {{ field|add_class:"form-control hud-textarea" }}
+                            {% elif field.field.widget.input_type == 'checkbox' %}
+                                <div class="hud-checkbox">
+                                    {{ field }}
+                                    <label for="{{ field.id_for_label }}" class="checkbox-label">
+                                        {{ field.label }}
+                                    </label>
+                                </div>
+                            {% elif field.field.widget.input_type == 'file' %}
+                                <div class="file-upload-container">
+                                    {{ field|add_class:"file-input" }}
+                                    <label for="{{ field.id_for_label }}" class="file-upload-label">
+                                        <i class="fas fa-upload me-2"></i>
+                                        Choose File
+                                    </label>
+                                </div>
+                            {% else %}
+                                {{ field|add_class:"form-control hud-input" }}
+                            {% endif %}
+                            
+                            {% if field.help_text %}
+                            <small class="form-help-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {{ field.help_text }}
+                            </small>
+                            {% endif %}
+                            
+                            {% if field.errors %}
+                            <div class="field-errors">
+                                {% for error in field.errors %}
+                                <span class="error-message">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    {{ error }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <div class="action-group">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save me-2"></i>
+                            {{ submit_text|default:"Save" }}
+                        </button>
+                        
+                        {% if cancel_url %}
+                        <a href="{{ cancel_url }}" class="btn btn-outline">
+                            <i class="fas fa-times me-2"></i>
+                            Cancel
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    {% if object and delete_url %}
+                    <div class="danger-actions">
+                        <a href="{{ delete_url }}" class="btn btn-danger delete-action">
+                            <i class="fas fa-trash me-2"></i>
+                            Delete
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_inline_js %}
+// Form enhancement
+const form = document.getElementById('adminForm');
+const submitBtn = document.getElementById('submitBtn');
+
+if (form && submitBtn) {
+    form.addEventListener('submit', function() {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        submitBtn.disabled = true;
+    });
+}
+
+// File upload enhancement
+const fileInputs = document.querySelectorAll('.file-input');
+fileInputs.forEach(input => {
+    input.addEventListener('change', function() {
+        const label = this.nextElementSibling;
+        if (this.files.length > 0) {
+            label.innerHTML = `<i class="fas fa-check me-2"></i>${this.files[0].name}`;
+            label.classList.add('file-selected');
+        }
+    });
+});
+
+// Character counting for textareas
+const textareas = document.querySelectorAll('.hud-textarea');
+textareas.forEach(textarea => {
+    const maxLength = textarea.getAttribute('maxlength');
+    if (maxLength) {
+        const counter = document.createElement('div');
+        counter.className = 'char-counter';
+        counter.textContent = `0 / ${maxLength}`;
+        textarea.parentNode.appendChild(counter);
+        
+        textarea.addEventListener('input', function() {
+            counter.textContent = `${this.value.length} / ${maxLength}`;
+            if (this.value.length > maxLength * 0.9) {
+                counter.classList.add('warning');
+            } else {
+                counter.classList.remove('warning');
+            }
+        });
+    }
+});
+{% endblock %}

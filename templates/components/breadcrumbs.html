@@ -1,0 +1,37 @@
+<!----
+ * AURA Portfolio - HUD Breadcrumbs Component
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.0.1 - Optimized for Component Architecture
+---->
+
+<div class="container">
+    <nav class="hud-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'core:home' %}" class="breadcrumb-item">
+            <i class="fas fa-home me-1"></i>Dashboard
+        </a>
+        <span class="breadcrumb-separator">/</span>
+        
+        {% if breadcrumb_items %}
+            {% for item in breadcrumb_items %}
+                <span class="breadcrumb-separator">/</span>
+                {% if item.url and not forloop.last %}
+                    <a href="{{ item.url }}" class="breadcrumb-item">{{ item.title }}</a>
+                {% else %}
+                    <span class="breadcrumb-item active">{{ item.title }}</span>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <!-- Default breadcrumb based on current page -->
+            {% if 'blog' in request.resolver_match.app_name %}
+                <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">DataLogs</a>
+            {% elif 'projects' in request.resolver_match.app_name %}
+                <a href="{% url 'projects:system_list' %}" class="breadcrumb-item">Systems</a>
+            {% elif request.resolver_match.view_name == 'core:about' %}
+                <span class="breadcrumb-item active">Profile</span>
+            {% elif request.resolver_match.view_name == 'core:contact' %}
+                <span class="breadcrumb-item active">Contact</span>
+            {% endif %}
+        {% endif %}
+    </nav>
+</div>
+
