@@ -6,8 +6,9 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
+from django.utils import timezone
 
-from .models import CorePage, Skill, Education, Experience, SocialLink
+from .models import CorePage, Skill, Education, Experience, SocialLink, Contact
 from .forms import ContactForm
 from blog.models import Post
 from projects.models import SystemModule
@@ -73,26 +74,49 @@ class DeveloperProfileView(TemplateView):
 
 
 class CommTerminalView(FormView):
-    """Contact form styled as communication terminal."""
+    """Contact form styled as AURA HUD interface."""
     template_name = 'core/communication.html'
     form_class = ContactForm
     success_url = reverse_lazy('core:contact_success')
 
     def form_valid(self, form):
         # Save the contact submission
-        form.save()
-        # Add a success message
+        contact = form.save()
+        # Add AURA-themed success message
         messages.success(
             self.request,
-            "TRANSMISSION_SUCCESSFUL: Your message has been received. Stand by for response.",
+            f"TRANSMISSION_COMPLETE: Message #{contact.id:04d} received and logged. "
+            f"Response protocol initiated. Expected delivery: 24-48 hours.",
         )
         return super().form_valid(form)
 
     def form_invalid(self, form):
+        # Add AURA-themed error message
         messages.error(
-            self.request, "TRANSMISSION_ERROR: Please check your input and try again."
+            self.request,
+            "TRANSMISSION_ERROR: Data validation failed. Please verify input parameters and retry transmission.",
         )
         return super().form_invalid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Add social links for network connections
+        context["social_links"] = SocialLink.objects.all().order_by("display_order")
+
+        # Add system metrics for HUD display
+        context["system_metrics"] = {
+            "uptime": "99.7%",
+            "response_time": "142ms",
+            "security_level": "AES-256",
+            "active_connections": "1,247",
+            "messages_processed": Contact.objects.count(),
+        }
+
+        # Add current timestamp for real-time display
+        context["current_timestamp"] = timezone.now()
+
+        return context
 
 
 class ContactSuccessView(TemplateView):
