@@ -1,0 +1,191 @@
+<!----
+ * AURA Portfolio - Projects/Systems App Base Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.0.1 - Optimized for Component Architecture
+---->
+
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<!-- Systems App Specific Styles -->
+<link rel="stylesheet" href="{% static 'projects/css/systems.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/forms.css' %}">
+{% block systems_css %}{% endblock %}
+{% endblock %}
+
+{% block body_class %}systems-app {% block systems_body_class %}{% endblock %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container">
+    <nav class="hud-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'core:home' %}" class="breadcrumb-item">
+            <i class="fas fa-home me-1"></i>Dashboard
+        </a>
+        <span class="breadcrumb-separator">/</span>
+        <a href="{% url 'projects:system_list' %}" class="breadcrumb-item">Systems</a>
+        {% block system_breadcrumbs %}{% endblock %}
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Systems Header Section -->
+<section class="systems-header">
+    <div class="container">
+        <div class="section-header">
+            <h1 class="section-title">
+                <i class="fas fa-project-diagram me-2"></i>
+                {% block system_title %}System Repository{% endblock %}
+            </h1>
+            <p class="section-subtitle">
+                {% block system_subtitle %}Advanced Python systems and machine learning implementations{% endblock %}
+            </p>
+        </div>
+        
+        <!-- Systems Navigation -->
+        <div class="systems-nav">
+            <div class="nav-filters">
+                {% block system_filters %}
+                <div class="filter-group">
+                    <label class="filter-label">System Type:</label>
+                    <select class="hud-select" id="systemTypeFilter">
+                        <option value="">All Types</option>
+                        {% for system_type in system_types %}
+                        <option value="{{ system_type.slug }}" {% if current_type == system_type.slug %}selected{% endif %}>
+                            {{ system_type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Technology:</label>
+                    <select class="hud-select" id="technologyFilter">
+                        <option value="">All Technologies</option>
+                        {% for tech in technologies %}
+                        <option value="{{ tech.slug }}" {% if current_tech == tech.slug %}selected{% endif %}>
+                            {{ tech.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endblock %}
+            </div>
+            
+            <div class="nav-controls">
+                {% block system_controls %}
+                <a href="{% url 'projects:system_list' %}" class="nav-control">
+                    <i class="fas fa-th-large me-1"></i>Grid View
+                </a>
+                <a href="{% url 'projects:systems_dashboard' %}" class="nav-control">
+                    <i class="fas fa-chart-line me-1"></i>Analytics
+                </a>
+                {% endblock %}
+            </div>
+        </div>
+        
+        <!-- System Status Dashboard -->
+        <div class="systems-dashboard">
+            <div class="dashboard-metrics">
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" data-counter="{{ total_systems|default:'12' }}">0</div>
+                        <div class="metric-label">Active Systems</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" data-counter="{{ systems_in_development|default:'3' }}">0</div>
+                        <div class="metric-label">In Development</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" data-counter="{{ technologies_count|default:'8' }}">0</div>
+                        <div class="metric-label">Technologies</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value">{{ avg_completion|floatformat:1|default:'87.5' }}%</div>
+                        <div class="metric-label">Avg Completion</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Systems Content -->
+<section class="systems-content">
+    <div class="container">
+        {% block system_content %}{% endblock %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Systems App JavaScript -->
+<script src="{% static 'projects/js/systems.js' %}"></script>
+<script src="{% static 'js/components/charts.js' %}"></script>
+{% block systems_js %}{% endblock %}
+{% endblock %}
+
+{% block inline_js %}
+// Systems app initialization
+console.log('🚀 Systems App Initialized');
+
+// Initialize system-specific features
+if (typeof initSystemFeatures === 'function') {
+    initSystemFeatures();
+}
+
+// Filter functionality
+const systemTypeFilter = document.getElementById('systemTypeFilter');
+const technologyFilter = document.getElementById('technologyFilter');
+
+if (systemTypeFilter) {
+    systemTypeFilter.addEventListener('change', function() {
+        const params = new URLSearchParams(window.location.search);
+        if (this.value) {
+            params.set('type', this.value);
+        } else {
+            params.delete('type');
+        }
+        window.location.search = params.toString();
+    });
+}
+
+if (technologyFilter) {
+    technologyFilter.addEventListener('change', function() {
+        const params = new URLSearchParams(window.location.search);
+        if (this.value) {
+            params.set('tech', this.value);
+        } else {
+            params.delete('tech');
+        }
+        window.location.search = params.toString();
+    });
+}
+
+// Page-specific initialization
+{% block systems_inline_js %}{% endblock %}
+{% endblock %}
