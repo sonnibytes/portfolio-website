@@ -1,7 +1,7 @@
 /**
  * AURA Portfolio - Base JavaScript
  * Advanced User Repository & Archive - Core System Functions
- * Version: 2.0.0 - Component Architecture
+ * Version: 2.0.1 - Component Architecture
  */
 
 // AURA System State
