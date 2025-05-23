@@ -1,183 +1,294 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block meta_description %}AURA - Advanced User Repository & Archive. Python Development, Machine Learning and AI Portfolio.{% endblock %}">
+    <meta name="description" content="{% block meta_description %}AURA Portfolio - Advanced User Repository & Archive showcasing Python development and ML engineering expertise{% endblock %}">
     
-    <title>{% block title %}AURA | Advanced User Repository & Archive{% endblock %}</title>
+    <title>{% block title %}AURA Portfolio | Advanced User Repository & Archive{% endblock %}</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% load static %}{% static 'images/favicon.png' %}">
-
-    <!-- Font Loading -->
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    
+    <!-- Google Fonts - AURA Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=JetBrains+Mono:wght@100;200;300;400;500;700&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@100;200;300;400;500;700&family=Exo+2:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- AURA Base Stylesheet -->
-    {% load static %}
+    <!-- AURA Base Design System -->
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     
-    <!-- Optional: Syntax Highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/themes/prism-tomorrow.min.css">
+    <!-- AURA Component Styles -->
+    <link rel="stylesheet" href="{% static 'css/components/glass-cards.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/hud-elements.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/animations.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/navigation.css' %}">
+    
+    <!-- Additional component styles -->
+    {% block component_css %}{% endblock %}
     
     <!-- Page-specific stylesheets -->
     {% block extra_css %}{% endblock %}
+    
+    <!-- SEO and Meta -->
+    <meta name="author" content="{% block meta_author %}Sonni Gunnels{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}Python, Django, Machine Learning, Data Science, Portfolio, Developer{% endblock %}">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{% block og_title %}AURA Portfolio - Advanced User Repository & Archive{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Showcasing Python development and ML engineering expertise through an advanced user repository interface{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}AURA Portfolio{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Advanced User Repository & Archive{% endblock %}">
 </head>
+
 <body class="{% block body_class %}{% endblock %}">
-    <!-- AURA HUD Header -->
-    <header class="hud-header">
-        <div class="container hud-header-container">
-            <a href="{% url 'core:home' %}" class="hud-logo">
-                AURA
-            </a>
-            
-            <nav class="hud-nav">
-                <a href="{% url 'core:home' %}" class="nav-item {% if request.resolver_match.view_name == 'core:home' %}active{% endif %}">Dashboard</a>
-                <a href="{% url 'blog:post_list' %}" class="nav-item {% if 'blog' in request.resolver_match.app_name %}active{% endif %}">Data Logs</a>
-                <a href="{% url 'projects:system_list' %}" class="nav-item {% if 'projects' in request.resolver_match.app_name %}active{% endif %}">Systems</a>
-                <a href="{% url 'core:about' %}" class="nav-item {% if request.resolver_match.view_name == 'core:about' %}active{% endif %}">Profile</a>
-                <a href="{% url 'core:contact' %}" class="nav-item {% if request.resolver_match.view_name == 'core:contact' %}active{% endif %}">Contact</a>
-            </nav>
-            
-            <button class="mobile-menu-toggle" aria-label="Toggle navigation">
-                <i class="fas fa-bars"></i>
-            </button>
+    <!-- Loading Screen for AURA -->
+    {% block loading_screen %}
+    <div class="loading-screen" id="loadingScreen" style="display: none;">
+        <div class="loading-container" id="loadingContainer">
+            <div class="aura-logo">AURA</div>
+            <div class="aura-subtitle">ADVANCED USER REPOSITORY & ARCHIVE</div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="loading-text">Initializing systems...</div>
         </div>
+        
+        <div class="welcome-screen" id="welcomeScreen">
+            <div class="welcome-message">WELCOME TO AURA</div>
+        </div>
+    </div>
+    {% endblock %}
+
+    <!-- AURA HUD Header Navigation -->
+    <header class="aura-header" id="auraHeader">
+        <nav class="aura-nav">
+            <div class="container">
+                <div class="nav-container">
+                    <!-- AURA Logo -->
+                    <a href="{% url 'core:home' %}" class="aura-logo-nav">
+                        <span class="logo-text">AURA</span>
+                        <span class="logo-subtitle">Portfolio</span>
+                    </a>
+                    
+                    <!-- System Status Indicator -->
+                    <div class="system-status-nav">
+                        <div class="status-indicator operational"></div>
+                        <span class="status-text">SYSTEMS ONLINE</span>
+                    </div>
+                    
+                    <!-- Navigation Menu -->
+                    <div class="nav-menu" id="navMenu">
+                        <a href="{% url 'core:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="{% url 'blog:post_list' %}" class="nav-link {% if 'blog' in request.resolver_match.app_name %}active{% endif %}">
+                            <i class="fas fa-database"></i>
+                            <span>DataLogs</span>
+                        </a>
+                        <a href="{% url 'projects:system_list' %}" class="nav-link {% if 'projects' in request.resolver_match.app_name %}active{% endif %}">
+                            <i class="fas fa-microchip"></i>
+                            <span>Systems</span>
+                        </a>
+                        <a href="{% url 'core:about' %}" class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+                            <i class="fas fa-user-astronaut"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="{% url 'core:contact' %}" class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">
+                            <i class="fas fa-satellite-dish"></i>
+                            <span>Contact</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Mobile Menu Toggle -->
+                    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
+                        <span class="toggle-line"></span>
+                        <span class="toggle-line"></span>
+                        <span class="toggle-line"></span>
+                    </button>
+                </div>
+            </div>
+        </nav>
     </header>
 
-    <!-- Mobile Menu -->
-    <div class="mobile-menu" id="mobileMenu">
-        <nav class="mobile-nav">
-            <a href="{% url 'core:home' %}" class="mobile-nav-item">Dashboard</a>
-            <a href="{% url 'blog:post_list' %}" class="mobile-nav-item">Data Logs</a>
-            <a href="{% url 'projects:system_list' %}" class="mobile-nav-item">Systems</a>
-            <a href="{% url 'core:about' %}" class="mobile-nav-item">Profile</a>
-            <a href="{% url 'core:contact' %}" class="mobile-nav-item">Contact</a>
-        </nav>
-    </div>
-    
-    <!-- Main Content -->
-    <main>
+    <!-- Main Content Area -->
+    <main id="mainContent">
+        <!-- Page-specific pre-content -->
         {% block pre_content %}{% endblock %}
         
-        {% block content %}{% endblock %}
+        <!-- Breadcrumb Navigation -->
+        {% block breadcrumbs %}
+        {% if show_breadcrumbs %}
+        {% include 'components/breadcrumbs.html' %}
+        {% endif %}
+        {% endblock %}
         
-        {% block post_content %}{% endblock %}
-    </main>
-    
-    <!-- AURA Footer -->
-    <footer class="footer">
-        <div class="container footer-container">
-            <div class="footer-col">
-                <h3 class="footer-title">AURA</h3>
-                <p class="footer-text">Advanced User Repository & Archive. Transforming data into intelligent solutions through Python, Machine Learning and AI development.</p>
-                <div class="footer-social">
-                    <a href="https://github.com/ksg-dev" class="social-icon" aria-label="GitHub">
-                        <i class="fab fa-github"></i>
-                    </a>
-                    <a href="https://linkedin.com/in/sonni-gunnels" class="social-icon" aria-label="LinkedIn">
-                        <i class="fab fa-linkedin-in"></i>
-                    </a>
-                    <a href="#" class="social-icon" aria-label="Twitter">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="footer-col">
-                <h3 class="footer-title">Navigation</h3>
-                <ul class="footer-links">
-                    <li><a href="{% url 'core:home' %}">Dashboard</a></li>
-                    <li><a href="{% url 'blog:post_list' %}">Data Logs</a></li>
-                    <li><a href="{% url 'projects:system_list' %}">Systems</a></li>
-                    <li><a href="{% url 'core:about' %}">Profile</a></li>
-                    <li><a href="{% url 'core:contact' %}">Contact</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-col">
-                <h3 class="footer-title">System Categories</h3>
-                <ul class="footer-links">
-                    <li><a href="#">Machine Learning</a></li>
-                    <li><a href="#">Data Engineering</a></li>
-                    <li><a href="#">Web Applications</a></li>
-                    <li><a href="#">API Development</a></li>
-                    <li><a href="#">Automation</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-col">
-                <h3 class="footer-title">System Status</h3>
-                <div class="system-status-footer">
-                    <div class="status-item">
-                        <span class="status-indicator operational"></span>
-                        <span class="status-text">All Systems Operational</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-indicator operational"></span>
-                        <span class="status-text">Uptime: 99.7%</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-indicator info"></span>
-                        <span class="status-text">{{ total_logs_count|default:"24" }} Active Logs</span>
-                    </div>
-                </div>
-            </div>
+        <!-- Main Content Container -->
+        <div class="main-content-wrapper">
+            {% block content %}{% endblock %}
         </div>
         
-        <div class="container footer-bottom">
-            <div class="footer-copyright">
-                &copy; {% now "Y" %} Sonni Gunnels. All rights reserved.
+        <!-- Page-specific post-content -->
+        {% block post_content %}{% endblock %}
+    </main>
+
+    <!-- AURA HUD Footer -->
+    <footer class="aura-footer">
+        <div class="container">
+            <!-- Footer Top Section -->
+            <div class="footer-top">
+                <div class="row">
+                    <!-- AURA Info -->
+                    <div class="col-lg-4">
+                        <div class="footer-section">
+                            <h3 class="footer-title">AURA System</h3>
+                            <p class="footer-description">
+                                Advanced User Repository & Archive showcasing Python development, 
+                                machine learning engineering, and innovative system design.
+                            </p>
+                            <div class="system-metrics-footer">
+                                <div class="metric-item">
+                                    <span class="metric-label">Systems Online</span>
+                                    <span class="metric-value">{{ total_systems|default:"8" }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Data Logs</span>
+                                    <span class="metric-value">{{ total_logs|default:"24" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Navigation Links -->
+                    <div class="col-lg-2">
+                        <div class="footer-section">
+                            <h3 class="footer-title">Navigation</h3>
+                            <ul class="footer-links">
+                                <li><a href="{% url 'core:home' %}">Dashboard</a></li>
+                                <li><a href="{% url 'blog:post_list' %}">DataLogs</a></li>
+                                <li><a href="{% url 'projects:system_list' %}">Systems</a></li>
+                                <li><a href="{% url 'core:about' %}">Profile</a></li>
+                                <li><a href="{% url 'core:contact' %}">Contact</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Categories -->
+                    <div class="col-lg-2">
+                        <div class="footer-section">
+                            <h3 class="footer-title">Categories</h3>
+                            <ul class="footer-links">
+                                {% for category in categories %}
+                                <li><a href="{% url 'blog:category' slug=category.slug %}">{{ category.name }}</a></li>
+                                {% empty %}
+                                <li><a href="{% url 'blog:post_list' %}">All DataLogs</a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- System Status -->
+                    <div class="col-lg-4">
+                        <div class="footer-section">
+                            <h3 class="footer-title">System Status</h3>
+                            <div class="system-status-footer">
+                                <div class="status-item">
+                                    <div class="status-indicator operational"></div>
+                                    <span class="status-text">All Systems Operational</span>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-indicator operational"></div>
+                                    <span class="status-text">{{ total_logs_count|default:"24" }} Active Logs</span>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-indicator operational"></div>
+                                    <span class="status-text">99.7% Uptime</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Network Connections -->
+                            <div class="network-connections">
+                                <h4 class="network-title">Network Nodes</h4>
+                                <div class="social-connections">
+                                    {% for link in social_links %}
+                                    <a href="{{ link.url }}" target="_blank" class="network-node" aria-label="{{ link.name }}">
+                                        <i class="fab {{ link.icon }}"></i>
+                                    </a>
+                                    {% empty %}
+                                    <!-- Fallback social links -->
+                                    <a href="https://github.com/ksg-dev" target="_blank" class="network-node" aria-label="GitHub">
+                                        <i class="fab fa-github"></i>
+                                    </a>
+                                    <a href="https://linkedin.com/in/sonni-gunnels" target="_blank" class="network-node" aria-label="LinkedIn">
+                                        <i class="fab fa-linkedin-in"></i>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="footer-bottom-links">
-                <a href="{% url 'core:privacy' %}">Privacy Policy</a>
-                <a href="{% url 'core:terms' %}">Terms of Service</a>
+            
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <div class="footer-copyright">
+                        <span>&copy; {% now "Y" %} AURA Portfolio System. All rights reserved.</span>
+                        <span class="system-id">System ID: AURA-{{ request.session.session_key|slice:":8"|upper|default:"00000000" }}</span>
+                    </div>
+                    
+                    <div class="footer-legal">
+                        <a href="{% url 'core:privacy' %}">Privacy Protocol</a>
+                        <a href="{% url 'core:terms' %}">Terms of Service</a>
+                    </div>
+                    
+                    <div class="footer-timestamp">
+                        <span>Last Updated: {% now "Y-m-d H:i:s" %} UTC</span>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
-    
-    <!-- Base JavaScript -->
+
+    <!-- AURA Core JavaScript -->
     <script src="{% static 'js/base.js' %}"></script>
     
-    <!-- Prism.js for Code Syntax Highlighting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.26.0/components/prism-javascript.min.js"></script>
+    <!-- AURA Component Scripts -->
+    <script src="{% static 'js/components/navigation.js' %}"></script>
+    <script src="{% static 'js/components/animations.js' %}"></script>
+    
+    <!-- Additional component scripts -->
+    {% block component_js %}{% endblock %}
     
     <!-- Page-specific scripts -->
     {% block extra_js %}{% endblock %}
-
-    <!-- Mobile Menu JavaScript -->
+    
+    <!-- AURA System Initialization -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const mobileToggle = document.querySelector('.mobile-menu-toggle');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        if (mobileToggle && mobileMenu) {
-            mobileToggle.addEventListener('click', function() {
-                mobileMenu.classList.toggle('active');
-                const icon = this.querySelector('i');
-                icon.classList.toggle('fa-bars');
-                icon.classList.toggle('fa-times');
-            });
-            
-            // Close mobile menu when clicking outside
-            document.addEventListener('click', function(event) {
-                if (mobileMenu.classList.contains('active') && 
-                    !mobileMenu.contains(event.target) && 
-                    !mobileToggle.contains(event.target)) {
-                    mobileMenu.classList.remove('active');
-                    const icon = mobileToggle.querySelector('i');
-                    icon.classList.add('fa-bars');
-                    icon.classList.remove('fa-times');
-                }
-            });
+        // Initialize AURA system
+        if (typeof initAURASystem === 'function') {
+            initAURASystem();
         }
+        
+        // Initialize navigation
+        if (typeof initNavigation === 'function') {
+            initNavigation();
+        }
+        
+        // Initialize page-specific functionality
+        {% block page_js %}{% endblock %}
     });
     </script>
 </body>
