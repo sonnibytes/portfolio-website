@@ -30,6 +30,13 @@ function initAURASystem() {
   initSystemMonitoring();
   initResponsiveSystem();
   initAccessibility();
+  initScrollAnimations();
+  initComponentAnimations();
+  
+  // Initialize loading sequence if on homepage
+  if (document.querySelector('#loadingScreen')) {
+      initLoadingSequence();
+  }
   
   // Mark as initialized
   AURA.initialized = true;
@@ -252,6 +259,184 @@ function enhanceARIA() {
 }
 
 /**
+* Initialize scroll-triggered animations
+*/
+function initScrollAnimations() {
+  const animatedElements = document.querySelectorAll('.scroll-animate, .scroll-animate-left, .scroll-animate-right');
+  
+  if (animatedElements.length === 0) return;
+  
+  const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+          if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+              observer.unobserve(entry.target);
+          }
+      });
+  }, { 
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+  });
+  
+  animatedElements.forEach(element => {
+      observer.observe(element);
+  });
+}
+
+/**
+* Initialize component-specific animations
+*/
+function initComponentAnimations() {
+  // Initialize card stagger animations
+  initCardStaggerAnimations();
+  
+  // Initialize HUD data counters
+  initHUDDataCounters();
+  
+  // Initialize progress bars
+  initProgressBars();
+  
+  // Initialize terminal animations
+  initTerminalAnimations();
+}
+
+/**
+* Initialize staggered card animations
+*/
+function initCardStaggerAnimations() {
+  const cardGrids = document.querySelectorAll('.card-grid, .featured-systems-grid, .devlogs-grid');
+  
+  cardGrids.forEach(grid => {
+      const cards = grid.querySelectorAll('.glass-card, .system-card, .datalog-card');
+      
+      cards.forEach((card, index) => {
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          
+          setTimeout(() => {
+              card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+              card.style.opacity = '1';
+              card.style.transform = 'translateY(0)';
+          }, index * 100);
+      });
+  });
+}
+
+/**
+* Initialize HUD data counters
+*/
+function initHUDDataCounters() {
+  const counters = document.querySelectorAll('.hud-data-counter, [data-counter]');
+  
+  const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+          if (entry.isIntersecting) {
+              const counter = entry.target;
+              const target = parseInt(counter.dataset.target || counter.dataset.counter, 10) || 0;
+              const duration = parseInt(counter.dataset.duration, 10) || 2000;
+              
+              animateCounter(counter, target, duration);
+              observer.unobserve(counter);
+          }
+      });
+  }, { threshold: 0.5 });
+  
+  counters.forEach(counter => observer.observe(counter));
+}
+
+/**
+* Animate number counter
+*/
+function animateCounter(element, target, duration) {
+  const step = target / (duration / 16);
+  let current = 0;
+  
+  const updateCounter = () => {
+      current += step;
+      if (current < target) {
+          element.textContent = Math.floor(current).toLocaleString();
+          requestAnimationFrame(updateCounter);
+      } else {
+          element.textContent = target.toLocaleString();
+      }
+  };
+  
+  updateCounter();
+}
+
+/**
+* Initialize progress bars
+*/
+function initProgressBars() {
+  const progressBars = document.querySelectorAll('.progress-bar-hud, .skill-level-fill');
+  
+  const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+          if (entry.isIntersecting) {
+              const bar = entry.target;
+              const width = bar.dataset.width || bar.style.width || '0%';
+              
+              bar.style.width = '0%';
+              bar.style.transition = 'width 1s ease-out';
+              
+              setTimeout(() => {
+                  bar.style.width = width;
+              }, 100);
+              
+              observer.unobserve(bar);
+          }
+      });
+  }, { threshold: 0.2 });
+  
+  progressBars.forEach(bar => observer.observe(bar));
+}
+
+/**
+* Initialize terminal typing animations
+*/
+function initTerminalAnimations() {
+  const terminalLines = document.querySelectorAll('.terminal-line');
+  const terminalOutputs = document.querySelectorAll('.terminal-output');
+  
+  if (terminalLines.length === 0) return;
+  
+  terminalLines.forEach((line, index) => {
+      setTimeout(() => {
+          line.classList.add('active');
+          
+          const command = line.querySelector('.terminal-command');
+          if (command) {
+              typeText(command, command.textContent, 50);
+          }
+      }, index * 1000);
+  });
+  
+  setTimeout(() => {
+      terminalOutputs.forEach(output => {
+          output.classList.add('active');
+      });
+  }, terminalLines.length * 1000 + 500);
+}
+
+/**
+* Type text with typewriter effect
+*/
+function typeText(element, text, speed) {
+  const originalText = text;
+  element.textContent = '';
+  
+  let i = 0;
+  const timer = setInterval(() => {
+      element.textContent = originalText.substring(0, i + 1);
+      i++;
+      
+      if (i >= originalText.length) {
+          clearInterval(timer);
+      }
+  }, speed);
+}
+
+/**
 * Utility Functions
 */
 
@@ -377,6 +562,7 @@ function initLoadingSequence() {
   const loadingScreen = document.getElementById('loadingScreen');
   const loadingContainer = document.getElementById('loadingContainer');
   const welcomeScreen = document.getElementById('welcomeScreen');
+  const mainInterface = document.getElementById('mainInterface') || document.getElementById('mainContent');
   
   if (!loadingScreen) return;
   
@@ -392,26 +578,26 @@ function initLoadingSequence() {
       
       if (logo) {
           logo.style.opacity = '1';
-          logo.style.animation = 'logoFadeIn 2s ease-out forwards';
+          logo.classList.add('aura-logo-animate');
       }
       
       if (subtitle) {
           setTimeout(() => {
               subtitle.style.opacity = '1';
-              subtitle.style.animation = 'subtitleFadeIn 2s ease-out forwards';
+              subtitle.classList.add('aura-subtitle-animate');
           }, 1000);
       }
       
       if (progressBar) {
           setTimeout(() => {
-              progressBar.style.animation = 'progressLoad 3s ease-out forwards';
+              progressBar.classList.add('aura-progress-animate');
           }, 2000);
       }
       
       if (loadingText) {
           setTimeout(() => {
               loadingText.style.opacity = '1';
-              loadingText.style.animation = 'textFadeIn 1s ease-out forwards';
+              loadingText.classList.add('aura-text-animate');
           }, 2500);
       }
   }, 500);
@@ -425,6 +611,7 @@ function initLoadingSequence() {
       setTimeout(() => {
           if (welcomeScreen) {
               welcomeScreen.classList.add('active');
+              welcomeScreen.classList.add('aura-welcome-animate');
           }
       }, 500);
   }, 4500);
@@ -443,13 +630,14 @@ function initLoadingSequence() {
               document.body.style.overflow = 'auto';
               
               // Initialize main interface
-              const mainInterface = document.getElementById('mainContent');
               if (mainInterface) {
                   mainInterface.style.opacity = '1';
                   mainInterface.style.transform = 'scale(1)';
+                  mainInterface.classList.add('aura-interface-animate');
               }
               
               AURA.loadingComplete = true;
+              console.log('🎯 AURA Loading Sequence Complete');
           }, 1000);
       }, 800);
   }, 7000);
