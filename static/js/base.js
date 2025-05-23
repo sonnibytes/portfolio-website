@@ -8,7 +8,12 @@
 const AURA = {
   initialized: false,
   loadingComplete: false,
-  components: {},
+  components: {
+      navigation: false,
+      forms: false,
+      dashboard: false,
+      animations: false
+  },
   settings: {
       loadingDuration: 7000,
       animationSpeed: 'normal',
@@ -33,6 +38,9 @@ function initAURASystem() {
   initScrollAnimations();
   initComponentAnimations();
   
+  // Initialize component systems
+  initComponentSystems();
+  
   // Initialize loading sequence if on homepage
   if (document.querySelector('#loadingScreen')) {
       initLoadingSequence();
@@ -44,239 +52,466 @@ function initAURASystem() {
 }
 
 /**
-* System Monitoring and Status Updates
+* Form Component Enhancements
 */
-function initSystemMonitoring() {
-  // Update timestamps in real-time
-  updateTimestamps();
-  setInterval(updateTimestamps, 1000);
+function initFormComponents() {
+  // Initialize form scanning effects
+  initFormScanningEffects();
   
-  // Monitor system performance
-  monitorPerformance();
+  // Initialize form validation enhancements
+  initFormValidation();
   
-  // Update status indicators
-  updateStatusIndicators();
+  // Initialize file upload enhancements
+  initFileUploadEnhancements();
+  
+  // Initialize form auto-save (if needed)
+  initFormAutoSave();
 }
 
 /**
-* Update all timestamp elements
+* Form scanning line effects
 */
-function updateTimestamps() {
-  const timestampElements = document.querySelectorAll('[data-timestamp]');
-  const now = new Date();
+function initFormScanningEffects() {
+  const formControls = document.querySelectorAll('.form-control, .form-select');
   
-  timestampElements.forEach(element => {
-      const format = element.dataset.timestamp || 'datetime';
+  formControls.forEach(control => {
+      const container = control.closest('.input-container');
+      if (!container) return;
       
-      switch (format) {
-          case 'time':
-              element.textContent = now.toLocaleTimeString('en-US', { 
-                  hour12: false, 
-                  timeZone: 'UTC' 
-              }) + ' UTC';
-              break;
-          case 'date':
-              element.textContent = now.toISOString().split('T')[0];
-              break;
-          case 'datetime':
-          default:
-              element.textContent = now.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
-              break;
-      }
+      control.addEventListener('focus', function() {
+          container.classList.add('scanning');
+      });
+      
+      control.addEventListener('blur', function() {
+          container.classList.remove('scanning');
+      });
   });
+}
+
+/**
+* Enhanced form validation
+*/
+function initFormValidation() {
+  const forms = document.querySelectorAll('.aura-form');
   
-  // Update footer timestamp if it exists
-  const footerTimestamp = document.querySelector('.footer-timestamp span');
-  if (footerTimestamp) {
-      footerTimestamp.textContent = `Last Updated: ${now.toISOString().slice(0, 19).replace('T', ' ')} UTC`;
+  forms.forEach(form => {
+      const inputs = form.querySelectorAll('.form-control, .form-select');
+      
+      inputs.forEach(input => {
+          input.addEventListener('blur', function() {
+              validateField(this);
+          });
+          
+          input.addEventListener('input', debounce(function() {
+              if (this.classList.contains('is-invalid')) {
+                  validateField(this);
+              }
+          }, 300));
+      });
+      
+      form.addEventListener('submit', function(event) {
+          let isValid = true;
+          
+          inputs.forEach(input => {
+              if (!validateField(input)) {
+                  isValid = false;
+              }
+          });
+          
+          if (!isValid) {
+              event.preventDefault();
+              
+              // Focus first invalid field
+              const firstInvalid = form.querySelector('.form-control.is-invalid, .form-select.is-invalid');
+              if (firstInvalid) {
+                  firstInvalid.focus();
+              }
+          }
+      });
+  });
+}
+
+/**
+* Validate individual form field
+*/
+function validateField(field) {
+  const value = field.value.trim();
+  const isRequired = field.hasAttribute('required');
+  const fieldType = field.type || field.tagName.toLowerCase();
+  
+  // Remove existing validation classes
+  field.classList.remove('is-valid', 'is-invalid');
+  
+  // Remove existing feedback
+  const existingFeedback = field.parentNode.querySelector('.form-feedback');
+  if (existingFeedback) {
+      existingFeedback.remove();
+  }
+  
+  let isValid = true;
+  let message = '';
+  
+  // Required field validation
+  if (isRequired && !value) {
+      isValid = false;
+      message = 'This field is required.';
+  }
+  
+  // Email validation
+  else if (fieldType === 'email' && value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+          isValid = false;
+          message = 'Please enter a valid email address.';
+      }
+  }
+  
+  // URL validation
+  else if (fieldType === 'url' && value) {
+      try {
+          new URL(value);
+      } catch {
+          isValid = false;
+          message = 'Please enter a valid URL.';
+      }
+  }
+  
+  // Apply validation styling
+  field.classList.add(isValid ? 'is-valid' : 'is-invalid');
+  
+  // Add feedback message
+  if (!isValid && message) {
+      const feedback = document.createElement('div');
+      feedback.className = 'form-feedback invalid';
+      feedback.textContent = message;
+      field.parentNode.appendChild(feedback);
+  }
+  
+  return isValid;
+}
+
+/**
+* File upload enhancements
+*/
+function initFileUploadEnhancements() {
+  const fileInputs = document.querySelectorAll('.file-upload-input');
+  
+  fileInputs.forEach(input => {
+      const label = input.parentNode.querySelector('.file-upload-label');
+      if (!label) return;
+      
+      input.addEventListener('change', function() {
+          const files = this.files;
+          const fileText = label.querySelector('.file-upload-text');
+          
+          if (files.length > 0) {
+              const fileNames = Array.from(files).map(file => file.name).join(', ');
+              fileText.textContent = `Selected: ${fileNames}`;
+              label.classList.add('has-files');
+          } else {
+              fileText.textContent = 'Choose file or drag and drop';
+              label.classList.remove('has-files');
+          }
+      });
+      
+      // Drag and drop functionality
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+          label.addEventListener(eventName, preventDefaults, false);
+      });
+      
+      ['dragenter', 'dragover'].forEach(eventName => {
+          label.addEventListener(eventName, () => label.classList.add('drag-over'), false);
+      });
+      
+      ['dragleave', 'drop'].forEach(eventName => {
+          label.addEventListener(eventName, () => label.classList.remove('drag-over'), false);
+      });
+      
+      label.addEventListener('drop', function(event) {
+          const dt = event.dataTransfer;
+          const files = dt.files;
+          input.files = files;
+          
+          // Trigger change event
+          const changeEvent = new Event('change', { bubbles: true });
+          input.dispatchEvent(changeEvent);
+      });
+  });
+}
+
+/**
+* Prevent default drag behaviors
+*/
+function preventDefaults(event) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+/**
+* Form auto-save functionality
+*/
+function initFormAutoSave() {
+  const autoSaveForms = document.querySelectorAll('[data-auto-save]');
+  
+  autoSaveForms.forEach(form => {
+      const formId = form.dataset.autoSave;
+      const inputs = form.querySelectorAll('input, textarea, select');
+      
+      // Load saved data
+      loadFormData(form, formId);
+      
+      // Save data on input
+      inputs.forEach(input => {
+          input.addEventListener('input', debounce(() => {
+              saveFormData(form, formId);
+          }, 1000));
+      });
+      
+      // Clear saved data on successful submit
+      form.addEventListener('submit', () => {
+          clearFormData(formId);
+      });
+  });
+}
+
+/**
+* Save form data to localStorage
+*/
+function saveFormData(form, formId) {
+  const formData = new FormData(form);
+  const data = {};
+  
+  for (let [key, value] of formData.entries()) {
+      data[key] = value;
+  }
+  
+  try {
+      localStorage.setItem(`aura_form_${formId}`, JSON.stringify(data));
+  } catch (error) {
+      console.warn('Could not save form data:', error);
   }
 }
 
 /**
-* Monitor system performance and update metrics
+* Load form data from localStorage
 */
-function monitorPerformance() {
-  // Simulate system metrics updates
-  const metricElements = document.querySelectorAll('[data-metric]');
+function loadFormData(form, formId) {
+  try {
+      const saved = localStorage.getItem(`aura_form_${formId}`);
+      if (saved) {
+          const data = JSON.parse(saved);
+          
+          Object.keys(data).forEach(key => {
+              const input = form.querySelector(`[name="${key}"]`);
+              if (input && input.type !== 'file') {
+                  input.value = data[key];
+              }
+          });
+      }
+  } catch (error) {
+      console.warn('Could not load form data:', error);
+  }
+}
+
+/**
+* Clear saved form data
+*/
+function clearFormData(formId) {
+  try {
+      localStorage.removeItem(`aura_form_${formId}`);
+  } catch (error) {
+      console.warn('Could not clear form data:', error);
+  }
+}
+
+/**
+* Dashboard Component Enhancements
+*/
+function initDashboardComponents() {
+  // Initialize widget interactions
+  initWidgetInteractions();
   
-  metricElements.forEach(element => {
+  // Initialize dashboard animations
+  initDashboardAnimations();
+  
+  // Initialize real-time updates
+  initRealTimeUpdates();
+}
+
+/**
+* Widget interaction enhancements
+*/
+function initWidgetInteractions() {
+  const widgets = document.querySelectorAll('.dashboard-widget');
+  
+  widgets.forEach(widget => {
+      // Widget action buttons
+      const actions = widget.querySelectorAll('.widget-action');
+      actions.forEach(action => {
+          action.addEventListener('click', function() {
+              const actionType = this.dataset.action;
+              handleWidgetAction(widget, actionType);
+          });
+      });
+      
+      // Widget hover effects
+      widget.addEventListener('mouseenter', function() {
+          this.classList.add('widget-focused');
+      });
+      
+      widget.addEventListener('mouseleave', function() {
+          this.classList.remove('widget-focused');
+      });
+  });
+}
+
+/**
+* Handle widget actions
+*/
+function handleWidgetAction(widget, actionType) {
+  switch (actionType) {
+      case 'refresh':
+          refreshWidget(widget);
+          break;
+      case 'minimize':
+          minimizeWidget(widget);
+          break;
+      case 'maximize':
+          maximizeWidget(widget);
+          break;
+      case 'settings':
+          openWidgetSettings(widget);
+          break;
+  }
+}
+
+/**
+* Refresh widget data
+*/
+function refreshWidget(widget) {
+  widget.classList.add('widget-loading');
+  
+  // Simulate data refresh
+  setTimeout(() => {
+      widget.classList.remove('widget-loading');
+      
+      // Add refresh animation
+      widget.style.transform = 'scale(1.02)';
+      setTimeout(() => {
+          widget.style.transform = '';
+      }, 200);
+  }, 1000);
+}
+
+/**
+* Dashboard animations
+*/
+function initDashboardAnimations() {
+  // Animate dashboard on load
+  const dashboardContainer = document.querySelector('.dashboard-container');
+  if (dashboardContainer) {
+      const widgets = dashboardContainer.querySelectorAll('.dashboard-widget');
+      
+      widgets.forEach((widget, index) => {
+          widget.style.opacity = '0';
+          widget.style.transform = 'translateY(20px)';
+          
+          setTimeout(() => {
+              widget.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+              widget.style.opacity = '1';
+              widget.style.transform = 'translateY(0)';
+          }, index * 100);
+      });
+  }
+}
+
+/**
+* Real-time dashboard updates
+*/
+function initRealTimeUpdates() {
+  // Update metrics every 30 seconds
+  setInterval(() => {
+      updateDashboardMetrics();
+  }, 30000);
+  
+  // Update activity feed every 60 seconds
+  setInterval(() => {
+      updateActivityFeed();
+  }, 60000);
+}
+
+/**
+* Update dashboard metrics
+*/
+function updateDashboardMetrics() {
+  const metricValues = document.querySelectorAll('[data-metric]');
+  
+  metricValues.forEach(element => {
       const metricType = element.dataset.metric;
       
       switch (metricType) {
           case 'uptime':
-              element.textContent = '99.7%';
+              // Simulate slight uptime changes
+              const currentUptime = parseFloat(element.textContent);
+              const newUptime = Math.max(99.5, Math.min(99.9, currentUptime + (Math.random() - 0.5) * 0.1));
+              element.textContent = newUptime.toFixed(1) + '%';
               break;
+              
           case 'response_time':
-              // Simulate response time between 120-180ms
-              const responseTime = Math.floor(Math.random() * 60) + 120;
-              element.textContent = responseTime + 'ms';
-              break;
-          case 'memory_usage':
-              // Simulate memory usage between 60-85%
-              const memUsage = Math.floor(Math.random() * 25) + 60;
-              element.textContent = memUsage + '%';
+              // Simulate response time changes
+              const newResponseTime = Math.floor(Math.random() * 60) + 120;
+              element.textContent = newResponseTime + 'ms';
               break;
       }
   });
 }
 
 /**
-* Update status indicators based on system state
+* Update activity feed
 */
-function updateStatusIndicators() {
-  const statusIndicators = document.querySelectorAll('.status-indicator');
+function updateActivityFeed() {
+  const activityFeeds = document.querySelectorAll('.activity-list');
   
-  statusIndicators.forEach(indicator => {
-      // Add operational class if not already present
-      if (!indicator.classList.contains('warning') && 
-          !indicator.classList.contains('error') && 
-          !indicator.classList.contains('inactive')) {
-          indicator.classList.add('operational');
-      }
+  activityFeeds.forEach(feed => {
+      // Add subtle animation to indicate update
+      feed.style.opacity = '0.7';
+      setTimeout(() => {
+          feed.style.opacity = '1';
+      }, 300);
   });
 }
 
 /**
-* Responsive System Management
+* Animation Component Enhancements
 */
-function initResponsiveSystem() {
-  // Handle responsive breakpoint changes
-  const mediaQueries = {
-      mobile: window.matchMedia('(max-width: 767px)'),
-      tablet: window.matchMedia('(max-width: 991px)'),
-      desktop: window.matchMedia('(min-width: 992px)')
-  };
+function initAnimationComponents() {
+  // Initialize entrance animations
+  initEntranceAnimations();
   
-  // Listen for breakpoint changes
-  Object.keys(mediaQueries).forEach(breakpoint => {
-      const mq = mediaQueries[breakpoint];
-      mq.addListener(() => handleBreakpointChange(breakpoint, mq.matches));
-      handleBreakpointChange(breakpoint, mq.matches);
-  });
+  // Initialize hover animations
+  initHoverAnimations();
+  
+  // Initialize loading animations
+  initLoadingAnimations();
 }
 
 /**
-* Handle responsive breakpoint changes
+* Entrance animations for elements
 */
-function handleBreakpointChange(breakpoint, matches) {
-  document.body.classList.toggle(`aura-${breakpoint}`, matches);
-  
-  if (breakpoint === 'mobile' && matches) {
-      // Optimize for mobile
-      optimizeForMobile();
-  }
-}
-
-/**
-* Mobile optimizations
-*/
-function optimizeForMobile() {
-  // Reduce animation intensity on mobile
-  if (AURA.settings.reducedMotion) {
-      document.body.classList.add('reduced-motion');
-  }
-  
-  // Optimize touch interactions
-  const touchElements = document.querySelectorAll('.btn, .nav-link, .card');
-  touchElements.forEach(element => {
-      element.style.cursor = 'pointer';
-  });
-}
-
-/**
-* Accessibility Enhancements
-*/
-function initAccessibility() {
-  // Handle keyboard navigation
-  document.addEventListener('keydown', handleKeyboardNavigation);
-  
-  // Handle focus management
-  initFocusManagement();
-  
-  // Add ARIA labels where needed
-  enhanceARIA();
-}
-
-/**
-* Keyboard navigation handler
-*/
-function handleKeyboardNavigation(event) {
-  // ESC key handling
-  if (event.key === 'Escape') {
-      closeModals();
-      closeMobileMenu();
-  }
-  
-  // Tab navigation enhancement
-  if (event.key === 'Tab') {
-      document.body.classList.add('keyboard-navigation');
-  }
-}
-
-/**
-* Focus management
-*/
-function initFocusManagement() {
-  // Remove keyboard navigation class on mouse interaction
-  document.addEventListener('mousedown', () => {
-      document.body.classList.remove('keyboard-navigation');
-  });
-  
-  // Enhanced focus indicators
-  const focusableElements = document.querySelectorAll('a, button, input, select, textarea, [tabindex]');
-  
-  focusableElements.forEach(element => {
-      element.addEventListener('focus', function() {
-          this.classList.add('aura-focused');
-      });
-      
-      element.addEventListener('blur', function() {
-          this.classList.remove('aura-focused');
-      });
-  });
-}
-
-/**
-* Enhance ARIA labels and accessibility
-*/
-function enhanceARIA() {
-  // Add ARIA labels to status indicators
-  const statusIndicators = document.querySelectorAll('.status-indicator');
-  statusIndicators.forEach((indicator, index) => {
-      if (!indicator.hasAttribute('aria-label')) {
-          const status = indicator.classList.contains('operational') ? 'Operational' : 'Unknown';
-          indicator.setAttribute('aria-label', `System status: ${status}`);
-      }
-  });
-  
-  // Add ARIA labels to metric displays
-  const metricDisplays = document.querySelectorAll('[data-metric]');
-  metricDisplays.forEach(metric => {
-      const metricType = metric.dataset.metric;
-      const value = metric.textContent;
-      metric.setAttribute('aria-label', `${metricType}: ${value}`);
-  });
-}
-
-/**
-* Initialize scroll-triggered animations
-*/
-function initScrollAnimations() {
-  const animatedElements = document.querySelectorAll('.scroll-animate, .scroll-animate-left, .scroll-animate-right');
-  
-  if (animatedElements.length === 0) return;
+function initEntranceAnimations() {
+  const animatedElements = document.querySelectorAll('[data-animate]');
   
   const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
           if (entry.isIntersecting) {
-              entry.target.classList.add('in-view');
-              observer.unobserve(entry.target);
+              const element = entry.target;
+              const animationType = element.dataset.animate;
+              
+              element.classList.add(`animate-${animationType}`);
+              observer.unobserve(element);
           }
       });
-  }, { 
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-  });
+  }, { threshold: 0.1 });
   
   animatedElements.forEach(element => {
       observer.observe(element);
@@ -284,381 +519,40 @@ function initScrollAnimations() {
 }
 
 /**
-* Initialize component-specific animations
+* Hover animations
 */
-function initComponentAnimations() {
-  // Initialize card stagger animations
-  initCardStaggerAnimations();
+function initHoverAnimations() {
+  const hoverElements = document.querySelectorAll('.hover-glow, .hover-lift');
   
-  // Initialize HUD data counters
-  initHUDDataCounters();
-  
-  // Initialize progress bars
-  initProgressBars();
-  
-  // Initialize terminal animations
-  initTerminalAnimations();
-}
-
-/**
-* Initialize staggered card animations
-*/
-function initCardStaggerAnimations() {
-  const cardGrids = document.querySelectorAll('.card-grid, .featured-systems-grid, .devlogs-grid');
-  
-  cardGrids.forEach(grid => {
-      const cards = grid.querySelectorAll('.glass-card, .system-card, .datalog-card');
+  hoverElements.forEach(element => {
+      element.addEventListener('mouseenter', function() {
+          this.classList.add('hovered');
+      });
       
-      cards.forEach((card, index) => {
-          card.style.opacity = '0';
-          card.style.transform = 'translateY(20px)';
-          
-          setTimeout(() => {
-              card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-              card.style.opacity = '1';
-              card.style.transform = 'translateY(0)';
-          }, index * 100);
+      element.addEventListener('mouseleave', function() {
+          this.classList.remove('hovered');
       });
   });
 }
 
 /**
-* Initialize HUD data counters
+* Loading animations
 */
-function initHUDDataCounters() {
-  const counters = document.querySelectorAll('.hud-data-counter, [data-counter]');
+function initLoadingAnimations() {
+  const loadingElements = document.querySelectorAll('.shimmer-effect');
   
+  // Add intersection observer to start shimmer when visible
   const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
           if (entry.isIntersecting) {
-              const counter = entry.target;
-              const target = parseInt(counter.dataset.target || counter.dataset.counter, 10) || 0;
-              const duration = parseInt(counter.dataset.duration, 10) || 2000;
-              
-              animateCounter(counter, target, duration);
-              observer.unobserve(counter);
+              entry.target.classList.add('shimmer-active');
+          } else {
+              entry.target.classList.remove('shimmer-active');
           }
       });
-  }, { threshold: 0.5 });
-  
-  counters.forEach(counter => observer.observe(counter));
-}
-
-/**
-* Animate number counter
-*/
-function animateCounter(element, target, duration) {
-  const step = target / (duration / 16);
-  let current = 0;
-  
-  const updateCounter = () => {
-      current += step;
-      if (current < target) {
-          element.textContent = Math.floor(current).toLocaleString();
-          requestAnimationFrame(updateCounter);
-      } else {
-          element.textContent = target.toLocaleString();
-      }
-  };
-  
-  updateCounter();
-}
-
-/**
-* Initialize progress bars
-*/
-function initProgressBars() {
-  const progressBars = document.querySelectorAll('.progress-bar-hud, .skill-level-fill');
-  
-  const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-          if (entry.isIntersecting) {
-              const bar = entry.target;
-              const width = bar.dataset.width || bar.style.width || '0%';
-              
-              bar.style.width = '0%';
-              bar.style.transition = 'width 1s ease-out';
-              
-              setTimeout(() => {
-                  bar.style.width = width;
-              }, 100);
-              
-              observer.unobserve(bar);
-          }
-      });
-  }, { threshold: 0.2 });
-  
-  progressBars.forEach(bar => observer.observe(bar));
-}
-
-/**
-* Initialize terminal typing animations
-*/
-function initTerminalAnimations() {
-  const terminalLines = document.querySelectorAll('.terminal-line');
-  const terminalOutputs = document.querySelectorAll('.terminal-output');
-  
-  if (terminalLines.length === 0) return;
-  
-  terminalLines.forEach((line, index) => {
-      setTimeout(() => {
-          line.classList.add('active');
-          
-          const command = line.querySelector('.terminal-command');
-          if (command) {
-              typeText(command, command.textContent, 50);
-          }
-      }, index * 1000);
   });
   
-  setTimeout(() => {
-      terminalOutputs.forEach(output => {
-          output.classList.add('active');
-      });
-  }, terminalLines.length * 1000 + 500);
-}
-
-/**
-* Type text with typewriter effect
-*/
-function typeText(element, text, speed) {
-  const originalText = text;
-  element.textContent = '';
-  
-  let i = 0;
-  const timer = setInterval(() => {
-      element.textContent = originalText.substring(0, i + 1);
-      i++;
-      
-      if (i >= originalText.length) {
-          clearInterval(timer);
-      }
-  }, speed);
-}
-
-/**
-* Utility Functions
-*/
-
-/**
-* Close all open modals
-*/
-function closeModals() {
-  const modals = document.querySelectorAll('.modal.show, .modal.active');
-  modals.forEach(modal => {
-      modal.classList.remove('show', 'active');
+  loadingElements.forEach(element => {
+      observer.observe(element);
   });
-}
-
-/**
-* Close mobile menu
-*/
-function closeMobileMenu() {
-  const mobileMenu = document.querySelector('.nav-menu');
-  const toggleButton = document.querySelector('.mobile-menu-toggle');
-  
-  if (mobileMenu && mobileMenu.classList.contains('active')) {
-      mobileMenu.classList.remove('active');
-      if (toggleButton) {
-          toggleButton.classList.remove('active');
-      }
-  }
-}
-
-/**
-* Smooth scroll to element
-*/
-function smoothScrollTo(target, offset = 80) {
-  const element = typeof target === 'string' ? document.querySelector(target) : target;
-  
-  if (element) {
-      const targetPosition = element.getBoundingClientRect().top + window.pageYOffset - offset;
-      
-      window.scrollTo({
-          top: targetPosition,
-          behavior: 'smooth'
-      });
-  }
-}
-
-/**
-* Debounce function to limit function calls
-*/
-function debounce(func, wait, immediate) {
-  let timeout;
-  return function executedFunction(...args) {
-      const later = function() {
-          timeout = null;
-          if (!immediate) func(...args);
-      };
-      const callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-      if (callNow) func(...args);
-  };
-}
-
-/**
-* Throttle function to limit function execution rate
-*/
-function throttle(func, limit) {
-  let inThrottle;
-  return function() {
-      const args = arguments;
-      const context = this;
-      if (!inThrottle) {
-          func.apply(context, args);
-          inThrottle = true;
-          setTimeout(() => inThrottle = false, limit);
-      }
-  };
-}
-
-/**
-* Check if element is in viewport
-*/
-function isInViewport(element, threshold = 0) {
-  const rect = element.getBoundingClientRect();
-  const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-  const windowWidth = window.innerWidth || document.documentElement.clientWidth;
-  
-  return (
-      rect.top >= -threshold &&
-      rect.left >= -threshold &&
-      rect.bottom <= windowHeight + threshold &&
-      rect.right <= windowWidth + threshold
-  );
-}
-
-/**
-* Format numbers with appropriate suffixes
-*/
-function formatNumber(num) {
-  if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-  } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-  }
-  return num.toString();
-}
-
-/**
-* Generate random system ID
-*/
-function generateSystemID(prefix = 'SYS', length = 8) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = prefix + '-';
-  for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
-/**
-* AURA Loading Sequence
-* Three-phase loading animation
-*/
-function initLoadingSequence() {
-  const loadingScreen = document.getElementById('loadingScreen');
-  const loadingContainer = document.getElementById('loadingContainer');
-  const welcomeScreen = document.getElementById('welcomeScreen');
-  const mainInterface = document.getElementById('mainInterface') || document.getElementById('mainContent');
-  
-  if (!loadingScreen) return;
-  
-  // Show loading screen
-  loadingScreen.style.display = 'flex';
-  
-  // Phase 1: Logo and progress (0-4.5s)
-  setTimeout(() => {
-      const logo = loadingScreen.querySelector('.aura-logo');
-      const subtitle = loadingScreen.querySelector('.aura-subtitle');
-      const progressBar = loadingScreen.querySelector('.progress-bar');
-      const loadingText = loadingScreen.querySelector('.loading-text');
-      
-      if (logo) {
-          logo.style.opacity = '1';
-          logo.classList.add('aura-logo-animate');
-      }
-      
-      if (subtitle) {
-          setTimeout(() => {
-              subtitle.style.opacity = '1';
-              subtitle.classList.add('aura-subtitle-animate');
-          }, 1000);
-      }
-      
-      if (progressBar) {
-          setTimeout(() => {
-              progressBar.classList.add('aura-progress-animate');
-          }, 2000);
-      }
-      
-      if (loadingText) {
-          setTimeout(() => {
-              loadingText.style.opacity = '1';
-              loadingText.classList.add('aura-text-animate');
-          }, 2500);
-      }
-  }, 500);
-  
-  // Phase 2: Welcome screen (4.5s-7s)
-  setTimeout(() => {
-      if (loadingContainer) {
-          loadingContainer.style.opacity = '0';
-      }
-      
-      setTimeout(() => {
-          if (welcomeScreen) {
-              welcomeScreen.classList.add('active');
-              welcomeScreen.classList.add('aura-welcome-animate');
-          }
-      }, 500);
-  }, 4500);
-  
-  // Phase 3: Fade to main interface (7s+)
-  setTimeout(() => {
-      if (welcomeScreen) {
-          welcomeScreen.style.opacity = '0';
-      }
-      
-      setTimeout(() => {
-          loadingScreen.classList.add('fade-out');
-          
-          setTimeout(() => {
-              loadingScreen.style.display = 'none';
-              document.body.style.overflow = 'auto';
-              
-              // Initialize main interface
-              if (mainInterface) {
-                  mainInterface.style.opacity = '1';
-                  mainInterface.style.transform = 'scale(1)';
-                  mainInterface.classList.add('aura-interface-animate');
-              }
-              
-              AURA.loadingComplete = true;
-              console.log('🎯 AURA Loading Sequence Complete');
-          }, 1000);
-      }, 800);
-  }, 7000);
-}
-
-/**
-* Export AURA functions for global access
-*/
-window.AURA = AURA;
-window.initAURASystem = initAURASystem;
-window.initLoadingSequence = initLoadingSequence;
-window.smoothScrollTo = smoothScrollTo;
-window.debounce = debounce;
-window.throttle = throttle;
-window.isInViewport = isInViewport;
-window.formatNumber = formatNumber;
-window.generateSystemID = generateSystemID;
-
-// Auto-initialize if DOM is already loaded
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAURASystem);
-} else {
-  initAURASystem();
 }
