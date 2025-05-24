@@ -1,7 +1,7 @@
 /**
  * AURA DataLogs Interface JavaScript
  * Advanced User Repository & Archive - Blog/DataLogs System
- * Version: 1.0.0
+ * Version: 1.0.1
  */
 
 // DataLogs System State
