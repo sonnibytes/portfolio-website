@@ -8,7 +8,6 @@
 {% load static %}
 {% load code_filters %}
 {% load blog_tags %}
-{% load nav_tags %}
 
 {% block extra_css %}
 <!-- DataLogs App Specific Styles -->
@@ -23,9 +22,70 @@
 {% block body_class %}datalogs-interface {% block datalogs_body_class %}{% endblock %}{% endblock %}
 
 {% block content %}
-{% render_subnav links %}
 <!-- DataLogs HUD Interface -->
 <div class="datalogs-interface-container">
+    
+    <!-- DataLogs Sub-Navigation -->
+    <section class="datalogs-subnav">
+        <div class="container subnav-container">
+            <div class="subnav-left">
+                <div class="subnav-title">
+                    <i class="fas fa-database subnav-title-icon"></i>
+                    {% block subnav_title %}DataLogs{% endblock %}
+                </div>
+                
+                <nav class="subnav-links">
+                    <a href="{% url 'blog:post_list' %}" class="subnav-link {% if request.resolver_match.view_name == 'blog:post_list' %}active{% endif %}">
+                        <i class="fas fa-list subnav-icon"></i>
+                        <span>All Logs</span>
+                    </a>
+                    <a href="{% url 'blog:archive' %}" class="subnav-link {% if 'archive' in request.resolver_match.view_name %}active{% endif %}">
+                        <i class="fas fa-calendar subnav-icon"></i>
+                        <span>Archive</span>
+                    </a>
+                    <a href="{% url 'blog:tags' %}" class="subnav-link {% if 'tag' in request.resolver_match.view_name %}active{% endif %}">
+                        <i class="fas fa-tags subnav-icon"></i>
+                        <span>Tags</span>
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'blog:dashboard' %}" class="subnav-link {% if 'dashboard' in request.resolver_match.view_name %}active{% endif %}">
+                        <i class="fas fa-chart-line subnav-icon"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+            
+            <div class="subnav-right">
+                <div class="subnav-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-file-alt"></i>
+                        <span class="stat-value">{{ total_logs|default:"24" }}</span>
+                        <span class="stat-label">Logs</span>
+                    </div>
+                    <span class="stat-separator">|</span>
+                    <div class="stat-item">
+                        <i class="fas fa-folder"></i>
+                        <span class="stat-value">{{ categories.count|default:"5" }}</span>
+                        <span class="stat-label">Categories</span>
+                    </div>
+                </div>
+                
+                <div class="subnav-actions">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'blog:post_create' %}" class="subnav-action-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>New Log</span>
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'blog:search' %}" class="subnav-action-btn">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
     
     <!-- DataLogs Header Section -->
     <section class="datalogs-header-section">
@@ -49,6 +109,13 @@
                                 <span class="metric-value">{{ published_logs|default:"18" }}</span>
                                 <span class="metric-label">Published</span>
                             </span>
+                            {% if user.is_authenticated %}
+                            <span class="metric-separator">|</span>
+                            <span class="metric-item">
+                                <span class="metric-value">{{ draft_logs|default:"3" }}</span>
+                                <span class="metric-label">Drafts</span>
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
                     
@@ -70,8 +137,9 @@
                     </p>
                     
                     <!-- Category Navigation HUD -->
+                    {% block category_nav %}
                     <div class="category-hud-nav">
-                        <a href="{% url 'blog:post_list' %}" class="category-hexagon {% if not current_category %}active{% endif %}" title="All DataLogs">
+                        <a href="{% url 'blog:post_list' %}" class="category-hexagon {% if not current_category and not current_tag %}active{% endif %}" title="All DataLogs">
                             <div class="hex-content">
                                 <div class="hex-icon"><i class="fas fa-database"></i></div>
                                 <div class="hex-label">ALL</div>
@@ -86,7 +154,7 @@
                             <div class="hex-content">
                                 <div class="hex-icon">
                                     {% if category.icon %}
-                                    <i class="fas {{ category.icon }}"></i>
+                                    <i class="{{ category.icon }}"></i>
                                     {% else %}
                                     <span class="hex-code">{{ category.code|default:"LOG" }}</span>
                                     {% endif %}
@@ -96,6 +164,7 @@
                         </a>
                         {% endfor %}
                     </div>
+                    {% endblock %}
                 </div>
             </div>
         </div>
@@ -105,54 +174,18 @@
     <main class="datalogs-main-content">
         <div class="container">
             
-            <!-- DataLogs Filters & Search -->
-            {% block datalogs_filters %}
-            <div class="datalogs-controls">
-                <div class="glass-card controls-panel">
-                    <div class="controls-left">
-                        <!-- Search Interface -->
-                        <form method="get" action="{% url 'blog:search' %}" class="search-terminal">
-                            <div class="search-container">
-                                <div class="search-prompt">
-                                    <span class="prompt-text">search:</span>
-                                    <input type="text" name="q" value="{{ query|default:'' }}" 
-                                           class="search-input" placeholder="Enter search parameters..."
-                                           autocomplete="off">
-                                </div>
-                                <button type="submit" class="search-execute">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <div class="controls-right">
-                        <!-- View Mode Toggle -->
-                        <div class="view-toggle">
-                            <button class="view-btn grid-view active" data-view="grid">
-                                <i class="fas fa-th"></i>
-                            </button>
-                            <button class="view-btn list-view" data-view="list">
-                                <i class="fas fa-list"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Sort Options -->
-                        <div class="sort-dropdown">
-                            <select class="hud-select" id="sortSelect">
-                                <option value="latest">Latest First</option>
-                                <option value="oldest">Oldest First</option>
-                                <option value="title">Title A-Z</option>
-                                <option value="category">By Category</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+            <!-- Breadcrumb Navigation -->
+            {% block datalogs_breadcrumbs %}
+            <div class="datalogs-breadcrumbs">
+                {% include 'components/breadcrumbs.html' %}
             </div>
             {% endblock %}
             
+            <!-- DataLogs Filters & Search -->
+            {% block datalogs_filters %}{% endblock %}
+            
             <!-- Main DataLogs Content -->
-            <div class="datalogs-content-grid">
+            <div class="datalogs-content-area">
                 {% block datalogs_content %}
                 <!-- Default content - will be overridden in child templates -->
                 <div class="glass-card info-card">
@@ -192,29 +225,39 @@ document.addEventListener('DOMContentLoaded', function() {
         initDataLogsInterface();
     }
     
-    // View toggle functionality
-    const viewButtons = document.querySelectorAll('.view-btn');
-    const contentGrid = document.querySelector('.datalogs-content-grid');
+    // Subnav mobile responsiveness
+    const subnavContainer = document.querySelector('.subnav-container');
+    if (window.innerWidth <= 767) {
+        subnavContainer.classList.add('mobile-view');
+    }
     
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            viewButtons.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+    // Real-time timestamp updates
+    const timestamps = document.querySelectorAll('[data-timestamp]');
+    if (timestamps.length > 0) {
+        updateTimestamps();
+        setInterval(updateTimestamps, 1000);
+    }
+    
+    function updateTimestamps() {
+        const now = new Date();
+        timestamps.forEach(element => {
+            const format = element.dataset.timestamp || 'datetime';
             
-            const viewMode = this.dataset.view;
-            if (contentGrid) {
-                contentGrid.className = `datalogs-content-grid ${viewMode}-view`;
+            switch (format) {
+                case 'time':
+                    element.textContent = now.toLocaleTimeString('en-US', { 
+                        hour12: false, 
+                        timeZone: 'UTC' 
+                    }) + ' UTC';
+                    break;
+                case 'date':
+                    element.textContent = now.toISOString().split('T')[0];
+                    break;
+                case 'datetime':
+                default:
+                    element.textContent = now.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
+                    break;
             }
-        });
-    });
-    
-    // Sort functionality
-    const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect) {
-        sortSelect.addEventListener('change', function() {
-            const url = new URL(window.location);
-            url.searchParams.set('sort', this.value);
-            window.location.href = url.toString();
         });
     }
     
