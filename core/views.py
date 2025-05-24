@@ -179,7 +179,7 @@ class DeveloperProfileView(TemplateView):
         return context
 
 
-# TODO: Clean up
+# TODO: Clean up -- May be able to combine dashboards on home instead of separate in sep apps.
 class ResumeDownloadView(TemplateView):
     """
     Generate and serve downloadable resume in various formats.
