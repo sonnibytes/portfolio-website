@@ -227,7 +227,8 @@ class ResumeDownloadView(TemplateView):
             )
 
         except Exception as e:
-            return JsonResponse({"error": "Resume generation failed"}, status=500)
+            return JsonResponse({
+                "error": "Resume generation failed"}, status=500)
 
     def generate_json_resume(self):
         """Generate machine-readable JSON resume."""
@@ -289,8 +290,10 @@ class ResumeDownloadView(TemplateView):
                 "projects": [
                     {
                         "name": system.title,
-                        "description": system.excerpt or system.description[:200],
-                        "highlights": [tech.name for tech in system.technologies.all()],
+                        "description":
+                        system.excerpt or system.description[:200],
+                        "highlights":
+                        [tech.name for tech in system.technologies.all()],
                         "url": system.live_url or system.github_url,
                         "roles": ["Developer"],
                         "entity": "Personal Project",
@@ -309,13 +312,15 @@ class ResumeDownloadView(TemplateView):
             return response
 
         except Exception as e:
-            return JsonResponse({"error": "JSON resume generation failed"}, status=500)
+            return JsonResponse({
+                "error": "JSON resume generation failed"}, status=500)
 
     def serve_static_resume(self):
         """Fallback to serve static resume file."""
         return JsonResponse(
             {
-                "message": "Please visit the developer profile page for comprehensive information.",
+                "message":
+                "Please visit the developer profile page for comprehensive info.",
                 "profile_url": "/developer-profile/",
                 "contact_url": "/communication/",
             }
@@ -394,37 +399,13 @@ class CommTerminalView(FormView):
 
 
 class ContactSuccessView(TemplateView):
-    """AURA Contact Success confirmation w system feedback."""
-    template_name = 'core/contact_success.html'
+    """AURA Contact Success confirmation."""
+
+    template_name = "core/contact_success.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Generate or retrieve message ID
-        latest_contact = Contact.objects.last()
-        context["message_id"] = f"{latest_contact.id:04d}" if latest_contact else "0001"
-
-        # Transmission confirmation details
-        # TODO: May swap for more useful metrics later
-        context["transmission_details"] = {
-            "protocol": "HTTPS/TLS 1.3",
-            "encryption": "AES-256-GCM",
-            "timestamp": timezone.now(),
-            "status": "CONFIRMED",
-            "priority": "NORMAL",
-            "estimated_response": "24-48 hours",
-        }
-
-        # System status at time of transmission
-        # TODO: May swap for more useful system metrics
-        context["system_status"] = {
-            "all_systems": "OPERATIONAL",
-            "message_queue": f"{Contact.objects.filter(
-                is_read=False).count()} pending",
-            "server_load": "23%",
-            "connection_quality": "EXCELLENT",
-        }
-
+        context["message_id"] = self.request.GET.get("msg_id", "0001")
         return context
 
 
@@ -491,21 +472,21 @@ class TermsView(TemplateView):
         return context
 
 
-class ResumeView(TemplateView):
-    """View for resume/CV page."""
-    template_name = "core/resume.html"
+# class ResumeView(TemplateView):
+#     """View for resume/CV page."""
+#     template_name = "core/resume.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['skills'] = Skill.objects.all().order_by('category', 'display_order')
-        context['education'] = Education.objects.all()
-        context['experiences'] = Experience.objects.all()
-        return context
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['skills'] = Skill.objects.all().order_by('category', 'display_order')
+#         context['education'] = Education.objects.all()
+#         context['experiences'] = Experience.objects.all()
+#         return context
 
 
 @method_decorator(csrf_protect, name='dispatch')
 class ErrorView(TemplateView):
-    """View for custom error pages."""
+    """AURA custom error pages."""
     template_name = 'core/error.html'
 
     def get_context_data(self, **kwargs):
@@ -513,3 +494,43 @@ class ErrorView(TemplateView):
         context['error_code'] = kwargs.get('error_code', '404')
         context['error_message'] = kwargs.get('error_message', 'Page not found')
         return context
+
+
+# API Views for AURA HUD Data
+class SystemMetricsAPIView(TemplateView):
+    """API endpoint for real-time system metrics (for HUD dashboard)."""
+
+    def get(self, request, *args, **kwargs):
+        metrics = {
+            "systems": {
+                "total": SystemModule.objects.filter(
+                    status__in=["deployed", "published"]
+                ).count(),
+                "deployed": SystemModule.objects.filter(status="deployed").count(),
+                "in_development": SystemModule.objects.filter(
+                    status="in_development"
+                ).count(),
+                "testing": SystemModule.objects.filter(status="testing").count(),
+            },
+            "logs": {
+                "total": Post.objects.filter(status="published").count(),
+                "recent": Post.objects.filter(
+                    status="published",
+                    published_date__gte=timezone.now() - timezone.timedelta(days=30),
+                ).count(),
+            },
+            "technologies": {
+                "total": Technology.objects.count(),
+                "languages": Technology.objects.filter(category="language").count(),
+                "frameworks": Technology.objects.filter(category="framework").count(),
+            },
+            "system_status": {
+                "uptime": "99.7%",
+                "response_time": f"{142 + (timezone.now().second % 30)}ms",
+                "memory_usage": f"{65 + (timezone.now().second % 20)}%",
+                "active_connections": 1247 + (timezone.now().minute * 3),
+                "last_updated": timezone.now().isoformat(),
+            },
+        }
+
+        return JsonResponse(metrics)

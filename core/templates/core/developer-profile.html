@@ -1,9 +1,15 @@
+<!----
+ * AURA Portfolio - Developer Profile/Resume Template
+ * Advanced User Repository & Archive
+ * Version: 2.0.1 - Optimized for Component Architecture
+---->
+
 {% extends "base.html" %}
 {% load static %}
 {% load core_tags %}
 
 {% block title %}Developer Profile | AURA{% endblock %}
-{% block meta_description %}Explore Sonni Gunnels' developer profile - Python expertise, ML systems, and technical insights through an advanced user repository interface.{% endblock %}
+{% block meta_description %}Comprehensive developer profile showcasing Python expertise, ML systems, and technical capabilities through the AURA advanced user repository interface.{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'core/css/about.css' %}">
@@ -48,21 +54,21 @@
                                 <div class="meta-icon"><i class="fas fa-microchip"></i></div>
                                 <div class="meta-content">
                                     <div class="meta-label">Active Systems</div>
-                                    <div class="meta-value">{{ total_systems|default:"12" }}</div>
+                                    <div class="meta-value">{{ portfolio_metrics.total_systems }}</div>
                                 </div>
                             </div>
                             <div class="profile-meta-item">
                                 <div class="meta-icon"><i class="fas fa-database"></i></div>
                                 <div class="meta-content">
                                     <div class="meta-label">Data Logs</div>
-                                    <div class="meta-value">{{ total_logs_count|default:"24" }}</div>
+                                    <div class="meta-value">{{ portfolio_metrics.total_logs_count }}</div>
                                 </div>
                             </div>
                             <div class="profile-meta-item">
                                 <div class="meta-icon"><i class="fas fa-calendar-alt"></i></div>
                                 <div class="meta-content">
                                     <div class="meta-label">Experience</div>
-                                    <div class="meta-value">{{ coding_years|default:"3" }}+ Years</div>
+                                    <div class="meta-value">{{ portfolio_metrics.coding_years }}+ Years</div>
                                 </div>
                             </div>
                         </div>
@@ -71,9 +77,19 @@
                             <a href="{% url 'core:contact' %}" class="btn btn-primary">
                                 <i class="fas fa-satellite-dish me-2"></i> Initialize Contact
                             </a>
-                            <a href="{% url 'core:resume' %}" class="btn btn-outline">
-                                <i class="fas fa-file-alt me-2"></i> Access Resume
-                            </a>
+                            <div class="resume-download-group">
+                                <a href="{% url 'core:resume_download' %}" class="btn btn-outline">
+                                    <i class="fas fa-download me-2"></i> Download Resume
+                                </a>
+                                <div class="download-options">
+                                    <a href="{% url 'core:resume_download_format' format='pdf' %}" class="download-option" title="PDF Format">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    <a href="{% url 'core:resume_download_format' format='json' %}" class="download-option" title="JSON Format">
+                                        <i class="fas fa-file-code"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -82,16 +98,16 @@
     </div>
 </section>
 
-<!-- Profile Overview Section -->
+<!-- Portfolio Overview Section -->
 <section class="profile-overview-section">
     <div class="container">
         <div class="row">
-            <!-- Bio Panel -->
+            <!-- Professional Summary -->
             <div class="col-lg-8">
                 <div class="glass-card profile-bio-card">
                     <div class="card-header">
                         <h2 class="card-title">
-                            <i class="fas fa-user-astronaut me-2"></i>  Developer Profile
+                            <i class="fas fa-user-astronaut me-2"></i> Developer Profile
                         </h2>
                     </div>
                     <div class="card-content">
@@ -100,41 +116,81 @@
                         <p>I'm passionate about creating scalable solutions that solve real-world problems through the intersection of software engineering and artificial intelligence. Each system in my repository represents a unique approach to technical challenges, emphasizing both performance and maintainability.</p>
                         
                         <p>AURA represents my journey through advanced development practices, showcasing systems that demonstrate proficiency in Python ecosystem tools, machine learning frameworks, and modern software architecture patterns.</p>
+                        
+                        <!-- Recent Activity Timeline -->
+                        <div class="recent-activity-section">
+                            <h3 class="activity-title">
+                                <i class="fas fa-clock me-2"></i> Recent Activity
+                            </h3>
+                            <div class="activity-timeline">
+                                {% for system in recent_systems %}
+                                <div class="activity-item">
+                                    <div class="activity-icon system">
+                                        <i class="fas fa-rocket"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">{{ system.title }}</div>
+                                        <div class="activity-description">System {{ system.get_status_display|lower }}</div>
+                                        <div class="activity-time">{{ system.created|timesince }} ago</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                {% for post in recent_posts %}
+                                <div class="activity-item">
+                                    <div class="activity-icon log">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">{{ post.title }}</div>
+                                        <div class="activity-description">DataLog entry published</div>
+                                        <div class="activity-time">{{ post.published_date|timesince }} ago</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Quick Stats -->
+            <!-- Portfolio Metrics -->
             <div class="col-lg-4">
                 <div class="glass-card stats-card">
                     <div class="card-header">
                         <h2 class="card-title">
-                            <i class="fas fa-chart-line me-2"></i>  System Metrics
+                            <i class="fas fa-chart-line me-2"></i> Portfolio Metrics
                         </h2>
                     </div>
                     <div class="card-content">
                         <div class="stat-item">
-                            <div class="stat-value hud-data-counter" data-target="{{ systems_completed|default:'8' }}">0</div>
+                            <div class="stat-value hud-data-counter" data-target="{{ portfolio_metrics.systems_completed }}">0</div>
                             <div class="stat-label">Deployed Systems</div>
                             <div class="stat-icon"><i class="fas fa-rocket"></i></div>
                         </div>
                         
                         <div class="stat-item">
-                            <div class="stat-value hud-data-counter" data-target="{{ systems_in_progress|default:'3' }}">0</div>
+                            <div class="stat-value hud-data-counter" data-target="{{ portfolio_metrics.systems_in_progress }}">0</div>
                             <div class="stat-label">In Development</div>
                             <div class="stat-icon"><i class="fas fa-cogs"></i></div>
                         </div>
                         
                         <div class="stat-item">
-                            <div class="stat-value">{{ languages_used|default:"8" }}</div>
+                            <div class="stat-value">{{ portfolio_metrics.languages_used }}</div>
                             <div class="stat-label">Technologies</div>
                             <div class="stat-icon"><i class="fas fa-code"></i></div>
                         </div>
                         
                         <div class="stat-item">
-                            <div class="stat-value">99.7%</div>
-                            <div class="stat-label">System Uptime</div>
-                            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                            <div class="stat-value">{{ portfolio_metrics.github_repos }}</div>
+                            <div class="stat-label">GitHub Repos</div>
+                            <div class="stat-icon"><i class="fab fa-github"></i></div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-value">{{ portfolio_metrics.lines_of_code|floatformat:0 }}</div>
+                            <div class="stat-label">Lines of Code</div>
+                            <div class="stat-icon"><i class="fas fa-terminal"></i></div>
                         </div>
                     </div>
                 </div>
@@ -208,32 +264,11 @@
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">Technical Proficiency Matrix</h2>
-            <p class="section-subtitle">Skill levels across technology domains</p>
+            <p class="section-subtitle">Comprehensive skill assessment across technology domains</p>
         </div>
         
         <div class="row">
-            <!-- Skill Radar Chart -->
-            <div class="col-lg-6">
-                <div class="glass-card skill-radar-card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-radar me-2"></i> Skill Distribution
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="skill-radar-container">
-                            <div class="radar-chart" 
-                                 data-values="90,85,88,82,85,78" 
-                                 data-labels="Python,Machine Learning,Data Analysis,System Design,API Development,Cloud Platforms"
-                                 data-max="100">
-                                <!-- Radar chart will be rendered here via JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Technology Breakdown -->
+            <!-- Technology Stack Overview -->
             <div class="col-lg-6">
                 <div class="glass-card tech-breakdown-card">
                     <div class="card-header">
@@ -249,12 +284,12 @@
                                 <div class="tech-category-count">{{ data.skills.count }} skills</div>
                             </div>
                             <div class="tech-category-skills">
-                                {% for skill in data.skills|slice:":4" %}
+                                {% for skill in data.skills|slice:":6" %}
                                 <div class="skill-indicator">
                                     <div class="skill-name">{{ skill.name }}</div>
                                     <div class="skill-level">
                                         <div class="skill-level-bar">
-                                            <div class="skill-level-fill" style="width: {{ skill.proficiency|multiply:20 }}%"></div>
+                                            <div class="skill-level-fill" style="width: {{ skill.proficiency }}%"></div>
                                         </div>
                                         <div class="skill-level-text">{{ skill.proficiency }}/5</div>
                                     </div>
@@ -274,7 +309,7 @@
                                     <div class="skill-name">Python</div>
                                     <div class="skill-level">
                                         <div class="skill-level-bar">
-                                            <div class="skill-level-fill" style="width: 90%"></div>
+                                            <div class="skill-level-fill" style="width: 100%"></div>
                                         </div>
                                         <div class="skill-level-text">5/5</div>
                                     </div>
@@ -283,7 +318,7 @@
                                     <div class="skill-name">JavaScript</div>
                                     <div class="skill-level">
                                         <div class="skill-level-bar">
-                                            <div class="skill-level-fill" style="width: 70%"></div>
+                                            <div class="skill-level-fill" style="width: 80%"></div>
                                         </div>
                                         <div class="skill-level-text">4/5</div>
                                     </div>
@@ -309,6 +344,44 @@
                             </div>
                         </div>
                         {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Skills Radar Chart -->
+            <div class="col-lg-6">
+                <div class="glass-card skill-radar-card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-radar me-2"></i> Skill Distribution
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="skill-radar-container">
+                            <div class="radar-chart" 
+                                 data-values="95,85,88,82,85,78" 
+                                 data-labels="Python,Machine Learning,Data Analysis,System Design,API Development,Cloud Platforms"
+                                 data-max="100">
+                                <!-- Radar chart will be rendered here via JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Technology Categories Breakdown -->
+                        <div class="tech-category-overview">
+                            {% for category, data in tech_by_category.items %}
+                            <div class="category-overview-item">
+                                <div class="category-label">{{ data.label }}</div>
+                                <div class="category-tech-list">
+                                    {% for tech in data.technologies|slice:":4" %}
+                                    <span class="mini-tech-tag">{{ tech.name }}</span>
+                                    {% endfor %}
+                                    {% if data.technologies.count > 4 %}
+                                    <span class="tech-count">+{{ data.technologies.count|add:"-4" }} more</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -404,6 +477,80 @@
     </div>
 </section>
 
+<!-- Education Section -->
+<section class="education-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Educational Background</h2>
+            <p class="section-subtitle">Academic foundation and continuous learning</p>
+        </div>
+        
+        <div class="education-grid">
+            {% for edu in education %}
+            <div class="glass-card education-card">
+                <div class="education-header">
+                    <div class="education-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="education-meta">
+                        <div class="education-dates">
+                            {{ edu.start_date|date:"Y" }} — {% if edu.is_current %}Present{% else %}{{ edu.end_date|date:"Y" }}{% endif %}
+                        </div>
+                        <div class="education-status">
+                            {% if edu.is_current %}
+                            <div class="status-indicator warning"></div>
+                            <span>In Progress</span>
+                            {% else %}
+                            <div class="status-indicator operational"></div>
+                            <span>Completed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="education-content">
+                    <h3 class="education-degree">{{ edu.degree }}</h3>
+                    <div class="education-field">{{ edu.field_of_study }}</div>
+                    <div class="education-institution">{{ edu.institution }}</div>
+                    
+                    {% if edu.description %}
+                    <div class="education-description">
+                        {{ edu.description }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <!-- Fallback education -->
+            <div class="glass-card education-card">
+                <div class="education-header">
+                    <div class="education-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="education-meta">
+                        <div class="education-dates">2018 — 2022</div>
+                        <div class="education-status">
+                            <div class="status-indicator operational"></div>
+                            <span>Completed</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="education-content">
+                    <h3 class="education-degree">Bachelor of Science</h3>
+                    <div class="education-field">Computer Science</div>
+                    <div class="education-institution">University of Alabama at Birmingham</div>
+                    
+                    <div class="education-description">
+                        Focus on software engineering, data structures, and machine learning fundamentals.
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
 <!-- Connect Section -->
 <section class="connect-section">
     <div class="container">
@@ -441,6 +588,41 @@
                     <a href="https://linkedin.com/in/sonni-gunnels" target="_blank" class="btn btn-outline">Connect</a>
                 </div>
             </div>
+            
+            <!-- Resume Download Section -->
+            <div class="resume-download-section">
+                <div class="resume-download-header">
+                    <h3 class="download-title">
+                        <i class="fas fa-file-download me-2"></i>
+                        Resume & Documentation
+                    </h3>
+                    <p class="download-description">
+                        Download comprehensive professional documentation in multiple formats.
+                    </p>
+                </div>
+                
+                <div class="download-options-grid">
+                    <a href="{% url 'core:resume_download_format' format='pdf' %}" class="download-card">
+                        <div class="download-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="download-info">
+                            <div class="download-format">PDF Resume</div>
+                            <div class="download-desc">Standard format for applications</div>
+                        </div>
+                    </a>
+                    
+                    <a href="{% url 'core:resume_download_format' format='json' %}" class="download-card">
+                        <div class="download-icon">
+                            <i class="fas fa-file-code"></i>
+                        </div>
+                        <div class="download-info">
+                            <div class="download-format">JSON Resume</div>
+                            <div class="download-desc">Machine-readable format</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -461,6 +643,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize timeline animations
     initTimelineAnimations();
+    
+    // Initialize download tooltips
+    initDownloadTooltips();
 });
 
 function initHUDDataCounters() {
@@ -551,7 +736,7 @@ function initRadarChart() {
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('dominant-baseline', 'middle');
         text.setAttribute('fill', '#e8eaf6');
-        text.setAttribute('font-size', '12');
+        text.setAttribute('font-size', '11');
         text.setAttribute('font-family', 'Rajdhani, sans-serif');
         text.textContent = labels[i];
         svg.appendChild(text);
@@ -625,6 +810,20 @@ function initTimelineAnimations() {
     }, { threshold: 0.2 });
     
     timelineItems.forEach(item => observer.observe(item));
+}
+
+function initDownloadTooltips() {
+    const downloadOptions = document.querySelectorAll('.download-option');
+    
+    downloadOptions.forEach(option => {
+        option.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px) scale(1.1)';
+        });
+        
+        option.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
 }
 </script>
 {% endblock %}
