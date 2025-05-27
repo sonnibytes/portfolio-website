@@ -248,7 +248,7 @@ def truncate_smart(text, length=150):
     return truncated + '...'
 
 
-@register.filter
+@register.simple_tag
 def get_popular_tags(limit=10):
     """
     Returns most popular tags by post count.
@@ -259,7 +259,7 @@ def get_popular_tags(limit=10):
     ).filter(post_count__gt=0).order_by('-post_count')[:limit]
 
 
-@register.filter
+@register.simple_tag
 def get_recent_posts(limit=5, exclude_id=None):
     """
     Returns recently published posts.
@@ -273,7 +273,7 @@ def get_recent_posts(limit=5, exclude_id=None):
     return posts[:limit]
 
 
-@register.filter
+@register.simple_tag
 def get_featured_post():
     """
     Returns the featured post if any.

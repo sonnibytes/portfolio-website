@@ -24,13 +24,15 @@
 {% block datalogs_title %}[ DATALOGS ]{% endblock %}
 {% block datalogs_subtitle %}
     {% if category %}
-        Category: {{ category.name }} | {{ posts|length }} Entries Found
+        Category: {{ category.name }} | {{ posts|length|format_number }} Entries Found
     {% elif tag %}
-        Tag: {{ tag.name }} | {{ posts|length }} Entries Found
+        Tag: {{ tag.name }} | {{ posts|length|format_number }} Entries Found
     {% elif query %}
-        Search Results: "{{ query }}" | {{ posts|length }} Entries Found
+        Search Results: "{{ query }}" | {{ posts|length|format_number }} Entries Found
     {% else %}
-        {{ posts|length }} Log Entries
+        {{ posts|length|format_number }} Total Development Entries
+        {% blog_stats as stats %}
+        | {{ stats.avg_reading_time|format_duration }} Average Read Time
     {% endif %}
 {% endblock %}
 
@@ -111,9 +113,10 @@
                         <a href="{% url 'blog:post_list' %}" class="filter-item {% if not category %}active{% endif %}">
                             <span class="filter-icon"><i class="fas fa-database"></i></span>
                             <span class="filter-label">All Categories</span>
-                            <span class="filter-count">{{ posts.count }}</span>
+                            <span class="filter-count">{{ posts.count|format_number }}</span>
                         </a>
-                        {% for cat in categories %}
+                        {% get_post_count_by_category as category_stats %}
+                        {% for cat in category_stats %}
                         <a href="{% url 'blog:category' slug=cat.slug %}" 
                            class="filter-item {% if category.slug == cat.slug %}active{% endif %}"
                            style="--category-color: {{ cat|category_color }};">
@@ -125,40 +128,41 @@
                                 {% endif %}
                             </span>
                             <span class="filter-label">{{ cat.name }}</span>
-                            <span class="filter-count">{{ cat.posts.count }}</span>
+                            <span class="filter-count">{{ cat.post_count|format_number }}</span>
                         </a>
                         {% endfor %}
                     </div>
                 </div>
                 
-                <!-- Tag Cloud -->
-                <div class="filter-group">
-                    <h4 class="filter-group-title">Popular Tags</h4>
-                    <div class="tag-cloud">
-                        {% for tag in popular_tags %}
-                        <a href="{% url 'blog:tag' slug=tag.slug %}" 
-                           class="tag-item {% if current_tag.slug == tag.slug %}active{% endif %}"
-                           style="font-size: {{ tag.weight|default:1 }}em;">
-                            {{ tag.name }}
-                            <span class="tag-count">{{ tag.posts_count }}</span>
-                        </a>
-                        {% endfor %}
-                    </div>
+               <!-- Tag Cloud -->
+               <div class="filter-group">
+                <h4 class="filter-group-title">Popular Tags</h4>
+                <div class="tag-cloud">
+                    {% get_popular_tags 8 as popular_tags %}
+                    {% for tag in popular_tags %}
+                    <a href="{% url 'blog:tag' slug=tag.slug %}" 
+                       class="tag-item {% if current_tag.slug == tag.slug %}active{% endif %}"
+                       style="font-size: {% calculate 'add' 0.8 tag.post_count|mul:0.1 %}em;">
+                        {{ tag.name }}
+                        <span class="tag-count">{{ tag.post_count }}</span>
+                    </a>
+                    {% endfor %}
                 </div>
+            </div>
                 
                 <!-- Date Range -->
                 <div class="filter-group">
                     <h4 class="filter-group-title">Time Range</h4>
                     <div class="filter-items">
-                        <a href="?period=week" class="filter-item">
+                        <a href="{% build_url period='week' %}" class="filter-item">
                             <span class="filter-icon"><i class="fas fa-calendar-week"></i></span>
                             <span class="filter-label">This Week</span>
                         </a>
-                        <a href="?period=month" class="filter-item">
+                        <a href="{% build_url period='month' %}" class="filter-item">
                             <span class="filter-icon"><i class="fas fa-calendar-alt"></i></span>
                             <span class="filter-label">This Month</span>
                         </a>
-                        <a href="?period=year" class="filter-item">
+                        <a href="{% build_url period='year' %}" class="filter-item">
                             <span class="filter-icon"><i class="fas fa-calendar"></i></span>
                             <span class="filter-label">This Year</span>
                         </a>
@@ -179,7 +183,7 @@
         <div class="datalog-entry-header">
             <div class="datalog-meta-top">
                 <div class="datalog-id">
-                    {{ post.id|datalog_id }}
+                    <span class="id-prefix">{{ post.id|datalog_id }}</span>
                 </div>
                 <div class="datalog-status">
                     <div class="status-indicator operational"></div>
@@ -241,14 +245,14 @@
                     {% if post.category.icon %}
                     <i class="{{ post.category|category_icon }}"></i>
                     {% else %}
-                    <span class="icon-text">{{ post.get_icon_text }}</span>
+                    <span class="icon-text">[ NO VISUAL DATA ]</span>
                     {% endif %}
                 </div>
-                <div class="placeholder-overlay">
+                {% comment %} <div class="placeholder-overlay">
                     <div class="overlay-icon">
                         <i class="fas fa-file-alt"></i>
                     </div>
-                </div>
+                </div> {% endcomment %}
             </div>
             {% endif %}
             
@@ -261,7 +265,7 @@
                 </h3>
                 
                 <div class="datalog-excerpt">
-                    {{ post.excerpt|default:post.content|truncate_smart:25 }}
+                    {{ post.excerpt|default:post.content|truncate_smart:100|safe }}
                 </div>
                 
                 <!-- DataLog Metadata -->
@@ -289,7 +293,7 @@
                         </a>
                         {% endfor %}
                         {% if post.tags.count > 3 %}
-                        <span class="tag-more">+{{ post.tags.count|add:"-3" }} more</span>
+                        <span class="tag-more">+{{ post.tags.count|subtract:3 }} more</span>
                         {% endif %}
                     </div>
                     {% endif %}
@@ -354,7 +358,9 @@
 </div>
 
 <!-- Featured DataLog (if exists and not in search/filter) -->
-{% if featured_post and not query and not category and not tag %}
+{% if not query and not category and not tag %}
+{% get_featured_post as featured_post %}
+{% if featured_post %}
 <div class="featured-datalog-section">
     <div class="glass-card featured-datalog-card">
         <div class="featured-header">
@@ -362,7 +368,7 @@
                 <i class="fas fa-star"></i>
                 <span>Featured DataLog</span>
             </div>
-            <div class="featured-id">FEAT-001</div>
+            <div class="featured-id">{{ featured_post.id|datalog_id }}</div>
         </div>
         
         <div class="featured-content">
@@ -378,11 +384,11 @@
             
             <div class="featured-text">
                 <h3 class="featured-title">{{ featured_post.title }}</h3>
-                <p class="featured-excerpt">{{ featured_post.excerpt|default:featured_post.content|truncate_smart:30 }}</p>
+                <p class="featured-excerpt">{{ featured_post.excerpt|default:featured_post.content|truncate_smart:120 }}</p>
                 
                 <div class="featured-meta">
                     <span class="featured-category">{{ featured_post.category.name }}</span>
-                    <span class="featured-date">{{ featured_post.published_date|date:"M d, Y" }}</span>
+                    <span class="featured-date">{{ featured_post.published_date|time_since_published }}</span>
                     <span class="featured-reading-time">{{ featured_post.reading_time|format_duration }} read</span>
                 </div>
                 
@@ -395,6 +401,7 @@
     </div>
 </div>
 {% endif %}
+{% endif %}
 {% endblock %}
 
 {% block datalogs_sidebar %}
@@ -406,17 +413,23 @@
             DataLog Analytics
         </h3>
         
+        {% blog_stats as stats %}
         <div class="analytics-metrics">
             <div class="metric-item">
-                <div class="metric-value">{{ posts.count }}</div>
+                <div class="metric-value">{{ posts.count|format_number }}</div>
+                <div class="metric-label">Current View</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ stats.total_posts|format_number }}</div>
                 <div class="metric-label">Total Entries</div>
             </div>
             <div class="metric-item">
-                <div class="metric-value">{{ categories.count }}</div>
+                <div class="metric-value">{{ stats.total_categories|format_number }}</div>
                 <div class="metric-label">Categories</div>
             </div>
             <div class="metric-item">
-                <div class="metric-value">{{ total_reading_time|default:"45"|format_duration }}</div>
+                {% calculate 'multiply' stats.avg_reading_time posts.count as total_reading %}
+                <div class="metric-value">{{ total_reading|format_duration }}</div>
                 <div class="metric-label">Total Reading</div>
             </div>
         </div>
@@ -425,14 +438,15 @@
         <div class="recent-activity">
             <h4 class="activity-title">Recent Activity</h4>
             <div class="activity-items">
-                {% for post in recent_posts|slice:":3" %}
+                {% get_recent_posts 3 as recent_posts %}
+                {% for post in recent_posts %}
                 <div class="activity-item">
                     <div class="activity-icon">
                         <i class="fas fa-plus"></i>
                     </div>
                     <div class="activity-content">
-                        <div class="activity-text">New entry: {{ post.title|truncate_smart:30 }}</div>
-                        <div class="activity-time">{{ post.published_date|time_since_published }} </div>
+                        <div class="activity-text">{{ post.title|truncate_smart:35 }}</div>
+                        <div class="activity-time">{{ post.published_date|time_since_published }}</div>
                     </div>
                 </div>
                 {% endfor %}
@@ -460,6 +474,16 @@ function initDataLogCards() {
     const cards = document.querySelectorAll('.datalog-entry-card');
     
     cards.forEach((card, index) => {
+        // Add staggered entrance animation
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+        
         // Add hover scanning effect
         card.addEventListener('mouseenter', function() {
             this.classList.add('scanning-horizontal');
