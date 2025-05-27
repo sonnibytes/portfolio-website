@@ -7,6 +7,9 @@
 
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
+
+{% load math_filters %}
+{% load system_tags %}
 {% load blog_tags %}
 
 {% block title %}
@@ -215,8 +218,8 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ total_reading_time|default:"120" }}</div>
-                    <div class="stat-label">Total Reading (min)</div>
+                    <div class="stat-value">{{ total_reading_time|default:"120"|format_duration }}</div>
+                    <div class="stat-label">Total Reading Time</div>
                 </div>
             </div>
             
@@ -231,7 +234,25 @@
             </div>
         </div>
     </div>
-    
+
+        <!-- Progress Visualization -->
+        <div class="archive-progress">
+            <h4 class="progress-title">Archive Growth</h4>
+            <div class="progress-bars">
+                {% for archive_year in years %}
+                <div class="year-progress-item">
+                    <div class="progress-label">{{ archive_year }}</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" 
+                            style="width: {{ year_counts|get_item:archive_year|progress_width:30 }}%;"></div>
+                    </div>
+                    <div class="progress-value">{{ year_counts|get_item:archive_year }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+        
     <!-- Timeline Content -->
     <div class="timeline-content">
         {% if posts %}
@@ -248,6 +269,12 @@
                         {{ month_group.grouper|date:"F Y" }}
                         <span class="month-count">({{ month_group.list|length }} entries)</span>
                     </h3>
+                    <div class="month-stats">
+                        {% calculate "add" month_group.list|length 0 as total_month_posts %}
+                        <span class="stat-item">
+                            Reading: {{ month_group.list|first }}
+                        </span>
+                    </div>
                 </div>
                 
                 <div class="timeline-posts">
@@ -265,9 +292,9 @@
                             <!-- Post Header -->
                             <div class="post-header">
                                 <div class="post-meta-top">
-                                    <div class="post-id">LOG-{{ post.id|stringformat:"03d" }}</div>
+                                    <div class="post-id">{{ post.id|datalog_id }}</div>
                                     {% if post.category %}
-                                    <div class="post-category" style="--category-color: {{ post.category.color|default:'#b39ddb' }};">
+                                    <div class="post-category" style="--category-color: {{ post.category|category_color }};">
                                         {% if post.category.icon %}
                                         <i class="{{ post.category.icon }}"></i>
                                         {% endif %}
@@ -284,6 +311,7 @@
                                 <div class="post-timestamp">
                                     <i class="fas fa-clock"></i>
                                     <span>{{ post.published_date|date:"H:i" }} UTC</span>
+                                    <span class="time-ago">({{ post.published_date|time_since_published }})</span>
                                 </div>
                             </div>
                             
@@ -296,13 +324,13 @@
                                 </h3>
                                 
                                 <p class="post-excerpt">
-                                    {{ post.excerpt|default:post.content|truncatewords:20 }}
+                                    {{ post.excerpt|default:post.content|truncate_smart:120 }}
                                 </p>
                                 
                                 <div class="post-metadata">
                                     <div class="metadata-item">
                                         <i class="fas fa-clock"></i>
-                                        <span>{{ post.reading_time|default:"3" }} min read</span>
+                                        <span>{{ post.reading_time|default:"3"|format_duration }} read</span>
                                     </div>
                                     
                                     {% if post.tags.exists %}
@@ -313,7 +341,8 @@
                                                 {{ tag.name }}{% if not forloop.last %}, {% endif %}
                                             {% endfor %}
                                             {% if post.tags.count > 2 %}
-                                                +{{ post.tags.count|add:"-2" }} more
+                                                {% calculate "subtract" post.tags.count 2 as extra_tags %}
+                                                +{{ extra_tags }} more
                                             {% endif %}
                                         </span>
                                     </div>
@@ -334,6 +363,18 @@
                                     <span>Access Entry</span>
                                     <i class="fas fa-arrow-right"></i>
                                 </a>
+                                <!-- Quick Stats -->
+                                <div class="post-quick-stats">
+                                    <div class="stat-badge">
+                                        <i class="fas fa-eye"></i>
+                                        <span>{{ post.views.count|default:0|format_number }}</span>
+                                    </div>
+                                    {% if post.category %}
+                                    <div class="stat-badge category" style="background: {{ post.category|category_color }}20;">
+                                        <span>{{ post.category.code }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </article>
@@ -437,8 +478,21 @@
             </div>
             <div class="summary-item">
                 <div class="summary-label">Longest Entry</div>
-                <div class="summary-value">{{ longest_reading_time|default:"12" }} min</div>
+                <div class="summary-value">{{ longest_reading_time|default:"12"|format_duration }}</div>
             </div>
+        </div>
+        <!-- Year Distribution -->
+        <div class="year-distribution">
+            <h4 class="distribution-title">Posts by Year</h4>
+            {% for archive_year in years %}
+            <div class="year-dist-item">
+                <span class="year-label">{{ archive_year }}</span>
+                <div class="year-bar-bg">
+                    <div class="year-bar" style="width: {{ year_counts|get_item:archive_year|percentage:30 }}%;"></div>
+                </div>
+                <span class="year-count">{{ year_counts|get_item:archive_year|format_number }}</span>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </aside>
@@ -453,6 +507,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initViewToggle();
     initArchiveChart();
     initScrollAnimations();
+
+    // Add HUD-style Enhancements
+    initArchiveHUD();
 });
 
 function initArchiveView() {
@@ -671,6 +728,38 @@ function initScrollAnimations() {
     }, { threshold: 0.5 });
     
     monthSections.forEach(section => observer.observe(section));
+}
+
+function initArchiveHUD() {
+    // Add real-time updates to stats
+    const statValues = document.querySelectorAll('.stat-value');
+    
+    statValues.forEach(stat => {
+        // Add counting animation for numbers
+        const finalValue = parseInt(stat.textContent) || 0;
+        let currentValue = 0;
+        const increment = finalValue / 60; // 60 frames
+        
+        const counter = setInterval(() => {
+            currentValue += increment;
+            if (currentValue >= finalValue) {
+                stat.textContent = finalValue;
+                clearInterval(counter);
+            } else {
+                stat.textContent = Math.floor(currentValue);
+            }
+        }, 16); // ~60fps
+    });
+    
+    // Add scanning effects to progress bars
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach((bar, index) => {
+        setTimeout(() => {
+            bar.style.transform = 'scaleX(1)';
+            bar.style.transformOrigin = 'left';
+            bar.style.transition = 'transform 1s ease-out';
+        }, index * 200);
+    });
 }
 </script>
 {% endblock %}

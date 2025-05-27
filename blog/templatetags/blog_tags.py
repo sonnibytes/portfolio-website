@@ -44,9 +44,10 @@ def get_field(form, field_name):
     return form[field_name]
 
 
+# Previously 'add' renaming to avoid namespace issues with add
 @register.filter
 @stringfilter
-def add(value, arg):
+def concat(value, arg):
     """Concatenate strings."""
     return value + arg
 
@@ -119,7 +120,7 @@ def reading_time(content):
     """
     if not content:
         return 0
-    
+
     # Strip HTML and markdown
     text = re.sub(r'<[^>]+>', '', content)
     text = re.sub(r'[#*`\[\]()_]', '', content)
@@ -138,7 +139,7 @@ def markdown_headings(content):
     """
     if not content:
         return []
-    
+
     headings = []
     heading_pattern = r'^(#{1,3})\s+(.+)$'
 
@@ -165,7 +166,7 @@ def time_since_published(published_date):
     """
     if not published_date:
         return "Unknown"
-    
+
     now = datetime.now()
     if published_date.tzinfo:
         now = timezone.now()
@@ -231,7 +232,7 @@ def truncate_smart(text, length=150):
     """
     if not text or len(text) <= length:
         return text
-    
+
     truncated = text[:length].rsplit(' ', 1)[0]
     return truncated + '...'
 
@@ -336,7 +337,7 @@ def highlight_search(text, query):
     """
     if not query or not text:
         return text
-    
+
     escaped_text = escape(text)
     escaped_query = escape(query)
 
@@ -377,7 +378,7 @@ def build_url(context, **kwargs):
             params.pop(key, None)
         else:
             params[key] = value
-    
+
     if params:
         return f"?{params.urlencode()}"
     return ""
@@ -455,8 +456,3 @@ def pygments_css():
 
     # Wrap the CSS in a style tag and mark it as safe for rendering
     return mark_safe(f"<style>{css_rules}</style>")
-
-
-# =========== Inclusion Tags (formerly system_tags) =========== #
-
-@register.inclusion_tag
