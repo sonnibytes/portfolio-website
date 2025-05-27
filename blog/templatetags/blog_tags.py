@@ -203,6 +203,17 @@ def category_color(category, default="#b39ddb"):
 
 
 @register.filter
+def category_icon(category, default="fas fa-book-open"):
+    """
+    Return category icon code or default.
+    Usage: {{ post.category|category_icon }}
+    """
+    if hasattr(category, 'icon') and category.icon:
+        return f"fas {category.icon}"
+    return default
+
+
+@register.filter
 def post_status_color(status):
     """
     Returns color for post status.

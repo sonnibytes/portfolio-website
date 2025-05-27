@@ -1,7 +1,7 @@
 <!----
  * AURA Portfolio - Datalogs List Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.0.1 - Optimized for Component Architecture
+ * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -54,7 +54,7 @@
                 {% if query %}
                 <div class="search-info">
                     <div class="search-results-summary">
-                        <span class="results-count">{{ posts|length }}</span> entries found for 
+                        <span class="results-count">{{ posts|length|format_number }}</span> entries found for 
                         <span class="search-term">"{{ query }}"</span>
                         <a href="{% url 'blog:post_list' %}" class="clear-search" title="Clear Search">
                             <i class="fas fa-times"></i>
@@ -116,10 +116,10 @@
                         {% for cat in categories %}
                         <a href="{% url 'blog:category' slug=cat.slug %}" 
                            class="filter-item {% if category.slug == cat.slug %}active{% endif %}"
-                           style="--category-color: {{ cat.color|default:'#26c6da' }};">
+                           style="--category-color: {{ cat|category_color }};">
                             <span class="filter-icon">
                                 {% if cat.icon %}
-                                <i class="{{ cat.icon }}"></i>
+                                <i class="{{ cat|category_icon }}"></i>
                                 {% else %}
                                 <span class="filter-code">{{ cat.code|default:"LOG" }}</span>
                                 {% endif %}
@@ -179,8 +179,7 @@
         <div class="datalog-entry-header">
             <div class="datalog-meta-top">
                 <div class="datalog-id">
-                    <span class="id-prefix">LOG-</span>
-                    <span class="id-number">{{ forloop.counter|stringformat:"03d" }}</span>
+                    {{ post.id|datalog_id }}
                 </div>
                 <div class="datalog-status">
                     <div class="status-indicator operational"></div>
@@ -192,10 +191,10 @@
                 {% if post.category %}
                 <a href="{% url 'blog:category' slug=post.category.slug %}" 
                    class="category-badge" 
-                   style="--category-color: {{ post.category.color|default:'#b39ddb' }};"
+                   style="--category-color: {{ post.category|category_color }};"
                    title="{{ post.category.name }}">
                     {% if post.category.icon %}
-                    <i class="{{ post.category.icon }}"></i>
+                    <i class="{{ post.category|category_icon }}"></i>
                     {% endif %}
                     <span class="category-code">{{ post.category.code|default:"LOG" }}</span>
                 </a>
@@ -240,7 +239,7 @@
             <div class="datalog-visual datalog-placeholder">
                 <div class="placeholder-icon">
                     {% if post.category.icon %}
-                    <i class="{{ post.category.icon }}"></i>
+                    <i class="{{ post.category|category_icon }}"></i>
                     {% else %}
                     <span class="icon-text">{{ post.get_icon_text }}</span>
                     {% endif %}
@@ -262,7 +261,7 @@
                 </h3>
                 
                 <div class="datalog-excerpt">
-                    {{ post.excerpt|default:post.content|truncatewords:25|safe }}
+                    {{ post.excerpt|default:post.content|truncate_smart:25 }}
                 </div>
                 
                 <!-- DataLog Metadata -->
@@ -270,11 +269,11 @@
                     <div class="metadata-row">
                         <div class="metadata-item">
                             <i class="fas fa-calendar-alt metadata-icon"></i>
-                            <span class="metadata-value">{{ post.published_date|date:"M d, Y" }}</span>
+                            <span class="metadata-value">{{ post.published_date|time_since_published }}</span>
                         </div>
                         <div class="metadata-item">
                             <i class="fas fa-clock metadata-icon"></i>
-                            <span class="metadata-value">{{ post.reading_time|default:"3" }} min read</span>
+                            <span class="metadata-value">{{ post.reading_time|default:"3"|format_duration }} read</span>
                         </div>
                         <div class="metadata-item">
                             <i class="fas fa-user metadata-icon"></i>
@@ -379,12 +378,12 @@
             
             <div class="featured-text">
                 <h3 class="featured-title">{{ featured_post.title }}</h3>
-                <p class="featured-excerpt">{{ featured_post.excerpt|default:featured_post.content|truncatewords:30 }}</p>
+                <p class="featured-excerpt">{{ featured_post.excerpt|default:featured_post.content|truncate_smart:30 }}</p>
                 
                 <div class="featured-meta">
                     <span class="featured-category">{{ featured_post.category.name }}</span>
                     <span class="featured-date">{{ featured_post.published_date|date:"M d, Y" }}</span>
-                    <span class="featured-reading-time">{{ featured_post.reading_time }} min read</span>
+                    <span class="featured-reading-time">{{ featured_post.reading_time|format_duration }} read</span>
                 </div>
                 
                 <a href="{% url 'blog:post_detail' slug=featured_post.slug %}" class="featured-link">
@@ -417,8 +416,8 @@
                 <div class="metric-label">Categories</div>
             </div>
             <div class="metric-item">
-                <div class="metric-value">{{ total_reading_time|default:"45" }}</div>
-                <div class="metric-label">Total Reading (min)</div>
+                <div class="metric-value">{{ total_reading_time|default:"45"|format_duration }}</div>
+                <div class="metric-label">Total Reading</div>
             </div>
         </div>
         
@@ -432,8 +431,8 @@
                         <i class="fas fa-plus"></i>
                     </div>
                     <div class="activity-content">
-                        <div class="activity-text">New entry: {{ post.title|truncatechars:30 }}</div>
-                        <div class="activity-time">{{ post.published_date|timesince }} ago</div>
+                        <div class="activity-text">New entry: {{ post.title|truncate_smart:30 }}</div>
+                        <div class="activity-time">{{ post.published_date|time_since_published }} </div>
                     </div>
                 </div>
                 {% endfor %}

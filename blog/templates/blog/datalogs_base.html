@@ -1,7 +1,7 @@
 <!----
  * AURA Portfolio - Blog/Datalogs App Base Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.0.1 - Optimized for Component Architecture
+ * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
 ---->
 
 {% extends "base.html" %}
@@ -38,20 +38,20 @@
                 </div>
                 
                 <nav class="subnav-links">
-                    <a href="{% url 'blog:post_list' %}" class="subnav-link {% if request.resolver_match.view_name == 'blog:post_list' %}active{% endif %}">
+                    <a href="{% url 'blog:post_list' %}" class="subnav-link {% active_nav 'blog:post_list' %}">
                         <i class="fas fa-list subnav-icon"></i>
                         <span>All Logs</span>
                     </a>
-                    <a href="{% url 'blog:archive' %}" class="subnav-link {% if 'archive' in request.resolver_match.view_name %}active{% endif %}">
+                    <a href="{% url 'blog:archive' %}" class="subnav-link {% active_nav 'blog:archive' %}">
                         <i class="fas fa-calendar subnav-icon"></i>
                         <span>Archive</span>
                     </a>
-                    <a href="{% url 'blog:tags' %}" class="subnav-link {% if 'tag' in request.resolver_match.view_name %}active{% endif %}">
+                    <a href="{% url 'blog:tags' %}" class="subnav-link {% active_nav 'blog:tags' %}">
                         <i class="fas fa-tags subnav-icon"></i>
                         <span>Tags</span>
                     </a>
                     {% if user.is_authenticated %}
-                    <a href="{% url 'blog:dashboard' %}" class="subnav-link {% if 'dashboard' in request.resolver_match.view_name %}active{% endif %}">
+                    <a href="{% url 'blog:dashboard' %}" class="subnav-link {% active_nav 'blog:dashboard' %}">
                         <i class="fas fa-chart-line subnav-icon"></i>
                         <span>Dashboard</span>
                     </a>
@@ -60,18 +60,26 @@
             </div>
             
             <div class="subnav-right">
+                {% blog_stats as stats %}
                 <div class="subnav-stats">
                     <div class="stat-item">
                         <i class="fas fa-file-alt"></i>
-                        <span class="stat-value">{{ total_logs|default:"24" }}</span>
+                        <span class="stat-value">{{ stats.total_posts|format_number }}</span>
                         <span class="stat-label">Logs</span>
                     </div>
                     <span class="stat-separator">|</span>
                     <div class="stat-item">
                         <i class="fas fa-folder"></i>
-                        <span class="stat-value">{{ categories.count|default:"5" }}</span>
+                        <span class="stat-value">{{ stats.total_categories|format_number }}</span>
                         <span class="stat-label">Categories</span>
                     </div>
+                    <span class="stat-separator">|</span>
+                    <div class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span class="stat-value">{{ stats.avg_reading_time|format_duration }}</span>
+                        <span class="stat-label">Avg Read</span>
+                    </div>
+                </div>
                 </div>
                 
                 <div class="subnav-actions">
@@ -104,19 +112,29 @@
                         </div>
                         <div class="system-metrics">
                             <span class="metric-item">
-                                <span class="metric-value">{{ total_logs|default:"24" }}</span>
+                                <span class="metric-value">{{ stats.total_posts|format_number }}</span>
                                 <span class="metric-label">Total Entries</span>
                             </span>
                             <span class="metric-separator">|</span>
                             <span class="metric-item">
-                                <span class="metric-value">{{ published_logs|default:"18" }}</span>
+                                <span class="metric-value">{{ published_logs|format_number }}</span>
                                 <span class="metric-label">Published</span>
                             </span>
                             {% if user.is_authenticated %}
                             <span class="metric-separator">|</span>
                             <span class="metric-item">
-                                <span class="metric-value">{{ draft_logs|default:"3" }}</span>
+                                <span class="metric-value">{{ draft_logs|format_number }}</span>
                                 <span class="metric-label">Drafts</span>
+                            </span>
+                            <span class="metric-separator">|</span>
+                            <span class="metric-item">
+                                <span class="metric-value">{{ stats.total_categories|format_number }}</span>
+                                <span class="metric-label">Categories</span>
+                            </span>
+                            <span class="metric-separator">|</span>
+                            <span class="metric-item">
+                                <span class="metric-value">{{ stats.total_tags|format_number }}</span>
+                                <span class="metric-label">Tags</span>
                             </span>
                             {% endif %}
                         </div>
@@ -139,7 +157,7 @@
                         {% block datalogs_subtitle %}Development Insights & Technical Documentation{% endblock %}
                     </p>
                     
-                    <!-- Category Navigation HUD -->
+                    {% comment %} <!-- Category Navigation HUD -->
                     {% block category_nav %}
                     <div class="category-hud-nav">
                         <a href="{% url 'blog:post_list' %}" class="category-hexagon {% if not current_category and not current_tag %}active{% endif %}" title="All DataLogs">
@@ -153,11 +171,11 @@
                         <a href="{% url 'blog:category' slug=category.slug %}" 
                            class="category-hexagon {% if current_category == category.slug %}active{% endif %}"
                            title="{{ category.name }}"
-                           style="--category-color: {{ category.color|default:'#26c6da' }};">
+                           style="--category-color: {{ category|category_color }};">
                             <div class="hex-content">
                                 <div class="hex-icon">
                                     {% if category.icon %}
-                                    <i class="fas {{ category.icon }}"></i>
+                                    <i class="{{ category|category_icon }}"></i>
                                     {% else %}
                                     <span class="hex-code">{{ category.code|default:"LOG" }}</span>
                                     {% endif %}
@@ -171,11 +189,49 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> {% endcomment %}
+                     <!-- Category Navigation HUD -->
+                     {% block category_nav %}
+                     {% render_category_nav current_category %}
+                     {% endblock %}
+                 </div>
+             </div>
+         </div>
+     </section>
     
     <!-- DataLogs Content Area -->
     <main class="datalogs-main-content">
         <div class="container">
+
+              <!-- Breadcrumb Navigation -->
+              {% block datalogs_breadcrumbs %}
+              <div class="datalogs-breadcrumbs">
+                  <nav class="breadcrumb-nav">
+                      <a href="{% url 'core:home' %}" class="breadcrumb-item">
+                          <i class="fas fa-home"></i>
+                          Dashboard
+                      </a>
+                      <span class="breadcrumb-separator">/</span>
+                      <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">DataLogs</a>
+                      {% if category %}
+                      <span class="breadcrumb-separator">/</span>
+                      <span class="breadcrumb-item active">{{ category.name }}</span>
+                      {% elif tag %}
+                      <span class="breadcrumb-separator">/</span>
+                      <span class="breadcrumb-item">Tags</span>
+                      <span class="breadcrumb-separator">/</span>
+                      <span class="breadcrumb-item active">{{ tag.name }}</span>
+                      {% elif year %}
+                      <span class="breadcrumb-separator">/</span>
+                      <span class="breadcrumb-item">Archive</span>
+                      <span class="breadcrumb-separator">/</span>
+                      <span class="breadcrumb-item active">
+                          {% if month %}{{ month_name }} {% endif %}{{ year }}
+                      </span>
+                      {% endif %}
+                  </nav>
+              </div>
+              {% endblock %}
             
             <!-- DataLogs Filters & Search -->
             {% block datalogs_filters %}{% endblock %}
@@ -195,7 +251,7 @@
             {% block datalogs_pagination %}
             {% if is_paginated %}
             <div class="datalogs-pagination">
-                {% include 'components/pagination.html' %}
+                {% render_pagination page_obj request %}
             </div>
             {% endif %}
             {% endblock %}
