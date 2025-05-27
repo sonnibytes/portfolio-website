@@ -1,7 +1,7 @@
 <!----
  * AURA Portfolio - Blog/Datalogs App Base Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
+ * Version: 2.1.2 - Optimized for Component Architecture, Enhanced TemplateTags, Restructured
 ---->
 
 {% extends "base.html" %}
@@ -28,8 +28,8 @@
 <!-- DataLogs HUD Interface -->
 <div class="datalogs-interface-container">
     
-    <!-- DataLogs Sub-Navigation -->
-    <section class="datalogs-subnav">
+    <!-- DataLogs Sub-Navigation (Immediately under Main Nav)-->
+    <section class="datalogs-subnav {% block subnav_class %}{% endblock %}">
         <div class="container subnav-container">
             <div class="subnav-left">
                 <div class="subnav-title">
@@ -61,6 +61,8 @@
             
             <div class="subnav-right">
                 {% blog_stats as stats %}
+
+                <!---Standard Stats (always visible)-->
                 <div class="subnav-stats">
                     <div class="stat-item">
                         <i class="fas fa-file-alt"></i>
@@ -81,7 +83,10 @@
                     </div>
                 </div>
                 </div>
-                
+
+                <!---Post Detail Specific Data (only on detail pages)-->
+                {% block subnav_detail_data %}{% endblock %}
+
                 <div class="subnav-actions">
                     {% if user.is_authenticated %}
                     <a href="{% url 'blog:post_create' %}" class="subnav-action-btn">
@@ -97,8 +102,41 @@
             </div>
         </div>
     </section>
+
+    <!-- Breadcrumb Navigation (Under Sub-Nav) -->
+    <section class="datalogs-breadcrumbs-section">
+        <div class="container">
+            {% block datalogs_breadcrumbs %}
+            <nav class="breadcrumb-nav">
+                <a href="{% url 'core:home' %}" class="breadcrumb-item">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </a>
+                <span class="breadcrumb-separator">/</span>
+                <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">DataLogs</a>
+                {% if category %}
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item active">{{ category.name }}</span>
+                {% elif tag %}
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item">Tags</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item active">{{ tag.name }}</span>
+                {% elif year %}
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item">Archive</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item active">
+                    {% if month %}{{ month_name }} {% endif %}{{ year }}
+                </span>
+                {% endif %}
+            </nav>
+            {% endblock %}
+        </div>
+    </section>
     
-    <!-- DataLogs Header Section -->
+    <!-- DataLogs HUD Interface Header (Collapsible) -->
+    {% block hud_interface %}
     <section class="datalogs-header-section">
         <div class="container">
             <div class="glass-card datalogs-header-card">
@@ -117,24 +155,19 @@
                             </span>
                             <span class="metric-separator">|</span>
                             <span class="metric-item">
-                                <span class="metric-value">{{ published_logs|format_number }}</span>
+                                <span class="metric-value">{{ published_count|default:stats.total_posts|format_number }}</span>
                                 <span class="metric-label">Published</span>
                             </span>
                             {% if user.is_authenticated %}
                             <span class="metric-separator">|</span>
                             <span class="metric-item">
-                                <span class="metric-value">{{ draft_logs|format_number }}</span>
+                                <span class="metric-value">{{ draft_count|default:"0"|format_number }}</span>
                                 <span class="metric-label">Drafts</span>
                             </span>
                             <span class="metric-separator">|</span>
                             <span class="metric-item">
                                 <span class="metric-value">{{ stats.total_categories|format_number }}</span>
                                 <span class="metric-label">Categories</span>
-                            </span>
-                            <span class="metric-separator">|</span>
-                            <span class="metric-item">
-                                <span class="metric-value">{{ stats.total_tags|format_number }}</span>
-                                <span class="metric-label">Tags</span>
                             </span>
                             {% endif %}
                         </div>
@@ -157,81 +190,19 @@
                         {% block datalogs_subtitle %}Development Insights & Technical Documentation{% endblock %}
                     </p>
                     
-                    {% comment %} <!-- Category Navigation HUD -->
+                    <!-- Category Navigation HUD -->
                     {% block category_nav %}
-                    <div class="category-hud-nav">
-                        <a href="{% url 'blog:post_list' %}" class="category-hexagon {% if not current_category and not current_tag %}active{% endif %}" title="All DataLogs">
-                            <div class="hex-content">
-                                <div class="hex-icon"><i class="fas fa-database"></i></div>
-                                <div class="hex-label">ALL</div>
-                            </div>
-                        </a>
-                        
-                        {% for category in categories %}
-                        <a href="{% url 'blog:category' slug=category.slug %}" 
-                           class="category-hexagon {% if current_category == category.slug %}active{% endif %}"
-                           title="{{ category.name }}"
-                           style="--category-color: {{ category|category_color }};">
-                            <div class="hex-content">
-                                <div class="hex-icon">
-                                    {% if category.icon %}
-                                    <i class="{{ category|category_icon }}"></i>
-                                    {% else %}
-                                    <span class="hex-code">{{ category.code|default:"LOG" }}</span>
-                                    {% endif %}
-                                </div>
-                                <div class="hex-label">{{ category.code|default:"LOG" }}</div>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
+                    {% render_category_nav current_category %}
                     {% endblock %}
                 </div>
             </div>
         </div>
-    </section> {% endcomment %}
-                     <!-- Category Navigation HUD -->
-                     {% block category_nav %}
-                     {% render_category_nav current_category %}
-                     {% endblock %}
-                 </div>
-             </div>
-         </div>
-     </section>
+    </section>
+    {% endblock %}
     
     <!-- DataLogs Content Area -->
     <main class="datalogs-main-content">
         <div class="container">
-
-              <!-- Breadcrumb Navigation -->
-              {% block datalogs_breadcrumbs %}
-              <div class="datalogs-breadcrumbs">
-                  <nav class="breadcrumb-nav">
-                      <a href="{% url 'core:home' %}" class="breadcrumb-item">
-                          <i class="fas fa-home"></i>
-                          Dashboard
-                      </a>
-                      <span class="breadcrumb-separator">/</span>
-                      <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">DataLogs</a>
-                      {% if category %}
-                      <span class="breadcrumb-separator">/</span>
-                      <span class="breadcrumb-item active">{{ category.name }}</span>
-                      {% elif tag %}
-                      <span class="breadcrumb-separator">/</span>
-                      <span class="breadcrumb-item">Tags</span>
-                      <span class="breadcrumb-separator">/</span>
-                      <span class="breadcrumb-item active">{{ tag.name }}</span>
-                      {% elif year %}
-                      <span class="breadcrumb-separator">/</span>
-                      <span class="breadcrumb-item">Archive</span>
-                      <span class="breadcrumb-separator">/</span>
-                      <span class="breadcrumb-item active">
-                          {% if month %}{{ month_name }} {% endif %}{{ year }}
-                      </span>
-                      {% endif %}
-                  </nav>
-              </div>
-              {% endblock %}
             
             <!-- DataLogs Filters & Search -->
             {% block datalogs_filters %}{% endblock %}
@@ -311,6 +282,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
             }
         });
+    }
+
+    // Initialize HUD interface collapse/expand for detail pages
+    initHUDInterfaceToggle();
+    
+    function initHUDInterfaceToggle() {
+        const hudInterface = document.querySelector('.datalogs-header-section');
+        const isDetailPage = document.body.classList.contains('post-detail');
+        
+        if (isDetailPage && hudInterface) {
+            // Collapse HUD interface on detail pages by default
+            hudInterface.classList.add('collapsed');
+            
+            // Add toggle button to subnav for detail pages
+            const subnavRight = document.querySelector('.subnav-right');
+            if (subnavRight) {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'hud-toggle-btn';
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                toggleBtn.title = 'Toggle HUD Interface';
+                
+                toggleBtn.addEventListener('click', function() {
+                    hudInterface.classList.toggle('collapsed');
+                    const icon = this.querySelector('i');
+                    icon.classList.toggle('fa-chevron-down');
+                    icon.classList.toggle('fa-chevron-up');
+                });
+                
+                subnavRight.insertBefore(toggleBtn, subnavRight.firstChild);
+            }
+        }
     }
     
     // Initialize category hexagon animations
