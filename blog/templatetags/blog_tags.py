@@ -148,7 +148,8 @@ def markdown_headings(content):
         if match:
             level = len(match.group(1))
             text = match.group(2).strip()
-            heading_id = text.lower().replace(' ', '-').replace(',', '').replace('.', '')
+            # Create ID from heading
+            heading_id = slugify(text)
             headings.append({
                 'level': level,
                 'text': text,
