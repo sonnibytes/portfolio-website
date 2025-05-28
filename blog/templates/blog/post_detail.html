@@ -24,7 +24,7 @@
 
 <!-- Override sub-nav title for detail page -->
 {% block subnav_title %}
-    DataLog {{ post.id|datalog_id }}
+     {{ post.id|datalog_id }}
     {% if post.category %}
     <span class="subnav-category" style="--category-color: {{ post.category|category_color }};">
         {{ post.category.code|default:"LOG" }}
@@ -37,13 +37,18 @@
 <div class="subnav-post-data">
     <span class="stat-separator">|</span>
     <div class="stat-item post-stat">
-        <i class="fas fa-calendar-alt"></i>
-        <span class="stat-value">{{ post.published_date|time_since_published }}</span>
-        <span class="stat-label">Published</span>
+        <span class="stat-label">LOG: </span>
+        <span class="stat-value">{{ post.title }}</span>
     </div>
     <span class="stat-separator">|</span>
     <div class="stat-item post-stat">
-        <i class="fas fa-clock"></i>
+        {% comment %} <i class="fas fa-calendar-alt"></i> {% endcomment %}
+        <span class="stat-label">Published</span>
+        <span class="stat-value">{{ post.published_date|time_since_published }}</span>
+    </div>
+    <span class="stat-separator">|</span>
+    <div class="stat-item post-stat">
+        {% comment %} <i class="fas fa-clock"></i> {% endcomment %}
         <span class="stat-value">{{ post.reading_time|format_duration }}</span>
         <span class="stat-label">Read Time</span>
     </div>
@@ -102,7 +107,7 @@
                 <div class="status-left">
                     <div class="system-status">
                         <div class="status-indicator operational"></div>
-                        <span class="status-text">{{ post.id|datalog_id }} ACTIVE</span>
+                        <span class="status-text"> ACTIVE {{ post.id|datalog_id }} | {{ post.title }}</span>
                     </div>
                     <div class="detail-meta-compact">
                         <span class="detail-item">
@@ -136,6 +141,48 @@
                 {% if post.excerpt %}
                 <p class="datalog-detail-excerpt">{{ post.excerpt }}</p>
                 {% endif %}
+
+                <!-- Post Header with Metrics -->
+            <div class="post-header-metrics">
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="metric-content">
+                            <div class="metric-value">{{ post.published_date|time_since_published }}</div>
+                            <div class="metric-label">Published</div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon"><i class="fas fa-clock"></i></div>
+                        <div class="metric-content">
+                            <div class="metric-value">{{ post.reading_time|format_duration }}</div>
+                            <div class="metric-label">Reading Time</div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon"><i class="fas fa-eye"></i></div>
+                        <div class="metric-content">
+                            <div class="metric-value">{{ post.views.count|default:"0"|format_number }}</div>
+                            <div class="metric-label">Views</div>
+                        </div>
+                    </div>
+                    {% if post.category %}
+                    <div class="metric-item">
+                        <div class="metric-icon" style="color: {{ post.category|category_color }};">
+                            {% if post.category.icon %}
+                            <i class="{{ post.category.icon }}"></i>
+                            {% else %}
+                            <i class="fas fa-folder"></i>
+                            {% endif %}
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value">{{ post.category.name }}</div>
+                            <div class="metric-label">Category</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
                 
                 <!-- System Connections (if any) -->
                 {% if post.has_system_connections %}
@@ -186,14 +233,14 @@
                 
                 {% if post.show_toc %}
                 <nav class="toc-nav">
-                    {% with post.content|markdown_headings as headings %}
+                    {% comment %} {% with post.content|markdown_headings as headings %} {% endcomment %}
                     {% for heading in headings %}
                     <a href="#{{ heading.id }}" class="toc-link toc-level-{{ heading.level }}">
                         <span class="toc-marker">{{ heading.level|mul:">" }}</span>
                         <span class="toc-text">{{ heading.text }}</span>
                     </a>
                     {% endfor %}
-                    {% endwith %}
+                    {% comment %} {% endwith %} {% endcomment %}
                 </nav>
                 {% endif %}
                 
@@ -229,44 +276,10 @@
             
             <!-- Post Header with Metrics -->
             <div class="post-header-metrics">
-                <div class="metrics-grid">
-                    <div class="metric-item">
-                        <div class="metric-icon"><i class="fas fa-calendar-alt"></i></div>
-                        <div class="metric-content">
-                            <div class="metric-value">{{ post.published_date|date:"M d, Y" }}</div>
-                            <div class="metric-label">Published</div>
-                        </div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-icon"><i class="fas fa-clock"></i></div>
-                        <div class="metric-content">
-                            <div class="metric-value">{{ post.reading_time|format_duration }}</div>
-                            <div class="metric-label">Reading Time</div>
-                        </div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-icon"><i class="fas fa-eye"></i></div>
-                        <div class="metric-content">
-                            <div class="metric-value">{{ post.views.count|default:"0"|format_number }}</div>
-                            <div class="metric-label">Views</div>
-                        </div>
-                    </div>
-                    {% if post.category %}
-                    <div class="metric-item">
-                        <div class="metric-icon" style="color: {{ post.category|category_color }};">
-                            {% if post.category.icon %}
-                            <i class="{{ post.category.icon }}"></i>
-                            {% else %}
-                            <i class="fas fa-folder"></i>
-                            {% endif %}
-                        </div>
-                        <div class="metric-content">
-                            <div class="metric-value">{{ post.category.name }}</div>
-                            <div class="metric-label">Category</div>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
+                <h1 class="datalog-detail-title">{{ post.title }}</h1>
+                {% if post.excerpt %}
+                <p class="datalog-detail-excerpt">{{ post.excerpt }}</p>
+                {% endif %}
             </div>
 
                 <!---- Featured Code Block ---->
