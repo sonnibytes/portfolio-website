@@ -52,17 +52,16 @@
                     <span>Tags</span>
                 </a>
                 <!-- Categories Dropdown -->
-                <div class="dropdown subnav-dropdown">
+                <div class="subnav-dropdown">
                     <button class="subnav-link dropdown-toggle {% if current_category %}active{% endif %}" 
                             type="button" 
                             id="categoriesDropdown" 
-                            data-bs-toggle="dropdown" 
                             aria-expanded="false">
                         <i class="fas fa-folder subnav-icon"></i>
                         <span>{% if current_category %}{{ current_category.name }}{% else %}Categories{% endif %}</span>
                         <i class="fas fa-chevron-down dropdown-arrow"></i>
                     </button>
-                    <ul class="dropdown-menu aura-dropdown-menu" aria-labelledby="categoriesDropdown">
+                    <ul class="aura-dropdown-menu" aria-labelledby="categoriesDropdown">
                         <li>
                             <a class="dropdown-item aura-dropdown-item" href="{% url 'blog:post_list' %}">
                                 <i class="fas fa-list dropdown-item-icon"></i>
@@ -401,8 +400,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Bootstrap JavaScript (for dropdown functionality) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Remove Bootstrap JavaScript - we'll use custom dropdown -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
 
 <script src="{% static 'blog/js/datalogs.js' %}"></script>
 {% block datalogs_js %}{% endblock %}
@@ -415,8 +414,8 @@ document.addEventListener('DOMContentLoaded', function() {
         initDatalogsInterface();
     }
     
-    // Initialize Bootstrap dropdowns with custom options
-    initializeAuraDropdowns();
+    // Initialize custom AURA dropdowns (no Bootstrap needed)
+    initializeCustomDropdowns();
     
     // Filter toggle functionality
     const filterToggle = document.getElementById('datalogsFilterToggle');
@@ -713,67 +712,185 @@ function applyCategoryTheming() {
     });
 }
 
-// Initialize Bootstrap dropdowns with AURA styling
-function initializeAuraDropdowns() {
-    // Initialize all dropdowns
-    const dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
-    const dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
-        return new bootstrap.Dropdown(dropdownToggleEl, {
-            boundary: 'viewport',
-            display: 'dynamic'
-        });
-    });
+// Custom AURA Dropdown System (No Bootstrap needed)
+function initializeCustomDropdowns() {
+    console.log('🚀 Initializing custom AURA dropdowns...');
     
-    // Add custom AURA animation classes
-    dropdownElementList.forEach(function(dropdownToggle) {
-        const dropdownMenu = dropdownToggle.nextElementSibling;
+    const dropdowns = document.querySelectorAll('.subnav-dropdown');
+    
+    dropdowns.forEach(dropdown => {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        const menu = dropdown.querySelector('.aura-dropdown-menu');
+        const arrow = dropdown.querySelector('.dropdown-arrow');
         
-        // Add show class with animation
-        dropdownToggle.addEventListener('show.bs.dropdown', function() {
-            if (dropdownMenu) {
-                dropdownMenu.classList.add('show');
-                // Animate dropdown arrow
-                const arrow = dropdownToggle.querySelector('.dropdown-arrow');
-                if (arrow) {
-                    arrow.style.transform = 'rotate(180deg)';
-                }
+        if (!toggle || !menu) {
+            console.warn('⚠️ Dropdown elements not found:', dropdown);
+            return;
+        }
+        
+        console.log('✅ Setting up dropdown:', toggle);
+        
+        // Toggle dropdown on click
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('🖱️ Dropdown clicked');
+            
+            // Close all other dropdowns first
+            closeAllDropdowns();
+            
+            // Toggle current dropdown
+            const isOpen = menu.classList.contains('show');
+            
+            if (!isOpen) {
+                openDropdown(dropdown, toggle, menu, arrow);
             }
         });
         
-        // Remove show class with animation
-        dropdownToggle.addEventListener('hide.bs.dropdown', function() {
-            if (dropdownMenu) {
-                // Animate dropdown arrow back
-                const arrow = dropdownToggle.querySelector('.dropdown-arrow');
-                if (arrow) {
-                    arrow.style.transform = 'rotate(0deg)';
-                }
-                
-                // Delay removal of show class for smooth animation
-                setTimeout(() => {
-                    dropdownMenu.classList.remove('show');
-                }, 150);
-            }
-        });
-        
-        // Handle keyboard navigation
-        dropdownToggle.addEventListener('keydown', function(e) {
+        // Keyboard support
+        toggle.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                bootstrap.Dropdown.getInstance(this).toggle();
+                toggle.click();
+            } else if (e.key === 'Escape') {
+                closeDropdown(dropdown, menu, arrow);
             }
+        });
+        
+        // Prevent menu clicks from closing dropdown
+        menu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        // Handle dropdown item clicks
+        const dropdownItems = menu.querySelectorAll('.aura-dropdown-item');
+        dropdownItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Update toggle text if it's a category selection
+                if (this.href && this.href.includes('category')) {
+                    const categoryName = this.querySelector('.dropdown-item-text')?.textContent;
+                    const toggleText = toggle.querySelector('span');
+                    
+                    if (categoryName && toggleText && categoryName !== 'All Categories') {
+                        toggleText.textContent = categoryName;
+                        toggle.classList.add('active');
+                    } else if (categoryName === 'All Categories') {
+                        toggleText.textContent = 'Categories';
+                        toggle.classList.remove('active');
+                    }
+                }
+                
+                // Close dropdown after selection
+                setTimeout(() => {
+                    closeDropdown(dropdown, menu, arrow);
+                }, 100);
+            });
         });
     });
     
-    // Close dropdowns when clicking outside subnav
+    // Close dropdowns when clicking outside
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.subnav-dropdown')) {
-            dropdownElementList.forEach(function(dropdown) {
-                const instance = bootstrap.Dropdown.getInstance(dropdown);
-                if (instance) {
-                    instance.hide();
+            closeAllDropdowns();
+        }
+    });
+    
+    // Close dropdowns on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAllDropdowns();
                 }
             });
+    
+    console.log('✅ Custom dropdowns initialized successfully');
+}
+
+function openDropdown(dropdown, toggle, menu, arrow) {
+    console.log('📂 Opening dropdown');
+    
+    // Position dropdown to connect directly with button
+    const rect = toggle.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const menuHeight = 400; // estimated max height
+    
+    // Reset positioning
+    menu.style.position = 'fixed';
+    menu.style.left = rect.left + 'px';
+    menu.style.minWidth = Math.max(280, rect.width) + 'px';
+    menu.style.zIndex = '2000';
+    
+    // Position directly at the bottom of the button (no gap)
+    menu.style.top = (rect.bottom - 1) + 'px'; // -1px to overlap border
+    menu.style.transform = 'translateY(0)';
+    
+    // Check if dropdown would go below viewport
+    if (rect.bottom + menuHeight > viewportHeight) {
+        // If not enough space below, position above instead
+        menu.style.top = (rect.top - menuHeight + 1) + 'px'; // +1px to overlap border
+        menu.style.transform = 'translateY(0)';
+    }
+    
+    // Show dropdown with animation
+    menu.style.opacity = '0';
+    menu.style.transform = 'translateY(-3px) scale(0.98)'; // Subtle animation
+    menu.classList.add('show');
+    menu.style.display = 'block';
+    
+    // Add connected styling to button
+    toggle.classList.add('dropdown-open');
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        menu.style.opacity = '1';
+        menu.style.transform = 'translateY(0) scale(1)';
+    });
+    
+    // Rotate arrow
+    if (arrow) {
+        arrow.style.transform = 'rotate(180deg)';
+    }
+    
+    // Mark toggle as active
+    toggle.setAttribute('aria-expanded', 'true');
+}
+
+function closeDropdown(dropdown, menu, arrow) {
+    console.log('📁 Closing dropdown');
+    
+    // Animate out
+    menu.style.opacity = '0';
+    menu.style.transform = 'translateY(-10px) scale(0.95)';
+    
+    // Hide after animation
+    setTimeout(() => {
+        menu.classList.remove('show');
+        menu.style.display = 'none';
+    }, 150);
+    
+    // Reset arrow
+    if (arrow) {
+        arrow.style.transform = 'rotate(0deg)';
+    }
+    
+    // Mark toggle as inactive
+    const toggle = dropdown.querySelector('.dropdown-toggle');
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.classList.remove('dropdown-open');
+                }
+}
+
+function closeAllDropdowns() {
+    console.log('🔒 Closing all dropdowns');
+    
+    const openDropdowns = document.querySelectorAll('.subnav-dropdown');
+    openDropdowns.forEach(dropdown => {
+        const menu = dropdown.querySelector('.aura-dropdown-menu');
+        const arrow = dropdown.querySelector('.dropdown-arrow');
+        
+        if (menu && menu.classList.contains('show')) {
+            closeDropdown(dropdown, menu, arrow);
         }
     });
 }
@@ -781,111 +898,62 @@ function initializeAuraDropdowns() {
 // Category dropdown specific functionality
 function setupCategoryDropdown() {
     const categoryDropdown = document.getElementById('categoriesDropdown');
-    const categoryItems = document.querySelectorAll('.aura-dropdown-item[href*="category"]');
     
-    if (categoryDropdown && categoryItems.length > 0) {
-        // Add click tracking for analytics
-        categoryItems.forEach(item => {
-            item.addEventListener('click', function() {
-                const categoryName = this.querySelector('.dropdown-item-text').textContent;
+    if (categoryDropdown) {
+        console.log('📁 Setting up category dropdown functionality');
+        
+        // Check if we're on a category page and update button text
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/category/')) {
+            const categorySlug = currentPath.split('/category/')[1].replace('/', '');
+            const categoryItem = document.querySelector(`[href*="category/${categorySlug}"]`);
+        
+            if (categoryItem) {
+                const categoryName = categoryItem.querySelector('.dropdown-item-text')?.textContent;
+                const toggleText = categoryDropdown.querySelector('span');
                 
-                // Update dropdown button text to show selected category
-                const dropdownText = categoryDropdown.querySelector('span');
-                if (dropdownText && categoryName !== 'All Categories') {
-                    dropdownText.textContent = categoryName;
+                if (categoryName && toggleText) {
+                    toggleText.textContent = categoryName;
                     categoryDropdown.classList.add('active');
-                } else if (categoryName === 'All Categories') {
-                    dropdownText.textContent = 'Categories';
-                    categoryDropdown.classList.remove('active');
-                }
-                
-                // Analytics tracking (if you have analytics)
-                if (typeof gtag !== 'undefined') {
-                    gtag('event', 'category_selected', {
-                        'category_name': categoryName,
-                        'page_location': window.location.href
-                    });
-                }
-            });
-        });
+            }
+            }
+        }
     }
 }
 
-// Enhanced dropdown search functionality
-function setupDropdownSearch() {
-    const dropdowns = document.querySelectorAll('.aura-dropdown-menu');
+// Add smooth scrolling for dropdown if content is long
+function handleDropdownScrolling() {
+    const dropdownMenus = document.querySelectorAll('.aura-dropdown-menu');
     
-    dropdowns.forEach(dropdown => {
-        // Add search functionality if many items
-        const items = dropdown.querySelectorAll('.aura-dropdown-item');
-        if (items.length > 8) {
-            addDropdownSearchBox(dropdown);
-        }
-    });
-}
-
-function addDropdownSearchBox(dropdown) {
-    const searchBox = document.createElement('div');
-    searchBox.className = 'dropdown-search-container';
-    searchBox.innerHTML = `
-        <div class="dropdown-search-box">
-            <i class="fas fa-search dropdown-search-icon"></i>
-            <input type="text" class="dropdown-search-input" placeholder="Search categories...">
-        </div>
-        <hr class="dropdown-divider aura-dropdown-divider">
-    `;
-    
-    dropdown.insertBefore(searchBox, dropdown.firstChild);
-    
-    const searchInput = searchBox.querySelector('.dropdown-search-input');
-    const items = dropdown.querySelectorAll('.aura-dropdown-item');
-    
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
+    dropdownMenus.forEach(menu => {
+        // Prevent wheel events from bubbling to parent
+        menu.addEventListener('wheel', function(e) {
+        e.stopPropagation();
+            
+            // Check if scrolling is needed
+            const isScrollable = menu.scrollHeight > menu.clientHeight;
+            
+            if (!isScrollable) {
+                e.preventDefault();
+                return;
+            }
+            
+            // Handle scroll bounds
+            const atTop = menu.scrollTop === 0;
+            const atBottom = menu.scrollTop >= menu.scrollHeight - menu.clientHeight;
         
-        items.forEach(item => {
-            const text = item.querySelector('.dropdown-item-text')?.textContent.toLowerCase() || '';
-            if (text.includes(searchTerm) || searchTerm === '') {
-                item.style.display = 'flex';
-            } else {
-                item.style.display = 'none';
+            if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+                e.preventDefault();
             }
         });
     });
-    
-    // Prevent dropdown from closing when clicking search box
-    searchBox.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
 }
 
-// Initialize all dropdown functionality
+// Initialize everything
 setTimeout(() => {
     setupCategoryDropdown();
-    setupDropdownSearch();
+    handleDropdownScrolling();
 }, 100);
-
-// Real-time category count updates (if you want dynamic counts)
-function updateCategoryCounts() {
-    const categoryItems = document.querySelectorAll('.aura-dropdown-item[href*="category"]');
-    
-    categoryItems.forEach(item => {
-        const countElement = item.querySelector('.dropdown-item-count');
-        const categorySlug = item.href.split('/').pop();
-        
-        if (countElement && categorySlug) {
-            // You could make an AJAX call here to get real-time counts
-            // fetch(`/api/category/${categorySlug}/count/`)
-            //     .then(response => response.json())
-            //     .then(data => {
-            //         countElement.textContent = data.count;
-            //     });
-        }
-    });
-}
-
-// Update category counts every 5 minutes (optional)
-// setInterval(updateCategoryCounts, 300000);
 </script>
 {% endblock %}
                 

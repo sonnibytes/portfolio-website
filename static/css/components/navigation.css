@@ -1288,10 +1288,20 @@ main {
     gap: var(--spacing-xs);
     position: relative;
     padding-right: var(--spacing-lg); /* Extra space for arrow */
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
 }
 
 .subnav-dropdown .dropdown-toggle:focus {
     box-shadow: none; /* Remove Bootstrap default focus */
+}
+
+/* Connected dropdown styling */
+.subnav-dropdown .dropdown-toggle.dropdown-open {
+    background: rgba(179, 157, 219, 0.1);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: 1px solid rgba(179, 157, 219, 0.3);
 }
 
 .subnav-dropdown .dropdown-arrow {
@@ -1317,30 +1327,40 @@ main {
         var(--gradient-glass),
         rgba(7, 7, 18, 0.95);
     backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--border-radius-lg);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-top: none; /* Remove top border for connection */
+    border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) var(--border-radius-lg);
     box-shadow: 
         0 15px 40px rgba(0, 0, 0, 0.4),
         0 0 20px rgba(179, 157, 219, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
     padding: var(--spacing-sm);
-    margin-top: var(--spacing-xs);
+    margin-top: -1px; /* Overlap with button border */
     min-width: 280px;
     max-height: 400px;
     overflow-y: auto;
     z-index: 1050;
+    position: fixed;
+    display: none;
 }
 
+/* Remove the top gradient bar since we're connecting */
 .aura-dropdown-menu::before {
+    display: none;
+}
+
+/* Add connection indicator */
+.aura-dropdown-menu::after {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--color-lavender), var(--color-coral));
-    opacity: 0.8;
-    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        rgba(179, 157, 219, 0.5) 0%, 
+        rgba(179, 157, 219, 0.8) 50%, 
+        rgba(179, 157, 219, 0.5) 100%);
 }
 
 /* AURA Dropdown Items */
@@ -1504,7 +1524,7 @@ main {
 /* Dropdown Animation */
 .aura-dropdown-menu {
     opacity: 0;
-    transform: translateY(-10px) scale(0.95);
+    transform: translateY(-5px) scale(0.98); /* Reduced movement for connected feel */
     transition: all var(--transition-fast);
     pointer-events: none;
 }
@@ -1537,9 +1557,19 @@ main {
 /* App-Specific Dropdown Variants */
 
 /* DataLogs Dropdown (Lavender theme) */
-.datalogs-subnav .aura-dropdown-menu::before {
-    background: linear-gradient(90deg, var(--color-lavender), var(--color-coral));
+
+.datalogs-subnav .aura-dropdown-menu {
+    border-color: rgba(179, 157, 219, 0.3);
 }
+
+.datalogs-subnav .dropdown-toggle.dropdown-open {
+    background: rgba(179, 157, 219, 0.1);
+    border-bottom-color: rgba(179, 157, 219, 0.3);
+}
+
+/* .datalogs-subnav .aura-dropdown-menu::before {
+    background: linear-gradient(90deg, var(--color-lavender), var(--color-coral));
+} */
 
 .datalogs-subnav .aura-dropdown-item::before {
     background: var(--color-lavender);
@@ -1556,9 +1586,19 @@ main {
 }
 
 /* Systems Dropdown (Coral theme) */
-.systems-subnav .aura-dropdown-menu::before {
-    background: linear-gradient(90deg, var(--color-coral), var(--color-yellow));
+
+.systems-subnav .aura-dropdown-menu {
+    border-color: rgba(255, 138, 128, 0.3);
 }
+
+.systems-subnav .dropdown-toggle.dropdown-open {
+    background: rgba(255, 138, 128, 0.1);
+    border-bottom-color: rgba(255, 138, 128, 0.3);
+}
+
+/* .systems-subnav .aura-dropdown-menu::before {
+    background: linear-gradient(90deg, var(--color-coral), var(--color-yellow));
+} */
 
 .systems-subnav .aura-dropdown-item::before {
     background: var(--color-coral);
@@ -1579,9 +1619,19 @@ main {
 }
 
 /* Core Dropdown (Teal theme) */
-.core-subnav .aura-dropdown-menu::before {
-    background: linear-gradient(90deg, var(--color-teal), var(--color-mint));
+
+.core-subnav .aura-dropdown-menu {
+    border-color: rgba(38, 198, 218, 0.3);
 }
+
+.core-subnav .dropdown-toggle.dropdown-open {
+    background: rgba(38, 198, 218, 0.1);
+    border-bottom-color: rgba(38, 198, 218, 0.3);
+}
+
+/* .core-subnav .aura-dropdown-menu::before {
+    background: linear-gradient(90deg, var(--color-teal), var(--color-mint));
+} */
 
 .core-subnav .aura-dropdown-item::before {
     background: var(--color-teal);
@@ -1706,4 +1756,23 @@ main {
     .aura-dropdown-item:hover {
         transform: none;
     }
+}
+
+/* Fix dropdown visibility without Bootstrap CSS */
+.dropdown-menu {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    z-index: 1000 !important;
+    display: none !important;
+    min-width: 10rem !important;
+    margin: 0 !important;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+}
+
+.dropdown {
+    position: relative !important;
 }
