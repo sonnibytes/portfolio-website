@@ -14,7 +14,7 @@ register = template.Library()
 #     except (ValueError, TypeError):
 #         return value
 
-### OUTDATED STYLES
+# ## OUTDATED STYLES
 # @register.simple_tag
 # def tech_frame(css_class=""):
 #     """Render a tech frame with angled corners."""
@@ -27,7 +27,7 @@ register = template.Library()
 #     """
 #     return mark_safe(html)
 
-### OUTDATED STYLES
+# ## OUTDATED STYLES
 # @register.simple_tag
 # def hud_corner_accents():
 #     """Render the HUD corner accents for containers."""
@@ -44,8 +44,10 @@ register = template.Library()
 def data_grid(rows=10, cols=10, random=True, animate=True):
     """Render a data grid visualization."""
     html = f'''
-    <div class="data-grid" data-random="{str(random).lower()}" data-animate="{str(animate).lower()}"
-         style="grid-template-columns: repeat({cols}, 1fr); grid-template-rows: repeat({rows}, 1fr);">
+    <div class="data-grid" data-random="{str(random).lower()}"
+    data-animate="{str(animate).lower()}"
+         style="grid-template-columns: repeat({cols}, 1fr);
+         grid-template-rows: repeat({rows}, 1fr);">
     '''
 
     for i in range(rows * cols):
@@ -93,7 +95,8 @@ def radar_chart(values, labels, max_value=100):
     labels_str = ",".join(labels)
 
     html = f'''
-    <div class="radar-chart" data-values="{values_str}" data-labels="{labels_str}" data-max="{max_value}"></div>
+    <div class="radar-chart" data-values="{values_str}"
+    data-labels="{labels_str}" data-max="{max_value}"></div>
     '''
     return mark_safe(html)
 
@@ -163,7 +166,8 @@ def skill_bar(name, level, max_level=5, color=""):
             <div class="skill-level">Level {level}/{max_level}</div>
         </div>
         <div class="skill-progress">
-            <div class="skill-progress-bar" style="width: {percent}%; background: {gradient}"></div>
+            <div class="skill-progress-bar" style="width: {percent}%;
+            background: {gradient}"></div>
         </div>
     </div>
     """
@@ -182,7 +186,8 @@ def hexagon_badge(text, color="var(--color-cyan)", size="medium", icon=""):
         content = f'<i class="fas {icon}"></i>'
 
     html = f"""
-    <div class="category-hex" style="--category-color: {color}; width: {size_px}; height: {size_px}">
+    <div class="category-hex" style="--category-color: {color};
+    width: {size_px}; height: {size_px}">
         {content}
     </div>
     """
@@ -300,7 +305,8 @@ def card(title, content="", image="", link="", link_text="", css_class=""):
     link_html = ""
     if link and link_text:
         link_html = f'''
-        <a href="{link}" class="card-link">{link_text} <i class="fas fa-arrow-right"></i></a>
+        <a href="{link}" class="card-link">{link_text}
+        <i class="fas fa-arrow-right"></i></a>
         '''
 
     html = f"""
@@ -335,7 +341,7 @@ def contact_info_item(icon, title, content):
 
 @register.filter
 def get_experience_duration(start_date, end_date=None):
-    """Calculate and format the duration between two dates in years and months."""
+    """Calculate and format duration between two dates in years and months."""
     import datetime
 
     if not end_date:
@@ -350,11 +356,13 @@ def get_experience_duration(start_date, end_date=None):
     remaining_months = months % 12
 
     if years > 0 and remaining_months > 0:
-        return f"{years} year{'s' if years != 1 else ''}, {remaining_months} month{'s' if remaining_months != 1 else ''}"
+        return f"{years} year{'s' if years != 1 else ''}, \
+        {remaining_months} month{'s' if remaining_months != 1 else ''}"
     elif years > 0:
         return f"{years} year{'s' if years != 1 else ''}"
     else:
-        return f"{remaining_months} month{'s' if remaining_months != 1 else ''}"
+        return f"{remaining_months} \
+        month{'s' if remaining_months != 1 else ''}"
 
 
 @register.filter

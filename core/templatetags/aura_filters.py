@@ -1,7 +1,7 @@
 """
-AURA Portfolio - Mathematical Template Filters
-Custom template filters for mathematical operations in templates
-Version 1.0.1: Separated Global TemplateTags
+AURA Portfolio - Global Template Filters
+Advanced User Repository & Archive - Mathematical operations, formatting, and AURA utilities
+Version 1.0.2: Separated Global TemplateTags, Updated/Enhanced, More Thorough
 """
 
 from django import template
@@ -15,6 +15,8 @@ from django.db.models import Count, Q, Avg
 
 from datetime import datetime, timedelta
 import re
+import json
+import math
 
 register = template.Library()
 
@@ -59,6 +61,18 @@ def subtract(value, arg):
 
 
 @register.filter
+def add_filter(value, arg):
+    """
+    Adds the argument to the value (avoiding conflict with built-in add).
+    Usage: {{ value|add_filter:5 }}
+    """
+    try:
+        return float(value) + float(arg)
+    except (ValueError, TypeError):
+        return 0
+
+
+@register.filter
 def percentage(value, total):
     """
     Calculates percentage of value from total.
@@ -75,7 +89,7 @@ def percentage(value, total):
 @register.filter
 def progress_width(value, total):
     """
-    Calculates width percentage for progress bars.
+    Calculates width percentage for progress bars (clamped 0-100).
     Usage: style="width: {{ current|progress_width:total }}%"
     """
     try:
@@ -84,6 +98,19 @@ def progress_width(value, total):
         percentage = (float(value) / float(total)) * 100
         # Clamp between 0-100
         return min(100, max(0, percentage))
+    except (ValueError, TypeError):
+        return 0
+
+
+@register.filter
+def clamp(value, range_str="0,100"):
+    """
+    Clamps value between min and max.
+    Usage: {{ value|clamp:"0,100" }}
+    """
+    try:
+        min_val, max_val = map(float, range_str.split(","))
+        return max(min_val, min(max_val, float(value)))
     except (ValueError, TypeError):
         return 0
 
@@ -151,7 +178,31 @@ def file_size(bytes_value):
         return "0 B"
 
 
-#  ==============  UTILITY FIELDS  ============== #
+@register.filter
+def format_decimal(value, places=2):
+    """
+    Formats decimal to specified places.
+    Usage: {{ 3.14159|format_decimal:2 }} -> "3.14"
+    """
+    try:
+        return f"{float(value):.{int(places)}f}"
+    except (ValueError, TypeError):
+        return "0.00"
+
+
+@register.filter
+def format_currency(value, symbol="$"):
+    """
+    Formats number as currency.
+    Usage: {{ 1234.56|format_currency }} -> "$1,234.56"
+    """
+    try:
+        return f"{symbol}{float(value):,.2f}"
+    except (ValueError, TypeError):
+        return f"{symbol}0.00"
+
+
+#  ==============  UTILITY FILTERS  ============== #
 
 @register.filter
 def get_item(dictionary, key):
@@ -161,6 +212,18 @@ def get_item(dictionary, key):
     """
     try:
         return dictionary.get(key)
+    except (AttributeError, TypeError):
+        return None
+
+
+@register.filter
+def get_attribute(obj, attr_name):
+    """
+    Gets an attribute from an object using a variable name.
+    Usage: {{ object|get_attribute:"field_name" }}
+    """
+    try:
+        return getattr(obj, attr_name, None)
     except (AttributeError, TypeError):
         return None
 
@@ -204,30 +267,63 @@ def star_rating(value, max_stars=5):
 @register.filter
 def truncate_smart(text, length=150):
     """
-    Smart truncation that doesn't cut off in the middle of words.
-    Usage: {{ text|truncate_smart:100 }}
+    Smart truncation preserving words and avoiding orphaned characters.
+    Usage: {{ text|truncate_smart:150 }}
     """
-    if not text or len(text) <= length:
+    if not text:
+        return ""
+
+    if len(text) <= length:
         return text
 
-    truncated = text[:length].rsplit(" ", 1)[0]
+    truncated = text[:length]
+    # Find last space to avoid cutting words
+    last_space = truncated.rfind(" ")
+    if last_space > length * 0.8:  # If space is reasonably close to end
+        truncated = truncated[:last_space]
+
     return truncated + "..."
 
 
 @register.filter
-def get_field(form, field_name):
-    """Get a form field by name."""
-    return form[field_name]
+def split_string(value, delimiter=","):
+    """
+    Splits a string by delimiter.
+    Usage: {{ "a,b,c"|split_string:"," }}
+    """
+    try:
+        return value.split(delimiter) if value else []
+    except (AttributeError, TypeError):
+        return []
 
 
-# Previously 'add' renaming to avoid namespace issues with add
 @register.filter
-@stringfilter
-def concat(value, arg):
-    """Concatenate strings."""
-    return value + arg
+def join_with(value, separator=" • "):
+    """
+    Joins a list with a custom separator.
+    Usage: {{ list|join_with:" • " }}
+    """
+    try:
+        return separator.join(str(item) for item in value)
+    except (TypeError, AttributeError):
+        return ""
+
+# moved back to blog_tags
+# @register.filter
+# def get_field(form, field_name):
+#     """Get a form field by name."""
+#     return form[field_name]
+
+# moved back to blog_tags
+# # Previously 'add' renaming to avoid namespace issues with add
+# @register.filter
+# @stringfilter
+# def concat(value, arg):
+#     """Concatenate strings."""
+#     return value + arg
 
 
+# not on suggested, but leaving here, think it'll come in handy
 @register.filter
 def highlight_search(text, query):
     """
@@ -251,7 +347,7 @@ def highlight_search(text, query):
 
 
 #  ==============  TIME UTILITIES  ============== #
-
+# This is best way, suggested throws errors w naive and aware
 @register.filter
 def time_since_published(published_date):
     """
@@ -285,11 +381,50 @@ def time_since_published(published_date):
         return "Just now"
 
 
+@register.filter
+def format_date_iso(value):
+    """
+    Formats date in ISO format for JavaScript.
+    Usage: {{ date|format_date_iso }}
+    """
+    try:
+        if hasattr(value, "isoformat"):
+            return value.isoformat()
+        return str(value)
+    except (AttributeError, TypeError):
+        return ""
+
+
+@register.filter
+def days_until(value):
+    """
+    Calculate days until a future date.
+    Usage: {{ deadline|days_until }}
+    """
+    if not value:
+        return 0
+
+    try:
+        now = timezone.now().date()
+        if hasattr(value, "date"):
+            target_date = value.date()
+        else:
+            target_date = value
+
+        diff = target_date - now
+        return diff.days
+    except (AttributeError, TypeError):
+        return 0
+
+
 #  ==============  AURA-SPECFIC FILTERS  ============== #
 
 @register.filter
 def system_id_format(value):
-    """Format system ID: {{ system.id|system_id_format }} -> "SYS-001" """
+    """
+    Format system ID with zero padding.
+    Usage: {{ system.id|system_id_format }} -> "SYS-001"
+    """
     try:
         return f"SYS-{int(value):03d}"
     except (ValueError, TypeError):
@@ -298,7 +433,10 @@ def system_id_format(value):
 
 @register.filter
 def datalog_id(value):
-    """Format datalog ID: {{ post.id|datalog_id }} -> "LOG-001" """
+    """
+    Format datalog ID with zero padding.
+    Usage: {{ post.id|datalog_id }} -> "LOG-001"
+    """
     try:
         return f"LOG-{int(value):03d}"
     except (ValueError, TypeError):
@@ -307,7 +445,10 @@ def datalog_id(value):
 
 @register.filter
 def series_id(value):
-    """Format series ID: {{ series.id|series_id }} -> "SER-001" """
+    """
+    Format series ID with zero padding.
+    Usage: {{ series.id|series_id }} -> "SER-001"
+    """
     try:
         return f"SER-{int(value):03d}"
     except (ValueError, TypeError):
@@ -339,7 +480,10 @@ def metric_color(value, thresholds="50,80"):
 
 @register.filter
 def status_color(status):
-    """Get color for system status"""
+    """
+    Get CSS color variable for system status.
+    Usage: style="color: {{ system.status|status_color }};"
+    """
     colors = {
         "draft": "var(--color-gunmetal)",
         "in_development": "var(--color-yellow)",
@@ -350,52 +494,182 @@ def status_color(status):
         "operational": "var(--color-mint)",
         "warning": "var(--color-yellow)",
         "error": "var(--color-coral)",
+        "info": "var(--color-teal)",
+        "inactive": "var(--color-gunmetal)",
     }
     return colors.get(status, "var(--color-teal)")
 
 
-@register.inclusion_tag("components/pagination.html")
-def render_pagination(page_obj, request):
+@register.filter
+def complexity_display(complexity):
     """
-    Renders AURA-styled pagination.
-    Usage: {% render_pagination page_obj request %}
+    Visual complexity indicator using filled/empty circles.
+    Usage: {{ system.complexity|complexity_display }}
     """
-    return {
-        "page_obj": page_obj,
-        "request": request,
+    try:
+        complexity = int(complexity)
+        filled = "●" * complexity
+        empty = "○" * (5 - complexity)
+        return mark_safe(f'<span class="complexity-display">{filled}{empty}</span>')
+    except (ValueError, TypeError):
+        return mark_safe('<span class="complexity-display">○○○○○</span>')
+
+
+@register.filter
+def priority_class(priority):
+    """
+    Get CSS class for priority level.
+    Usage: class="{{ priority|priority_class }}"
+    """
+    classes = {
+        1: "priority-low",
+        2: "priority-normal",
+        3: "priority-high",
+        4: "priority-critical",
+    }
+    return classes.get(priority, "priority-normal")
+
+
+@register.filter
+def hex_color_brightness(hex_color):
+    """
+    Calculate brightness of hex color (0-255).
+    Usage: {{ "#ff0000"|hex_color_brightness }}
+    """
+    try:
+        hex_color = hex_color.lstrip("#")
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        # Calculate perceived brightness
+        return (r * 299 + g * 587 + b * 114) / 1000
+    except (ValueError, TypeError):
+        return 128
+
+
+@register.filter
+def tech_icon_fallback(tech_name):
+    """
+    Generate fallback icon class for technologies.
+    Usage: {{ tech.name|tech_icon_fallback }}
+    """
+    fallback_icons = {
+        "python": "fab fa-python",
+        "javascript": "fab fa-js-square",
+        "react": "fab fa-react",
+        "django": "fas fa-code",
+        "node": "fab fa-node-js",
+        "docker": "fab fa-docker",
+        "git": "fab fa-git-alt",
+        "html": "fab fa-html5",
+        "css": "fab fa-css3-alt",
+        "sass": "fab fa-sass",
+        "vue": "fab fa-vuejs",
+        "angular": "fab fa-angular",
+        "bootstrap": "fab fa-bootstrap",
+        "database": "fas fa-database",
+        "api": "fas fa-plug",
+        "ml": "fas fa-brain",
+        "ai": "fas fa-robot",
     }
 
+    tech_lower = tech_name.lower()
+    for key, icon in fallback_icons.items():
+        if key in tech_lower:
+            return icon
 
-@register.simple_tag(takes_context=True)
-def active_nav(context, url_name):
+    return "fas fa-code"  # Default fallback
+
+# # moved back to blog_tags
+# @register.inclusion_tag("components/pagination.html")
+# def render_pagination(page_obj, request):
+#     """
+#     Renders AURA-styled pagination.
+#     Usage: {% render_pagination page_obj request %}
+#     """
+#     return {
+#         "page_obj": page_obj,
+#         "request": request,
+#     }
+
+# # moved back to blog_tags
+# @register.simple_tag(takes_context=True)
+# def active_nav(context, url_name):
+#     """
+#     Returns 'active' if current URL matches the given URL name.
+#     Usage: {% active_nav 'blog:post_list' %}
+#     """
+#     request = context["request"]
+#     if request.resolver_match and request.resolver_match.url_name == url_name:
+#         return "active"
+#     return ""
+
+# # moved back to blog_tags
+# @register.simple_tag(takes_context=True)
+# def build_url(context, **kwargs):
+#     """
+#     Builds URL with current GET params plus new ones.
+#     Usage: {% build_url sort='title' page=2 %}
+#     """
+#     request = context["request"]
+#     params = request.GET.copy()
+
+#     for key, value in kwargs.items():
+#         if value is None:
+#             params.pop(key, None)
+#         else:
+#             params[key] = value
+
+#     if params:
+#         return f"?{params.urlencode()}"
+#     return ""
+
+#  ==============  CONTENT PROCESSING  ============== #
+
+
+@register.filter
+def extract_first_paragraph(content):
     """
-    Returns 'active' if current URL matches the given URL name.
-    Usage: {% active_nav 'blog:post_list' %}
+    Extract first paragraph from HTML or markdown content.
+    Usage: {{ content|extract_first_paragraph }}
     """
-    request = context["request"]
-    if request.resolver_match and request.resolver_match.url_name == url_name:
-        return "active"
-    return ""
+    if not content:
+        return ""
+
+    # Remove markdown headers and code blocks
+    content = re.sub(r"^#+\s+.*$", "", content, flags=re.MULTILINE)
+    content = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
+
+    # Split by paragraphs and get first non-empty one
+    paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
+    return paragraphs[0] if paragraphs else ""
 
 
-@register.simple_tag(takes_context=True)
-def build_url(context, **kwargs):
+@register.filter
+def count_words(content):
     """
-    Builds URL with current GET params plus new ones.
-    Usage: {% build_url sort='title' page=2 %}
+    Count words in content.
+    Usage: {{ content|count_words }}
     """
-    request = context["request"]
-    params = request.GET.copy()
+    if not content:
+        return 0
 
-    for key, value in kwargs.items():
-        if value is None:
-            params.pop(key, None)
-        else:
-            params[key] = value
+    # Remove markdown/html and count words
+    clean_content = re.sub(r"<[^>]+>", "", content)
+    clean_content = re.sub(r"[#*`_\[\]()]", "", clean_content)
+    words = re.findall(r"\b\w+\b", clean_content)
+    return len(words)
 
-    if params:
-        return f"?{params.urlencode()}"
-    return ""
+
+@register.filter
+def reading_time(content, wpm=200):
+    """
+    Calculate reading time in minutes.
+    Usage: {{ content|reading_time }} or {{ content|reading_time:250 }}
+    """
+    word_count = count_words(content)
+    minutes = math.ceil(word_count / wpm)
+    return max(1, minutes)  # Minimum 1 minute
 
 
 #  ==============  COMPLEX TAG FUNCTIONS  ============== #
@@ -416,14 +690,86 @@ def calculate(operation, value1, value2):
             "multiply": val1 * val2,
             "divide": val1 / val2 if val2 != 0 else 0,
             "percentage": (val1 / val2 * 100) if val2 != 0 else 0,
+            "power": val1**val2,
+            "modulo": val1 % val2 if val2 != 0 else 0,
         }
 
         result = operations.get(operation, 0)
-        return round(result, 2) if isinstance(result, float) else result
+        # Return integer if it's a whole number, else float
+        return int(result) if result == int(result) else round(result, 2)
     except (ValueError, TypeError, ZeroDivisionError):
         return 0
 
 
+@register.simple_tag
+def random_choice(*choices):
+    """
+    Returns a random choice from the given options.
+    Usage: {% random_choice "red" "blue" "green" %}
+    """
+    import random
+
+    return random.choice(choices) if choices else ""
+
+
+@register.simple_tag
+def current_timestamp():
+    """
+    Returns current timestamp in ISO format.
+    Usage: {% current_timestamp %}
+    """
+    return timezone.now().isoformat()
+
+
+@register.simple_tag
+def json_encode(value):
+    """
+    Encode value as JSON for JavaScript.
+    Usage: var data = {{ data|json_encode }};
+    """
+    try:
+        return mark_safe(json.dumps(value))
+    except (TypeError, ValueError):
+        return mark_safe("null")
+
+
+@register.simple_tag(takes_context=True)
+def query_string(context, **kwargs):
+    """
+    Build query string with current GET parameters plus new ones.
+    Usage: {% query_string page=2 sort="name" %}
+    """
+    request = context.get("request")
+    if not request:
+        return ""
+
+    get_params = request.GET.copy()
+
+    for key, value in kwargs.items():
+        if value is None:
+            get_params.pop(key, None)
+        else:
+            get_params[key] = value
+
+    return f"?{get_params.urlencode()}" if get_params else ""
+
+
+@register.simple_tag
+def percentage_of(value, total):
+    """
+    Calculate percentage and return formatted string.
+    Usage: {% percentage_of 25 100 %} -> "25.0%"
+    """
+    try:
+        if float(total) == 0:
+            return "0%"
+        result = (float(value) / float(total)) * 100
+        return f"{result:.1f}%"
+    except (ValueError, TypeError):
+        return "0%"
+
+
+# not on suggested, but leaving here, think it'll come in handy
 @register.simple_tag
 def progress_bar(value, total, css_class="", show_text=True):
     """Generate progress bar HTML"""
@@ -444,7 +790,7 @@ def progress_bar(value, total, css_class="", show_text=True):
             'style="width: 0%;"></div></div>'
         )
 
-
+# not on suggested, but leaving here, think it'll come in handy
 @register.simple_tag
 def system_status_indicator(status, size="md"):
     """Generate status indicator HTML"""
@@ -459,7 +805,33 @@ def system_status_indicator(status, size="md"):
     '''
     return mark_safe(html)
 
-#  ==============  PLACEHOLDER  ============== #
+#  ==============  DEBUGGING FILTERS  ============== #
+
+@register.filter
+def debug_type(value):
+    """
+    Returns the type of the value (for debugging).
+    Usage: {{ value|debug_type }}
+    """
+    return type(value).__name__
+
+
+@register.filter
+def debug_dir(value):
+    """
+    Returns the dir() of the value (for debugging).
+    Usage: {{ value|debug_dir }}
+    """
+    return mark_safe(f"<pre>{dir(value)}</pre>")
+
+
+@register.simple_tag
+def debug_context(context_var):
+    """
+    Debug template context variable.
+    Usage: {% debug_context variable_name %}
+    """
+    return mark_safe(f"<pre>{repr(context_var)}</pre>")
 
 
 
