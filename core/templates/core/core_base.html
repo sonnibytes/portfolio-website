@@ -1,12 +1,14 @@
 <!----
  * AURA Portfolio - Core App Base Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.0.1 - Optimized for Component Architecture
+ * Version: 2.1.1 - Optimized for Component Architecture, Updated Nav/Sub-Nav
 ---->
 {% extends "base.html" %}
 {% load static %}
 {% load aura_filters %}
 {% load aura_components %}
+
+{% block title %}{% block core_title %}Core System{% endblock %} | AURA Dashboard{% endblock %}
 
 {% block extra_css %}
 <!-- Core App Specific Styles -->
@@ -16,23 +18,175 @@
 {% block core_css %}{% endblock %}
 {% endblock %}
 
-{% block body_class %}core-app {% block core_body_class %}{% endblock %}{% endblock %}
+{% block body_class %}core-interface{% endblock %}
 
-{% block extra_js %}
-<!-- Core App JavaScript -->
-<script src="{% static 'core/js/core.js' %}"></script>
-{% block core_js %}{% endblock %}
+{% block subnav %}
+<!-- Core Sub-Navigation -->
+<nav class="app-subnav core-subnav" id="coreSubnav">
+    <div class="container subnav-container">
+        
+        <div class="subnav-left">
+            <!-- Core Brand/Title -->
+            <div class="subnav-title">
+                <i class="fas fa-home subnav-title-icon"></i>
+                <span>Command Center</span>
+            </div>
+            
+            <!-- Core Navigation Links -->
+            <div class="subnav-links">
+                <a href="{% url 'core:home' %}" class="subnav-link {% active_nav 'core:home' %}">
+                    <i class="fas fa-tachometer-alt subnav-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'core:about' %}" class="subnav-link {% active_nav 'core:about' %}">
+                    <i class="fas fa-user-astronaut subnav-icon"></i>
+                    <span>Profile & Resume</span>
+                </a>
+                <a href="{% url 'core:contact' %}" class="subnav-link {% active_nav 'core:contact' %}">
+                    <i class="fas fa-satellite-dish subnav-icon"></i>
+                    <span>Contact</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="subnav-right">
+            <!-- Real-time Core Metrics -->
+            <div class="subnav-stats">
+                <div class="stat-item">
+                    <i class="fas fa-project-diagram"></i>
+                    <span class="stat-value">{{ total_systems|default:"12" }}</span>
+                    <span class="stat-label">Systems</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-database"></i>
+                    <span class="stat-value">{{ total_logs|default:"24" }}</span>
+                    <span class="stat-label">DataLogs</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <span class="stat-value">{{ uptime|default:"99.7" }}%</span>
+                    <span class="stat-label">Uptime</span>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="subnav-actions">
+                <a href="{% url 'blog:post_list' %}" class="subnav-action-btn">
+                    <i class="fas fa-database"></i>
+                    <span>View DataLogs</span>
+                </a>
+                <a href="{% url 'projects:system_list' %}" class="subnav-action-btn">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>View Systems</span>
+                </a>
+                {% if user.is_authenticated %}
+                <button class="subnav-action-btn" id="adminPanelToggle">
+                    <i class="fas fa-cog"></i>
+                    <span>Admin</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- Core Status Scanning Line -->
+    <div class="subnav-scanning-line"></div>
+</nav>
 {% endblock %}
 
-{% block inline_js %}
-// Core app initialization
-console.log('🏠 Core App Initialized');
+{% block breadcrumbs %}
+{% if show_breadcrumbs %}
+<div class="container">
+    <nav class="core-breadcrumbs">
+        <div class="breadcrumb-container">
+            <a href="{% url 'core:home' %}" class="breadcrumb-item">
+                <i class="fas fa-home"></i>
+                <span>AURA</span>
+            </a>
+            {% block core_breadcrumbs %}{% endblock %}
+        </div>
+        
+        <!-- Optional System Status Indicators -->
+        <div class="breadcrumb-status">
+            <div class="status-indicator operational"></div>
+            <span class="status-text">SYSTEM OPERATIONAL</span>
+        </div>
+    </nav>
+</div>
+{% endif %}
+{% endblock %}
 
-// Initialize core-specific features
-if (typeof initCoreFeatures === 'function') {
-    initCoreFeatures();
-}
+{% block content %}
+<!-- Core Interface Container -->
+<div class="core-interface-container">
+    
+    <!-- Main Core Content Area -->
+    <div class="core-content-area">
+        <div class="container">
+            
+            <!-- Page Header Section -->
+            {% block core_header %}
+            {% if page_title %}
+            {% section_header title=page_title subtitle=page_subtitle icon=page_icon %}
+            {% endif %}
+            {% endblock %}
+            
+            <!-- Alert/Notification Bar -->
+            {% if messages %}
+            <div class="core-alerts">
+                {% for message in messages %}
+                {% alert_box message message.tags dismissible=True %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Main Content Block -->
+            <main class="core-main-content">
+                {% block core_content %}
+                <!-- Individual core pages will override this -->
+                {% endblock %}
+            </main>
+            
+        </div>
+    </div>
+    
+</div>
 
-// Page-specific initialization
-{% block core_inline_js %}{% endblock %}
+<!-- Core Real-time Data Overlay -->
+<div class="core-data-overlay" id="coreDataOverlay">
+    <div class="data-stream" id="coreDataStream">
+        <!-- Real-time core metrics will be populated here -->
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'core/js/home.js' %}"></script>
+{% block core_js %}{% endblock %}
+
+<!-- Initialize Core Interface -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize core interface
+    if (typeof initCoreInterface === 'function') {
+        initCoreInterface();
+    }
+    
+    // Admin panel toggle
+    const adminToggle = document.getElementById('adminPanelToggle');
+    if (adminToggle) {
+        adminToggle.addEventListener('click', function() {
+            // Toggle admin panel or redirect to admin
+            window.location.href = '/admin/';
+        });
+    }
+    
+    // Core-specific initialization
+    {% block core_inline_js %}{% endblock %}
+});
+</script>
 {% endblock %}

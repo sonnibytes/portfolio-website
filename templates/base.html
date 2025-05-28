@@ -30,10 +30,7 @@
     <link rel="stylesheet" href="{% static 'css/components/glass-cards.css' %}">
     <link rel="stylesheet" href="{% static 'css/components/hud-elements.css' %}">
     <link rel="stylesheet" href="{% static 'css/components/animations.css' %}">
-    <link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}">
-    <link rel="stylesheet" href="{% static 'css/components/forms.css' %}">
-    <link rel="stylesheet" href="{% static 'css/components/data-grid.css' %}">
-
+    <link rel="stylesheet" href="{% static 'css/components/navigation.css' %}">
     
     <!-- Optional: Syntax Highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
@@ -48,8 +45,8 @@
     <!-- AURA Loading Screen (Homepage Only) -->
     {% block loading_screen %}{% endblock %}
     
-    <!-- AURA HUD Header Navigation -->
-    <header class="aura-navbar">
+    <!-- AURA Main Navigation -->
+    <header class="aura-navbar" id="mainNavbar">
         <div class="container navbar-container">
             <!-- AURA Logo/Brand -->
             <a href="{% url 'core:home' %}" class="navbar-brand">
@@ -63,7 +60,7 @@
             </a>
             
             <!-- Main Navigation -->
-            <nav class="navbar-nav">
+            <nav class="navbar-nav" id="mainNav">
                 <a href="{% url 'core:home' %}" class="nav-link {% if request.resolver_match.view_name == 'core:home' %}active{% endif %}">
                     <i class="fas fa-home nav-icon"></i>
                     <span class="nav-text">Dashboard</span>
@@ -99,7 +96,7 @@
             </div>
             
             <!-- Mobile Menu Toggle -->
-            <button class="mobile-menu-toggle" aria-label="Toggle navigation">
+            <button class="mobile-menu-toggle" aria-label="Toggle navigation" id="mobileMenuToggle">
                 <span class="menu-line"></span>
                 <span class="menu-line"></span>
                 <span class="menu-line"></span>
@@ -107,12 +104,13 @@
         </div>
     </header>
     
+    <!-- App-Specific Sub-Navigation -->
+    {% block subnav %}{% endblock %}
+    
     <!-- Main Content Area -->
     <main id="mainContent" class="{% block main_class %}{% endblock %}">
         <!-- Breadcrumb Navigation -->
-        {% block breadcrumbs %}
-            {% include 'components/breadcrumbs.html' %}
-        {% endblock %}
+        {% block breadcrumbs %}{% endblock %}
         
         <!-- Page Content -->
         {% block content %}{% endblock %}
@@ -263,9 +261,45 @@
                 initAURASystem();
             }
             
+            // Initialize navigation
+            initNavigationSystem();
+            
             // App-specific initialization
             {% block inline_js %}{% endblock %}
         });
+        
+        // Navigation System Initialization
+        function initNavigationSystem() {
+            const mainNavbar = document.getElementById('mainNavbar');
+            const mobileToggle = document.getElementById('mobileMenuToggle');
+            const mainNav = document.getElementById('mainNav');
+            
+            // Mobile menu toggle
+            if (mobileToggle && mainNav) {
+                mobileToggle.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    mainNav.classList.toggle('active');
+                });
+            }
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!mainNavbar.contains(e.target)) {
+                    mobileToggle?.classList.remove('active');
+                    mainNav?.classList.remove('active');
+                }
+            });
+            
+            // Handle sub-nav sticky behavior
+            const subNavs = document.querySelectorAll('.app-subnav');
+            if (subNavs.length > 0) {
+                // Calculate offset for sub-nav sticky positioning
+                const mainNavHeight = mainNavbar.offsetHeight;
+                subNavs.forEach(subnav => {
+                    subnav.style.top = mainNavHeight + 'px';
+                });
+            }
+        }
     </script>
 </body>
 </html>

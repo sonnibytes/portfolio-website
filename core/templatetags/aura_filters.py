@@ -593,16 +593,16 @@ def tech_icon_fallback(tech_name):
 #     }
 
 # # moved back to blog_tags
-# @register.simple_tag(takes_context=True)
-# def active_nav(context, url_name):
-#     """
-#     Returns 'active' if current URL matches the given URL name.
-#     Usage: {% active_nav 'blog:post_list' %}
-#     """
-#     request = context["request"]
-#     if request.resolver_match and request.resolver_match.url_name == url_name:
-#         return "active"
-#     return ""
+@register.simple_tag(takes_context=True)
+def active_nav(context, url_name):
+    """
+    Returns 'active' if current URL matches the given URL name.
+    Usage: {% active_nav 'blog:post_list' %}
+    """
+    request = context["request"]
+    if request.resolver_match and request.resolver_match.url_name == url_name:
+        return "active"
+    return ""
 
 # # moved back to blog_tags
 # @register.simple_tag(takes_context=True)
