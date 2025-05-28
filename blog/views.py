@@ -421,15 +421,15 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         # DEBUG: Print the raw reuqest POST data and form cleaned_data
-        print("=" * 50)
-        print("FORM SUBMITTED")
-        print("POST Data:")
-        pprint.pprint(dict(self.request.POST))
-        print("Cleaned Data:")
-        pprint.pprint(form.cleaned_data)
-        print("Content Field BEFORE Save:")
-        print(form.instance.content)
-        print("=" * 50)
+        # print("=" * 50)
+        # print("FORM SUBMITTED")
+        # print("POST Data:")
+        # pprint.pprint(dict(self.request.POST))
+        # print("Cleaned Data:")
+        # pprint.pprint(form.cleaned_data)
+        # print("Content Field BEFORE Save:")
+        # print(form.instance.content)
+        # print("=" * 50)
 
         # Set publication date if status is published and doesn't have one
         if form.instance.status == "published" and not form.instance.published_date:
@@ -439,9 +439,9 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         response = super().form_valid(form)
 
         # DEBUG AFTER SAVE
-        print("Content Field AFTER Save:")
-        print(self.object.content)
-        print("=" * 50)
+        # print("Content Field AFTER Save:")
+        # print(self.object.content)
+        # print("=" * 50)
 
         messages.success(self.request, "Post updated successfully!")
         return response

@@ -1,327 +1,598 @@
-<!-- Blog homepage with post cards -->
-{% extends "blog/base.html" %} 
+<!----
+ * AURA Portfolio - Datalogs List Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
+---->
+
+{% extends "blog/datalogs_base.html" %}
 {% load static %} 
-{% load code_filters %}
-{% load blog_tags %} 
 
-{% block blog_content %}
+{% load aura_filters %}
+{% load aura_components%}
+{% comment %} {% load system_tags %} {% endcomment %}
+{% load blog_tags %}
 
-<!-- Page Header -->
-<div class="page-header text-center mb-5 hud-corner-effect">
-  <div class="corner-bl"></div>
-   <div class="corner-br"></div>
-  <h1 class="display-4">ML<span class="text-purple">DEVLOGs</span></h1>
-  <p class="lead text-secondary">
-    Exploring the world of machine learning and AI development
-  </p>
-</div>
-{% comment %} Create Post Button  {% endcomment %}
-{% if user.is_authenticated %}
-<div class="mb-4 text-end">
-  <a href="{% url 'blog:post_create' %}" class="btn btn-primary">
-    <i class="fas fa-plus-circle me-2"></i> New Post
-  </a>
-</div>
-{% endif %}
+{% block title %}DataLogs Archive | AURA{% endblock %}
+{% block meta_description %}AURA DataLogs - Development insights, technical documentation, and system analysis entries from the Advanced User Repository & Archive.{% endblock %}
 
-<!-- Featured Post Section -->
-<div class="featured-post-section mb-5">
-  {% if featured_post %}
-  <div class="card featured-post-card bg-dark bg-opacity-50">
-    <div class="card-body p-4">
-      <div class="row">
-        <div class="col-lg-6">
-          <div class="featured-badge mb-2">FEATURED ENTRY</div>
-          <h2 class="card-title">{{ featured_post.title }}</h2>
-          <div class="featured-divider"></div>
-          <p class="card-text text-light-50 mb-4">
-            {{ featured_post.excerpt }}
-          </p>
+{% block datalogs_css %}
+<link rel="stylesheet" href="{% static 'blog/css/datalogs.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/datalogs-list.css' %}">
+{% endblock %}
 
-          <div class="d-flex align-items-center mb-3">
-            <div class="author-avatar me-2">
-              {{ featured_post.author.first_name|first }}
-              {{ featured_post.author.last_name|first }}
-            </div>
-            <span class="text-light me-2"
-              >{{ featured_post.author.get_full_name }}</span
-            >
-            <span class="text-secondary mx-2">|</span>
-            <span class="text-secondary"
-              >{{ featured_post.published_date|date:"M d, Y" }}</span
-            >
-          </div>
+{% block datalogs_body_class %}datalogs-list{% endblock %}
 
-          <a href="{{ featured_post.get_absolute_url }}" class="featured-link">
-            ACCESS TRANSMISSION <i class="fas fa-arrow-right ms-1"></i>
-          </a>
+{% block datalogs_title %}[ DATALOGS ]{% endblock %}
+{% block datalogs_subtitle %}
+    {% if category %}
+        Category: {{ category.name }} | {{ posts|length|format_number }} Entries Found
+    {% elif tag %}
+        Tag: {{ tag.name }} | {{ posts|length|format_number }} Entries Found
+    {% elif query %}
+        Search Results: "{{ query }}" | {{ posts|length|format_number }} Entries Found
+    {% else %}
+        {{ posts|length|format_number }} Total Development Entries
+        {% blog_stats as stats %}
+        | {{ stats.avg_reading_time|format_duration }} Average Read Time
+    {% endif %}
+{% endblock %}
+
+{% block datalogs_filters %}
+<div class="datalogs-controls">
+    <div class="glass-card controls-panel">
+        <div class="controls-left">
+            <!-- Enhanced Search Interface -->
+            <form method="get" action="{% url 'blog:search' %}" class="search-terminal">
+                <div class="search-container">
+                    <div class="search-prompt">
+                        <span class="prompt-text">search:</span>
+                        <input type="text" name="q" value="{{ query|default:'' }}" 
+                               class="search-input" placeholder="Enter search parameters..."
+                               autocomplete="off" data-live-search="false">
+                    </div>
+                    <button type="submit" class="search-execute" title="Execute Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                {% if query %}
+                <div class="search-info">
+                    <div class="search-results-summary">
+                        <span class="results-count">{{ posts|length|format_number }}</span> entries found for 
+                        <span class="search-term">"{{ query }}"</span>
+                        <a href="{% url 'blog:post_list' %}" class="clear-search" title="Clear Search">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
         </div>
-
-        <div class="col-lg-6">
-          <div class="code-block">
-            <div class="code-header">
-              <div class="terminal-button red"></div>
-              <div class="terminal-button yellow"></div>
-              <div class="terminal-button green"></div>
-              <span class="filename"
-                >{{ featured_post.get_code_filename }}</span
-              >
+        
+        <div class="controls-right">
+            <!-- View Mode Toggle -->
+            <div class="view-toggle">
+                <button class="view-btn grid-view active" data-view="grid" title="Grid View">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button class="view-btn list-view" data-view="list" title="List View">
+                    <i class="fas fa-list"></i>
+                </button>
             </div>
-            <div class="code-content">
-              <pre>
-{{ featured_post.featured_code|highlight_code:featured_post.featured_code_format }}</pre
-              >
+            
+            <!-- Sort Options -->
+            <div class="sort-dropdown">
+                <select class="hud-select" id="sortSelect" title="Sort DataLogs">
+                    <option value="latest" {% if request.GET.sort == 'latest' %}selected{% endif %}>Latest First</option>
+                    <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                    <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>Title A-Z</option>
+                    <option value="category" {% if request.GET.sort == 'category' %}selected{% endif %}>By Category</option>
+                    <option value="reading-time" {% if request.GET.sort == 'reading-time' %}selected{% endif %}>Reading Time</option>
+                </select>
             </div>
-          </div>
+            
+            <!-- Filter Toggle -->
+            <button class="filter-toggle" id="filterToggle" title="Toggle Filters">
+                <i class="fas fa-filter"></i>
+                <span class="filter-label">Filters</span>
+            </button>
         </div>
-      </div>
     </div>
-  </div>
-  {% endif %}
-</div>
-
-<!-- Categories Section -->
-<div class="mb-4">
-  <div class="card bg-dark bg-opacity-50 p-3">
-    <h2 class="section-title h4 mb-3">Categories</h2>
-    <div class="section-divider mb-4"></div>
-
-    <div class="categories-container">
-      {% for category in categories %}
-      <div class="category-hex-wrapper">
-        <a href="{% url 'blog:category' slug=category.slug %}">
-          <div
-            class="category-hex"
-            style="--category-color: {{ category.color }}"
-            data-category="{{ category.code }}"
-          >
-            {% if category.icon %}
-            <i class="fas {{ category.icon }}"></i>
-            {% else %} {{ category.code }} {% endif %}
-          </div>
-        </a>
-        <div class="category-name">{{ category.name }}</div>
-      </div>
-      {% empty %}
-      <p class="text-secondary">No categories available</p>
-      {% endfor %}
+    
+    <!-- Advanced Filters Panel (Initially Hidden) -->
+    <div class="glass-card filters-panel" id="filtersPanel" style="display: none;">
+        <div class="filters-section">
+            <h3 class="filters-title">
+                <i class="fas fa-sliders-h me-2"></i>
+                Advanced Filters
+            </h3>
+            
+            <div class="filters-grid">
+                <!-- Category Filters -->
+                <div class="filter-group">
+                    <h4 class="filter-group-title">Categories</h4>
+                    <div class="filter-items">
+                        <a href="{% url 'blog:post_list' %}" class="filter-item {% if not category %}active{% endif %}">
+                            <span class="filter-icon"><i class="fas fa-database"></i></span>
+                            <span class="filter-label">All Categories</span>
+                            <span class="filter-count">{{ posts.count|format_number }}</span>
+                        </a>
+                        {% get_post_count_by_category as category_stats %}
+                        {% for cat in category_stats %}
+                        <a href="{% url 'blog:category' slug=cat.slug %}" 
+                           class="filter-item {% if category.slug == cat.slug %}active{% endif %}"
+                           style="--category-color: {{ cat|category_color }};">
+                            <span class="filter-icon">
+                                {% if cat.icon %}
+                                <i class="{{ cat|category_icon }}"></i>
+                                {% else %}
+                                <span class="filter-code">{{ cat.code|default:"LOG" }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="filter-label">{{ cat.name }}</span>
+                            <span class="filter-count">{{ cat.post_count|format_number }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+               <!-- Tag Cloud -->
+               <div class="filter-group">
+                <h4 class="filter-group-title">Popular Tags</h4>
+                <div class="tag-cloud">
+                    {% get_popular_tags 8 as popular_tags %}
+                    {% for tag in popular_tags %}
+                    <a href="{% url 'blog:tag' slug=tag.slug %}" 
+                       class="tag-item {% if current_tag.slug == tag.slug %}active{% endif %}"
+                       style="font-size: {% calculate 'add' 0.8 tag.post_count|mul:0.1 %}em;">
+                        {{ tag.name }}
+                        <span class="tag-count">{{ tag.post_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+                
+                <!-- Date Range -->
+                <div class="filter-group">
+                    <h4 class="filter-group-title">Time Range</h4>
+                    <div class="filter-items">
+                        <a href="{% build_url period='week' %}" class="filter-item">
+                            <span class="filter-icon"><i class="fas fa-calendar-week"></i></span>
+                            <span class="filter-label">This Week</span>
+                        </a>
+                        <a href="{% build_url period='month' %}" class="filter-item">
+                            <span class="filter-icon"><i class="fas fa-calendar-alt"></i></span>
+                            <span class="filter-label">This Month</span>
+                        </a>
+                        <a href="{% build_url period='year' %}" class="filter-item">
+                            <span class="filter-icon"><i class="fas fa-calendar"></i></span>
+                            <span class="filter-label">This Year</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
+{% endblock %}
 
-<!-- Search Bar -->
-<div class="mb-5">
-  <div class="card bg-dark bg-opacity-50 p-3">
-    <form action="{% url 'blog:search' %}" method="get" class="d-flex">
-      <input
-        type="text"
-        name="q"
-        class="form-control bg-dark text-light border-0"
-        placeholder="Search articles..."
-      />
-      <button type="submit" class="btn btn-outline-cyan ms-2">
-        <i class="fas fa-search"></i>
-      </button>
-    </form>
-  </div>
-</div>
-
-<!-- Latest Posts Section -->
-<div class="posts-section mb-5">
-  <h2 class="section-title h4 mb-3">Latest Entries</h2>
-  <div class="section-divider mb-4"></div>
-
-  <!-- START POLYGON CARD -->
-  {% load static %}
-
-  <div class="row g-4">
-    {% for post in posts %} 
-    <div class="col-lg-4 col-md-6 mb-4">
-      <div class="holographic-container bracket-corners">
-        <div class="bracket-bl"></div>
-        <div class="bracket-br"></div>
-        {% comment %} <!-- HUD corner accents -->
-        <div class="hud-corner hud-corner-tl"></div>
-        <div class="hud-corner hud-corner-tr"></div>
-        <div class="hud-corner hud-corner-bl"></div>
-        <div class="hud-corner hud-corner-br"></div> {% endcomment %}
-  
-        <!-- Image Section -->
-        <div class="post-image-container">
-          <div class="post-image-pattern">
+{% block datalogs_content %}
+<!-- DataLogs Entry Grid -->
+<div class="datalogs-content-grid grid-view" id="dataLogsGrid">
+    {% for post in posts %}
+    <article class="glass-card datalog-entry-card" data-category="{{ post.category.slug|default:'general' }}">
+        <!-- DataLog Header -->
+        <div class="datalog-entry-header">
+            <div class="datalog-meta-top">
+                <div class="datalog-id">
+                    <span class="id-prefix">{{ post.id|datalog_id }}</span>
+                </div>
+                <div class="datalog-status">
+                    <div class="status-indicator operational"></div>
+                    <span class="status-text">ACTIVE</span>
+                </div>
+            </div>
+            
+            <div class="datalog-category-info">
+                {% if post.category %}
+                <a href="{% url 'blog:category' slug=post.category.slug %}" 
+                   class="category-badge" 
+                   style="--category-color: {{ post.category|category_color }};"
+                   title="{{ post.category.name }}">
+                    {% if post.category.icon %}
+                    <i class="{{ post.category|category_icon }}"></i>
+                    {% endif %}
+                    <span class="category-code">{{ post.category.code|default:"LOG" }}</span>
+                </a>
+                {% endif %}
+                
+                {% if post.featured %}
+                <div class="featured-badge" title="Featured DataLog">
+                    <i class="fas fa-star"></i>
+                    <span>Featured</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- DataLog Content -->
+        <div class="datalog-entry-content">
+            <!-- DataLog Image/Visual -->
             {% if post.thumbnail %}
-            <img
-              src="{{ post.thumbnail.url }}"
-              alt="{{ post.title }}"
-              class="img-fluid"
-            />
+            <div class="datalog-visual">
+                <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" class="datalog-image">
+                <div class="visual-overlay">
+                    <div class="overlay-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                </div>
+            </div>
+            {% elif post.featured_code %}
+            <div class="datalog-visual datalog-code-preview">
+                <div class="code-header">
+                    <div class="code-filename">{{ post.get_code_filename }}</div>
+                    <div class="code-language">{{ post.featured_code_format|upper }}</div>
+                </div>
+                <div class="code-content">
+                    <pre><code class="language-{{ post.featured_code_format }}">{{ post.featured_code|truncatechars:200 }}</code></pre>
+                </div>
+                <div class="code-expand-hint">
+                    <i class="fas fa-expand-alt"></i>
+                    View Full Code
+                </div>
+            </div>
             {% else %}
-            <div class="image-placeholder">
-              <span class="image-icon">[ NO VISUAL DATA ]</span>
+            <div class="datalog-visual datalog-placeholder">
+                <div class="placeholder-icon">
+                    {% if post.category.icon %}
+                    <i class="{{ post.category|category_icon }}"></i>
+                    {% else %}
+                    <span class="icon-text">[ NO VISUAL DATA ]</span>
+                    {% endif %}
+                </div>
+                {% comment %} <div class="placeholder-overlay">
+                    <div class="overlay-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                </div> {% endcomment %}
             </div>
             {% endif %}
-          </div>
-  
-          <!-- Overlaid Category Hexagon -->
-          <div class="category-hex-overlay">
-            <a href="{% url 'blog:category' slug=post.category.slug %}">
-              <div
-                class="category-hex"
-                style="--category-color: {{ post.category.color|default:'var(--color-cyan)' }}"
-              >
-                {{ post.category.code }}
-              </div>
-            </a>
-          </div>
+            
+            <!-- DataLog Text Content -->
+            <div class="datalog-text-content">
+                <h3 class="datalog-title">
+                    <a href="{% url 'blog:post_detail' slug=post.slug %}" class="title-link">
+                        {{ post.title }}
+                    </a>
+                </h3>
+                
+                <div class="datalog-excerpt">
+                    {{ post.excerpt|default:post.content|truncate_smart:100|safe }}
+                </div>
+                
+                <!-- DataLog Metadata -->
+                <div class="datalog-metadata">
+                    <div class="metadata-row">
+                        <div class="metadata-item">
+                            <i class="fas fa-calendar-alt metadata-icon"></i>
+                            <span class="metadata-value">{{ post.published_date|time_since_published }}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <i class="fas fa-clock metadata-icon"></i>
+                            <span class="metadata-value">{{ post.reading_time|default:"3"|format_duration }} read</span>
+                        </div>
+                        <div class="metadata-item">
+                            <i class="fas fa-user metadata-icon"></i>
+                            <span class="metadata-value">{{ post.author.get_full_name|default:post.author.username }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if post.tags.exists %}
+                    <div class="metadata-tags">
+                        {% for tag in post.tags.all|slice:":3" %}
+                        <a href="{% url 'blog:tag' slug=tag.slug %}" class="metadata-tag">
+                            {{ tag.name }}
+                        </a>
+                        {% endfor %}
+                        {% if post.tags.count > 3 %}
+                        <span class="tag-more">+{{ post.tags.count|subtract:3 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-  
-        <!-- Dashed Divider Line -->
-        <div class="post-divider-dashed"></div>
-  
-        <!-- Content Section -->
-        <div class="post-content">
-          <h3 class="card-title h5 mb-3">{{ post.title }}</h3>
-          <p class="card-text text-secondary small mb-3">{{ post.excerpt }}</p>
-  
-          <!-- Tags -->
-          <div class="d-flex flex-wrap gap-2 mb-3">
-            {% for tag in post.tags.all|slice:":3" %}
-            <a
-              href="{% url 'blog:tag' slug=tag.slug %}"
-              class="tag-pill text-decoration-none"
-              >{{ tag.name }}</a
-            >
-            {% endfor %}
-          </div>
-  
-          <!-- Date -->
-          <p class="post-date mb-3">
-            {{ post.published_date|date:"M d, Y" }} // SID: {{ post.id|stringformat:"04d" }}
-          </p>
-  
-          <!-- Divider -->
-          <div class="post-divider mb-3"></div>
-  
-          <!-- Access Link -->
-          <a href="{{ post.get_absolute_url }}" class="post-link">
-            ACCESS TRANSMISSION <span class="arrow">→</span>
-          </a>
+        
+        <!-- DataLog Footer -->
+        <div class="datalog-entry-footer">
+            <div class="footer-left">
+                {% if post.has_system_connections %}
+                <div class="system-connections">
+                    <i class="fas fa-link connection-icon"></i>
+                    <span class="connection-text">Linked to {{ post.get_related_systems.count }} system{{ post.get_related_systems.count|pluralize }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="footer-right">
+                <a href="{% url 'blog:post_detail' slug=post.slug %}" class="datalog-link">
+                    <span class="link-text">Access DataLog</span>
+                    <i class="fas fa-arrow-right link-icon"></i>
+                </a>
+            </div>
         </div>
-      </div>
-    </div>
+        
+        <!-- Scanning Line Effect -->
+        <div class="datalog-scanning-line"></div>
+    </article>
     {% empty %}
-    <div class="col-12">
-      <div class="alert alert-info">No logs available yet. Check back soon!</div>
+    <!-- No DataLogs Found -->
+    <div class="glass-card no-results-card">
+        <div class="no-results-content">
+            <div class="no-results-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <h3 class="no-results-title">No DataLogs Found</h3>
+            <p class="no-results-message">
+                {% if query %}
+                    No entries match your search criteria: <strong>"{{ query }}"</strong>
+                {% elif category %}
+                    No entries found in category: <strong>{{ category.name }}</strong>
+                {% elif tag %}
+                    No entries found with tag: <strong>{{ tag.name }}</strong>
+                {% else %}
+                    No datalog entries have been published yet.
+                {% endif %}
+            </p>
+            <div class="no-results-actions">
+                {% if query or category or tag %}
+                <a href="{% url 'blog:post_list' %}" class="btn btn-outline">
+                    <i class="fas fa-undo me-2"></i>View All DataLogs
+                </a>
+                {% endif %}
+                <a href="{% url 'core:contact' %}" class="btn btn-primary">
+                    <i class="fas fa-envelope me-2"></i>Suggest a Topic
+                </a>
+            </div>
+        </div>
     </div>
     {% endfor %}
-  </div>  
- 
 </div>
 
-  <!-- ==================================================== -->
+<!-- Featured DataLog (if exists and not in search/filter) -->
+{% if not query and not category and not tag %}
+{% get_featured_post as featured_post %}
+{% if featured_post %}
+<div class="featured-datalog-section">
+    <div class="glass-card featured-datalog-card">
+        <div class="featured-header">
+            <div class="featured-badge">
+                <i class="fas fa-star"></i>
+                <span>Featured DataLog</span>
+            </div>
+            <div class="featured-id">{{ featured_post.id|datalog_id }}</div>
+        </div>
+        
+        <div class="featured-content">
+            <div class="featured-visual">
+                {% if featured_post.thumbnail %}
+                <img src="{{ featured_post.thumbnail.url }}" alt="{{ featured_post.title }}">
+                {% else %}
+                <div class="featured-placeholder">
+                    <i class="fas fa-star"></i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="featured-text">
+                <h3 class="featured-title">{{ featured_post.title }}</h3>
+                <p class="featured-excerpt">{{ featured_post.excerpt|default:featured_post.content|truncate_smart:120 }}</p>
+                
+                <div class="featured-meta">
+                    <span class="featured-category">{{ featured_post.category.name }}</span>
+                    <span class="featured-date">{{ featured_post.published_date|time_since_published }}</span>
+                    <span class="featured-reading-time">{{ featured_post.reading_time|format_duration }} read</span>
+                </div>
+                
+                <a href="{% url 'blog:post_detail' slug=featured_post.slug %}" class="featured-link">
+                    <span>Access Featured DataLog</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
 
-<!-- Pagination -->
-{% if is_paginated %}
-<nav aria-label="Page navigation">
-  <ul class="pagination justify-content-center">
-    {% if page_obj.has_previous %}
-    <li class="page-item">
-      <a class="page-link" href="?page=1" aria-label="First">
-        <span aria-hidden="true">&laquo;&laquo;</span>
-      </a>
-    </li>
-    <li class="page-item">
-      <a
-        class="page-link"
-        href="?page={{ page_obj.previous_page_number }}"
-        aria-label="Previous"
-      >
-        <span aria-hidden="true">&laquo;</span>
-      </a>
-    </li>
-    {% else %}
-    <li class="page-item disabled">
-      <span class="page-link">&laquo;</span>
-    </li>
-    {% endif %} 
-    {% for num in page_obj.paginator.page_range %} 
-      {% if num == page_obj.number %}
-    <li class="page-item active">
-      <span class="page-link">{{ num }}</span>
-    </li>
-      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-    <li class="page-item">
-      <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-    </li>
-      {% endif %} 
-    {% endfor %} 
-    {% if page_obj.has_next %}
-    <li class="page-item">
-      <a
-        class="page-link"
-        href="?page={{ page_obj.next_page_number }}"
-        aria-label="Next"
-      >
-        <span aria-hidden="true">&raquo;</span>
-      </a>
-    </li>
-    <li class="page-item">
-      <a
-        class="page-link"
-        href="?page={{ page_obj.paginator.num_pages }}"
-        aria-label="Last"
-      >
-        <span aria-hidden="true">&raquo;&raquo;</span>
-      </a>
-    </li>
-    {% else %}
-    <li class="page-item disabled">
-      <span class="page-link">&raquo;</span>
-    </li>
-    {% endif %}
-  </ul>
-</nav>
-{% endif %} 
-{% endblock %} 
-{% block extra_js %} {{ block.super }}
+{% block datalogs_sidebar %}
+<!-- DataLogs Sidebar (Optional) -->
+<aside class="datalogs-sidebar">
+    <div class="glass-card sidebar-panel">
+        <h3 class="sidebar-title">
+            <i class="fas fa-chart-bar me-2"></i>
+            DataLog Analytics
+        </h3>
+        
+        {% blog_stats as stats %}
+        <div class="analytics-metrics">
+            <div class="metric-item">
+                <div class="metric-value">{{ posts.count|format_number }}</div>
+                <div class="metric-label">Current View</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ stats.total_posts|format_number }}</div>
+                <div class="metric-label">Total Entries</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ stats.total_categories|format_number }}</div>
+                <div class="metric-label">Categories</div>
+            </div>
+            <div class="metric-item">
+                {% calculate 'multiply' stats.avg_reading_time posts.count as total_reading %}
+                <div class="metric-value">{{ total_reading|format_duration }}</div>
+                <div class="metric-label">Total Reading</div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="recent-activity">
+            <h4 class="activity-title">Recent Activity</h4>
+            <div class="activity-items">
+                {% get_recent_posts 3 as recent_posts %}
+                {% for post in recent_posts %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-text">{{ post.title|truncate_smart:35 }}</div>
+                        <div class="activity-time">{{ post.published_date|time_since_published }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</aside>
+{% endblock %}
+
+{% block datalogs_js %}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // Get the page header h1 element with typing animation class
-    const headerText = document.querySelector("h1.typing-animation");
+// DataLogs List Page Specific Enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize enhanced features
+    initDataLogCards();
+    initAdvancedFilters();
+    initViewPersistence();
+    initSearchEnhancements();
+    
+    // Add dynamic loading effects
+    addLoadingEffects();
+});
 
-    if (headerText) {
-      // Store the original content
-      const originalContent = headerText.innerHTML;
-
-      // Initialize the animation
-      initTypingAnimation(headerText, originalContent);
-    }
-
-    function initTypingAnimation(element, content) {
-      // Set initial state (empty)
-      element.textContent = "";
-
-      // Start the typing sequence after a short delay
-      setTimeout(() => {
-        // Reset to original HTML content
-        element.innerHTML = content;
-
-        // Set up a restart of the animation after it completes
+function initDataLogCards() {
+    const cards = document.querySelectorAll('.datalog-entry-card');
+    
+    cards.forEach((card, index) => {
+        // Add staggered entrance animation
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
         setTimeout(() => {
-          // Remove the class briefly
-          element.classList.remove("typing-animation");
+            card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+        
+        // Add hover scanning effect
+        card.addEventListener('mouseenter', function() {
+            this.classList.add('scanning-horizontal');
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.classList.remove('scanning-horizontal');
+        });
+        
+        // Add click-to-expand for mobile
+        const visual = card.querySelector('.datalog-visual');
+        if (visual) {
+            visual.addEventListener('click', function() {
+                const link = card.querySelector('.title-link');
+                if (link) link.click();
+            });
+        }
+    });
+}
 
-          // Force reflow to restart animation
-          void element.offsetWidth;
-
-          // Add the class back to restart animation
-          element.classList.add("typing-animation");
-
-          // Start the process again
-          initTypingAnimation(element, content);
-        }, 5000); // Total animation duration including pauses
-      }, 500);
+function initAdvancedFilters() {
+    const filterToggle = document.getElementById('filterToggle');
+    const filtersPanel = document.getElementById('filtersPanel');
+    
+    if (filterToggle && filtersPanel) {
+        filterToggle.addEventListener('click', function() {
+            const isVisible = filtersPanel.style.display !== 'none';
+            
+            if (isVisible) {
+                filtersPanel.style.display = 'none';
+                this.classList.remove('active');
+            } else {
+                filtersPanel.style.display = 'block';
+                this.classList.add('active');
+                
+                // Animate in
+                filtersPanel.style.opacity = '0';
+                filtersPanel.style.transform = 'translateY(-10px)';
+                
+                setTimeout(() => {
+                    filtersPanel.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    filtersPanel.style.opacity = '1';
+                    filtersPanel.style.transform = 'translateY(0)';
+                }, 10);
+            }
+        });
     }
-  });
+}
+
+function initViewPersistence() {
+    // Restore saved view mode
+    const savedView = localStorage.getItem('datalogViewMode') || 'grid';
+    const gridElement = document.getElementById('dataLogsGrid');
+    const viewButtons = document.querySelectorAll('.view-btn');
+    
+    if (gridElement) {
+        gridElement.className = `datalogs-content-grid ${savedView}-view`;
+    }
+    
+    viewButtons.forEach(btn => {
+        if (btn.dataset.view === savedView) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+function initSearchEnhancements() {
+    const searchInput = document.querySelector('.search-input');
+    const clearSearch = document.querySelector('.clear-search');
+    
+    if (clearSearch) {
+        clearSearch.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Add animation
+            this.style.transform = 'rotate(90deg)';
+            this.style.opacity = '0.6';
+            
+            setTimeout(() => {
+                window.location.href = this.href;
+            }, 200);
+        });
+    }
+    
+    if (searchInput) {
+        // Add search suggestions (future enhancement)
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.classList.add('search-focused');
+        });
+        
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.classList.remove('search-focused');
+        });
+    }
+}
+
+function addLoadingEffects() {
+    // Add loading effects to navigation links
+    const navLinks = document.querySelectorAll('.filter-item, .category-badge, .metadata-tag');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            this.style.opacity = '0.6';
+            this.innerHTML += ' <i class="fas fa-spinner fa-spin" style="margin-left: 0.5rem;"></i>';
+        });
+    });
+}
 </script>
 {% endblock %}

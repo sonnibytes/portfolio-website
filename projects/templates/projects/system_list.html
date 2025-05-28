@@ -1,339 +1,322 @@
-{% extends "base.html" %}
+<!----
+ * AURA Portfolio - Projects/Systems List Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.0.1 - Optimized for Component Architecture, w Enhanced Global Tags/Filters
+---->
+
+{% extends "projects/systems_base.html" %}
 {% load static %}
+{% load aura_filters %}
+{% load aura_components %}
 
-{% block title %}Systems Overview | ML DEVLOG{% endblock %}
-{% block meta_description %}Explore Python, Machine Learning, and AI systems developed by Sonni Gunnels{% endblock %}
+{% block systems_title %}Systems Overview{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'projects/css/systems.css' %}">
+{% block systems_css %}
+<style>
+/* Additional styles specific to system list */
+.systems-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-xl);
+}
+
+.system-card {
+    background: 
+        var(--gradient-glass),
+        rgba(13, 13, 31, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-xl);
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    transition: all var(--transition-normal);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.system-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    opacity: 0.8;
+}
+
+.system-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 
+        0 15px 40px rgba(0, 0, 0, 0.4),
+        var(--shadow-glow-teal);
+    border-color: rgba(38, 198, 218, 0.3);
+}
+
+.card-scanning-line {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(38, 198, 218, 0.1) 50%, 
+        transparent 100%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.system-card:hover .card-scanning-line {
+    opacity: 1;
+    animation: scanHorizontal 1s linear;
+}
+</style>
 {% endblock %}
 
-{% block body_class %}systems-page grid-pattern{% endblock %}
+{% block systems_breadcrumbs %}
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+<span class="breadcrumb-item active">
+    <i class="fas fa-th-large"></i>
+    <span>All Systems</span>
+</span>
+{% endblock %}
 
-{% block content %}
-<!-- Systems HUD Header -->
-<section class="systems-hero-section">
-    <div class="container">
-        <!-- HUD Corner Accents -->
-        <div class="hud-corner hud-corner-tl"></div>
-        <div class="hud-corner hud-corner-tr"></div>
-        <div class="hud-corner hud-corner-bl"></div>
-        <div class="hud-corner hud-corner-br"></div>
+{% block systems_header %}
+{% section_header title="Systems Command Center" subtitle="Advanced Development Projects & Solutions" icon="fas fa-project-diagram" show_metrics=True metric_1_value=total_systems metric_1_label="Total Systems" metric_1_icon="fas fa-server" metric_2_value=active_systems metric_2_label="Active" metric_2_icon="fas fa-check-circle" metric_3_value=avg_completion metric_3_label="Avg Complete" metric_3_icon="fas fa-chart-line" metric_4_value=featured_count metric_4_label="Featured" metric_4_icon="fas fa-star" %}
+{% endblock %}
+
+{% block systems_content %}
+
+<!-- Filter Variables for Template -->
+{% with show_filters=True show_breadcrumbs=True %}
+
+<!-- Systems Grid -->
+{% if systems %}
+<div class="systems-grid">
+    {% for system in systems %}
+    <article class="system-card" 
+             data-system="{{ system.system_id }}" 
+             data-status="{{ system.status }}"
+             data-type="{{ system.system_type.slug|default:'general' }}"
+             data-complexity="{{ system.complexity }}"
+             data-technologies="{% for tech in system.technologies.all %}{{ tech.slug }}{% if not forloop.last %},{% endif %}{% endfor %}">
         
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <h1 class="systems-title">
-                    SYSTEM<span class="text-purple">MODULES</span>
-                    <span class="systems-subtitle">Active Project Catalog</span>
-                </h1>
-                <div class="systems-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">{{ total_systems }}</div>
-                        <div class="stat-label">DEPLOYED</div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <div class="stat-value">{{ systems_in_development }}</div>
-                        <div class="stat-label">IN DEV</div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <div class="stat-value">{{ avg_completion|floatformat:0 }}%</div>
-                        <div class="stat-label">AVG COMPLETE</div>
-                    </div>
-                </div>
+        <!-- System Header -->
+        <div class="system-card-header">
+            <div class="system-id">{{ system.system_id }}</div>
+            <div class="system-status">
+                <div class="status-indicator {{ system.status }}"></div>
+                <span class="status-text">{{ system.get_status_display|upper }}</span>
             </div>
-            <div class="col-lg-4">
-                <div class="systems-visual">
-                    <!-- System Status Display -->
-                    <div class="status-display">
-                        <div class="status-ring">
-                            <div class="status-indicator active"></div>
-                            <div class="status-text">ALL SYSTEMS OPERATIONAL</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Featured Systems Showcase -->
-{% if featured_systems %}
-<section class="featured-systems-section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">FEATURED SYSTEMS</h2>
-            <div class="section-divider"></div>
         </div>
         
-        <div class="featured-systems-grid">
-            {% for system in featured_systems %}
-            <div class="featured-system-card">
-                <div class="system-header">
-                    <div class="system-id">{{ system.system_id }}</div>
-                    <div class="system-status" style="--status-color: {{ system.get_status_color }}">
-                        {{ system.get_status_display }}
-                    </div>
-                </div>
-                
-                <div class="system-image">
-                    {% if system.featured_image %}
-                    <img src="{{ system.featured_image.url }}" alt="{{ system.title }}">
-                    {% else %}
-                    <div class="image-placeholder">
-                        <i class="fas fa-microchip"></i>
-                    </div>
-                    {% endif %}
-                </div>
-                
-                <div class="system-content">
-                    <h3 class="system-title">{{ system.title }}</h3>
-                    <p class="system-excerpt">{{ system.excerpt }}</p>
-                    
-                    <div class="system-metrics">
-                        <div class="metric">
-                            <span class="metric-label">COMPLEXITY</span>
-                            <span class="metric-value">{{ system.get_complexity_display }}</span>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">PROGRESS</span>
-                            <span class="metric-value">{{ system.completion_percent }}%</span>
-                        </div>
-                    </div>
-                    
-                    <div class="system-tech">
-                        {% for tech in system.technologies.all|slice:":4" %}
-                        <span class="tech-badge" style="--tech-color: {{ tech.color }}">
-                            {{ tech.name }}
-                        </span>
-                        {% endfor %}
-                    </div>
-                    
-                    <a href="{{ system.get_absolute_url }}" class="system-access-btn">
-                        ACCESS SYSTEM <i class="fas fa-arrow-right"></i>
-                    </a>
+        <!-- System Visual -->
+        {% if system.thumbnail %}
+        <div class="system-visual">
+            <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}" loading="lazy">
+            <div class="visual-overlay">
+                <div class="overlay-content">
+                    <i class="fas fa-eye"></i>
+                    <span>View System</span>
                 </div>
             </div>
-            {% endfor %}
         </div>
-    </div>
-</section>
-{% endif %}
-
-<!-- Systems Filter HUD -->
-<section class="systems-filter-section">
-    <div class="container">
-        <div class="filter-hud">
-            <!-- Filter Controls -->
-            <div class="filter-controls">
-                <div class="filter-group">
-                    <label class="filter-label">SYSTEM TYPE</label>
-                    <select class="filter-select" onchange="updateFilters()">
-                        <option value="">ALL TYPES</option>
-                        {% for type in system_types %}
-                        <option value="{{ type.slug }}" {% if current_type == type.slug %}selected{% endif %}>
-                            {{ type.name }} ({{ type.systems_count }})
-                        </option>
-                        {% endfor %}
-                    </select>
+        {% endif %}
+        
+        <!-- System Content -->
+        <div class="system-content">
+            <h3 class="system-title">
+                <a href="{{ system.get_absolute_url }}">{{ system.title }}</a>
+            </h3>
+            
+            {% if system.subtitle %}
+            <p class="system-subtitle">{{ system.subtitle }}</p>
+            {% endif %}
+            
+            <p class="system-excerpt">{{ system.excerpt|default:system.description|truncatewords:15 }}</p>
+            
+            <!-- System Progress -->
+            <div class="system-progress">
+                <div class="progress-header">
+                    <span class="progress-label">Development Progress</span>
+                    <span class="progress-percentage">{{ system.completion_percent|default:"85" }}%</span>
                 </div>
-                
-                <div class="filter-group">
-                    <label class="filter-label">TECHNOLOGY</label>
-                    <select class="filter-select" onchange="updateFilters()">
-                        <option value="">ALL TECH</option>
-                        {% for tech in technologies %}
-                        <option value="{{ tech.slug }}" {% if current_tech == tech.slug %}selected{% endif %}>
-                            {{ tech.name }} ({{ tech.systems_count }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label class="filter-label">SORT BY</label>
-                    <select class="filter-select" onchange="updateFilters()">
-                        <option value="-created" {% if current_sort == '-created' %}selected{% endif %}>NEWEST FIRST</option>
-                        <option value="title" {% if current_sort == 'title' %}selected{% endif %}>NAME A-Z</option>
-                        <option value="-completion_percent" {% if current_sort == '-completion_percent' %}selected{% endif %}>COMPLETION</option>
-                        <option value="complexity" {% if current_sort == 'complexity' %}selected{% endif %}>COMPLEXITY</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label class="filter-label">SEARCH</label>
-                    <div class="search-input-container">
-                        <input type="text" class="search-input" placeholder="SEARCH SYSTEMS..." value="{{ current_search }}">
-                        <button class="search-btn" onclick="executeSearch()">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {{ system.completion_percent|default:'85' }}%;" data-width="{{ system.completion_percent|default:'85' }}%"></div>
                 </div>
             </div>
             
-            <!-- Quick Filter Tags -->
-            <div class="quick-filters">
-                <span class="filter-label">QUICK FILTERS:</span>
-                {% for type in system_types|slice:":5" %}
-                <a href="?type={{ type.slug }}" class="quick-filter-tag {% if current_type == type.slug %}active{% endif %}"
-                   style="--filter-color: {{ type.color }}">
-                    {{ type.code }}
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Systems Grid -->
-<section class="systems-grid-section">
-    <div class="container">
-        <div class="systems-grid">
-            {% for system in systems %}
-            <div class="system-card" data-system-type="{{ system.system_type.slug }}" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
-                <!-- System Header -->
-                <div class="system-card-header">
-                    <div class="system-id-badge">{{ system.system_id }}</div>
-                    <div class="system-type-hex" style="--type-color: {{ system.system_type.color }}">
-                        {{ system.system_type.code }}
-                    </div>
-                </div>
-                
-                <!-- System Image -->
-                <div class="system-image">
-                    {% if system.thumbnail %}
-                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
-                    {% else %}
-                    <div class="image-placeholder">
-                        <i class="fas fa-code"></i>
-                    </div>
-                    {% endif %}
-                    
-                    <!-- Status Overlay -->
-                    <div class="status-overlay">
-                        <div class="status-indicator" style="--status-color: {{ system.get_status_color }}"></div>
-                        <span class="status-text">{{ system.get_status_display }}</span>
-                    </div>
-                </div>
-                
-                <!-- System Info -->
-                <div class="system-info">
-                    <h3 class="system-name">{{ system.title }}</h3>
-                    <p class="system-description">{{ system.excerpt|truncatewords:15 }}</p>
-                    
-                    <!-- Progress Bar -->
-                    <div class="progress-container">
-                        <div class="progress-label">
-                            <span>COMPLETION</span>
-                            <span>{{ system.completion_percent }}%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ system.completion_percent }}%"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Technologies -->
-                    <div class="system-technologies">
-                        {% for tech in system.technologies.all|slice:":3" %}
-                        <span class="tech-pill" style="--tech-color: {{ tech.color }}">
-                            {% if tech.icon %}<i class="fab {{ tech.icon }}"></i>{% endif %}
-                            {{ tech.name }}
-                        </span>
-                        {% endfor %}
-                        {% if system.technologies.count > 3 %}
-                        <span class="tech-pill more">+{{ system.technologies.count|add:"-3" }}</span>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- System Actions -->
-                    <div class="system-actions">
-                        <a href="{{ system.get_absolute_url }}" class="action-btn primary">
-                            <i class="fas fa-eye"></i> VIEW SYSTEM
-                        </a>
-                        {% if system.live_url %}
-                        <a href="{{ system.live_url }}" target="_blank" class="action-btn secondary">
-                            <i class="fas fa-external-link-alt"></i> LIVE DEMO
-                        </a>
-                        {% endif %}
-                        {% if system.github_url %}
-                        <a href="{{ system.github_url }}" target="_blank" class="action-btn tertiary">
-                            <i class="fab fa-github"></i> CODE
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- HUD Scanning Effect -->
-                <div class="scan-line"></div>
-            </div>
-            {% empty %}
-            <div class="col-12">
-                <div class="no-systems-message">
-                    <div class="no-systems-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <h3>NO SYSTEMS FOUND</h3>
-                    <p>No systems match your current filter criteria. Try adjusting your filters or search terms.</p>
-                    <a href="{% url 'projects:system_list' %}" class="btn btn-outline">CLEAR FILTERS</a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <!-- Pagination -->
-        {% if is_paginated %}
-        <div class="pagination-container">
-            <nav class="pagination-nav">
-                {% if page_obj.has_previous %}
-                <a href="?page=1" class="page-link first">&laquo;&laquo;</a>
-                <a href="?page={{ page_obj.previous_page_number }}" class="page-link prev">&laquo;</a>
+            <!-- System Metadata -->
+            <div class="system-metadata">
+                {% if system.system_type %}
+                <span class="meta-tag type-tag" style="--tag-color: {{ system.system_type.color }};">
+                    {% if system.system_type.icon %}<i class="{{ system.system_type.icon }}"></i>{% endif %}
+                    {{ system.system_type.name }}
+                </span>
                 {% endif %}
                 
-                <span class="page-info">
-                    PAGE {{ page_obj.number }} OF {{ page_obj.paginator.num_pages }}
+                <span class="meta-tag complexity-tag complexity-{{ system.complexity }}">
+                    <i class="fas fa-layer-group"></i>
+                    {{ system.get_complexity_display }}
                 </span>
                 
-                {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="page-link next">&raquo;</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link last">&raquo;&raquo;</a>
+                <span class="meta-tag tech-count-tag">
+                    <i class="fas fa-code"></i>
+                    {{ system.technologies.count }} Tech{{ system.technologies.count|pluralize:"hnologies,hnologies" }}
+                </span>
+            </div>
+            
+            <!-- Technologies Used -->
+            {% if system.technologies.exists %}
+            <div class="system-technologies">
+                {% for tech in system.technologies.all|slice:":4" %}
+                <span class="tech-badge" style="--tech-color: {{ tech.color }};" title="{{ tech.name }}">
+                    {% if tech.icon %}<i class="{{ tech.icon }}"></i>{% endif %}
+                    {{ tech.name }}
+                </span>
+                {% endfor %}
+                {% if system.technologies.count > 4 %}
+                <span class="tech-badge more-tech">+{{ system.technologies.count|add:"-4" }}</span>
                 {% endif %}
-            </nav>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
+        
+        <!-- System Footer -->
+        <div class="system-footer">
+            <div class="footer-actions">
+                {% if system.github_url %}
+                <a href="{{ system.github_url }}" class="action-btn github-btn" target="_blank" title="View Source">
+                    <i class="fab fa-github"></i>
+                </a>
+                {% endif %}
+                
+                {% if system.live_url %}
+                <a href="{{ system.live_url }}" class="action-btn demo-btn" target="_blank" title="Live Demo">
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+                {% endif %}
+                
+                {% if system.documentation_url %}
+                <a href="{{ system.documentation_url }}" class="action-btn docs-btn" target="_blank" title="Documentation">
+                    <i class="fas fa-book"></i>
+                </a>
+                {% endif %}
+            </div>
+            
+            <a href="{{ system.get_absolute_url }}" class="system-link">
+                <span>Access System</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Scanning Line Effect -->
+        <div class="card-scanning-line"></div>
+        
+    </article>
+    {% endfor %}
+</div>
+
+<!-- Load More Button (if pagination) -->
+{% if is_paginated and page_obj.has_next %}
+<div class="load-more-container">
+    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-primary load-more-btn">
+        <i class="fas fa-download"></i>
+        <span>Load More Systems</span>
+    </a>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="systems-empty-state">
+    <div class="empty-icon">
+        <i class="fas fa-project-diagram"></i>
     </div>
-</section>
+    <h3 class="empty-title">No Systems Found</h3>
+    <p class="empty-message">
+        {% if request.GET %}
+            No systems match your current filter criteria. Try adjusting your filters.
+        {% else %}
+            No systems have been added yet. Check back soon for exciting projects!
+        {% endif %}
+    </p>
+    {% if user.is_authenticated %}
+    <a href="{% url 'projects:system_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i>
+        Create New System
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endwith %}
+
 {% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'projects/js/systems.js' %}"></script>
+{% block systems_js %}
 <script>
-// Filter and search functionality
-function updateFilters() {
-    const typeFilter = document.querySelector('select[onchange="updateFilters()"]').value;
-    const techFilter = document.querySelectorAll('select[onchange="updateFilters()"]')[1].value;
-    const sortFilter = document.querySelectorAll('select[onchange="updateFilters()"]')[2].value;
+// Page-specific JavaScript for system list
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize system card animations with stagger
+    const systemCards = document.querySelectorAll('.system-card');
+    systemCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
     
-    const url = new URL(window.location);
-    url.searchParams.set('type', typeFilter);
-    url.searchParams.set('tech', techFilter);
-    url.searchParams.set('sort', sortFilter);
-    
-    window.location.href = url.toString();
-}
-
-function executeSearch() {
-    const searchTerm = document.querySelector('.search-input').value;
-    const url = new URL(window.location);
-    url.searchParams.set('search', searchTerm);
-    window.location.href = url.toString();
-}
-
-// Allow Enter key to trigger search
-document.querySelector('.search-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        executeSearch();
+    // Load more functionality
+    const loadMoreBtn = document.querySelector('.load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading...</span>';
+            
+            // Navigate after short delay for visual feedback
+            setTimeout(() => {
+                window.location.href = this.href;
+            }, 500);
+        });
     }
+    
+    // System card interactions
+    systemCards.forEach(card => {
+        const statusIndicator = card.querySelector('.status-indicator');
+        const progressBar = card.querySelector('.progress-bar');
+        
+        // Animate progress bar on hover
+        card.addEventListener('mouseenter', function() {
+            if (progressBar) {
+                const width = progressBar.dataset.width || progressBar.style.width;
+                progressBar.style.width = '0%';
+                setTimeout(() => {
+                    progressBar.style.transition = 'width 0.8s ease-out';
+                    progressBar.style.width = width;
+                }, 100);
+            }
+        });
+        
+        // Reset progress bar animation
+        card.addEventListener('mouseleave', function() {
+            if (progressBar) {
+                setTimeout(() => {
+                    progressBar.style.transition = 'width 0.3s ease';
+                }, 800);
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

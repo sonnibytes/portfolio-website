@@ -1,0 +1,374 @@
+
+<!----
+ * AURA Portfolio - Blog/Datalogs App Base Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.1.2 - Optimized for Component Architecture, Enhanced TemplateTags, Restructured, Updated Nav/Sub-Nav
+---->
+
+{% extends "base.html" %}
+{% load static %}
+
+{% load aura_filters %}
+{% load aura_components%}
+{% load blog_tags %}
+
+{% block title %}{% block datalogs_title %}DataLogs Archive{% endblock %} | AURA DataLogs{% endblock %}
+
+{% block extra_css %}
+<!-- DataLogs App Specific Styles -->
+<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/forms.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/glass-cards.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/datalogs.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/collapsed-hud.css' %}">
+
+{% pygments_css %}
+{% block datalogs_css %}{% endblock %}
+{% endblock %}
+
+{% block body_class %}datalogs-interface{% endblock %}
+
+
+{% block subnav %}
+<!-- DataLogs Sub-Navigation -->
+<nav class="app-subnav datalogs-subnav" id="datalogsSubnav">
+    <div class="container subnav-container">
+        
+        <div class="subnav-left">
+            <!-- DataLogs Brand/Title -->
+            <div class="subnav-title">
+                <i class="fas fa-database subnav-title-icon"></i>
+                <span>DataLogs</span>
+            </div>
+            
+            <!-- DataLogs Navigation Links -->
+            <div class="subnav-links">
+                <a href="{% url 'blog:post_list' %}" class="subnav-link {% active_nav 'blog:post_list' %}">
+                    <i class="fas fa-list subnav-icon"></i>
+                    <span>All Logs</span>
+                </a>
+                <a href="{% url 'blog:archive' %}" class="subnav-link {% active_nav 'blog:archive' %}">
+                    <i class="fas fa-history subnav-icon"></i>
+                    <span>Archive</span>
+                </a>
+                <a href="{% url 'blog:tags' %}" class="subnav-link {% active_nav 'blog:tags' %}">
+                    <i class="fas fa-tags subnav-icon"></i>
+                    <span>Tags</span>
+                </a>
+                <a href="{% url 'blog:search' %}" class="subnav-link {% active_nav 'blog:search' %}">
+                    <i class="fas fa-search subnav-icon"></i>
+                    <span>Search</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="subnav-right">
+            <!-- Real-time DataLogs Metrics -->
+            <div class="subnav-stats">
+                <div class="stat-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="stat-value">{{ total_posts|default:"24" }}</span>
+                    <span class="stat-label">Logs</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <span class="stat-value">{{ total_views|default:"1.2K" }}</span>
+                    <span class="stat-label">Views</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-calendar"></i>
+                    <span class="stat-value">{{ posts_this_month|default:"8" }}</span>
+                    <span class="stat-label">This Month</span>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="subnav-actions">
+                {% if user.is_authenticated %}
+                <a href="{% url 'blog:post_create' %}" class="subnav-action-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>New Log</span>
+                </a>
+                <a href="{% url 'blog:dashboard' %}" class="subnav-action-btn">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% endif %}
+                <button class="subnav-action-btn" id="datalogsFilterToggle">
+                    <i class="fas fa-filter"></i>
+                    <span>Filters</span>
+                </button>
+                <button class="subnav-action-btn" id="datalogsViewToggle">
+                    <i class="fas fa-th-large"></i>
+                    <span>View</span>
+                </button>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- DataLogs Status Scanning Line -->
+    <div class="subnav-scanning-line"></div>
+</nav>
+{% endblock %}
+
+{% block breadcrumbs %}
+{% if show_breadcrumbs %}
+<div class="container">
+    <nav class="datalogs-breadcrumbs">
+        <div class="breadcrumb-container">
+            <a href="{% url 'core:home' %}" class="breadcrumb-item">
+                <i class="fas fa-home"></i>
+                <span>AURA</span>
+            </a>
+            <i class="fas fa-chevron-right breadcrumb-separator"></i>
+            <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">
+                <i class="fas fa-database"></i>
+                <span>DataLogs</span>
+            </a>
+            {% block datalogs_breadcrumbs %}{% endblock %}
+        </div>
+        
+        <!-- Optional Category Status -->
+        {% if current_category %}
+        <div class="breadcrumb-status">
+            <div class="category-indicator">
+                <span class="category-code" style="color: {{ current_category.color }};">{{ current_category.code }}</span>
+            </div>
+            <span class="status-text">{{ current_category.name|upper }}</span>
+        </div>
+        {% elif current_tag %}
+        <div class="breadcrumb-status">
+            <div class="status-indicator info"></div>
+            <span class="status-text">TAG: {{ current_tag.name|upper }}</span>
+        </div>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- DataLogs Interface Container -->
+<div class="datalogs-interface-container">
+    
+    <!-- DataLogs Filter Panel (Collapsible) -->
+    {% if show_filters %}
+    <div class="datalogs-filter-panel" id="datalogsFilterPanel" style="display: none;">
+        <div class="filter-panel-header">
+            <h3 class="filter-title">
+                <i class="fas fa-sliders-h"></i>
+                DataLog Filters
+            </h3>
+            <button class="filter-close" id="closeFilters">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="filter-panel-content">
+            <form method="get" class="filter-form" id="datalogsFilterForm">
+                
+                <!-- Category Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Categories</label>
+                    <div class="filter-options category-filters">
+                        {% for category in categories %}
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="category" value="{{ category.slug }}" {% if category.slug in request.GET.category %}checked{% endif %}>
+                            <span class="category-badge" style="--cat-color: {{ category.color }};">{{ category.code }}</span>
+                            <span>{{ category.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <div class="filter-options">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="status" value="draft" {% if 'draft' in request.GET.status %}checked{% endif %}>
+                            <span class="status-indicator draft"></span>
+                            <span>Draft</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="status" value="published" {% if 'published' in request.GET.status %}checked{% endif %}>
+                            <span class="status-indicator published"></span>
+                            <span>Published</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Tag Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Tags</label>
+                    <div class="filter-search">
+                        <input type="text" class="tag-search" placeholder="Search tags..." id="tagSearch">
+                    </div>
+                    <div class="filter-options tag-filters" id="tagFilters">
+                        {% for tag in tags %}
+                        <label class="filter-checkbox tag-option" data-tag="{{ tag.name|lower }}">
+                            <input type="checkbox" name="tags" value="{{ tag.slug }}" {% if tag.slug in request.GET.tags %}checked{% endif %}>
+                            <span class="tech-tag">{{ tag.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Date Range Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Date Range</label>
+                    <div class="filter-date-range">
+                        <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="date-input">
+                        <span class="date-separator">to</span>
+                        <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="date-input">
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                        Apply Filters
+                    </button>
+                    <button type="button" class="btn btn-outline" id="clearFilters">
+                        <i class="fas fa-times"></i>
+                        Clear All
+                    </button>
+                </div>
+                
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Main DataLogs Content Area -->
+    <div class="datalogs-content-area">
+        <div class="container">
+            
+            <!-- Page Header Section -->
+            {% block datalogs_header %}
+            {% if page_title %}
+            {% section_header title=page_title subtitle=page_subtitle icon=page_icon %}
+            {% endif %}
+            {% endblock %}
+            
+            <!-- Alert/Notification Bar -->
+            {% if messages %}
+            <div class="datalogs-alerts">
+                {% for message in messages %}
+                {% alert_box message message.tags dismissible=True %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Main Content Block -->
+            <main class="datalogs-main-content">
+                {% block datalogs_content %}
+                <!-- Individual datalog pages will override this -->
+                {% endblock %}
+            </main>
+            
+        </div>
+    </div>
+    
+</div>
+
+<!-- DataLogs Real-time Data Overlay -->
+<div class="datalogs-data-overlay" id="datalogsDataOverlay">
+    <div class="data-stream" id="datalogsDataStream">
+        <!-- Real-time datalog metrics will be populated here -->
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'blog/js/datalogs.js' %}"></script>
+{% block datalogs_js %}{% endblock %}
+
+<!-- Initialize DataLogs Interface -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize datalogs interface
+    if (typeof initDatalogsInterface === 'function') {
+        initDatalogsInterface();
+    }
+    
+    // Filter toggle functionality
+    const filterToggle = document.getElementById('datalogsFilterToggle');
+    const filterPanel = document.getElementById('datalogsFilterPanel');
+    const closeFilters = document.getElementById('closeFilters');
+    
+    if (filterToggle && filterPanel) {
+        filterToggle.addEventListener('click', function() {
+            const isVisible = filterPanel.style.display !== 'none';
+            filterPanel.style.display = isVisible ? 'none' : 'block';
+            this.classList.toggle('active', !isVisible);
+        });
+    }
+    
+    if (closeFilters && filterPanel) {
+        closeFilters.addEventListener('click', function() {
+            filterPanel.style.display = 'none';
+            filterToggle?.classList.remove('active');
+        });
+    }
+    
+    // View toggle functionality
+    const viewToggle = document.getElementById('datalogsViewToggle');
+    if (viewToggle) {
+        viewToggle.addEventListener('click', function() {
+            const contentArea = document.querySelector('.datalogs-main-content');
+            if (contentArea) {
+                contentArea.classList.toggle('grid-view');
+                contentArea.classList.toggle('list-view');
+                
+                const icon = this.querySelector('i');
+                if (contentArea.classList.contains('grid-view')) {
+                    icon.className = 'fas fa-list';
+                } else {
+                    icon.className = 'fas fa-th-large';
+                }
+            }
+        });
+    }
+    
+    // Tag search functionality
+    const tagSearch = document.getElementById('tagSearch');
+    const tagOptions = document.querySelectorAll('.tag-option');
+    
+    if (tagSearch && tagOptions.length > 0) {
+        tagSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            tagOptions.forEach(option => {
+                const tagName = option.dataset.tag;
+                if (tagName.includes(searchTerm)) {
+                    option.style.display = 'flex';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Clear filters functionality
+    const clearFilters = document.getElementById('clearFilters');
+    if (clearFilters) {
+        clearFilters.addEventListener('click', function() {
+            const form = document.getElementById('datalogsFilterForm');
+            if (form) {
+                form.reset();
+                // Redirect to clean URL
+                window.location.href = window.location.pathname;
+            }
+        });
+    }
+    
+    // DataLogs-specific initialization
+    {% block datalogs_inline_js %}{% endblock %}
+});
+</script>
+{% endblock %}
+                

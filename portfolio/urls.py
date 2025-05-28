@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -29,6 +30,8 @@ urlpatterns = [
     # Blog app URLs
     path("blog/", include("blog.urls", namespace="blog")),
     path("markdownx/", include("markdownx.urls")),
+    # Test new AURA global filters/templatetags
+    path("test-aura/", TemplateView.as_view(template_name="test_aura.html"), name="test_aura")
 ]
 
 # Serve media files in development

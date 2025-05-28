@@ -1,62 +1,118 @@
-{% extends "blog/base.html" %}
+<!----
+ * AURA Portfolio - Category Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
+---->
+
+{% extends "blog/datalogs_base.html" %}
 {% load static %}
 
-{% block blog_content %}
-<!-- Category List Header -->
-<div class="tech-frame corner-accent">
-  <div class="c-tl"></div>
-  <div class="c-tr"></div>
-  <div class="c-bl"></div>
-  <div class="c-br"></div>
-  
-  <!-- Category title with digital counter -->
-  <h1 class="list-page-title">
-    Category: {{ category.name }}
-    <span class="digital-counter">{{ posts.count }} LOG{{ post.count|pluralize|upper }} FOUND</span>
-  </h1>
-  
-  <!-- Category description -->
-  <p class="list-page-description">{{ category.description }}</p>
-  
-  <!-- List filters -->
-  <div class="list-filter-bar">
-    <span class="filter-label">FILTER:</span>
-    <a href="?sort=latest" class="filter-pill {% if current_sort == 'latest' %}active{% endif %}">Latest</a>
-    <a href="?sort=popular" class="filter-pill {% if current_sort == 'popular' %}active{% endif %}">Popular</a>
-    <a href="?sort=oldest" class="filter-pill {% if current_sort == 'oldest' %}active{% endif %}">Oldest</a>
-    
-    <!-- Sort dropdown -->
-    <div class="sort-container">
-      <select class="sort-dropdown" onchange="location = this.value;">
-        <option value="" disabled selected>SORT BY</option>
-        <option value="?sort=latest" {% if current_sort == 'latest' %}selected{% endif %}>Newest First</option>
-        <option value="?sort=oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
-        <option value="?sort=popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
-      </select>
-    </div>
-  </div>
-</div>
+{% load aura_filters %}
+{% comment %} {% load system_tags %} {% endcomment %}
+{% load blog_tags %}
 
-<!-- Posts Grid -->
-<div class="row g-4">
-  {% for post in posts %}
-    <div class="col-lg-4 col-md-6 mb-4">
-      {% include "blog/includes/post_card.html" with post=post %}
-    </div>
-  {% empty %}
-    <div class="col-12">
-      <div class="no-results">
-        <div class="no-results-icon"><i class="fas fa-folder-open"></i></div>
-        <h3 class="no-results-title">No logs found</h3>
-        <p class="no-results-message">No log entries are currently available matching this category.</p>
-        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-cyan">Back to DEVLOGs</a>
-      </div>
-    </div>
-  {% endfor %}
-</div>
+{% block title %}{{ category.name }} Category | DataLogs | AURA{% endblock %}
+{% block meta_description %}Browse Log entries in {{ category.name|upper }} category - {{ posts|length }} development insights and technical documentation.{% endblock %}
 
-<!-- Pagination -->
-{% if is_paginated %}
-  {% include "blog/includes/pagination.html" %}
-{% endif %}
+{% block datalogs_css %}
+<link rel="stylesheet" href="{% static 'blog/css/datalogs-list.css' %}">
+{% endblock %}
+
+{% block datalogs_body_class %}category-view{% endblock %}
+
+{% block datalogs_title %}[ CATEGORY: {{ category.name|upper }} ]{% endblock %}
+{% block datalogs_subtitle %}
+    {{ posts|length|format_number }} {{ category.name }} entries
+    {% if posts %}
+    | {% calculate 'multiply' posts.0.reading_time posts|length as total_reading %}{{ total_reading|format_duration }} total reading
+    {% endif %}
+{% endblock %}
+
+{% block datalogs_filters %}
+<div class="category-info-panel">
+    <div class="glass-card category-header-card">
+        <div class="category-display" style="--category-color: {{ category|category_color }};">
+            <div class="category-icon-large">
+                {% if category.icon %}
+                <i class="{{ category|category_icon }}"></i>
+                {% else %}
+                <span class="category-code-large">{{ category.code|default:"LOG" }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="category-info">
+                <h2 class="category-name">{{ category.name }}</h2>
+                {% if category.description %}
+                <p class="category-description">{{ category.description }}</p>
+                {% endif %}
+                
+                <div class="category-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ posts|length|format_number }}</span>
+                        <span class="stat-label">Entries</span>
+                    </div>
+                    <div class="stat-item">
+                        {% calculate 'multiply' posts.0.reading_time|default:3 posts|length as total_reading %}
+                        <span class="stat-value">{{ total_reading|format_duration }}</span>
+                        <span class="stat-label">Total Reading</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ posts.0.published_date|time_since_published|default:"Recently" }}</span>
+                        <span class="stat-label">Latest Entry</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Category Navigation -->
+        <div class="category-nav">
+            <a href="{% url 'blog:post_list' %}" class="category-nav-btn">
+                <i class="fas fa-list"></i>
+                <span>All Categories</span>
+            </a>
+            
+            {% get_post_count_by_category as all_categories %}
+            {% for cat in all_categories|slice:":5" %}
+            {% if cat.slug != category.slug %}
+            <a href="{% url 'blog:category' slug=cat.slug %}" class="category-nav-btn" 
+               style="--category-color: {{ cat|category_color }};">
+                {% if cat.icon %}
+                <i class="{{ cat|category_icon }}"></i>
+                {% else %}
+                <span class="nav-code">{{ cat.code|default:"LOG" }}</span>
+                {% endif %}
+                <span>{{ cat.name }}</span>
+                <span class="nav-count">{{ cat.post_count }}</span>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block datalogs_content %}
+<!-- Category DataLogs Grid -->
+<div class="category-posts-grid">
+    {% for post in posts %}
+    {% render_post_card post show_excerpt=True card_type="category" %}
+    {% empty %}
+    <div class="glass-card no-posts-card">
+        <div class="no-posts-content">
+            <div class="no-posts-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h3 class="no-posts-title">No Entries in {{ category.name }}</h3>
+            <p class="no-posts-message">
+                There are currently no published entries in the {{ category.name }} category.
+            </p>
+            <div class="no-posts-actions">
+                <a href="{% url 'blog:post_list' %}" class="btn btn-primary">
+                    <i class="fas fa-list me-2"></i>View All DataLogs
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}

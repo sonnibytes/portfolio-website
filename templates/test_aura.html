@@ -1,0 +1,312 @@
+<!---
+* AURA Global Templatetags/Filters Test
+* See path root/test-aura to see all components in action
+* Version: 1.0.3 - Enhanced alert_box, progress bars, progress bar variations, updated section header
+-->
+
+{% extends "base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+
+{% block title %}AURA Template Tags Test{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="padding: 2rem 0;">
+        
+        <!-- Test Section Header -->
+        <header class="test-header">
+            <h1 class="display-title">AURA Template Tags Test</h1>
+            <p class="system-text">Testing all filters and components</p>
+        </header>
+        
+        <!-- Section Header Component Test -->
+        <section class="test-section">
+            <h2>🎯 Section Header Component</h2>
+            <div class="test-item">
+                {% section_header title="System Overview" subtitle="Development Status Dashboard" icon="fas fa-project-diagram" show_metrics=True metric_1_value="12" metric_1_label="Total Systems" metric_1_icon="fas fa-server" metric_2_value="8" metric_2_label="Active" metric_2_icon="fas fa-check-circle" metric_3_value="87" metric_3_label="Avg Complete" metric_3_icon="fas fa-chart-line" metric_4_value="3" metric_4_label="Featured" metric_4_icon="fas fa-star" status="operational" status_text="ONLINE" action_url="#" action_text="View Dashboard" action_icon="fas fa-external-link-alt" %}
+            </div>
+        </section>
+        
+        <!-- Mathematical Filters Test -->
+        <section class="test-section">
+            <h2>📊 Mathematical Filters</h2>
+            <div class="test-grid">
+                <div class="test-item">
+                    <strong>Number Formatting:</strong>
+                    <ul>
+                        <li>{{ 1500|format_number }} (should be "1.5K")</li>
+                        <li>{{ 2500000|format_number }} (should be "2.5M")</li>
+                        <li>{{ 125|format_duration }} (should be "2h 5m")</li>
+                        <li>{{ 1024000|file_size }} (should be "1.0 MB")</li>
+                    </ul>
+                </div>
+                
+                <div class="test-item">
+                    <strong>AURA IDs:</strong>
+                    <ul>
+                        <li>{{ 1|system_id_format }} (should be "SYS-001")</li>
+                        <li>{{ 42|datalog_id }} (should be "LOG-042")</li>
+                    </ul>
+                </div>
+                
+                <div class="test-item">
+                    <strong>Calculations:</strong>
+                    <ul>
+                        <li>75 of 100 = {{ 75|percentage:100 }}% (should be "75.0%")</li>
+                        <li>Progress width: {{ 85|progress_width:100 }}% (should be "85%")</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Component Tests -->
+        <section class="test-section">
+            <h2>🧩 UI Components</h2>
+            
+            <!-- Progress Bars -->
+            <div class="test-item">
+                <h3>Enhanced Progress Bars</h3>
+                <div style="margin: 2rem 0;">
+                    {% progress_bar 75 100 color="teal" show_text=True label="System Development" size="md" %}
+                </div>
+                <div style="margin: 2rem 0;">
+                    {% progress_bar 45 100 color="coral" show_text=True label="Testing Phase" size="md" %}
+                </div>
+                <div style="margin: 2rem 0;">
+                    {% progress_bar 92 100 color="mint" show_text=True label="Deployment Ready" size="md" %}
+                </div>
+                
+                <h4 style="margin-top: 2rem; color: var(--color-lavender);">Progress with Icons</h4>
+                <div style="margin: 1rem 0;">
+                    {% progress_bar_with_icon 68 100 icon="fas fa-code" label="Code Development" color="lavender" %}
+                </div>
+                <div style="margin: 1rem 0;">
+                    {% progress_bar_with_icon 85 100 icon="fas fa-bug" label="Bug Fixes" color="coral" %}
+                </div>
+                
+                <h4 style="margin-top: 2rem; color: var(--color-teal);">Indeterminate Progress</h4>
+                <div style="margin: 1rem 0;">
+                    {% indeterminate_progress color="teal" label="Processing data..." %}
+                </div>
+                
+                <h4 style="margin-top: 2rem; color: var(--color-yellow);">Step Progress</h4>
+                <div style="margin: 1rem 0;">
+                    {% progress_steps 2 4 step_labels="Setup,Configure,Deploy,Complete" %}
+                </div>
+            </div>
+            
+            <!-- Circular Progress -->
+            <div class="test-item">
+                <h3>Circular Progress</h3>
+                <div style="display: flex; gap: 1rem; margin: 1rem 0;">
+                    {% circular_progress 85 100 size="80px" color="teal" %}
+                    {% circular_progress 60 100 size="80px" color="lavender" %}
+                    {% circular_progress 92 100 size="80px" color="mint" %}
+                </div>
+            </div>
+            
+            <!-- Status Indicators -->
+            <div class="test-item">
+                <h3>Status Indicators</h3>
+                <div style="display: flex; gap: 1rem; align-items: center; margin: 1rem 0;">
+                    {% status_indicator "operational" size="md" with_text=True pulsing=True %}
+                    {% status_indicator "warning" size="md" with_text=True pulsing=True %}
+                    {% status_indicator "error" size="md" with_text=True pulsing=True %}
+                </div>
+            </div>
+            
+            <!-- Tech Badges -->
+            <div class="test-item">
+                <h3>Technology Badges</h3>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0;">
+                    {% tech_badge "Python" icon="fab fa-python" color="#3776ab" size="md" %}
+                    {% tech_badge "JavaScript" icon="fab fa-js-square" color="#f7df1e" size="md" %}
+                    {% tech_badge "React" icon="fab fa-react" color="#61dafb" size="md" %}
+                    {% tech_badge "Django" icon="fas fa-code" color="#092e20" size="md" %}
+                </div>
+            </div>
+            
+            <!-- Priority Tags -->
+            <div class="test-item">
+                <h3>Priority Tags</h3>
+                <div style="display: flex; gap: 0.5rem; margin: 1rem 0;">
+                    {% priority_tag 1 show_icon=True %}
+                    {% priority_tag 2 show_icon=True %}
+                    {% priority_tag 3 show_icon=True %}
+                    {% priority_tag 4 show_icon=True %}
+                </div>
+            </div>
+            
+            <!-- Metric Cards -->
+            <div class="test-item">
+                <h3>Metric Cards</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                    {% metric_card "1,247" "Active Users" icon="fas fa-users" color="teal" trend="+12%" %}
+                    {% metric_card "98.7%" "System Uptime" icon="fas fa-server" color="mint" trend="+0.3%" %}
+                    {% metric_card "142ms" "Response Time" icon="fas fa-tachometer-alt" color="lavender" trend="-8ms" %}
+                </div>
+            </div>
+            
+            <!-- Alert Box -->
+            <div class="test-item">
+                <h3>Alert Components</h3>
+                <div style="margin: 1rem 0;">
+                    {% alert_box "System integration test successful!" "success" dismissible=True %}
+                    {% alert_box "Some filters may need adjustment" "warning" dismissible=True %}
+                </div>
+            </div>
+            
+            <!-- Loading Spinner -->
+            <div class="test-item">
+                <h3>Loading Components</h3>
+                <div style="display: flex; gap: 2rem; align-items: center; margin: 1rem 0;">
+                    {% loading_spinner size="sm" color="teal" %}
+                    {% loading_spinner size="md" color="lavender" text="Loading..." %}
+                    {% loading_spinner size="lg" color="coral" %}
+                </div>
+            </div>
+            
+            <!-- Search Input -->
+            <div class="test-item">
+                <h3>Search Input</h3>
+                <div style="max-width: 400px; margin: 1rem 0;">
+                    {% search_input name="test_search" placeholder="Search AURA systems..." value="" %}
+                </div>
+            </div>
+            
+            <!-- Copy Button -->
+            <div class="test-item">
+                <h3>Interactive Components</h3>
+                <div style="margin: 1rem 0;">
+                    {% copy_button "https://github.com/your-repo/aura-portfolio" "Copy Repository URL" "URL Copied!" %}
+                </div>
+            </div>
+            
+        </section>
+        
+        <!-- Complex Components -->
+        <section class="test-section">
+            <h2>🎯 Complex Components</h2>
+            
+            <!-- Glass Card -->
+            <div class="test-item">
+                <h3>Glass Card Component</h3>
+                {% glass_card title="System Status" content="<p>All systems are operational. Performance metrics are within normal parameters.</p><ul><li>CPU: 23%</li><li>Memory: 67%</li><li>Network: Normal</li></ul>" footer="<small>Last updated: just now</small>" css_class="test-card" %}
+            </div>
+            
+            <!-- Sparkline -->
+            <div class="test-item">
+                <h3>Sparkline Charts</h3>
+                <div style="margin: 1rem 0;">
+                    <p>System Performance (Last 10 hours):</p>
+                    {% sparkline "65,70,68,72,75,73,78,82,79,85" color="teal" height="50px" %}
+                </div>
+            </div>
+            
+        </section>
+        
+        <!-- Time and Content Tests -->
+        <section class="test-section">
+            <h2>⏰ Time & Content Filters</h2>
+            <div class="test-grid">
+                <div class="test-item">
+                    <strong>Time Formatting:</strong>
+                    <ul>
+                        <li>Current timestamp: {% current_timestamp %}</li>
+                        <li>Star rating (4.2): {{ 4.2|star_rating }}</li>
+                    </ul>
+                </div>
+                
+                <div class="test-item">
+                    <strong>Text Processing:</strong>
+                    <ul>
+                        <li>Smart truncate: {{ "This is a very long text that should be truncated at a reasonable point to avoid cutting words in the middle"|truncate_smart:50 }}</li>
+                        <li>Word count: {{ "Hello world this is a test sentence"|count_words }} words</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+    </div>
+</div>
+
+<style>
+/* Test page styles */
+.test-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: var(--gradient-glass), rgba(13, 13, 31, 0.3);
+    border-radius: var(--border-radius-xl);
+    backdrop-filter: blur(20px);
+}
+
+.test-section {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: var(--gradient-glass), rgba(13, 13, 31, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-xl);
+    backdrop-filter: blur(15px);
+}
+
+.test-section h2 {
+    color: var(--color-teal);
+    margin-bottom: 1.5rem;
+    font-family: var(--font-heading);
+}
+
+.test-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.test-item {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 1.5rem;
+    border-radius: var(--border-radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.test-item h3 {
+    color: var(--color-lavender);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.test-item ul {
+    margin: 0.5rem 0;
+    padding-left: 1rem;
+}
+
+.test-item li {
+    margin: 0.25rem 0;
+    color: var(--color-text-secondary);
+}
+
+.test-card {
+    margin: 1rem 0;
+}
+
+/* Ensure components have proper spacing */
+.aura-progress-container {
+    margin: 0.5rem 0;
+}
+
+.status-indicator-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-text {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+</style>
+{% endblock %}
