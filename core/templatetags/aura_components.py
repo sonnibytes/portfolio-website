@@ -489,18 +489,26 @@ def alert_box(message, alert_type="info", dismissible=True, icon=""):
 
     alert_icon = icon or icons.get(alert_type, "fas fa-info-circle")
     dismiss_html = (
-        '<button class="alert-dismiss"><i class="fas fa-times"></i></button>'
+        """
+    <button class="alert-dismiss" onclick="this.parentElement.style.display='none'">
+        <i class="fas fa-times"></i>
+    </button>
+    """
         if dismissible
         else ""
     )
 
     html = f'''
     <div class="aura-alert alert-{alert_type} {"alert-dismissible" if dismissible else ""}">
-        <div class="alert-content">
-            <i class="{alert_icon} alert-icon"></i>
-            <span class="alert-text">{message}</span>
+        <div class="alert-main">
+            <div class="alert-icon-wrapper">
+                <i class="{alert_icon} alert-icon"></i>
+            </div>
+            <div class="alert-content">
+                <span class="alert-text">{message}</span>
+            </div>
+            {f'<div class="alert-actions">{dismiss_html}</div>' if dismissible else ""}
         </div>
-        {dismiss_html}
     </div>
     '''
     return mark_safe(html)
