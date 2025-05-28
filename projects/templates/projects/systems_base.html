@@ -1,191 +1,296 @@
 <!----
  * AURA Portfolio - Projects/Systems App Base Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.0.1 - Optimized for Component Architecture
+ * Version: 2.0.2 - Optimized for Component Architecture, w Enhanced Global Tags/Filters
 ---->
 
 
 {% extends "base.html" %}
 {% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+
+{% block title %}{% block systems_title %}Systems Overview{% endblock %} | AURA Systems{% endblock %}
 
 {% block extra_css %}
-<!-- Systems App Specific Styles -->
+<link rel="stylesheet" href="{% static 'css/components/navigation.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/forms.css' %}">
 {% block systems_css %}{% endblock %}
 {% endblock %}
 
-{% block body_class %}systems-app {% block systems_body_class %}{% endblock %}{% endblock %}
+{% block body_class %}systems-interface{% endblock %}
 
 {% block breadcrumbs %}
-<div class="container">
-    <nav class="hud-breadcrumbs" aria-label="Breadcrumb">
-        <a href="{% url 'core:home' %}" class="breadcrumb-item">
-            <i class="fas fa-home me-1"></i>Dashboard
-        </a>
-        <span class="breadcrumb-separator">/</span>
-        <a href="{% url 'projects:system_list' %}" class="breadcrumb-item">Systems</a>
-        {% block system_breadcrumbs %}{% endblock %}
-    </nav>
-</div>
+<!-- Breadcrumbs will be below the subnav -->
 {% endblock %}
 
 {% block content %}
-<!-- Systems Header Section -->
-<section class="systems-header">
-    <div class="container">
-        <div class="section-header">
-            <h1 class="section-title">
-                <i class="fas fa-project-diagram me-2"></i>
-                {% block system_title %}System Repository{% endblock %}
-            </h1>
-            <p class="section-subtitle">
-                {% block system_subtitle %}Advanced Python systems and machine learning implementations{% endblock %}
-            </p>
-        </div>
-        
-        <!-- Systems Navigation -->
-        <div class="systems-nav">
-            <div class="nav-filters">
-                {% block system_filters %}
-                <div class="filter-group">
-                    <label class="filter-label">System Type:</label>
-                    <select class="hud-select" id="systemTypeFilter">
-                        <option value="">All Types</option>
-                        {% for system_type in system_types %}
-                        <option value="{{ system_type.slug }}" {% if current_type == system_type.slug %}selected{% endif %}>
-                            {{ system_type.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
+<!-- Systems HUD Interface Container -->
+<div class="systems-interface-container">
+    
+    <!-- Systems Sub-Navigation (Sticky) -->
+    <nav class="systems-subnav" id="systemsSubnav">
+        <div class="container subnav-container">
+            
+            <div class="subnav-left">
+                <!-- Systems Brand/Title -->
+                <div class="subnav-title">
+                    <i class="fas fa-project-diagram subnav-title-icon"></i>
+                    <span>Systems Command Center</span>
                 </div>
                 
-                <div class="filter-group">
-                    <label class="filter-label">Technology:</label>
-                    <select class="hud-select" id="technologyFilter">
-                        <option value="">All Technologies</option>
-                        {% for tech in technologies %}
-                        <option value="{{ tech.slug }}" {% if current_tech == tech.slug %}selected{% endif %}>
-                            {{ tech.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                <!-- Systems Navigation Links -->
+                <div class="subnav-links">
+                    <a href="{% url 'projects:system_list' %}" class="subnav-link {% if 'system_list' in request.resolver_match.view_name %}active{% endif %}">
+                        <i class="fas fa-th-large subnav-icon"></i>
+                        <span>All Systems</span>
+                    </a>
+                    <a href="{% url 'projects:systems_dashboard' %}" class="subnav-link {% if 'dashboard' in request.resolver_match.view_name %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt subnav-icon"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{% url 'projects:featured_systems' %}" class="subnav-link {% if 'featured' in request.resolver_match.view_name %}active{% endif %}">
+                        <i class="fas fa-star subnav-icon"></i>
+                        <span>Featured</span>
+                    </a>
+                    <a href="{% url 'projects:system_timeline' %}" class="subnav-link {% if 'timeline' in request.resolver_match.view_name %}active{% endif %}">
+                        <i class="fas fa-history subnav-icon"></i>
+                        <span>Timeline</span>
+                    </a>
                 </div>
-                {% endblock %}
             </div>
             
-            <div class="nav-controls">
-                {% block system_controls %}
-                <a href="{% url 'projects:system_list' %}" class="nav-control">
-                    <i class="fas fa-th-large me-1"></i>Grid View
-                </a>
-                <a href="{% url 'projects:systems_dashboard' %}" class="nav-control">
-                    <i class="fas fa-chart-line me-1"></i>Analytics
-                </a>
-                {% endblock %}
+            <div class="subnav-right">
+                <!-- Real-time System Metrics -->
+                <div class="subnav-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-server"></i>
+                        <span class="stat-value">{{ total_systems|default:"12" }}</span>
+                        <span class="stat-label">Systems</span>
+                    </div>
+                    <span class="stat-separator">|</span>
+                    <div class="stat-item">
+                        <i class="fas fa-code"></i>
+                        <span class="stat-value">{{ active_systems|default:"8" }}</span>
+                        <span class="stat-label">Active</span>
+                    </div>
+                    <span class="stat-separator">|</span>
+                    <div class="stat-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="stat-value">{{ avg_completion|default:"87" }}%</span>
+                        <span class="stat-label">Complete</span>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="subnav-actions">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'projects:system_create' %}" class="subnav-action-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>New System</span>
+                    </a>
+                    {% endif %}
+                    <button class="subnav-action-btn" id="systemsFilterToggle">
+                        <i class="fas fa-filter"></i>
+                        <span>Filters</span>
+                    </button>
+                </div>
             </div>
+            
         </div>
         
-        <!-- System Status Dashboard -->
-        <div class="systems-dashboard">
-            <div class="dashboard-metrics">
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        <i class="fas fa-rocket"></i>
+        <!-- Systems Status Scanning Line -->
+        <div class="subnav-scanning-line"></div>
+    </nav>
+    
+    <!-- Breadcrumbs Navigation -->
+    {% if show_breadcrumbs %}
+    <div class="container">
+        <nav class="systems-breadcrumbs">
+            <div class="breadcrumb-container">
+                <a href="{% url 'core:home' %}" class="breadcrumb-item">
+                    <i class="fas fa-home"></i>
+                    <span>AURA</span>
+                </a>
+                <i class="fas fa-chevron-right breadcrumb-separator"></i>
+                <a href="{% url 'projects:system_list' %}" class="breadcrumb-item">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Systems</span>
+                </a>
+                {% block systems_breadcrumbs %}{% endblock %}
+            </div>
+            
+            <!-- Optional System Status Indicators -->
+            {% if current_system %}
+            <div class="breadcrumb-status">
+                <div class="status-indicator {{ current_system.status|default:'operational' }}"></div>
+                <span class="status-text">{{ current_system.get_status_display|upper|default:"OPERATIONAL" }}</span>
+            </div>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+    
+    <!-- Main Systems Content Area -->
+    <div class="systems-content-area">
+        <div class="container">
+            
+            <!-- Page Header Section -->
+            {% block systems_header %}
+            {% include 'components/section_header.html' with title=page_title subtitle=page_subtitle icon=page_icon %}
+            {% endblock %}
+            
+            <!-- Alert/Notification Bar -->
+            {% if messages %}
+            <div class="systems-alerts">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible">
+                    <div class="alert-content">
+                        <i class="fas fa-{{ message.tags|default:'info' }}-circle alert-icon"></i>
+                        <span class="alert-text">{{ message }}</span>
                     </div>
-                    <div class="metric-content">
-                        <div class="metric-value" data-counter="{{ total_systems|default:'12' }}">0</div>
-                        <div class="metric-label">Active Systems</div>
-                    </div>
+                    <button class="alert-dismiss" data-dismiss="alert">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Systems Filter Panel (Collapsible) -->
+            {% if show_filters %}
+            <div class="systems-filter-panel" id="systemsFilterPanel" style="display: none;">
+                <div class="filter-panel-header">
+                    <h3 class="filter-title">
+                        <i class="fas fa-sliders-h"></i>
+                        System Filters
+                    </h3>
+                    <button class="filter-close" id="closeFilters">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        <i class="fas fa-cogs"></i>
-                    </div>
-                    <div class="metric-content">
-                        <div class="metric-value" data-counter="{{ systems_in_development|default:'3' }}">0</div>
-                        <div class="metric-label">In Development</div>
-                    </div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        <i class="fas fa-code"></i>
-                    </div>
-                    <div class="metric-content">
-                        <div class="metric-value" data-counter="{{ technologies_count|default:'8' }}">0</div>
-                        <div class="metric-label">Technologies</div>
-                    </div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-icon">
-                        <i class="fas fa-tachometer-alt"></i>
-                    </div>
-                    <div class="metric-content">
-                        <div class="metric-value">{{ avg_completion|floatformat:1|default:'87.5' }}%</div>
-                        <div class="metric-label">Avg Completion</div>
-                    </div>
+                <div class="filter-panel-content">
+                    <form method="get" class="filter-form" id="systemsFilterForm">
+                        
+                        <!-- System Status Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">Status</label>
+                            <div class="filter-options status-filters">
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" name="status" value="deployed" {% if 'deployed' in request.GET.status %}checked{% endif %}>
+                                    <span class="status-indicator deployed"></span>
+                                    <span>Deployed</span>
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" name="status" value="in_development" {% if 'in_development' in request.GET.status %}checked{% endif %}>
+                                    <span class="status-indicator in_development"></span>
+                                    <span>Development</span>
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" name="status" value="testing" {% if 'testing' in request.GET.status %}checked{% endif %}>
+                                    <span class="status-indicator testing"></span>
+                                    <span>Testing</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- System Type Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">System Types</label>
+                            <div class="filter-options">
+                                {% for system_type in system_types %}
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" name="type" value="{{ system_type.slug }}" {% if system_type.slug in request.GET.type %}checked{% endif %}>
+                                    <span class="type-badge" style="--type-color: {{ system_type.color }};">{{ system_type.code }}</span>
+                                    <span>{{ system_type.name }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Technology Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">Technologies</label>
+                            <div class="filter-search">
+                                <input type="text" class="tech-search" placeholder="Search technologies..." id="techSearch">
+                            </div>
+                            <div class="filter-options tech-filters" id="techFilters">
+                                {% for tech in technologies %}
+                                <label class="filter-checkbox tech-option" data-tech="{{ tech.name|lower }}">
+                                    <input type="checkbox" name="tech" value="{{ tech.slug }}" {% if tech.slug in request.GET.tech %}checked{% endif %}>
+                                    <span class="tech-badge" style="--tech-color: {{ tech.color }};">
+                                        {% if tech.icon %}<i class="{{ tech.icon }}"></i>{% endif %}
+                                        {{ tech.name }}
+                                    </span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Complexity Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">Complexity Range</label>
+                            <div class="filter-range">
+                                <input type="range" name="complexity_min" min="1" max="5" value="{{ request.GET.complexity_min|default:'1' }}" class="complexity-range" id="complexityMin">
+                                <input type="range" name="complexity_max" min="1" max="5" value="{{ request.GET.complexity_max|default:'5' }}" class="complexity-range" id="complexityMax">
+                                <div class="range-display">
+                                    <span id="complexityDisplay">1 - 5</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                                Apply Filters
+                            </button>
+                            <button type="button" class="btn btn-outline" id="clearFilters">
+                                <i class="fas fa-times"></i>
+                                Clear All
+                            </button>
+                        </div>
+                        
+                    </form>
                 </div>
             </div>
+            {% endif %}
+            
+            <!-- Main Content Block -->
+            <main class="systems-main-content">
+                {% block systems_content %}
+                <!-- Individual system pages will override this -->
+                {% endblock %}
+            </main>
+            
         </div>
     </div>
-</section>
+    
+</div>
 
-<!-- Systems Content -->
-<section class="systems-content">
-    <div class="container">
-        {% block system_content %}{% endblock %}
+<!-- Systems Real-time Data Overlay -->
+<div class="systems-data-overlay" id="systemsDataOverlay">
+    <div class="data-stream" id="dataStream">
+        <!-- Real-time system metrics will be populated here -->
     </div>
-</section>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
-<!-- Systems App JavaScript -->
 <script src="{% static 'projects/js/systems.js' %}"></script>
-<script src="{% static 'js/components/charts.js' %}"></script>
 {% block systems_js %}{% endblock %}
-{% endblock %}
 
-{% block inline_js %}
-// Systems app initialization
-console.log('🚀 Systems App Initialized');
-
-// Initialize system-specific features
-if (typeof initSystemFeatures === 'function') {
-    initSystemFeatures();
-}
-
-// Filter functionality
-const systemTypeFilter = document.getElementById('systemTypeFilter');
-const technologyFilter = document.getElementById('technologyFilter');
-
-if (systemTypeFilter) {
-    systemTypeFilter.addEventListener('change', function() {
-        const params = new URLSearchParams(window.location.search);
-        if (this.value) {
-            params.set('type', this.value);
-        } else {
-            params.delete('type');
-        }
-        window.location.search = params.toString();
-    });
-}
-
-if (technologyFilter) {
-    technologyFilter.addEventListener('change', function() {
-        const params = new URLSearchParams(window.location.search);
-        if (this.value) {
-            params.set('tech', this.value);
-        } else {
-            params.delete('tech');
-        }
-        window.location.search = params.toString();
-    });
-}
-
-// Page-specific initialization
-{% block systems_inline_js %}{% endblock %}
+<!-- Initialize Systems Interface -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize systems interface
+    if (typeof initSystemsInterface === 'function') {
+        initSystemsInterface();
+    }
+    
+    // Systems-specific initialization
+    {% block systems_inline_js %}{% endblock %}
+});
+</script>
 {% endblock %}

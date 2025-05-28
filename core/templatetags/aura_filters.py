@@ -252,7 +252,7 @@ def star_rating(value, max_stars=5):
 
         full_stars = int(value)
         half_star = 1 if value - full_stars >= 0.5 else 0
-        empty_stars = max_stars = full_stars - half_star
+        empty_stars = max_stars - full_stars - half_star
 
         stars = "★" * full_stars
         if half_star:
