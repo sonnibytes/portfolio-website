@@ -161,14 +161,14 @@ def format_number(value):
 def file_size(bytes_value):
     """
     Converts bytes to human-readable file size.
-    Usage: {{ 1024000|file_size }} -> "1.0 MB"
+    Usage: {{ 1,024,000|file_size }} -> "1.0 MB"
     """
     try:
         bytes_value = float(bytes_value)
 
-        if bytes_value >= 1024**3:
+        if bytes_value >= 1024**3:  # 1,073,741,824
             return f"{bytes_value / (1024**3):.1f} GB"
-        elif bytes_value >= 1024**2:
+        elif bytes_value >= 1024**2:  # 1,048,576
             return f"{bytes_value / (1024**2):.1f} MB"
         elif bytes_value >= 1024:
             return f"{bytes_value / 1024:.1f} KB"

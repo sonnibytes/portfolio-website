@@ -1,7 +1,7 @@
 """
 AURA Portfolio - Global Template Components
 Advanced User Repository & Archive - Reusable UI components and complex template tags
-Version: 1.0.0
+Version: 1.0.1 - Fine-Tuned Alert Boxes & Progress Bars
 """
 
 from django import template
@@ -19,44 +19,65 @@ register = template.Library()
 
 @register.simple_tag
 def progress_bar(
-    value, total, css_class="", show_text=True, color="teal", height="6px"
+    value,
+    total,
+    css_class="",
+    show_text=True,
+    color="teal",
+    height="8px",
+    label="",
+    size="md",
 ):
     """
-    Generate AURA-style progress bar HTML.
-    Usage: {% progress_bar 75 100 css_class="system-progress"
-    show_text=True color="teal" %}
+    Generate enhanced AURA-style progress bar HTML.
+    Usage: {% progress_bar 75 100 css_class="system-progress" show_text=True color="teal" label="Development Progress" %}
     """
     try:
         percentage = min(100, max(0, (float(value) / float(total)) * 100))
 
-        color_vars = {
-            "teal": "var(--color-teal)",
-            "lavender": "var(--color-lavender)",
-            "coral": "var(--color-coral)",
-            "mint": "var(--color-mint)",
-            "yellow": "var(--color-yellow)",
-        }
+        # Size classes
+        size_classes = {"sm": "progress-sm", "md": "", "lg": "progress-lg"}
+        size_class = size_classes.get(size, "")
 
-        bar_color = color_vars.get(color, "var(--color-teal)")
+        # Color classes
+        color_class = f"progress-{color}"
+
+        # Label HTML
+        label_html = f'<div class="progress-label">{label}</div>' if label else ""
+
+        # Text HTML with charcoal styling
+        text_html = (
+            f'<div class="progress-text">{percentage:.1f}%</div>' if show_text else ""
+        )
 
         html = f'''
-        <div class="aura-progress-container {css_class}" style="height: {height};">
-            <div class="aura-progress-track"></div>
-            <div class="aura-progress-bar" 
-                 style="width: {percentage}%; background: {bar_color};" 
-                 data-percentage="{percentage}">
-                <div class="progress-glow"></div>
+        <div class="aura-progress-container {size_class} {css_class}">
+            {label_html}
+            <div class="aura-progress-wrapper">
+                <div class="aura-progress-track"></div>
+                <div class="aura-progress-bar {color_class}" 
+                     style="width: {percentage}%;" 
+                     data-percentage="{percentage}"
+                     data-color="{color}">
+                    <div class="progress-glow"></div>
+                </div>
             </div>
-            {f'<span class="progress-text">{percentage:.1f}%</span>'
-             if show_text else ""}
+            {text_html}
         </div>
         '''
         return mark_safe(html)
     except (ValueError, TypeError):
-        return mark_safe(
-            f'<div class="aura-progress-container {css_class}"> \
-            <div class="aura-progress-bar" style="width: 0%;"></div></div>'
-        )
+        return mark_safe(f"""
+        <div class="aura-progress-container {css_class}">
+            <div class="aura-progress-wrapper">
+                <div class="aura-progress-track"></div>
+                <div class="aura-progress-bar progress-{color}" style="width: 0%;">
+                    <div class="progress-glow"></div>
+                </div>
+            </div>
+            {f'<div class="progress-text">0%</div>' if show_text else ""}
+        </div>
+        """)
 
 
 @register.simple_tag
@@ -275,6 +296,162 @@ def metric_card(value, label, icon="", color="teal", trend="", size="md"):
 
 
 @register.simple_tag
+def progress_bar_with_icon(
+    value, total, icon="fas fa-tasks", label="Progress", color="teal", show_text=True
+):
+    """
+    Generate progress bar with icon and label.
+    Usage: {% progress_bar_with_icon 75 100 icon="fas fa-code" label="Development" color="teal" %}
+    """
+    try:
+        percentage = min(100, max(0, (float(value) / float(total)) * 100))
+        color_class = f"progress-{color}"
+
+        html = f'''
+        <div class="progress-with-icon">
+            <div class="progress-icon">
+                <i class="{icon}"></i>
+            </div>
+            <div class="progress-content">
+                <div class="progress-label">{label}</div>
+                <div class="aura-progress-container">
+                    <div class="aura-progress-wrapper">
+                        <div class="aura-progress-track"></div>
+                        <div class="aura-progress-bar {color_class}" 
+                             style="width: {percentage}%;" 
+                             data-percentage="{percentage}">
+                            <div class="progress-glow"></div>
+                        </div>
+                    </div>
+                    {f'<div class="progress-text">{percentage:.1f}%</div>' if show_text else ""}
+                </div>
+            </div>
+        </div>
+        '''
+        return mark_safe(html)
+    except (ValueError, TypeError):
+        return mark_safe('<div class="progress-with-icon">Error loading progress</div>')
+
+
+@register.simple_tag
+def indeterminate_progress(color="teal", label="Loading..."):
+    """
+    Generate indeterminate/loading progress bar.
+    Usage: {% indeterminate_progress color="teal" label="Processing data..." %}
+    """
+    color_class = f"progress-{color}"
+
+    html = f"""
+    <div class="aura-progress-container">
+        {f'<div class="progress-label">{label}</div>' if label else ""}
+        <div class="aura-progress-wrapper">
+            <div class="aura-progress-track"></div>
+            <div class="aura-progress-bar {color_class} indeterminate">
+                <div class="progress-glow"></div>
+            </div>
+        </div>
+    </div>
+    """
+    return mark_safe(html)
+
+
+@register.simple_tag
+def progress_steps(current_step, total_steps, step_labels=""):
+    """
+    Generate step progress indicator.
+    Usage: {% progress_steps 2 4 step_labels="Setup,Config,Deploy,Complete" %}
+    """
+    try:
+        current = int(current_step)
+        total = int(total_steps)
+        labels = step_labels.split(",") if step_labels else []
+
+        steps_html = ""
+        for i in range(1, total + 1):
+            if i < current:
+                step_class = "completed"
+            elif i == current:
+                step_class = "active"
+            else:
+                step_class = ""
+
+            label = labels[i - 1] if i <= len(labels) else f"Step {i}"
+
+            steps_html += f"""
+            <div class="progress-step-item">
+                <div class="progress-step {step_class}"></div>
+                <div class="step-label">{label}</div>
+            </div>
+            """
+
+        html = f"""
+        <div class="progress-steps-container">
+            <div class="progress-steps">
+                {steps_html}
+            </div>
+        </div>
+        """
+        return mark_safe(html)
+    except (ValueError, TypeError):
+        return mark_safe('<div class="progress-steps-error">Invalid step data</div>')
+
+
+@register.simple_tag
+def system_progress_card(title, systems_data):
+    """
+    Generate a card showing multiple system progress bars.
+    Usage: {% system_progress_card "Development Status" systems_list %}
+    """
+    html = f"""
+    <div class="system-progress-card glass-card">
+        <div class="card-header">
+            <h3 class="card-title">{title}</h3>
+        </div>
+        <div class="card-content">
+    """
+
+    try:
+        for system in systems_data:
+            name = system.get("name", "Unknown System")
+            progress = system.get("progress", 0)
+            status = system.get("status", "in_development")
+
+            color_map = {
+                "deployed": "mint",
+                "testing": "coral",
+                "in_development": "teal",
+                "published": "lavender",
+            }
+            color = color_map.get(status, "teal")
+
+            html += f"""
+            <div class="system-progress-item">
+                <div class="system-info">
+                    <span class="system-name">{name}</span>
+                    <span class="system-status">{status.replace("_", " ").title()}</span>
+                </div>
+                <div class="aura-progress-container progress-sm">
+                    <div class="aura-progress-wrapper">
+                        <div class="aura-progress-track"></div>
+                        <div class="aura-progress-bar progress-{color}" style="width: {progress}%;">
+                            <div class="progress-glow"></div>
+                        </div>
+                    </div>
+                    <div class="progress-text">{progress}%</div>
+                </div>
+            </div>
+            """
+    except (TypeError, AttributeError):
+        html += '<div class="error">Unable to load system data</div>'
+
+    html += """
+        </div>
+    </div>
+    """
+    return mark_safe(html)
+
+
+@register.simple_tag
 def system_metrics_grid(*metrics):
     """
     Generate grid of system metrics.
@@ -350,10 +527,12 @@ def nav_link(context, url_name, label, icon="", css_class=""):
 
 
 @register.inclusion_tag("components/glass_card.html")
-def glass_card(title="", content="", footer="", css_class="", with_header=True):
+def glass_card(title="", 
+               content="", footer="", css_class="", with_header=True):
     """
     Render a glass-morphism card component.
-    Usage: {% glass_card title="System Status" content="..." css_class="dashboard-card" %}
+    Usage: {% glass_card title="System Status" content="..."
+    css_class="dashboard-card" %}
     """
     return {
         "title": title,
@@ -400,7 +579,8 @@ def system_card_skeleton():
 def chart_container(chart_id, chart_type="line", height="300px", data_url=""):
     """
     Generate chart container for data visualization.
-    Usage: {% chart_container "systems-chart" "bar" height="400px" data_url="/api/systems/metrics/" %}
+    Usage: {% chart_container "systems-chart" "bar" height="400px"
+    data_url="/api/systems/metrics/" %}
     """
     html = f'''
     <div class="chart-container" style="height: {height};">
