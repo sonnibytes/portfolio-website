@@ -16,6 +16,7 @@ from django.utils import timezone
 
 import re
 from datetime import timedelta
+import random
 
 from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric
 from blog.models import Post, SystemLogEntry, Category
@@ -469,7 +470,7 @@ class TechnologyUsageAPIView(ListView):
         })
 
 
-# Separated for now, may combine w SystemMetricsAPIView
+# =============  Separated for now, may combine w SystemMetricsAPIView
 class DashboardMetricsAPIView(ListView):
     """
     API Enpoint for real-time dashboard metrics.
@@ -506,7 +507,7 @@ class DashboardMetricsAPIView(ListView):
                 'color': tech.color,
                 'icon': tech.icon,
             })
-        
+
         # System status distribution
         status_distribution = {}
         for status_choice in SystemModule.STATUS_CHOICES:
@@ -530,7 +531,7 @@ class DashboardMetricsAPIView(ListView):
                 'logged_at': log.logged_at.isoformat(),
                 'status': log.log_status
             })
-        
+
         # TODO: Add more useful performance metrics, these for testing
         data = {
             'timestamp': timezone.now().isoformat(),
@@ -548,6 +549,71 @@ class DashboardMetricsAPIView(ListView):
                 'response_time': '142ms',
                 'memory_usage': '67%',
                 'cpu_usage': '23%',
+            }
+        }
+
+        return JsonResponse(data)
+
+
+class SystemTimeSeriesAPIView(ListView):
+    """
+    API Endpoint for time-series data (charts)
+    """
+
+    model = SystemModule
+
+    def get(self, request, *args, **kwargs):
+        """Return time-series data for charts."""
+
+        # Get date range (default to last 30 days)
+        days = int(request.GET.get('days', 30))
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=days)
+
+        # Generate date range
+        date_range = []
+        current_date = start_date
+        while current_date <= end_date:
+            date_range.append(current_date.isoformat())
+            current_date += timedelta(days=1)
+        
+
+        # TODO: In real app, query actual data
+        # For now, generate sample data that shows realistic trends
+        def generate_trend_data(base_value, volatility=0.1, trend=0.02):
+            """Generate realistic trending data."""
+            data = []
+            current = base_value
+            for i in range(len(date_range)):
+                # Add trend and random variation
+                current *= (1 + trend + random.uniform(-volatility, volatility))
+                data.append(round(current, 2))
+            return data
+
+        # System Development progress over time
+        system_progress = generate_trend_data(65, 0.05, 0.01)
+
+        # DataLog entries over time
+        datalog_activity = generate_trend_data(45, 0.08, 0.015)
+
+        # Code contributions (lines added/modified)
+        code_activity = generate_trend_data(1200, 0.15, 0.02)
+
+        # Development hours logged
+        dev_hours = generate_trend_data(8, 0.2, 0.005)
+
+        data = {
+            'date_range': date_range,
+            'metrics': {
+                'system_progress': system_progress,
+                'datalog_activity': datalog_activity,
+                'code_activity': code_activity,
+                'dev_hours': dev_hours,
+            },
+            'meta': {
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat(),
+                'days': days
             }
         }
 
