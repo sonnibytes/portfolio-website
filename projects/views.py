@@ -249,10 +249,11 @@ class TechnologyDetailView(DetailView):
 class SystemsDashboardView(ListView):
     """
     Traditional Systems Dashboard (can redirect to unified dashboard or serve as systems-focused view)
+    Sending to Unified Temp for now can tweak later.
     """
 
     model = SystemModule
-    template_name = "projects/systems_dashboard.html"
+    template_name = "projects/unified_dashboard.html"
     context_object_name = "recent_systems"
 
     def get_queryset(self):
@@ -292,7 +293,7 @@ class SystemsDashboardView(ListView):
 
         # Recent system logs
         context['recent_logs'] = SystemLogEntry.objects.select_related(
-            'post', 'systems'
+            'post', 'system'
         ).order_by('-logged_at')[:5]
 
         # Systems by status for HUD-display

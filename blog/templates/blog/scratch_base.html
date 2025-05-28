@@ -1,333 +1,878 @@
-<!----
- * AURA Portfolio - Blog/Datalogs App Base Template
- * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.1.2 - Optimized for Component Architecture, Enhanced TemplateTags, Restructured, Updated Nav/Sub-Nav
----->
-
 {% extends "base.html" %}
 {% load static %}
-
 {% load aura_filters %}
-{% load aura_components%}
-{% load blog_tags %}
+{% load aura_components %}
 
 {% block title %}{% block datalogs_title %}DataLogs Archive{% endblock %} | AURA DataLogs{% endblock %}
 
 {% block extra_css %}
-<!-- DataLogs App Specific Styles -->
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/forms.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/glass-cards.css' %}">
 <link rel="stylesheet" href="{% static 'blog/css/datalogs.css' %}">
-<link rel="stylesheet" href="{% static 'blog/css/collapsed-hud.css' %}">
-
-{% pygments_css %}
 {% block datalogs_css %}{% endblock %}
 {% endblock %}
 
-{% block body_class %}datalogs-interface {% block datalogs_body_class %}{% endblock %}{% endblock %}
+{% block body_class %}datalogs-interface{% endblock %}
+
+{% block subnav %}
+<!-- DataLogs Sub-Navigation -->
+<nav class="app-subnav datalogs-subnav" id="datalogsSubnav">
+    <div class="container subnav-container">
+        
+        <div class="subnav-left">
+            <!-- DataLogs Brand/Title -->
+            <div class="subnav-title">
+                <i class="fas fa-database subnav-title-icon"></i>
+                <span>DataLogs Archive</span>
+            </div>
+            
+            <!-- DataLogs Navigation Links -->
+            <div class="subnav-links">
+                <a href="{% url 'blog:post_list' %}" class="subnav-link {% if 'post_list' in request.resolver_match.view_name %}active{% endif %}">
+                    <i class="fas fa-list subnav-icon"></i>
+                    <span>All Logs</span>
+                </a>
+                <a href="{% url 'blog:archive' %}" class="subnav-link {% if 'archive' in request.resolver_match.view_name %}active{% endif %}">
+                    <i class="fas fa-calendar-alt subnav-icon"></i>
+                    <span>Archive</span>
+                </a>
+                <a href="{% url 'blog:tag_list' %}" class="subnav-link {% if 'tag' in request.resolver_match.view_name %}active{% endif %}">
+                    <i class="fas fa-tags subnav-icon"></i>
+                    <span>Tags</span>
+                </a>
+                
+                <!-- Categories Dropdown -->
+                <div class="dropdown subnav-dropdown">
+                    <button class="subnav-link dropdown-toggle {% if current_category %}active{% endif %}" 
+                            type="button" 
+                            id="categoriesDropdown" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false">
+                        <i class="fas fa-folder subnav-icon"></i>
+                        <span>{% if current_category %}{{ current_category.name }}{% else %}Categories{% endif %}</span>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </button>
+                    <ul class="dropdown-menu aura-dropdown-menu" aria-labelledby="categoriesDropdown">
+                        <li>
+                            <a class="dropdown-item aura-dropdown-item" href="{% url 'blog:post_list' %}">
+                                <i class="fas fa-list dropdown-item-icon"></i>
+                                <span class="dropdown-item-text">All Categories</span>
+                                <span class="dropdown-item-count">{{ total_posts|default:"24" }}</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider aura-dropdown-divider"></li>
+                        {% for category in categories %}
+                        <li>
+                            <a class="dropdown-item aura-dropdown-item {% if category.slug == current_category %}active{% endif %}" 
+                               href="{% url 'blog:category' slug=category.slug %}">
+                                <div class="category-hexagon-mini" style="--hex-color: {{ category.color }};">
+                                    <span class="hexagon-text-mini">{{ category.code }}</span>
+                                </div>
+                                <span class="dropdown-item-text">{{ category.name }}</span>
+                                <span class="dropdown-item-count">{{ category.posts.count|default:"0" }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                        {% if categories.count > 0 %}
+                        <li><hr class="dropdown-divider aura-dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item aura-dropdown-item dropdown-item-special" href="#">
+                                <i class="fas fa-plus dropdown-item-icon"></i>
+                                <span class="dropdown-item-text">Manage Categories</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <a href="#" class="subnav-link" id="analyticsLink">
+                    <i class="fas fa-chart-bar subnav-icon"></i>
+                    <span>Analytics</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="subnav-right">
+            <!-- Real-time DataLog Metrics -->
+            <div class="subnav-stats">
+                <div class="stat-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="stat-value">{{ total_posts|default:"24" }}</span>
+                    <span class="stat-label">Entries</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <span class="stat-value">{{ total_views|default:"1.2K" }}</span>
+                    <span class="stat-label">Views</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-tags"></i>
+                    <span class="stat-value">{{ total_tags|default:"18" }}</span>
+                    <span class="stat-label">Tags</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-folder"></i>
+                    <span class="stat-value">{{ total_categories|default:"5" }}</span>
+                    <span class="stat-label">Categories</span>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="subnav-actions">
+                {% if user.is_authenticated %}
+                <a href="{% url 'blog:post_create' %}" class="subnav-action-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>New Entry</span>
+                </a>
+                {% endif %}
+                <button class="subnav-action-btn" id="datalogsFilterToggle">
+                    <i class="fas fa-filter"></i>
+                    <span>Filters</span>
+                </button>
+                <button class="subnav-action-btn" id="datalogsViewToggle">
+                    <i class="fas fa-th-large"></i>
+                    <span>View</span>
+                </button>
+                <button class="subnav-action-btn" id="datalogsSearchToggle">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </button>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- DataLogs Scanning Line -->
+    <div class="subnav-scanning-line"></div>
+</nav>
+{% endblock %}
+
+{% block breadcrumbs %}
+{% if show_breadcrumbs %}
+<div class="container">
+    <nav class="datalogs-breadcrumbs">
+        <div class="breadcrumb-container">
+            <a href="{% url 'core:home' %}" class="breadcrumb-item">
+                <i class="fas fa-home"></i>
+                <span>AURA</span>
+            </a>
+            <i class="fas fa-chevron-right breadcrumb-separator"></i>
+            <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">
+                <i class="fas fa-database"></i>
+                <span>DataLogs</span>
+            </a>
+            {% block datalogs_breadcrumbs %}{% endblock %}
+        </div>
+        
+        <!-- Optional Category/Status Indicators -->
+        {% if current_post %}
+        <div class="breadcrumb-status">
+            <div class="status-indicator {{ current_post.status|default:'published' }}"></div>
+            <span class="status-text">{{ current_post.get_status_display|upper|default:"PUBLISHED" }}</span>
+            {% if current_post.category %}
+            <span class="category-code">{{ current_post.category.code }}</span>
+            {% endif %}
+        </div>
+        {% elif current_category %}
+        <div class="breadcrumb-status">
+            <div class="category-indicator" style="color: {{ current_category.color }};">
+                <span class="category-code">{{ current_category.code }}</span>
+            </div>
+            <span class="status-text">{{ current_category.name|upper }}</span>
+        </div>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}
 
 {% block content %}
-{% block breadcrumbs %}{% endblock %}
-<!-- DataLogs HUD Interface -->
+<!-- DataLogs Interface Container -->
 <div class="datalogs-interface-container">
     
-    <!-- DataLogs Sub-Navigation (Immediately under Main Nav)-->
-    <section class="datalogs-subnav {% block subnav_class %}{% endblock %}">
-        <div class="container subnav-container">
-            <div class="subnav-left">
-                <div class="subnav-title">
-                    <i class="fas fa-database subnav-title-icon"></i>
-                    {% block subnav_title %}DataLogs{% endblock %}
+    <!-- DataLogs Filter Panel (Collapsible) -->
+    {% if show_filters %}
+    <div class="datalogs-filter-panel" id="datalogsFilterPanel" style="display: none;">
+        <div class="filter-panel-header">
+            <h3 class="filter-title">
+                <i class="fas fa-sliders-h"></i>
+                DataLog Filters
+            </h3>
+            <button class="filter-close" id="closeFilters">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="filter-panel-content">
+            <form method="get" class="filter-form" id="datalogsFilterForm">
+                
+                <!-- Category Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Categories</label>
+                    <div class="filter-options">
+                        {% for category in categories %}
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="category" value="{{ category.slug }}" {% if category.slug in request.GET.category %}checked{% endif %}>
+                            <span class="category-badge" style="--category-color: {{ category.color }};">{{ category.code }}</span>
+                            <span>{{ category.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
                 </div>
                 
-                <nav class="subnav-links">
-                    <a href="{% url 'blog:post_list' %}" class="subnav-link {% active_nav 'blog:post_list' %}">
-                        <i class="fas fa-list subnav-icon"></i>
-                        <span>All Logs</span>
-                    </a>
-                    <a href="{% url 'blog:archive' %}" class="subnav-link {% active_nav 'blog:archive' %}">
-                        <i class="fas fa-calendar subnav-icon"></i>
-                        <span>Archive</span>
-                    </a>
-                    <a href="{% url 'blog:tags' %}" class="subnav-link {% active_nav 'blog:tags' %}">
-                        <i class="fas fa-tags subnav-icon"></i>
-                        <span>Tags</span>
-                    </a>
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'blog:dashboard' %}" class="subnav-link {% active_nav 'blog:dashboard' %}">
-                        <i class="fas fa-chart-line subnav-icon"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    {% endif %}
-                </nav>
-            </div>
-            
-            <div class="subnav-right">
-                {% blog_stats as stats %}
-
-                <!---Standard Stats (always visible)-->
-                {% comment %} <div class="subnav-stats">
-                    <div class="stat-item">
-                        <i class="fas fa-file-alt"></i>
-                        <span class="stat-value">{{ stats.total_posts|format_number }}</span>
-                        <span class="stat-label">Logs</span>
+                <!-- Tag Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Tags</label>
+                    <div class="filter-search">
+                        <input type="text" class="tag-search" placeholder="Search tags..." id="tagSearch">
                     </div>
-                    <span class="stat-separator">|</span>
-                    <div class="stat-item">
-                        <i class="fas fa-folder"></i>
-                        <span class="stat-value">{{ stats.total_categories|format_number }}</span>
-                        <span class="stat-label">Categories</span>
+                    <div class="filter-options tag-filters" id="tagFilters">
+                        {% for tag in tags %}
+                        <label class="filter-checkbox tag-option" data-tag="{{ tag.name|lower }}">
+                            <input type="checkbox" name="tag" value="{{ tag.slug }}" {% if tag.slug in request.GET.tag %}checked{% endif %}>
+                            <span class="tag-badge">{{ tag.name }}</span>
+                        </label>
+                        {% endfor %}
                     </div>
-                    <span class="stat-separator">|</span>
-                    <div class="stat-item">
-                        <i class="fas fa-clock"></i>
-                        <span class="stat-value">{{ stats.avg_reading_time|format_duration }}</span>
-                        <span class="stat-label">Avg Read</span>
-                    </div>
-                </div> {% endcomment %}
                 </div>
-
-                <!---Post Detail Specific Data (only on detail pages)-->
-                {% block subnav_detail_data %}{% endblock %}
-
-                <div class="subnav-actions">
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'blog:post_create' %}" class="subnav-action-btn">
-                        <i class="fas fa-plus"></i>
-                        <span>New Log</span>
-                    </a>
-                    {% endif %}
-                    <a href="{% url 'blog:search' %}" class="subnav-action-btn">
+                
+                <!-- Date Range Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Date Range</label>
+                    <div class="filter-date-range">
+                        <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="filter-date-input">
+                        <span class="date-separator">to</span>
+                        <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="filter-date-input">
+                    </div>
+                </div>
+                
+                <!-- Reading Time Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Reading Time</label>
+                    <div class="filter-options">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="quick" {% if 'quick' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Quick Read (< 5 min)</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="medium" {% if 'medium' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Medium Read (5-15 min)</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="long" {% if 'long' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Deep Dive (15+ min)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Featured Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Special</label>
+                    <div class="filter-options">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="featured" value="true" {% if request.GET.featured %}checked{% endif %}>
+                            <span class="featured-badge">Featured Entries</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="has_code" value="true" {% if request.GET.has_code %}checked{% endif %}>
+                            <span class="code-badge">Code Examples</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search"></i>
-                        <span>Search</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Breadcrumb Navigation (Under Sub-Nav) -->
-    <section class="datalogs-breadcrumbs-section">
-        <div class="container">
-            {% block datalogs_breadcrumbs %}
-            <nav class="breadcrumb-nav">
-                <a href="{% url 'core:home' %}" class="breadcrumb-item">
-                    <i class="fas fa-home"></i>
-                    Dashboard
-                </a>
-                <span class="breadcrumb-separator">/</span>
-                <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">DataLogs</a>
-                {% if category %}
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item active">{{ category.name }}</span>
-                {% elif tag %}
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item">Tags</span>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item active">{{ tag.name }}</span>
-                {% elif year %}
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item">Archive</span>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item active">
-                    {% if month %}{{ month_name }} {% endif %}{{ year }}
-                </span>
-                {% endif %}
-            </nav>
-            {% endblock %}
-        </div>
-    </section>
-    
-    <!-- DataLogs HUD Interface Header (Collapsible) -->
-    {% block hud_interface %}
-    <section class="datalogs-header-section">
-        <div class="container">
-            <div class="glass-card datalogs-header-card">
-                
-                <!-- System Status Bar -->
-                <div class="datalogs-status-bar">
-                    <div class="status-left">
-                        <div class="system-status">
-                            <div class="status-indicator operational pulse-effect"></div>
-                            <span class="status-text">DATALOG SYSTEM ONLINE</span>
-                        </div>
-                        <div class="system-metrics">
-                            <span class="metric-item">
-                                <span class="metric-value">{{ stats.total_posts|format_number }}</span>
-                                <span class="metric-label">Total Entries</span>
-                            </span>
-                            <span class="metric-separator">|</span>
-                            <span class="metric-item">
-                                <span class="metric-value">{{ published_count|default:stats.total_posts|format_number }}</span>
-                                <span class="metric-label">Published</span>
-                            </span>
-                            {% if user.is_authenticated %}
-                            <span class="metric-separator">|</span>
-                            <span class="metric-item">
-                                <span class="metric-value">{{ draft_count|default:"0"|format_number }}</span>
-                                <span class="metric-label">Drafts</span>
-                            </span>
-                            <span class="metric-separator">|</span>
-                            <span class="metric-item">
-                                <span class="metric-value">{{ stats.total_categories|format_number }}</span>
-                                <span class="metric-label">Categories</span>
-                            </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="status-right">
-                        <div class="timestamp-display">
-                            <i class="fas fa-clock me-2"></i>
-                            <span data-timestamp="datetime">{% now "Y-m-d H:i:s" %} UTC</span>
-                        </div>
-                    </div>
+                        Apply Filters
+                    </button>
+                    <button type="button" class="btn btn-outline" id="clearFilters">
+                        <i class="fas fa-times"></i>
+                        Clear All
+                    </button>
                 </div>
                 
-                <!-- DataLogs Navigation -->
-                <div class="datalogs-nav-container">
-                    <h1 class="datalogs-title display-title">
-                        {% block datalogs_title %}[ DATALOG ARCHIVES ]{% endblock %}
-                    </h1>
-                    <p class="datalogs-subtitle system-text">
-                        {% block datalogs_subtitle %}Development Insights & Technical Documentation{% endblock %}
-                    </p>
-                    
-                    <!-- Category Navigation HUD -->
-                    {% block category_nav %}
-                    {% render_category_nav current_category %}
-                    {% endblock %}
-                </div>
-            </div>
+            </form>
         </div>
-    </section>
-    {% endblock %}
+    </div>
+    {% endif %}
     
-    <!-- DataLogs Content Area -->
-    <main class="datalogs-main-content">
+    <!-- DataLogs Search Panel -->
+    <div class="datalogs-search-panel" id="datalogsSearchPanel" style="display: none;">
+        <div class="search-panel-content">
+            <form method="get" class="search-form" action="{% url 'blog:search' %}">
+                <div class="datalog-search-container">
+                    <i class="fas fa-search datalog-search-icon"></i>
+                    <input type="text" 
+                           name="q" 
+                           class="datalog-search-input" 
+                           placeholder="Search through DataLog entries..."
+                           value="{{ query|default:'' }}"
+                           autocomplete="off">
+                    <button type="submit" class="search-submit-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                
+                <div class="search-suggestions" id="searchSuggestions" style="display: none;">
+                    <!-- Dynamic search suggestions will be populated here -->
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Main DataLogs Content Area -->
+    <div class="datalogs-content-area">
         <div class="container">
             
-            <!-- DataLogs Filters & Search -->
-            {% block datalogs_filters %}{% endblock %}
-            
-            <!-- Main DataLogs Content -->
-            <div class="datalogs-content-area">
-                {% block datalogs_content %}
-                <!-- Default content - will be overridden in child templates -->
-                <div class="glass-card info-card">
-                    <h3>DataLog System Ready</h3>
-                    <p>Awaiting content implementation...</p>
-                </div>
-                {% endblock %}
-            </div>
-            
-            <!-- DataLogs Pagination -->
-            {% block datalogs_pagination %}
-            {% if is_paginated %}
-            <div class="datalogs-pagination">
-                {% render_pagination page_obj request %}
-            </div>
+            <!-- Page Header Section -->
+            {% block datalogs_header %}
+            {% if page_title %}
+            {% section_header title=page_title subtitle=page_subtitle icon=page_icon show_metrics=show_header_metrics %}
             {% endif %}
             {% endblock %}
             
+            <!-- Alert/Notification Bar -->
+            {% if messages %}
+            <div class="datalogs-alerts">
+                {% for message in messages %}
+                {% alert_box message message.tags dismissible=True %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- DataLog Stats (Optional) -->
+            {% if show_stats %}
+            <div class="datalog-stats-grid">
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_posts|format_number }}</span>
+                    <span class="datalog-stat-label">Total Entries</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_words|format_number }}</span>
+                    <span class="datalog-stat-label">Words Written</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ avg_reading_time|default:"8" }}min</span>
+                    <span class="datalog-stat-label">Avg Read Time</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_views|format_number }}</span>
+                    <span class="datalog-stat-label">Total Views</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Main Content Block -->
+            <main class="datalogs-main-content">
+                {% block datalogs_content %}
+                <!-- Individual datalog pages will override this -->
+                {% endblock %}
+            </main>
+            
         </div>
-    </main>
-    
-    <!-- DataLogs Sidebar (Optional) -->
-    {% block datalogs_sidebar %}{% endblock %}
+    </div>
     
 </div>
+
+<!-- DataLogs Analytics Overlay -->
+<div class="datalogs-data-overlay" id="datalogsDataOverlay">
+    <div class="data-stream" id="datalogsDataStream">
+        <h3 class="data-stream-title">
+            <i class="fas fa-chart-bar"></i>
+            DataLog Analytics
+        </h3>
+        <!-- Real-time analytics data will be populated here -->
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
-<!-- DataLogs App Scripts -->
+<!-- Bootstrap JavaScript (for dropdown functionality) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script src="{% static 'blog/js/datalogs.js' %}"></script>
 {% block datalogs_js %}{% endblock %}
 
+<!-- Initialize DataLogs Interface -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize DataLogs interface
-    if (typeof initDataLogsInterface === 'function') {
-        initDataLogsInterface();
+    // Initialize datalogs interface
+    if (typeof initDatalogsInterface === 'function') {
+        initDatalogsInterface();
     }
     
-    // Subnav mobile responsiveness
-    const subnavContainer = document.querySelector('.subnav-container');
-    if (window.innerWidth <= 767) {
-        subnavContainer.classList.add('mobile-view');
-    }
+    // Initialize Bootstrap dropdowns with custom options
+    initializeAuraDropdowns();
     
-    // Real-time timestamp updates
-    const timestamps = document.querySelectorAll('[data-timestamp]');
-    if (timestamps.length > 0) {
-        updateTimestamps();
-        setInterval(updateTimestamps, 1000);
-    }
+    // Filter toggle functionality
+    const filterToggle = document.getElementById('datalogsFilterToggle');
+    const filterPanel = document.getElementById('datalogsFilterPanel');
+    const closeFilters = document.getElementById('closeFilters');
     
-    function updateTimestamps() {
-        const now = new Date();
-        timestamps.forEach(element => {
-            const format = element.dataset.timestamp || 'datetime';
+    if (filterToggle && filterPanel) {
+        filterToggle.addEventListener('click', function() {
+            const isVisible = filterPanel.style.display !== 'none';
+            filterPanel.style.display = isVisible ? 'none' : 'block';
+            this.classList.toggle('active', !isVisible);
             
-            switch (format) {
-                case 'time':
-                    element.textContent = now.toLocaleTimeString('en-US', { 
-                        hour12: false, 
-                        timeZone: 'UTC' 
-                    }) + ' UTC';
-                    break;
-                case 'date':
-                    element.textContent = now.toISOString().split('T')[0];
-                    break;
-                case 'datetime':
-                default:
-                    element.textContent = now.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
-                    break;
+            // Close search panel if open
+            const searchPanel = document.getElementById('datalogsSearchPanel');
+            if (searchPanel && searchPanel.style.display !== 'none') {
+                searchPanel.style.display = 'none';
+                document.getElementById('datalogsSearchToggle')?.classList.remove('active');
             }
         });
     }
-
-    // Initialize HUD interface collapse/expand for detail pages
-    initHUDInterfaceToggle();
     
-    function initHUDInterfaceToggle() {
-        const hudInterface = document.querySelector('.datalogs-header-section');
-        const isDetailPage = document.body.classList.contains('post-detail');
-        
-        if (isDetailPage && hudInterface) {
-            // Collapse HUD interface on detail pages by default
-            hudInterface.classList.add('collapsed');
-            
-            // Add toggle button to subnav for detail pages
-            const subnavRight = document.querySelector('.subnav-right');
-            if (subnavRight) {
-                const toggleBtn = document.createElement('button');
-                toggleBtn.className = 'hud-toggle-btn';
-                toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
-                toggleBtn.title = 'Toggle HUD Interface';
-                
-                toggleBtn.addEventListener('click', function() {
-                    hudInterface.classList.toggle('collapsed');
-                    const icon = this.querySelector('i');
-                    icon.classList.toggle('fa-chevron-down');
-                    icon.classList.toggle('fa-chevron-up');
-                });
-                
-                subnavRight.insertBefore(toggleBtn, subnavRight.firstChild);
-            }
-        }
+    if (closeFilters && filterPanel) {
+        closeFilters.addEventListener('click', function() {
+            filterPanel.style.display = 'none';
+            filterToggle?.classList.remove('active');
+        });
     }
     
-    // Initialize category hexagon animations
-    const hexagons = document.querySelectorAll('.category-hexagon');
-    hexagons.forEach((hex, index) => {
-        hex.style.animationDelay = `${index * 0.1}s`;
-        hex.classList.add('fade-in-up');
-    });
+    // Search toggle functionality
+    const searchToggle = document.getElementById('datalogsSearchToggle');
+    const searchPanel = document.getElementById('datalogsSearchPanel');
     
-    // App-specific initialization
+    if (searchToggle && searchPanel) {
+        searchToggle.addEventListener('click', function() {
+            const isVisible = searchPanel.style.display !== 'none';
+            searchPanel.style.display = isVisible ? 'none' : 'block';
+            this.classList.toggle('active', !isVisible);
+            
+            // Close filter panel if open
+            if (filterPanel && filterPanel.style.display !== 'none') {
+                filterPanel.style.display = 'none';
+                filterToggle?.classList.remove('active');
+            }
+            
+            // Focus search input when opening
+            if (!isVisible) {
+                const searchInput = searchPanel.querySelector('.datalog-search-input');
+                if (searchInput) {
+                    setTimeout(() => searchInput.focus(), 100);
+                }
+            }
+        });
+    }
+    
+    // View toggle functionality
+    const viewToggle = document.getElementById('datalogsViewToggle');
+    if (viewToggle) {
+        viewToggle.addEventListener('click', function() {
+            const contentArea = document.querySelector('.datalogs-main-content');
+            if (contentArea) {
+                contentArea.classList.toggle('grid-view');
+                contentArea.classList.toggle('list-view');
+                
+                const icon = this.querySelector('i');
+                if (contentArea.classList.contains('grid-view')) {
+                    icon.className = 'fas fa-list';
+                } else {
+                    icon.className = 'fas fa-th-large';
+                }
+            }
+        });
+    }
+    
+    // Tag search functionality
+    const tagSearch = document.getElementById('tagSearch');
+    const tagOptions = document.querySelectorAll('.tag-option');
+    
+    if (tagSearch && tagOptions.length > 0) {
+        tagSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            tagOptions.forEach(option => {
+                const tagName = option.dataset.tag;
+                if (tagName.includes(searchTerm)) {
+                    option.style.display = 'flex';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Search suggestions functionality
+    const searchInput = document.querySelector('.datalog-search-input');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    
+    if (searchInput && searchSuggestions) {
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    loadSearchSuggestions(query);
+                }, 300);
+            } else {
+                searchSuggestions.style.display = 'none';
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchPanel?.contains(e.target)) {
+                searchSuggestions.style.display = 'none';
+            }
+        });
+    }
+    
+    // Analytics link functionality
+    const analyticsLink = document.getElementById('analyticsLink');
+    if (analyticsLink) {
+        analyticsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleAnalyticsOverlay();
+        });
+    }
+    
+    // Clear filters functionality
+    const clearFilters = document.getElementById('clearFilters');
+    if (clearFilters) {
+        clearFilters.addEventListener('click', function() {
+            const form = document.getElementById('datalogsFilterForm');
+            if (form) {
+                form.reset();
+                // Redirect to clean URL
+                window.location.href = window.location.pathname;
+            }
+        });
+    }
+    
+    // Date range validation
+    const dateFrom = document.querySelector('input[name="date_from"]');
+    const dateTo = document.querySelector('input[name="date_to"]');
+    
+    if (dateFrom && dateTo) {
+        dateFrom.addEventListener('change', function() {
+            if (dateTo.value && this.value > dateTo.value) {
+                dateTo.value = this.value;
+            }
+        });
+        
+        dateTo.addEventListener('change', function() {
+            if (dateFrom.value && this.value < dateFrom.value) {
+                dateFrom.value = this.value;
+            }
+        });
+    }
+    
+    // DataLogs-specific initialization
     {% block datalogs_inline_js %}{% endblock %}
 });
+
+// Search suggestions loader
+function loadSearchSuggestions(query) {
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    if (!searchSuggestions) return;
+    
+    // Simulate search suggestions (replace with actual API call)
+    const suggestions = [
+        'Machine Learning Fundamentals',
+        'Python Data Analysis',
+        'Django Best Practices',
+        'API Development',
+        'Database Optimization'
+    ].filter(suggestion => 
+        suggestion.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    if (suggestions.length > 0) {
+        searchSuggestions.innerHTML = suggestions.map(suggestion => 
+            `<div class="search-suggestion-item" onclick="selectSuggestion('${suggestion}')">
+                <i class="fas fa-search"></i>
+                <span>${suggestion}</span>
+            </div>`
+        ).join('');
+        searchSuggestions.style.display = 'block';
+    } else {
+        searchSuggestions.style.display = 'none';
+    }
+}
+
+// Select search suggestion
+function selectSuggestion(suggestion) {
+    const searchInput = document.querySelector('.datalog-search-input');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    
+    if (searchInput) {
+        searchInput.value = suggestion;
+        searchSuggestions.style.display = 'none';
+        
+        // Submit search
+        const searchForm = searchInput.closest('form');
+        if (searchForm) {
+            searchForm.submit();
+        }
+    }
+}
+
+// Analytics overlay toggle
+function toggleAnalyticsOverlay() {
+    const overlay = document.getElementById('datalogsDataOverlay');
+    if (overlay) {
+        overlay.classList.toggle('active');
+        
+        if (overlay.classList.contains('active')) {
+            loadDatalogAnalytics();
+        }
+    }
+}
+
+// Load datalog analytics
+function loadDatalogAnalytics() {
+    const dataStream = document.getElementById('datalogsDataStream');
+    if (dataStream) {
+        // Simulate analytics data (replace with actual API call)
+        const analytics = [
+            { label: 'Most Popular Category', value: 'Machine Learning' },
+            { label: 'Avg Words per Entry', value: '1,247' },
+            { label: 'Total Reading Time', value: '127h' },
+            { label: 'Top Tag', value: '#python' },
+            { label: 'Engagement Rate', value: '84%' }
+        ];
+        
+        const analyticsHTML = analytics.map(metric => 
+            `<div class="metric-stream-item">
+                <span class="metric-label">${metric.label}:</span>
+                <span class="metric-value">${metric.value}</span>
+            </div>`
+        ).join('');
+        
+        // Append to existing title
+        const existingTitle = dataStream.querySelector('.data-stream-title');
+        if (existingTitle) {
+            dataStream.innerHTML = existingTitle.outerHTML + analyticsHTML;
+        } else {
+            dataStream.innerHTML = analyticsHTML;
+        }
+    }
+}
+
+// Real-time search with debouncing
+function setupRealTimeSearch() {
+    const searchInput = document.querySelector('.datalog-search-input');
+    if (searchInput) {
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length >= 3) {
+                searchTimeout = setTimeout(() => {
+                    // Perform real-time search
+                    performRealTimeSearch(query);
+                }, 500);
+            }
+        });
+    }
+}
+
+function performRealTimeSearch(query) {
+    // This would typically make an AJAX call to your search endpoint
+    console.log('Searching for:', query);
+    
+    // Example: Update URL with search parameter
+    const url = new URL(window.location);
+    url.searchParams.set('q', query);
+    
+    // You could use fetch() here to get results without page reload
+    // fetch('/blog/search/?q=' + encodeURIComponent(query))
+    //     .then(response => response.json())
+    //     .then(data => updateSearchResults(data));
+}
+
+// Category color theming
+function applyCategoryTheming() {
+    const categoryElements = document.querySelectorAll('[data-category-color]');
+    categoryElements.forEach(element => {
+        const color = element.dataset.categoryColor;
+        if (color) {
+            element.style.setProperty('--category-accent', color);
+        }
+    });
+}
+
+// Initialize Bootstrap dropdowns with AURA styling
+function initializeAuraDropdowns() {
+    // Initialize all dropdowns
+    const dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+    const dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+        return new bootstrap.Dropdown(dropdownToggleEl, {
+            boundary: 'viewport',
+            display: 'dynamic'
+        });
+    });
+    
+    // Add custom AURA animation classes
+    dropdownElementList.forEach(function(dropdownToggle) {
+        const dropdownMenu = dropdownToggle.nextElementSibling;
+        
+        // Add show class with animation
+        dropdownToggle.addEventListener('show.bs.dropdown', function() {
+            if (dropdownMenu) {
+                dropdownMenu.classList.add('show');
+                // Animate dropdown arrow
+                const arrow = dropdownToggle.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(180deg)';
+                }
+            }
+        });
+        
+        // Remove show class with animation
+        dropdownToggle.addEventListener('hide.bs.dropdown', function() {
+            if (dropdownMenu) {
+                // Animate dropdown arrow back
+                const arrow = dropdownToggle.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(0deg)';
+                }
+                
+                // Delay removal of show class for smooth animation
+                setTimeout(() => {
+                    dropdownMenu.classList.remove('show');
+                }, 150);
+            }
+        });
+        
+        // Handle keyboard navigation
+        dropdownToggle.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                bootstrap.Dropdown.getInstance(this).toggle();
+            }
+        });
+    });
+    
+    // Close dropdowns when clicking outside subnav
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.subnav-dropdown')) {
+            dropdownElementList.forEach(function(dropdown) {
+                const instance = bootstrap.Dropdown.getInstance(dropdown);
+                if (instance) {
+                    instance.hide();
+                }
+            });
+        }
+    });
+}
+
+// Category dropdown specific functionality
+function setupCategoryDropdown() {
+    const categoryDropdown = document.getElementById('categoriesDropdown');
+    const categoryItems = document.querySelectorAll('.aura-dropdown-item[href*="category"]');
+    
+    if (categoryDropdown && categoryItems.length > 0) {
+        // Add click tracking for analytics
+        categoryItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const categoryName = this.querySelector('.dropdown-item-text').textContent;
+                
+                // Update dropdown button text to show selected category
+                const dropdownText = categoryDropdown.querySelector('span');
+                if (dropdownText && categoryName !== 'All Categories') {
+                    dropdownText.textContent = categoryName;
+                    categoryDropdown.classList.add('active');
+                } else if (categoryName === 'All Categories') {
+                    dropdownText.textContent = 'Categories';
+                    categoryDropdown.classList.remove('active');
+                }
+                
+                // Analytics tracking (if you have analytics)
+                if (typeof gtag !== 'undefined') {
+                    gtag('event', 'category_selected', {
+                        'category_name': categoryName,
+                        'page_location': window.location.href
+                    });
+                }
+            });
+        });
+    }
+}
+
+// Enhanced dropdown search functionality
+function setupDropdownSearch() {
+    const dropdowns = document.querySelectorAll('.aura-dropdown-menu');
+    
+    dropdowns.forEach(dropdown => {
+        // Add search functionality if many items
+        const items = dropdown.querySelectorAll('.aura-dropdown-item');
+        if (items.length > 8) {
+            addDropdownSearchBox(dropdown);
+        }
+    });
+}
+
+function addDropdownSearchBox(dropdown) {
+    const searchBox = document.createElement('div');
+    searchBox.className = 'dropdown-search-container';
+    searchBox.innerHTML = `
+        <div class="dropdown-search-box">
+            <i class="fas fa-search dropdown-search-icon"></i>
+            <input type="text" class="dropdown-search-input" placeholder="Search categories...">
+        </div>
+        <hr class="dropdown-divider aura-dropdown-divider">
+    `;
+    
+    dropdown.insertBefore(searchBox, dropdown.firstChild);
+    
+    const searchInput = searchBox.querySelector('.dropdown-search-input');
+    const items = dropdown.querySelectorAll('.aura-dropdown-item');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        items.forEach(item => {
+            const text = item.querySelector('.dropdown-item-text')?.textContent.toLowerCase() || '';
+            if (text.includes(searchTerm) || searchTerm === '') {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Prevent dropdown from closing when clicking search box
+    searchBox.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+}
+
+// Initialize all dropdown functionality
+setTimeout(() => {
+    setupCategoryDropdown();
+    setupDropdownSearch();
+}, 100);
+
+// Real-time category count updates (if you want dynamic counts)
+function updateCategoryCounts() {
+    const categoryItems = document.querySelectorAll('.aura-dropdown-item[href*="category"]');
+    
+    categoryItems.forEach(item => {
+        const countElement = item.querySelector('.dropdown-item-count');
+        const categorySlug = item.href.split('/').pop();
+        
+        if (countElement && categorySlug) {
+            // You could make an AJAX call here to get real-time counts
+            // fetch(`/api/category/${categorySlug}/count/`)
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         countElement.textContent = data.count;
+            //     });
+        }
+    });
+}
+
+// Update category counts every 5 minutes (optional)
+// setInterval(updateCategoryCounts, 300000);
 </script>
 {% endblock %}

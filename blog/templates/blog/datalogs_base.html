@@ -2,7 +2,7 @@
 <!----
  * AURA Portfolio - Blog/Datalogs App Base Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.1.2 - Optimized for Component Architecture, Enhanced TemplateTags, Restructured, Updated Nav/Sub-Nav
+ * Version: 2.1.3 - Cleaned/Optimized
 ---->
 
 {% extends "base.html" %}
@@ -16,11 +16,7 @@
 
 {% block extra_css %}
 <!-- DataLogs App Specific Styles -->
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/forms.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/glass-cards.css' %}">
 <link rel="stylesheet" href="{% static 'blog/css/datalogs.css' %}">
-<link rel="stylesheet" href="{% static 'blog/css/collapsed-hud.css' %}">
 
 {% pygments_css %}
 {% block datalogs_css %}{% endblock %}
@@ -55,20 +51,64 @@
                     <i class="fas fa-tags subnav-icon"></i>
                     <span>Tags</span>
                 </a>
-                <a href="{% url 'blog:search' %}" class="subnav-link {% active_nav 'blog:search' %}">
-                    <i class="fas fa-search subnav-icon"></i>
-                    <span>Search</span>
+                <!-- Categories Dropdown -->
+                <div class="dropdown subnav-dropdown">
+                    <button class="subnav-link dropdown-toggle {% if current_category %}active{% endif %}" 
+                            type="button" 
+                            id="categoriesDropdown" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false">
+                        <i class="fas fa-folder subnav-icon"></i>
+                        <span>{% if current_category %}{{ current_category.name }}{% else %}Categories{% endif %}</span>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </button>
+                    <ul class="dropdown-menu aura-dropdown-menu" aria-labelledby="categoriesDropdown">
+                        <li>
+                            <a class="dropdown-item aura-dropdown-item" href="{% url 'blog:post_list' %}">
+                                <i class="fas fa-list dropdown-item-icon"></i>
+                                <span class="dropdown-item-text">All Categories</span>
+                                <span class="dropdown-item-count">{{ total_posts|default:"24" }}</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider aura-dropdown-divider"></li>
+                        {% for category in categories %}
+                        <li>
+                            <a class="dropdown-item aura-dropdown-item {% if category.slug == current_category %}active{% endif %}" 
+                               href="{% url 'blog:category' slug=category.slug %}">
+                                <div class="category-hexagon-mini" style="--hex-color: {{ category.color }};">
+                                    <span class="hexagon-text-mini">{{ category.code }}</span>
+                                </div>
+                                <span class="dropdown-item-text">{{ category.name }}</span>
+                                <span class="dropdown-item-count">{{ category.posts.count|default:"0" }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                        {% if categories.count > 0 %}
+                        <li><hr class="dropdown-divider aura-dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item aura-dropdown-item dropdown-item-special" href="#">
+                                <i class="fas fa-plus dropdown-item-icon"></i>
+                                <span class="dropdown-item-text">Manage Categories</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <a href="#" class="subnav-link" id="analyticsLink">
+                    <i class="fas fa-chart-bar subnav-icon"></i>
+                    <span>Analytics</span>
                 </a>
             </div>
-        </div>
+                </div>
         
         <div class="subnav-right">
-            <!-- Real-time DataLogs Metrics -->
+            <!-- Real-time DataLog Metrics -->
             <div class="subnav-stats">
                 <div class="stat-item">
                     <i class="fas fa-file-alt"></i>
                     <span class="stat-value">{{ total_posts|default:"24" }}</span>
-                    <span class="stat-label">Logs</span>
+                    <span class="stat-label">Entries</span>
                 </div>
                 <span class="stat-separator">|</span>
                 <div class="stat-item">
@@ -78,9 +118,15 @@
                 </div>
                 <span class="stat-separator">|</span>
                 <div class="stat-item">
-                    <i class="fas fa-calendar"></i>
-                    <span class="stat-value">{{ posts_this_month|default:"8" }}</span>
-                    <span class="stat-label">This Month</span>
+                    <i class="fas fa-tags"></i>
+                    <span class="stat-value">{{ total_tags|default:"18" }}</span>
+                    <span class="stat-label">Tags</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-folder"></i>
+                    <span class="stat-value">{{ total_categories|default:"5" }}</span>
+                    <span class="stat-label">Categories</span>
                 </div>
             </div>
             
@@ -89,11 +135,7 @@
                 {% if user.is_authenticated %}
                 <a href="{% url 'blog:post_create' %}" class="subnav-action-btn">
                     <i class="fas fa-plus"></i>
-                    <span>New Log</span>
-                </a>
-                <a href="{% url 'blog:dashboard' %}" class="subnav-action-btn">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
+                    <span>New Entry</span>
                 </a>
                 {% endif %}
                 <button class="subnav-action-btn" id="datalogsFilterToggle">
@@ -104,12 +146,16 @@
                     <i class="fas fa-th-large"></i>
                     <span>View</span>
                 </button>
+                <button class="subnav-action-btn" id="datalogsSearchToggle">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </button>
             </div>
         </div>
         
     </div>
     
-    <!-- DataLogs Status Scanning Line -->
+    <!-- DataLogs Scanning Line -->
     <div class="subnav-scanning-line"></div>
 </nav>
 {% endblock %}
@@ -131,18 +177,21 @@
             {% block datalogs_breadcrumbs %}{% endblock %}
         </div>
         
-        <!-- Optional Category Status -->
-        {% if current_category %}
+        <!-- Optional Category/Status Indicators -->
+        {% if current_post %}
         <div class="breadcrumb-status">
-            <div class="category-indicator">
-                <span class="category-code" style="color: {{ current_category.color }};">{{ current_category.code }}</span>
+            <div class="status-indicator {{ current_post.status|default:'published' }}"></div>
+            <span class="status-text">{{ current_post.get_status_display|upper|default:"PUBLISHED" }}</span>
+            {% if current_post.category %}
+            <span class="category-code">{{ current_post.category.code }}</span>
+            {% endif %}
+        </div>
+        {% elif current_category %}
+        <div class="breadcrumb-status">
+            <div class="category-indicator" style="color: {{ current_category.color }};">
+                <span class="category-code">{{ current_category.code }}</span>
             </div>
             <span class="status-text">{{ current_category.name|upper }}</span>
-        </div>
-        {% elif current_tag %}
-        <div class="breadcrumb-status">
-            <div class="status-indicator info"></div>
-            <span class="status-text">TAG: {{ current_tag.name|upper }}</span>
         </div>
         {% endif %}
     </nav>
@@ -173,31 +222,14 @@
                 <!-- Category Filter -->
                 <div class="filter-group">
                     <label class="filter-label">Categories</label>
-                    <div class="filter-options category-filters">
+                    <div class="filter-options">
                         {% for category in categories %}
                         <label class="filter-checkbox">
                             <input type="checkbox" name="category" value="{{ category.slug }}" {% if category.slug in request.GET.category %}checked{% endif %}>
-                            <span class="category-badge" style="--cat-color: {{ category.color }};">{{ category.code }}</span>
+                            <span class="category-badge" style="--category-color: {{ category.color }};">{{ category.code }}</span>
                             <span>{{ category.name }}</span>
                         </label>
                         {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Status Filter -->
-                <div class="filter-group">
-                    <label class="filter-label">Status</label>
-                    <div class="filter-options">
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="status" value="draft" {% if 'draft' in request.GET.status %}checked{% endif %}>
-                            <span class="status-indicator draft"></span>
-                            <span>Draft</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="status" value="published" {% if 'published' in request.GET.status %}checked{% endif %}>
-                            <span class="status-indicator published"></span>
-                            <span>Published</span>
-                        </label>
                     </div>
                 </div>
                 
@@ -210,8 +242,8 @@
                     <div class="filter-options tag-filters" id="tagFilters">
                         {% for tag in tags %}
                         <label class="filter-checkbox tag-option" data-tag="{{ tag.name|lower }}">
-                            <input type="checkbox" name="tags" value="{{ tag.slug }}" {% if tag.slug in request.GET.tags %}checked{% endif %}>
-                            <span class="tech-tag">{{ tag.name }}</span>
+                            <input type="checkbox" name="tag" value="{{ tag.slug }}" {% if tag.slug in request.GET.tag %}checked{% endif %}>
+                            <span class="tag-badge">{{ tag.name }}</span>
                         </label>
                         {% endfor %}
                     </div>
@@ -221,9 +253,43 @@
                 <div class="filter-group">
                     <label class="filter-label">Date Range</label>
                     <div class="filter-date-range">
-                        <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="date-input">
+                        <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="filter-date-input">
                         <span class="date-separator">to</span>
-                        <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="date-input">
+                        <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="filter-date-input">
+                    </div>
+                </div>
+                
+                <!-- Reading Time Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Reading Time</label>
+                    <div class="filter-options">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="quick" {% if 'quick' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Quick Read (< 5 min)</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="medium" {% if 'medium' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Medium Read (5-15 min)</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="long" {% if 'long' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Deep Dive (15+ min)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Featured Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Special</label>
+                    <div class="filter-options">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="featured" value="true" {% if request.GET.featured %}checked{% endif %}>
+                            <span class="featured-badge">Featured Entries</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="has_code" value="true" {% if request.GET.has_code %}checked{% endif %}>
+                            <span class="code-badge">Code Examples</span>
+                        </label>
                     </div>
                 </div>
                 
@@ -243,6 +309,30 @@
     </div>
     {% endif %}
     
+    <!-- DataLogs Search Panel -->
+    <div class="datalogs-search-panel" id="datalogsSearchPanel" style="display: none;">
+        <div class="search-panel-content">
+            <form method="get" class="search-form" action="{% url 'blog:search' %}">
+                <div class="datalog-search-container">
+                    <i class="fas fa-search datalog-search-icon"></i>
+                    <input type="text" 
+                           name="q" 
+                           class="datalog-search-input" 
+                           placeholder="Search through DataLog entries..."
+                           value="{{ query|default:'' }}"
+                           autocomplete="off">
+                    <button type="submit" class="search-submit-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                
+                <div class="search-suggestions" id="searchSuggestions" style="display: none;">
+                    <!-- Dynamic search suggestions will be populated here -->
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <!-- Main DataLogs Content Area -->
     <div class="datalogs-content-area">
         <div class="container">
@@ -250,7 +340,7 @@
             <!-- Page Header Section -->
             {% block datalogs_header %}
             {% if page_title %}
-            {% section_header title=page_title subtitle=page_subtitle icon=page_icon %}
+            {% section_header title=page_title subtitle=page_subtitle icon=page_icon show_metrics=show_header_metrics %}
             {% endif %}
             {% endblock %}
             
@@ -260,6 +350,28 @@
                 {% for message in messages %}
                 {% alert_box message message.tags dismissible=True %}
                 {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- DataLog Stats (Optional) -->
+            {% if show_stats %}
+            <div class="datalog-stats-grid">
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_posts|format_number }}</span>
+                    <span class="datalog-stat-label">Total Entries</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_words|format_number }}</span>
+                    <span class="datalog-stat-label">Words Written</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ avg_reading_time|default:"8" }}min</span>
+                    <span class="datalog-stat-label">Avg Read Time</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_views|format_number }}</span>
+                    <span class="datalog-stat-label">Total Views</span>
+                </div>
             </div>
             {% endif %}
             
@@ -275,16 +387,23 @@
     
 </div>
 
-<!-- DataLogs Real-time Data Overlay -->
+<!-- DataLogs Analytics Overlay -->
 <div class="datalogs-data-overlay" id="datalogsDataOverlay">
     <div class="data-stream" id="datalogsDataStream">
-        <!-- Real-time datalog metrics will be populated here -->
+        <h3 class="data-stream-title">
+            <i class="fas fa-chart-bar"></i>
+            DataLog Analytics
+        </h3>
+        <!-- Real-time analytics data will be populated here -->
     </div>
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
+<!-- Bootstrap JavaScript (for dropdown functionality) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script src="{% static 'blog/js/datalogs.js' %}"></script>
 {% block datalogs_js %}{% endblock %}
 
@@ -296,6 +415,9 @@ document.addEventListener('DOMContentLoaded', function() {
         initDatalogsInterface();
     }
     
+    // Initialize Bootstrap dropdowns with custom options
+    initializeAuraDropdowns();
+    
     // Filter toggle functionality
     const filterToggle = document.getElementById('datalogsFilterToggle');
     const filterPanel = document.getElementById('datalogsFilterPanel');
@@ -306,6 +428,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const isVisible = filterPanel.style.display !== 'none';
             filterPanel.style.display = isVisible ? 'none' : 'block';
             this.classList.toggle('active', !isVisible);
+            
+            // Close search panel if open
+            const searchPanel = document.getElementById('datalogsSearchPanel');
+            if (searchPanel && searchPanel.style.display !== 'none') {
+                searchPanel.style.display = 'none';
+                document.getElementById('datalogsSearchToggle')?.classList.remove('active');
+            }
         });
     }
     
@@ -313,6 +442,32 @@ document.addEventListener('DOMContentLoaded', function() {
         closeFilters.addEventListener('click', function() {
             filterPanel.style.display = 'none';
             filterToggle?.classList.remove('active');
+        });
+    }
+    
+    // Search toggle functionality
+    const searchToggle = document.getElementById('datalogsSearchToggle');
+    const searchPanel = document.getElementById('datalogsSearchPanel');
+    
+    if (searchToggle && searchPanel) {
+        searchToggle.addEventListener('click', function() {
+            const isVisible = searchPanel.style.display !== 'none';
+            searchPanel.style.display = isVisible ? 'none' : 'block';
+            this.classList.toggle('active', !isVisible);
+            
+            // Close filter panel if open
+            if (filterPanel && filterPanel.style.display !== 'none') {
+                filterPanel.style.display = 'none';
+                filterToggle?.classList.remove('active');
+            }
+            
+            // Focus search input when opening
+            if (!isVisible) {
+                const searchInput = searchPanel.querySelector('.datalog-search-input');
+                if (searchInput) {
+                    setTimeout(() => searchInput.focus(), 100);
+                }
+            }
         });
     }
     
@@ -353,6 +508,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Search suggestions functionality
+    const searchInput = document.querySelector('.datalog-search-input');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    
+    if (searchInput && searchSuggestions) {
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    loadSearchSuggestions(query);
+                }, 300);
+            } else {
+                searchSuggestions.style.display = 'none';
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchPanel?.contains(e.target)) {
+                searchSuggestions.style.display = 'none';
+            }
+        });
+    }
+    
+    // Analytics link functionality
+    const analyticsLink = document.getElementById('analyticsLink');
+    if (analyticsLink) {
+        analyticsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleAnalyticsOverlay();
+        });
+    }
+    
     // Clear filters functionality
     const clearFilters = document.getElementById('clearFilters');
     if (clearFilters) {
@@ -366,9 +558,334 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Date range validation
+    const dateFrom = document.querySelector('input[name="date_from"]');
+    const dateTo = document.querySelector('input[name="date_to"]');
+    
+    if (dateFrom && dateTo) {
+        dateFrom.addEventListener('change', function() {
+            if (dateTo.value && this.value > dateTo.value) {
+                dateTo.value = this.value;
+            }
+        });
+        
+        dateTo.addEventListener('change', function() {
+            if (dateFrom.value && this.value < dateFrom.value) {
+                dateFrom.value = this.value;
+            }
+        });
+    }
+    
     // DataLogs-specific initialization
     {% block datalogs_inline_js %}{% endblock %}
 });
+
+// Search suggestions loader
+function loadSearchSuggestions(query) {
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    if (!searchSuggestions) return;
+    
+    // Simulate search suggestions (replace with actual API call)
+    const suggestions = [
+        'Machine Learning Fundamentals',
+        'Python Data Analysis',
+        'Django Best Practices',
+        'API Development',
+        'Database Optimization'
+    ].filter(suggestion => 
+        suggestion.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    if (suggestions.length > 0) {
+        searchSuggestions.innerHTML = suggestions.map(suggestion => 
+            `<div class="search-suggestion-item" onclick="selectSuggestion('${suggestion}')">
+                <i class="fas fa-search"></i>
+                <span>${suggestion}</span>
+            </div>`
+        ).join('');
+        searchSuggestions.style.display = 'block';
+    } else {
+        searchSuggestions.style.display = 'none';
+    }
+}
+
+// Select search suggestion
+function selectSuggestion(suggestion) {
+    const searchInput = document.querySelector('.datalog-search-input');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    
+    if (searchInput) {
+        searchInput.value = suggestion;
+        searchSuggestions.style.display = 'none';
+        
+        // Submit search
+        const searchForm = searchInput.closest('form');
+        if (searchForm) {
+            searchForm.submit();
+        }
+    }
+}
+
+// Analytics overlay toggle
+function toggleAnalyticsOverlay() {
+    const overlay = document.getElementById('datalogsDataOverlay');
+    if (overlay) {
+        overlay.classList.toggle('active');
+        
+        if (overlay.classList.contains('active')) {
+            loadDatalogAnalytics();
+        }
+    }
+}
+
+// Load datalog analytics
+function loadDatalogAnalytics() {
+    const dataStream = document.getElementById('datalogsDataStream');
+    if (dataStream) {
+        // Simulate analytics data (replace with actual API call)
+        const analytics = [
+            { label: 'Most Popular Category', value: 'Machine Learning' },
+            { label: 'Avg Words per Entry', value: '1,247' },
+            { label: 'Total Reading Time', value: '127h' },
+            { label: 'Top Tag', value: '#python' },
+            { label: 'Engagement Rate', value: '84%' }
+        ];
+        
+        const analyticsHTML = analytics.map(metric => 
+            `<div class="metric-stream-item">
+                <span class="metric-label">${metric.label}:</span>
+                <span class="metric-value">${metric.value}</span>
+            </div>`
+        ).join('');
+        
+        // Append to existing title
+        const existingTitle = dataStream.querySelector('.data-stream-title');
+        if (existingTitle) {
+            dataStream.innerHTML = existingTitle.outerHTML + analyticsHTML;
+        } else {
+            dataStream.innerHTML = analyticsHTML;
+        }
+    }
+}
+
+// Real-time search with debouncing
+function setupRealTimeSearch() {
+    const searchInput = document.querySelector('.datalog-search-input');
+    if (searchInput) {
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length >= 3) {
+                searchTimeout = setTimeout(() => {
+                    // Perform real-time search
+                    performRealTimeSearch(query);
+                }, 500);
+            }
+        });
+    }
+}
+
+function performRealTimeSearch(query) {
+    // This would typically make an AJAX call to your search endpoint
+    console.log('Searching for:', query);
+    
+    // Example: Update URL with search parameter
+    const url = new URL(window.location);
+    url.searchParams.set('q', query);
+    
+    // You could use fetch() here to get results without page reload
+    // fetch('/blog/search/?q=' + encodeURIComponent(query))
+    //     .then(response => response.json())
+    //     .then(data => updateSearchResults(data));
+}
+
+// Category color theming
+function applyCategoryTheming() {
+    const categoryElements = document.querySelectorAll('[data-category-color]');
+    categoryElements.forEach(element => {
+        const color = element.dataset.categoryColor;
+        if (color) {
+            element.style.setProperty('--category-accent', color);
+        }
+    });
+}
+
+// Initialize Bootstrap dropdowns with AURA styling
+function initializeAuraDropdowns() {
+    // Initialize all dropdowns
+    const dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+    const dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+        return new bootstrap.Dropdown(dropdownToggleEl, {
+            boundary: 'viewport',
+            display: 'dynamic'
+        });
+    });
+    
+    // Add custom AURA animation classes
+    dropdownElementList.forEach(function(dropdownToggle) {
+        const dropdownMenu = dropdownToggle.nextElementSibling;
+        
+        // Add show class with animation
+        dropdownToggle.addEventListener('show.bs.dropdown', function() {
+            if (dropdownMenu) {
+                dropdownMenu.classList.add('show');
+                // Animate dropdown arrow
+                const arrow = dropdownToggle.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(180deg)';
+                }
+            }
+        });
+        
+        // Remove show class with animation
+        dropdownToggle.addEventListener('hide.bs.dropdown', function() {
+            if (dropdownMenu) {
+                // Animate dropdown arrow back
+                const arrow = dropdownToggle.querySelector('.dropdown-arrow');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(0deg)';
+                }
+                
+                // Delay removal of show class for smooth animation
+                setTimeout(() => {
+                    dropdownMenu.classList.remove('show');
+                }, 150);
+            }
+        });
+        
+        // Handle keyboard navigation
+        dropdownToggle.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                bootstrap.Dropdown.getInstance(this).toggle();
+            }
+        });
+    });
+    
+    // Close dropdowns when clicking outside subnav
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.subnav-dropdown')) {
+            dropdownElementList.forEach(function(dropdown) {
+                const instance = bootstrap.Dropdown.getInstance(dropdown);
+                if (instance) {
+                    instance.hide();
+                }
+            });
+        }
+    });
+}
+
+// Category dropdown specific functionality
+function setupCategoryDropdown() {
+    const categoryDropdown = document.getElementById('categoriesDropdown');
+    const categoryItems = document.querySelectorAll('.aura-dropdown-item[href*="category"]');
+    
+    if (categoryDropdown && categoryItems.length > 0) {
+        // Add click tracking for analytics
+        categoryItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const categoryName = this.querySelector('.dropdown-item-text').textContent;
+                
+                // Update dropdown button text to show selected category
+                const dropdownText = categoryDropdown.querySelector('span');
+                if (dropdownText && categoryName !== 'All Categories') {
+                    dropdownText.textContent = categoryName;
+                    categoryDropdown.classList.add('active');
+                } else if (categoryName === 'All Categories') {
+                    dropdownText.textContent = 'Categories';
+                    categoryDropdown.classList.remove('active');
+                }
+                
+                // Analytics tracking (if you have analytics)
+                if (typeof gtag !== 'undefined') {
+                    gtag('event', 'category_selected', {
+                        'category_name': categoryName,
+                        'page_location': window.location.href
+                    });
+                }
+            });
+        });
+    }
+}
+
+// Enhanced dropdown search functionality
+function setupDropdownSearch() {
+    const dropdowns = document.querySelectorAll('.aura-dropdown-menu');
+    
+    dropdowns.forEach(dropdown => {
+        // Add search functionality if many items
+        const items = dropdown.querySelectorAll('.aura-dropdown-item');
+        if (items.length > 8) {
+            addDropdownSearchBox(dropdown);
+        }
+    });
+}
+
+function addDropdownSearchBox(dropdown) {
+    const searchBox = document.createElement('div');
+    searchBox.className = 'dropdown-search-container';
+    searchBox.innerHTML = `
+        <div class="dropdown-search-box">
+            <i class="fas fa-search dropdown-search-icon"></i>
+            <input type="text" class="dropdown-search-input" placeholder="Search categories...">
+        </div>
+        <hr class="dropdown-divider aura-dropdown-divider">
+    `;
+    
+    dropdown.insertBefore(searchBox, dropdown.firstChild);
+    
+    const searchInput = searchBox.querySelector('.dropdown-search-input');
+    const items = dropdown.querySelectorAll('.aura-dropdown-item');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        items.forEach(item => {
+            const text = item.querySelector('.dropdown-item-text')?.textContent.toLowerCase() || '';
+            if (text.includes(searchTerm) || searchTerm === '') {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Prevent dropdown from closing when clicking search box
+    searchBox.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+}
+
+// Initialize all dropdown functionality
+setTimeout(() => {
+    setupCategoryDropdown();
+    setupDropdownSearch();
+}, 100);
+
+// Real-time category count updates (if you want dynamic counts)
+function updateCategoryCounts() {
+    const categoryItems = document.querySelectorAll('.aura-dropdown-item[href*="category"]');
+    
+    categoryItems.forEach(item => {
+        const countElement = item.querySelector('.dropdown-item-count');
+        const categorySlug = item.href.split('/').pop();
+        
+        if (countElement && categorySlug) {
+            // You could make an AJAX call here to get real-time counts
+            // fetch(`/api/category/${categorySlug}/count/`)
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         countElement.textContent = data.count;
+            //     });
+        }
+    });
+}
+
+// Update category counts every 5 minutes (optional)
+// setInterval(updateCategoryCounts, 300000);
 </script>
 {% endblock %}
                 
