@@ -1,7 +1,7 @@
 """
 AURA Portfolio - Global Template Components
 Advanced User Repository & Archive - Reusable UI components and complex template tags
-Version: 1.0.1 - Fine-Tuned Alert Boxes & Progress Bars
+Version: 1.0.2 - Fine-Tuned Alert Boxes & Progress Bars, add section header handling
 """
 
 from django import template
@@ -527,12 +527,10 @@ def nav_link(context, url_name, label, icon="", css_class=""):
 
 
 @register.inclusion_tag("components/glass_card.html")
-def glass_card(title="", 
-               content="", footer="", css_class="", with_header=True):
+def glass_card(title="", content="", footer="", css_class="", with_header=True):
     """
     Render a glass-morphism card component.
-    Usage: {% glass_card title="System Status" content="..."
-    css_class="dashboard-card" %}
+    Usage: {% glass_card title="System Status" content="..." css_class="dashboard-card" %}
     """
     return {
         "title": title,
@@ -540,6 +538,63 @@ def glass_card(title="",
         "footer": footer,
         "css_class": css_class,
         "with_header": with_header,
+    }
+
+
+@register.inclusion_tag("components/section_header.html")
+def section_header(
+    title="",
+    subtitle="",
+    icon="",
+    show_metrics=False,
+    metric_1_value="",
+    metric_1_label="",
+    metric_1_icon="fas fa-chart-line",
+    metric_2_value="",
+    metric_2_label="",
+    metric_2_icon="fas fa-check-circle",
+    metric_3_value="",
+    metric_3_label="",
+    metric_3_icon="fas fa-clock",
+    metric_4_value="",
+    metric_4_label="",
+    metric_4_icon="fas fa-star",
+    status="",
+    status_text="",
+    action_url="",
+    action_text="",
+    action_icon="",
+    animated=True,
+    title_prefix=True,
+):
+    """
+    Render AURA section header with metrics and status.
+    Usage: {% section_header title="Systems Overview" subtitle="Active Projects" icon="fas fa-project-diagram" show_metrics=True %}
+    """
+    return {
+        "title": title,
+        "subtitle": subtitle,
+        "icon": icon,
+        "show_metrics": show_metrics,
+        "metric_1_value": metric_1_value,
+        "metric_1_label": metric_1_label,
+        "metric_1_icon": metric_1_icon,
+        "metric_2_value": metric_2_value,
+        "metric_2_label": metric_2_label,
+        "metric_2_icon": metric_2_icon,
+        "metric_3_value": metric_3_value,
+        "metric_3_label": metric_3_label,
+        "metric_3_icon": metric_3_icon,
+        "metric_4_value": metric_4_value,
+        "metric_4_label": metric_4_label,
+        "metric_4_icon": metric_4_icon,
+        "status": status,
+        "status_text": status_text,
+        "action_url": action_url,
+        "action_text": action_text,
+        "action_icon": action_icon,
+        "animated": animated,
+        "title_prefix": title_prefix,
     }
 
 

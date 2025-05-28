@@ -484,3 +484,39 @@ def pygments_css():
 
     # Wrap the CSS in a style tag and mark it as safe for rendering
     return mark_safe(f"<style>{css_rules}</style>")
+
+
+# =========== ADDED AFTER GLOBAL FILTERS =============#
+@register.filter
+def extract_code_blocks(content):
+    """Count code blocks in markdown content"""
+    pattern = r"```(\w+)?\n(.*?)\n```"
+    matches = re.findall(pattern, content, re.DOTALL)
+    return len(matches)
+
+
+@register.filter
+def reading_difficulty(content):
+    """Calculate reading difficulty based on content"""
+    word_count = len(re.findall(r"\b\w+\b", content))
+    code_blocks = extract_code_blocks(content)
+
+    if word_count < 300:
+        return "Quick Read"
+    elif word_count < 800:
+        return "Medium Read"
+    elif code_blocks > 3:
+        return "Technical Deep Dive"
+    else:
+        return "Long Read"
+
+
+@register.simple_tag
+def datalog_status_badge(post):
+    """Generate status badge for datalog posts"""
+    if post.featured:
+        return mark_safe('<span class="datalog-badge featured">Featured</span>')
+    elif post.created > timezone.now() - timedelta(days=7):
+        return mark_safe('<span class="datalog-badge new">New</span>')
+    else:
+        return ""
