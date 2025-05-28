@@ -110,7 +110,7 @@ class SystemModuleListView(ListView):
 
 
 class SystemModuleDetailView(DetailView):
-    """Detailed system view with specs, logs, and metrics."""
+    """Enhanced system detail view with better metrics integration."""
 
     model = SystemModule
     template_name = 'projects/system_detail.html'
@@ -173,6 +173,10 @@ class SystemModuleDetailView(DetailView):
             ).order_by('created').first()
         except SystemModule.DoesNotExist:
             context['next_system'] = None
+
+        # Add breadcrumb data
+        context['show_breadcrumbs'] = True
+        context['current_system'] = system
 
         return context
 
@@ -904,7 +908,7 @@ class UnifiedDashboardView(ListView):
         return {
             'tech_usage_stats': tech_usage_stats,
         }
-    
+
     def get_activity_data(self):
         """Recent activity and metrics."""
 
@@ -916,7 +920,7 @@ class UnifiedDashboardView(ListView):
         return {
             'recent_activity_logs': recent_logs,
         }
-    
+
     def get_chart_data(self):
         """Data for charts and visualizations."""
 
@@ -938,4 +942,65 @@ class UnifiedDashboardView(ListView):
             'lines_of_code': 52000,
         }
 
+# ===================== AURA STYLING - UTILITY FUNCTIONS =====================
 
+
+def get_system_health_score(system):
+    """Calculate overall health score for a system."""
+
+    score = 0
+
+    # Completion percentage (40% weight)
+    completion_weight = (system.completion_percent or 0) * 0.4
+    score += completion_weight
+
+    # Recent activity (30% weight)
+    recent_logs = system.get_related_logs()[:5]
+    # Max 30 points
+    activity_score = min(len(recent_logs) * 6, 30)
+    score += activity_score
+
+    # Performance metrics (20% weight)
+    if system.performance_score:
+        score += (system.performance_score * 0.2)
+    else:
+        # Default moderate score
+        score += 15
+
+    # Uptime (10% weight)
+    if system.uptime_percentage:
+        score += (system.uptime_percentage * 0.1)
+    else:
+        # Default good uptime
+        score += 9
+
+    return min(100, max(0, score))
+
+
+def get_technology_trend_score(tech):
+    """Calculate trend score for tech usage."""
+
+    current_usage = tech.systems.filter(
+        status__in=['deployed', 'published']
+    ).count()
+
+    # TODO: In real app, compare w historical data
+    # For now, return current usage as trend indicator
+    return current_usage
+
+
+def calculate_development_velocity(system):
+    """Calculate development velocity for a system."""
+
+    logs = system.get_related_logs()
+
+    if not logs:
+        return 0
+
+    # Calculate based on log frequency and completion progress
+    recent_logs = logs.filter(
+        logged_at__gte=timezone.now() - timedelta(days=30)
+    ).count()
+
+    velocity = recent_logs * (system.completion_percent or 0) / 100
+    return round(velocity, 2)

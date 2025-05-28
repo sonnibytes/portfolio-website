@@ -340,7 +340,7 @@ class SystemModule(models.Model):
             "archived": "#666666",  # Dark Gray
         }
         return status_colors.get(self.status, "#00f0ff")
-    
+
     def get_complexity_display(self):
         """Return complexity as a visual indicator."""
         return "●" * self.complexity + "○" * (5 - self.complexity)
@@ -361,7 +361,7 @@ class SystemModule(models.Model):
         """Calculate development progress based on various factors."""
         if self.completion_percent:
             return self.completion_percent
-        
+
         # Calculate based on status if no explicit percentage
         status_progress = {
             'draft': 10,
