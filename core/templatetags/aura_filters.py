@@ -769,41 +769,41 @@ def percentage_of(value, total):
         return "0%"
 
 
-# not on suggested, but leaving here, think it'll come in handy
-@register.simple_tag
-def progress_bar(value, total, css_class="", show_text=True):
-    """Generate progress bar HTML"""
-    try:
-        percentage = min(100, max(0, (float(value) / float(total)) * 100))
+# moved to aura_components
+# @register.simple_tag
+# def progress_bar(value, total, css_class="", show_text=True):
+#     """Generate progress bar HTML"""
+#     try:
+#         percentage = min(100, max(0, (float(value) / float(total)) * 100))
 
-        html = f"""
-        <div class="progress-container {css_class}">
-            <div class="progress-bar" style="width: {percentage}%;"></div>
-            {f'<span class="progress-text">{percentage:.1f}%</span>'
-             if show_text else ""}
-        </div>
-        """
-        return mark_safe(html)
-    except (ValueError, TypeError):
-        return mark_safe(
-            '<div class="progress-container"><div class="progress-bar" ' \
-            'style="width: 0%;"></div></div>'
-        )
+#         html = f"""
+#         <div class="progress-container {css_class}">
+#             <div class="progress-bar" style="width: {percentage}%;"></div>
+#             {f'<span class="progress-text">{percentage:.1f}%</span>'
+#              if show_text else ""}
+#         </div>
+#         """
+#         return mark_safe(html)
+#     except (ValueError, TypeError):
+#         return mark_safe(
+#             '<div class="progress-container"><div class="progress-bar" ' \
+#             'style="width: 0%;"></div></div>'
+#         )
 
-# not on suggested, but leaving here, think it'll come in handy
-@register.simple_tag
-def system_status_indicator(status, size="md"):
-    """Generate status indicator HTML"""
-    sizes = {
-        "sm": "status-indicator-sm", "md": "", "lg": "status-indicator-lg"}
+# moved to aura_components
+# @register.simple_tag
+# def system_status_indicator(status, size="md"):
+#     """Generate status indicator HTML"""
+#     sizes = {
+#         "sm": "status-indicator-sm", "md": "", "lg": "status-indicator-lg"}
 
-    size_class = sizes.get(size, "")
+#     size_class = sizes.get(size, "")
 
-    html = f'''
-    <div class="status-indicator {status} {size_class}"
-    title="{status.replace("_", " ").title()}"></div>
-    '''
-    return mark_safe(html)
+#     html = f'''
+#     <div class="status-indicator {status} {size_class}"
+#     title="{status.replace("_", " ").title()}"></div>
+#     '''
+#     return mark_safe(html)
 
 #  ==============  DEBUGGING FILTERS  ============== #
 
