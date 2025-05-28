@@ -5,39 +5,39 @@ import re
 
 register = template.Library()
 
+# Covered in aura_filters math_filters
+# @register.filter
+# def multiply(value, arg):
+#     """Multiply the value by the argument."""
+#     try:
+#         return float(value) * float(arg)
+#     except (ValueError, TypeError):
+#         return value
 
-@register.filter
-def multiply(value, arg):
-    """Multiply the value by the argument."""
-    try:
-        return float(value) * float(arg)
-    except (ValueError, TypeError):
-        return value
+### OUTDATED STYLES
+# @register.simple_tag
+# def tech_frame(css_class=""):
+#     """Render a tech frame with angled corners."""
+#     html = f"""
+#     <div class="tech-frame {css_class}">
+#         <div class="tech-frame-inner">
+#             {{ content }}
+#         </div>
+#     </div>
+#     """
+#     return mark_safe(html)
 
-
-@register.simple_tag
-def tech_frame(css_class=""):
-    """Render a tech frame with angled corners."""
-    html = f"""
-    <div class="tech-frame {css_class}">
-        <div class="tech-frame-inner">
-            {{ content }}
-        </div>
-    </div>
-    """
-    return mark_safe(html)
-
-
-@register.simple_tag
-def hud_corner_accents():
-    """Render the HUD corner accents for containers."""
-    html = """
-    <div class="hud-corner hud-corner-tl"></div>
-    <div class="hud-corner hud-corner-tr"></div>
-    <div class="hud-corner hud-corner-bl"></div>
-    <div class="hud-corner hud-corner-br"></div>
-    """
-    return mark_safe(html)
+### OUTDATED STYLES
+# @register.simple_tag
+# def hud_corner_accents():
+#     """Render the HUD corner accents for containers."""
+#     html = """
+#     <div class="hud-corner hud-corner-tl"></div>
+#     <div class="hud-corner hud-corner-tr"></div>
+#     <div class="hud-corner hud-corner-bl"></div>
+#     <div class="hud-corner hud-corner-br"></div>
+#     """
+#     return mark_safe(html)
 
 
 @register.simple_tag

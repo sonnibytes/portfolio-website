@@ -1,6 +1,7 @@
 """
 AURA Portfolio - Blog Template Tags
 Custom template tags and filters for the blog/datalogs system
+Version 2.0.1: Separated Out Global TemplateTags to aura_filters
 """
 
 from django import template
@@ -25,31 +26,32 @@ from ..models import Post, Category, Tag
 
 register = template.Library()
 
+### Moved to aura_filters global
 
-@register.filter
-def get_item(dictionary, key):
-    """
-    Get an item from a dictionary using variable key.
-    Usage: {{ dict|get_item:key }}
-    """
-    try:
-        return dictionary.get(key)
-    except (AttributeError, TypeError):
-        return None
-
-
-@register.filter
-def get_field(form, field_name):
-    """Get a form field by name."""
-    return form[field_name]
+# @register.filter
+# def get_item(dictionary, key):
+#     """
+#     Get an item from a dictionary using variable key.
+#     Usage: {{ dict|get_item:key }}
+#     """
+#     try:
+#         return dictionary.get(key)
+#     except (AttributeError, TypeError):
+#         return None
 
 
-# Previously 'add' renaming to avoid namespace issues with add
-@register.filter
-@stringfilter
-def concat(value, arg):
-    """Concatenate strings."""
-    return value + arg
+# @register.filter
+# def get_field(form, field_name):
+#     """Get a form field by name."""
+#     return form[field_name]
+
+
+# # Previously 'add' renaming to avoid namespace issues with add
+# @register.filter
+# @stringfilter
+# def concat(value, arg):
+#     """Concatenate strings."""
+#     return value + arg
 
 
 # =========== Enhanced Inclusion Tags (added w rework to combine various tag files) =========== #
@@ -82,17 +84,17 @@ def render_category_nav(current_category=None):
         'current_category': current_category,
     }
 
-
-@register.inclusion_tag('components/pagination.html')
-def render_pagination(page_obj, request):
-    """
-    Renders AURA-styled pagination.
-    Usage: {% render_pagination page_obj request %}
-    """
-    return {
-        'page_obj': page_obj,
-        'request': request,
-    }
+# Moved to global aura_filters
+# @register.inclusion_tag('components/pagination.html')
+# def render_pagination(page_obj, request):
+#     """
+#     Renders AURA-styled pagination.
+#     Usage: {% render_pagination page_obj request %}
+#     """
+#     return {
+#         'page_obj': page_obj,
+#         'request': request,
+#     }
 
 
 @register.inclusion_tag('blog/includes/social_share.html', takes_context=True)
@@ -158,38 +160,38 @@ def markdown_headings(content):
 
             return headings
 
+## Moved to global aura_filters
+# @register.filter
+# def time_since_published(published_date):
+#     """
+#     Returns human-readable time since publication.
+#     Usage: {{ post.published_date|time_since_published }}
+#     """
+#     if not published_date:
+#         return "Unknown"
 
-@register.filter
-def time_since_published(published_date):
-    """
-    Returns human-readable time since publication.
-    Usage: {{ post.published_date|time_since_published }}
-    """
-    if not published_date:
-        return "Unknown"
+#     now = datetime.now()
+#     if published_date.tzinfo:
+#         now = timezone.now()
 
-    now = datetime.now()
-    if published_date.tzinfo:
-        now = timezone.now()
+#     diff = now - published_date
 
-    diff = now - published_date
-
-    if diff.days > 365:
-        years = diff.days // 365
-        return f"{years} year{'s' if years != 1 else ''} ago"
-    elif diff.days > 30:
-        months = diff.days // 30
-        return f"{months} month{'s' if months != 1 else ''} ago"
-    elif diff.days > 0:
-        return f"{diff.days} day{'s' if diff.days != 1 else ''} ago"
-    elif diff.seconds > 3600:
-        hours = diff.seconds // 3600
-        return f"{hours} hour{'s' if hours != 1 else ''} ago"
-    elif diff.seconds > 60:
-        minutes = diff.seconds // 60
-        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
-    else:
-        return "Just now"
+#     if diff.days > 365:
+#         years = diff.days // 365
+#         return f"{years} year{'s' if years != 1 else ''} ago"
+#     elif diff.days > 30:
+#         months = diff.days // 30
+#         return f"{months} month{'s' if months != 1 else ''} ago"
+#     elif diff.days > 0:
+#         return f"{diff.days} day{'s' if diff.days != 1 else ''} ago"
+#     elif diff.seconds > 3600:
+#         hours = diff.seconds // 3600
+#         return f"{hours} hour{'s' if hours != 1 else ''} ago"
+#     elif diff.seconds > 60:
+#         minutes = diff.seconds // 60
+#         return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+#     else:
+#         return "Just now"
 
 
 @register.filter
@@ -226,27 +228,27 @@ def post_status_color(status):
     }
     return colors.get(status, '#26c6da')
 
+# moved to global aura_filters
+# @register.filter
+# def datalog_id(post_id):
+#     """
+#     Formats post ID as data identifier.
+#     Usage: {{ post.id|datalog_id }}
+#     """
+#     return f"LOG-{post_id:03d}"
 
-@register.filter
-def datalog_id(post_id):
-    """
-    Formats post ID as data identifier.
-    Usage: {{ post.id|datalog_id }}
-    """
-    return f"LOG-{post_id:03d}"
+# Moved to global aura_filters
+# @register.filter
+# def truncate_smart(text, length=150):
+#     """
+#     Smart truncation that doesn't cut off in the middle of words.
+#     Usage: {{ text|truncate_smart:100 }}
+#     """
+#     if not text or len(text) <= length:
+#         return text
 
-
-@register.filter
-def truncate_smart(text, length=150):
-    """
-    Smart truncation that doesn't cut off in the middle of words.
-    Usage: {{ text|truncate_smart:100 }}
-    """
-    if not text or len(text) <= length:
-        return text
-
-    truncated = text[:length].rsplit(' ', 1)[0]
-    return truncated + '...'
+#     truncated = text[:length].rsplit(' ', 1)[0]
+#     return truncated + '...'
 
 
 @register.simple_tag
@@ -341,59 +343,73 @@ def posts_by_month(year):
     ).dates('published_date', 'month', order='DESC')
 
 
-@register.filter
-def highlight_search(text, query):
-    """
-    Highlights search terms in text.
-    Usage: {{ text|highlight_search:query }}
-    """
-    if not query or not text:
-        return text
-
-    escaped_text = escape(text)
-    escaped_query = escape(query)
-
-    # Highlight each word in query
-    words = escaped_query.split()
-    for word in words:
-        pattern = re.compile(re.escape(word), re.IGNORECASE)
-        escaped_text = pattern.sub(
-            f'<mark class="search-highlight">{word}</mark>',
-            escaped_text
-        )
-    return mark_safe(escaped_text)
+# Adding from blog system_tags
+@register.inclusion_tag("blog/includes/related_systems.html")
+def related_systems(post, limit=3):
+    """Show related systems for a blog post."""
+    connections = post.system_connections.select_related("system").order_by(
+        "-priority"
+    )[:limit]
+    return {
+        "connections": connections,
+        "post": post,
+    }
 
 
-@register.simple_tag(takes_context=True)
-def active_nav(context, url_name):
-    """
-    Returns 'active' if current URL matches the given URL name.
-    Usage: {% active_nav 'blog:post_list' %}
-    """
-    request = context['request']
-    if request.resolver_match and request.resolver_match.url_name == url_name:
-        return 'active'
-    return ''
+# Moved to global - aura_filters
+# @register.filter
+# def highlight_search(text, query):
+#     """
+#     Highlights search terms in text.
+#     Usage: {{ text|highlight_search:query }}
+#     """
+#     if not query or not text:
+#         return text
+
+#     escaped_text = escape(text)
+#     escaped_query = escape(query)
+
+#     # Highlight each word in query
+#     words = escaped_query.split()
+#     for word in words:
+#         pattern = re.compile(re.escape(word), re.IGNORECASE)
+#         escaped_text = pattern.sub(
+#             f'<mark class="search-highlight">{word}</mark>',
+#             escaped_text
+#         )
+#     return mark_safe(escaped_text)
 
 
-@register.simple_tag(takes_context=True)
-def build_url(context, **kwargs):
-    """
-    Builds URL with current GET params plus new ones.
-    Usage: {% build_url sort='title' page=2 %}
-    """
-    request = context["request"]
-    params = request.GET.copy()
+# @register.simple_tag(takes_context=True)
+# def active_nav(context, url_name):
+#     """
+#     Returns 'active' if current URL matches the given URL name.
+#     Usage: {% active_nav 'blog:post_list' %}
+#     """
+#     request = context['request']
+#     if request.resolver_match and request.resolver_match.url_name == url_name:
+#         return 'active'
+#     return ''
 
-    for key, value in kwargs.items():
-        if value is None:
-            params.pop(key, None)
-        else:
-            params[key] = value
 
-    if params:
-        return f"?{params.urlencode()}"
-    return ""
+# @register.simple_tag(takes_context=True)
+# def build_url(context, **kwargs):
+#     """
+#     Builds URL with current GET params plus new ones.
+#     Usage: {% build_url sort='title' page=2 %}
+#     """
+#     request = context["request"]
+#     params = request.GET.copy()
+
+#     for key, value in kwargs.items():
+#         if value is None:
+#             params.pop(key, None)
+#         else:
+#             params[key] = value
+
+#     if params:
+#         return f"?{params.urlencode()}"
+#     return ""
 
 
 # =========== Markdown (Markdownx - bs4) Filter (formerly markdown_filters) =========== #
