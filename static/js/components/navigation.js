@@ -1,7 +1,7 @@
 /**
- * AURA Navigation System JavaScript
+ * AURA Navigation System JavaScript - Updated for dropdown compatibility
  * Advanced User Repository & Archive - Navigation Components
- * Version: 1.0.1
+ * Version: 1.0.2 - AURA Dropdown Compatible
  */
 
 // Navigation System State
@@ -9,7 +9,8 @@ const NavigationSystem = {
     initialized: false,
     mobileMenuOpen: false,
     currentSubNav: null,
-    scrollPosition: 0
+    scrollPosition: 0,
+    customDropdownsEnabled: false // New flag for custom dropdowns
 };
 
 /**
@@ -18,12 +19,32 @@ const NavigationSystem = {
 function initNavigationSystem() {
     console.log('🧭 Navigation System Initializing...');
     
+    // Check if we're on a page that uses custom dropdowns
+    const hasCustomDropdowns = document.querySelector('.subnav-dropdown .aura-dropdown-menu');
+    NavigationSystem.customDropdownsEnabled = !!hasCustomDropdowns;
+    
+    if (NavigationSystem.customDropdownsEnabled) {
+        console.log('📋 Custom AURA dropdowns detected - skipping standard dropdown init');
+    }
+    
     // Initialize core navigation components
     initMainNavigation();
     initMobileMenu();
     initSubNavigation();
     initScrollEffects();
     initKeyboardNavigation();
+    
+    // Only initialize standard dropdowns if custom ones aren't present
+    if (!NavigationSystem.customDropdownsEnabled) {
+        initDropdownMenus();
+    }
+    
+    initBreadcrumbNavigation();
+    initNavigationSearch();
+    initStatusIndicators();
+    initPerformanceMonitoring();
+    initThemeDetection();
+    initAccessibilityFeatures();
     
     // Mark as initialized
     NavigationSystem.initialized = true;
@@ -145,10 +166,10 @@ function initSubNavigation() {
     const subNavs = document.querySelectorAll('.datalogs-subnav, .systems-subnav');
     
     subNavs.forEach(subNav => {
-        const subNavLinks = subNav.querySelectorAll('.subnav-link');
+        const subNavLinks = subNav.querySelectorAll('.subnav-link:not(.dropdown-toggle)'); // Exclude dropdown toggles
         const actionBtns = subNav.querySelectorAll('.subnav-action-btn');
         
-        // Sub-navigation link interactions
+        // Sub-navigation link interactions (excluding dropdowns)
         subNavLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 // Add loading effect
@@ -381,9 +402,15 @@ function navigateToContact() {
 }
 
 /**
- * Initialize Dropdown Menus
+ * Initialize Dropdown Menus (ONLY FOR NON-AURA DROPDOWNS)
  */
 function initDropdownMenus() {
+    // Skip if custom AURA dropdowns are present
+    if (NavigationSystem.customDropdownsEnabled) {
+        console.log('🚫 Skipping standard dropdown init - AURA dropdowns detected');
+        return;
+    }
+    
     const dropdowns = document.querySelectorAll('.nav-dropdown');
     
     dropdowns.forEach(dropdown => {
@@ -723,13 +750,15 @@ function handleResize() {
         closeMobileMenu();
     }
     
-    // Update dropdown positions
-    const dropdownMenus = document.querySelectorAll('.dropdown-menu');
-    dropdownMenus.forEach(menu => {
-        menu.style.opacity = '0';
-        menu.style.visibility = 'hidden';
-        menu.style.transform = 'translateY(-10px)';
-    });
+    // Update dropdown positions (only for standard dropdowns)
+    if (!NavigationSystem.customDropdownsEnabled) {
+        const dropdownMenus = document.querySelectorAll('.dropdown-menu');
+        dropdownMenus.forEach(menu => {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.transform = 'translateY(-10px)';
+        });
+    }
 }
 
 /**
@@ -792,17 +821,26 @@ const NavigationUtils = {
 };
 
 /**
+ * Throttle function for performance
+ */
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+/**
  * Initialize Navigation System on DOM ready
  */
 document.addEventListener('DOMContentLoaded', function() {
     initNavigationSystem();
-    initDropdownMenus();
-    initBreadcrumbNavigation();
-    initNavigationSearch();
-    initStatusIndicators();
-    initPerformanceMonitoring();
-    initThemeDetection();
-    initAccessibilityFeatures();
     
     // Update active states
     NavigationUtils.updateActiveStates();
@@ -823,22 +861,6 @@ document.addEventListener('DOMContentLoaded', function() {
         `);
     }
 });
-
-/**
- * Throttle function for performance
- */
-function throttle(func, limit) {
-    let inThrottle;
-    return function() {
-        const args = arguments;
-        const context = this;
-        if (!inThrottle) {
-            func.apply(context, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
-        }
-    };
-}
 
 /**
  * Export Navigation System for global access

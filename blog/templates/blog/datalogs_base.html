@@ -26,7 +26,7 @@
 
 
 {% block subnav %}
-<!-- DataLogs Sub-Navigation -->
+<!-- DataLogs Sub-Navigation - Simplified -->
 <nav class="app-subnav datalogs-subnav" id="datalogsSubnav">
     <div class="container subnav-container">
         
@@ -37,61 +37,46 @@
                 <span>DataLogs</span>
             </div>
             
-            <!-- DataLogs Navigation Links -->
+            <!-- DataLogs Navigation Links - Improved sizing -->
             <div class="subnav-links">
-                <a href="{% url 'blog:post_list' %}" class="subnav-link {% active_nav 'blog:post_list' %}">
+                <a href="{% url 'blog:post_list' %}" class="subnav-link {% if 'post_list' in request.resolver_match.view_name %}active{% endif %}">
                     <i class="fas fa-list subnav-icon"></i>
                     <span>All Logs</span>
                 </a>
-                <a href="{% url 'blog:archive' %}" class="subnav-link {% active_nav 'blog:archive' %}">
-                    <i class="fas fa-history subnav-icon"></i>
+                <a href="{% url 'blog:archive' %}" class="subnav-link {% if 'archive' in request.resolver_match.view_name %}active{% endif %}">
+                    <i class="fas fa-calendar-alt subnav-icon"></i>
                     <span>Archive</span>
                 </a>
                 <a href="{% url 'blog:tags' %}" class="subnav-link {% active_nav 'blog:tags' %}">
                     <i class="fas fa-tags subnav-icon"></i>
                     <span>Tags</span>
                 </a>
-                <!-- Categories Dropdown -->
-                <div class="subnav-dropdown">
-                    <button class="subnav-link dropdown-toggle {% if current_category %}active{% endif %}" 
-                            type="button" 
-                            id="categoriesDropdown" 
-                            aria-expanded="false">
-                        <i class="fas fa-folder subnav-icon"></i>
-                        <span>{% if current_category %}{{ current_category.name }}{% else %}Categories{% endif %}</span>
-                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                
+                <!-- Category Navigation - Horizontal Scroll Style -->
+                <div class="category-nav-container">
+                    <button class="category-scroll-btn category-scroll-left" id="categoryScrollLeft">
+                        <i class="fas fa-chevron-left"></i>
                     </button>
-                    <ul class="aura-dropdown-menu" aria-labelledby="categoriesDropdown">
-                        <li>
-                            <a class="dropdown-item aura-dropdown-item" href="{% url 'blog:post_list' %}">
-                                <i class="fas fa-list dropdown-item-icon"></i>
-                                <span class="dropdown-item-text">All Categories</span>
-                                <span class="dropdown-item-count">{{ total_posts|default:"24" }}</span>
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider aura-dropdown-divider"></li>
+                    <div class="category-nav-scroll" id="categoryNavScroll">
+                        <a href="{% url 'blog:post_list' %}" class="category-nav-item {% if not current_category %}active{% endif %}">
+                            <div class="category-hexagon" style="--hex-color: var(--color-teal);">
+                                <span class="hexagon-text">ALL</span>
+                            </div>
+                            <span class="category-label">All</span>
+                        </a>
                         {% for category in categories %}
-                        <li>
-                            <a class="dropdown-item aura-dropdown-item {% if category.slug == current_category %}active{% endif %}" 
-                               href="{% url 'blog:category' slug=category.slug %}">
-                                <div class="category-hexagon-mini" style="--hex-color: {{ category.color }};">
-                                    <span class="hexagon-text-mini">{{ category.code }}</span>
+                        <a href="{% url 'blog:category' slug=category.slug %}" 
+                           class="category-nav-item {% if category.slug == current_category.slug %}active{% endif %}">
+                            <div class="category-hexagon" style="--hex-color: {{ category.color }};">
+                                <span class="hexagon-text">{{ category.code }}</span>
                                 </div>
-                                <span class="dropdown-item-text">{{ category.name }}</span>
-                                <span class="dropdown-item-count">{{ category.posts.count|default:"0" }}</span>
+                            <span class="category-label">{{ category.name }}</span>
                             </a>
-                        </li>
                         {% endfor %}
-                        {% if categories.count > 0 %}
-                        <li><hr class="dropdown-divider aura-dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item aura-dropdown-item dropdown-item-special" href="#">
-                                <i class="fas fa-plus dropdown-item-icon"></i>
-                                <span class="dropdown-item-text">Manage Categories</span>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
+                    </div>
+                    <button class="category-scroll-btn category-scroll-right" id="categoryScrollRight">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
                 
                 <a href="#" class="subnav-link" id="analyticsLink">
@@ -400,22 +385,21 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Remove Bootstrap JavaScript - we'll use custom dropdown -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
-
 <script src="{% static 'blog/js/datalogs.js' %}"></script>
 {% block datalogs_js %}{% endblock %}
 
-<!-- Initialize DataLogs Interface -->
+<!-- Simplified DataLogs Interface JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DataLogs interface initializing...');
+    
     // Initialize datalogs interface
     if (typeof initDatalogsInterface === 'function') {
         initDatalogsInterface();
     }
     
-    // Initialize custom AURA dropdowns (no Bootstrap needed)
-    initializeCustomDropdowns();
+    // Initialize category navigation scrolling
+    initCategoryNavigation();
     
     // Filter toggle functionality
     const filterToggle = document.getElementById('datalogsFilterToggle');
@@ -575,16 +559,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // DataLogs-specific initialization
-    {% block datalogs_inline_js %}{% endblock %}
+    console.log('✅ DataLogs interface initialized successfully');
 });
 
-// Search suggestions loader
+// ========== CATEGORY NAVIGATION SCROLLING ==========
+
+function initCategoryNavigation() {
+    const scrollContainer = document.getElementById('categoryNavScroll');
+    const leftBtn = document.getElementById('categoryScrollLeft');
+    const rightBtn = document.getElementById('categoryScrollRight');
+    
+    if (!scrollContainer || !leftBtn || !rightBtn) return;
+    
+    console.log('📂 Initializing category navigation...');
+    
+    // Check scroll position and update buttons
+    function updateScrollButtons() {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+        
+        leftBtn.style.opacity = scrollLeft > 0 ? '1' : '0.3';
+        leftBtn.style.pointerEvents = scrollLeft > 0 ? 'auto' : 'none';
+        
+        rightBtn.style.opacity = scrollLeft < scrollWidth - clientWidth ? '1' : '0.3';
+        rightBtn.style.pointerEvents = scrollLeft < scrollWidth - clientWidth ? 'auto' : 'none';
+    }
+    
+    // Scroll functionality
+    leftBtn.addEventListener('click', function() {
+        scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+    });
+    
+    rightBtn.addEventListener('click', function() {
+        scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+    });
+    
+    // Update buttons on scroll
+    scrollContainer.addEventListener('scroll', updateScrollButtons);
+        
+    // Initial button state
+    setTimeout(updateScrollButtons, 100);
+    
+    // Update on resize
+    window.addEventListener('resize', updateScrollButtons);
+    
+    console.log('✅ Category navigation initialized');
+}
+
+// ========== SEARCH AND ANALYTICS FUNCTIONS ==========
+
 function loadSearchSuggestions(query) {
     const searchSuggestions = document.getElementById('searchSuggestions');
     if (!searchSuggestions) return;
     
-    // Simulate search suggestions (replace with actual API call)
     const suggestions = [
         'Machine Learning Fundamentals',
         'Python Data Analysis',
@@ -608,7 +634,6 @@ function loadSearchSuggestions(query) {
     }
 }
 
-// Select search suggestion
 function selectSuggestion(suggestion) {
     const searchInput = document.querySelector('.datalog-search-input');
     const searchSuggestions = document.getElementById('searchSuggestions');
@@ -617,7 +642,6 @@ function selectSuggestion(suggestion) {
         searchInput.value = suggestion;
         searchSuggestions.style.display = 'none';
         
-        // Submit search
         const searchForm = searchInput.closest('form');
         if (searchForm) {
             searchForm.submit();
@@ -625,7 +649,6 @@ function selectSuggestion(suggestion) {
     }
 }
 
-// Analytics overlay toggle
 function toggleAnalyticsOverlay() {
     const overlay = document.getElementById('datalogsDataOverlay');
     if (overlay) {
@@ -637,11 +660,9 @@ function toggleAnalyticsOverlay() {
     }
 }
 
-// Load datalog analytics
 function loadDatalogAnalytics() {
     const dataStream = document.getElementById('datalogsDataStream');
     if (dataStream) {
-        // Simulate analytics data (replace with actual API call)
         const analytics = [
             { label: 'Most Popular Category', value: 'Machine Learning' },
             { label: 'Avg Words per Entry', value: '1,247' },
@@ -657,7 +678,6 @@ function loadDatalogAnalytics() {
             </div>`
         ).join('');
         
-        // Append to existing title
         const existingTitle = dataStream.querySelector('.data-stream-title');
         if (existingTitle) {
             dataStream.innerHTML = existingTitle.outerHTML + analyticsHTML;
@@ -667,293 +687,6 @@ function loadDatalogAnalytics() {
     }
 }
 
-// Real-time search with debouncing
-function setupRealTimeSearch() {
-    const searchInput = document.querySelector('.datalog-search-input');
-    if (searchInput) {
-        let searchTimeout;
-        
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            const query = this.value.trim();
-            
-            if (query.length >= 3) {
-                searchTimeout = setTimeout(() => {
-                    // Perform real-time search
-                    performRealTimeSearch(query);
-                }, 500);
-            }
-        });
-    }
-}
-
-function performRealTimeSearch(query) {
-    // This would typically make an AJAX call to your search endpoint
-    console.log('Searching for:', query);
-    
-    // Example: Update URL with search parameter
-    const url = new URL(window.location);
-    url.searchParams.set('q', query);
-    
-    // You could use fetch() here to get results without page reload
-    // fetch('/blog/search/?q=' + encodeURIComponent(query))
-    //     .then(response => response.json())
-    //     .then(data => updateSearchResults(data));
-}
-
-// Category color theming
-function applyCategoryTheming() {
-    const categoryElements = document.querySelectorAll('[data-category-color]');
-    categoryElements.forEach(element => {
-        const color = element.dataset.categoryColor;
-        if (color) {
-            element.style.setProperty('--category-accent', color);
-        }
-    });
-}
-
-// Custom AURA Dropdown System (No Bootstrap needed)
-function initializeCustomDropdowns() {
-    console.log('🚀 Initializing custom AURA dropdowns...');
-    
-    const dropdowns = document.querySelectorAll('.subnav-dropdown');
-    
-    dropdowns.forEach(dropdown => {
-        const toggle = dropdown.querySelector('.dropdown-toggle');
-        const menu = dropdown.querySelector('.aura-dropdown-menu');
-        const arrow = dropdown.querySelector('.dropdown-arrow');
-        
-        if (!toggle || !menu) {
-            console.warn('⚠️ Dropdown elements not found:', dropdown);
-            return;
-        }
-        
-        console.log('✅ Setting up dropdown:', toggle);
-        
-        // Toggle dropdown on click
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            console.log('🖱️ Dropdown clicked');
-            
-            // Close all other dropdowns first
-            closeAllDropdowns();
-            
-            // Toggle current dropdown
-            const isOpen = menu.classList.contains('show');
-            
-            if (!isOpen) {
-                openDropdown(dropdown, toggle, menu, arrow);
-            }
-        });
-        
-        // Keyboard support
-        toggle.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggle.click();
-            } else if (e.key === 'Escape') {
-                closeDropdown(dropdown, menu, arrow);
-            }
-        });
-        
-        // Prevent menu clicks from closing dropdown
-        menu.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-        
-        // Handle dropdown item clicks
-        const dropdownItems = menu.querySelectorAll('.aura-dropdown-item');
-        dropdownItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                // Update toggle text if it's a category selection
-                if (this.href && this.href.includes('category')) {
-                    const categoryName = this.querySelector('.dropdown-item-text')?.textContent;
-                    const toggleText = toggle.querySelector('span');
-                    
-                    if (categoryName && toggleText && categoryName !== 'All Categories') {
-                        toggleText.textContent = categoryName;
-                        toggle.classList.add('active');
-                    } else if (categoryName === 'All Categories') {
-                        toggleText.textContent = 'Categories';
-                        toggle.classList.remove('active');
-                    }
-                }
-                
-                // Close dropdown after selection
-                setTimeout(() => {
-                    closeDropdown(dropdown, menu, arrow);
-                }, 100);
-            });
-        });
-    });
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.subnav-dropdown')) {
-            closeAllDropdowns();
-        }
-    });
-    
-    // Close dropdowns on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeAllDropdowns();
-                }
-            });
-    
-    console.log('✅ Custom dropdowns initialized successfully');
-}
-
-function openDropdown(dropdown, toggle, menu, arrow) {
-    console.log('📂 Opening dropdown');
-    
-    // Position dropdown to connect directly with button
-    const rect = toggle.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const menuHeight = 400; // estimated max height
-    
-    // Reset positioning
-    menu.style.position = 'fixed';
-    menu.style.left = rect.left + 'px';
-    menu.style.minWidth = Math.max(280, rect.width) + 'px';
-    menu.style.zIndex = '2000';
-    
-    // Position directly at the bottom of the button (no gap)
-    menu.style.top = (rect.bottom - 1) + 'px'; // -1px to overlap border
-    menu.style.transform = 'translateY(0)';
-    
-    // Check if dropdown would go below viewport
-    if (rect.bottom + menuHeight > viewportHeight) {
-        // If not enough space below, position above instead
-        menu.style.top = (rect.top - menuHeight + 1) + 'px'; // +1px to overlap border
-        menu.style.transform = 'translateY(0)';
-    }
-    
-    // Show dropdown with animation
-    menu.style.opacity = '0';
-    menu.style.transform = 'translateY(-3px) scale(0.98)'; // Subtle animation
-    menu.classList.add('show');
-    menu.style.display = 'block';
-    
-    // Add connected styling to button
-    toggle.classList.add('dropdown-open');
-    
-    // Animate in
-    requestAnimationFrame(() => {
-        menu.style.opacity = '1';
-        menu.style.transform = 'translateY(0) scale(1)';
-    });
-    
-    // Rotate arrow
-    if (arrow) {
-        arrow.style.transform = 'rotate(180deg)';
-    }
-    
-    // Mark toggle as active
-    toggle.setAttribute('aria-expanded', 'true');
-}
-
-function closeDropdown(dropdown, menu, arrow) {
-    console.log('📁 Closing dropdown');
-    
-    // Animate out
-    menu.style.opacity = '0';
-    menu.style.transform = 'translateY(-10px) scale(0.95)';
-    
-    // Hide after animation
-    setTimeout(() => {
-        menu.classList.remove('show');
-        menu.style.display = 'none';
-    }, 150);
-    
-    // Reset arrow
-    if (arrow) {
-        arrow.style.transform = 'rotate(0deg)';
-    }
-    
-    // Mark toggle as inactive
-    const toggle = dropdown.querySelector('.dropdown-toggle');
-    if (toggle) {
-        toggle.setAttribute('aria-expanded', 'false');
-        toggle.classList.remove('dropdown-open');
-                }
-}
-
-function closeAllDropdowns() {
-    console.log('🔒 Closing all dropdowns');
-    
-    const openDropdowns = document.querySelectorAll('.subnav-dropdown');
-    openDropdowns.forEach(dropdown => {
-        const menu = dropdown.querySelector('.aura-dropdown-menu');
-        const arrow = dropdown.querySelector('.dropdown-arrow');
-        
-        if (menu && menu.classList.contains('show')) {
-            closeDropdown(dropdown, menu, arrow);
-        }
-    });
-}
-
-// Category dropdown specific functionality
-function setupCategoryDropdown() {
-    const categoryDropdown = document.getElementById('categoriesDropdown');
-    
-    if (categoryDropdown) {
-        console.log('📁 Setting up category dropdown functionality');
-        
-        // Check if we're on a category page and update button text
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('/category/')) {
-            const categorySlug = currentPath.split('/category/')[1].replace('/', '');
-            const categoryItem = document.querySelector(`[href*="category/${categorySlug}"]`);
-        
-            if (categoryItem) {
-                const categoryName = categoryItem.querySelector('.dropdown-item-text')?.textContent;
-                const toggleText = categoryDropdown.querySelector('span');
-                
-                if (categoryName && toggleText) {
-                    toggleText.textContent = categoryName;
-                    categoryDropdown.classList.add('active');
-            }
-            }
-        }
-    }
-}
-
-// Add smooth scrolling for dropdown if content is long
-function handleDropdownScrolling() {
-    const dropdownMenus = document.querySelectorAll('.aura-dropdown-menu');
-    
-    dropdownMenus.forEach(menu => {
-        // Prevent wheel events from bubbling to parent
-        menu.addEventListener('wheel', function(e) {
-        e.stopPropagation();
-            
-            // Check if scrolling is needed
-            const isScrollable = menu.scrollHeight > menu.clientHeight;
-            
-            if (!isScrollable) {
-                e.preventDefault();
-                return;
-            }
-            
-            // Handle scroll bounds
-            const atTop = menu.scrollTop === 0;
-            const atBottom = menu.scrollTop >= menu.scrollHeight - menu.clientHeight;
-        
-            if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-                e.preventDefault();
-            }
-        });
-    });
-}
-
-// Initialize everything
-setTimeout(() => {
-    setupCategoryDropdown();
-    handleDropdownScrolling();
-}, 100);
+console.log('📋 DataLogs JavaScript loaded successfully');
 </script>
 {% endblock %}
-                

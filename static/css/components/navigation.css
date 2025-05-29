@@ -1272,6 +1272,19 @@ main {
 /* ========== AURA BOOTSTRAP DROPDOWN STYLES ========== */
 /* Add this to your static/css/components/navigation.css file */
 
+/* Add this to the top of your dropdown section in navigation.css */
+.subnav-dropdown .aura-dropdown-menu {
+    /* Reset any inherited styles that might conflict */
+    margin: 0 !important;
+    padding: var(--spacing-sm) !important;
+    transform: translateY(-5px) scale(0.98) !important;
+    transition: all 0.2s ease !important;
+}
+
+.subnav-dropdown .aura-dropdown-menu.show {
+    transform: translateY(0) scale(1) !important;
+}
+
 /* Subnav Dropdown Container */
 .subnav-dropdown {
     position: relative;
@@ -1296,12 +1309,25 @@ main {
     box-shadow: none; /* Remove Bootstrap default focus */
 }
 
-/* Connected dropdown styling */
+/* Connected dropdown styling - smooth connection */
 .subnav-dropdown .dropdown-toggle.dropdown-open {
     background: rgba(179, 157, 219, 0.1);
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    border-bottom: 1px solid rgba(179, 157, 219, 0.3);
+    position: relative;
+    z-index: 2001; /* Above the dropdown */
+}
+
+/* Create seamless connection border */
+.subnav-dropdown .dropdown-toggle.dropdown-open::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(179, 157, 219, 0.3);
+    z-index: 1;
 }
 
 .subnav-dropdown .dropdown-arrow {
@@ -1321,36 +1347,93 @@ main {
     color: var(--color-lavender);
 }
 
-/* AURA Dropdown Menu */
+/* AURA Dropdown Menu - Fixed Positioning */
 .aura-dropdown-menu {
     background: 
         var(--gradient-glass),
         rgba(7, 7, 18, 0.95);
     backdrop-filter: blur(25px);
     border: 1px solid rgba(179, 157, 219, 0.3);
-    border-top: none; /* Remove top border for connection */
-    border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) var(--border-radius-lg);
+    border-radius: var(--border-radius-lg);
     box-shadow: 
         0 15px 40px rgba(0, 0, 0, 0.4),
         0 0 20px rgba(179, 157, 219, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
     padding: var(--spacing-sm);
-    margin-top: -1px; /* Overlap with button border */
     min-width: 280px;
     max-height: 400px;
     overflow-y: auto;
-    z-index: 1050;
+    z-index: 2000;
     position: fixed;
     display: none;
+    opacity: 0;
+    transform: translateY(-5px) scale(0.98);
+    transition: all var(--transition-fast);
+    pointer-events: none;
+}
+
+/* When dropdown is below button */
+.aura-dropdown-menu.dropdown-below {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    margin-top: -1px; /* Overlap with button border */
+}
+
+/* When dropdown is above button */
+.aura-dropdown-menu.dropdown-above {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: -1px; /* Overlap with button border */
+    transform: translateY(5px) scale(0.98); /* Different animation direction */
+}
+
+/* Show state */
+.aura-dropdown-menu.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+/* Remove the default gradient bar for connected look */
+.aura-dropdown-menu.dropdown-below::before {
+    display: none;
+}
+
+/* Add connection indicator for below dropdown */
+.aura-dropdown-menu.dropdown-below::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        rgba(179, 157, 219, 0.5) 0%, 
+        rgba(179, 157, 219, 0.8) 50%, 
+        rgba(179, 157, 219, 0.5) 100%);
+}
+
+/* Connection indicator for above dropdown */
+.aura-dropdown-menu.dropdown-above::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        rgba(179, 157, 219, 0.5) 0%, 
+        rgba(179, 157, 219, 0.8) 50%, 
+        rgba(179, 157, 219, 0.5) 100%);
 }
 
 /* Remove the top gradient bar since we're connecting */
-.aura-dropdown-menu::before {
+/* .aura-dropdown-menu::before {
     display: none;
-}
+} */
 
 /* Add connection indicator */
-.aura-dropdown-menu::after {
+/* .aura-dropdown-menu::after {
     content: '';
     position: absolute;
     top: 0;
@@ -1361,7 +1444,7 @@ main {
         rgba(179, 157, 219, 0.5) 0%, 
         rgba(179, 157, 219, 0.8) 50%, 
         rgba(179, 157, 219, 0.5) 100%);
-}
+} */
 
 /* AURA Dropdown Items */
 .aura-dropdown-item {
@@ -1420,6 +1503,7 @@ main {
     text-align: center;
     color: var(--color-lavender);
     font-size: 0.85rem;
+    flex-shrink: 0;
 }
 
 .dropdown-item-text {
@@ -1438,6 +1522,7 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.08);
     min-width: 30px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .aura-dropdown-item:hover .dropdown-item-count {
@@ -1744,6 +1829,10 @@ main {
         transform: none;
     }
     
+    .aura-dropdown-menu.show {
+        transform: none;
+    }
+    
     .dropdown-arrow {
         transition: none;
     }
@@ -1759,7 +1848,7 @@ main {
 }
 
 /* Fix dropdown visibility without Bootstrap CSS */
-.dropdown-menu {
+/* .dropdown-menu {
     position: absolute !important;
     top: 100% !important;
     left: 0 !important;
@@ -1775,4 +1864,4 @@ main {
 
 .dropdown {
     position: relative !important;
-}
+} */
