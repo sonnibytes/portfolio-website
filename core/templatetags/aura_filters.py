@@ -346,6 +346,24 @@ def highlight_search(text, query):
     return mark_safe(escaped_text)
 
 
+@register.filter
+def linecount(value):
+    """
+    Count the number of lines in a text string.
+    Usage: {{ code_text|linecount }}
+    """
+    if not value:
+        return 0
+
+    try:
+        lines = value.strip().split("\n")
+        # Filter out empty lines at the beginning and end
+        non_empty_lines = [line for line in lines if line.strip()]
+        return len(non_empty_lines)
+    except (AttributeError, TypeError):
+        return 0
+
+
 #  ==============  TIME UTILITIES  ============== #
 # This is best way, suggested throws errors w naive and aware
 @register.filter
@@ -770,41 +788,6 @@ def percentage_of(value, total):
         return "0%"
 
 
-# moved to aura_components
-# @register.simple_tag
-# def progress_bar(value, total, css_class="", show_text=True):
-#     """Generate progress bar HTML"""
-#     try:
-#         percentage = min(100, max(0, (float(value) / float(total)) * 100))
-
-#         html = f"""
-#         <div class="progress-container {css_class}">
-#             <div class="progress-bar" style="width: {percentage}%;"></div>
-#             {f'<span class="progress-text">{percentage:.1f}%</span>'
-#              if show_text else ""}
-#         </div>
-#         """
-#         return mark_safe(html)
-#     except (ValueError, TypeError):
-#         return mark_safe(
-#             '<div class="progress-container"><div class="progress-bar" ' \
-#             'style="width: 0%;"></div></div>'
-#         )
-
-# moved to aura_components
-# @register.simple_tag
-# def system_status_indicator(status, size="md"):
-#     """Generate status indicator HTML"""
-#     sizes = {
-#         "sm": "status-indicator-sm", "md": "", "lg": "status-indicator-lg"}
-
-#     size_class = sizes.get(size, "")
-
-#     html = f'''
-#     <div class="status-indicator {status} {size_class}"
-#     title="{status.replace("_", " ").title()}"></div>
-#     '''
-#     return mark_safe(html)
 
 #  ==============  DEBUGGING FILTERS  ============== #
 
@@ -833,20 +816,3 @@ def debug_context(context_var):
     Usage: {% debug_context variable_name %}
     """
     return mark_safe(f"<pre>{repr(context_var)}</pre>")
-
-
-
-# @register.simple_tag
-# def system_progress_bar(system):
-#     """Render a progress bar for system development."""
-#     progress = system.get_development_progress()
-
-#     html = f"""
-#     <div class="system-progress-container">
-#         <div class="progress-bar-bg">
-#             <div class="progress-bar-fill" style="width: {progress}%"></div>
-#         </div>
-#         <span class="progress-text">{progress}%</span>
-#     </div>
-#     """
-#     return mark_safe(html)
