@@ -610,7 +610,6 @@ def tech_icon_fallback(tech_name):
 #         "request": request,
 #     }
 
-# # moved back to blog_tags
 @register.simple_tag(takes_context=True)
 def active_nav(context, url_name):
     """
@@ -619,6 +618,18 @@ def active_nav(context, url_name):
     """
     request = context["request"]
     if request.resolver_match and request.resolver_match.url_name == url_name:
+        return "active"
+    return ""
+
+
+@register.simple_tag(takes_context=True)
+def active_category_class(context, category):
+    """
+    Return 'active' class if category matches current category
+    Usage: {% active_category_class category %}
+    """
+    current_category = context.get("current_category")
+    if current_category and current_category.slug == category.slug:
         return "active"
     return ""
 
@@ -680,6 +691,7 @@ def count_words(content):
     return len(words)
 
 
+# Duplicated in datalog_tags?
 @register.filter
 def reading_time(content, wpm=200):
     """
