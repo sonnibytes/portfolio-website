@@ -10,17 +10,17 @@ from django.contrib import messages
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
-from django.db.models import Count
+from django.db.models import Count, Q, Avg
 from markdownx.utils import markdownify
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import calendar
 import os
 import re
 from uuid import uuid4
 import pprint
 
-from .models import Post, Category, Tag, Series, SeriesPost
+from .models import Post, Category, Tag, Series, SeriesPost, PostView
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 
 
@@ -37,12 +37,73 @@ class PostListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Existing context
         context['categories'] = Category.objects.all()
         context['tags'] = Tag.objects.all()
         context['featured_post'] = Post.objects.filter(
             status='published',
             featured=True
-            ).first()
+        ).first()
+
+        # Enhanced context for new template
+        context.update({
+            # Page configuration
+            'page_title': 'DataLogs Archive',
+            'page_subtitle': 'Technical Insights and Development Journey',
+            'page_icon': 'fas fa-database',
+            'show_breadcrumbs': False,
+            'show_filters': True,
+            'show_stats': True,
+            'show_header_metrics': True,
+
+            # Statistics for the interface
+            'total_posts': Post.objects.filter(status='published').count(),
+            'total_words': sum(post.content.split().__len__() for post in Post.objects.filter(status='published')),
+            'avg_reading_time': Post.objects.filter(
+                status='published').aggregate(
+                avg_time=Avg('reading_time')
+            )['avg_time'] or 8,
+            'total_views': PostView.objects.count() if hasattr(Post, 'views') else 0,
+            'total_categories': Category.objects.count(),
+            'total_tags': Tag.objects.count(),
+
+            # Current context for breadcrumbs/navigation
+            'current_category': None,  # Will be set in CategoryView
+            'current_post': None,      # Will be set in PostDetailView
+
+            # Enhanced categories with post counts
+            'categories_with_counts': Category.objects.annotate(
+                post_count=Count('posts', filter=Q(posts__status='published'))
+            ).filter(post_count__gt=0).order_by('name'),
+
+            # Popular tags for quick filters
+            'popular_tags': Tag.objects.annotate(
+                post_count=Count('posts', filter=Q(posts__status='published'))
+            ).filter(post_count__gt=0).order_by('-post_count')[:10],
+
+            # Recent activity for analytics
+            'recent_posts_count': Post.objects.filter(
+                status='published',
+                published_date__gte=timezone.now() - timedelta(days=30)
+            ).count(),
+
+            # Featured post enhanced data
+            'featured_post_data': None,
+        })
+
+        # Enhanced featured post data
+        if context['featured_post']:
+            featured = context['featured_post']
+            context['featured_post_data'] = {
+                'has_code': bool(featured.featured_code),
+                'code_language': featured.featured_code_format,
+                'code_lines': len(featured.featured_code.split('\n')) if featured.featured_code else 0,
+                'estimated_complexity': 'Beginner' if featured.reading_time < 5 else 'Intermediate' if featured.reading_time < 15 else 'Advanced',
+                'related_systems': featured.related_systems.filter(status__in=['deployed', 'published'])[:2],
+                'primary_system': featured.get_primary_system() if hasattr(featured, 'get_primary_system') else None,
+            }
+
         return context
 
 
@@ -109,6 +170,16 @@ class PostDetailView(DetailView):
         headings = self.extract_headings(post.content)
         context['headings'] = headings
 
+        # Additional enhanced context
+        context.update({
+            'current_post': post,
+            'show_breadcrumbs': True,
+            'show_terminal_code': bool(post.featured_code),
+            'code_complexity': self.get_code_complexity(post),
+            'estimated_difficulty': self.get_difficulty_level(post),
+            'social_share_data': self.get_social_share_data(post),
+        })
+
         return context
 
     def extract_headings(self, markdown_content):
@@ -132,6 +203,40 @@ class PostDetailView(DetailView):
                 })
         return headings
 
+    def get_code_complexity(self, post):
+        """Analyze code complexity for display (Can enhance later)."""
+        if not post.featured_code:
+            return None
+
+        code = post.featured_code
+        lines = len(code.split('\n'))
+
+        if lines < 10:
+            return 'Simple'
+        elif lines < 50:
+            return 'Moderate'
+        else:
+            return 'Complex'
+
+    def get_difficulty_level(self, post):
+        """Determine content difficulty (can enhance later, maybe even add a vote..?)"""
+        if post.reading_time < 5:
+            return 'Beginner'
+        elif post.reading_time < 15:
+            return 'Intermediate'
+        else:
+            return 'Advanced'
+
+    def get_social_share_data(self, post):
+        """Prepare data for social sharing."""
+        return {
+            'title': post.title,
+            'description': post.excerpt or f"Technical insights on {post.title}",
+            'image': post.thumbnail.url if post.thumbnail else None,
+            'url': self.request.build_absolute_uri(post.get_absolute_url()),
+            'tags': [tag.name for tag in post.tags.all()[:5]]
+        }
+
 
 class CategoryView(ListView):
     """View for posts filtered by category."""
@@ -148,9 +253,31 @@ class CategoryView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['category'] = self.category
-        # Add this line to track active category
-        context['category_slug'] = self.kwargs['slug']
+        context.update(
+            {
+                "current_category": self.category,
+                "page_title": f"{self.category.name} DataLogs",
+                "page_subtitle": f"Technical insights in {self.category.name}",
+                "page_icon": self.category.icon or "fas fa-folder",
+                "show_breadcrumbs": True,
+                "show_filters": True,
+                "show_stats": True,
+                # Category-specific stats
+                "category_post_count": self.get_queryset().count(),
+                "category_avg_reading_time": self.get_queryset().aggregate(
+                    avg_time=Avg("reading_time")
+                )["avg_time"]
+                or 0,
+                # Related categories
+                "related_categories": Category.objects.exclude(id=self.category.id)
+                .annotate(
+                    post_count=Count(
+                        "posts", filter=Q(posts__status="published")
+                    )
+                )
+                .filter(post_count__gt=0)[:4],
+            }
+        )
         return context
 
 
@@ -341,8 +468,66 @@ class SearchView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['query'] = self.request.GET.get('q', '')
+        query = self.request.GET.get('q', '')
+
+        context.update({
+            'query': query,
+            'page_title': f'Search Results for "{query}"' if query else 'Search Logs',
+            'page_subtitle': f'Found {self.get_queryset().count()} matching entries' if query else 'Search Entries',
+            'page_icon': 'fas fa-search',
+            'show_breadcrumbs': True,
+            'show_filters': True,
+            'show_stats': False,
+
+            # Search-specific data
+            'search_results_count': self.get_queryset().count(),
+            'search_suggestions': self.get_search_suggestions(query) if query else [],
+            'popular_searches': self.get_popular_searches(),
+        })
+
         return context
+
+    def get_search_suggestions(self, query):
+        """Generate search suggestions based on query."""
+        suggestions = []
+
+        # Add category suggestions
+        matching_categories = Category.objects.filter(
+            name__icontains=query
+        )[:3]
+        for cat in matching_categories:
+            suggestions.append({
+                'text': f'{cat.name} category',
+                'type': 'category',
+                'url': cat.get_absolute_url(),
+                'icon': 'fas fa-folder',
+            })
+
+        # Add tag suggestions
+        matching_tags = Tag.objects.filter(
+            name__icontains=query
+        )[:3]
+        for tag in matching_tags:
+            suggestions.append({
+                'text': f'#{tag.name}',
+                'type': 'tag',
+                'url': tag.get_absolute_url(),
+                'icon': 'gas ga-tag',
+            })
+
+        return suggestions
+
+    def get_popular_searches(self):
+        """Return popular search terms (could be enhanced w actual search tracking later)"""
+        return [
+            'Machine Learning',
+            'Python',
+            'Django',
+            'API Development',
+            'Database',
+            'Neural Networks',
+        ]
+
 
 # ===================== ADMIN VIEWS FOR POST MANAGEMENT =====================
 
