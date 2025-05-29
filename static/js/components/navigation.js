@@ -1,7 +1,7 @@
 /**
- * AURA Navigation System JavaScript - Updated for dropdown compatibility
+ * AURA Navigation System JavaScript - Cleaned Version
  * Advanced User Repository & Archive - Navigation Components
- * Version: 1.0.2 - AURA Dropdown Compatible
+ * Version: 2.0.1 - Dropdown Logic Removed, Category Navigation Added
  */
 
 // Navigation System State
@@ -9,8 +9,7 @@ const NavigationSystem = {
     initialized: false,
     mobileMenuOpen: false,
     currentSubNav: null,
-    scrollPosition: 0,
-    customDropdownsEnabled: false // New flag for custom dropdowns
+    scrollPosition: 0
 };
 
 /**
@@ -19,26 +18,13 @@ const NavigationSystem = {
 function initNavigationSystem() {
     console.log('🧭 Navigation System Initializing...');
     
-    // Check if we're on a page that uses custom dropdowns
-    const hasCustomDropdowns = document.querySelector('.subnav-dropdown .aura-dropdown-menu');
-    NavigationSystem.customDropdownsEnabled = !!hasCustomDropdowns;
-    
-    if (NavigationSystem.customDropdownsEnabled) {
-        console.log('📋 Custom AURA dropdowns detected - skipping standard dropdown init');
-    }
-    
     // Initialize core navigation components
     initMainNavigation();
     initMobileMenu();
     initSubNavigation();
+    initCategoryNavigation();
     initScrollEffects();
     initKeyboardNavigation();
-    
-    // Only initialize standard dropdowns if custom ones aren't present
-    if (!NavigationSystem.customDropdownsEnabled) {
-        initDropdownMenus();
-    }
-    
     initBreadcrumbNavigation();
     initNavigationSearch();
     initStatusIndicators();
@@ -163,13 +149,13 @@ function closeMobileMenu() {
  * Initialize Sub-Navigation
  */
 function initSubNavigation() {
-    const subNavs = document.querySelectorAll('.datalogs-subnav, .systems-subnav');
+    const subNavs = document.querySelectorAll('.datalogs-subnav, .systems-subnav, .core-subnav');
     
     subNavs.forEach(subNav => {
-        const subNavLinks = subNav.querySelectorAll('.subnav-link:not(.dropdown-toggle)'); // Exclude dropdown toggles
+        const subNavLinks = subNav.querySelectorAll('.subnav-link');
         const actionBtns = subNav.querySelectorAll('.subnav-action-btn');
         
-        // Sub-navigation link interactions (excluding dropdowns)
+        // Sub-navigation link interactions
         subNavLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 // Add loading effect
@@ -206,6 +192,8 @@ function initSubNavigation() {
             NavigationSystem.currentSubNav = 'datalogs';
         } else if (subNav.classList.contains('systems-subnav')) {
             NavigationSystem.currentSubNav = 'systems';
+        } else if (subNav.classList.contains('core-subnav')) {
+            NavigationSystem.currentSubNav = 'core';
         }
     });
     
@@ -215,21 +203,134 @@ function initSubNavigation() {
 }
 
 /**
+ * Initialize Category Navigation
+ */
+function initCategoryNavigation() {
+    const scrollContainer = document.getElementById('categoryNavScroll');
+    const leftBtn = document.getElementById('categoryScrollLeft');
+    const rightBtn = document.getElementById('categoryScrollRight');
+    
+    if (!scrollContainer || !leftBtn || !rightBtn) {
+        console.log('📂 Category navigation elements not found, skipping...');
+        return;
+    }
+    
+    console.log('📂 Initializing category navigation...');
+    
+    // Check scroll position and update buttons
+    function updateScrollButtons() {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+        
+        leftBtn.style.opacity = scrollLeft > 0 ? '1' : '0.3';
+        leftBtn.style.pointerEvents = scrollLeft > 0 ? 'auto' : 'none';
+        
+        rightBtn.style.opacity = scrollLeft < scrollWidth - clientWidth ? '1' : '0.3';
+        rightBtn.style.pointerEvents = scrollLeft < scrollWidth - clientWidth ? 'auto' : 'none';
+    }
+    
+    // Scroll functionality
+    leftBtn.addEventListener('click', function() {
+        scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+    });
+    
+    rightBtn.addEventListener('click', function() {
+        scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+    });
+    
+    // Update buttons on scroll
+    scrollContainer.addEventListener('scroll', updateScrollButtons);
+    
+    // Initial button state
+    setTimeout(updateScrollButtons, 100);
+    
+    // Update on resize
+    window.addEventListener('resize', updateScrollButtons);
+    
+    // Touch/swipe support for mobile
+    let startX = 0;
+    let scrollLeftStart = 0;
+    
+    scrollContainer.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].pageX;
+        scrollLeftStart = scrollContainer.scrollLeft;
+    });
+    
+    scrollContainer.addEventListener('touchmove', function(e) {
+        const x = e.touches[0].pageX;
+        const walk = (startX - x) * 2; // Multiply by 2 for faster scrolling
+        scrollContainer.scrollLeft = scrollLeftStart + walk;
+        e.preventDefault();
+    });
+    
+    // Category item click effects
+    const categoryItems = scrollContainer.querySelectorAll('.category-nav-item');
+    categoryItems.forEach(item => {
+        item.addEventListener('click', function() {
+            // Remove active from all categories
+            categoryItems.forEach(cat => cat.classList.remove('active'));
+            // Add active to clicked category
+            this.classList.add('active');
+            
+            // Add click animation
+            const hexagon = this.querySelector('.category-hexagon');
+            if (hexagon) {
+                hexagon.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    hexagon.style.transform = 'scale(1)';
+                }, 150);
+            }
+        });
+    });
+    
+    console.log('✅ Category navigation initialized');
+}
+
+/**
  * Update Sub-Navigation Stats
  */
 function updateSubNavStats() {
-    const statValues = document.querySelectorAll('.stat-value');
+    const statValues = document.querySelectorAll('.stat-value[data-metric]');
     
     statValues.forEach(stat => {
+        const metricType = stat.getAttribute('data-metric');
+        
+        // Simulate real-time updates for certain metrics
+        switch (metricType) {
+            case 'response_time':
+                // Simulate response time between 120-180ms
+                const responseTime = Math.floor(Math.random() * 60) + 120;
+                animateStatChange(stat, stat.textContent, responseTime + 'ms');
+                break;
+            case 'uptime':
+                // Occasionally update uptime
+                if (Math.random() > 0.95) { // 5% chance
+                    const uptimes = ['99.7%', '99.8%', '99.6%'];
+                    const newUptime = uptimes[Math.floor(Math.random() * uptimes.length)];
+                    animateStatChange(stat, stat.textContent, newUptime);
+                }
+                break;
+            case 'memory_usage':
+                // Simulate memory usage between 60-85%
+                if (Math.random() > 0.9) { // 10% chance
+                    const memUsage = Math.floor(Math.random() * 25) + 60;
+                    animateStatChange(stat, stat.textContent, memUsage + '%');
+                }
+                break;
+        }
+    });
+    
+    // Update regular stat values with minor fluctuations
+    const regularStats = document.querySelectorAll('.stat-value:not([data-metric])');
+    regularStats.forEach(stat => {
         const currentValue = parseInt(stat.textContent) || 0;
         
         // Simulate minor fluctuations for demo purposes
-        if (Math.random() > 0.7) { // 30% chance to update
-            const change = Math.random() > 0.5 ? 1 : -1;
+        if (Math.random() > 0.8) { // 20% chance to update
+            const change = Math.random() > 0.6 ? 1 : -1;
             const newValue = Math.max(0, currentValue + change);
             
             if (newValue !== currentValue) {
-                animateStatChange(stat, currentValue, newValue);
+                animateStatChange(stat, currentValue.toString(), newValue.toString());
             }
         }
     });
@@ -239,21 +340,21 @@ function updateSubNavStats() {
  * Animate Stat Value Change
  */
 function animateStatChange(element, fromValue, toValue) {
+    if (fromValue === toValue) return;
+    
     element.style.color = 'var(--color-yellow)';
     element.style.transform = 'scale(1.1)';
     
-    // Animate the number change
+    // Animate the value change
     const duration = 500;
-    const steps = 10;
-    const stepValue = (toValue - fromValue) / steps;
     let currentStep = 0;
+    const totalSteps = 10;
     
     const interval = setInterval(() => {
         currentStep++;
-        const currentValue = Math.round(fromValue + (stepValue * currentStep));
-        element.textContent = currentValue;
         
-        if (currentStep >= steps) {
+        if (currentStep >= totalSteps) {
+            element.textContent = toValue;
             clearInterval(interval);
             
             // Reset styling
@@ -262,7 +363,7 @@ function animateStatChange(element, fromValue, toValue) {
                 element.style.transform = '';
             }, 200);
         }
-    }, duration / steps);
+    }, duration / totalSteps);
 }
 
 /**
@@ -270,7 +371,7 @@ function animateStatChange(element, fromValue, toValue) {
  */
 function initScrollEffects() {
     const navbar = document.querySelector('.aura-navbar');
-    const subNavs = document.querySelectorAll('.datalogs-subnav, .systems-subnav');
+    const subNavs = document.querySelectorAll('.datalogs-subnav, .systems-subnav, .core-subnav');
     
     if (!navbar) return;
     
@@ -298,7 +399,7 @@ function initScrollEffects() {
             navbar.style.boxShadow = '';
         }
         
-        // Sub-navigation effects
+        // Sub-navigation effects (hide on scroll down, show on scroll up)
         subNavs.forEach(subNav => {
             if (scrollTop > 200 && scrollDirection === 'down') {
                 subNav.style.transform = 'translateY(-100%)';
@@ -365,6 +466,20 @@ function initKeyboardNavigation() {
                     break;
             }
         }
+        
+        // Arrow keys for category navigation
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            const categoryScroll = document.getElementById('categoryNavScroll');
+            if (categoryScroll && document.activeElement.closest('.category-nav-container')) {
+                e.preventDefault();
+                const scrollAmount = 150;
+                if (e.key === 'ArrowLeft') {
+                    categoryScroll.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                } else {
+                    categoryScroll.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                }
+            }
+        }
     });
     
     // Remove keyboard navigation class on mouse interaction
@@ -402,96 +517,10 @@ function navigateToContact() {
 }
 
 /**
- * Initialize Dropdown Menus (ONLY FOR NON-AURA DROPDOWNS)
- */
-function initDropdownMenus() {
-    // Skip if custom AURA dropdowns are present
-    if (NavigationSystem.customDropdownsEnabled) {
-        console.log('🚫 Skipping standard dropdown init - AURA dropdowns detected');
-        return;
-    }
-    
-    const dropdowns = document.querySelectorAll('.nav-dropdown');
-    
-    dropdowns.forEach(dropdown => {
-        const toggle = dropdown.querySelector('.dropdown-toggle');
-        const menu = dropdown.querySelector('.dropdown-menu');
-        
-        if (!toggle || !menu) return;
-        
-        let hoverTimeout;
-        
-        // Show dropdown on hover
-        dropdown.addEventListener('mouseenter', function() {
-            clearTimeout(hoverTimeout);
-            menu.style.opacity = '1';
-            menu.style.visibility = 'visible';
-            menu.style.transform = 'translateY(0)';
-        });
-        
-        // Hide dropdown on leave
-        dropdown.addEventListener('mouseleave', function() {
-            hoverTimeout = setTimeout(() => {
-                menu.style.opacity = '0';
-                menu.style.visibility = 'hidden';
-                menu.style.transform = 'translateY(-10px)';
-            }, 150);
-        });
-        
-        // Keyboard navigation for dropdowns
-        toggle.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                const isVisible = menu.style.visibility === 'visible';
-                
-                if (isVisible) {
-                    menu.style.opacity = '0';
-                    menu.style.visibility = 'hidden';
-                    menu.style.transform = 'translateY(-10px)';
-                } else {
-                    menu.style.opacity = '1';
-                    menu.style.visibility = 'visible';
-                    menu.style.transform = 'translateY(0)';
-                    
-                    // Focus first item
-                    const firstItem = menu.querySelector('.dropdown-item');
-                    if (firstItem) firstItem.focus();
-                }
-            }
-        });
-        
-        // Handle dropdown item navigation
-        const dropdownItems = menu.querySelectorAll('.dropdown-item');
-        dropdownItems.forEach((item, index) => {
-            item.addEventListener('keydown', function(e) {
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    const nextItem = dropdownItems[index + 1];
-                    if (nextItem) nextItem.focus();
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    const prevItem = dropdownItems[index - 1];
-                    if (prevItem) {
-                        prevItem.focus();
-                    } else {
-                        toggle.focus();
-                    }
-                } else if (e.key === 'Escape') {
-                    menu.style.opacity = '0';
-                    menu.style.visibility = 'hidden';
-                    menu.style.transform = 'translateY(-10px)';
-                    toggle.focus();
-                }
-            });
-        });
-    });
-}
-
-/**
  * Initialize Breadcrumb Navigation
  */
 function initBreadcrumbNavigation() {
-    const breadcrumbs = document.querySelectorAll('.breadcrumb-nav');
+    const breadcrumbs = document.querySelectorAll('.breadcrumb-nav, .core-breadcrumbs, .datalogs-breadcrumbs, .systems-breadcrumbs');
     
     breadcrumbs.forEach(breadcrumb => {
         const items = breadcrumb.querySelectorAll('.breadcrumb-item');
@@ -732,7 +761,7 @@ function initAccessibilityFeatures() {
         navbar.setAttribute('aria-label', 'Main navigation');
     }
     
-    const subNavs = document.querySelectorAll('.datalogs-subnav, .systems-subnav');
+    const subNavs = document.querySelectorAll('.datalogs-subnav, .systems-subnav, .core-subnav');
     subNavs.forEach(subNav => {
         if (!subNav.getAttribute('role')) {
             subNav.setAttribute('role', 'navigation');
@@ -750,14 +779,14 @@ function handleResize() {
         closeMobileMenu();
     }
     
-    // Update dropdown positions (only for standard dropdowns)
-    if (!NavigationSystem.customDropdownsEnabled) {
-        const dropdownMenus = document.querySelectorAll('.dropdown-menu');
-        dropdownMenus.forEach(menu => {
-            menu.style.opacity = '0';
-            menu.style.visibility = 'hidden';
-            menu.style.transform = 'translateY(-10px)';
-        });
+    // Update category navigation scroll buttons
+    const categoryNavigation = document.getElementById('categoryNavScroll');
+    if (categoryNavigation) {
+        // Trigger scroll button update after resize
+        setTimeout(() => {
+            const event = new Event('scroll');
+            categoryNavigation.dispatchEvent(event);
+        }, 100);
     }
 }
 
@@ -817,6 +846,25 @@ const NavigationUtils = {
         if (element) {
             element.classList.remove('nav-loading');
         }
+    },
+    
+    // Scroll category navigation to specific item
+    scrollToCategory(categorySlug) {
+        const categoryItem = document.querySelector(`[href*="${categorySlug}"]`);
+        const scrollContainer = document.getElementById('categoryNavScroll');
+        
+        if (categoryItem && scrollContainer) {
+            const itemRect = categoryItem.getBoundingClientRect();
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const scrollLeft = scrollContainer.scrollLeft;
+            
+            const targetScrollLeft = scrollLeft + itemRect.left - containerRect.left - (containerRect.width / 2) + (itemRect.width / 2);
+            
+            scrollContainer.scrollTo({
+                left: targetScrollLeft,
+                behavior: 'smooth'
+            });
+        }
     }
 };
 
@@ -857,6 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
    Alt/Ctrl + S - Systems
    Alt/Ctrl + P - Profile
    Alt/Ctrl + C - Contact
+   Arrow Keys - Scroll categories (when focused)
    ESC - Close menus
         `);
     }
