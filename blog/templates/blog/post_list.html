@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - Datalogs Enhanced List Template
- * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
+ * AURA Portfolio - DataLogs List Template - CLEANED
+ * Advanced User Repository & Archive - Main DataLogs Landing Page
+ * Version: 2.1.0 - Cleaned and Optimized
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -22,27 +22,24 @@
 
 {% block datalogs_content %}
 
-<!-- Categories Navigation Container - Glass Style -->
-<section class="categories-navigation-container">
+<!-- Categories Navigation Container -->
+<section class="categories-navigation-section">
     <div class="container">
         <div class="categories-glass-panel">
             <div class="categories-scroll-container">
-                <button class="category-scroll-btn category-scroll-left" id="categoryScrollLeft">
+                <button class="category-scroll-btn category-scroll-left" id="categoryScrollLeft" aria-label="Scroll categories left">
                     <i class="fas fa-chevron-left"></i>
                 </button>
                 
                 <div class="categories-grid" id="categoriesGrid">
                     <!-- All Categories Option -->
-                    <a href="{% url 'blog:post_list' %}" class="category-nav-card {% if not current_category %}active{% endif %}">
+                    <a href="{% url 'blog:post_list' %}" 
+                       class="category-nav-item {% if not current_category %}active{% endif %}"
+                       data-category="all">
                         <div class="category-hexagon-container">
-                            <div class="category-hexagon-glass" 
-                                 data-color="#26c6da"
-                                 style="--primary-color: #26c6da; --secondary-color: rgba(38, 198, 218, 0.1); --glow-color: rgba(38, 198, 218, 0.4);">
-                                <div class="hexagon-outline"></div>
-                                <div class="hexagon-glass-bg"></div>
-                                <span class="hexagon-text">ALL</span>
+                            <div class="category-hexagon glass-hex" data-color="#26c6da">
+                                <span class="hex-text">ALL</span>
                             </div>
-                            <div class="category-glow"></div>
                         </div>
                         <div class="category-info">
                             <h3 class="category-name">All DataLogs</h3>
@@ -50,31 +47,25 @@
                         </div>
                     </a>
                     
-                    <!-- Individual Categories with Enhanced Glass Effect -->
+                    <!-- Individual Categories -->
                     {% for category in categories %}
-                    {% with color_scheme=category|category_color_scheme %}
                     <a href="{% url 'blog:category' slug=category.slug %}" 
-                       class="category-nav-card {% if category.slug == current_category.slug %}active{% endif %}">
+                       class="category-nav-item {% if category.slug == current_category.slug %}active{% endif %}"
+                       data-category="{{ category.slug }}">
                         <div class="category-hexagon-container">
-                            <div class="category-hexagon-glass" 
-                                 data-color="{{ category.color }}"
-                                 style="--primary-color: {{ color_scheme.primary }}; --secondary-color: {{ color_scheme.secondary }}; --glow-color: {{ color_scheme.glow }};">
-                                <div class="hexagon-outline"></div>
-                                <div class="hexagon-glass-bg"></div>
-                                <span class="hexagon-text">{{ category.code }}</span>
+                            <div class="category-hexagon glass-hex" data-color="{{ category.color }}">
+                                <span class="hex-text">{{ category.code }}</span>
                             </div>
-                            <div class="category-glow"></div>
                         </div>
                         <div class="category-info">
                             <h3 class="category-name">{{ category.name }}</h3>
                             <span class="category-count">{{ category.posts.count }} entries</span>
                         </div>
                     </a>
-                    {% endwith %}
                     {% endfor %}
                 </div>
                 
-                <button class="category-scroll-btn category-scroll-right" id="categoryScrollRight">
+                <button class="category-scroll-btn category-scroll-right" id="categoryScrollRight" aria-label="Scroll categories right">
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
@@ -82,13 +73,25 @@
     </div>
 </section>
 
-<!-- Search and Filters Section -->
+<!-- Enhanced Search Section -->
 <section class="datalogs-search-section">
     <div class="container">
-        <!-- Enhanced Search Input -->
         <div class="search-container-enhanced">
             <form method="get" action="{% url 'blog:search' %}" class="search-form-enhanced">
-                {% search_input name="q" placeholder="Search through DataLog entries, code, and insights..." value=query css_class="search-enhanced" %}
+                <div class="search-input-wrapper">
+                    <div class="search-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <input type="text" 
+                           name="q" 
+                           class="search-input-enhanced" 
+                           placeholder="Search DataLog entries, code snippets, and technical insights..."
+                           value="{{ query|default:'' }}"
+                           autocomplete="off">
+                    <button type="submit" class="search-submit-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
                 <div class="search-suggestions" id="searchSuggestions">
                     <!-- Dynamic suggestions populated by JavaScript -->
                 </div>
@@ -126,12 +129,12 @@
         {% section_header title="Featured DataLog Entry" subtitle="Highlighted Technical Insights" icon="fas fa-star" %}
         
         <div class="featured-datalog-container">
-            <!-- Featured Post Content - Left Side -->
+            <!-- Featured Post Content -->
             <div class="featured-content">
                 <div class="featured-header">
                     <div class="post-meta">
                         {% if featured_post.category %}
-                        <span class="category-badge" style="--category-color: {{ featured_post.category.color }};">
+                        <span class="category-badge" data-color="{{ featured_post.category.color }}">
                             {{ featured_post.category.code }}
                         </span>
                         {% endif %}
@@ -143,13 +146,9 @@
                         <a href="{{ featured_post.get_absolute_url }}">{{ featured_post.title }}</a>
                     </h2>
                     
-                    {% if featured_post.subtitle %}
-                    <p class="featured-subtitle">{{ featured_post.subtitle }}</p>
+                    {% if featured_post.excerpt %}
+                    <p class="featured-excerpt">{{ featured_post.excerpt|truncate_smart:200 }}</p>
                     {% endif %}
-                </div>
-                
-                <div class="featured-excerpt">
-                    <p>{{ featured_post.excerpt|default:featured_post.content|truncate_smart:200 }}</p>
                 </div>
                 
                 <div class="featured-tags">
@@ -174,10 +173,10 @@
                 </div>
             </div>
             
-            <!-- Terminal Code Display - Right Side -->
+            <!-- Enhanced Terminal Display -->
             {% if featured_post.featured_code %}
-            <div class="featured-terminal">
-                <div class="terminal-window">
+            <div class="featured-terminal-container">
+                <div class="terminal-window enhanced">
                     <div class="terminal-header">
                         <div class="terminal-controls">
                             <span class="terminal-button red"></span>
@@ -186,21 +185,22 @@
                         </div>
                         <div class="terminal-title">{{ featured_post.get_code_filename }}</div>
                         <div class="terminal-status">
+                            <span class="status-indicator operational"></span>
                             <span class="status-text">{{ featured_post.featured_code_format|upper }}</span>
-                            <div class="status-indicator operational"></div>
                         </div>
                     </div>
                     <div class="terminal-content">
-                        <div class="code-block-enhanced">
+                        <div class="code-display">
                             {{ featured_post.featured_code|highlight_code:featured_post.featured_code_format }}
                         </div>
                     </div>
                     <div class="terminal-footer">
                         <div class="terminal-info">
-                            <span class="line-count">{{ featured_post.featured_code|count_words }} lines</span>
+                            <span class="line-count">{{ featured_post.featured_code|linecount }} lines</span>
                             <span class="lang-indicator">{{ featured_post.featured_code_format }}</span>
+                            <span class="file-size">{{ featured_post.featured_code|length }} chars</span>
                         </div>
-                        {% copy_button featured_post.featured_code "Copy Code" "Code Copied!" %}
+                        {% copy_button featured_post.featured_code "Copy Code" "Copied!" %}
                     </div>
                 </div>
             </div>
@@ -213,7 +213,7 @@
 <!-- DataLog Entries Grid -->
 <section class="datalogs-grid-section">
     <div class="container">
-        <!-- View Controls and Stats -->
+        <!-- Grid Header with Controls -->
         <div class="grid-header">
             <div class="grid-stats">
                 <div class="stat-group">
@@ -266,7 +266,7 @@
                     <div class="datalog-header">
                         <div class="post-meta">
                             {% if post.category %}
-                            <span class="category-badge" style="--category-color: {{ post.category.color }};">
+                            <span class="category-badge" data-color="{{ post.category.color }}">
                                 {{ post.category.code }}
                             </span>
                             {% endif %}
@@ -360,719 +360,4 @@
 
 {% block datalogs_js %}
 <script src="{% static 'blog/js/post_list_enhanced.js' %}"></script>
-
-<style>
-    .categories-grid {
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        overflow-x: auto;
-        padding: 1rem;
-    }
-    
-    .category-nav-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        text-decoration: none;
-        color: white;
-        transition: transform 0.3s ease;
-    }
-    
-    .category-nav-card.active {
-        transform: scale(1.05);
-    }
-    
-    .category-hexagon-container {
-        position: relative;
-        width: 100px;
-        height: 115px;
-        margin-bottom: 1rem;
-    }
-    
-    .category-hexagon-glass {
-        --size: 100px;
-        width: var(--size);
-        aspect-ratio: 1 / 1.15;
-        position: relative;
-        clip-path: polygon(
-            50% 0%, 100% 25%, 100% 75%, 
-            50% 100%, 0% 75%, 0% 25%
-        );
-        background: var(--secondary-color, rgba(255, 255, 255, 0.1));
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 2px solid transparent;
-        z-index: 2;
-    }
-    
-    .hexagon-outline {
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        clip-path: inherit;
-        border: 2px solid var(--primary-color, #26c6da);
-        box-shadow: 0 0 12px var(--glow-color, rgba(38, 198, 218, 0.4));
-        z-index: 3;
-        pointer-events: none;
-    }
-    
-    .hexagon-glass-bg {
-        position: absolute;
-        inset: 0;
-        background: inherit;
-        clip-path: inherit;
-        backdrop-filter: inherit;
-        -webkit-backdrop-filter: inherit;
-        z-index: 1;
-    }
-    
-    .hexagon-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-weight: bold;
-        font-size: 0.9rem;
-        z-index: 4;
-        color: white;
-        pointer-events: none;
-    }
-    
-    .category-info h3,
-    .category-info span {
-        margin: 0;
-        font-size: 0.9rem;
-        color: white;
-    }
-    
-
-
-    /* Enhanced Category Hexagon Styling with Glass Effect and Glowing Outline */
-    
-    {% comment %} .category-hexagon-glass {
-        width: 48px;
-        height: 48px;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2;
-        transition: all var(--transition-normal);
-    }
-    
-    /* Glass-morphism background with hexagon clipping */
-    .hexagon-glass-bg {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 46px;
-        height: 46px;
-        background: 
-            linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)),
-            var(--secondary-color);
-        backdrop-filter: blur(10px);
-        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-        transition: all var(--transition-fast);
-        z-index: 1;
-    }
-    
-    /* Glowing hexagon outline */
-    .hexagon-outline {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 48px;
-        height: 48px;
-        background: transparent;
-        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-        z-index: 0;
-    }
-    
-    .hexagon-outline::before {
-        content: '';
-        position: absolute;
-        top: -2px;
-        left: -2px;
-        right: -2px;
-        bottom: -2px;
-        background: var(--primary-color);
-        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-        opacity: 0.6;
-        filter: blur(1px);
-        transition: all var(--transition-fast);
-    }
-    
-    .hexagon-outline::after {
-        content: '';
-        position: absolute;
-        top: -1px;
-        left: -1px;
-        right: -1px;
-        bottom: -1px;
-        background: var(--primary-color);
-        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-        opacity: 0.8;
-        transition: all var(--transition-fast);
-    }
-    
-    /* Text content on top */
-    .hexagon-text {
-        position: relative;
-        z-index: 3;
-        font-family: var(--font-code);
-        font-size: 0.8rem;
-        color: var(--color-text);
-        font-weight: 700;
-        text-transform: uppercase;
-        line-height: 1;
-        text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
-    }
-    
-    /* Enhanced Hover Effects */
-    .category-nav-card:hover .hexagon-glass-bg {
-        background: 
-            linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1)),
-            var(--secondary-color);
-        transform: translate(-50%, -50%) scale(1.05);
-    }
-    
-    .category-nav-card:hover .hexagon-outline::before {
-        opacity: 0.9;
-        filter: blur(2px);
-        box-shadow: 0 0 15px var(--glow-color);
-    }
-    
-    .category-nav-card:hover .hexagon-outline::after {
-        opacity: 1;
-        box-shadow: 0 0 20px var(--glow-color), inset 0 0 10px var(--glow-color);
-    }
-    
-    .category-nav-card:hover .hexagon-text {
-        color: var(--color-text);
-        text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
-        transform: scale(1.05);
-    }
-    
-    /* Active State Enhancement */
-    .category-nav-card.active .hexagon-glass-bg {
-        background: 
-            linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15)),
-            var(--secondary-color);
-        transform: translate(-50%, -50%) scale(1.1);
-    }
-    
-    .category-nav-card.active .hexagon-outline::before {
-        opacity: 1;
-        filter: blur(3px);
-        box-shadow: 0 0 25px var(--glow-color);
-    }
-    
-    .category-nav-card.active .hexagon-outline::after {
-        opacity: 1;
-        box-shadow: 
-            0 0 30px var(--glow-color), 
-            0 0 15px var(--primary-color),
-            inset 0 0 15px var(--glow-color);
-    }
-    
-    .category-nav-card.active .hexagon-text {
-        color: var(--color-text);
-        text-shadow: 
-            0 0 15px rgba(255, 255, 255, 1),
-            0 0 8px var(--primary-color);
-        transform: scale(1.1);
-        font-weight: 800;
-    }
-    
-    /* Pulse Animation for Active Categories */
-    .category-nav-card.active .category-hexagon-glass {
-        animation: hexagonPulse 3s ease-in-out infinite;
-    }
-    
-    @keyframes hexagonPulse {
-        0%, 100% {
-            filter: drop-shadow(0 0 8px var(--glow-color));
-        }
-        50% {
-            filter: drop-shadow(0 0 20px var(--glow-color)) drop-shadow(0 0 10px var(--primary-color));
-        }
-    }
-    
-    /* Enhanced Category Glow Effect */
-    .category-glow {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(1);
-        width: 70px;
-        height: 70px;
-        background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
-        opacity: 0.2;
-        transition: all var(--transition-fast);
-        z-index: 0;
-        border-radius: 50%;
-    }
-    
-    .category-nav-card:hover .category-glow {
-        opacity: 0.4;
-        transform: translate(-50%, -50%) scale(1.3);
-    }
-    
-    .category-nav-card.active .category-glow {
-        opacity: 0.6;
-        transform: translate(-50%, -50%) scale(1.5);
-        animation: glowPulse 2s ease-in-out infinite;
-    }
-    
-    @keyframes glowPulse {
-        0%, 100% {
-            opacity: 0.6;
-            transform: translate(-50%, -50%) scale(1.5);
-        }
-        50% {
-            opacity: 0.8;
-            transform: translate(-50%, -50%) scale(1.7);
-        }
-    }
-    
-    /* Additional Visual Enhancements */
-    .category-nav-card {
-        position: relative;
-        overflow: visible; /* Allow glow effects to extend beyond bounds */
-    }
-    
-    /* Scanning Effect for Active Categories */
-    .category-nav-card.active::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, 
-            transparent 0%, 
-            var(--glow-color) 50%, 
-            transparent 100%);
-        animation: categoryScan 3s linear infinite;
-        pointer-events: none;
-        z-index: -1;
-        opacity: 0.3;
-    }
-    
-    @keyframes categoryScan {
-        0% { left: -100%; }
-        100% { left: 100%; }
-    }
-    
-    /* Mobile Responsiveness */
-    @media (max-width: 767px) {
-        .category-hexagon-glass {
-            width: 40px;
-            height: 40px;
-        }
-        
-        .hexagon-glass-bg {
-            width: 38px;
-            height: 38px;
-        }
-        
-        .hexagon-outline {
-            width: 40px;
-            height: 40px;
-        }
-        
-        .hexagon-text {
-            font-size: 0.7rem;
-        }
-        
-        .category-glow {
-            width: 60px;
-            height: 60px;
-        }
-    }
-    
-    /* Reduced Motion Support */
-    @media (prefers-reduced-motion: reduce) {
-        .category-hexagon-glass,
-        .hexagon-glass-bg,
-        .hexagon-outline::before,
-        .hexagon-outline::after,
-        .category-glow {
-            animation: none;
-            transition: none;
-        }
-        
-        .category-nav-card:hover .hexagon-glass-bg,
-        .category-nav-card.active .hexagon-glass-bg {
-            transform: translate(-50%, -50%);
-        }
-    } {% endcomment %}
-    </style>
-    
-    <script>
-    // Enhanced Category Interaction Effects
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🔧 Enhancing category hexagon interactions...');
-        
-        const categoryCards = document.querySelectorAll('.category-nav-card');
-        
-        categoryCards.forEach(card => {
-            const hexagonGlass = card.querySelector('.category-hexagon-glass');
-            const primaryColor = hexagonGlass.style.getPropertyValue('--primary-color');
-            
-            // Enhanced click effect
-            card.addEventListener('click', function(e) {
-                // Create ripple effect
-                const ripple = document.createElement('div');
-                const rect = this.getBoundingClientRect();
-                const size = Math.max(rect.width, rect.height);
-                const x = e.clientX - rect.left - size / 2;
-                const y = e.clientY - rect.top - size / 2;
-                
-                ripple.style.cssText = `
-                    position: absolute;
-                    width: ${size}px;
-                    height: ${size}px;
-                    left: ${x}px;
-                    top: ${y}px;
-                    background: radial-gradient(circle, ${primaryColor}30 0%, transparent 70%);
-                    border-radius: 50%;
-                    transform: scale(0);
-                    animation: rippleEffect 0.6s ease-out;
-                    pointer-events: none;
-                    z-index: 1;
-                `;
-                
-                this.appendChild(ripple);
-                
-                // Add temporary glow boost
-                hexagonGlass.style.filter = `drop-shadow(0 0 25px ${primaryColor})`;
-                
-                setTimeout(() => {
-                    ripple.remove();
-                    hexagonGlass.style.filter = '';
-                }, 600);
-            });
-            
-            // Enhanced hover tracking
-            card.addEventListener('mouseenter', function() {
-                hexagonGlass.style.transform = 'scale(1.05)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                hexagonGlass.style.transform = 'scale(1)';
-            });
-        });
-        
-        console.log('✅ Category hexagon interactions enhanced');
-    });
-    
-    // Add ripple keyframe
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes rippleEffect {
-            to {
-                transform: scale(2);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-    </script>
-
-<script>
-    // Enhanced Category Interaction Effects
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🔧 Enhancing category hexagon interactions...');
-        
-        const categoryCards = document.querySelectorAll('.category-nav-card');
-        
-        categoryCards.forEach(card => {
-            const hexagonGlass = card.querySelector('.category-hexagon-glass');
-            const primaryColor = hexagonGlass.style.getPropertyValue('--primary-color');
-            
-            // Enhanced click effect
-            card.addEventListener('click', function(e) {
-                // Create ripple effect
-                const ripple = document.createElement('div');
-                const rect = this.getBoundingClientRect();
-                const size = Math.max(rect.width, rect.height);
-                const x = e.clientX - rect.left - size / 2;
-                const y = e.clientY - rect.top - size / 2;
-                
-                ripple.style.cssText = `
-                    position: absolute;
-                    width: ${size}px;
-                    height: ${size}px;
-                    left: ${x}px;
-                    top: ${y}px;
-                    background: radial-gradient(circle, ${primaryColor}30 0%, transparent 70%);
-                    border-radius: 50%;
-                    transform: scale(0);
-                    animation: rippleEffect 0.6s ease-out;
-                    pointer-events: none;
-                    z-index: 1;
-                `;
-                
-                this.appendChild(ripple);
-                
-                // Add temporary glow boost
-                hexagonGlass.style.filter = `drop-shadow(0 0 25px ${primaryColor})`;
-                
-                setTimeout(() => {
-                    ripple.remove();
-                    hexagonGlass.style.filter = '';
-                }, 600);
-            });
-            
-            // Enhanced hover tracking
-            card.addEventListener('mouseenter', function() {
-                hexagonGlass.style.transform = 'scale(1.05)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                hexagonGlass.style.transform = 'scale(1)';
-            });
-        });
-        
-        console.log('✅ Category hexagon interactions enhanced');
-    });
-    
-    // Add ripple keyframe
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes rippleEffect {
-            to {
-                transform: scale(2);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-    </script>
-
-{% comment %} <script> {% endcomment %}
-{% comment %} document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 Enhanced DataLogs interface loading...');
-    
-    // Initialize enhanced features
-    initCategoryNavigation();
-    initSearchEnhancements();
-    initViewToggle();
-    initCardAnimations();
-    initTerminalEffects();
-    
-    console.log('✅ Enhanced DataLogs interface loaded');
-});
-
-// Enhanced Category Navigation
-function initCategoryNavigation() {
-    const scrollContainer = document.getElementById('categoriesGrid');
-    const leftBtn = document.getElementById('categoryScrollLeft');
-    const rightBtn = document.getElementById('categoryScrollRight');
-    
-    if (!scrollContainer || !leftBtn || !rightBtn) return;
-    
-    function updateScrollButtons() {
-        const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
-        
-        leftBtn.style.opacity = scrollLeft > 0 ? '1' : '0.3';
-        leftBtn.disabled = scrollLeft <= 0;
-        
-        rightBtn.style.opacity = scrollLeft < scrollWidth - clientWidth ? '1' : '0.3';
-        rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth;
-    }
-    
-    leftBtn.addEventListener('click', () => {
-        scrollContainer.scrollBy({ left: -300, behavior: 'smooth' });
-    });
-    
-    rightBtn.addEventListener('click', () => {
-        scrollContainer.scrollBy({ left: 300, behavior: 'smooth' });
-    });
-    
-    scrollContainer.addEventListener('scroll', updateScrollButtons);
-    updateScrollButtons();
-    
-   categoryCards.forEach(card => {
-        const hexagonGlass = card.querySelector('.category-hexagon-glass');
-        const primaryColor = hexagonGlass.style.getPropertyValue('--primary-color');
-        
-        // Enhanced click effect
-        card.addEventListener('click', function(e) {
-            // Create ripple effect
-            const ripple = document.createElement('div');
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
-            
-            ripple.style.cssText = `
-                position: absolute;
-                width: ${size}px;
-                height: ${size}px;
-                left: ${x}px;
-                top: ${y}px;
-                background: radial-gradient(circle, ${primaryColor}30 0%, transparent 70%);
-                border-radius: 50%;
-                transform: scale(0);
-                animation: rippleEffect 0.6s ease-out;
-                pointer-events: none;
-                z-index: 1;
-            `;
-            
-            this.appendChild(ripple);
-            
-            // Add temporary glow boost
-            hexagonGlass.style.filter = `drop-shadow(0 0 25px ${primaryColor})`;
-            
-            setTimeout(() => {
-                ripple.remove();
-                hexagonGlass.style.filter = '';
-            }, 600);
-        });
-        
-        // Enhanced hover tracking
-        card.addEventListener('mouseenter', function() {
-            hexagonGlass.style.transform = 'scale(1.05)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            hexagonGlass.style.transform = 'scale(1)';
-        });
-    });
-    
-    console.log('✅ Category hexagon interactions enhanced');
-});
-}
-
-// Enhanced Search with Suggestions
-function initSearchEnhancements() {
-    const searchInput = document.querySelector('.search-enhanced input');
-    const suggestions = document.getElementById('searchSuggestions');
-    
-    if (!searchInput || !suggestions) return;
-    
-    let searchTimeout;
-    
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        const query = this.value.trim();
-        
-        if (query.length >= 2) {
-            searchTimeout = setTimeout(() => {
-                loadSearchSuggestions(query);
-            }, 300);
-        } else {
-            suggestions.style.display = 'none';
-        }
-    });
-    
-    function loadSearchSuggestions(query) {
-        // Simulate search suggestions (replace with actual API call)
-        const mockSuggestions = [
-            'Machine Learning Fundamentals',
-            'Python Data Analysis',
-            'Django Best Practices',
-            'API Development',
-            'Database Optimization'
-        ].filter(suggestion => 
-            suggestion.toLowerCase().includes(query.toLowerCase())
-        );
-        
-        if (mockSuggestions.length > 0) {
-            suggestions.innerHTML = mockSuggestions.map(suggestion => 
-                `<div class="search-suggestion" onclick="selectSuggestion('${suggestion}')">
-                    <i class="fas fa-search"></i>
-                    <span>${suggestion}</span>
-                </div>`
-            ).join('');
-            suggestions.style.display = 'block';
-        } else {
-            suggestions.style.display = 'none';
-        }
-    }
-    
-    window.selectSuggestion = function(suggestion) {
-        searchInput.value = suggestion;
-        suggestions.style.display = 'none';
-        searchInput.closest('form').submit();
-    };
-}
-
-// View Toggle Functionality
-function initViewToggle() {
-    const toggleBtns = document.querySelectorAll('.view-toggle-btn');
-    const grid = document.getElementById('datalogsGrid');
-    
-    if (!grid) return;
-    
-    toggleBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const view = this.dataset.view;
-            
-            // Update active button
-            toggleBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Update grid layout
-            grid.className = `datalogs-grid datalogs-${view}`;
-        });
-    });
-}
-
-// Card Animations
-function initCardAnimations() {
-    const cards = document.querySelectorAll('.datalog-card');
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, { threshold: 0.1 });
-    
-    cards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
-        observer.observe(card);
-    });
-}
-
-// Terminal Effects
-function initTerminalEffects() {
-    const terminal = document.querySelector('.featured-terminal');
-    if (!terminal) return;
-    
-    // Add typing effect to terminal on scroll into view
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('terminal-active');
-            }
-        });
-    }, { threshold: 0.3 });
-    
-    observer.observe(terminal);
-    
-    // Add copy functionality enhancement
-    const copyBtn = terminal.querySelector('.copy-button');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', function() {
-            // Add visual feedback
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = 'scale(1)';
-            }, 150);
-        });
-    }
-}
-</script> {% endcomment %}
 {% endblock %}

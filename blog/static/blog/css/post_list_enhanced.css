@@ -1,21 +1,20 @@
 /* 
- * Enhanced DataLogs Post List CSS
- * Advanced AURA styling for improved DataLogs interface
- * Version: 1.0.0
+ * Enhanced DataLogs Post List CSS - CLEANED
+ * Advanced functionality for the DataLogs interface
+ * Version: 2.1.0 - Cleaned and Optimized
  */
 
-/* ========== CATEGORIES NAVIGATION CONTAINER ========== */
+/* ========== CATEGORIES NAVIGATION SECTION ========== */
 
-.categories-navigation-container {
-    padding: var(--spacing-lg) 0;
-    margin-top: var(--spacing-md);
-    position: relative;
+.categories-navigation-section {
+    padding: var(--spacing-xl) 0;
+    margin-bottom: var(--spacing-lg);
 }
 
 .categories-glass-panel {
     background: 
         var(--gradient-glass),
-        rgba(13, 13, 31, 0.3);
+        rgba(13, 13, 31, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--border-radius-xl);
     backdrop-filter: blur(20px);
@@ -69,6 +68,7 @@
 .category-scroll-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
+    transform: scale(0.9);
 }
 
 .categories-grid {
@@ -86,103 +86,105 @@
     display: none;
 }
 
-.category-nav-card {
+/* ========== CATEGORY NAVIGATION ITEMS ========== */
+
+.category-nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--border-radius-lg);
     text-decoration: none;
+    color: var(--color-text);
     transition: all var(--transition-normal);
     position: relative;
     min-width: 140px;
     flex-shrink: 0;
     cursor: pointer;
-    overflow: hidden;
+    overflow: visible;
+    border-radius: var(--border-radius-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.category-nav-card:hover {
+.category-nav-item:hover {
     background: rgba(179, 157, 219, 0.05);
     border-color: rgba(179, 157, 219, 0.2);
     transform: translateY(-5px);
     box-shadow: var(--shadow-glow-lavender);
 }
 
-.category-nav-card.active {
+.category-nav-item.active {
     background: rgba(179, 157, 219, 0.1);
     border-color: rgba(179, 157, 219, 0.3);
     box-shadow: var(--shadow-glow-lavender);
 }
 
-/* Enhanced scanning effect for active categories */
-.category-nav-card.active::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        var(--glow-color) 50%, 
-        transparent 100%);
-    animation: categoryScan 3s linear infinite;
-    pointer-events: none;
-    z-index: -1;
-    opacity: 0.2;
-    border-radius: var(--border-radius-lg);
-}
-
 .category-hexagon-container {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 60px;
+    height: 60px;
+    margin-bottom: var(--spacing-sm);
 }
 
-.category-hexagon {
-    width: 48px;
-    height: 48px;
+/* ========== GLASS HEXAGONS WITH COLORED GLOW ========== */
+
+.category-hexagon.glass-hex {
+    width: 60px;
+    height: 60px;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: 
+        linear-gradient(135deg, 
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 50%, 
+            rgba(255, 255, 255, 0.08) 100%
+        ),
+        rgba(13, 13, 31, 0.6);
+    backdrop-filter: blur(15px);
+    border: 2px solid transparent;
+    transition: all var(--transition-normal);
     z-index: 2;
 }
 
-.category-hexagon::before {
+.category-hexagon.glass-hex::before {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 46px;
-    height: 46px;
-    background: var(--hex-color, var(--color-lavender));
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    opacity: 0.9;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    background: var(--hex-color, #26c6da);
+    clip-path: inherit;
+    z-index: -1;
+    opacity: 0.6;
+    filter: blur(1px);
     transition: all var(--transition-fast);
 }
 
-.category-nav-card:hover .category-hexagon::before {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.1);
+.category-hexagon.glass-hex::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    background: var(--hex-color, #26c6da);
+    clip-path: inherit;
+    z-index: -2;
+    opacity: 0.3;
+    filter: blur(4px);
+    transition: all var(--transition-fast);
 }
 
-.category-nav-card.active .category-hexagon::before {
-    opacity: 1;
-    box-shadow: 0 0 20px var(--hex-color, var(--color-lavender));
-}
-
-/* Text stays on top */
-.hexagon-text {
+.hex-text {
     position: relative;
     z-index: 3;
     font-family: var(--font-code);
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: var(--color-text);
     font-weight: 700;
     text-transform: uppercase;
@@ -191,47 +193,73 @@
     transition: all var(--transition-fast);
 }
 
-/* .category-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(1);
-    width: 70px;
-    height: 70px;
-    background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
-    opacity: 0.2;
-    transition: all var(--transition-fast);
-    z-index: 0;
-    border-radius: 50%;
-} */
-
-/* Remove the old category-glow since we're using outline glow */
-.category-glow {
-    display: none;
+/* Enhanced Hover Effects */
+.category-nav-item:hover .category-hexagon.glass-hex {
+    background: 
+        linear-gradient(135deg, 
+            rgba(255, 255, 255, 0.25) 0%,
+            rgba(255, 255, 255, 0.1) 50%, 
+            rgba(255, 255, 255, 0.15) 100%
+        ),
+        rgba(13, 13, 31, 0.7);
+    transform: scale(1.05);
 }
 
-.category-nav-card:hover .category-glow {
-    opacity: 0.4;
-    transform: translate(-50%, -50%) scale(1.3);
+.category-nav-item:hover .category-hexagon.glass-hex::before {
+    opacity: 0.8;
+    filter: blur(2px);
+    box-shadow: 0 0 15px var(--hex-color, #26c6da);
 }
 
-.category-nav-card.active .category-glow {
-    opacity: 0.6;
-    transform: translate(-50%, -50%) scale(1.5);
-    animation: glowPulse 2s ease-in-out infinite;
+.category-nav-item:hover .category-hexagon.glass-hex::after {
+    opacity: 0.5;
+    filter: blur(6px);
+    transform: scale(1.1);
 }
 
-@keyframes glowPulse {
-    0%, 100% {
-        opacity: 0.6;
-        transform: translate(-50%, -50%) scale(1.5);
-    }
-    50% {
-        opacity: 0.8;
-        transform: translate(-50%, -50%) scale(1.7);
-    }
+.category-nav-item:hover .hex-text {
+    color: var(--color-text);
+    text-shadow: 
+        0 0 12px rgba(255, 255, 255, 0.8),
+        0 0 6px var(--hex-color, #26c6da);
+    transform: scale(1.05);
 }
 
+/* Active State Enhancement */
+.category-nav-item.active .category-hexagon.glass-hex {
+    background: 
+        linear-gradient(135deg, 
+            rgba(255, 255, 255, 0.3) 0%,
+            rgba(255, 255, 255, 0.15) 50%, 
+            rgba(255, 255, 255, 0.2) 100%
+        ),
+        rgba(13, 13, 31, 0.8);
+    transform: scale(1.1);
+}
+
+.category-nav-item.active .category-hexagon.glass-hex::before {
+    opacity: 1;
+    filter: blur(3px);
+    box-shadow: 0 0 25px var(--hex-color, #26c6da);
+}
+
+.category-nav-item.active .category-hexagon.glass-hex::after {
+    opacity: 0.7;
+    filter: blur(8px);
+    transform: scale(1.2);
+    animation: hexGlow 2s ease-in-out infinite;
+}
+
+.category-nav-item.active .hex-text {
+    color: var(--color-text);
+    text-shadow: 
+        0 0 15px rgba(255, 255, 255, 1),
+        0 0 8px var(--hex-color, #26c6da);
+    transform: scale(1.1);
+    font-weight: 800;
+}
+
+/* Category Info */
 .category-info {
     text-align: center;
     z-index: 2;
@@ -244,6 +272,7 @@
     margin: 0 0 0.2rem 0;
     font-weight: 600;
     white-space: nowrap;
+    transition: color var(--transition-fast);
 }
 
 .category-count {
@@ -251,221 +280,24 @@
     font-size: 0.75rem;
     color: var(--color-text-tertiary);
     white-space: nowrap;
+    transition: color var(--transition-fast);
 }
 
-.category-nav-card:hover .category-name {
+.category-nav-item:hover .category-name,
+.category-nav-item.active .category-name {
     color: var(--color-lavender);
 }
 
-.category-nav-card.active .category-name {
-    color: var(--color-lavender);
-}
-
-/* Clean Glass Hexagon with Colored Outline Only */
-
-.category-hexagon-glass {
-    width: 48px;
-    height: 48px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    transition: all var(--transition-normal);
-}
-
-/* Pure glass background - no color */
-.hexagon-glass-bg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 46px;
-    height: 46px;
-    background: 
-        linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.12) 0%,
-            rgba(255, 255, 255, 0.04) 50%, 
-            rgba(255, 255, 255, 0.08) 100%
-        ),
-        rgba(13, 13, 31, 0.3);
-    backdrop-filter: blur(15px);
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    transition: all var(--transition-fast);
-    z-index: 1;
-    border: none;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* Colored hexagon outline using CSS border technique */
-.hexagon-outline {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 48px;
-    height: 48px;
-    z-index: 0;
-}
-
-
-/* Create hexagon outline using multiple elements */
-.hexagon-outline::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    border: 1.5px solid var(--primary-color);
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    opacity: 0.8;
-    transition: all var(--transition-fast);
-}
-
-/* Outer glow effect */
-.hexagon-outline::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    width: calc(100% + 4px);
-    height: calc(100% + 4px);
-    background: var(--primary-color);
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    opacity: 0.2;
-    filter: blur(2px);
-    transition: all var(--transition-fast);
-    z-index: -1;
-}
-
-
-/* Hover Effects - Enhanced glass and stronger outline */
-.category-nav-card:hover .hexagon-glass-bg {
-    background: 
-        linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.18) 0%,
-            rgba(255, 255, 255, 0.08) 50%, 
-            rgba(255, 255, 255, 0.12) 100%
-        ),
-        rgba(13, 13, 31, 0.4);
-    transform: translate(-50%, -50%) scale(1.02);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-
-.category-nav-card:active .hexagon-glass-bg {
-    transform: translate(-50%, -50%) scale(0.98);
-}
-
-@keyframes simpleHexPulse {
-    0%, 100% {
-        box-shadow: 
-            0 0 20px var(--glow-color),
-            0 0 10px var(--primary-color),
-            inset 0 0 20px rgba(255, 255, 255, 0.3);
-    }
-    50% {
-        box-shadow: 
-            0 0 30px var(--glow-color),
-            0 0 15px var(--primary-color),
-            inset 0 0 25px rgba(255, 255, 255, 0.4);
-    }
-}
-
-.category-nav-card:hover .hexagon-outline::before {
-    border-width: 2px;
-    opacity: 1;
-    filter: drop-shadow(0 0 3px var(--primary-color));
-}
-
-.category-nav-card:hover .hexagon-outline::after {
-    opacity: 0.3;
-    filter: blur(3px);
-    transform: scale(1.05);
-}
-
-.category-nav-card:hover .hexagon-text {
-    color: var(--color-text);
-    text-shadow: 
-        0 0 12px rgba(255, 255, 255, 0.8),
-        0 0 6px var(--primary-color);
-    transform: scale(1.02);
-}
-
-/* Active State - Stronger glass effect and prominent outline */
-.category-nav-card.active .hexagon-glass-bg {
-    background: 
-        linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.25) 0%,
-            rgba(255, 255, 255, 0.12) 50%, 
-            rgba(255, 255, 255, 0.18) 100%
-        ),
-        rgba(13, 13, 31, 0.5);
-    transform: translate(-50%, -50%) scale(1.05);
-    box-shadow: 
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.category-nav-card:active .hexagon-outline::before {
-    border-width: 3px;
-    filter: drop-shadow(0 0 8px var(--primary-color));
-}
-
-.category-nav-card.active .hexagon-outline::after {
-    opacity: 0.4;
-    filter: blur(4px);
-    transform: scale(1.1);
-    animation: outlineGlow 2s ease-in-out infinite;
-}
-
-.category-nav-card.active .hexagon-text {
-    color: var(--color-text);
-    text-shadow: 
-        0 0 15px rgba(255, 255, 255, 1),
-        0 0 8px var(--primary-color),
-        0 0 4px rgba(255, 255, 255, 0.8);
-    transform: scale(1.05);
-    font-weight: 800;
-}
-
-/* Pulsing glow animation for active state */
-@keyframes outlineGlow {
-    0%, 100% {
-        opacity: 0.4;
-        transform: scale(1.1);
-    }
-    50% {
-        opacity: 0.6;
-        transform: scale(1.15);
-    }
-}
-
-/* Pulse Animation for Active Categories */
-.category-nav-card.active .category-hexagon-glass {
-    animation: hexagonPulse 3s ease-in-out infinite;
-}
-
-@keyframes hexagonPulse {
-    0%, 100% {
-        filter: drop-shadow(0 0 8px var(--glow-color));
-    }
-    50% {
-        filter: drop-shadow(0 0 20px var(--glow-color)) drop-shadow(0 0 10px var(--primary-color));
-    }
-}
-
-@keyframes categoryScan {
-    0% { left: -100%; }
-    100% { left: 100%; }
+.category-nav-item:hover .category-count,
+.category-nav-item.active .category-count {
+    color: var(--color-text-secondary);
 }
 
 /* ========== SEARCH SECTION ========== */
 
 .datalogs-search-section {
     padding: var(--spacing-xl) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .search-container-enhanced {
@@ -477,28 +309,21 @@
     position: relative;
 }
 
-.search-enhanced {
+.search-input-wrapper {
     position: relative;
-}
-
-.search-enhanced input {
-    width: 100%;
-    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) 3.5rem;
+    display: flex;
+    align-items: center;
     background: 
         var(--gradient-glass),
         rgba(7, 7, 18, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--border-radius-xl);
-    color: var(--color-text);
-    font-family: var(--font-body);
-    font-size: 1.1rem;
-    transition: all var(--transition-fast);
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: all var(--transition-fast);
 }
 
-.search-enhanced input:focus {
-    outline: none;
+.search-input-wrapper:focus-within {
     border-color: var(--color-lavender);
     box-shadow: 0 0 0 2px rgba(179, 157, 219, 0.2), 0 4px 20px rgba(0, 0, 0, 0.3);
     background: 
@@ -506,10 +331,50 @@
         rgba(7, 7, 18, 0.8);
 }
 
-.search-enhanced .search-icon {
+.search-icon {
+    position: absolute;
     left: var(--spacing-lg);
     color: var(--color-lavender);
     font-size: 1.2rem;
+    z-index: 2;
+}
+
+.search-input-enhanced {
+    width: 100%;
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) 3.5rem;
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    outline: none;
+}
+
+.search-input-enhanced::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.search-submit-btn {
+    position: absolute;
+    right: var(--spacing-sm);
+    width: 40px;
+    height: 40px;
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: 50%;
+    color: var(--color-lavender);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.search-submit-btn:hover {
+    background: rgba(179, 157, 219, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(179, 157, 219, 0.4);
 }
 
 .search-suggestions {
@@ -529,33 +394,18 @@
     max-height: 300px;
     overflow-y: auto;
     display: none;
-}
-
-.search-suggestion {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    color: var(--color-text-secondary);
-    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-10px);
     transition: all var(--transition-fast);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.search-suggestion:last-child {
-    border-bottom: none;
+.search-suggestions.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
 }
 
-.search-suggestion:hover {
-    background: rgba(179, 157, 219, 0.1);
-    color: var(--color-lavender);
-}
-
-.search-suggestion i {
-    color: var(--color-lavender);
-    font-size: 0.9rem;
-}
-
+/* Quick Filters */
 .quick-filters {
     display: flex;
     align-items: center;
@@ -657,6 +507,12 @@
     transition: all var(--transition-fast);
 }
 
+.category-badge[data-color] {
+    border-color: var(--category-color, rgba(179, 157, 219, 0.3));
+    background: var(--category-color, rgba(179, 157, 219, 0.1));
+    color: var(--category-color, var(--color-lavender));
+}
+
 .category-badge:hover {
     background: rgba(179, 157, 219, 0.2);
     color: var(--color-lavender);
@@ -685,13 +541,6 @@
 
 .featured-title a:hover {
     color: var(--color-lavender);
-}
-
-.featured-subtitle {
-    font-size: 1.1rem;
-    color: var(--color-text-secondary);
-    margin: 0;
-    font-weight: 300;
 }
 
 .featured-excerpt {
@@ -725,23 +574,23 @@
     gap: var(--spacing-md);
 }
 
-/* ========== TERMINAL CODE DISPLAY ========== */
+/* ========== ENHANCED TERMINAL DISPLAY ========== */
 
-.featured-terminal {
+.featured-terminal-container {
     opacity: 0;
     transform: translateX(30px);
     transition: all 0.8s ease;
 }
 
-.featured-terminal.terminal-active {
+.featured-terminal-container.terminal-active {
     opacity: 1;
     transform: translateX(0);
 }
 
-.terminal-window {
+.terminal-window.enhanced {
     background: 
         var(--gradient-glass),
-        rgba(7, 7, 18, 0.8);
+        rgba(7, 7, 18, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--border-radius-lg);
     overflow: hidden;
@@ -750,7 +599,7 @@
     position: relative;
 }
 
-.terminal-window::before {
+.terminal-window.enhanced::before {
     content: '';
     position: absolute;
     top: 0;
@@ -819,19 +668,13 @@
     overflow-y: auto;
 }
 
-.code-block-enhanced {
+.code-display {
     position: relative;
 }
 
-.code-block-enhanced .highlighted {
+.code-display pre {
     background: transparent !important;
     border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-.code-block-enhanced pre {
-    background: transparent !important;
     margin: 0 !important;
     padding: 0 !important;
     white-space: pre-wrap;
@@ -857,7 +700,8 @@
 }
 
 .line-count,
-.lang-indicator {
+.lang-indicator,
+.file-size {
     padding: 0.2rem 0.4rem;
     background: rgba(255, 255, 255, 0.05);
     border-radius: var(--border-radius-sm);
@@ -972,6 +816,8 @@
     opacity: 0.6;
 }
 
+/* ========== DATALOG CARDS ========== */
+
 .datalog-card {
     background: 
         var(--gradient-glass), 
@@ -1006,42 +852,11 @@
     border-color: rgba(179, 157, 219, 0.2);
 }
 
-.datalogs-list .datalog-card {
-    flex-direction: row;
-    height: auto;
-}
-
-.datalogs-timeline .datalog-card {
-    position: relative;
-    margin-left: var(--spacing-lg);
-}
-
-.datalogs-timeline .datalog-card::after {
-    content: '';
-    position: absolute;
-    left: calc(-1 * var(--spacing-xl) - 6px);
-    top: var(--spacing-lg);
-    width: 12px;
-    height: 12px;
-    background: var(--color-lavender);
-    border-radius: 50%;
-    box-shadow: 0 0 0 4px rgba(179, 157, 219, 0.2);
-}
-
 .datalog-image {
     position: relative;
     height: 200px;
     overflow: hidden;
     flex-shrink: 0;
-}
-
-.datalogs-list .datalog-image {
-    width: 300px;
-    height: auto;
-}
-
-.datalogs-timeline .datalog-image {
-    height: 150px;
 }
 
 .datalog-image img {
@@ -1249,6 +1064,19 @@
     color: var(--color-text-tertiary);
 }
 
+/* ========== ANIMATIONS ========== */
+
+@keyframes hexGlow {
+    0%, 100% {
+        opacity: 0.7;
+        transform: scale(1.2);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.3);
+    }
+}
+
 /* ========== RESPONSIVE DESIGN ========== */
 
 @media (max-width: 1200px) {
@@ -1256,19 +1084,14 @@
         gap: var(--spacing-md);
     }
     
-    .category-nav-card {
+    .category-nav-item {
         min-width: 120px;
         padding: var(--spacing-md);
     }
     
-    .category-hexagon {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .category-hexagon::before {
-        width: 38px;
-        height: 38px;
+    .category-hexagon.glass-hex {
+        width: 50px;
+        height: 50px;
     }
     
     .featured-datalog-container {
@@ -1282,22 +1105,12 @@
 }
 
 @media (max-width: 991px) {
-    .categories-scroll-container {
-        gap: var(--spacing-sm);
-    }
-    
-    .category-scroll-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 0.9rem;
-    }
-    
     .featured-datalog-container {
         grid-template-columns: 1fr;
         gap: var(--spacing-lg);
     }
     
-    .featured-terminal {
+    .featured-terminal-container {
         order: -1;
     }
     
@@ -1331,48 +1144,18 @@
         padding: var(--spacing-lg);
     }
     
-    .category-nav-card {
+    .category-nav-item {
         min-width: 100px;
         padding: var(--spacing-sm);
     }
     
-    .category-hexagon {
-        width: 32px;
-        height: 32px;
-    }
-    
-    .category-hexagon::before {
-        width: 30px;
-        height: 30px;
-    }
-    
-    .hexagon-text {
-        font-size: 0.7rem;
-    }
-
-    .category-hexagon-glass {
+    .category-hexagon.glass-hex {
         width: 40px;
         height: 40px;
     }
     
-    .hexagon-glass-bg {
-        width: 38px;
-        height: 38px;
-    }
-    
-    .hexagon-outline {
-        width: 40px;
-        height: 40px;
-    }
-
-    .category-nav-card:hover .hexagon-outline::before,
-    .category-nav-card.active .hexagon-outline::before {
-        border-width: 2px;
-    }
-    
-    .category-glow {
-        width: 60px;
-        height: 60px;
+    .hex-text {
+        font-size: 0.8rem;
     }
     
     .category-name {
@@ -1383,12 +1166,12 @@
         font-size: 0.7rem;
     }
     
-    .search-enhanced input {
+    .search-input-enhanced {
         padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 3rem;
         font-size: 1rem;
     }
     
-    .search-enhanced .search-icon {
+    .search-icon {
         left: var(--spacing-md);
         font-size: 1rem;
     }
@@ -1424,15 +1207,6 @@
         gap: var(--spacing-md);
     }
     
-    .datalogs-list .datalog-card {
-        flex-direction: column;
-    }
-    
-    .datalogs-list .datalog-image {
-        width: 100%;
-        height: 200px;
-    }
-    
     .grid-stats {
         gap: var(--spacing-md);
     }
@@ -1444,10 +1218,6 @@
 }
 
 @media (max-width: 576px) {
-    .categories-navigation-container {
-        padding: var(--spacing-md) 0;
-    }
-    
     .category-scroll-btn {
         display: none;
     }
@@ -1459,18 +1229,6 @@
     .categories-grid {
         justify-content: flex-start;
         padding: var(--spacing-xs) 0;
-    }
-    
-    .datalogs-search-section {
-        padding: var(--spacing-lg) 0;
-    }
-    
-    .featured-datalog-section {
-        padding: var(--spacing-lg) 0;
-    }
-    
-    .datalogs-grid-section {
-        padding: var(--spacing-lg) 0;
     }
     
     .datalog-footer {
@@ -1485,109 +1243,5 @@
     
     .read-more-btn {
         justify-content: center;
-    }
-}
-
-
-/* Fallback for browsers that don't support clip-path */
-@supports not (clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)) {
-    .hexagon-glass-bg,
-    .hexagon-outline::before,
-    .hexagon-outline::after {
-        border-radius: 50%;
-        clip-path: none;
-    }
-    
-    .hexagon-glass-bg {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .hexagon-outline {
-        width: 44px;
-        height: 44px;
-    }
-}
-
-/* ========== ACCESSIBILITY ENHANCEMENTS ========== */
-
-.category-nav-card:focus,
-.filter-tag:focus,
-.datalog-card:focus,
-.pagination-btn:focus {
-    outline: 2px solid var(--color-lavender);
-    outline-offset: 2px;
-}
-
-/* ========== HIGH CONTRAST MODE ========== */
-
-@media (prefers-contrast: high) {
-    .categories-glass-panel,
-    .terminal-window,
-    .datalog-card {
-        border-width: 2px;
-        backdrop-filter: none;
-        background: rgba(13, 13, 31, 0.9);
-    }
-    
-    .category-hexagon::before {
-        border: 2px solid var(--color-text);
-    }
-
-    .hexagon-glass-bg {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: none;
-    }
-    
-    .hexagon-outline::before {
-        border-width: 3px;
-        opacity: 1;
-    }
-    
-    .hexagon-text {
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-    }
-}
-
-/* ========== REDUCED MOTION ========== */
-
-@media (prefers-reduced-motion: reduce) {
-    .category-hexagon-glass,
-    .hexagon-glass-bg,
-    .hexagon-outline::before,
-    .hexagon-outline::after,
-    .category-glow {
-        animation: none;
-        transition: none;
-    }
-
-    .category-nav-card,
-    .datalog-card,
-    .featured-terminal,
-    .pagination-btn,
-    .read-more-btn {
-        transition: none;
-    }
-    
-    .category-nav-card:hover .hexagon-glass-bg,
-    .category-nav-card.active .hexagon-glass-bg {
-        transform: translate(-50%, -50%);
-    }
-
-    .datalog-card:hover {
-        transform: none;
-    }
-    
-    .datalog-image img {
-        transition: none;
-    }
-    
-    .datalog-card:hover .datalog-image img {
-        transform: none;
-    }
-
-    .category-nav-card:hover .hexagon-text,
-    .category-nav-card.active .hexagon-text {
-        transform: none;
     }
 }

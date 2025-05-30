@@ -1,11 +1,11 @@
 /**
- * Enhanced DataLogs Post List JavaScript
- * Advanced functionality for the improved DataLogs interface
- * Version: 1.0.0
+ * Enhanced DataLogs Post List JavaScript - CLEANED
+ * Advanced functionality for the DataLogs interface
+ * Version: 2.1.0 - Cleaned and Optimized
  */
 
-// Enhanced DataLogs Interface State
-let DataLogsEnhanced = {
+// DataLogs Interface State
+const DataLogsEnhanced = {
     initialized: false,
     currentView: 'grid',
     searchTimeout: null,
@@ -19,13 +19,13 @@ function initEnhancedDataLogs() {
     console.log('🚀 Enhanced DataLogs Interface Initializing...');
     
     // Initialize all enhanced features
-    initEnhancedCategoryNavigation();
+    initCategoryNavigation();
     initEnhancedSearch();
     initViewToggleSystem();
-    initCardAnimationSystem();
+    initCardAnimations();
     initTerminalEnhancements();
-    initFilterSystem();
-    initPerformanceOptimizations();
+    initScrollEffects();
+    initCategoryColorSystem();
     
     // Mark as initialized
     DataLogsEnhanced.initialized = true;
@@ -33,9 +33,9 @@ function initEnhancedDataLogs() {
 }
 
 /**
- * Enhanced Category Navigation with Better UX
+ * Initialize Category Navigation with Glass Hexagons
  */
-function initEnhancedCategoryNavigation() {
+function initCategoryNavigation() {
     const scrollContainer = document.getElementById('categoriesGrid');
     const leftBtn = document.getElementById('categoryScrollLeft');
     const rightBtn = document.getElementById('categoryScrollRight');
@@ -45,9 +45,9 @@ function initEnhancedCategoryNavigation() {
         return;
     }
     
-    console.log('📂 Initializing enhanced category navigation...');
+    console.log('📂 Initializing category navigation...');
     
-    // Enhanced scroll button logic with smooth animations
+    // Enhanced scroll button logic
     function updateScrollButtons() {
         const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
         const maxScroll = scrollWidth - clientWidth;
@@ -110,47 +110,18 @@ function initEnhancedCategoryNavigation() {
     window.addEventListener('resize', throttle(updateScrollButtons, 150));
     
     // Enhanced category card interactions
-    const categoryCards = document.querySelectorAll('.category-nav-card');
+    const categoryCards = document.querySelectorAll('.category-nav-item');
     categoryCards.forEach((card, index) => {
-        // Enhanced hover effects
-        card.addEventListener('mouseenter', function() {
-            const glow = this.querySelector('.category-glow');
-            const hexagon = this.querySelector('.category-hexagon');
-            
-            if (glow) {
-                glow.style.opacity = '0.6';
-                glow.style.transform = 'translate(-50%, -50%) scale(1.3)';
-            }
-            
-            if (hexagon) {
-                hexagon.style.transform = 'scale(1.05)';
-            }
-            
-            // Add ripple effect
-            createRippleEffect(this, event);
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            const glow = this.querySelector('.category-glow');
-            const hexagon = this.querySelector('.category-hexagon');
-            
-            if (glow) {
-                glow.style.opacity = '0.3';
-                glow.style.transform = 'translate(-50%, -50%) scale(1)';
-            }
-            
-            if (hexagon) {
-                hexagon.style.transform = 'scale(1)';
-            }
-        });
-        
-        // Click animation
+        // Click animation with ripple effect
         card.addEventListener('click', function(e) {
             // Add loading state
             this.classList.add('category-loading');
             
+            // Create ripple effect
+            createRippleEffect(this, e);
+            
             // Animate hexagon
-            const hexagon = this.querySelector('.category-hexagon');
+            const hexagon = this.querySelector('.category-hexagon.glass-hex');
             if (hexagon) {
                 hexagon.style.transform = 'scale(0.9)';
                 setTimeout(() => {
@@ -193,14 +164,39 @@ function initEnhancedCategoryNavigation() {
         isDragging = false;
     });
     
-    console.log('✅ Enhanced category navigation initialized');
+    console.log('✅ Category navigation initialized');
+}
+
+/**
+ * Initialize Category Color System
+ */
+function initCategoryColorSystem() {
+    const categoryItems = document.querySelectorAll('.category-nav-item');
+    const categoryBadges = document.querySelectorAll('.category-badge[data-color]');
+    
+    // Apply colors to category hexagons
+    categoryItems.forEach(item => {
+        const hexagon = item.querySelector('.category-hexagon.glass-hex');
+        if (hexagon && hexagon.dataset.color) {
+            const color = hexagon.dataset.color;
+            hexagon.style.setProperty('--hex-color', color);
+        }
+    });
+    
+    // Apply colors to category badges
+    categoryBadges.forEach(badge => {
+        if (badge.dataset.color) {
+            const color = badge.dataset.color;
+            badge.style.setProperty('--category-color', color);
+        }
+    });
 }
 
 /**
  * Enhanced Search with Real-time Suggestions
  */
 function initEnhancedSearch() {
-    const searchInput = document.querySelector('.search-enhanced input');
+    const searchInput = document.querySelector('.search-input-enhanced');
     const suggestions = document.getElementById('searchSuggestions');
     const quickFilters = document.querySelectorAll('.filter-tag');
     
@@ -266,25 +262,13 @@ function initEnhancedSearch() {
     
     function showSuggestions() {
         if (suggestions) {
-            suggestions.style.display = 'block';
-            suggestions.style.opacity = '0';
-            suggestions.style.transform = 'translateY(-10px)';
-            
-            setTimeout(() => {
-                suggestions.style.opacity = '1';
-                suggestions.style.transform = 'translateY(0)';
-            }, 50);
+            suggestions.classList.add('show');
         }
     }
     
     function hideSuggestions() {
         if (suggestions) {
-            suggestions.style.opacity = '0';
-            suggestions.style.transform = 'translateY(-10px)';
-            
-            setTimeout(() => {
-                suggestions.style.display = 'none';
-            }, 200);
+            suggestions.classList.remove('show');
         }
     }
     
@@ -309,10 +293,9 @@ function initEnhancedSearch() {
                 this.style.transform = 'scale(1)';
             }, 150);
             
-            // Simulate filter application (replace with actual logic)
+            // Show feedback
             setTimeout(() => {
-                // Add visual feedback
-                createNotification(`Filter "${this.textContent.trim()}" ${this.classList.contains('active') ? 'applied' : 'removed'}`, 'info');
+                showNotification(`Filter "${this.textContent.trim()}" ${this.classList.contains('active') ? 'applied' : 'removed'}`, 'info');
             }, 300);
         });
     });
@@ -326,7 +309,7 @@ function initEnhancedSearch() {
     
     // Keyboard navigation for suggestions
     searchInput.addEventListener('keydown', function(e) {
-        if (!suggestions || suggestions.style.display === 'none') return;
+        if (!suggestions || !suggestions.classList.contains('show')) return;
         
         const suggestionItems = suggestions.querySelectorAll('.search-suggestion');
         let currentIndex = Array.from(suggestionItems).findIndex(item => 
@@ -398,8 +381,8 @@ function initViewToggleSystem() {
             // Store preference
             localStorage.setItem('datalogViewPreference', newView);
             
-            // Analytics tracking (if needed)
-            trackViewChange(newView);
+            // Analytics tracking
+            console.log(`📊 View changed to: ${newView}`);
         });
     });
     
@@ -435,18 +418,13 @@ function initViewToggleSystem() {
         }, 150);
     }
     
-    function trackViewChange(view) {
-        // Analytics tracking placeholder
-        console.log(`📊 View changed to: ${view}`);
-    }
-    
     console.log('✅ View toggle system initialized');
 }
 
 /**
  * Advanced Card Animation System
  */
-function initCardAnimationSystem() {
+function initCardAnimations() {
     const cards = document.querySelectorAll('.datalog-card');
     
     if (cards.length === 0) return;
@@ -493,13 +471,6 @@ function initCardAnimationSystem() {
         card.addEventListener('mouseenter', function() {
             clearTimeout(hoverTimeout);
             
-            // Add glow effect
-            this.style.boxShadow = `
-                0 8px 32px rgba(0, 0, 0, 0.3),
-                0 0 20px rgba(179, 157, 219, 0.2),
-                0 0 40px rgba(179, 157, 219, 0.1)
-            `;
-            
             // Enhance image if present
             const image = this.querySelector('.datalog-image img');
             if (image) {
@@ -515,9 +486,6 @@ function initCardAnimationSystem() {
         
         card.addEventListener('mouseleave', function() {
             hoverTimeout = setTimeout(() => {
-                // Reset effects
-                this.style.boxShadow = '';
-                
                 const image = this.querySelector('.datalog-image img');
                 if (image) {
                     image.style.transform = 'scale(1)';
@@ -547,7 +515,7 @@ function initCardAnimationSystem() {
  * Terminal Enhancements
  */
 function initTerminalEnhancements() {
-    const terminal = document.querySelector('.featured-terminal');
+    const terminal = document.querySelector('.featured-terminal-container');
     
     if (!terminal) return;
     
@@ -568,12 +536,6 @@ function initTerminalEnhancements() {
     function activateTerminal(terminal) {
         terminal.classList.add('terminal-active');
         
-        // Add typing animation to code content
-        const codeContent = terminal.querySelector('.code-block-enhanced');
-        if (codeContent) {
-            simulateTyping(codeContent);
-        }
-        
         // Animate terminal buttons
         const buttons = terminal.querySelectorAll('.terminal-button');
         buttons.forEach((button, index) => {
@@ -583,134 +545,31 @@ function initTerminalEnhancements() {
         });
     }
     
-    function simulateTyping(codeElement) {
-        const originalContent = codeElement.innerHTML;
-        const lines = originalContent.split('\n');
-        
-        codeElement.innerHTML = '';
-        codeElement.style.borderRight = '2px solid var(--color-teal)';
-        
-        let lineIndex = 0;
-        let charIndex = 0;
-        
-        function typeNextChar() {
-            if (lineIndex >= lines.length) {
-                // Typing complete, remove cursor
-                codeElement.style.borderRight = 'none';
-                return;
-            }
-            
-            const currentLine = lines[lineIndex];
-            
-            if (charIndex < currentLine.length) {
-                codeElement.innerHTML += currentLine[charIndex];
-                charIndex++;
-                setTimeout(typeNextChar, Math.random() * 50 + 25);
-            } else {
-                // Line complete, add newline and move to next
-                if (lineIndex < lines.length - 1) {
-                    codeElement.innerHTML += '\n';
-                }
-                lineIndex++;
-                charIndex = 0;
-                setTimeout(typeNextChar, 200);
-            }
-        }
-        
-        // Start typing animation after a short delay
-        setTimeout(typeNextChar, 500);
-    }
-    
-    // Enhanced copy button functionality
-    const copyBtn = terminal.querySelector('.copy-button');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', function() {
-            // Enhanced visual feedback
-            this.style.transform = 'scale(0.95)';
-            this.style.background = 'rgba(165, 214, 167, 0.2)';
-            
-            setTimeout(() => {
-                this.style.transform = 'scale(1)';
-                this.style.background = '';
-            }, 200);
-            
-            // Show success notification
-            createNotification('Code copied to clipboard!', 'success');
-        });
-    }
-    
     console.log('✅ Terminal enhancements initialized');
 }
 
 /**
- * Filter System
+ * Initialize Scroll Effects
  */
-function initFilterSystem() {
-    console.log('🔧 Initializing filter system...');
+function initScrollEffects() {
+    // Add scroll-triggered animations
+    const animateElements = document.querySelectorAll('.stat-group, .filter-tag, .pagination-btn');
     
-    // This would integrate with the existing filter panel
-    // For now, just add visual enhancements to filter interactions
-    
-    const filterTags = document.querySelectorAll('.filter-tag');
-    filterTags.forEach(tag => {
-        tag.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Toggle active state with animation
-            const wasActive = this.classList.contains('active');
-            
-            if (wasActive) {
-                this.classList.remove('active');
-                this.style.transform = 'scale(0.95)';
-            } else {
-                this.classList.add('active');
-                this.style.transform = 'scale(1.05)';
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
             }
-            
-            setTimeout(() => {
-                this.style.transform = 'scale(1)';
-            }, 150);
         });
+    }, { threshold: 0.1 });
+    
+    animateElements.forEach(element => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(element);
     });
-    
-    console.log('✅ Filter system initialized');
-}
-
-/**
- * Performance Optimizations
- */
-function initPerformanceOptimizations() {
-    console.log('⚡ Initializing performance optimizations...');
-    
-    // Lazy loading for images
-    const images = document.querySelectorAll('.datalog-image img');
-    
-    if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    if (img.dataset.src) {
-                        img.src = img.dataset.src;
-                        img.removeAttribute('data-src');
-                    }
-                    imageObserver.unobserve(img);
-                }
-            });
-        });
-        
-        images.forEach(img => {
-            if (img.getAttribute('loading') !== 'lazy') {
-                img.setAttribute('loading', 'lazy');
-            }
-            imageObserver.observe(img);
-        });
-    }
-    
-    // Preload critical resources
-    preloadCriticalResources();
-    
-    console.log('✅ Performance optimizations initialized');
 }
 
 /**
@@ -763,7 +622,7 @@ function createRippleEffect(element, event) {
 }
 
 // Create notifications
-function createNotification(message, type = 'info') {
+function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
@@ -817,23 +676,6 @@ function createNotification(message, type = 'info') {
             }
         }, 300);
     }, 3000);
-}
-
-// Preload critical resources
-function preloadCriticalResources() {
-    // Preload critical CSS that might be needed
-    const criticalCSS = [
-        '/static/css/components/animations.css',
-        '/static/css/components/hud-elements.css'
-    ];
-    
-    criticalCSS.forEach(href => {
-        const link = document.createElement('link');
-        link.rel = 'preload';
-        link.as = 'style';
-        link.href = href;
-        document.head.appendChild(link);
-    });
 }
 
 // Add CSS for animations
