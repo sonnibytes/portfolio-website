@@ -161,7 +161,7 @@ def format_number(value):
 def file_size(bytes_value):
     """
     Converts bytes to human-readable file size.
-    Usage: {{ 1,024,000|file_size }} -> "1.0 MB"
+    Usage: {{ 1024000|file_size }} -> "1.0 MB"
     """
     try:
         bytes_value = float(bytes_value)

@@ -150,20 +150,20 @@ def datalog_reading_level(post):
         return "Quick"
 
     word_count = len(post.content.split())
-    code_blocks = count_code_blocks(post)
+    # code_blocks = count_code_blocks(post)
 
     if word_count < 500:
         return "Quick Read"
     elif word_count < 1500:
         return "Medium Read"
-    elif code_blocks > 3:
-        return "Technical Deep Dive"
+    # elif code_blocks > 3:
+    #     return "Technical Deep Dive"
     else:
         return "Long Read"
 
 
 @register.filter
-def has_system_connections(post):
+def has_system_connection(post):
     """
     Check if post has system connections
     Usage: {{ post|has_system_connection }}
@@ -222,8 +222,9 @@ def datalog_stats():
 
 
 # Combined enhanced with former get_recent_posts tag
+# Splitting back up to fetch by limit or by cutoff date, may rework later
 @register.simple_tag
-def recent_datalog_activity(days=30, limit=5, exclude_id=None):
+def recent_datalog_activity(days=30):
     """
     Get recent DataLog activity for dashboard
     Usage: {% recent_datalog_activity 30 %}
@@ -233,10 +234,10 @@ def recent_datalog_activity(days=30, limit=5, exclude_id=None):
         recent_posts = Post.objects.filter(
             status='published',
             published_date__gte=cutoff_date
-        ).order_by('-published_date')[:limit]
+        ).order_by('-published_date')
 
-        if exclude_id:
-            recent_posts = recent_posts.exclude(id=exclude_id)
+        # if exclude_id:
+        #     recent_posts = recent_posts.exclude(id=exclude_id)
 
         return {
             'posts': recent_posts,
@@ -253,7 +254,21 @@ def recent_datalog_activity(days=30, limit=5, exclude_id=None):
 
 
 @register.simple_tag
-def get_datalog_categories():
+def get_recent_posts(limit=5, exclude_id=None):
+    """
+    Returns recently published posts.
+    Usage: {% get_recent_posts 3 %}
+    """
+    posts = Post.objects.filter(status='published').order_by('-published_date')
+
+    if exclude_id:
+        posts = posts.exclude(id=exclude_id)
+
+    return posts[:limit]
+
+
+@register.simple_tag
+def get_datalog_categories(popular_only=False):
     """
     Get post count by category sorted by post count
     Usage: {% get_datalog_categories %}
@@ -263,6 +278,8 @@ def get_datalog_categories():
             post_count=Count('posts', filter=Q(posts__status='published'))
         ).filter(post_count__gt=0).order_by("-post_count")
 
+        if popular_only:
+            return categories[:5]
         return categories
     except Exception:
         return []
@@ -357,11 +374,17 @@ def datalog_terminal_info(post):
     }
 
 # Formerly category_color
-@register.filter
+# Splitting again, can refactor and combine later
+@register.simple_tag
 def category_color_scheme(category):
     """
     Generate color scheme for category display
-    Usage: {% category|category_color_scheme %}
+    Usage: {% category_color_scheme category %}
+    Returns: dict -> {
+        'primary': '#123456',  # primary hex color
+        'secondary': 'rgba(38, 198, 218, 0.1)',  # secondary as rgb
+        'glow': primary_color.replace('#', 'rgba(').replace(')', ', 0.3)') if '#' in primary_color else 'rgba(38, 198, 218, 0.3)',
+    }
     """
     if not category:
         return {
@@ -688,20 +711,6 @@ def get_popular_tags(limit=10):
     return Tag.objects.annotate(
         post_count=Count('posts', filter=Q(posts__status='published'))
     ).filter(post_count__gt=0).order_by('-post_count')[:limit]
-
-# Combined into recent_datalog_activity
-# @register.simple_tag
-# def get_recent_posts(limit=5, exclude_id=None):
-#     """
-#     Returns recently published posts.
-#     Usage: {% get_recent_posts 3 %}
-#     """
-#     posts = Post.objects.filter(status='published').order_by('-published_date')
-
-#     if exclude_id:
-#         posts = posts.exclude(id=exclude_id)
-
-#     return posts[:limit]
 
 
 @register.simple_tag
