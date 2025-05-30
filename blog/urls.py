@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.views.generic import TemplateView
 
 urlpatterns = [
     # Public blog urls - Post views
@@ -34,6 +35,9 @@ urlpatterns = [
     path("admin/category/new/", views.CategoryCreateView.as_view(), name="category_create"),
     path("admin/category/<slug:slug>/edit/", views.CategoryUpdateView.as_view(), name="category_edit"),
     path("admin/category/<slug:slug>/delete/", views.CategoryDeleteView.as_view(), name="category_delete"),
+
+    # Test DataLog Features
+    path("test-features/", TemplateView.as_view(template_name='blog/test_features.html'), name='test_features'),
 ]
 
 app_name = 'blog'

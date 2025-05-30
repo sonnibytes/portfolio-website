@@ -357,11 +357,11 @@ def datalog_terminal_info(post):
     }
 
 # Formerly category_color
-@register.simple_tag
+@register.filter
 def category_color_scheme(category):
     """
     Generate color scheme for category display
-    Usage: {% category_color_scheme category %}
+    Usage: {% category|category_color_scheme %}
     """
     if not category:
         return {
@@ -470,10 +470,6 @@ def datalog_breadcrumb(current_page=None, current_category=None, current_post=No
         )
 
     return {"breadcrumbs": breadcrumbs}
-
-
-
-
 
 
 # ========== DATALOG UTILITY FUNCTIONS ==========
@@ -656,10 +652,6 @@ def markdown_headings(content):
             })
 
             return headings
-
-
-
-
 
 
 @register.filter
@@ -858,6 +850,15 @@ def pygments_css():
 
 # =========== ADDED AFTER GLOBAL FILTERS =============#
 
+@register.filter
+def category_color(category, default="#b39ddb"):
+    """
+    Returns category color or default.
+    Usage: {{ post.category|category_color }}
+    """
+    if hasattr(category, "color") and category.color:
+        return category.color
+    return default
 
 
 # @register.simple_tag

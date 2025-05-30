@@ -10,7 +10,7 @@
 {% load aura_filters %}
 {% load aura_components%}
 {% comment %} {% load system_tags %} {% endcomment %}
-{% load blog_tags %}
+{% load datalog_tags %}
 
 {% block title %}DataLogs Archive | AURA{% endblock %}
 {% block meta_description %}AURA DataLogs - Development insights, technical documentation, and system analysis entries from the Advanced User Repository & Archive.{% endblock %}
@@ -32,7 +32,7 @@
         Search Results: "{{ query }}" | {{ posts|length|format_number }} Entries Found
     {% else %}
         {{ posts|length|format_number }} Total Development Entries
-        {% blog_stats as stats %}
+        {% datalog_stats as stats %}
         | {{ stats.avg_reading_time|format_duration }} Average Read Time
     {% endif %}
 {% endblock %}
@@ -116,7 +116,7 @@
                             <span class="filter-label">All Categories</span>
                             <span class="filter-count">{{ posts.count|format_number }}</span>
                         </a>
-                        {% get_post_count_by_category as category_stats %}
+                        {% get_datalog_categories as category_stats %}
                         {% for cat in category_stats %}
                         <a href="{% url 'blog:category' slug=cat.slug %}" 
                            class="filter-item {% if category.slug == cat.slug %}active{% endif %}"
@@ -414,7 +414,7 @@
             DataLog Analytics
         </h3>
         
-        {% blog_stats as stats %}
+        {% datalog_stats as stats %}
         <div class="analytics-metrics">
             <div class="metric-item">
                 <div class="metric-value">{{ posts.count|format_number }}</div>

@@ -7,7 +7,7 @@ Access via: /blog/test-features/ (you'll need to add URL)
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
 {% load datalog_tags %}
-{% load code_filters %}
+{% load aura_components %}
 {% load aura_filters %}
 
 {% block title %}DataLog Features Test{% endblock %}
@@ -63,12 +63,12 @@ Access via: /blog/test-features/ (you'll need to add URL)
         <!-- Popular Categories Test -->
         <section class="test-section">
             <h2>🏷️ Popular Categories</h2>
-            {% popular_datalog_categories 5 as categories %}
+            {% get_datalog_categories as categories %}
             <div class="category-test-grid">
                 {% for category in categories %}
-                {% category_color_scheme category as colors %}
-                <div class="category-test-card" style="border-color: {{ colors.primary }};">
-                    <div class="category-hex" style="background: {{ colors.primary }};">
+                {% comment %} {% category|category_color_scheme %} {% endcomment %}
+                <div class="category-test-card" style="border-color: {{ category|category_color_scheme }};">
+                    <div class="category-hex" style="background: {{ category|category_color_scheme }};">
                         {{ category.code }}
                     </div>
                     <div class="category-info">
@@ -158,13 +158,13 @@ Access via: /blog/test-features/ (you'll need to add URL)
                 
                 <h4>File Size Formatting:</h4>
                 <ul>
-                    <li>1024 bytes = {% format_file_size 1024 %}</li>
-                    <li>1048576 bytes = {% format_file_size 1048576 %}</li>
-                    <li>1073741824 bytes = {% format_file_size 1073741824 %}</li>
+                    <li>1024 bytes = {% file_size 1024 %}</li>
+                    <li>1048576 bytes = {% file_size 1048576 %}</li>
+                    <li>1073741824 bytes = {% file_size 1073741824 %}</li>
                 </ul>
                 
                 <h4>String Splitting:</h4>
-                <p>Tags: {% for tag in "python,django,web-development"|split_by_comma %}#{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                <p>Tags: {% for tag in "python,django,web-development"|split_string %}#{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
             </div>
         </section>
         
