@@ -253,9 +253,13 @@ class CategoryView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # context['category'] = self.category
+        # context['category_slug'] = self.kwargs['slug']
+
         context.update(
             {
-                "current_category": self.category,
+                "category": self.category,
+                "category_slug": self.kwargs['slug'],
                 "page_title": f"{self.category.name} DataLogs",
                 "page_subtitle": f"Technical insights in {self.category.name}",
                 "page_icon": self.category.icon or "fas fa-folder",
@@ -263,11 +267,11 @@ class CategoryView(ListView):
                 "show_filters": True,
                 "show_stats": True,
                 # Category-specific stats
-                "category_post_count": self.get_queryset().count(),
-                "category_avg_reading_time": self.get_queryset().aggregate(
-                    avg_time=Avg("reading_time")
-                )["avg_time"]
-                or 0,
+                # "category_post_count": self.get_queryset().count(),
+                # "category_avg_reading_time": self.get_queryset().aggregate(
+                    # avg_time=Avg("reading_time")
+                # )["avg_time"]
+                # or 0,
                 # Related categories
                 "related_categories": Category.objects.exclude(id=self.category.id)
                 .annotate(

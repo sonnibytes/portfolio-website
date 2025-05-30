@@ -1,15 +1,13 @@
 <!----
- * AURA Portfolio - Datalogs Detail Template
+ * AURA Portfolio - DataLogs Detail Template - CLEANED
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.1.2 - Optimized for Component Architecture, Enhanced TemplateTags, Restructured
+ * Version: 3.0.0 - Major Cleanup with Components
 ---->
 
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
-
 {% load aura_filters %}
 {% load aura_components %}
-{% comment %} {% load system_tags %} {% endcomment %}
 {% load datalog_tags %}
 
 {% block title %}{{ post.title }} | DataLog {{ post.id|datalog_id }} | AURA{% endblock %}
@@ -17,204 +15,38 @@
 
 {% block datalogs_css %}
 <link rel="stylesheet" href="{% static 'blog/css/datalog-detail.css' %}">
+{% pygments_css %}
 {% endblock %}
 
 {% block datalogs_body_class %}post-detail{% endblock %}
-{% block subnav_class %}detail-subnav{% endblock %}
 
-<!-- Override sub-nav title for detail page -->
-{% block subnav_title %}
-     {{ post.id|datalog_id }}
-    {% if post.category %}
-    <span class="subnav-category" style="--category-color: {{ post.category|category_color }};">
-        {{ post.category.code|default:"LOG" }}
-    </span>
-    {% endif %}
-{% endblock %}
-
-<!-- Add post-specific data to subnav -->
-{% block subnav_detail_data %}
-<div class="subnav-post-data">
-    <span class="stat-separator">|</span>
-    <div class="stat-item post-stat">
-        <span class="stat-label">LOG: </span>
-        <span class="stat-value">{{ post.title }}</span>
-    </div>
-    <span class="stat-separator">|</span>
-    <div class="stat-item post-stat">
-        {% comment %} <i class="fas fa-calendar-alt"></i> {% endcomment %}
-        <span class="stat-label">Published</span>
-        <span class="stat-value">{{ post.published_date|time_since_published }}</span>
-    </div>
-    <span class="stat-separator">|</span>
-    <div class="stat-item post-stat">
-        {% comment %} <i class="fas fa-clock"></i> {% endcomment %}
-        <span class="stat-value">{{ post.reading_time|format_duration }}</span>
-        <span class="stat-label">Read Time</span>
-    </div>
-    {% if post.has_system_connection %}
-    <span class="stat-separator">|</span>
-    <div class="stat-item post-stat">
-        <i class="fas fa-link"></i>
-        <span class="stat-value">{{ post.get_related_systems.count }}</span>
-        <span class="stat-label">System{{ post.get_related_systems.count|pluralize }}</span>
-    </div>
-    {% endif %}
-</div>
-{% endblock %}
-
-
-<!-- Override breadcrumbs for detail page -->
-{% block datalogs_breadcrumbs %}
-<nav class="breadcrumb-nav detail-breadcrumbs">
-    <a href="{% url 'core:home' %}" class="breadcrumb-item">
-        <i class="fas fa-home"></i>
-        Dashboard
-    </a>
-    <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">DataLogs</a>
-    {% if post.category %}
-    <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'blog:category' slug=post.category.slug %}" class="breadcrumb-item">{{ post.category.name }}</a>
-    {% endif %}
-    <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-item active">{{ post.id|datalog_id }}</span>
-    
-    <!-- Quick navigation buttons -->
-    <div class="breadcrumb-actions">
-        {% if previous_post %}
-        <a href="{% url 'blog:post_detail' slug=previous_post.slug %}" class="breadcrumb-nav-btn" title="Previous DataLog">
-            <i class="fas fa-chevron-left"></i>
-        </a>
-        {% endif %}
-        {% if next_post %}
-        <a href="{% url 'blog:post_detail' slug=next_post.slug %}" class="breadcrumb-nav-btn" title="Next DataLog">
-            <i class="fas fa-chevron-right"></i>
-        </a>
-        {% endif %}
-    </div>
-</nav>
-{% endblock %}
-
-<!-- Override HUD interface with collapsed version for detail pages -->
-{% block hud_interface %}
-<section class="datalogs-header-section collapsed">
-    <div class="container">
-        <div class="glass-card datalogs-header-card">
-            
-            <!-- Compact Status Bar for Detail Pages -->
-            <div class="datalogs-status-bar compact">
-                <div class="status-left">
-                    <div class="system-status">
-                        <div class="status-indicator operational"></div>
-                        <span class="status-text"> ACTIVE {{ post.id|datalog_id }} | {{ post.title }}</span>
-                    </div>
-                    <div class="detail-meta-compact">
-                        <span class="detail-item">
-                            <i class="fas fa-user"></i>
-                            {{ post.author.get_full_name|default:post.author.username }}
-                        </span>
-                        <span class="detail-item">
-                            <i class="fas fa-eye"></i>
-                            {{ post.views.count|default:"0"|format_number }} views
-                        </span>
-                        {% if post.featured %}
-                        <span class="detail-item featured">
-                            <i class="fas fa-star"></i>
-                            Featured
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="status-right">
-                    <div class="timestamp-display">
-                        <i class="fas fa-clock"></i>
-                        <span data-timestamp="datetime">{% now "Y-m-d H:i:s" %} UTC</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Expandable Detail Section -->
-            <div class="datalogs-detail-expand">
-                <h1 class="datalog-detail-title">{{ post.title }}</h1>
-                {% if post.excerpt %}
-                <p class="datalog-detail-excerpt">{{ post.excerpt }}</p>
-                {% endif %}
-
-                <!-- Post Header with Metrics -->
-            <div class="post-header-metrics">
-                <div class="metrics-grid">
-                    <div class="metric-item">
-                        <div class="metric-icon"><i class="fas fa-calendar-alt"></i></div>
-                        <div class="metric-content">
-                            <div class="metric-value">{{ post.published_date|time_since_published }}</div>
-                            <div class="metric-label">Published</div>
-                        </div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-icon"><i class="fas fa-clock"></i></div>
-                        <div class="metric-content">
-                            <div class="metric-value">{{ post.reading_time|format_duration }}</div>
-                            <div class="metric-label">Reading Time</div>
-                        </div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-icon"><i class="fas fa-eye"></i></div>
-                        <div class="metric-content">
-                            <div class="metric-value">{{ post.views.count|default:"0"|format_number }}</div>
-                            <div class="metric-label">Views</div>
-                        </div>
-                    </div>
-                    {% if post.category %}
-                    <div class="metric-item">
-                        <div class="metric-icon" style="color: {{ post.category|category_color }};">
-                            {% if post.category.icon %}
-                            <i class="{{ post.category.icon }}"></i>
-                            {% else %}
-                            <i class="fas fa-folder"></i>
-                            {% endif %}
-                        </div>
-                        <div class="metric-content">
-                            <div class="metric-value">{{ post.category.name }}</div>
-                            <div class="metric-label">Category</div>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-                
-                <!-- System Connections (if any) -->
-                {% if post.has_system_connections %}
-                <div class="detail-system-connections">
-                    <h3 class="connections-title">
-                        <i class="fas fa-link"></i>
-                        Connected Systems
-                    </h3>
-                    <div class="connections-list">
-                        {% for connection in post.get_system_connections %}
-                        <a href="{{ connection.system.get_absolute_url }}" class="connection-badge">
-                            <i class="fas fa-project-diagram"></i>
-                            {{ connection.system.title }}
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</section>
-{% endblock %}
-
-<!-- Override datalogs title for collapsed state -->
 {% block datalogs_title %}{{ post.title }}{% endblock %}
 {% block datalogs_subtitle %}
     {{ post.category.name|default:"General" }} Entry | {{ post.published_date|time_since_published }} | {{ post.reading_time|format_duration }} read
 {% endblock %}
 
-<!-- No filters needed on detail page -->
-{% block datalogs_filters %}{% endblock %}
+{% block datalogs_breadcrumbs %}
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+{% if post.category %}
+<a href="{% url 'blog:category' slug=post.category.slug %}" class="breadcrumb-item">{{ post.category.name }}</a>
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+{% endif %}
+<span class="breadcrumb-item active">{{ post.id|datalog_id }}</span>
+
+<!-- Quick navigation buttons -->
+<div class="breadcrumb-actions">
+    {% if previous_post %}
+    <a href="{% url 'blog:post_detail' slug=previous_post.slug %}" class="breadcrumb-nav-btn" title="Previous DataLog">
+        <i class="fas fa-chevron-left"></i>
+    </a>
+    {% endif %}
+    {% if next_post %}
+    <a href="{% url 'blog:post_detail' slug=next_post.slug %}" class="breadcrumb-nav-btn" title="Next DataLog">
+        <i class="fas fa-chevron-right"></i>
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
 
 {% block datalogs_content %}
 <!-- DataLog Entry Container -->
@@ -231,16 +63,14 @@
                     Contents
                 </h3>
                 
-                {% if post.show_toc %}
+                {% if post.show_toc and headings %}
                 <nav class="toc-nav">
-                    {% comment %} {% with post.content|markdown_headings as headings %} {% endcomment %}
                     {% for heading in headings %}
                     <a href="#{{ heading.id }}" class="toc-link toc-level-{{ heading.level }}">
                         <span class="toc-marker">{{ heading.level|mul:">" }}</span>
                         <span class="toc-text">{{ heading.text }}</span>
                     </a>
                     {% endfor %}
-                    {% comment %} {% endwith %} {% endcomment %}
                 </nav>
                 {% endif %}
                 
@@ -271,113 +101,150 @@
             </div>
         </aside>
 
-         <!-- Main Content -->
-         <div class="glass-card datalog-content-card">
+        <!-- Main Content -->
+        <div class="glass-card datalog-content-card">
             
             <!-- Post Header with Metrics -->
-            <div class="post-header-metrics">
+            <div class="post-header-section">
+                <div class="post-header-top">
+                    <div class="post-id-badge">{{ post.id|datalog_id }}</div>
+                    <div class="post-status-indicators">
+                        <div class="status-indicator operational"></div>
+                        <span class="status-text">ACTIVE</span>
+                    </div>
+                </div>
+                
                 <h1 class="datalog-detail-title">{{ post.title }}</h1>
+                
                 {% if post.excerpt %}
                 <p class="datalog-detail-excerpt">{{ post.excerpt }}</p>
                 {% endif %}
+                
+                <!-- Use our new reusable component -->
+                {% include 'blog/includes/post_metrics_display.html' with post=post style='full' %}
             </div>
 
-                <!---- Featured Code Block ---->
-                {% if post.featured_code %}
-                <div class="datalog-featured-code">
-                    <div class="code-terminal">
-                        <div class="terminal-header">
-                            <div class="terminal-buttons">
-                                <div class="terminal-button red"></div>
-                                <div class="terminal-button yellow"></div>
-                                <div class="terminal-button green"></div>
-                            </div>
-                            <div class="terminal-title">{{ post.get_code_filename }}</div>
-                            <div class="terminal-language">{{ post.featured_code_format|upper }}</div>
+            <!-- Featured Code Block -->
+            {% if post.featured_code %}
+            <div class="datalog-featured-code">
+                <div class="code-terminal">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <div class="terminal-button red"></div>
+                            <div class="terminal-button yellow"></div>
+                            <div class="terminal-button green"></div>
                         </div>
-                        <div class="terminal-content">
-                            <pre><code class="language-{{ post.featured_code_format }}">{{ post.featured_code }}</code></pre>
+                        <div class="terminal-title">{{ post.get_code_filename }}</div>
+                        <div class="terminal-language">{{ post.featured_code_format|upper }}</div>
+                    </div>
+                    <div class="terminal-content">
+                        <pre><code class="language-{{ post.featured_code_format }}">{{ post.featured_code }}</code></pre>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Main Content -->
+            <div class="datalog-content-body">
+                {{ post.rendered_content|safe }}
+            </div>
+            
+            <!-- Tags Section -->
+            {% if post.tags.exists %}
+            <div class="datalog-tags-section">
+                <h3 class="tags-title">
+                    <i class="fas fa-tags me-2"></i>
+                    Related Tags
+                </h3>
+                <div class="tags-cloud">
+                    {% for tag in post.tags.all %}
+                    <a href="{% url 'blog:tag' slug=tag.slug %}" class="tag-link">
+                        <i class="fas fa-tag"></i>
+                        {{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- System Connections (if any) -->
+            {% if post.has_system_connections %}
+            <div class="datalog-system-connections">
+                <h3 class="connections-title">
+                    <i class="fas fa-link"></i>
+                    Connected Systems
+                </h3>
+                <div class="connections-grid">
+                    {% for connection in post.get_system_connections %}
+                    <a href="{{ connection.system.get_absolute_url }}" class="connection-card">
+                        <div class="connection-icon">
+                            <i class="fas fa-project-diagram"></i>
                         </div>
+                        <div class="connection-info">
+                            <div class="connection-title">{{ connection.system.title }}</div>
+                            <div class="connection-type">{{ connection.get_connection_type_display }}</div>
+                        </div>
+                        <div class="connection-status">
+                            <div class="status-indicator {{ connection.system.status }}"></div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+                
+    <!-- Series Navigation (if part of series) -->
+    {% if post.is_in_series %}
+    <div class="series-navigation">
+        <div class="glass-card series-panel">
+            <h3 class="series-title">
+                <i class="fas fa-list-ol me-2"></i>
+                Part of Series: {{ post.get_series.title }}
+            </h3>
+            <div class="series-nav-buttons">
+                {% if prev_in_series %}
+                <a href="{% url 'blog:post_detail' slug=prev_in_series.slug %}" 
+                   class="series-nav-btn prev">
+                    <i class="fas fa-chevron-left"></i>
+                    <div class="nav-content">
+                        <div class="nav-label">Previous</div>
+                        <div class="nav-title">{{ prev_in_series.title|truncate_smart:50 }}</div>
+                    </div>
+                </a>
+                {% else %}
+                <div class="series-nav-btn disabled">
+                    <i class="fas fa-chevron-left"></i>
+                    <div class="nav-content">
+                        <div class="nav-label">Previous</div>
+                        <div class="nav-title">Start of Series</div>
                     </div>
                 </div>
                 {% endif %}
                 
-                <!-- Main Content -->
-                <div class="datalog-content-body">
-                    {{ post.rendered_content|safe }}
-                </div>
-                
-                <!-- Tags Section -->
-                {% if post.tags.exists %}
-                <div class="datalog-tags-section">
-                    <h3 class="tags-title">
-                        <i class="fas fa-tags me-2"></i>
-                        Related Tags
-                    </h3>
-                    <div class="tags-cloud">
-                        {% for tag in post.tags.all %}
-                        <a href="{% url 'blog:tag' slug=tag.slug %}" class="tag-link">
-                            <i class="fas fa-tag"></i>
-                            {{ tag.name }}
-                        </a>
-                        {% endfor %}
+                {% if next_in_series %}
+                <a href="{% url 'blog:post_detail' slug=next_in_series.slug %}" 
+                   class="series-nav-btn next">
+                    <div class="nav-content">
+                        <div class="nav-label">Next</div>
+                        <div class="nav-title">{{ next_in_series.title|truncate_smart:50 }}</div>
                     </div>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% else %}
+                <div class="series-nav-btn disabled">
+                    <div class="nav-content">
+                        <div class="nav-label">Next</div>
+                        <div class="nav-title">End of Series</div>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
                 </div>
                 {% endif %}
             </div>
         </div>
-                
-                <!-- Series Navigation (if part of series) -->
-                {% if post.is_in_series %}
-                <div class="series-navigation">
-                    <div class="glass-card series-panel">
-                        <h3 class="series-title">
-                            <i class="fas fa-list-ol me-2"></i>
-                            Part of Series: {{ post.get_series.title }}
-                        </h3>
-                        <div class="series-nav-buttons">
-                            {% if prev_in_series %}
-                            <a href="{% url 'blog:post_detail' slug=prev_in_series.slug %}" 
-                               class="series-nav-btn prev">
-                                <i class="fas fa-chevron-left"></i>
-                                <div class="nav-content">
-                                    <div class="nav-label">Previous</div>
-                                    <div class="nav-title">{{ prev_in_series.title|truncate_smart:50 }}</div>
-                                </div>
-                            </a>
-                            {% else %}
-                            <div class="series-nav-btn disabled">
-                                <i class="fas fa-chevron-left"></i>
-                                <div class="nav-content">
-                                    <div class="nav-label">Previous</div>
-                                    <div class="nav-title">Start of Series</div>
-                                </div>
-                            </div>
-                            {% endif %}
-                            
-                            {% if next_in_series %}
-                            <a href="{% url 'blog:post_detail' slug=next_in_series.slug %}" 
-                               class="series-nav-btn next">
-                                <div class="nav-content">
-                                    <div class="nav-label">Next</div>
-                                    <div class="nav-title">{{ next_in_series.title|truncate_smart:50 }}</div>
-                                </div>
-                                <i class="fas fa-chevron-right"></i>
-                            </a>
-                            {% else %}
-                            <div class="series-nav-btn disabled">
-                                <div class="nav-content">
-                                    <div class="nav-label">Next</div>
-                                    <div class="nav-title">End of Series</div>
-                                </div>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
+    </div>
+    {% endif %}
     
     <!-- Related DataLogs Section -->
     {% if related_posts %}
@@ -390,11 +257,13 @@
             
             <div class="related-grid">
                 {% for related in related_posts %}
-                <div class="related-card" style="--category-color: {{ related.category|category_color }};">
+                <div class="related-card">
                     <div class="related-header">
                         <div class="related-id">{{ related.id|datalog_id }}</div>
                         {% if related.category %}
-                        <div class="related-category">{{ related.category.code|default:"LOG" }}</div>
+                        <div class="related-category" data-category-color="{{ related.category.color }}">
+                            {{ related.category.code|default:"LOG" }}
+                        </div>
                         {% endif %}
                     </div>
                     
@@ -403,10 +272,9 @@
                             <a href="{% url 'blog:post_detail' slug=related.slug %}">{{ related.title }}</a>
                         </h4>
                         <p class="related-excerpt">{{ related.excerpt|default:related.content|truncate_smart:80 }}</p>
-                        <div class="related-meta">
-                            <span>{{ related.published_date|time_since_published }}</span>
-                            <span>{{ related.reading_time|format_duration }}</span>
-                        </div>
+                        
+                        <!-- Use compact metrics component -->
+                        {% include 'blog/includes/post_metrics_display.html' with post=related style='minimal' %}
                     </div>
                     
                     <div class="related-link">
@@ -418,15 +286,14 @@
                 {% endfor %}
             </div>
         </div>
-    </div>
+    </section>
     {% endif %}
     
     <!-- Navigation to Previous/Next Posts -->
     <div class="post-navigation">
         <div class="glass-card nav-panel">
             <div class="nav-grid">
-
-            <!-- Previous Post -->
+                <!-- Previous Post -->
                 {% if previous_post %}
                 <a href="{% url 'blog:post_detail' slug=previous_post.slug %}" class="nav-card prev-post">
                     <div class="nav-direction">
@@ -435,7 +302,8 @@
                     </div>
                     <div class="nav-post-info">
                         <div class="nav-post-title">{{ previous_post.title|truncate_smart:60 }}</div>
-                        <div class="nav-post-meta">{{ previous_post.published_date|time_since_published }}</div>
+                        <!-- Use inline metrics component -->
+                        {% include 'blog/includes/post_metrics_display.html' with post=previous_post style='minimal' %}
                     </div>
                 </a>
                 {% else %}
@@ -455,7 +323,8 @@
                 <a href="{% url 'blog:post_detail' slug=next_post.slug %}" class="nav-card next-post">
                     <div class="nav-post-info">
                         <div class="nav-post-title">{{ next_post.title|truncate_smart:60 }}</div>
-                        <div class="nav-post-meta">{{ next_post.published_date|time_since_published }}</div>
+                        <!-- Use inline metrics component -->
+                        {% include 'blog/includes/post_metrics_display.html' with post=next_post style='minimal' %}
                     </div>
                     <div class="nav-direction">
                         <span>Next</span>
@@ -465,7 +334,6 @@
                 {% else %}
                 <div class="nav-placeholder"></div>
                 {% endif %}
-                
             </div>
         </div>
     </div>
@@ -474,229 +342,5 @@
 {% endblock %}
 
 {% block datalogs_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize post detail specific features
-    initTableOfContents();
-    initReadingProgress();
-    initCodeHighlighting();
-    initImageEnhancements();
-    initScrollEffects();
-    initSocialShare();
-
-    // Initialize HUD interface toggle
-    initHUDToggle();
-});
-
-function initHUDToggle() {
-    const hudSection = document.querySelector('.datalogs-header-section');
-    const toggleBtn = document.querySelector('.hud-toggle-btn');
-    
-    if (hudSection && toggleBtn) {
-        toggleBtn.addEventListener('click', function() {
-            hudSection.classList.toggle('collapsed');
-            const icon = this.querySelector('i');
-            
-            if (hudSection.classList.contains('collapsed')) {
-                icon.className = 'fas fa-chevron-down';
-                this.title = 'Expand HUD Interface';
-            } else {
-                icon.className = 'fas fa-chevron-up';
-                this.title = 'Collapse HUD Interface';
-            }
-        });
-    }
-}
-
-function initTableOfContents() {
-    const tocLinks = document.querySelectorAll('.toc-link');
-    const headings = document.querySelectorAll('.datalog-content-body h2, .datalog-content-body h3, .datalog-content-body h4');
-    
-    // Not in _._.2 version, may remove
-    if (tocLinks.length === 0 || headings.length === 0) return;
-    
-    // Smooth scroll for TOC links
-    tocLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const targetId = this.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            
-            if (targetElement) {
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-                
-                // Add highlight effect
-                targetElement.style.color = 'var(--color-lavender)';
-                setTimeout(() => {
-                    targetElement.style.color = '';
-                }, 2000);
-            }
-        });
-    });
-    
-    // Highlight current section in TOC
-    if (headings.length > 0) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const id = entry.target.id;
-                const tocLink = document.querySelector(`.toc-link[href="#${id}"]`);
-                
-                if (tocLink) {
-                    if (entry.isIntersecting) {
-                        tocLinks.forEach(link => link.classList.remove('active'));
-                        tocLink.classList.add('active');
-                    }
-                }
-            });
-        }, {
-            threshold: 0.5,
-            rootMargin: '-100px 0px -50% 0px'
-        });
-        
-        headings.forEach(heading => {
-            if (heading.id) {
-                observer.observe(heading);
-            }
-        });
-    }
-}
-    
-
-function initReadingProgress() {
-    const progressBar = document.getElementById('readingProgress');
-    const progressPercentage = document.querySelector('.progress-percentage');
-    
-    if (!progressBar) return;
-    
-    function updateProgress() {
-        //const content = document.querySelector('.datalog-content-body');
-
-        // added:
-        //const contentTop = content.offsetTop;
-        //const contentHeight = content.offsetHeight;
-        //const windowHeight = window.innerHeight;
-
-        // old const
-        const scrollTop = window.pageYOffset;
-        const docHeight = document.body.scrollHeight - window.innerHeight;
-        const scrollPercent = (scrollTop / docHeight) * 100;
-        
-        progressBar.style.width = scrollPercent + '%';
-        if (progressPercentage) {
-            progressPercentage.textContent = Math.round(scrollPercent) + '%';
-        }
-    }
-    
-    window.addEventListener('scroll', updateProgress);
-    updateProgress(); // Initial call
-}
-
-function initCodeHighlighting() {
-    // Initialize Prism.js if available
-    if (typeof Prism !== 'undefined') {
-        Prism.highlightAll();
-    }
-    
-    // Add copy button to code blocks
-    const codeBlocks = document.querySelectorAll('pre code');
-    codeBlocks.forEach(block => {
-        const pre = block.parentElement;
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'code-copy-btn';
-        copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
-        copyBtn.title = 'Copy code';
-        
-        copyBtn.addEventListener('click', function() {
-            navigator.clipboard.writeText(block.textContent).then(() => {
-                this.innerHTML = '<i class="fas fa-check"></i>';
-                this.style.color = 'var(--color-mint)';
-                
-                setTimeout(() => {
-                    this.innerHTML = '<i class="fas fa-copy"></i>';
-                    this.style.color = '';
-                }, 2000);
-            });
-        });
-        
-        pre.style.position = 'relative';
-        pre.appendChild(copyBtn);
-    });
-}
-
-function initImageEnhancements() {
-    const images = document.querySelectorAll('.datalog-content-body img');
-    
-    images.forEach(img => {
-        // Add loading effect
-        img.addEventListener('load', function() {
-            this.style.opacity = '1';
-        });
-        
-        // Add click to expand
-        img.addEventListener('click', function() {
-            if (this.classList.contains('expanded')) {
-                this.classList.remove('expanded');
-            } else {
-                this.classList.add('expanded');
-            }
-        });
-        
-        img.style.cursor = 'pointer';
-        img.title = 'Click to expand';
-    });
-}
-
-function initScrollEffects() {
-    // Add scroll-triggered animations
-    const animateElements = document.querySelectorAll('.related-card, .metric-display, .connection-card');
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, { threshold: 0.1 });
-    
-    animateElements.forEach(element => {
-        element.style.opacity = '0';
-        element.style.transform = 'translateY(20px)';
-        element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(element);
-    });
-    
-    // Add scanning effects on scroll
-    const scanningElements = document.querySelectorAll('.glass-card');
-    scanningElements.forEach(element => {
-        element.addEventListener('mouseenter', function() {
-            this.classList.add('scanning-horizontal');
-        });
-        
-        element.addEventListener('mouseleave', function() {
-            this.classList.remove('scanning-horizontal');
-        });
-    });
-}
-
-function initSocialShare() {
-    // Add social sharing functionality
-    const shareButtons = document.querySelectorAll('.social-share-btn');
-    
-    shareButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const url = this.href;
-            const windowFeatures = 'width=600,height=400,scrollbars=yes,resizable=yes';
-            
-            window.open(url, 'share', windowFeatures);
-        });
-    });
-}
-</script>
+<script src="{% static 'blog/js/post-detail-enhanced.js' %}"></script>
 {% endblock %}

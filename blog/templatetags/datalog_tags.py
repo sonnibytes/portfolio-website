@@ -386,7 +386,7 @@ def category_color_scheme(category):
             "secondary": "rgba(38, 198, 218, 0.1)",
             "glow": "rgba(38, 198, 218, 0.4)"
         }
-    
+
     # Get primary color from category
     primary_color = getattr(category, 'color', '#26c6da')
 
@@ -406,7 +406,7 @@ def category_color_scheme(category):
                 return (38, 198, 218)
         # Fallback to Teal
         return (38, 198, 218)
-    
+
     try:
         r, g, b = hex_to_rgb(primary_color)
 
