@@ -38,6 +38,7 @@ urlpatterns = [
 
     # Test DataLog Features
     path("test-features/", TemplateView.as_view(template_name='blog/test_features.html'), name='test_features'),
+    # path("test/posts/", views.PostEnhList2.as_view(), name="post_enh2"),
 ]
 
 app_name = 'blog'

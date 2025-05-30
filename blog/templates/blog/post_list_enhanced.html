@@ -1,3 +1,9 @@
+<!----
+ * AURA Portfolio - Datalogs Enhanced List Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
+---->
+
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
 {% load aura_filters %}
@@ -29,7 +35,11 @@
                     <!-- All Categories Option -->
                     <a href="{% url 'blog:post_list' %}" class="category-nav-card {% if not current_category %}active{% endif %}">
                         <div class="category-hexagon-container">
-                            <div class="category-hexagon" style="--hex-color: var(--color-teal);">
+                            <div class="category-hexagon-glass" 
+                                 data-color="#26c6da"
+                                 style="--primary-color: #26c6da; --secondary-color: rgba(38, 198, 218, 0.1); --glow-color: rgba(38, 198, 218, 0.4);">
+                                <div class="hexagon-outline"></div>
+                                <div class="hexagon-glass-bg"></div>
                                 <span class="hexagon-text">ALL</span>
                             </div>
                             <div class="category-glow"></div>
@@ -40,12 +50,17 @@
                         </div>
                     </a>
                     
-                    <!-- Individual Categories -->
+                    <!-- Individual Categories with Enhanced Glass Effect -->
                     {% for category in categories %}
+                    {% with color_scheme=category|category_color_scheme %}
                     <a href="{% url 'blog:category' slug=category.slug %}" 
                        class="category-nav-card {% if category.slug == current_category.slug %}active{% endif %}">
                         <div class="category-hexagon-container">
-                            <div class="category-hexagon" style="--hex-color: {{ category.color }};">
+                            <div class="category-hexagon-glass" 
+                                 data-color="{{ category.color }}"
+                                 style="--primary-color: {{ color_scheme.primary }}; --secondary-color: {{ color_scheme.secondary }}; --glow-color: {{ color_scheme.glow }};">
+                                <div class="hexagon-outline"></div>
+                                <div class="hexagon-glass-bg"></div>
                                 <span class="hexagon-text">{{ category.code }}</span>
                             </div>
                             <div class="category-glow"></div>
@@ -55,6 +70,7 @@
                             <span class="category-count">{{ category.posts.count }} entries</span>
                         </div>
                     </a>
+                    {% endwith %}
                     {% endfor %}
                 </div>
                 

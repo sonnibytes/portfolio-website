@@ -373,43 +373,147 @@ def datalog_terminal_info(post):
         'size': f"{len(code.encode('utf-8'))} bytes"
     }
 
-# Formerly category_color
-# Splitting again, can refactor and combine later
-@register.simple_tag
+# Enhanced and Fixed Color Scheme and Glow for Category Hexes
+@register.filter
 def category_color_scheme(category):
     """
-    Generate color scheme for category display
-    Usage: {% category_color_scheme category %}
-    Returns: dict -> {
-        'primary': '#123456',  # primary hex color
-        'secondary': 'rgba(38, 198, 218, 0.1)',  # secondary as rgb
-        'glow': primary_color.replace('#', 'rgba(').replace(')', ', 0.3)') if '#' in primary_color else 'rgba(38, 198, 218, 0.3)',
-    }
+    Generate comprehensive color scheme for category display with proper RGBA conversion
+    Usage: {% with color_scheme=category|category_color_scheme %}
     """
     if not category:
         return {
             "primary": "#26c6da",
-            "secondary": "rgba(38, 198, 218, 0.1)"
+            "secondary": "rgba(38, 198, 218, 0.1)",
+            "glow": "rgba(38, 198, 218, 0.4)"
         }
-
+    
+    # Get primary color from category
     primary_color = getattr(category, 'color', '#26c6da')
 
-    # Generate secondary color (transparent version)
-    secondary_color = primary_color.replace('#', 'rgba(')  # Necessary..?
-    # Convert hex to rgb and add alpha
-    if len(primary_color) == 7:  # #rrggbb format
-        r = int(primary_color[1:3], 16)
-        g = int(primary_color[3:5], 16)
-        b = int(primary_color[5:7], 16)
-        secondary_color = f"rgba({r}, {g}, {b}, 0.1)"
-    else:
-        secondary_color = 'rgba(38, 198, 218, 0.1)'
+    # Ensure color starts with #
+    if not primary_color.startswith('#'):
+        primary_color = '#' + primary_color
 
-    return {
-        'primary': primary_color,
-        'secondary': secondary_color,
-        'glow': primary_color.replace('#', 'rgba(').replace(')', '0.3)') if '#' in primary_color else 'rgba(38, 198, 218, 0.3)'
-    }
+    # Convert hex to RGB for RGBA calculations
+    def hex_to_rgb(hex_color):
+        """Convert hex color to RGB tuple."""
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 6:
+            try:
+                return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+            except ValueError:
+                # Fallback to teal
+                return (38, 198, 218)
+        # Fallback to Teal
+        return (38, 198, 218)
+    
+    try:
+        r, g, b = hex_to_rgb(primary_color)
+
+        # Generate comprehensive color scheme
+        color_scheme = {
+            'primary': primary_color,
+            'secondary': f'rgba({r}, {g}, {b}, 0.1)',
+            'glow': f'rgba({r}, {g}, {b}, 0.4)',
+            'border': f'rgba({r}, {g}, {b}, 0.3)',
+            'hover': f'rgba({r}, {g}, {b}, 0.2)',
+            'active': f'rgba({r}, {g}, {b}, 0.15)',
+            'shadow': f'rgba({r}, {g}, {b}, 0.25)',
+            'text': primary_color,
+            # Additional utility colors
+            'rgb': f'{r}, {g}, {b}',
+            'light': f'rgba({r}, {g}, {b}, 0.05)',
+            'medium': f'rgba({r}, {g}, {b}, 0.2)',
+            'strong': f'rgba({r}, {g}, {b}, 0.6)',
+        }
+
+        return color_scheme
+
+    except Exception:
+        # Fallback to color scheme if anything goes wrong
+        return {
+            "primary": "#26c6da",
+            "secondary": "rgba(38, 198, 218, 0.1)",
+            "glow": "rgba(38, 198, 218, 0.4)",
+            "border": "rgba(38, 198, 218, 0.3)",
+            "hover": "rgba(38, 198, 218, 0.2)",
+            "active": "rgba(38, 198, 218, 0.15)",
+            "shadow": "rgba(38, 198, 218, 0.25)",
+            "text": "#26c6da",
+            "rgb": "38, 198, 218",
+            "light": "rgba(38, 198, 218, 0.05)",
+            "medium": "rgba(38, 198, 218, 0.2)",
+            "strong": "rgba(38, 198, 218, 0.6)",
+        }
+
+
+@register.filter
+def hex_to_rgba(hex_color, alpha=1.0):
+    """
+    Convert hex color to RGBA
+    Usage: {{ "#ff0000"|hex_to_rgba:0.5 }}
+    """
+    if not hex_color or not hex_color.startswith('#'):
+        return f"rgba(38, 198, 218, {alpha})"
+
+    try:
+        hex_color = hex_color.lstrip('#')
+
+        # Convert hex to rgb and add alpha
+        if len(hex_color) == 6:  # rrggbb format
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            return f"rgba({r}, {g}, {b}, {alpha})"
+
+    except ValueError:
+        pass
+
+    return f"rgba(38, 198, 218, {alpha})"
+
+
+@register.simple_tag
+def generate_category_css_vars(category):
+    """
+    Generate CSS custom properties for a category
+    Usage: {% generate_category_css_vars category %}
+    """
+    color_scheme = category_color_scheme(category)
+
+    css_vars = []
+    for key, value in color_scheme.items():
+        css_vars.append(f"--category-{key}: {value};")
+
+    return mark_safe(' '.join(css_vars))
+
+
+@register.filter
+def adjust_color_brightness(hex_color, factor=1.2):
+    """
+    Adjust the brightness of a hex color
+    Usage: {{ "#ff0000"|adjust_color_brightness:1.5 }}
+    factor > 1 makes it brighter, < 1 makes it darker
+    """
+    if not hex_color or not hex_color.startswith('#'):
+        return hex_color
+
+    try:
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 6:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+
+            # Adjust brightness
+            r = min(255, int(r * factor))
+            g = min(255, int(g * factor))
+            b = min(255, int(b * factor))
+
+            return f"#{r:02x}{g:02x}{b:02x}"
+    except ValueError:
+        pass
+
+    return hex_color
 
 
 @register.simple_tag
