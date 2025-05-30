@@ -1,598 +1,1078 @@
 <!----
- * AURA Portfolio - Datalogs List Template
+ * AURA Portfolio - Datalogs Enhanced List Template
  * Advanced User Repository & Archive - Complete Foundation
  * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
 ---->
 
-{% extends "blog/post_list_enhanced.html" %}
-{% load static %} 
-
+{% extends "blog/datalogs_base.html" %}
+{% load static %}
 {% load aura_filters %}
-{% load aura_components%}
-{% comment %} {% load system_tags %} {% endcomment %}
+{% load aura_components %}
 {% load datalog_tags %}
 
-{% block title %}DataLogs Archive | AURA{% endblock %}
-{% block meta_description %}AURA DataLogs - Development insights, technical documentation, and system analysis entries from the Advanced User Repository & Archive.{% endblock %}
+{% block datalogs_title %}DataLogs Archive{% endblock %}
 
 {% block datalogs_css %}
-{% comment %} <link rel="stylesheet" href="{% static 'blog/css/datalogs.css' %}"> {% endcomment %}
-<link rel="stylesheet" href="{% static 'blog/css/datalogs-list.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/post_list_enhanced.css' %}">
+{% pygments_css %}
 {% endblock %}
 
-{% block datalogs_body_class %}datalogs-list{% endblock %}
+{% block show_breadcrumbs %}False{% endblock %}
+{% block show_filters %}True{% endblock %}
 
-{% block datalogs_title %}[ DATALOGS ]{% endblock %}
-{% block datalogs_subtitle %}
-    {% if category %}
-        Category: {{ category.name }} | {{ posts|length|format_number }} Entries Found
-    {% elif tag %}
-        Tag: {{ tag.name }} | {{ posts|length|format_number }} Entries Found
-    {% elif query %}
-        Search Results: "{{ query }}" | {{ posts|length|format_number }} Entries Found
-    {% else %}
-        {{ posts|length|format_number }} Total Development Entries
-        {% datalog_stats as stats %}
-        | {{ stats.avg_reading_time|format_duration }} Average Read Time
-    {% endif %}
-{% endblock %}
+{% block datalogs_content %}
 
-{% block datalogs_filters %}
-<div class="datalogs-controls">
-    <div class="glass-card controls-panel">
-        <div class="controls-left">
-            <!-- Enhanced Search Interface -->
-            <form method="get" action="{% url 'blog:search' %}" class="search-terminal">
-                <div class="search-container">
-                    <div class="search-prompt">
-                        <span class="prompt-text">search:</span>
-                        <input type="text" name="q" value="{{ query|default:'' }}" 
-                               class="search-input" placeholder="Enter search parameters..."
-                               autocomplete="off" data-live-search="false">
-                    </div>
-                    <button type="submit" class="search-execute" title="Execute Search">
-                        <i class="fas fa-search"></i>
-                    </button>
+<!-- Categories Navigation Container - Glass Style -->
+<section class="categories-navigation-container">
+    <div class="container">
+        <div class="categories-glass-panel">
+            <div class="categories-scroll-container">
+                <button class="category-scroll-btn category-scroll-left" id="categoryScrollLeft">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <div class="categories-grid" id="categoriesGrid">
+                    <!-- All Categories Option -->
+                    <a href="{% url 'blog:post_list' %}" class="category-nav-card {% if not current_category %}active{% endif %}">
+                        <div class="category-hexagon-container">
+                            <div class="category-hexagon-glass" 
+                                 data-color="#26c6da"
+                                 style="--primary-color: #26c6da; --secondary-color: rgba(38, 198, 218, 0.1); --glow-color: rgba(38, 198, 218, 0.4);">
+                                <div class="hexagon-outline"></div>
+                                <div class="hexagon-glass-bg"></div>
+                                <span class="hexagon-text">ALL</span>
+                            </div>
+                            <div class="category-glow"></div>
+                        </div>
+                        <div class="category-info">
+                            <h3 class="category-name">All DataLogs</h3>
+                            <span class="category-count">{{ total_posts|default:"24" }} entries</span>
+                        </div>
+                    </a>
+                    
+                    <!-- Individual Categories with Enhanced Glass Effect -->
+                    {% for category in categories %}
+                    {% with color_scheme=category|category_color_scheme %}
+                    <a href="{% url 'blog:category' slug=category.slug %}" 
+                       class="category-nav-card {% if category.slug == current_category.slug %}active{% endif %}">
+                        <div class="category-hexagon-container">
+                            <div class="category-hexagon-glass" 
+                                 data-color="{{ category.color }}"
+                                 style="--primary-color: {{ color_scheme.primary }}; --secondary-color: {{ color_scheme.secondary }}; --glow-color: {{ color_scheme.glow }};">
+                                <div class="hexagon-outline"></div>
+                                <div class="hexagon-glass-bg"></div>
+                                <span class="hexagon-text">{{ category.code }}</span>
+                            </div>
+                            <div class="category-glow"></div>
+                        </div>
+                        <div class="category-info">
+                            <h3 class="category-name">{{ category.name }}</h3>
+                            <span class="category-count">{{ category.posts.count }} entries</span>
+                        </div>
+                    </a>
+                    {% endwith %}
+                    {% endfor %}
                 </div>
-                {% if query %}
-                <div class="search-info">
-                    <div class="search-results-summary">
-                        <span class="results-count">{{ posts|length|format_number }}</span> entries found for 
-                        <span class="search-term">"{{ query }}"</span>
-                        <a href="{% url 'blog:post_list' %}" class="clear-search" title="Clear Search">
-                            <i class="fas fa-times"></i>
-                        </a>
-                    </div>
+                
+                <button class="category-scroll-btn category-scroll-right" id="categoryScrollRight">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search and Filters Section -->
+<section class="datalogs-search-section">
+    <div class="container">
+        <!-- Enhanced Search Input -->
+        <div class="search-container-enhanced">
+            <form method="get" action="{% url 'blog:search' %}" class="search-form-enhanced">
+                {% search_input name="q" placeholder="Search through DataLog entries, code, and insights..." value=query css_class="search-enhanced" %}
+                <div class="search-suggestions" id="searchSuggestions">
+                    <!-- Dynamic suggestions populated by JavaScript -->
                 </div>
-                {% endif %}
             </form>
         </div>
         
-        <div class="controls-right">
-            <!-- View Mode Toggle -->
-            <div class="view-toggle">
-                <button class="view-btn grid-view active" data-view="grid" title="Grid View">
-                    <i class="fas fa-th"></i>
-                </button>
-                <button class="view-btn list-view" data-view="list" title="List View">
-                    <i class="fas fa-list"></i>
-                </button>
+        <!-- Quick Filter Tags -->
+        <div class="quick-filters">
+            <span class="filter-label">Quick Filters:</span>
+            <div class="filter-tags">
+                <a href="?featured=true" class="filter-tag {% if request.GET.featured %}active{% endif %}">
+                    <i class="fas fa-star"></i> Featured
+                </a>
+                <a href="?has_code=true" class="filter-tag {% if request.GET.has_code %}active{% endif %}">
+                    <i class="fas fa-code"></i> Code Examples
+                </a>
+                <a href="?reading_time=quick" class="filter-tag {% if 'quick' in request.GET.reading_time %}active{% endif %}">
+                    <i class="fas fa-clock"></i> Quick Read
+                </a>
+                <a href="?category=ml" class="filter-tag">
+                    <i class="fas fa-brain"></i> Machine Learning
+                </a>
+                <a href="?category=dev" class="filter-tag">
+                    <i class="fas fa-code-branch"></i> Development
+                </a>
             </div>
-            
-            <!-- Sort Options -->
-            <div class="sort-dropdown">
-                <select class="hud-select" id="sortSelect" title="Sort DataLogs">
-                    <option value="latest" {% if request.GET.sort == 'latest' %}selected{% endif %}>Latest First</option>
-                    <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Oldest First</option>
-                    <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>Title A-Z</option>
-                    <option value="category" {% if request.GET.sort == 'category' %}selected{% endif %}>By Category</option>
-                    <option value="reading-time" {% if request.GET.sort == 'reading-time' %}selected{% endif %}>Reading Time</option>
-                </select>
-            </div>
-            
-            <!-- Filter Toggle -->
-            <button class="filter-toggle" id="filterToggle" title="Toggle Filters">
-                <i class="fas fa-filter"></i>
-                <span class="filter-label">Filters</span>
-            </button>
         </div>
     </div>
-    
-    <!-- Advanced Filters Panel (Initially Hidden) -->
-    <div class="glass-card filters-panel" id="filtersPanel" style="display: none;">
-        <div class="filters-section">
-            <h3 class="filters-title">
-                <i class="fas fa-sliders-h me-2"></i>
-                Advanced Filters
-            </h3>
-            
-            <div class="filters-grid">
-                <!-- Category Filters -->
-                <div class="filter-group">
-                    <h4 class="filter-group-title">Categories</h4>
-                    <div class="filter-items">
-                        <a href="{% url 'blog:post_list' %}" class="filter-item {% if not category %}active{% endif %}">
-                            <span class="filter-icon"><i class="fas fa-database"></i></span>
-                            <span class="filter-label">All Categories</span>
-                            <span class="filter-count">{{ posts.count|format_number }}</span>
-                        </a>
-                        {% get_datalog_categories as category_stats %}
-                        {% for cat in category_stats %}
-                        <a href="{% url 'blog:category' slug=cat.slug %}" 
-                           class="filter-item {% if category.slug == cat.slug %}active{% endif %}"
-                           style="--category-color: {{ cat|category_color }};">
-                            <span class="filter-icon">
-                                {% if cat.icon %}
-                                <i class="{{ cat|category_icon }}"></i>
-                                {% else %}
-                                <span class="filter-code">{{ cat.code|default:"LOG" }}</span>
-                                {% endif %}
-                            </span>
-                            <span class="filter-label">{{ cat.name }}</span>
-                            <span class="filter-count">{{ cat.post_count|format_number }}</span>
-                        </a>
-                        {% endfor %}
+</section>
+
+<!-- Featured DataLog Entry -->
+{% if featured_post %}
+<section class="featured-datalog-section">
+    <div class="container">
+        {% section_header title="Featured DataLog Entry" subtitle="Highlighted Technical Insights" icon="fas fa-star" %}
+        
+        <div class="featured-datalog-container">
+            <!-- Featured Post Content - Left Side -->
+            <div class="featured-content">
+                <div class="featured-header">
+                    <div class="post-meta">
+                        {% if featured_post.category %}
+                        <span class="category-badge" style="--category-color: {{ featured_post.category.color }};">
+                            {{ featured_post.category.code }}
+                        </span>
+                        {% endif %}
+                        <span class="post-date">{{ featured_post.published_date|date:"M d, Y" }}</span>
+                        <span class="reading-time">{{ featured_post.reading_time }}min read</span>
                     </div>
+                    
+                    <h2 class="featured-title">
+                        <a href="{{ featured_post.get_absolute_url }}">{{ featured_post.title }}</a>
+                    </h2>
+                    
+                    {% if featured_post.subtitle %}
+                    <p class="featured-subtitle">{{ featured_post.subtitle }}</p>
+                    {% endif %}
                 </div>
                 
-               <!-- Tag Cloud -->
-               <div class="filter-group">
-                <h4 class="filter-group-title">Popular Tags</h4>
-                <div class="tag-cloud">
-                    {% get_popular_tags 8 as popular_tags %}
-                    {% for tag in popular_tags %}
-                    <a href="{% url 'blog:tag' slug=tag.slug %}" 
-                       class="tag-item {% if current_tag.slug == tag.slug %}active{% endif %}"
-                       style="font-size: {% calculate 'add' 0.8 tag.post_count|mul:0.1 %}em;">
-                        {{ tag.name }}
-                        <span class="tag-count">{{ tag.post_count }}</span>
+                <div class="featured-excerpt">
+                    <p>{{ featured_post.excerpt|default:featured_post.content|truncate_smart:200 }}</p>
+                </div>
+                
+                <div class="featured-tags">
+                    {% for tag in featured_post.tags.all|slice:":4" %}
+                    <a href="{% url 'blog:tag' slug=tag.slug %}" class="tag-link">
+                        #{{ tag.name }}
                     </a>
                     {% endfor %}
                 </div>
-            </div>
                 
-                <!-- Date Range -->
-                <div class="filter-group">
-                    <h4 class="filter-group-title">Time Range</h4>
-                    <div class="filter-items">
-                        <a href="{% build_url period='week' %}" class="filter-item">
-                            <span class="filter-icon"><i class="fas fa-calendar-week"></i></span>
-                            <span class="filter-label">This Week</span>
-                        </a>
-                        <a href="{% build_url period='month' %}" class="filter-item">
-                            <span class="filter-icon"><i class="fas fa-calendar-alt"></i></span>
-                            <span class="filter-label">This Month</span>
-                        </a>
-                        <a href="{% build_url period='year' %}" class="filter-item">
-                            <span class="filter-icon"><i class="fas fa-calendar"></i></span>
-                            <span class="filter-label">This Year</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block datalogs_content %}
-<!-- DataLogs Entry Grid -->
-<div class="datalogs-content-grid grid-view" id="dataLogsGrid">
-    {% for post in posts %}
-    <article class="glass-card datalog-entry-card" data-category="{{ post.category.slug|default:'general' }}">
-        <!-- DataLog Header -->
-        <div class="datalog-entry-header">
-            <div class="datalog-meta-top">
-                <div class="datalog-id">
-                    <span class="id-prefix">{{ post.id|datalog_id }}</span>
-                </div>
-                <div class="datalog-status">
-                    <div class="status-indicator operational"></div>
-                    <span class="status-text">ACTIVE</span>
+                <div class="featured-actions">
+                    <a href="{{ featured_post.get_absolute_url }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i>
+                        Read Full DataLog
+                    </a>
+                    {% if featured_post.related_systems.exists %}
+                    <a href="{% url 'projects:system_detail' slug=featured_post.get_primary_system.slug %}" class="btn btn-outline">
+                        <i class="fas fa-project-diagram"></i>
+                        View System
+                    </a>
+                    {% endif %}
                 </div>
             </div>
             
-            <div class="datalog-category-info">
-                {% if post.category %}
-                <a href="{% url 'blog:category' slug=post.category.slug %}" 
-                   class="category-badge" 
-                   style="--category-color: {{ post.category|category_color }};"
-                   title="{{ post.category.name }}">
-                    {% if post.category.icon %}
-                    <i class="{{ post.category|category_icon }}"></i>
-                    {% endif %}
-                    <span class="category-code">{{ post.category.code|default:"LOG" }}</span>
-                </a>
-                {% endif %}
-                
-                {% if post.featured %}
-                <div class="featured-badge" title="Featured DataLog">
-                    <i class="fas fa-star"></i>
-                    <span>Featured</span>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- DataLog Content -->
-        <div class="datalog-entry-content">
-            <!-- DataLog Image/Visual -->
-            {% if post.thumbnail %}
-            <div class="datalog-visual">
-                <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" class="datalog-image">
-                <div class="visual-overlay">
-                    <div class="overlay-icon">
-                        <i class="fas fa-eye"></i>
+            <!-- Terminal Code Display - Right Side -->
+            {% if featured_post.featured_code %}
+            <div class="featured-terminal">
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-controls">
+                            <span class="terminal-button red"></span>
+                            <span class="terminal-button yellow"></span>
+                            <span class="terminal-button green"></span>
+                        </div>
+                        <div class="terminal-title">{{ featured_post.get_code_filename }}</div>
+                        <div class="terminal-status">
+                            <span class="status-text">{{ featured_post.featured_code_format|upper }}</span>
+                            <div class="status-indicator operational"></div>
+                        </div>
+                    </div>
+                    <div class="terminal-content">
+                        <div class="code-block-enhanced">
+                            {{ featured_post.featured_code|highlight_code:featured_post.featured_code_format }}
+                        </div>
+                    </div>
+                    <div class="terminal-footer">
+                        <div class="terminal-info">
+                            <span class="line-count">{{ featured_post.featured_code|count_words }} lines</span>
+                            <span class="lang-indicator">{{ featured_post.featured_code_format }}</span>
+                        </div>
+                        {% copy_button featured_post.featured_code "Copy Code" "Code Copied!" %}
                     </div>
                 </div>
-            </div>
-            {% elif post.featured_code %}
-            <div class="datalog-visual datalog-code-preview">
-                <div class="code-header">
-                    <div class="code-filename">{{ post.get_code_filename }}</div>
-                    <div class="code-language">{{ post.featured_code_format|upper }}</div>
-                </div>
-                <div class="code-content">
-                    <pre><code class="language-{{ post.featured_code_format }}">{{ post.featured_code|truncate_smart:200 }}</code></pre>
-                </div>
-                <div class="code-expand-hint">
-                    <i class="fas fa-expand-alt"></i>
-                    View Full Code
-                </div>
-            </div>
-            {% else %}
-            <div class="datalog-visual datalog-placeholder">
-                <div class="placeholder-icon">
-                    {% if post.category.icon %}
-                    <i class="{{ post.category|category_icon }}"></i>
-                    {% else %}
-                    <span class="icon-text">[ NO VISUAL DATA ]</span>
-                    {% endif %}
-                </div>
-                {% comment %} <div class="placeholder-overlay">
-                    <div class="overlay-icon">
-                        <i class="fas fa-file-alt"></i>
-                    </div>
-                </div> {% endcomment %}
             </div>
             {% endif %}
-            
-            <!-- DataLog Text Content -->
-            <div class="datalog-text-content">
-                <h3 class="datalog-title">
-                    <a href="{% url 'blog:post_detail' slug=post.slug %}" class="title-link">
-                        {{ post.title }}
-                    </a>
-                </h3>
-                
-                <div class="datalog-excerpt">
-                    {{ post.excerpt|default:post.content|truncate_smart:100|safe }}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- DataLog Entries Grid -->
+<section class="datalogs-grid-section">
+    <div class="container">
+        <!-- View Controls and Stats -->
+        <div class="grid-header">
+            <div class="grid-stats">
+                <div class="stat-group">
+                    <span class="stat-value">{{ posts|length }}</span>
+                    <span class="stat-label">Showing</span>
                 </div>
-                
-                <!-- DataLog Metadata -->
-                <div class="datalog-metadata">
-                    <div class="metadata-row">
-                        <div class="metadata-item">
-                            <i class="fas fa-calendar-alt metadata-icon"></i>
-                            <span class="metadata-value">{{ post.published_date|time_since_published }}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <i class="fas fa-clock metadata-icon"></i>
-                            <span class="metadata-value">{{ post.reading_time|default:"3"|format_duration }} read</span>
-                        </div>
-                        <div class="metadata-item">
-                            <i class="fas fa-user metadata-icon"></i>
-                            <span class="metadata-value">{{ post.author.get_full_name|default:post.author.username }}</span>
-                        </div>
-                    </div>
-                    
-                    {% if post.tags.exists %}
-                    <div class="metadata-tags">
-                        {% for tag in post.tags.all|slice:":3" %}
-                        <a href="{% url 'blog:tag' slug=tag.slug %}" class="metadata-tag">
-                            {{ tag.name }}
-                        </a>
-                        {% endfor %}
-                        {% if post.tags.count > 3 %}
-                        <span class="tag-more">+{{ post.tags.count|subtract:3 }} more</span>
+                <div class="stat-group">
+                    <span class="stat-value">{{ page_obj.paginator.count|default:"24" }}</span>
+                    <span class="stat-label">Total Entries</span>
+                </div>
+                {% if current_category %}
+                <div class="stat-group">
+                    <span class="stat-value">{{ current_category.name }}</span>
+                    <span class="stat-label">Category</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="view-controls">
+                <button class="view-toggle-btn active" data-view="grid" title="Grid View">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button class="view-toggle-btn" data-view="list" title="List View">
+                    <i class="fas fa-list"></i>
+                </button>
+                <button class="view-toggle-btn" data-view="timeline" title="Timeline View">
+                    <i class="fas fa-stream"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- DataLog Entries -->
+        <div class="datalogs-grid" id="datalogsGrid">
+            {% for post in posts %}
+            <article class="datalog-card" data-category="{{ post.category.slug|default:'general' }}">
+                {% if post.thumbnail %}
+                <div class="datalog-image">
+                    <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" loading="lazy">
+                    <div class="image-overlay">
+                        {% if post.featured %}
+                        <span class="featured-badge">
+                            <i class="fas fa-star"></i>
+                        </span>
                         {% endif %}
                     </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <!-- DataLog Footer -->
-        <div class="datalog-entry-footer">
-            <div class="footer-left">
-                {% if post.has_system_connections %}
-                <div class="system-connections">
-                    <i class="fas fa-link connection-icon"></i>
-                    <span class="connection-text">Linked to {{ post.get_related_systems.count }} system{{ post.get_related_systems.count|pluralize }}</span>
                 </div>
                 {% endif %}
-            </div>
-            
-            <div class="footer-right">
-                <a href="{% url 'blog:post_detail' slug=post.slug %}" class="datalog-link">
-                    <span class="link-text">Access DataLog</span>
-                    <i class="fas fa-arrow-right link-icon"></i>
-                </a>
-            </div>
-        </div>
-        
-        <!-- Scanning Line Effect -->
-        <div class="datalog-scanning-line"></div>
-    </article>
-    {% empty %}
-    <!-- No DataLogs Found -->
-    <div class="glass-card no-results-card">
-        <div class="no-results-content">
-            <div class="no-results-icon">
-                <i class="fas fa-search"></i>
-            </div>
-            <h3 class="no-results-title">No DataLogs Found</h3>
-            <p class="no-results-message">
-                {% if query %}
-                    No entries match your search criteria: <strong>"{{ query }}"</strong>
-                {% elif category %}
-                    No entries found in category: <strong>{{ category.name }}</strong>
-                {% elif tag %}
-                    No entries found with tag: <strong>{{ tag.name }}</strong>
-                {% else %}
-                    No datalog entries have been published yet.
-                {% endif %}
-            </p>
-            <div class="no-results-actions">
-                {% if query or category or tag %}
+                
+                <div class="datalog-content">
+                    <div class="datalog-header">
+                        <div class="post-meta">
+                            {% if post.category %}
+                            <span class="category-badge" style="--category-color: {{ post.category.color }};">
+                                {{ post.category.code }}
+                            </span>
+                            {% endif %}
+                            <span class="post-date">{{ post.published_date|time_since_published }}</span>
+                        </div>
+                        
+                        <h3 class="datalog-title">
+                            <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
+                        </h3>
+                        
+                        {% if post.excerpt %}
+                        <p class="datalog-excerpt">{{ post.excerpt|truncate_smart:120 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="datalog-footer">
+                        <div class="datalog-stats">
+                            <span class="read-time">
+                                <i class="fas fa-clock"></i>
+                                {{ post.reading_time }}min
+                            </span>
+                            {% if post.tags.exists %}
+                            <span class="tag-count">
+                                <i class="fas fa-tags"></i>
+                                {{ post.tags.count }} tags
+                            </span>
+                            {% endif %}
+                            {% if post.related_systems.exists %}
+                            <span class="system-link">
+                                <i class="fas fa-project-diagram"></i>
+                                System
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <a href="{{ post.get_absolute_url }}" class="read-more-btn">
+                            <span>Read Entry</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </article>
+            {% empty %}
+            <div class="no-posts-message">
+                <div class="no-posts-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3>No DataLog entries found</h3>
+                <p>Try adjusting your search criteria or check back later for new entries.</p>
                 <a href="{% url 'blog:post_list' %}" class="btn btn-outline">
-                    <i class="fas fa-undo me-2"></i>View All DataLogs
+                    <i class="fas fa-refresh"></i>
+                    Reset Filters
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination-container">
+            <nav class="datalog-pagination">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i>
+                    Previous
                 </a>
                 {% endif %}
-                <a href="{% url 'core:contact' %}" class="btn btn-primary">
-                    <i class="fas fa-envelope me-2"></i>Suggest a Topic
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
-<!-- Featured DataLog (if exists and not in search/filter) -->
-{% if not query and not category and not tag %}
-{% get_featured_post as featured_post %}
-{% if featured_post %}
-<div class="featured-datalog-section">
-    <div class="glass-card featured-datalog-card">
-        <div class="featured-header">
-            <div class="featured-badge">
-                <i class="fas fa-star"></i>
-                <span>Featured DataLog</span>
-            </div>
-            <div class="featured-id">{{ featured_post.id|datalog_id }}</div>
-        </div>
-        
-        <div class="featured-content">
-            <div class="featured-visual">
-                {% if featured_post.thumbnail %}
-                <img src="{{ featured_post.thumbnail.url }}" alt="{{ featured_post.title }}">
-                {% else %}
-                <div class="featured-placeholder">
-                    <i class="fas fa-star"></i>
+                
+                <div class="pagination-info">
+                    <span class="page-numbers">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    <span class="entry-range">
+                        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+                    </span>
                 </div>
+                
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="pagination-btn">
+                    Next
+                    <i class="fas fa-chevron-right"></i>
+                </a>
                 {% endif %}
-            </div>
-            
-            <div class="featured-text">
-                <h3 class="featured-title">{{ featured_post.title }}</h3>
-                <p class="featured-excerpt">{{ featured_post.excerpt|default:featured_post.content|truncate_smart:120 }}</p>
-                
-                <div class="featured-meta">
-                    <span class="featured-category">{{ featured_post.category.name }}</span>
-                    <span class="featured-date">{{ featured_post.published_date|time_since_published }}</span>
-                    <span class="featured-reading-time">{{ featured_post.reading_time|format_duration }} read</span>
-                </div>
-                
-                <a href="{% url 'blog:post_detail' slug=featured_post.slug %}" class="featured-link">
-                    <span>Access Featured DataLog</span>
-                    <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
+            </nav>
         </div>
+        {% endif %}
     </div>
-</div>
-{% endif %}
-{% endif %}
-{% endblock %}
+</section>
 
-{% block datalogs_sidebar %}
-<!-- DataLogs Sidebar (Optional) -->
-<aside class="datalogs-sidebar">
-    <div class="glass-card sidebar-panel">
-        <h3 class="sidebar-title">
-            <i class="fas fa-chart-bar me-2"></i>
-            DataLog Analytics
-        </h3>
-        
-        {% datalog_stats as stats %}
-        <div class="analytics-metrics">
-            <div class="metric-item">
-                <div class="metric-value">{{ posts.count|format_number }}</div>
-                <div class="metric-label">Current View</div>
-            </div>
-            <div class="metric-item">
-                <div class="metric-value">{{ stats.total_posts|format_number }}</div>
-                <div class="metric-label">Total Entries</div>
-            </div>
-            <div class="metric-item">
-                <div class="metric-value">{{ stats.total_categories|format_number }}</div>
-                <div class="metric-label">Categories</div>
-            </div>
-            <div class="metric-item">
-                {% calculate 'multiply' stats.avg_reading_time posts.count as total_reading %}
-                <div class="metric-value">{{ total_reading|format_duration }}</div>
-                <div class="metric-label">Total Reading</div>
-            </div>
-        </div>
-        
-        <!-- Recent Activity -->
-        <div class="recent-activity">
-            <h4 class="activity-title">Recent Activity</h4>
-            <div class="activity-items">
-                {% get_recent_posts 3 as recent_posts %}
-                {% for post in recent_posts %}
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class="fas fa-plus"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-text">{{ post.title|truncate_smart:35 }}</div>
-                        <div class="activity-time">{{ post.published_date|time_since_published }}</div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</aside>
 {% endblock %}
 
 {% block datalogs_js %}
-<script>
-// DataLogs List Page Specific Enhancements
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize enhanced features
-    initDataLogCards();
-    initAdvancedFilters();
-    initViewPersistence();
-    initSearchEnhancements();
+<script src="{% static 'blog/js/post_list_enhanced.js' %}"></script>
+
+<style>
+    .categories-grid {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        overflow-x: auto;
+        padding: 1rem;
+    }
     
-    // Add dynamic loading effects
-    addLoadingEffects();
+    .category-nav-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        text-decoration: none;
+        color: white;
+        transition: transform 0.3s ease;
+    }
+    
+    .category-nav-card.active {
+        transform: scale(1.05);
+    }
+    
+    .category-hexagon-container {
+        position: relative;
+        width: 100px;
+        height: 115px;
+        margin-bottom: 1rem;
+    }
+    
+    .category-hexagon-glass {
+        --size: 100px;
+        width: var(--size);
+        aspect-ratio: 1 / 1.15;
+        position: relative;
+        clip-path: polygon(
+            50% 0%, 100% 25%, 100% 75%, 
+            50% 100%, 0% 75%, 0% 25%
+        );
+        background: var(--secondary-color, rgba(255, 255, 255, 0.1));
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 2px solid transparent;
+        z-index: 2;
+    }
+    
+    .hexagon-outline {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        clip-path: inherit;
+        border: 2px solid var(--primary-color, #26c6da);
+        box-shadow: 0 0 12px var(--glow-color, rgba(38, 198, 218, 0.4));
+        z-index: 3;
+        pointer-events: none;
+    }
+    
+    .hexagon-glass-bg {
+        position: absolute;
+        inset: 0;
+        background: inherit;
+        clip-path: inherit;
+        backdrop-filter: inherit;
+        -webkit-backdrop-filter: inherit;
+        z-index: 1;
+    }
+    
+    .hexagon-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: bold;
+        font-size: 0.9rem;
+        z-index: 4;
+        color: white;
+        pointer-events: none;
+    }
+    
+    .category-info h3,
+    .category-info span {
+        margin: 0;
+        font-size: 0.9rem;
+        color: white;
+    }
+    
+
+
+    /* Enhanced Category Hexagon Styling with Glass Effect and Glowing Outline */
+    
+    {% comment %} .category-hexagon-glass {
+        width: 48px;
+        height: 48px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        transition: all var(--transition-normal);
+    }
+    
+    /* Glass-morphism background with hexagon clipping */
+    .hexagon-glass-bg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 46px;
+        height: 46px;
+        background: 
+            linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)),
+            var(--secondary-color);
+        backdrop-filter: blur(10px);
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        transition: all var(--transition-fast);
+        z-index: 1;
+    }
+    
+    /* Glowing hexagon outline */
+    .hexagon-outline {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 48px;
+        height: 48px;
+        background: transparent;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        z-index: 0;
+    }
+    
+    .hexagon-outline::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: var(--primary-color);
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        opacity: 0.6;
+        filter: blur(1px);
+        transition: all var(--transition-fast);
+    }
+    
+    .hexagon-outline::after {
+        content: '';
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        bottom: -1px;
+        background: var(--primary-color);
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        opacity: 0.8;
+        transition: all var(--transition-fast);
+    }
+    
+    /* Text content on top */
+    .hexagon-text {
+        position: relative;
+        z-index: 3;
+        font-family: var(--font-code);
+        font-size: 0.8rem;
+        color: var(--color-text);
+        font-weight: 700;
+        text-transform: uppercase;
+        line-height: 1;
+        text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Enhanced Hover Effects */
+    .category-nav-card:hover .hexagon-glass-bg {
+        background: 
+            linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1)),
+            var(--secondary-color);
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+    
+    .category-nav-card:hover .hexagon-outline::before {
+        opacity: 0.9;
+        filter: blur(2px);
+        box-shadow: 0 0 15px var(--glow-color);
+    }
+    
+    .category-nav-card:hover .hexagon-outline::after {
+        opacity: 1;
+        box-shadow: 0 0 20px var(--glow-color), inset 0 0 10px var(--glow-color);
+    }
+    
+    .category-nav-card:hover .hexagon-text {
+        color: var(--color-text);
+        text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+        transform: scale(1.05);
+    }
+    
+    /* Active State Enhancement */
+    .category-nav-card.active .hexagon-glass-bg {
+        background: 
+            linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15)),
+            var(--secondary-color);
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    
+    .category-nav-card.active .hexagon-outline::before {
+        opacity: 1;
+        filter: blur(3px);
+        box-shadow: 0 0 25px var(--glow-color);
+    }
+    
+    .category-nav-card.active .hexagon-outline::after {
+        opacity: 1;
+        box-shadow: 
+            0 0 30px var(--glow-color), 
+            0 0 15px var(--primary-color),
+            inset 0 0 15px var(--glow-color);
+    }
+    
+    .category-nav-card.active .hexagon-text {
+        color: var(--color-text);
+        text-shadow: 
+            0 0 15px rgba(255, 255, 255, 1),
+            0 0 8px var(--primary-color);
+        transform: scale(1.1);
+        font-weight: 800;
+    }
+    
+    /* Pulse Animation for Active Categories */
+    .category-nav-card.active .category-hexagon-glass {
+        animation: hexagonPulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes hexagonPulse {
+        0%, 100% {
+            filter: drop-shadow(0 0 8px var(--glow-color));
+        }
+        50% {
+            filter: drop-shadow(0 0 20px var(--glow-color)) drop-shadow(0 0 10px var(--primary-color));
+        }
+    }
+    
+    /* Enhanced Category Glow Effect */
+    .category-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        width: 70px;
+        height: 70px;
+        background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+        opacity: 0.2;
+        transition: all var(--transition-fast);
+        z-index: 0;
+        border-radius: 50%;
+    }
+    
+    .category-nav-card:hover .category-glow {
+        opacity: 0.4;
+        transform: translate(-50%, -50%) scale(1.3);
+    }
+    
+    .category-nav-card.active .category-glow {
+        opacity: 0.6;
+        transform: translate(-50%, -50%) scale(1.5);
+        animation: glowPulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes glowPulse {
+        0%, 100% {
+            opacity: 0.6;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+        50% {
+            opacity: 0.8;
+            transform: translate(-50%, -50%) scale(1.7);
+        }
+    }
+    
+    /* Additional Visual Enhancements */
+    .category-nav-card {
+        position: relative;
+        overflow: visible; /* Allow glow effects to extend beyond bounds */
+    }
+    
+    /* Scanning Effect for Active Categories */
+    .category-nav-card.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            var(--glow-color) 50%, 
+            transparent 100%);
+        animation: categoryScan 3s linear infinite;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.3;
+    }
+    
+    @keyframes categoryScan {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    
+    /* Mobile Responsiveness */
+    @media (max-width: 767px) {
+        .category-hexagon-glass {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .hexagon-glass-bg {
+            width: 38px;
+            height: 38px;
+        }
+        
+        .hexagon-outline {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .hexagon-text {
+            font-size: 0.7rem;
+        }
+        
+        .category-glow {
+            width: 60px;
+            height: 60px;
+        }
+    }
+    
+    /* Reduced Motion Support */
+    @media (prefers-reduced-motion: reduce) {
+        .category-hexagon-glass,
+        .hexagon-glass-bg,
+        .hexagon-outline::before,
+        .hexagon-outline::after,
+        .category-glow {
+            animation: none;
+            transition: none;
+        }
+        
+        .category-nav-card:hover .hexagon-glass-bg,
+        .category-nav-card.active .hexagon-glass-bg {
+            transform: translate(-50%, -50%);
+        }
+    } {% endcomment %}
+    </style>
+    
+    <script>
+    // Enhanced Category Interaction Effects
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔧 Enhancing category hexagon interactions...');
+        
+        const categoryCards = document.querySelectorAll('.category-nav-card');
+        
+        categoryCards.forEach(card => {
+            const hexagonGlass = card.querySelector('.category-hexagon-glass');
+            const primaryColor = hexagonGlass.style.getPropertyValue('--primary-color');
+            
+            // Enhanced click effect
+            card.addEventListener('click', function(e) {
+                // Create ripple effect
+                const ripple = document.createElement('div');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${x}px;
+                    top: ${y}px;
+                    background: radial-gradient(circle, ${primaryColor}30 0%, transparent 70%);
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: rippleEffect 0.6s ease-out;
+                    pointer-events: none;
+                    z-index: 1;
+                `;
+                
+                this.appendChild(ripple);
+                
+                // Add temporary glow boost
+                hexagonGlass.style.filter = `drop-shadow(0 0 25px ${primaryColor})`;
+                
+                setTimeout(() => {
+                    ripple.remove();
+                    hexagonGlass.style.filter = '';
+                }, 600);
+            });
+            
+            // Enhanced hover tracking
+            card.addEventListener('mouseenter', function() {
+                hexagonGlass.style.transform = 'scale(1.05)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                hexagonGlass.style.transform = 'scale(1)';
+            });
+        });
+        
+        console.log('✅ Category hexagon interactions enhanced');
+    });
+    
+    // Add ripple keyframe
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes rippleEffect {
+            to {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    </script>
+
+<script>
+    // Enhanced Category Interaction Effects
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔧 Enhancing category hexagon interactions...');
+        
+        const categoryCards = document.querySelectorAll('.category-nav-card');
+        
+        categoryCards.forEach(card => {
+            const hexagonGlass = card.querySelector('.category-hexagon-glass');
+            const primaryColor = hexagonGlass.style.getPropertyValue('--primary-color');
+            
+            // Enhanced click effect
+            card.addEventListener('click', function(e) {
+                // Create ripple effect
+                const ripple = document.createElement('div');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${x}px;
+                    top: ${y}px;
+                    background: radial-gradient(circle, ${primaryColor}30 0%, transparent 70%);
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: rippleEffect 0.6s ease-out;
+                    pointer-events: none;
+                    z-index: 1;
+                `;
+                
+                this.appendChild(ripple);
+                
+                // Add temporary glow boost
+                hexagonGlass.style.filter = `drop-shadow(0 0 25px ${primaryColor})`;
+                
+                setTimeout(() => {
+                    ripple.remove();
+                    hexagonGlass.style.filter = '';
+                }, 600);
+            });
+            
+            // Enhanced hover tracking
+            card.addEventListener('mouseenter', function() {
+                hexagonGlass.style.transform = 'scale(1.05)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                hexagonGlass.style.transform = 'scale(1)';
+            });
+        });
+        
+        console.log('✅ Category hexagon interactions enhanced');
+    });
+    
+    // Add ripple keyframe
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes rippleEffect {
+            to {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    </script>
+
+{% comment %} <script> {% endcomment %}
+{% comment %} document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Enhanced DataLogs interface loading...');
+    
+    // Initialize enhanced features
+    initCategoryNavigation();
+    initSearchEnhancements();
+    initViewToggle();
+    initCardAnimations();
+    initTerminalEffects();
+    
+    console.log('✅ Enhanced DataLogs interface loaded');
 });
 
-function initDataLogCards() {
-    const cards = document.querySelectorAll('.datalog-entry-card');
+// Enhanced Category Navigation
+function initCategoryNavigation() {
+    const scrollContainer = document.getElementById('categoriesGrid');
+    const leftBtn = document.getElementById('categoryScrollLeft');
+    const rightBtn = document.getElementById('categoryScrollRight');
     
-    cards.forEach((card, index) => {
-        // Add staggered entrance animation
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
+    if (!scrollContainer || !leftBtn || !rightBtn) return;
+    
+    function updateScrollButtons() {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
         
-        setTimeout(() => {
-            card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 100);
+        leftBtn.style.opacity = scrollLeft > 0 ? '1' : '0.3';
+        leftBtn.disabled = scrollLeft <= 0;
         
-        // Add hover scanning effect
+        rightBtn.style.opacity = scrollLeft < scrollWidth - clientWidth ? '1' : '0.3';
+        rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth;
+    }
+    
+    leftBtn.addEventListener('click', () => {
+        scrollContainer.scrollBy({ left: -300, behavior: 'smooth' });
+    });
+    
+    rightBtn.addEventListener('click', () => {
+        scrollContainer.scrollBy({ left: 300, behavior: 'smooth' });
+    });
+    
+    scrollContainer.addEventListener('scroll', updateScrollButtons);
+    updateScrollButtons();
+    
+   categoryCards.forEach(card => {
+        const hexagonGlass = card.querySelector('.category-hexagon-glass');
+        const primaryColor = hexagonGlass.style.getPropertyValue('--primary-color');
+        
+        // Enhanced click effect
+        card.addEventListener('click', function(e) {
+            // Create ripple effect
+            const ripple = document.createElement('div');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                left: ${x}px;
+                top: ${y}px;
+                background: radial-gradient(circle, ${primaryColor}30 0%, transparent 70%);
+                border-radius: 50%;
+                transform: scale(0);
+                animation: rippleEffect 0.6s ease-out;
+                pointer-events: none;
+                z-index: 1;
+            `;
+            
+            this.appendChild(ripple);
+            
+            // Add temporary glow boost
+            hexagonGlass.style.filter = `drop-shadow(0 0 25px ${primaryColor})`;
+            
+            setTimeout(() => {
+                ripple.remove();
+                hexagonGlass.style.filter = '';
+            }, 600);
+        });
+        
+        // Enhanced hover tracking
         card.addEventListener('mouseenter', function() {
-            this.classList.add('scanning-horizontal');
+            hexagonGlass.style.transform = 'scale(1.05)';
         });
         
         card.addEventListener('mouseleave', function() {
-            this.classList.remove('scanning-horizontal');
+            hexagonGlass.style.transform = 'scale(1)';
         });
+    });
+    
+    console.log('✅ Category hexagon interactions enhanced');
+});
+}
+
+// Enhanced Search with Suggestions
+function initSearchEnhancements() {
+    const searchInput = document.querySelector('.search-enhanced input');
+    const suggestions = document.getElementById('searchSuggestions');
+    
+    if (!searchInput || !suggestions) return;
+    
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
         
-        // Add click-to-expand for mobile
-        const visual = card.querySelector('.datalog-visual');
-        if (visual) {
-            visual.addEventListener('click', function() {
-                const link = card.querySelector('.title-link');
-                if (link) link.click();
-            });
+        if (query.length >= 2) {
+            searchTimeout = setTimeout(() => {
+                loadSearchSuggestions(query);
+            }, 300);
+        } else {
+            suggestions.style.display = 'none';
         }
+    });
+    
+    function loadSearchSuggestions(query) {
+        // Simulate search suggestions (replace with actual API call)
+        const mockSuggestions = [
+            'Machine Learning Fundamentals',
+            'Python Data Analysis',
+            'Django Best Practices',
+            'API Development',
+            'Database Optimization'
+        ].filter(suggestion => 
+            suggestion.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        if (mockSuggestions.length > 0) {
+            suggestions.innerHTML = mockSuggestions.map(suggestion => 
+                `<div class="search-suggestion" onclick="selectSuggestion('${suggestion}')">
+                    <i class="fas fa-search"></i>
+                    <span>${suggestion}</span>
+                </div>`
+            ).join('');
+            suggestions.style.display = 'block';
+        } else {
+            suggestions.style.display = 'none';
+        }
+    }
+    
+    window.selectSuggestion = function(suggestion) {
+        searchInput.value = suggestion;
+        suggestions.style.display = 'none';
+        searchInput.closest('form').submit();
+    };
+}
+
+// View Toggle Functionality
+function initViewToggle() {
+    const toggleBtns = document.querySelectorAll('.view-toggle-btn');
+    const grid = document.getElementById('datalogsGrid');
+    
+    if (!grid) return;
+    
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const view = this.dataset.view;
+            
+            // Update active button
+            toggleBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update grid layout
+            grid.className = `datalogs-grid datalogs-${view}`;
+        });
     });
 }
 
-function initAdvancedFilters() {
-    const filterToggle = document.getElementById('filterToggle');
-    const filtersPanel = document.getElementById('filtersPanel');
+// Card Animations
+function initCardAnimations() {
+    const cards = document.querySelectorAll('.datalog-card');
     
-    if (filterToggle && filtersPanel) {
-        filterToggle.addEventListener('click', function() {
-            const isVisible = filtersPanel.style.display !== 'none';
-            
-            if (isVisible) {
-                filtersPanel.style.display = 'none';
-                this.classList.remove('active');
-            } else {
-                filtersPanel.style.display = 'block';
-                this.classList.add('active');
-                
-                // Animate in
-                filtersPanel.style.opacity = '0';
-                filtersPanel.style.transform = 'translateY(-10px)';
-                
-                setTimeout(() => {
-                    filtersPanel.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                    filtersPanel.style.opacity = '1';
-                    filtersPanel.style.transform = 'translateY(0)';
-                }, 10);
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
             }
         });
-    }
-}
-
-function initViewPersistence() {
-    // Restore saved view mode
-    const savedView = localStorage.getItem('datalogViewMode') || 'grid';
-    const gridElement = document.getElementById('dataLogsGrid');
-    const viewButtons = document.querySelectorAll('.view-btn');
+    }, { threshold: 0.1 });
     
-    if (gridElement) {
-        gridElement.className = `datalogs-content-grid ${savedView}-view`;
-    }
-    
-    viewButtons.forEach(btn => {
-        if (btn.dataset.view === savedView) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+        observer.observe(card);
     });
 }
 
-function initSearchEnhancements() {
-    const searchInput = document.querySelector('.search-input');
-    const clearSearch = document.querySelector('.clear-search');
+// Terminal Effects
+function initTerminalEffects() {
+    const terminal = document.querySelector('.featured-terminal');
+    if (!terminal) return;
     
-    if (clearSearch) {
-        clearSearch.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Add animation
-            this.style.transform = 'rotate(90deg)';
-            this.style.opacity = '0.6';
-            
+    // Add typing effect to terminal on scroll into view
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('terminal-active');
+            }
+        });
+    }, { threshold: 0.3 });
+    
+    observer.observe(terminal);
+    
+    // Add copy functionality enhancement
+    const copyBtn = terminal.querySelector('.copy-button');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+            // Add visual feedback
+            this.style.transform = 'scale(0.95)';
             setTimeout(() => {
-                window.location.href = this.href;
-            }, 200);
-        });
-    }
-    
-    if (searchInput) {
-        // Add search suggestions (future enhancement)
-        searchInput.addEventListener('focus', function() {
-            this.parentElement.classList.add('search-focused');
-        });
-        
-        searchInput.addEventListener('blur', function() {
-            this.parentElement.classList.remove('search-focused');
+                this.style.transform = 'scale(1)';
+            }, 150);
         });
     }
 }
-
-function addLoadingEffects() {
-    // Add loading effects to navigation links
-    const navLinks = document.querySelectorAll('.filter-item, .category-badge, .metadata-tag');
-    
-    navLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            this.style.opacity = '0.6';
-            this.innerHTML += ' <i class="fas fa-spinner fa-spin" style="margin-left: 0.5rem;"></i>';
-        });
-    });
-}
-</script>
+</script> {% endcomment %}
 {% endblock %}

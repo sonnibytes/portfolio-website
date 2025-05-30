@@ -673,7 +673,6 @@ def datalog_meta_tags(post, request=None):
     return mark_safe("\n".join(meta_tags))
 
 
-
 # =========== Enhanced Inclusion Tags (added w rework to combine various tag files) =========== #
 
 @register.inclusion_tag('blog/includes/post_card.html')
@@ -852,7 +851,6 @@ def posts_by_month(year):
     ).dates('published_date', 'month', order='DESC')
 
 
-# Adding from blog system_tags
 @register.inclusion_tag("blog/includes/related_systems.html")
 def related_systems(post, limit=3):
     """Show related systems for a blog post."""
@@ -866,7 +864,6 @@ def related_systems(post, limit=3):
 
 
 
-# Moved back for now
 @register.simple_tag(takes_context=True)
 def build_url(context, **kwargs):
     """

@@ -42,8 +42,3 @@ urlpatterns = [
 ]
 
 app_name = 'blog'
-
-    # path("post/create/", views.PostCreateView.as_view(), name="post_create"),
-    # path("post/<slug:slug>/edit/", views.PostUpdateView.as_view(), name="post_edit"),
-    # path("upload/image/", views.ImageUploadView.as_view(), name="upload_image"),
-    # path("tags/suggestions/", views.TagSuggestionsView.as_view(), name="tag_suggestions"),

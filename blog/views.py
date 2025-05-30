@@ -27,7 +27,7 @@ from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 class PostListView(ListView):
     """View for the blog homepage showing latest posts."""
     model = Post
-    template_name = "blog/post_list_enhanced.html"
+    template_name = "blog/post_list.html"
     context_object_name = "posts"
     paginate_by = 6  # 6 posts per page (2 rows of 3)
 
@@ -105,100 +105,6 @@ class PostListView(ListView):
             }
 
         return context
-
-# # Test enhanced2 context
-# class PostEnhList2(ListView):
-#     """Enhanced view for the blog homepage showing latest posts."""
-
-#     model = Post
-#     template_name = "blog/post_enh2.html" 
-#     context_object_name = "posts"
-#     paginate_by = 6
-
-#     def get_queryset(self):
-#         return (
-#             Post.objects.filter(status="published")
-#             .select_related("category", "author")
-#             .prefetch_related("tags")
-#             .order_by("-published_date")
-#         )
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-
-#         # Basic categories and tags (existing)
-#         context["categories"] = Category.objects.all()
-#         context["tags"] = Tag.objects.all()
-
-#         # Enhanced categories with post counts
-#         context["categories_with_counts"] = (
-#             Category.objects.annotate(
-#                 post_count=Count("posts", filter=Q(posts__status="published"))
-#             )
-#             .filter(post_count__gt=0)
-#             .order_by("name")
-#         )
-
-#         # Enhanced featured post
-#         context["featured_post"] = Post.objects.filter(
-#             status="published", featured=True
-#         ).first()
-
-#         # Statistics for the interface
-#         context.update(
-#             {
-#                 "total_posts": Post.objects.filter(status="published").count(),
-#                 "total_categories": Category.objects.count(),
-#                 "total_tags": Tag.objects.count(),
-#                 "avg_reading_time": Post.objects.filter(status="published").aggregate(
-#                     avg_time=Avg("reading_time")
-#                 )["avg_time"]
-#                 or 8,
-#                 # Popular tags for quick filters
-#                 "popular_tags": Tag.objects.annotate(
-#                     post_count=Count("posts", filter=Q(posts__status="published"))
-#                 )
-#                 .filter(post_count__gt=0)
-#                 .order_by("-post_count")[:10],
-#                 # Recent activity
-#                 "recent_posts_count": Post.objects.filter(
-#                     status="published",
-#                     published_date__gte=timezone.now() - timedelta(days=30),
-#                 ).count(),
-#             }
-#         )
-
-#         # Enhanced featured post data
-#         if context["featured_post"]:
-#             featured = context["featured_post"]
-#             context["featured_post_data"] = {
-#                 "has_code": bool(featured.featured_code),
-#                 "code_language": getattr(featured, "featured_code_format", "text"),
-#                 "code_lines": len(featured.featured_code.split("\n"))
-#                 if featured.featured_code
-#                 else 0,
-#                 "estimated_complexity": self.get_content_complexity(featured),
-#                 "related_systems": self.get_related_systems(featured),
-#             }
-
-#         return context
-
-#     def get_content_complexity(self, post):
-#         """Determine content complexity based on reading time and code presence"""
-#         if post.reading_time < 5:
-#             return "Beginner"
-#         elif post.reading_time < 15:
-#             if hasattr(post, "featured_code") and post.featured_code:
-#                 return "Intermediate"
-#             return "Beginner"
-#         else:
-#             return "Advanced"
-
-#     def get_related_systems(self, post):
-#         """Get related systems for a post if available"""
-#         if hasattr(post, "related_systems"):
-#             return post.related_systems.filter(status__in=["deployed", "published"])[:2]
-#         return []
 
 
 class PostDetailView(DetailView):

@@ -101,7 +101,7 @@
     min-width: 140px;
     flex-shrink: 0;
     cursor: pointer;
-    overflow: visible;   /* Allow glow effects to extend beyond bounds */
+    overflow: hidden;
 }
 
 .category-nav-card:hover {
@@ -117,7 +117,7 @@
     box-shadow: var(--shadow-glow-lavender);
 }
 
-/* Scanning Effect for Active Categories */
+/* Enhanced scanning effect for active categories */
 .category-nav-card.active::before {
     content: '';
     position: absolute;
@@ -132,7 +132,8 @@
     animation: categoryScan 3s linear infinite;
     pointer-events: none;
     z-index: -1;
-    opacity: 0.3;
+    opacity: 0.2;
+    border-radius: var(--border-radius-lg);
 }
 
 .category-hexagon-container {
@@ -176,6 +177,7 @@
     box-shadow: 0 0 20px var(--hex-color, var(--color-lavender));
 }
 
+/* Text stays on top */
 .hexagon-text {
     position: relative;
     z-index: 3;
@@ -186,9 +188,10 @@
     text-transform: uppercase;
     line-height: 1;
     text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    transition: all var(--transition-fast);
 }
 
-.category-glow {
+/* .category-glow {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -200,6 +203,11 @@
     transition: all var(--transition-fast);
     z-index: 0;
     border-radius: 50%;
+} */
+
+/* Remove the old category-glow since we're using outline glow */
+.category-glow {
+    display: none;
 }
 
 .category-nav-card:hover .category-glow {
@@ -253,6 +261,8 @@
     color: var(--color-lavender);
 }
 
+/* Clean Glass Hexagon with Colored Outline Only */
+
 .category-hexagon-glass {
     width: 48px;
     height: 48px;
@@ -264,7 +274,7 @@
     transition: all var(--transition-normal);
 }
 
-/* Glass-morphism background with hexagon clipping */
+/* Pure glass background - no color */
 .hexagon-glass-bg {
     position: absolute;
     top: 50%;
@@ -273,15 +283,21 @@
     width: 46px;
     height: 46px;
     background: 
-        linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)),
-        var(--secondary-color);
-    backdrop-filter: blur(10px);
+        linear-gradient(135deg, 
+            rgba(255, 255, 255, 0.12) 0%,
+            rgba(255, 255, 255, 0.04) 50%, 
+            rgba(255, 255, 255, 0.08) 100%
+        ),
+        rgba(13, 13, 31, 0.3);
+    backdrop-filter: blur(15px);
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     transition: all var(--transition-fast);
     z-index: 1;
+    border: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* Glowing hexagon outline */
+/* Colored hexagon outline using CSS border technique */
 .hexagon-outline {
     position: absolute;
     top: 50%;
@@ -289,93 +305,142 @@
     transform: translate(-50%, -50%);
     width: 48px;
     height: 48px;
-    background: transparent;
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     z-index: 0;
 }
 
+
+/* Create hexagon outline using multiple elements */
 .hexagon-outline::before {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: var(--primary-color);
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    opacity: 0.6;
-    filter: blur(1px);
-    transition: all var(--transition-fast);
-}
-
-.hexagon-outline::after {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: -1px;
-    right: -1px;
-    bottom: -1px;
-    background: var(--primary-color);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: 1.5px solid var(--primary-color);
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     opacity: 0.8;
     transition: all var(--transition-fast);
 }
 
+/* Outer glow effect */
+.hexagon-outline::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    background: var(--primary-color);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    opacity: 0.2;
+    filter: blur(2px);
+    transition: all var(--transition-fast);
+    z-index: -1;
+}
 
-/* Enhanced Hover Effects */
+
+/* Hover Effects - Enhanced glass and stronger outline */
 .category-nav-card:hover .hexagon-glass-bg {
     background: 
-        linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1)),
-        var(--secondary-color);
-    transform: translate(-50%, -50%) scale(1.05);
+        linear-gradient(135deg, 
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(255, 255, 255, 0.08) 50%, 
+            rgba(255, 255, 255, 0.12) 100%
+        ),
+        rgba(13, 13, 31, 0.4);
+    transform: translate(-50%, -50%) scale(1.02);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+
+.category-nav-card:active .hexagon-glass-bg {
+    transform: translate(-50%, -50%) scale(0.98);
+}
+
+@keyframes simpleHexPulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 20px var(--glow-color),
+            0 0 10px var(--primary-color),
+            inset 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+    50% {
+        box-shadow: 
+            0 0 30px var(--glow-color),
+            0 0 15px var(--primary-color),
+            inset 0 0 25px rgba(255, 255, 255, 0.4);
+    }
 }
 
 .category-nav-card:hover .hexagon-outline::before {
-    opacity: 0.9;
-    filter: blur(2px);
-    box-shadow: 0 0 15px var(--glow-color);
+    border-width: 2px;
+    opacity: 1;
+    filter: drop-shadow(0 0 3px var(--primary-color));
 }
 
 .category-nav-card:hover .hexagon-outline::after {
-    opacity: 1;
-    box-shadow: 0 0 20px var(--glow-color), inset 0 0 10px var(--glow-color);
+    opacity: 0.3;
+    filter: blur(3px);
+    transform: scale(1.05);
 }
 
 .category-nav-card:hover .hexagon-text {
     color: var(--color-text);
-    text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
-    transform: scale(1.05);
+    text-shadow: 
+        0 0 12px rgba(255, 255, 255, 0.8),
+        0 0 6px var(--primary-color);
+    transform: scale(1.02);
 }
 
-/* Active State Enhancement */
+/* Active State - Stronger glass effect and prominent outline */
 .category-nav-card.active .hexagon-glass-bg {
     background: 
-        linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15)),
-        var(--secondary-color);
-    transform: translate(-50%, -50%) scale(1.1);
+        linear-gradient(135deg, 
+            rgba(255, 255, 255, 0.25) 0%,
+            rgba(255, 255, 255, 0.12) 50%, 
+            rgba(255, 255, 255, 0.18) 100%
+        ),
+        rgba(13, 13, 31, 0.5);
+    transform: translate(-50%, -50%) scale(1.05);
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.category-nav-card.active .hexagon-outline::before {
-    opacity: 1;
-    filter: blur(3px);
-    box-shadow: 0 0 25px var(--glow-color);
+.category-nav-card:active .hexagon-outline::before {
+    border-width: 3px;
+    filter: drop-shadow(0 0 8px var(--primary-color));
 }
 
 .category-nav-card.active .hexagon-outline::after {
-    opacity: 1;
-    box-shadow: 
-        0 0 30px var(--glow-color), 
-        0 0 15px var(--primary-color),
-        inset 0 0 15px var(--glow-color);
+    opacity: 0.4;
+    filter: blur(4px);
+    transform: scale(1.1);
+    animation: outlineGlow 2s ease-in-out infinite;
 }
 
 .category-nav-card.active .hexagon-text {
     color: var(--color-text);
     text-shadow: 
         0 0 15px rgba(255, 255, 255, 1),
-        0 0 8px var(--primary-color);
-    transform: scale(1.1);
+        0 0 8px var(--primary-color),
+        0 0 4px rgba(255, 255, 255, 0.8);
+    transform: scale(1.05);
     font-weight: 800;
+}
+
+/* Pulsing glow animation for active state */
+@keyframes outlineGlow {
+    0%, 100% {
+        opacity: 0.4;
+        transform: scale(1.1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.15);
+    }
 }
 
 /* Pulse Animation for Active Categories */
@@ -1299,6 +1364,11 @@
         width: 40px;
         height: 40px;
     }
+
+    .category-nav-card:hover .hexagon-outline::before,
+    .category-nav-card.active .hexagon-outline::before {
+        border-width: 2px;
+    }
     
     .category-glow {
         width: 60px;
@@ -1418,6 +1488,27 @@
     }
 }
 
+
+/* Fallback for browsers that don't support clip-path */
+@supports not (clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)) {
+    .hexagon-glass-bg,
+    .hexagon-outline::before,
+    .hexagon-outline::after {
+        border-radius: 50%;
+        clip-path: none;
+    }
+    
+    .hexagon-glass-bg {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .hexagon-outline {
+        width: 44px;
+        height: 44px;
+    }
+}
+
 /* ========== ACCESSIBILITY ENHANCEMENTS ========== */
 
 .category-nav-card:focus,
@@ -1441,6 +1532,20 @@
     
     .category-hexagon::before {
         border: 2px solid var(--color-text);
+    }
+
+    .hexagon-glass-bg {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: none;
+    }
+    
+    .hexagon-outline::before {
+        border-width: 3px;
+        opacity: 1;
+    }
+    
+    .hexagon-text {
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
     }
 }
 
@@ -1478,6 +1583,11 @@
     }
     
     .datalog-card:hover .datalog-image img {
+        transform: none;
+    }
+
+    .category-nav-card:hover .hexagon-text,
+    .category-nav-card.active .hexagon-text {
         transform: none;
     }
 }
