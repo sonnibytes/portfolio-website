@@ -892,7 +892,7 @@ def markdownify(text):
         # Create an ID from heading text
         heading_id = slugify(heading.get_text())
 
-        # Set the ID attribute on the heading element
+        # Set ID attr on heading element
         heading["id"] = heading_id
 
     # Return modified HTML
@@ -900,53 +900,51 @@ def markdownify(text):
 
 # =========== Code Formating (Pygments) Filter =========== #
 
-# Register a new filter named 'highlight_code'
+
 @register.filter(name="highlight_code")
-# Mark the function as a string filter (operates on strings)
 @stringfilter
 def highlight_code(code, language=None):
     try:
-        # If a language is specified, get the appropriate lexer
+        # If lang is specified, get appropriate lexer
         if language:
             lexer = get_lexer_by_name(language, stripall=True)
-        # Otherwise, use a simple text lexer with no highlighting
+        # Else, use simple txt lexer w no highlighting
         else:
             lexer = TextLexer()
 
-        # Create an HTML formatter with a 'monokai' style
-        # 'cssclass' sets the CSS class that will be applied to the wrapper
+        # Create HTML formatter w 'monokai' style
+        # 'cssclass' sets CSS class that will be applied to wrapper
         formatter = HtmlFormatter(style="monokai", cssclass="highlighted")
 
-        # Perform the actual highlighting
-        # This takes the code string, lexer for parsing, and formatter for output
-        # Returns HTML with appropriate spans for syntax highlighting
+        # Perform actual highlighting
+        # Take code string, lexer for parsing, and formatter for output
+        # Returns HTML w appropriate spans for syntax highlighting
         highlighted_code = highlight(code, lexer, formatter)
 
-        # Mark the output as safe for rendering in the template
-        # This tells Django not to escape the HTML tags in the output
+        # Mark output safe for rendering in template
+        # Tells Django not to escape HTML tags in output
         return mark_safe(highlighted_code)
     except:
-        # If any error occurs, return the original code unchanged
-        # This provides a fallback if Pygments can't handle the code
+        # If any error occurs, return original code unchanged
         return code
 
 
-# Register a simple tag to generate CSS for Pygments
 @register.simple_tag
 def pygments_css():
-    # Create a formatter to get CSS rules
+    # Create formatter to get CSS rules
     formatter = HtmlFormatter(style="monokai")
 
-    # Get CSS style definitions for the specified style
-    # 'get_style_defs()' returns CSS rules for the given selector
-    # '.highlighted' matches the cssclass we set in highlight_code
+    # Get CSS style defs for specified style
+    # 'get_style_defs()' returns CSS rules for given selector
+    # '.highlighted' matches cssclass set in highlight_code
     css_rules = formatter.get_style_defs(".highlighted")
 
-    # Wrap the CSS in a style tag and mark it as safe for rendering
+    # Wrap CSS in style tag, mark safe for rendering
     return mark_safe(f"<style>{css_rules}</style>")
 
 
 # =========== ADDED AFTER GLOBAL FILTERS =============#
+
 
 @register.filter
 def category_color(category, default="#b39ddb"):
@@ -959,9 +957,6 @@ def category_color(category, default="#b39ddb"):
     return default
 
 # =========== TIMELINE COMPONENTS TAGS & FILTERS =============#
-
-
-# Add this to your datalog_tags.py file
 
 
 @register.inclusion_tag("blog/includes/timeline_section.html")
@@ -1045,8 +1040,8 @@ def timeline_stats(posts, period="all"):
 
     Usage: {% timeline_stats posts=posts period="month" %}
     """
-    from django.utils import timezone
-    from datetime import timedelta
+    # from django.utils import timezone
+    # from datetime import timedelta
 
     if not posts:
         return {
@@ -1096,6 +1091,7 @@ def group_by_date(posts, group_type="month"):
     """
     from itertools import groupby
     from operator import attrgetter
+    import calendar
 
     if not posts:
         return []
@@ -1179,81 +1175,279 @@ def timeline_date_range(posts):
         "span_days": span_days,
     }
 
+# =========== CATEGORY HEXAGON COMPONENT TAGS/FILTERS =============#
 
 
-# =========== LIKELY DELETE ON CLEAN UP =============#
+@register.inclusion_tag("blog/includes/category_hexagon_nav.html", takes_context=True)
+def category_hexagon_nav(
+    context, style="full", current_category=None, show_all=True, limit=None
+):
+    """
+    Render category hexagon navigation with different styles.
+
+    Usage:
+    {% category_hexagon_nav style="full" current_category=category %}
+    {% category_hexagon_nav style="compact" limit=6 %}
+    {% category_hexagon_nav style="minimal" show_all=False %}
+    {% category_hexagon_nav style="filter" %}
+
+    Args:
+        style (str): Navigation style - 'full', 'compact', 'minimal', 'filter'
+        current_category (Category): Currently selected category
+        show_all (bool): Whether to show "All Categories" option
+        limit (int): Limit number of categories shown (for compact/minimal)
+    """
+    from ..models import Category
+    from django.db.models import Count, Q
+
+    # Get categories w post counts
+    categories = (
+        Category.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        )
+        .filter(post_count__gt=0)
+        .order_by("-post_count", "name")
+    )
+
+    # Apply limit if specified
+    if limit:
+        categories = categories[:limit]
+
+    # Get total posts count for "All" option
+    from ..models import Post
+
+    total_posts = Post.objects.filter(status="published").count()
+
+    # Get request for filter state
+    request = context.get("request")
+
+    return {
+        "style": style,
+        "current_category": current_category,
+        "categories": categories,
+        "show_all": show_all,
+        "total_posts": total_posts,
+        "request": request,
+    }
 
 
-# @register.simple_tag
-# def datalog_status_badge(post):
-#     """Generate status badge for datalog posts"""
-#     if post.featured:
-#         return mark_safe('<span class="datalog-badge featured">Featured</span>')
-#     elif post.created > timezone.now() - timedelta(days=7):
-#         return mark_safe('<span class="datalog-badge new">New</span>')
-#     else:
-#         return ""
+@register.simple_tag
+def category_hexagon_styles():
+    """
+    Include category hexagon CSS styles.
+    Usage: {% category_hexagon_styles %}
+    """
+    return mark_safe("""
+    <style>
+    /* Category hexagon component styles are included in the component template */
+    .category-hexagon-navigation {
+        /* Component styles are self-contained */
+    }
+    </style>
+    """)
 
-# Combined w popular_datalog_categories into one get_datalog_categories function
-# @register.simple_tag
-# def get_post_count_by_category():
-#     """
-#     Returns post count grouped by category.
-#     Usage: {% get_post_count_by_category %}
-#     """
-#     return Category.objects.annotate(
-#         post_count=Count("posts", filter=Q(posts__status="published"))
-#     ).filter(post_count__gt=0)
 
-# # Combined w get_post_by_category into one get_datalog_categories function
-# @register.simple_tag
-# def popular_datalog_categories(limit=5):
-#     """
-#     Get most popular categories by post count
-#     Usage: {% popular_datalog_categories 5 %}
-#     """
-#     try:
-#         categories = (
-#             Category.objects.annotate(
-#                 post_count=Count("posts", filter=Q(posts__status="published"))
-#             )
-#             .filter(post_count__gt=0)
-#             .order_by("-post_count")[:limit]
-#         )
+@register.simple_tag
+def category_scroll_controls(container_id="categoriesGrid"):
+    """
+    Generate scroll control buttons for category navigation.
+    Usage: {% category_scroll_controls 'myContainerId' %}
+    """
+    return mark_safe(f"""
+    <button class="category-scroll-btn category-scroll-left" 
+            data-target="#{container_id}" 
+            aria-label="Scroll categories left">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    <button class="category-scroll-btn category-scroll-right" 
+            data-target="#{container_id}" 
+            aria-label="Scroll categories right">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+    """)
 
-#         return categories
-#     except Exception:
-#         return []
-# Moved to global - aura_filters
-# @register.filter
-# def highlight_search(text, query):
-#     """
-#     Highlights search terms in text.
-#     Usage: {{ text|highlight_search:query }}
-#     """
-#     if not query or not text:
-#         return text
 
-#     escaped_text = escape(text)
-#     escaped_query = escape(query)
+@register.filter
+def category_hex_color(category, fallback="#26c6da"):
+    """
+    Get category color for hexagon styling.
+    Usage: {{ category|category_hex_color }}
+    """
+    if hasattr(category, "color") and category.color:
+        return category.color
+    return fallback
 
-#     # Highlight each word in query
-#     words = escaped_query.split()
-#     for word in words:
-#         pattern = re.compile(re.escape(word), re.IGNORECASE)
-#         escaped_text = pattern.sub(
-#             f'<mark class="search-highlight">{word}</mark>',
-#             escaped_text
-#         )
-#     return mark_safe(escaped_text)
 
-# In aura_filters under split_string
-# @register.simple_tag
-# def split_by_comma(value):
-#     """
-#     Split string by comma for template iteration
-#     Usage: {{ "tag1,tag2,tag3"|split_by_comma }}
-#     """
-#     if not value:
-#         return []
-#     return [item.strip() for item in value.split(",")]
+@register.filter
+def category_hex_code(category, fallback="LOG"):
+    """
+    Get category code for hexagon display.
+    Usage: {{ category|category_hex_code }}
+    """
+    if hasattr(category, "code") and category.code:
+        return category.code.upper()[:3]  # Ensure max 3 characters
+    return fallback
+
+
+@register.simple_tag(takes_context=True)
+def is_category_active(context, category):
+    """
+    Check if a category is currently active.
+    Usage: {% is_category_active category %}
+    """
+    current_category = context.get("current_category")
+    if not current_category:
+        return False
+
+    if hasattr(category, "slug"):
+        return current_category.slug == category.slug
+
+    return False
+
+
+@register.simple_tag
+def category_nav_analytics(categories, style="full"):
+    """
+    Generate analytics data for category navigation.
+    Usage: {% category_nav_analytics categories 'compact' as analytics %}
+    """
+    if not categories:
+        return {}
+
+    total_categories = len(categories)
+    total_posts = sum(getattr(cat, "post_count", 0) for cat in categories)
+    most_popular = (
+        max(categories, key=lambda c: getattr(c, "post_count", 0))
+        if categories
+        else None
+    )
+
+    analytics = {
+        "total_categories": total_categories,
+        "total_posts": total_posts,
+        "most_popular_category": most_popular,
+        "average_posts_per_category": round(total_posts / total_categories, 1)
+        if total_categories > 0
+        else 0,
+        "style": style,
+    }
+
+    # Add style-specific analytics
+    if style == "compact":
+        analytics["display_limit"] = min(6, total_categories)
+        analytics["hidden_categories"] = max(0, total_categories - 6)
+    elif style == "minimal":
+        analytics["display_limit"] = min(4, total_categories)
+        analytics["hidden_categories"] = max(0, total_categories - 4)
+
+    return analytics
+
+
+@register.inclusion_tag("blog/includes/category_hexagon_single.html")
+def category_hexagon_single(category, size="md", show_label=True, link=True):
+    """
+    Render a single category hexagon.
+
+    Usage:
+    {% category_hexagon_single category size="lg" %}
+    {% category_hexagon_single category show_label=False %}
+
+    Args:
+        category: Category object
+        size (str): Hexagon size - 'sm', 'md', 'lg', 'xl'
+        show_label (bool): Whether to show category name label
+        link (bool): Whether to make hexagon clickable
+    """
+    size_map = {
+        "xs": "24px",
+        "sm": "32px",
+        "md": "40px",
+        "lg": "48px",
+        "xl": "60px",
+    }
+
+    return {
+        "category": category,
+        "hex_size": size_map.get(size, "40px"),
+        "show_label": show_label,
+        "link": link,
+        "size_class": f"hex-{size}",
+    }
+
+
+@register.simple_tag
+def category_distribution_data(categories, format="json"):
+    """
+    Generate category distribution data for charts.
+    Usage: {% category_distribution_data categories 'json' %}
+    """
+    import json
+
+    if not categories:
+        return "[]" if format == "json" else []
+
+    data = []
+    for category in categories:
+        post_count = getattr(category, "post_count", 0)
+        if post_count > 0:
+            data.append(
+                {
+                    "name": category.name,
+                    "code": getattr(category, "code", category.name[:3].upper()),
+                    "color": getattr(category, "color", "#26c6da"),
+                    "count": post_count,
+                    "url": category.get_absolute_url()
+                    if hasattr(category, "get_absolute_url")
+                    else "#",
+                }
+            )
+
+    if format == "json":
+        return mark_safe(json.dumps(data))
+
+    return data
+
+
+@register.simple_tag
+def category_quick_stats(categories):
+    """
+    Generate quick statistics for category navigation.
+    Usage: {% category_quick_stats categories as stats %}
+    """
+    if not categories:
+        return {
+            "total_categories": 0,
+            "total_posts": 0,
+            "avg_posts": 0,
+            "most_active": None,
+            "least_active": None,
+        }
+
+    post_counts = [
+        getattr(cat, "post_count", 0)
+        for cat in categories
+        if getattr(cat, "post_count", 0) > 0
+    ]
+
+    if not post_counts:
+        return {
+            "total_categories": len(categories),
+            "total_posts": 0,
+            "avg_posts": 0,
+            "most_active": None,
+            "least_active": None,
+        }
+
+    total_posts = sum(post_counts)
+    most_active = max(categories, key=lambda c: getattr(c, "post_count", 0))
+    least_active = min(categories, key=lambda c: getattr(c, "post_count", 0))
+
+    return {
+        "total_categories": len(categories),
+        "total_posts": total_posts,
+        "avg_posts": round(total_posts / len(categories), 1),
+        "most_active": most_active,
+        "least_active": least_active,
+        "max_posts": getattr(most_active, "post_count", 0),
+        "min_posts": getattr(least_active, "post_count", 0),
+    }

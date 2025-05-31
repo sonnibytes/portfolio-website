@@ -1,0 +1,106 @@
+<!----
+ * AURA DataLogs - Single Category Hexagon Component  
+ * Individual hexagon for use in various contexts
+ * Usage: {--% category_hexagon_single category size="lg" show_label=True %--}
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="single-category-hexagon {{ size_class }}">
+    {% if link %}
+    <a href="{{ category.get_absolute_url }}" class="hexagon-link" title="{{ category.name }}">
+    {% endif %}
+    
+        <div class="category-hexagon glass-hex single" 
+             style="--hex-color: {{ category|category_hex_color }}; width: {{ hex_size }}; height: {{ hex_size }};">
+            <span class="hex-text">{{ category|category_hex_code }}</span>
+        </div>
+        
+        {% if show_label %}
+        <span class="hexagon-label">{{ category.name }}</span>
+        {% endif %}
+    
+    {% if link %}
+    </a>
+    {% endif %}
+</div>
+
+<style>
+/* Single Category Hexagon Component Styles */
+.single-category-hexagon {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-body);
+}
+
+.hexagon-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    text-decoration: none;
+    color: inherit;
+    transition: all var(--transition-fast);
+}
+
+.hexagon-link:hover {
+    transform: translateY(-2px);
+    color: var(--color-lavender);
+}
+
+.hexagon-link:hover .category-hexagon.glass-hex {
+    transform: scale(1.1);
+}
+
+.hexagon-link:hover .category-hexagon.glass-hex::before {
+    opacity: 0.8;
+    box-shadow: 0 0 15px var(--hex-color, #26c6da);
+}
+
+.hexagon-link:hover .hex-text {
+    text-shadow: 
+        0 0 12px rgba(255, 255, 255, 0.8),
+        0 0 6px var(--hex-color, #26c6da);
+}
+
+.hexagon-label {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color var(--transition-fast);
+}
+
+.hexagon-link:hover .hexagon-label {
+    color: var(--color-lavender);
+}
+
+/* Size variations */
+.single-category-hexagon.hex-xs .hex-text { font-size: 0.6rem; }
+.single-category-hexagon.hex-sm .hex-text { font-size: 0.7rem; }
+.single-category-hexagon.hex-md .hex-text { font-size: 0.8rem; }
+.single-category-hexagon.hex-lg .hex-text { font-size: 0.9rem; }
+.single-category-hexagon.hex-xl .hex-text { font-size: 1rem; }
+
+.single-category-hexagon.hex-xs .hexagon-label { font-size: 0.6rem; max-width: 50px; }
+.single-category-hexagon.hex-sm .hexagon-label { font-size: 0.7rem; max-width: 60px; }
+.single-category-hexagon.hex-md .hexagon-label { font-size: 0.75rem; max-width: 80px; }
+.single-category-hexagon.hex-lg .hexagon-label { font-size: 0.8rem; max-width: 100px; }
+.single-category-hexagon.hex-xl .hexagon-label { font-size: 0.85rem; max-width: 120px; }
+
+/* Standalone styling (when not linked) */
+.single-category-hexagon:not(.hexagon-link) .category-hexagon.glass-hex {
+    cursor: default;
+}
+
+.single-category-hexagon:not(.hexagon-link):hover .category-hexagon.glass-hex {
+    transform: none;
+}
+</style>

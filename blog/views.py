@@ -666,7 +666,6 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     #             })
     #     return headings
 
-
     # def dispatch(self, request, *args, **kwargs):
     #     # Check if user is the author and has permission
     #     self.object = self.get_object()
@@ -674,8 +673,6 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     #         messages.error(request, "You don't have permission to edit this post.")
     #         return redirect("blog:post_detail", slug=self.object.slug)
     #     return super().dispatch(request, *args, **kwargs)
-
-    
 
     # def get_form(self, form_class=None):
     #     form = super().get_form(form_class)
