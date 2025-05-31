@@ -1,16 +1,13 @@
 <!----
- * AURA Portfolio - Datalogs Archive Template
- * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.0.2 - Optimized for Component Architecture, Enhanced TemplateTags
+ * AURA Portfolio - DataLogs Archive Template - COMPLETELY CLEANED
+ * Advanced User Repository & Archive - Component-Based Architecture
+ * Version: 3.0.0 - Complete rewrite with timeline component
 ---->
-
 
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
-
 {% load aura_filters %}
 {% load aura_components %}
-{% comment %} {% load system_tags %} {% endcomment %}
 {% load datalog_tags %}
 
 {% block title %}
@@ -30,126 +27,101 @@
 {% endblock %}
 
 {% block datalogs_css %}
-<link rel="stylesheet" href="{% static 'blog/css/archive.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/archive-enhanced.css' %}">
 {% endblock %}
 
 {% block datalogs_body_class %}archive-view{% endblock %}
 
-{% block subnav_title %}Archive{% endblock %}
-
 {% block datalogs_title %}
     {% if year and month %}
-        [ DATALOG ARCHIVE: {{ month_name|upper }} {{ year }} ]
+        [ ARCHIVE: {{ month_name|upper }} {{ year }} ]
     {% elif year %}
-        [ DATALOG ARCHIVE: {{ year }} ]
+        [ ARCHIVE: {{ year }} ]
     {% else %}
-        [ DATALOG TEMPORAL ARCHIVE ]
+        [ TEMPORAL ARCHIVE ]
     {% endif %}
 {% endblock %}
 
 {% block datalogs_subtitle %}
     {% if year and month %}
-        {{ posts|length }} entries found for {{ month_name }} {{ year }}
+        {{ posts|length }} entries from {{ month_name }} {{ year }}
     {% elif year %}
-        {{ posts|length }} entries found for {{ year }}
+        {{ posts|length }} entries from {{ year }}
     {% else %}
-        Chronological navigation through {{ posts|length }} development entries
+        Navigate through {{ posts|length }} chronological entries
     {% endif %}
 {% endblock %}
 
-{% block category_nav %}
-<!-- Archive-specific timeline navigation -->
-<div class="timeline-nav-container">
-    <div class="timeline-header">
-        <h3 class="timeline-title">
-            <i class="fas fa-history me-2"></i>
-            Temporal Navigation
-        </h3>
-        <div class="timeline-controls">
-            <button class="timeline-zoom" data-zoom="year" title="Year View">
-                <i class="fas fa-calendar"></i>
-            </button>
-            <button class="timeline-zoom active" data-zoom="month" title="Month View">
-                <i class="fas fa-calendar-alt"></i>
-            </button>
-            <button class="timeline-zoom" data-zoom="day" title="Day View">
-                <i class="fas fa-calendar-day"></i>
-            </button>
-        </div>
-    </div>
-    
-    <!-- Year Navigation -->
-    <div class="year-navigation">
-        {% for archive_year in years %}
-        <a href="{% url 'blog:archive_year' year=archive_year %}" 
-           class="year-node {% if year == archive_year %}active{% endif %}"
-           data-year="{{ archive_year }}"
-           title="{{ archive_year }} ({{ year_counts|get_item:archive_year }} entries)">
-            <div class="year-display">{{ archive_year }}</div>
-            <div class="year-count">{{ year_counts|get_item:archive_year }}</div>
-            <div class="year-bar" style="height: {{ year_counts|get_item:archive_year|mul:2 }}px;"></div>
-        </a>
-        {% endfor %}
-    </div>
-    
-    <!-- Month Navigation (if year selected) -->
-    {% if year %}
-    <div class="month-navigation">
-        {% for month_num, month_name in months %}
-        <a href="{% url 'blog:archive_month' year=year month=month_num %}" 
-           class="month-node {% if month == month_num %}active{% endif %}"
-           data-month="{{ month_num }}"
-           title="{{ month_name }} {{ year }} ({{ month_counts|get_item:month_num|default:0 }} entries)">
-            <div class="month-display">{{ month_name|slice:":3" }}</div>
-            <div class="month-count">{{ month_counts|get_item:month_num|default:0 }}</div>
-            <div class="month-indicator"></div>
-        </a>
-        {% endfor %}
-    </div>
-    {% endif %}
-</div>
-{% endblock %}
+{% block datalogs_content %}
 
-{% block datalogs_filters %}
-<div class="archive-controls">
-    <div class="glass-card controls-panel">
-        <div class="controls-left">
-            <!-- Archive Search -->
-            {% include 'blog/includes/enhanced_search_interface.html' with style='inline' query=query %}
+<!-- Archive Header Section -->
+<section class="archive-header-section">
+    <div class="glass-card archive-control-panel">
+        
+        <!-- Timeline Navigation -->
+        {% timeline_navigation posts=posts current_year=year current_month=month as nav_data %}
+        <div class="timeline-navigation">
+            <h3 class="nav-title">
+                <i class="fas fa-history"></i>
+                Temporal Navigation
+            </h3>
             
-            <!-- Quick Date Filters -->
-            <div class="quick-filters">
-                <a href="{% url 'blog:archive' %}" class="quick-filter {% if not year %}active{% endif %}">
-                    <i class="fas fa-list"></i>
-                    <span>All Time</span>
+            <!-- Year Navigation -->
+            <div class="year-navigation-grid">
+                {% for year_data in nav_data.years %}
+                <a href="{% url 'blog:archive_year' year=year_data.year %}" 
+                   class="year-nav-item {% if year_data.is_current %}active{% endif %}">
+                    <div class="year-display">{{ year_data.year }}</div>
+                    <div class="year-count">{{ year_data.total_posts }}</div>
+                    <div class="year-progress-bar">
+                        <div class="progress-fill" 
+                             style="height: {{ year_data.total_posts|progress_width:nav_data.total_posts|mul:3 }}px;"></div>
+                    </div>
                 </a>
-                <a href="?period=current-year" class="quick-filter">
-                    <i class="fas fa-calendar"></i>
-                    <span>This Year</span>
-                </a>
-                <a href="?period=current-month" class="quick-filter">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>This Month</span>
-                </a>
+                {% endfor %}
             </div>
+            
+            <!-- Month Navigation (if year selected) -->
+            {% if year %}
+            <div class="month-navigation-grid">
+                {% for year_data in nav_data.years %}
+                    {% if year_data.is_current %}
+                        {% for month_data in year_data.months %}
+                        <a href="{% url 'blog:archive_month' year=year month=month_data.number %}" 
+                           class="month-nav-item {% if month_data.is_current %}active{% endif %}">
+                            <div class="month-name">{{ month_data.short_name }}</div>
+                            <div class="month-count">{{ month_data.count }}</div>
+                        </a>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
         
-        <div class="controls-right">
-            <!-- Archive View Toggle -->
-            <div class="view-toggle">
-                <button class="view-btn timeline-view active" data-view="timeline" title="Timeline View">
+        <!-- Search Interface -->
+        <div class="archive-search">
+            {% include 'blog/includes/enhanced_search_interface.html' with style='inline' query=query %}
+        </div>
+        
+        <!-- View Controls -->
+        <div class="archive-view-controls">
+            <div class="view-toggle-group">
+                <button class="view-btn active" data-view="timeline" title="Timeline View">
                     <i class="fas fa-stream"></i>
+                    <span>Timeline</span>
                 </button>
-                <button class="view-btn grid-view" data-view="grid" title="Grid View">
-                    <i class="fas fa-th"></i>
-                </button>
-                <button class="view-btn compact-view" data-view="compact" title="Compact View">
+                <button class="view-btn" data-view="compact" title="Compact View">
                     <i class="fas fa-list"></i>
+                    <span>Compact</span>
+                </button>
+                <button class="view-btn" data-view="minimal" title="Minimal View">
+                    <i class="fas fa-bars"></i>
+                    <span>Minimal</span>
                 </button>
             </div>
             
-            <!-- Sort Options -->
-            <div class="sort-dropdown">
+            <div class="sort-controls">
                 <select class="hud-select" id="archiveSort">
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
@@ -159,218 +131,66 @@
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+</section>
 
-{% block datalogs_content %}
-<!-- Archive Content Container -->
-<div class="archive-content-container timeline-view" id="archiveContainer">
-    
-    <!-- Archive Stats Panel -->
-    <div class="glass-card archive-stats-panel">
+<!-- Archive Statistics -->
+<section class="archive-stats-section">
+    {% timeline_stats posts=posts period="month" as stats %}
+    <div class="glass-card stats-panel">
         <h3 class="stats-title">
-            <i class="fas fa-chart-bar me-2"></i>
-            Archive Statistics
+            <i class="fas fa-chart-bar"></i>
+            Archive Analytics
         </h3>
         
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
+                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ posts|length }}</div>
+                    <div class="stat-value">{{ stats.total_posts|format_number }}</div>
                     <div class="stat-label">
-                        {% if year and month %}
-                            Entries in {{ month_name }} {{ year }}
-                        {% elif year %}
-                            Entries in {{ year }}
-                        {% else %}
-                            Total Entries
-                        {% endif %}
+                        {% if year and month %}Entries in {{ month_name }} {{ year }}
+                        {% elif year %}Entries in {{ year }}
+                        {% else %}Total Entries{% endif %}
                     </div>
                 </div>
             </div>
             
             <div class="stat-item">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ years|length }}</div>
-                    <div class="stat-label">Active Years</div>
-                </div>
-            </div>
-            
-            <div class="stat-item">
-                <div class="stat-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">{{ total_reading_time|default:"120"|format_duration }}</div>
+                    <div class="stat-value">{{ stats.total_reading_time|format_duration }}</div>
                     <div class="stat-label">Total Reading Time</div>
                 </div>
             </div>
             
             <div class="stat-item">
-                <div class="stat-icon">
-                    <i class="fas fa-tags"></i>
-                </div>
+                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ categories.count|default:"5" }}</div>
-                    <div class="stat-label">Categories</div>
+                    <div class="stat-value">{{ stats.avg_reading_time|format_duration }}</div>
+                    <div class="stat-label">Average Read Time</div>
+                </div>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.most_active_period|truncate_smart:15 }}</div>
+                    <div class="stat-label">Most Active Period</div>
                 </div>
             </div>
         </div>
     </div>
+</section>
 
-        <!-- Progress Visualization -->
-        <div class="archive-progress">
-            <h4 class="progress-title">Archive Growth</h4>
-            <div class="progress-bars">
-                {% for archive_year in years %}
-                <div class="year-progress-item">
-                    <div class="progress-label">{{ archive_year }}</div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" 
-                            style="width: {{ year_counts|get_item:archive_year|progress_width:30 }}%;"></div>
-                    </div>
-                    <div class="progress-value">{{ year_counts|get_item:archive_year }}</div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-        
-    <!-- Timeline Content -->
-    <div class="timeline-content">
+<!-- Main Timeline Content -->
+<section class="archive-timeline-section">
+    <div id="archiveTimelineContainer">
         {% if posts %}
-            {% regroup posts by published_date.month as monthly_posts %}
-            
-            {% for month_group in monthly_posts %}
-            <div class="timeline-month-section">
-                <div class="timeline-month-header">
-                    <div class="month-marker">
-                        <div class="marker-line"></div>
-                        <div class="marker-dot"></div>
-                    </div>
-                    <h3 class="month-title">
-                        {{ month_group.grouper|date:"F Y" }}
-                        <span class="month-count">({{ month_group.list|length }} entries)</span>
-                    </h3>
-                    <div class="month-stats">
-                        {% calculate "add" month_group.list|length 0 as total_month_posts %}
-                        <span class="stat-item">
-                            Reading: {{ month_group.list|first }}
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="timeline-posts">
-                    {% for post in month_group.list %}
-                    <article class="timeline-post-card glass-card">
-                        <div class="timeline-post-marker">
-                            <div class="post-date-marker">
-                                <div class="date-day">{{ post.published_date|date:"d" }}</div>
-                                <div class="date-month">{{ post.published_date|date:"M" }}</div>
-                            </div>
-                            <div class="timeline-connector"></div>
-                        </div>
-                        
-                        <div class="timeline-post-content">
-                            <!-- Post Header -->
-                            <div class="post-header">
-                                <div class="post-meta-top">
-                                    <div class="post-id">{{ post.id|datalog_id }}</div>
-                                    {% if post.category %}
-                                    <div class="post-category" style="--category-color: {{ post.category|category_color }};">
-                                        {% if post.category.icon %}
-                                        <i class="{{ post.category.icon }}"></i>
-                                        {% endif %}
-                                        <span>{{ post.category.code|default:"LOG" }}</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if post.featured %}
-                                    <div class="post-featured">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="post-timestamp">
-                                    <i class="fas fa-clock"></i>
-                                    <span>{{ post.published_date|date:"H:i" }} UTC</span>
-                                    <span class="time-ago">({{ post.published_date|time_since_published }})</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Post Content -->
-                            <div class="post-main-content">
-                                <h3 class="post-title">
-                                    <a href="{% url 'blog:post_detail' slug=post.slug %}">
-                                        {{ post.title }}
-                                    </a>
-                                </h3>
-                                
-                                <p class="post-excerpt">
-                                    {{ post.excerpt|default:post.content|truncate_smart:120 }}
-                                </p>
-                                
-                                <div class="post-metadata">
-                                    <div class="metadata-item">
-                                        <i class="fas fa-clock"></i>
-                                        <span>{{ post.reading_time|default:"3"|format_duration }} read</span>
-                                    </div>
-                                    
-                                    {% if post.tags.exists %}
-                                    <div class="metadata-item">
-                                        <i class="fas fa-tags"></i>
-                                        <span>
-                                            {% for tag in post.tags.all|slice:":2" %}
-                                                {{ tag.name }}{% if not forloop.last %}, {% endif %}
-                                            {% endfor %}
-                                            {% if post.tags.count > 2 %}
-                                                {% calculate "subtract" post.tags.count 2 as extra_tags %}
-                                                +{{ extra_tags }} more
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    {% include 'blog/includes/system_connections.html' with post=post style='minimal'  %}
-                                    
-                                </div>
-                            </div>
-                            
-                            <!-- Post Actions -->
-                            <div class="post-actions">
-                                <a href="{% url 'blog:post_detail' slug=post.slug %}" class="read-more-btn">
-                                    <span>Access Entry</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
-                                <!-- Quick Stats -->
-                                <div class="post-quick-stats">
-                                    <div class="stat-badge">
-                                        <i class="fas fa-eye"></i>
-                                        <span>{{ post.views.count|default:0|format_number }}</span>
-                                    </div>
-                                    {% if post.category %}
-                                    <div class="stat-badge category" style="background: {{ post.category|category_color }}20;">
-                                        <span>{{ post.category.code }}</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-            
+            <!-- Use our amazing new timeline component! -->
+            {% timeline_section posts=posts style="timeline" %}
         {% else %}
-            <!-- No Posts in Archive -->
-            <div class="glass-card no-posts-card">
+            <!-- No Posts State -->
+            <div class="glass-card no-posts-panel">
                 <div class="no-posts-content">
                     <div class="no-posts-icon">
                         <i class="fas fa-calendar-times"></i>
@@ -378,21 +198,21 @@
                     <h3 class="no-posts-title">No Entries Found</h3>
                     <p class="no-posts-message">
                         {% if year and month %}
-                            No datalog entries were published in {{ month_name }} {{ year }}.
+                            No DataLog entries were published in {{ month_name }} {{ year }}.
                         {% elif year %}
-                            No datalog entries were published in {{ year }}.
+                            No DataLog entries were published in {{ year }}.
                         {% else %}
                             The archive is currently empty.
                         {% endif %}
                     </p>
                     <div class="no-posts-actions">
                         <a href="{% url 'blog:post_list' %}" class="btn btn-primary">
-                            <i class="fas fa-list me-2"></i>
+                            <i class="fas fa-list"></i>
                             View All DataLogs
                         </a>
                         {% if year or month %}
                         <a href="{% url 'blog:archive' %}" class="btn btn-outline">
-                            <i class="fas fa-calendar me-2"></i>
+                            <i class="fas fa-calendar"></i>
                             Browse All Years
                         </a>
                         {% endif %}
@@ -401,34 +221,32 @@
             </div>
         {% endif %}
     </div>
-</div>
-{% endblock %}
+</section>
 
-{% block datalogs_sidebar %}
 <!-- Archive Sidebar -->
 <aside class="archive-sidebar">
     <!-- Quick Navigation -->
     <div class="glass-card quick-nav-panel">
         <h3 class="panel-title">
-            <i class="fas fa-rocket me-2"></i>
-            Quick Navigation
+            <i class="fas fa-rocket"></i>
+            Quick Access
         </h3>
         
-        <div class="quick-nav-items">
-            <a href="{% url 'blog:post_list' %}" class="quick-nav-item">
+        <div class="quick-nav-links">
+            <a href="{% url 'blog:post_list' %}" class="quick-nav-link">
                 <i class="fas fa-list"></i>
                 <span>All DataLogs</span>
                 <div class="nav-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             
-            <a href="{% url 'blog:tags' %}" class="quick-nav-item">
+            <a href="{% url 'blog:tags' %}" class="quick-nav-link">
                 <i class="fas fa-tags"></i>
                 <span>Browse Tags</span>
                 <div class="nav-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             
-            {% for category in categories %}
-            <a href="{% url 'blog:category' slug=category.slug %}" class="quick-nav-item">
+            {% for category in categories|slice:":4" %}
+            <a href="{% url 'blog:category' slug=category.slug %}" class="quick-nav-link">
                 {% if category.icon %}
                 <i class="{{ category.icon }}"></i>
                 {% else %}
@@ -441,171 +259,73 @@
         </div>
     </div>
     
-    <!-- Archive Analytics -->
-    <div class="glass-card analytics-panel">
+    <!-- Recent Activity (Compact Timeline) -->
+    {% get_recent_posts 5 as recent_posts %}
+    {% if recent_posts %}
+    <div class="glass-card recent-activity-panel">
         <h3 class="panel-title">
-            <i class="fas fa-chart-line me-2"></i>
-            Archive Analytics
+            <i class="fas fa-clock"></i>
+            Recent Activity
         </h3>
         
-        <div class="analytics-chart">
-            <canvas id="archiveChart" width="280" height="160"></canvas>
+        <!-- Use compact timeline component -->
+        {% timeline_section posts=recent_posts style="compact" %}
+    </div>
+    {% endif %}
+    
+    <!-- Archive Distribution -->
+    <div class="glass-card distribution-panel">
+        <h3 class="panel-title">
+            <i class="fas fa-chart-pie"></i>
+            Archive Distribution
+        </h3>
+        
+        <div class="distribution-chart">
+            <canvas id="archiveDistributionChart" width="250" height="150"></canvas>
         </div>
         
-        <div class="analytics-summary">
-            <div class="summary-item">
-                <div class="summary-label">Most Active Month</div>
-                <div class="summary-value">{{ most_active_month|default:"March 2024" }}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Average per Month</div>
-                <div class="summary-value">{{ avg_posts_per_month|default:"2.5" }}</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-label">Longest Entry</div>
-                <div class="summary-value">{{ longest_reading_time|default:"12"|format_duration }}</div>
-            </div>
-        </div>
-        <!-- Year Distribution -->
-        <div class="year-distribution">
-            <h4 class="distribution-title">Posts by Year</h4>
-            {% for archive_year in years %}
-            <div class="year-dist-item">
-                <span class="year-label">{{ archive_year }}</span>
-                <div class="year-bar-bg">
-                    <div class="year-bar" style="width: {{ year_counts|get_item:archive_year|percentage:30 }}%;"></div>
-                </div>
-                <span class="year-count">{{ year_counts|get_item:archive_year|format_number }}</span>
+        <div class="distribution-legend">
+            {% for year_data in nav_data.years|slice:":3" %}
+            <div class="legend-item">
+                <div class="legend-color" data-year="{{ year_data.year }}"></div>
+                <div class="legend-label">{{ year_data.year }}</div>
+                <div class="legend-value">{{ year_data.total_posts }}</div>
             </div>
             {% endfor %}
         </div>
     </div>
 </aside>
+
 {% endblock %}
 
 {% block datalogs_js %}
+<script src="{% static 'blog/js/archive-enhanced.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize archive-specific features
     initArchiveView();
-    initTimelineNavigation();
-    initViewToggle();
+    initTimelineViews();
     initArchiveChart();
-    initScrollAnimations();
-
-    // Add HUD-style Enhancements
-    initArchiveHUD();
+    initArchiveAnimations();
+    
+    console.log('🗄️ Archive interface initialized');
 });
 
 function initArchiveView() {
-    // Add scanning effects to timeline posts
-    const timelinePosts = document.querySelectorAll('.timeline-post-card');
-    
-    timelinePosts.forEach((post, index) => {
-        // Staggered entrance animation
-        post.style.opacity = '0';
-        post.style.transform = 'translateX(-30px)';
-        
-        setTimeout(() => {
-            post.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            post.style.opacity = '1';
-            post.style.transform = 'translateX(0)';
-        }, index * 100);
-        
-        // Add hover effects
-        post.addEventListener('mouseenter', function() {
-            this.classList.add('scanning-horizontal');
-            this.style.transform = 'translateX(10px) scale(1.02)';
-        });
-        
-        post.addEventListener('mouseleave', function() {
-            this.classList.remove('scanning-horizontal');
-            this.style.transform = 'translateX(0) scale(1)';
-        });
-    });
-}
-
-function initTimelineNavigation() {
-    // Year and month node interactions
-    const yearNodes = document.querySelectorAll('.year-node');
-    const monthNodes = document.querySelectorAll('.month-node');
-    
-    // Enhanced year node effects
-    yearNodes.forEach(node => {
-        node.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px) scale(1.05)';
-            
-            const yearBar = this.querySelector('.year-bar');
-            if (yearBar) {
-                yearBar.style.background = 'var(--gradient-primary)';
-                yearBar.style.boxShadow = '0 0 10px var(--color-teal)';
-            }
-        });
-        
-        node.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-            
-            const yearBar = this.querySelector('.year-bar');
-            if (yearBar) {
-                yearBar.style.background = '';
-                yearBar.style.boxShadow = '';
-            }
-        });
-    });
-    
-    // Enhanced month node effects
-    monthNodes.forEach(node => {
-        node.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-3px) scale(1.1)';
-            
-            const indicator = this.querySelector('.month-indicator');
-            if (indicator) {
-                indicator.style.background = 'var(--color-lavender)';
-                indicator.style.boxShadow = '0 0 8px var(--color-lavender)';
-            }
-        });
-        
-        node.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-            
-            const indicator = this.querySelector('.month-indicator');
-            if (indicator) {
-                indicator.style.background = '';
-                indicator.style.boxShadow = '';
-            }
-        });
-    });
-}
-
-function initViewToggle() {
+    // View toggle functionality
     const viewButtons = document.querySelectorAll('.view-btn');
-    const archiveContainer = document.getElementById('archiveContainer');
+    const timelineContainer = document.getElementById('archiveTimelineContainer');
     
     viewButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             viewButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             
-            const viewMode = this.dataset.view;
-            
-            if (archiveContainer) {
-                archiveContainer.className = `archive-content-container ${viewMode}-view`;
-                
-                // Trigger re-animation for new view
-                const posts = archiveContainer.querySelectorAll('.timeline-post-card');
-                posts.forEach((post, index) => {
-                    post.style.transition = 'none';
-                    post.style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        post.style.transition = 'opacity 0.4s ease';
-                        post.style.opacity = '1';
-                    }, index * 50);
-                });
-            }
+            const viewType = this.dataset.view;
+            updateTimelineView(viewType);
             
             // Store preference
-            localStorage.setItem('archiveViewMode', viewMode);
+            localStorage.setItem('archiveViewMode', viewType);
         });
     });
     
@@ -619,131 +339,139 @@ function initViewToggle() {
     }
 }
 
+function updateTimelineView(viewType) {
+    const container = document.getElementById('archiveTimelineContainer');
+    if (!container) return;
+    
+    // Add loading state
+    container.style.opacity = '0.6';
+    container.style.pointerEvents = 'none';
+    
+    // Simulate view change (in real app, this would be an AJAX call)
+    setTimeout(() => {
+        container.className = `timeline-view-${viewType}`;
+        container.style.opacity = '1';
+        container.style.pointerEvents = 'auto';
+        
+        // Re-initialize animations for new view
+        if (typeof initTimelineAnimations === 'function') {
+            initTimelineAnimations();
+        }
+    }, 300);
+}
+
+function initTimelineViews() {
+    // Sort functionality
+    const sortSelect = document.getElementById('archiveSort');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const sortValue = this.value;
+            console.log('Sorting by:', sortValue);
+            
+            // In a real app, this would trigger a page reload or AJAX update
+            // For now, just show feedback
+            const container = document.getElementById('archiveTimelineContainer');
+            if (container) {
+                container.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    container.style.transform = 'scale(1)';
+                }, 200);
+            }
+        });
+    }
+}
+
 function initArchiveChart() {
-    const canvas = document.getElementById('archiveChart');
+    const canvas = document.getElementById('archiveDistributionChart');
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
     
-    // Sample data for posts per month
-    const monthlyData = [
-        {% for year in years %}
-            {% for month_num, month_name in months %}
-                {{ month_counts|get_item:month_num|default:0 }},
-            {% endfor %}
-        {% endfor %}
-        2, 4, 1, 3, 5, 2, 1, 3, 4, 2, 3, 1 // Sample fallback data
-    ].slice(0, 12);
+    // Sample data (in real app, this would come from Django context)
+    const yearData = [
+        { year: 2024, posts: 15, color: '#b39ddb' },
+        { year: 2023, posts: 8, color: '#26c6da' },
+        { year: 2022, posts: 3, color: '#ff8a80' }
+    ];
     
-    drawArchiveChart(ctx, monthlyData);
+    drawDistributionChart(ctx, yearData);
 }
 
-function drawArchiveChart(ctx, data) {
+function drawDistributionChart(ctx, data) {
     const canvas = ctx.canvas;
-    const width = canvas.width;
-    const height = canvas.height;
-    const padding = 20;
-    const chartWidth = width - (padding * 2);
-    const chartHeight = height - (padding * 2);
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(centerX, centerY) - 10;
     
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    // Calculate total for percentages
+    const total = data.reduce((sum, item) => sum + item.posts, 0);
     
-    // Set up gradient
-    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-    gradient.addColorStop(0, 'rgba(38, 198, 218, 0.8)');
-    gradient.addColorStop(1, 'rgba(179, 157, 219, 0.2)');
+    let currentAngle = -Math.PI / 2; // Start at top
     
-    // Draw chart background
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
-    ctx.fillRect(padding, padding, chartWidth, chartHeight);
-    
-    // Calculate positions
-    const maxValue = Math.max(...data);
-    const barWidth = chartWidth / data.length;
-    
-    // Draw bars
-    data.forEach((value, index) => {
-        const barHeight = (value / maxValue) * chartHeight;
-        const x = padding + (index * barWidth);
-        const y = height - padding - barHeight;
+    // Draw pie slices
+    data.forEach(item => {
+        const sliceAngle = (item.posts / total) * 2 * Math.PI;
         
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x, y, barWidth - 2, barHeight);
+        // Draw slice
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        ctx.closePath();
+        ctx.fill();
         
         // Add glow effect
-        ctx.shadowColor = 'rgba(38, 198, 218, 0.5)';
+        ctx.shadowColor = item.color;
         ctx.shadowBlur = 5;
-        ctx.fillRect(x, y, barWidth - 2, barHeight);
+        ctx.fill();
         ctx.shadowBlur = 0;
-    });
-    
-    // Draw grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
-    
-    for (let i = 0; i <= 4; i++) {
-        const y = padding + (i * chartHeight / 4);
-        ctx.beginPath();
-        ctx.moveTo(padding, y);
-        ctx.lineTo(width - padding, y);
-        ctx.stroke();
-    }
-}
-
-function initScrollAnimations() {
-    // Animate timeline markers on scroll
-    const monthSections = document.querySelectorAll('.timeline-month-section');
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const marker = entry.target.querySelector('.marker-dot');
-                if (marker) {
-                    marker.style.transform = 'scale(1.2)';
-                    marker.style.boxShadow = '0 0 15px var(--color-teal)';
-                    
-                    setTimeout(() => {
-                        marker.style.transform = 'scale(1)';
-                        marker.style.boxShadow = '0 0 8px var(--color-teal)';
-                    }, 500);
-                }
-            }
-        });
-    }, { threshold: 0.5 });
-    
-    monthSections.forEach(section => observer.observe(section));
-}
-
-function initArchiveHUD() {
-    // Add real-time updates to stats
-    const statValues = document.querySelectorAll('.stat-value');
-    
-    statValues.forEach(stat => {
-        // Add counting animation for numbers
-        const finalValue = parseInt(stat.textContent) || 0;
-        let currentValue = 0;
-        const increment = finalValue / 60; // 60 frames
         
-        const counter = setInterval(() => {
-            currentValue += increment;
-            if (currentValue >= finalValue) {
-                stat.textContent = finalValue;
-                clearInterval(counter);
-            } else {
-                stat.textContent = Math.floor(currentValue);
-            }
-        }, 16); // ~60fps
+        currentAngle += sliceAngle;
     });
     
-    // Add scanning effects to progress bars
-    const progressBars = document.querySelectorAll('.progress-bar');
-    progressBars.forEach((bar, index) => {
+    // Draw center circle
+    ctx.fillStyle = 'rgba(13, 13, 31, 0.8)';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.4, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Draw total in center
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '16px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(total.toString(), centerX, centerY - 5);
+    
+    ctx.font = '10px Rajdhani';
+    ctx.fillStyle = '#b0bec5';
+    ctx.fillText('ENTRIES', centerX, centerY + 10);
+}
+
+function initArchiveAnimations() {
+    // Staggered entrance animations for archive elements
+    const animateElements = document.querySelectorAll('.stat-item, .quick-nav-link, .year-nav-item');
+    
+    animateElements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        
         setTimeout(() => {
-            bar.style.transform = 'scaleX(1)';
-            bar.style.transformOrigin = 'left';
-            bar.style.transition = 'transform 1s ease-out';
-        }, index * 200);
+            element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+    
+    // Add hover enhancements to navigation items
+    const navItems = document.querySelectorAll('.year-nav-item, .month-nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px) scale(1.05)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
     });
 }
 </script>

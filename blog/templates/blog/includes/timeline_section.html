@@ -1,0 +1,994 @@
+<!----
+ * AURA DataLogs - Timeline Section Component
+ * Reusable timeline component with multiple styles and animations
+ * Usage: {--% include 'blog/includes/timeline_section.html' with posts=month_posts style="timeline" %--}
+ * Styles: timeline, compact, minimal, vertical
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="timeline-section timeline-{{ style|default:'timeline' }}">
+    
+    {% if style == 'timeline' %}
+    <!-- Full Timeline View (Archive Page Style) -->
+    {% regroup posts by published_date.month as monthly_posts %}
+    
+    {% for month_group in monthly_posts %}
+    <div class="timeline-month-section" data-month="{{ month_group.grouper }}">
+        <!-- Month Header -->
+        <div class="timeline-month-header">
+            <div class="month-marker">
+                <div class="marker-line"></div>
+                <div class="marker-dot"></div>
+            </div>
+            <h3 class="month-title">
+                {{ month_group.grouper|date:"F Y" }}
+                <span class="month-count">({{ month_group.list|length }} entries)</span>
+            </h3>
+            <div class="month-stats">
+                {% calculate "add" 0 0 as total_reading_time %}
+                {% for post in month_group.list %}
+                    {% calculate "add" total_reading_time post.reading_time as total_reading_time %}
+                {% endfor %}
+                <span class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    {{ total_reading_time|format_duration }} total reading
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-file-alt"></i>
+                    {{ month_group.list|length }} entries
+                </span>
+            </div>
+        </div>
+        
+        <!-- Timeline Posts -->
+        <div class="timeline-posts">
+            {% for post in month_group.list %}
+            <article class="timeline-post-card glass-card">
+                <div class="timeline-post-marker">
+                    <div class="post-date-marker">
+                        <div class="date-day">{{ post.published_date|date:"d" }}</div>
+                        <div class="date-month">{{ post.published_date|date:"M" }}</div>
+                    </div>
+                    <div class="timeline-connector"></div>
+                </div>
+                
+                <div class="timeline-post-content">
+                    <!-- Post Header -->
+                    <div class="post-header">
+                        <div class="post-meta-top">
+                            <div class="post-id">{{ post.id|datalog_id }}</div>
+                            {% if post.category %}
+                            <div class="post-category" data-category-color="{{ post.category.color }}">
+                                {% if post.category.icon %}
+                                <i class="{{ post.category.icon }}"></i>
+                                {% endif %}
+                                <span>{{ post.category.code|default:"LOG" }}</span>
+                            </div>
+                            {% endif %}
+                            {% if post.featured %}
+                            <div class="post-featured">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="post-timestamp">
+                            <i class="fas fa-clock"></i>
+                            <span>{{ post.published_date|date:"H:i" }} UTC</span>
+                            <span class="time-ago">({{ post.published_date|time_since_published }})</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Post Content -->
+                    <div class="post-main-content">
+                        <h3 class="post-title">
+                            <a href="{% url 'blog:post_detail' slug=post.slug %}">
+                                {{ post.title }}
+                            </a>
+                        </h3>
+                        
+                        <p class="post-excerpt">
+                            {{ post.excerpt|default:post.content|truncate_smart:120 }}
+                        </p>
+                        
+                        <!-- Use our metrics component -->
+                        {% include 'blog/includes/post_metrics_display.html' with post=post style='minimal' %}
+                        
+                        <!-- System connections if any -->
+                        {% include 'blog/includes/system_connections.html' with post=post style='minimal' %}
+                    </div>
+                    
+                    <!-- Post Actions -->
+                    <div class="post-actions">
+                        <a href="{% url 'blog:post_detail' slug=post.slug %}" class="read-more-btn">
+                            <span>Access Entry</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        
+                        <!-- Quick Stats -->
+                        <div class="post-quick-stats">
+                            <div class="stat-badge">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ post.views.count|default:0|format_number }}</span>
+                            </div>
+                            {% if post.category %}
+                            <div class="stat-badge category" data-category-color="{{ post.category.color }}">
+                                <span>{{ post.category.code }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% elif style == 'compact' %}
+    <!-- Compact Timeline (for sidebars or smaller spaces) -->
+    <div class="timeline-compact">
+        {% for post in posts|slice:":5" %}
+        <div class="timeline-compact-item">
+            <div class="compact-marker">
+                <div class="marker-dot"></div>
+                <div class="marker-date">{{ post.published_date|date:"M d" }}</div>
+            </div>
+            <div class="compact-content">
+                <h4 class="compact-title">
+                    <a href="{% url 'blog:post_detail' slug=post.slug %}">{{ post.title|truncate_smart:40 }}</a>
+                </h4>
+                {% if post.category %}
+                <span class="compact-category" data-category-color="{{ post.category.color }}">
+                    {{ post.category.code }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if posts|length > 5 %}
+        <div class="timeline-more">
+            <a href="{% url 'blog:archive' %}" class="more-link">
+                <i class="fas fa-plus"></i>
+                <span>{{ posts|length|add:"-5" }} more entries</span>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal Timeline (for quick previews) -->
+    <div class="timeline-minimal">
+        {% for post in posts|slice:":3" %}
+        <div class="minimal-item">
+            <div class="minimal-date">{{ post.published_date|date:"M d" }}</div>
+            <div class="minimal-title">
+                <a href="{% url 'blog:post_detail' slug=post.slug %}">{{ post.title|truncate_smart:50 }}</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% elif style == 'vertical' %}
+    <!-- Vertical Timeline (alternative layout) -->
+    <div class="timeline-vertical">
+        {% regroup posts by published_date.date as daily_posts %}
+        
+        {% for day_group in daily_posts %}
+        <div class="timeline-day-section">
+            <div class="day-header">
+                <div class="day-marker"></div>
+                <h4 class="day-title">{{ day_group.grouper|date:"F d, Y" }}</h4>
+            </div>
+            
+            <div class="day-posts">
+                {% for post in day_group.list %}
+                <div class="vertical-post-item">
+                    <div class="vertical-time">{{ post.published_date|date:"H:i" }}</div>
+                    <div class="vertical-content">
+                        <h5 class="vertical-title">
+                            <a href="{% url 'blog:post_detail' slug=post.slug %}">{{ post.title }}</a>
+                        </h5>
+                        <div class="vertical-meta">
+                            {% if post.category %}
+                            <span class="vertical-category">{{ post.category.name }}</span>
+                            {% endif %}
+                            <span class="vertical-reading">{{ post.reading_time|format_duration }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- Default: use timeline style -->
+    {% include 'blog/includes/timeline_section.html' with posts=posts style='timeline' %}
+    {% endif %}
+    
+</div>
+
+<style>
+/* Timeline Section Component Styles */
+.timeline-section {
+    font-family: var(--font-body);
+    position: relative;
+}
+
+/* ========== FULL TIMELINE STYLE ========== */
+.timeline-timeline {
+    position: relative;
+    padding-left: var(--spacing-xl);
+}
+
+.timeline-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--gradient-primary);
+    opacity: 0.6;
+}
+
+.timeline-month-section {
+    margin-bottom: var(--spacing-xxl);
+    position: relative;
+}
+
+.timeline-month-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    position: relative;
+}
+
+.month-marker {
+    position: absolute;
+    left: calc(var(--spacing-xl) * -1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 2;
+}
+
+.marker-line {
+    width: 20px;
+    height: 2px;
+    background: var(--color-teal);
+    margin-bottom: var(--spacing-xs);
+}
+
+.marker-dot {
+    width: 16px;
+    height: 16px;
+    background: var(--color-teal);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--color-teal);
+    transition: all var(--transition-normal);
+}
+
+.month-title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    color: var(--color-lavender);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.month-count {
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    font-weight: normal;
+}
+
+.month-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: var(--color-text-tertiary);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.stat-item i {
+    color: var(--color-lavender);
+}
+
+/* Timeline Posts */
+.timeline-posts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.timeline-post-card {
+    display: flex;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-normal);
+    border-left: 3px solid transparent;
+}
+
+.timeline-post-card:hover {
+    border-left-color: var(--color-lavender);
+    transform: translateX(5px);
+    box-shadow: var(--shadow-glow-lavender);
+}
+
+.timeline-post-marker {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.post-date-marker {
+    background: 
+        var(--gradient-glass),
+        rgba(179, 157, 219, 0.1);
+    border: 2px solid rgba(179, 157, 219, 0.3);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-sm);
+    text-align: center;
+    min-width: 60px;
+    backdrop-filter: blur(10px);
+}
+
+.date-day {
+    font-family: var(--font-code);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-lavender);
+    line-height: 1;
+}
+
+.date-month {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.timeline-connector {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(180deg, 
+        var(--color-lavender) 0%,
+        rgba(179, 157, 219, 0.3) 100%);
+    margin-top: var(--spacing-sm);
+}
+
+/* Timeline Post Content */
+.timeline-post-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+}
+
+.post-meta-top {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.post-id {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-lavender);
+    background: rgba(179, 157, 219, 0.1);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    font-weight: 600;
+}
+
+.post-category {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.2rem 0.6rem;
+    background: var(--category-color, rgba(179, 157, 219, 0.1));
+    border: 1px solid var(--category-color, rgba(179, 157, 219, 0.3));
+    border-radius: var(--border-radius-sm);
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--category-color, var(--color-lavender));
+    font-weight: 600;
+}
+
+.post-featured {
+    color: var(--color-yellow);
+    font-size: 0.9rem;
+}
+
+.post-timestamp {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+}
+
+.time-ago {
+    color: var(--color-text-secondary);
+}
+
+.post-main-content {
+    flex: 1;
+}
+
+.post-title {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    color: var(--color-text);
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: 1.3;
+}
+
+.post-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.post-title a:hover {
+    color: var(--color-lavender);
+}
+
+.post-excerpt {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+/* Post Actions */
+.post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.read-more-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--color-lavender);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.read-more-btn:hover {
+    color: var(--color-lavender);
+    transform: translateX(5px);
+}
+
+.read-more-btn i {
+    font-size: 0.8rem;
+    transition: transform var(--transition-fast);
+}
+
+.read-more-btn:hover i {
+    transform: translateX(3px);
+}
+
+.post-quick-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.stat-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.stat-badge.category {
+    background: var(--category-color, rgba(179, 157, 219, 0.1));
+    border-color: var(--category-color, rgba(179, 157, 219, 0.3));
+    color: var(--category-color, var(--color-lavender));
+}
+
+.stat-badge i {
+    font-size: 0.7rem;
+}
+
+/* ========== COMPACT TIMELINE STYLE ========== */
+.timeline-compact {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.timeline-compact-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.timeline-compact-item:hover {
+    background: rgba(179, 157, 219, 0.05);
+    border-color: rgba(179, 157, 219, 0.2);
+    transform: translateX(5px);
+}
+
+.compact-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.marker-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--color-lavender);
+    border-radius: 50%;
+}
+
+.marker-date {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.compact-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.compact-title {
+    font-size: 0.9rem;
+    color: var(--color-text);
+    margin: 0 0 var(--spacing-xs) 0;
+    line-height: 1.3;
+}
+
+.compact-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.compact-title a:hover {
+    color: var(--color-lavender);
+}
+
+.compact-category {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--category-color, var(--color-lavender));
+    background: var(--category-color, rgba(179, 157, 219, 0.1));
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--border-radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.timeline-more {
+    padding: var(--spacing-md);
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: var(--spacing-sm);
+}
+
+.more-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--color-lavender);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color var(--transition-fast);
+}
+
+.more-link:hover {
+    color: var(--color-text);
+}
+
+/* ========== MINIMAL TIMELINE STYLE ========== */
+.timeline-minimal {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.minimal-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.minimal-item:last-child {
+    border-bottom: none;
+}
+
+.minimal-date {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    min-width: 60px;
+    flex-shrink: 0;
+}
+
+.minimal-title {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.minimal-title a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.minimal-title a:hover {
+    color: var(--color-lavender);
+}
+
+/* ========== VERTICAL TIMELINE STYLE ========== */
+.timeline-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.timeline-day-section {
+    position: relative;
+    padding-left: var(--spacing-lg);
+}
+
+.day-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.day-marker {
+    width: 12px;
+    height: 12px;
+    background: var(--color-teal);
+    border-radius: 50%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    box-shadow: 0 0 8px var(--color-teal);
+}
+
+.day-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    color: var(--color-lavender);
+    margin: 0;
+}
+
+.day-posts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    position: relative;
+}
+
+.day-posts::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--spacing-lg) * -1 + 6px);
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(179, 157, 219, 0.3);
+}
+
+.vertical-post-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.vertical-post-item:hover {
+    background: rgba(179, 157, 219, 0.05);
+    transform: translateX(5px);
+}
+
+.vertical-time {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    min-width: 60px;
+    flex-shrink: 0;
+}
+
+.vertical-content {
+    flex: 1;
+}
+
+.vertical-title {
+    font-size: 1rem;
+    color: var(--color-text);
+    margin: 0 0 var(--spacing-xs) 0;
+    line-height: 1.3;
+}
+
+.vertical-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.vertical-title a:hover {
+    color: var(--color-lavender);
+}
+
+.vertical-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.vertical-category {
+    color: var(--color-lavender);
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 991px) {
+    .timeline-timeline {
+        padding-left: var(--spacing-lg);
+    }
+    
+    .timeline-month-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+    
+    .month-stats {
+        margin-left: 0;
+        flex-wrap: wrap;
+    }
+    
+    .timeline-post-card {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .timeline-post-marker {
+        flex-direction: row;
+        align-items: center;
+        align-self: flex-start;
+    }
+    
+    .timeline-connector {
+        width: 40px;
+        height: 2px;
+        margin-top: 0;
+        margin-left: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 767px) {
+    .post-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .post-actions {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: stretch;
+    }
+    
+    .read-more-btn {
+        justify-content: center;
+    }
+    
+    .post-quick-stats {
+        justify-content: center;
+    }
+    
+    .timeline-compact-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .compact-marker {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .timeline-timeline {
+        padding-left: var(--spacing-md);
+    }
+    
+    .post-meta-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .month-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes timelineEntrance {
+    0% {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.timeline-post-card {
+    animation: timelineEntrance 0.6s ease-out;
+}
+
+.timeline-post-card:nth-child(1) { animation-delay: 0.1s; }
+.timeline-post-card:nth-child(2) { animation-delay: 0.2s; }
+.timeline-post-card:nth-child(3) { animation-delay: 0.3s; }
+.timeline-post-card:nth-child(4) { animation-delay: 0.4s; }
+.timeline-post-card:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes markerPulse {
+    0%, 100% {
+        box-shadow: 0 0 8px var(--color-teal);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 15px var(--color-teal);
+        transform: scale(1.1);
+    }
+}
+
+.marker-dot:hover {
+    animation: markerPulse 2s ease-in-out infinite;
+}
+</style>
+
+<script>
+// Timeline Section JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    initTimelineAnimations();
+    initTimelineInteractions();
+});
+
+function initTimelineAnimations() {
+    // Intersection Observer for scroll animations
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const marker = entry.target.querySelector('.marker-dot');
+                if (marker) {
+                    marker.style.transform = 'scale(1.2)';
+                    marker.style.boxShadow = '0 0 15px var(--color-teal)';
+                    
+                    setTimeout(() => {
+                        marker.style.transform = 'scale(1)';
+                        marker.style.boxShadow = '0 0 8px var(--color-teal)';
+                    }, 500);
+                }
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    // Observe month sections
+    const monthSections = document.querySelectorAll('.timeline-month-section');
+    monthSections.forEach(section => observer.observe(section));
+}
+
+function initTimelineInteractions() {
+    // Enhanced hover effects for timeline posts
+    const timelinePosts = document.querySelectorAll('.timeline-post-card');
+    
+    timelinePosts.forEach(post => {
+        post.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(10px) scale(1.02)';
+            
+            // Add scanning effect
+            this.classList.add('scanning-horizontal');
+        });
+        
+        post.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0) scale(1)';
+            this.classList.remove('scanning-horizontal');
+        });
+    });
+    
+    // Smooth scrolling for timeline navigation
+    const timelineLinks = document.querySelectorAll('a[href*="#timeline-"]');
+    timelineLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // Add progressive loading for long timelines
+    const loadMoreButton = document.querySelector('.timeline-load-more');
+    if (loadMoreButton) {
+        loadMoreButton.addEventListener('click', function() {
+            // Implement progressive loading if needed
+            console.log('Loading more timeline entries...');
+        });
+    }
+}
+
+// Export functions for global access
+window.initTimelineAnimations = initTimelineAnimations;
+window.initTimelineInteractions = initTimelineInteractions;
+</script>

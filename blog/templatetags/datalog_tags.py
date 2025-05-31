@@ -703,6 +703,7 @@ def render_category_nav(current_category=None):
         'current_category': current_category,
     }
 
+
 # Moved back
 @register.inclusion_tag('components/pagination.html')
 def render_pagination(page_obj, request):
@@ -731,7 +732,8 @@ def social_share(context, post):
         'site_name': 'AUA DataLogs',
     }
 
-# =========== Enhanced Filters (added w rework to combine various tag files) =========== #
+# =========== Enhanced Filters =========== #
+
 
 @register.filter
 def reading_time(content):
@@ -871,7 +873,7 @@ def build_url(context, **kwargs):
     return ""
 
 
-# =========== Markdown (Markdownx - bs4) Filter (formerly markdown_filters) =========== #
+# =========== Markdown (Markdownx - bs4) Filter  =========== #
 
 @register.filter
 def markdownify(text):
@@ -896,7 +898,7 @@ def markdownify(text):
     # Return modified HTML
     return mark_safe(str(soup))
 
-# =========== Code Formating (Pygments) Filter (formerly code_filters) =========== #
+# =========== Code Formating (Pygments) Filter =========== #
 
 # Register a new filter named 'highlight_code'
 @register.filter(name="highlight_code")
@@ -912,7 +914,6 @@ def highlight_code(code, language=None):
             lexer = TextLexer()
 
         # Create an HTML formatter with a 'monokai' style
-        # This is a dark style that works well with your theme
         # 'cssclass' sets the CSS class that will be applied to the wrapper
         formatter = HtmlFormatter(style="monokai", cssclass="highlighted")
 
@@ -956,6 +957,231 @@ def category_color(category, default="#b39ddb"):
     if hasattr(category, "color") and category.color:
         return category.color
     return default
+
+# =========== TIMELINE COMPONENTS TAGS & FILTERS =============#
+
+
+# Add this to your datalog_tags.py file
+
+
+@register.inclusion_tag("blog/includes/timeline_section.html")
+def timeline_section(posts, style="timeline", group_by="month"):
+    """
+    Renders a timeline section with posts grouped by date.
+
+    Usage:
+    {% timeline_section posts=month_posts style="timeline" %}
+    {% timeline_section posts=recent_posts style="compact" %}
+    {% timeline_section posts=daily_posts style="vertical" %}
+
+    Args:
+        posts: QuerySet or list of posts
+        style: 'timeline', 'compact', 'minimal', 'vertical'
+        group_by: 'month', 'day', 'none' (for grouping)
+    """
+    return {
+        "posts": posts,
+        "style": style,
+        "group_by": group_by,
+    }
+
+
+@register.simple_tag
+def timeline_navigation(posts, current_year=None, current_month=None):
+    """
+    Generate timeline navigation data for year/month selection.
+
+    Usage: {% timeline_navigation posts=all_posts current_year=year %}
+    """
+    from collections import defaultdict
+    import calendar
+
+    # Group posts by year and month
+    timeline_data = defaultdict(lambda: defaultdict(int))
+    years = set()
+
+    for post in posts:
+        if hasattr(post, "published_date") and post.published_date:
+            year = post.published_date.year
+            month = post.published_date.month
+            timeline_data[year][month] += 1
+            years.add(year)
+
+    # Convert to sorted lists
+    year_data = []
+    for year in sorted(years, reverse=True):
+        months = []
+        for month in range(1, 13):
+            if timeline_data[year][month] > 0:
+                months.append(
+                    {
+                        "number": month,
+                        "name": calendar.month_name[month],
+                        "short_name": calendar.month_name[month][:3],
+                        "count": timeline_data[year][month],
+                        "is_current": (year == current_year and month == current_month),
+                    }
+                )
+
+        year_data.append(
+            {
+                "year": year,
+                "total_posts": sum(timeline_data[year].values()),
+                "months": months,
+                "is_current": (year == current_year),
+            }
+        )
+
+    return {
+        "years": year_data,
+        "total_posts": sum(sum(months.values()) for months in timeline_data.values()),
+    }
+
+
+@register.simple_tag
+def timeline_stats(posts, period="all"):
+    """
+    Calculate timeline statistics for display.
+
+    Usage: {% timeline_stats posts=posts period="month" %}
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+
+    if not posts:
+        return {
+            "total_posts": 0,
+            "total_reading_time": 0,
+            "avg_reading_time": 0,
+            "most_active_period": "N/A",
+            "period_label": period,
+        }
+
+    # Calculate totals
+    total_posts = len(posts)
+    total_reading_time = sum(getattr(post, "reading_time", 0) for post in posts)
+    avg_reading_time = total_reading_time / total_posts if total_posts > 0 else 0
+
+    # Find most active period
+    if period == "month":
+        from collections import Counter
+
+        month_counts = Counter()
+        for post in posts:
+            if hasattr(post, "published_date") and post.published_date:
+                month_year = post.published_date.strftime("%B %Y")
+                month_counts[month_year] += 1
+
+        most_active_period = (
+            month_counts.most_common(1)[0][0] if month_counts else "N/A"
+        )
+    else:
+        most_active_period = "All Time"
+
+    return {
+        "total_posts": total_posts,
+        "total_reading_time": total_reading_time,
+        "avg_reading_time": round(avg_reading_time, 1),
+        "most_active_period": most_active_period,
+        "period_label": period,
+    }
+
+
+@register.filter
+def group_by_date(posts, group_type="month"):
+    """
+    Group posts by date period.
+
+    Usage: {{ posts|group_by_date:"month" }}
+    """
+    from itertools import groupby
+    from operator import attrgetter
+
+    if not posts:
+        return []
+
+    # Sort posts by date first
+    sorted_posts = sorted(
+        posts, key=lambda p: getattr(p, "published_date", timezone.now()), reverse=True
+    )
+
+    if group_type == "month":
+        # Group by year-month
+        def date_key(post):
+            if hasattr(post, "published_date") and post.published_date:
+                return (post.published_date.year, post.published_date.month)
+            return (2024, 1)  # fallback
+
+        grouped = []
+        for key, group in groupby(sorted_posts, key=date_key):
+            year, month = key
+            posts_list = list(group)
+            grouped.append(
+                {
+                    "date_key": f"{year}-{month:02d}",
+                    "year": year,
+                    "month": month,
+                    "month_name": calendar.month_name[month],
+                    "posts": posts_list,
+                    "count": len(posts_list),
+                }
+            )
+        return grouped
+
+    elif group_type == "day":
+        # Group by year-month-day
+        def date_key(post):
+            if hasattr(post, "published_date") and post.published_date:
+                return post.published_date.date()
+            return timezone.now().date()
+
+        grouped = []
+        for key, group in groupby(sorted_posts, key=date_key):
+            posts_list = list(group)
+            grouped.append(
+                {
+                    "date": key,
+                    "posts": posts_list,
+                    "count": len(posts_list),
+                }
+            )
+        return grouped
+
+    # Default: return as-is
+    return sorted_posts
+
+
+@register.filter
+def timeline_date_range(posts):
+    """
+    Get the date range for a set of posts.
+
+    Usage: {{ posts|timeline_date_range }}
+    """
+    if not posts:
+        return {"start": None, "end": None, "span_days": 0}
+
+    dates = []
+    for post in posts:
+        if hasattr(post, "published_date") and post.published_date:
+            dates.append(post.published_date.date())
+
+    if not dates:
+        return {"start": None, "end": None, "span_days": 0}
+
+    start_date = min(dates)
+    end_date = max(dates)
+    span_days = (end_date - start_date).days
+
+    return {
+        "start": start_date,
+        "end": end_date,
+        "span_days": span_days,
+    }
+
+
+
+# =========== LIKELY DELETE ON CLEAN UP =============#
 
 
 # @register.simple_tag
