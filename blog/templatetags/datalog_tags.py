@@ -851,19 +851,6 @@ def posts_by_month(year):
     ).dates('published_date', 'month', order='DESC')
 
 
-@register.inclusion_tag("blog/includes/related_systems.html")
-def related_systems(post, limit=3):
-    """Show related systems for a blog post."""
-    connections = post.system_connections.select_related("system").order_by(
-        "-priority"
-    )[:limit]
-    return {
-        "connections": connections,
-        "post": post,
-    }
-
-
-
 @register.simple_tag(takes_context=True)
 def build_url(context, **kwargs):
     """

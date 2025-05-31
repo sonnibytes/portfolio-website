@@ -1,82 +1,142 @@
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
-
 {% load aura_filters %}
 {% load aura_components %}
-{% comment %} {% load system_tags %} {% endcomment %}
 {% load datalog_tags %}
 
-{% block blog_content %}
-<!-- Search Results Header -->
-<div class="list-page-header">
-  <!-- HUD corner accents -->
-  <div class="hud-corner hud-corner-tl"></div>
-  <div class="hud-corner hud-corner-tr"></div>
-  <div class="hud-corner hud-corner-bl"></div>
-  <div class="hud-corner hud-corner-br"></div>
-  
-  <!-- Search title with query and counter -->
-  <h1 class="list-page-title">
-    Search Parameter: "{{ query }}"
-    <span class="digital-counter">{{ posts.count }} MATCHES</span>
-  </h1>
-  
-  <!-- Search form -->
-  <div class="search-form-container mt-4">
-    <form action="{% url 'blog:search' %}" method="get" class="d-flex">
-      <input type="text" name="q" value="{{ query }}" class="search-input" placeholder="Search logs...">
-      <button type="submit" class="search-button ml-2">
-        <i class="fas fa-search mr-1"></i> SEARCH
-      </button>
-    </form>
-  </div>
-  
-  <!-- Search filters if needed -->
-  <div class="list-filter-bar">
-    <span class="filter-label">FILTER:</span>
-    <a href="?q={{ query }}&sort=relevance" class="filter-pill {% if current_sort == 'relevance' %}active{% endif %}">Relevance</a>
-    <a href="?q={{ query }}&sort=latest" class="filter-pill {% if current_sort == 'latest' %}active{% endif %}">Latest</a>
-    <a href="?q={{ query }}&sort=oldest" class="filter-pill {% if current_sort == 'oldest' %}active{% endif %}">Oldest</a>
-    
-    {% if categories %}
-      <span class="filter-label ml-4">CATEGORY:</span>
-      <a href="?q={{ query }}" class="filter-pill {% if not category %}active{% endif %}">All</a>
-      {% for cat in categories %}
-        <a href="?q={{ query }}&category={{ cat.slug }}" 
-           class="filter-pill {% if category == cat.slug %}active{% endif %}">
-          {{ cat.name }}
-        </a>
-      {% endfor %}
+{% block title %}
+    {% if query %}
+        Search Results for "{{ query }}" | DataLogs | AURA
+    {% else %}
+        Search DataLogs | AURA
     {% endif %}
-  </div>
-</div>
+{% endblock %}
 
-<!-- Posts Grid -->
-<div class="row g-4">
-  {% for post in posts %}
-    <div class="col-lg-4 col-md-6 mb-4">
-      {% include "blog/includes/post_card.html" with post=post %}
-    </div>
-  {% empty %}
-    <div class="col-12">
-      <div class="no-results">
-        <div class="no-results-icon"><i class="fas fa-search"></i></div>
-        <h3 class="no-results-title">No results found</h3>
-        <p class="no-results-message">Your search for "{{ query }}" did not match any logs.</p>
-        <p class="no-results-suggestions">Suggestions:</p>
-        <ul class="no-results-list">
-          <li>Check your spelling</li>
-          <li>Try more general keywords</li>
-          <li>Try different keywords</li>
-        </ul>
-        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-cyan mt-3">Back to DEVLOGs</a>
-      </div>
-    </div>
-  {% endfor %}
-</div>
+{% block meta_description %}
+    {% if query %}
+        Search results for "{{ query }}" in DataLog entries - {{ posts|length }} matches found.
+    {% else %}
+        Search through DataLog entries and technical documentation.
+    {% endif %}
+{% endblock %}
 
-<!-- Pagination -->
-{% if is_paginated %}
-  {% include "blog/includes/pagination.html" %}
-{% endif %}
+{% block datalogs_css %}
+<link rel="stylesheet" href="{% static 'blog/css/search-results.css' %}">
+{% endblock %}
+
+{% block datalogs_body_class %}search-results{% endblock %}
+
+{% block datalogs_title %}
+    {% if query %}
+        Search Results for "{{ query }}"
+    {% else %}
+        Search DataLogs
+    {% endif %}
+{% endblock %}
+
+{% block datalogs_subtitle %}
+    {% if query %}
+        Found {{ posts|length|format_number }} matching entries
+    {% else %}
+        Search through technical insights and development documentation
+    {% endif %}
+{% endblock %}
+
+{% block datalogs_breadcrumbs %}
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+<span class="breadcrumb-item active">
+    {% if query %}Search: "{{ query }}"{% else %}Search{% endif %}
+</span>
+{% endblock %}
+
+{% block datalogs_content %}
+<!-- Search Interface -->
+<section class="search-interface-section">
+    <div class="glass-card search-panel">
+        {% include 'blog/includes/enhanced_search_interface.html' with style='full' query=query %}
+        
+        {% if query %}
+        <!-- Search Results Summary -->
+        <div class="search-results-summary">
+            <div class="results-count">
+                <span class="count-value">{{ posts|length|format_number }}</span>
+                <span class="count-label">result{{ posts|length|pluralize }} found</span>
+            </div>
+            
+            {% if search_suggestions %}
+            <div class="search-suggestions-inline">
+                <span class="suggestions-label">Suggestions:</span>
+                {% for suggestion in search_suggestions %}
+                <a href="{{ suggestion.url }}" class="suggestion-link">
+                    <i class="{{ suggestion.icon }}"></i>
+                    {{ suggestion.text }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Search Results -->
+<section class="search-results-section">
+    {% if posts %}
+    <div class="search-results-grid">
+        {% for post in posts %}
+        {% render_post_card post show_excerpt=True card_type="search" %}
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination-container">
+        {% render_pagination page_obj request %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- No Results -->
+    <div class="glass-card no-results-panel">
+        <div class="no-results-content">
+            <div class="no-results-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            {% if query %}
+            <h3 class="no-results-title">No results found for "{{ query }}"</h3>
+            <p class="no-results-message">
+                Your search didn't match any DataLog entries. Here are some suggestions:
+            </p>
+            <div class="search-suggestions">
+                <ul class="suggestions-list">
+                    <li>Check your spelling</li>
+                    <li>Try more general keywords</li>
+                    <li>Use different search terms</li>
+                    <li>Browse by category instead</li>
+                </ul>
+            </div>
+            {% else %}
+            <h3 class="no-results-title">Start Your Search</h3>
+            <p class="no-results-message">
+                Enter your search terms above to find DataLog entries, code examples, and technical insights.
+            </p>
+            {% endif %}
+            
+            <div class="no-results-actions">
+                <a href="{% url 'blog:post_list' %}" class="btn btn-primary">
+                    <i class="fas fa-list me-2"></i>
+                    Browse All DataLogs
+                </a>
+                {% if categories %}
+                <a href="{% url 'blog:post_list' %}" class="btn btn-outline">
+                    <i class="fas fa-folder me-2"></i>
+                    Browse Categories
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</section>
 {% endblock %}

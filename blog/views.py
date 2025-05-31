@@ -459,15 +459,13 @@ class SearchView(ListView):
     def get_queryset(self):
         query = self.request.GET.get('q')
         if query:
+            # Use Q object to combine searches and apply distinct to the final result
+            search_query = Q(title__icontains=query) | Q(content__icontains=query) | Q(tags__name__icontains=query)
+
             return Post.objects.filter(
-                title__icontains=query
-            ) | Post.objects.filter(
-                content__icontains=query
-            ) | Post.objects.filter(
-                tags__name__icontains=query
-            ).distinct().filter(
-                status='published'
-            ).order_by('-published_date')
+                search_query
+            ).filter(status='published').distinct().order_by('-published_date')
+
         return Post.objects.none()
 
     def get_context_data(self, **kwargs):
