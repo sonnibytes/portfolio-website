@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - DataLogs Detail Template - FIXED
+ * AURA Portfolio - DataLogs Detail Template - FIXED SPACING
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 3.2.0 - Fixed glass card usage and TOC rendering
+ * Version: 3.2.1 - Fixed spacing and breadcrumb issues
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -21,14 +21,16 @@
 
 {% block datalogs_body_class %}post-detail{% endblock %}
 
+{% block show_breadcrumbs %}True{% endblock %}
+
 {% block datalogs_title %}{{ post.title }}{% endblock %}
 
 {% block datalogs_breadcrumbs %}
-<i class="fas fa-chevron-right breadcrumb-separator"></i>
 {% if post.category %}
-<a href="{% url 'blog:category' slug=post.category.slug %}" class="breadcrumb-item">{{ post.category.name }}</a>
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
+<a href="{% url 'blog:category' slug=post.category.slug %}" class="breadcrumb-item">{{ post.category.name }}</a>
 {% endif %}
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
 <span class="breadcrumb-item active">{{ post.id|datalog_id }}</span>
 
 <!-- Quick navigation buttons -->
@@ -127,35 +129,7 @@
 
                     <!-- Featured Code Block -->
                     {% if post.featured_code %}
-                    <div class="datalog-featured-code">
-                        <div class="terminal-window enhanced">
-                            <div class="terminal-header">
-                                <div class="terminal-controls">
-                                    <span class="terminal-button red"></span>
-                                    <span class="terminal-button yellow"></span>
-                                    <span class="terminal-button green"></span>
-                                </div>
-                                <div class="terminal-title">{{ post.get_code_filename|default:"code.py" }}</div>
-                                <div class="terminal-status">
-                                    <div class="status-indicator operational"></div>
-                                    <span class="status-text">{{ post.featured_code_format|upper|default:"PYTHON" }}</span>
-                                </div>
-                            </div>
-                            <div class="terminal-content">
-                                <div class="code-display">
-                                    {{ post.featured_code|highlight_code:post.featured_code_format }}
-                                </div>
-                            </div>
-                            <div class="terminal-footer">
-                                <div class="terminal-info">
-                                    <span class="line-count">{{ post.featured_code|linecount }} lines</span>
-                                    <span class="lang-indicator">{{ post.featured_code_format|default:"python" }}</span>
-                                    <span class="file-size">{{ post.featured_code|length }} chars</span>
-                                </div>
-                                {% copy_button post.featured_code "Copy Code" "Copied!" %}
-                            </div>
-                        </div>
-                    </div>
+                    {% terminal_display post=post %}
                     {% endif %}
                     
                     <!-- Main Content -->

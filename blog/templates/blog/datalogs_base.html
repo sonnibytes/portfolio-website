@@ -1,8 +1,7 @@
-
 <!----
  * AURA Portfolio - Blog/Datalogs App Base Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.1.3 - Cleaned/Optimized
+ * Version: 3.0.0 - Aligned with Master Consolidated JavaScript
 ---->
 
 {% extends "base.html" %}
@@ -22,11 +21,10 @@
 {% block datalogs_css %}{% endblock %}
 {% endblock %}
 
-{% block body_class %}datalogs-interface{% endblock %}
-
+{% block body_class %}datalogs-interface {% block datalogs_body_class %}{% endblock %}{% endblock %}
 
 {% block subnav %}
-<!-- DataLogs Sub-Navigation - Simplified -->
+<!-- DataLogs Sub-Navigation - Enhanced -->
 <nav class="app-subnav datalogs-subnav" id="datalogsSubnav">
     <div class="container subnav-container">
         
@@ -37,7 +35,7 @@
                 <span>DataLogs</span>
             </div>
             
-            <!-- DataLogs Navigation Links - Improved sizing -->
+            <!-- DataLogs Navigation Links -->
             <div class="subnav-links">
                 <a href="{% url 'blog:post_list' %}" class="subnav-link {% if 'post_list' in request.resolver_match.view_name %}active{% endif %}">
                     <i class="fas fa-list subnav-icon"></i>
@@ -51,40 +49,8 @@
                     <i class="fas fa-tags subnav-icon"></i>
                     <span>Tags</span>
                 </a>
-                
-                {% comment %} <!-- Category Navigation - Horizontal Scroll Style -->
-                <div class="category-nav-container">
-                    <button class="category-scroll-btn category-scroll-left" id="categoryScrollLeft">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div class="category-nav-scroll" id="categoryNavScroll">
-                        <a href="{% url 'blog:post_list' %}" class="category-nav-item {% if not current_category %}active{% endif %}">
-                            <div class="category-hexagon" style="--hex-color: var(--color-teal);">
-                                <span class="hexagon-text">ALL</span>
-                            </div>
-                            <span class="category-label">All</span>
-                        </a>
-                        {% for category in categories %}
-                        <a href="{% url 'blog:category' slug=category.slug %}" 
-                           class="category-nav-item {% if category.slug == current_category.slug %}active{% endif %}">
-                            <div class="category-hexagon" style="--hex-color: {{ category.color }};">
-                                <span class="hexagon-text">{{ category.code }}</span>
-                                </div>
-                            <span class="category-label">{{ category.name }}</span>
-                            </a>
-                        {% endfor %}
-                    </div>
-                    <button class="category-scroll-btn category-scroll-right" id="categoryScrollRight">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-                
-                <a href="#" class="subnav-link" id="analyticsLink">
-                    <i class="fas fa-chart-bar subnav-icon"></i>
-                    <span>Analytics</span>
-                </a>
             </div>
-                </div> {% endcomment %}
+        </div>
         
         <div class="subnav-right">
             <!-- Real-time DataLog Metrics -->
@@ -311,7 +277,13 @@
                 </div>
                 
                 <div class="search-suggestions" id="searchSuggestions" style="display: none;">
-                    <!-- Dynamic search suggestions will be populated here -->
+                    <div class="suggestions-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Search Suggestions</span>
+                    </div>
+                    <div class="suggestions-content" id="suggestionsContent">
+                        <!-- Dynamic search suggestions will be populated here -->
+                    </div>
                 </div>
             </form>
         </div>
@@ -360,7 +332,7 @@
             {% endif %}
             
             <!-- Main Content Block -->
-            <main class="datalogs-main-content">
+            <main class="datalogs-main-content" id="main-content">
                 {% block datalogs_content %}
                 <!-- Individual datalog pages will override this -->
                 {% endblock %}
@@ -385,308 +357,185 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- DataLogs Master Consolidated JavaScript -->
 <script src="{% static 'blog/js/datalogs-consolidated.js' %}"></script>
 {% block datalogs_js %}{% endblock %}
 
-<!-- Simplified DataLogs Interface JavaScript -->
+<!-- DataLogs Page-Specific Initialization -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DataLogs interface initializing...');
+    console.log('🚀 DataLogs base template initializing...');
     
-    // Initialize datalogs interface
-    if (typeof initDatalogsInterface === 'function') {
-        initDatalogsInterface();
-    }
-    
-    // Initialize category navigation scrolling
-    initCategoryNavigation();
-    
-    // Filter toggle functionality
-    const filterToggle = document.getElementById('datalogsFilterToggle');
-    const filterPanel = document.getElementById('datalogsFilterPanel');
-    const closeFilters = document.getElementById('closeFilters');
-    
-    if (filterToggle && filterPanel) {
-        filterToggle.addEventListener('click', function() {
-            const isVisible = filterPanel.style.display !== 'none';
-            filterPanel.style.display = isVisible ? 'none' : 'block';
-            this.classList.toggle('active', !isVisible);
-            
-            // Close search panel if open
-            const searchPanel = document.getElementById('datalogsSearchPanel');
-            if (searchPanel && searchPanel.style.display !== 'none') {
-                searchPanel.style.display = 'none';
-                document.getElementById('datalogsSearchToggle')?.classList.remove('active');
-            }
-        });
-    }
-    
-    if (closeFilters && filterPanel) {
-        closeFilters.addEventListener('click', function() {
-            filterPanel.style.display = 'none';
-            filterToggle?.classList.remove('active');
-        });
-    }
-    
-    // Search toggle functionality
-    const searchToggle = document.getElementById('datalogsSearchToggle');
-    const searchPanel = document.getElementById('datalogsSearchPanel');
-    
-    if (searchToggle && searchPanel) {
-        searchToggle.addEventListener('click', function() {
-            const isVisible = searchPanel.style.display !== 'none';
-            searchPanel.style.display = isVisible ? 'none' : 'block';
-            this.classList.toggle('active', !isVisible);
-            
-            // Close filter panel if open
-            if (filterPanel && filterPanel.style.display !== 'none') {
-                filterPanel.style.display = 'none';
-                filterToggle?.classList.remove('active');
-            }
-            
-            // Focus search input when opening
-            if (!isVisible) {
-                const searchInput = searchPanel.querySelector('.datalog-search-input');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 100);
-                }
-            }
-        });
-    }
-    
-    // View toggle functionality
-    const viewToggle = document.getElementById('datalogsViewToggle');
-    if (viewToggle) {
-        viewToggle.addEventListener('click', function() {
-            const contentArea = document.querySelector('.datalogs-main-content');
-            if (contentArea) {
-                contentArea.classList.toggle('grid-view');
-                contentArea.classList.toggle('list-view');
-                
-                const icon = this.querySelector('i');
-                if (contentArea.classList.contains('grid-view')) {
-                    icon.className = 'fas fa-list';
-                } else {
-                    icon.className = 'fas fa-th-large';
-                }
-            }
-        });
-    }
-    
-    // Tag search functionality
-    const tagSearch = document.getElementById('tagSearch');
-    const tagOptions = document.querySelectorAll('.tag-option');
-    
-    if (tagSearch && tagOptions.length > 0) {
-        tagSearch.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            tagOptions.forEach(option => {
-                const tagName = option.dataset.tag;
-                if (tagName.includes(searchTerm)) {
-                    option.style.display = 'flex';
-                } else {
-                    option.style.display = 'none';
-                }
-            });
-        });
-    }
-    
-    // Search suggestions functionality
-    const searchInput = document.querySelector('.datalog-search-input');
-    const searchSuggestions = document.getElementById('searchSuggestions');
-    
-    if (searchInput && searchSuggestions) {
-        let searchTimeout;
+    // Set page context data for the master JavaScript
+    if (window.datalogInterface) {
+        // Enhanced page detection with template context
+        const pageContext = {
+            viewName: '{{ request.resolver_match.view_name|default:"" }}',
+            appName: '{{ request.resolver_match.app_name|default:"" }}',
+            urlName: '{{ request.resolver_match.url_name|default:"" }}',
+            currentPost: {% if current_post %}'{{ current_post.id }}'{% else %}null{% endif %},
+            currentCategory: {% if current_category %}'{{ current_category.slug }}'{% else %}null{% endif %},
+            query: '{{ query|default:"" }}',
+            hasFilters: {% if show_filters %}true{% else %}false{% endif %},
+            totalPosts: {{ total_posts|default:0 }},
+            isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %}
+        };
         
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            const query = this.value.trim();
+        // Pass context to the interface
+        window.datalogInterface.pageContext = pageContext;
+        
+        // Enhanced page detection
+        window.datalogInterface.detectPageType = function() {
+            const body = document.body;
+            const context = this.pageContext;
             
-            if (query.length >= 2) {
-                searchTimeout = setTimeout(() => {
-                    loadSearchSuggestions(query);
-                }, 300);
+            // Use Django context for more accurate detection
+            if (context.viewName.includes('post_detail') || body.classList.contains('post-detail')) {
+                this.state.currentPage = 'detail';
+            } else if (context.viewName.includes('category') || body.classList.contains('category-view')) {
+                this.state.currentPage = 'category';
+            } else if (context.viewName.includes('archive') || body.classList.contains('archive-view')) {
+                this.state.currentPage = 'archive';
+            } else if (context.viewName.includes('search') || body.classList.contains('search-results')) {
+                this.state.currentPage = 'search';
+            } else if (context.viewName.includes('tag')) {
+                this.state.currentPage = 'tag';
             } else {
-                searchSuggestions.style.display = 'none';
+                this.state.currentPage = 'list';
             }
-        });
+            
+            console.log(`📄 Page detected: ${this.state.currentPage} (view: ${context.viewName})`);
+        };
         
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!searchPanel?.contains(e.target)) {
-                searchSuggestions.style.display = 'none';
-            }
-        });
+        // Initialize with enhanced context
+        if (!window.datalogInterface.isInitialized) {
+            window.datalogInterface.init();
+        }
     }
     
-    // Analytics link functionality
-    const analyticsLink = document.getElementById('analyticsLink');
-    if (analyticsLink) {
-        analyticsLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            toggleAnalyticsOverlay();
-        });
-    }
-    
-    // Clear filters functionality
-    const clearFilters = document.getElementById('clearFilters');
-    if (clearFilters) {
-        clearFilters.addEventListener('click', function() {
-            const form = document.getElementById('datalogsFilterForm');
-            if (form) {
-                form.reset();
-                // Redirect to clean URL
-                window.location.href = window.location.pathname;
-            }
-        });
-    }
-    
-    // Date range validation
-    const dateFrom = document.querySelector('input[name="date_from"]');
-    const dateTo = document.querySelector('input[name="date_to"]');
-    
-    if (dateFrom && dateTo) {
-        dateFrom.addEventListener('change', function() {
-            if (dateTo.value && this.value > dateTo.value) {
-                dateTo.value = this.value;
-            }
-        });
-        
-        dateTo.addEventListener('change', function() {
-            if (dateFrom.value && this.value < dateFrom.value) {
-                dateFrom.value = this.value;
-            }
-        });
-    }
-    
-    console.log('✅ DataLogs interface initialized successfully');
+    console.log('✅ DataLogs base template initialized');
 });
 
-// ========== CATEGORY NAVIGATION SCROLLING ==========
-
-function initCategoryNavigation() {
-    const scrollContainer = document.getElementById('categoryNavScroll');
-    const leftBtn = document.getElementById('categoryScrollLeft');
-    const rightBtn = document.getElementById('categoryScrollRight');
+// Global keyboard shortcuts for DataLogs
+document.addEventListener('keydown', function(e) {
+    // Don't trigger shortcuts when typing in inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     
-    if (!scrollContainer || !leftBtn || !rightBtn) return;
-    
-    console.log('📂 Initializing category navigation...');
-    
-    // Check scroll position and update buttons
-    function updateScrollButtons() {
-        const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
-        
-        leftBtn.style.opacity = scrollLeft > 0 ? '1' : '0.3';
-        leftBtn.style.pointerEvents = scrollLeft > 0 ? 'auto' : 'none';
-        
-        rightBtn.style.opacity = scrollLeft < scrollWidth - clientWidth ? '1' : '0.3';
-        rightBtn.style.pointerEvents = scrollLeft < scrollWidth - clientWidth ? 'auto' : 'none';
-    }
-    
-    // Scroll functionality
-    leftBtn.addEventListener('click', function() {
-        scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
-    });
-    
-    rightBtn.addEventListener('click', function() {
-        scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
-    });
-    
-    // Update buttons on scroll
-    scrollContainer.addEventListener('scroll', updateScrollButtons);
-        
-    // Initial button state
-    setTimeout(updateScrollButtons, 100);
-    
-    // Update on resize
-    window.addEventListener('resize', updateScrollButtons);
-    
-    console.log('✅ Category navigation initialized');
-}
-
-// ========== SEARCH AND ANALYTICS FUNCTIONS ==========
-
-function loadSearchSuggestions(query) {
-    const searchSuggestions = document.getElementById('searchSuggestions');
-    if (!searchSuggestions) return;
-    
-    const suggestions = [
-        'Machine Learning Fundamentals',
-        'Python Data Analysis',
-        'Django Best Practices',
-        'API Development',
-        'Database Optimization'
-    ].filter(suggestion => 
-        suggestion.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    if (suggestions.length > 0) {
-        searchSuggestions.innerHTML = suggestions.map(suggestion => 
-            `<div class="search-suggestion-item" onclick="selectSuggestion('${suggestion}')">
-                <i class="fas fa-search"></i>
-                <span>${suggestion}</span>
-            </div>`
-        ).join('');
-        searchSuggestions.style.display = 'block';
-    } else {
-        searchSuggestions.style.display = 'none';
-    }
-}
-
-function selectSuggestion(suggestion) {
-    const searchInput = document.querySelector('.datalog-search-input');
-    const searchSuggestions = document.getElementById('searchSuggestions');
-    
-    if (searchInput) {
-        searchInput.value = suggestion;
-        searchSuggestions.style.display = 'none';
-        
-        const searchForm = searchInput.closest('form');
-        if (searchForm) {
-            searchForm.submit();
+    // Global DataLogs shortcuts
+    if ((e.ctrlKey || e.metaKey)) {
+        switch(e.key) {
+            case 'k': // Ctrl/Cmd + K for search
+                e.preventDefault();
+                if (window.datalogInterface) {
+                    window.datalogInterface.focusSearch();
+                }
+                break;
+            case 'f': // Ctrl/Cmd + F for filters  
+                e.preventDefault();
+                if (window.datalogInterface) {
+                    window.datalogInterface.toggleFilterPanel();
+                }
+                break;
         }
     }
-}
-
-function toggleAnalyticsOverlay() {
-    const overlay = document.getElementById('datalogsDataOverlay');
-    if (overlay) {
-        overlay.classList.toggle('active');
-        
-        if (overlay.classList.contains('active')) {
-            loadDatalogAnalytics();
+    
+    // View shortcuts (no modifier keys)
+    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        switch(e.key) {
+            case '1':
+                if (window.datalogInterface) {
+                    window.datalogInterface.setView('grid');
+                }
+                break;
+            case '2':
+                if (window.datalogInterface) {
+                    window.datalogInterface.setView('list');
+                }
+                break;
+            case '3':
+                if (window.datalogInterface) {
+                    window.datalogInterface.setView('timeline');
+                }
+                break;
         }
+    }
+});
+
+// Enhanced analytics for DataLogs
+function trackDatalogEvent(eventName, eventData = {}) {
+    if (window.gtag) {
+        window.gtag('event', eventName, {
+            event_category: 'DataLogs',
+            ...eventData
+        });
+    }
+    
+    if (window.datalogInterface?.config.enableDebugMode) {
+        console.log('📊 DataLog Event:', eventName, eventData);
     }
 }
 
-function loadDatalogAnalytics() {
-    const dataStream = document.getElementById('datalogsDataStream');
-    if (dataStream) {
-        const analytics = [
-            { label: 'Most Popular Category', value: 'Machine Learning' },
-            { label: 'Avg Words per Entry', value: '1,247' },
-            { label: 'Total Reading Time', value: '127h' },
-            { label: 'Top Tag', value: '#python' },
-            { label: 'Engagement Rate', value: '84%' }
-        ];
+// Track navigation events
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('a');
+    if (link && link.href) {
+        const url = new URL(link.href, window.location.origin);
         
-        const analyticsHTML = analytics.map(metric => 
-            `<div class="metric-stream-item">
-                <span class="metric-label">${metric.label}:</span>
-                <span class="metric-value">${metric.value}</span>
-            </div>`
-        ).join('');
-        
-        const existingTitle = dataStream.querySelector('.data-stream-title');
-        if (existingTitle) {
-            dataStream.innerHTML = existingTitle.outerHTML + analyticsHTML;
-        } else {
-            dataStream.innerHTML = analyticsHTML;
+        if (url.pathname.includes('/blog/') || url.pathname.includes('/datalogs/')) {
+            const linkType = link.closest('.datalog-card') ? 'post_card' :
+                           link.closest('.category-nav-item') ? 'category_nav' :
+                           link.closest('.tag-link') ? 'tag' :
+                           link.closest('.breadcrumb') ? 'breadcrumb' :
+                           'other';
+            
+            trackDatalogEvent('navigation_click', {
+                link_type: linkType,
+                destination: url.pathname,
+                source_page: window.datalogInterface?.state.currentPage || 'unknown'
+            });
         }
     }
-}
+});
 
-console.log('📋 DataLogs JavaScript loaded successfully');
+// Track search usage
+document.addEventListener('submit', function(e) {
+    if (e.target.classList.contains('search-form')) {
+        const query = e.target.querySelector('input[name="q"]')?.value;
+        if (query) {
+            trackDatalogEvent('search_performed', {
+                query_length: query.length,
+                source_page: window.datalogInterface?.state.currentPage || 'unknown'
+            });
+        }
+    }
+});
+
+// Debug helpers (only in development)
+{% if settings.DEBUG %}
+window.DATALOG_DEBUG = {
+    interface: () => window.datalogInterface,
+    state: () => window.datalogInterface?.state,
+    config: () => window.datalogInterface?.config,
+    components: () => window.datalogInterface?.components,
+    pageContext: () => window.datalogInterface?.pageContext,
+    trackEvent: trackDatalogEvent,
+    enableDebug: () => {
+        if (window.datalogInterface) {
+            window.datalogInterface.config.enableDebugMode = true;
+            document.body.classList.add('debug');
+            console.log('🐛 DataLog debug mode enabled');
+        }
+    },
+    disableDebug: () => {
+        if (window.datalogInterface) {
+            window.datalogInterface.config.enableDebugMode = false;
+            document.body.classList.remove('debug');
+            console.log('✅ DataLog debug mode disabled');
+        }
+    }
+};
+
+console.log('🔧 DataLog debug helpers available at window.DATALOG_DEBUG');
+{% endif %}
 </script>
 {% endblock %}

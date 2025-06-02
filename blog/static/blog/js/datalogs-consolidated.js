@@ -131,7 +131,7 @@ class DatalogInterface {
         // Initialize all post detail components
         this.generateTableOfContents();
         this.initializeReadingProgress();
-        this.initializePostTerminals();
+        // this.initializePostTerminals();
         this.initializeSmoothScrolling();
         this.initializePostCopyButtons();
         
@@ -240,69 +240,69 @@ class DatalogInterface {
         });
     }
     
-    initializePostTerminals() {
-        const terminals = document.querySelectorAll('.terminal-window');
+    // initializePostTerminals() {
+    //     const terminals = document.querySelectorAll('.terminal-window');
         
-        terminals.forEach(terminal => {
-            // Add entrance animation when in viewport
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('terminal-active');
+    //     terminals.forEach(terminal => {
+    //         // Add entrance animation when in viewport
+    //         const observer = new IntersectionObserver((entries) => {
+    //             entries.forEach(entry => {
+    //                 if (entry.isIntersecting) {
+    //                     entry.target.classList.add('terminal-active');
                         
-                        // Add typing effect to code
-                        const codeDisplay = entry.target.querySelector('.code-display');
-                        if (codeDisplay && !codeDisplay.dataset.animated) {
-                            codeDisplay.dataset.animated = 'true';
-                            this.addTypingEffect(codeDisplay);
-                        }
+    //                     // Add typing effect to code
+    //                     const codeDisplay = entry.target.querySelector('.code-display');
+    //                     if (codeDisplay && !codeDisplay.dataset.animated) {
+    //                         codeDisplay.dataset.animated = 'true';
+    //                         this.addTypingEffect(codeDisplay);
+    //                     }
                         
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.3 });
+    //                     observer.unobserve(entry.target);
+    //                 }
+    //             });
+    //         }, { threshold: 0.3 });
             
-            observer.observe(terminal);
-            this.observers.add(observer);
+    //         observer.observe(terminal);
+    //         this.observers.add(observer);
             
-            // Terminal button interactions
-            const buttons = terminal.querySelectorAll('.terminal-button');
-            buttons.forEach(button => {
-                button.addEventListener('click', () => {
-                    button.style.transform = 'scale(0.8)';
-                    const timer = setTimeout(() => {
-                        button.style.transform = 'scale(1)';
-                    }, 100);
-                    this.timers.add(() => clearTimeout(timer));
-                });
-            });
-        });
-    }
+    //         // Terminal button interactions
+    //         const buttons = terminal.querySelectorAll('.terminal-button');
+    //         buttons.forEach(button => {
+    //             button.addEventListener('click', () => {
+    //                 button.style.transform = 'scale(0.8)';
+    //                 const timer = setTimeout(() => {
+    //                     button.style.transform = 'scale(1)';
+    //                 }, 100);
+    //                 this.timers.add(() => clearTimeout(timer));
+    //             });
+    //         });
+    //     });
+    // }
     
-    addTypingEffect(codeElement) {
-        const originalHTML = codeElement.innerHTML;
-        const textContent = codeElement.textContent;
+    // addTypingEffect(codeElement) {
+    //     const originalHTML = codeElement.innerHTML;
+    //     const textContent = codeElement.textContent;
         
-        // Don't animate if content is too long (performance)
-        if (textContent.length > 500) return;
+    //     // Don't animate if content is too long (performance)
+    //     if (textContent.length > 500) return;
         
-        codeElement.innerHTML = '';
+    //     codeElement.innerHTML = '';
         
-        let i = 0;
-        const typeCharacter = () => {
-            if (i < textContent.length) {
-                codeElement.textContent += textContent.charAt(i);
-                i++;
-                const timer = setTimeout(typeCharacter, this.config.typewriterSpeed);
-                this.timers.add(() => clearTimeout(timer));
-            } else {
-                codeElement.innerHTML = originalHTML;
-            }
-        };
+    //     let i = 0;
+    //     const typeCharacter = () => {
+    //         if (i < textContent.length) {
+    //             codeElement.textContent += textContent.charAt(i);
+    //             i++;
+    //             const timer = setTimeout(typeCharacter, this.config.typewriterSpeed);
+    //             this.timers.add(() => clearTimeout(timer));
+    //         } else {
+    //             codeElement.innerHTML = originalHTML;
+    //         }
+    //     };
         
-        const timer = setTimeout(typeCharacter, 500);
-        this.timers.add(() => clearTimeout(timer));
-    }
+    //     const timer = setTimeout(typeCharacter, 500);
+    //     this.timers.add(() => clearTimeout(timer));
+    // }
     
     initializeSmoothScrolling() {
         // Smooth scroll for all anchor links
@@ -1290,7 +1290,7 @@ class DatalogInterface {
         console.log('💻 Initializing terminal displays...');
         
         terminals.forEach(terminal => {
-            this.enhanceTerminal(terminal);
+            this.enhanceTerminalUnified(terminal);
         });
         
         // Copy button functionality
@@ -1299,18 +1299,32 @@ class DatalogInterface {
         console.log('✅ Terminal displays initialized');
     }
     
-    enhanceTerminal(terminal) {
+    // ========== UNIFIED TERMINAL ENHANCEMENT ========== //
+
+    enhanceTerminalUnified(terminal) {
+        // Check if terminal has code content that should be animated
+        const codeDisplay = terminal.querySelector('.code-display, .terminal-content');
+        const hasHighlighting = codeDisplay?.querySelector('.highlighted, .highlight, pre code');
+        const shouldAnimate = this.shouldAnimateTerminal(terminal, codeDisplay);
+        
         // Add terminal activation effect
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    const timer = setTimeout(() => {
-                        entry.target.classList.add('terminal-active');
-                        if (this.state.currentPage !== 'detail') {
-                            this.typewriterEffect(entry.target);
+                    entry.target.classList.add('terminal-active');
+                    
+                    if (shouldAnimate && codeDisplay && !codeDisplay.dataset.animated) {
+                        codeDisplay.dataset.animated = 'true';
+                        
+                        if (hasHighlighting) {
+                            // Use highlighting-aware animation
+                            this.animateHighlightedCode(codeDisplay);
+                        } else {
+                            // Use simple typewriter effect
+                            this.addTypingEffect(codeDisplay);
                         }
-                    }, 300);
-                    this.timers.add(() => clearTimeout(timer));
+                    }
+                    
                     observer.unobserve(entry.target);
                 }
             });
@@ -1319,7 +1333,7 @@ class DatalogInterface {
         observer.observe(terminal);
         this.observers.add(observer);
         
-        // Terminal button interactions
+        // Terminal button interactions (unchanged)
         const buttons = terminal.querySelectorAll('.terminal-button');
         buttons.forEach(button => {
             button.addEventListener('click', () => {
@@ -1332,27 +1346,97 @@ class DatalogInterface {
         });
     }
     
-    typewriterEffect(terminal) {
-        const codeContent = terminal.querySelector('.code-display, .terminal-content');
-        if (!codeContent) return;
+    // ========== ANIMATION DECISION LOGIC ========== //
+
+    shouldAnimateTerminal(terminal, codeDisplay) {
+        // Don't animate if no code content
+        if (!codeDisplay) return false;
         
-        const originalText = codeContent.textContent;
-        if (originalText.length > 500) return; // Skip for long content
+        // Don't animate if content is too long (performance)
+        const textContent = codeDisplay.textContent || '';
+        if (textContent.length > 500) return false;
         
-        codeContent.textContent = '';
+        // Don't animate if user prefers reduced motion
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+        
+        // Don't animate if already animated
+        if (codeDisplay.dataset.animated) return false;
+        
+        // Animate for all page types (remove page-specific logic)
+        return true;
+    }
+
+    // ========== HIGHLIGHTING-AWARE ANIMATION ========== //
+
+    animateHighlightedCode(codeElement) {
+        // Store original highlighted HTML
+        const originalHTML = codeElement.innerHTML;
+        const textContent = codeElement.textContent || '';
+        
+        // Create a temporary element to extract plain text properly
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = originalHTML;
+        const plainText = tempDiv.textContent || tempDiv.innerText || '';
+        
+        // Start with empty content
+        codeElement.innerHTML = '';
         
         let i = 0;
         
-        const typeInterval = () => {
-            if (i < originalText.length) {
-                codeContent.textContent += originalText.charAt(i);
+        const typeCharacter = () => {
+            if (i < plainText.length) {
+                // Add character by character, preserving basic structure
+                const currentText = plainText.substring(0, i + 1);
+                
+                // For highlighting, we'll add characters as plain text first
+                codeElement.textContent = currentText;
+                
                 i++;
-                const timer = setTimeout(typeInterval, this.config.typewriterSpeed);
+                const timer = setTimeout(typeCharacter, this.config.typewriterSpeed);
+                this.timers.add(() => clearTimeout(timer));
+            } else {
+                // Animation complete - restore full highlighting
+                const timer = setTimeout(() => {
+                    codeElement.innerHTML = originalHTML;
+                    // Add completion effect
+                    codeElement.classList.add('animation-complete');
+                }, 200);
                 this.timers.add(() => clearTimeout(timer));
             }
         };
         
-        const timer = setTimeout(typeInterval, 500);
+        // Start animation after delay
+        const timer = setTimeout(typeCharacter, 500);
+        this.timers.add(() => clearTimeout(timer));
+    }
+
+    // ========== SIMPLE TYPEWRITER EFFECT (for non-highlighted code) ========== //
+
+    addTypingEffect(codeElement) {
+        const originalHTML = codeElement.innerHTML;
+        const textContent = codeElement.textContent || '';
+        
+        // Don't animate if content is too long
+        if (textContent.length > 500) return;
+        
+        codeElement.innerHTML = '';
+        
+        let i = 0;
+        
+        const typeCharacter = () => {
+            if (i < textContent.length) {
+                codeElement.textContent += textContent.charAt(i);
+                i++;
+                const timer = setTimeout(typeCharacter, this.config.typewriterSpeed);
+                this.timers.add(() => clearTimeout(timer));
+            } else {
+                // Restore original HTML in case there was any formatting
+                codeElement.innerHTML = originalHTML;
+                codeElement.classList.add('animation-complete');
+            }
+        };
+        
+        const timer = setTimeout(typeCharacter, 500);
         this.timers.add(() => clearTimeout(timer));
     }
     
