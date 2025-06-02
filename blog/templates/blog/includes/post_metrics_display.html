@@ -1,6 +1,6 @@
 <!----
- * AURA DataLogs - Post Metrics Display Component
- * Reusable component for displaying post metadata consistently
+ * AURA DataLogs - Post Metrics Display Component (CLEANED & STREAMLINED)
+ * Reusable component with minimal CSS - relies on consolidated stylesheet
  * Usage: {--% include 'blog/includes/post_metrics_display.html' with post=post style="full" %--}
  * Styles: full, compact, minimal, inline
 ---->
@@ -45,7 +45,7 @@
         
         {% if post.category %}
         <div class="metric-item">
-            <div class="metric-icon" data-category-color="{{ post.category.color }}">
+            <div class="metric-icon" style="--category-color: {{ post.category.color }};">
                 {% if post.category.icon %}
                 <i class="{{ post.category.icon }}"></i>
                 {% else %}
@@ -82,13 +82,38 @@
             </div>
         </div>
         {% endif %}
+        
+        <!-- Enhanced metrics for full view -->
+        {% if post.tags.exists %}
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-tags"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post.tags.count }}</div>
+                <div class="metric-label">Tag{{ post.tags.count|pluralize }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if post|datalog_difficulty %}
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post|datalog_difficulty }}</div>
+                <div class="metric-label">Difficulty</div>
+            </div>
+        </div>
+        {% endif %}
     </div>
     
     {% elif style == 'compact' %}
     <!-- Compact metrics for cards and lists -->
     <div class="metrics-compact">
         {% if post.category %}
-        <span class="metric-badge category-badge" data-category-color="{{ post.category.color }}">
+        <span class="metric-badge category-badge" style="--category-color: {{ post.category.color }};">
             {{ post.category.code|default:"LOG" }}
         </span>
         {% endif %}
@@ -151,6 +176,58 @@
         {% endif %}
     </div>
     
+    {% elif style == 'detailed' %}
+    <!-- Detailed metrics with extra information -->
+    <div class="metrics-detailed">
+        <div class="metrics-row primary-metrics">
+            <div class="metric-group">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="metric-label">Published</span>
+                <span class="metric-value">{{ post.published_date|date:"M d, Y" }}</span>
+                <span class="metric-time-ago">({{ post.published_date|time_since_published }})</span>
+            </div>
+            
+            {% if post.updated != post.published_date %}
+            <div class="metric-group">
+                <i class="fas fa-edit"></i>
+                <span class="metric-label">Updated</span>
+                <span class="metric-value">{{ post.updated|date:"M d, Y" }}</span>
+                <span class="metric-time-ago">({{ post.updated|time_since_published }})</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="metrics-row secondary-metrics">
+            <div class="metric-group">
+                <i class="fas fa-clock"></i>
+                <span class="metric-value">{{ post.reading_time|format_duration }}</span>
+                <span class="metric-label">read</span>
+            </div>
+            
+            <div class="metric-group">
+                <i class="fas fa-eye"></i>
+                <span class="metric-value">{{ post.views.count|default:"0"|format_number }}</span>
+                <span class="metric-label">views</span>
+            </div>
+            
+            {% if post.tags.exists %}
+            <div class="metric-group">
+                <i class="fas fa-tags"></i>
+                <span class="metric-value">{{ post.tags.count }}</span>
+                <span class="metric-label">tag{{ post.tags.count|pluralize }}</span>
+            </div>
+            {% endif %}
+            
+            {% if post|has_system_connection %}
+            <div class="metric-group">
+                <i class="fas fa-link"></i>
+                <span class="metric-value">{{ post.get_system_connections.count }}</span>
+                <span class="metric-label">system{{ post.get_system_connections.count|pluralize }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
     {% else %}
     <!-- Default: compact style -->
     {% include 'blog/includes/post_metrics_display.html' with post=post style='compact' %}
@@ -159,209 +236,83 @@
 </div>
 
 <style>
-/* Post Metrics Component Styles */
-.post-metrics-display {
-    font-family: var(--font-body);
-    color: var(--color-text-secondary);
-}
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
 
-/* Full Metrics Grid */
-.metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: var(--spacing-lg);
-}
+/* Only styles that are NOT in consolidated CSS or need specific adjustments */
 
-.metric-item {
+/* Detailed metrics layout (new style not in consolidated CSS) */
+.metrics-detailed {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm);
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--border-radius-md);
-    transition: all var(--transition-fast);
-}
-
-.metric-item:hover {
-    background: rgba(38, 198, 218, 0.05);
-    border-color: rgba(38, 198, 218, 0.2);
-    transform: translateY(-2px);
-}
-
-.metric-item.featured {
-    background: rgba(255, 245, 157, 0.1);
-    border-color: rgba(255, 245, 157, 0.3);
-    color: var(--color-yellow);
-}
-
-.metric-icon {
-    width: 32px;
-    height: 32px;
-    background: rgba(38, 198, 218, 0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-teal);
-    font-size: 0.9rem;
-    flex-shrink: 0;
-}
-
-.metric-icon[data-category-color] {
-    background: var(--category-color, rgba(38, 198, 218, 0.1));
-    color: var(--category-color, var(--color-teal));
-}
-
-.metric-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.metric-value {
-    font-family: var(--font-code);
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 0.2rem;
-    line-height: 1;
-}
-
-.metric-label {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    line-height: 1;
-}
-
-/* Compact Metrics */
-.metrics-compact {
-    display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: var(--spacing-md);
+    font-family: var(--font-body);
+}
+
+.metrics-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
     flex-wrap: wrap;
 }
 
-.metrics-compact .metric-item {
+.primary-metrics {
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.secondary-metrics {
+    font-size: 0.9rem;
+}
+
+.metric-group {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
     font-size: 0.85rem;
-    background: none;
-    border: none;
-    padding: 0;
-}
-
-.metrics-compact .metric-item i {
-    font-size: 0.75rem;
-    color: var(--color-lavender);
-}
-
-.metric-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    padding: 0.2rem 0.6rem;
-    background: rgba(179, 157, 219, 0.1);
-    border: 1px solid rgba(179, 157, 219, 0.3);
-    border-radius: var(--border-radius-sm);
-    font-family: var(--font-code);
-    font-size: 0.75rem;
-    color: var(--color-lavender);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.category-badge[data-category-color] {
-    background: var(--category-color, rgba(179, 157, 219, 0.1));
-    border-color: var(--category-color, rgba(179, 157, 219, 0.3));
-    color: var(--category-color, var(--color-lavender));
-}
-
-.featured-badge {
-    background: rgba(255, 245, 157, 0.2);
-    border-color: rgba(255, 245, 157, 0.4);
-    color: var(--color-yellow);
-}
-
-/* Minimal Metrics */
-.metrics-minimal {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    font-size: 0.8rem;
-    color: var(--color-text-tertiary);
-}
-
-.metric-separator {
-    opacity: 0.5;
-}
-
-.metric-category {
-    color: var(--color-lavender);
-    font-weight: 500;
-}
-
-/* Inline Metrics */
-.metrics-inline {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    font-family: var(--font-code);
-    font-size: 0.85rem;
-}
-
-.stat-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
     white-space: nowrap;
 }
 
-.stat-label {
+.metric-group i {
+    color: var(--color-lavender);
+    font-size: 0.8rem;
+    width: 14px;
+    text-align: center;
+}
+
+.metric-label {
     color: var(--color-text-secondary);
+    font-weight: 400;
 }
 
-.stat-value {
+.metric-value {
     color: var(--color-text);
-    font-weight: 500;
+    font-weight: 600;
 }
 
-.stat-separator {
+.metric-time-ago {
     color: var(--color-text-tertiary);
-    opacity: 0.6;
+    font-style: italic;
+    font-size: 0.8rem;
 }
 
-/* Responsive Design */
-@media (max-width: 991px) {
-    .metrics-grid {
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: var(--spacing-md);
-    }
-    
-    .metrics-compact {
-        gap: var(--spacing-sm);
-    }
-}
-
+/* Component-specific responsive adjustments (override consolidated where needed) */
 @media (max-width: 767px) {
-    .metrics-grid {
-        grid-template-columns: 1fr 1fr;
+    .metrics-detailed .metrics-row {
+        flex-direction: column;
+        align-items: flex-start;
         gap: var(--spacing-sm);
     }
     
-    .metric-item {
-        padding: var(--spacing-xs);
+    .metric-group {
+        justify-content: space-between;
+        width: 100%;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: var(--border-radius-sm);
     }
-    
-    .metric-icon {
-        width: 28px;
-        height: 28px;
-        font-size: 0.8rem;
-    }
-    
+}
+
+@media (max-width: 576px) {
     .metrics-compact {
         flex-direction: column;
         align-items: flex-start;
@@ -371,16 +322,7 @@
     .metrics-inline .stat-item {
         flex-direction: column;
         gap: 0;
-    }
-}
-
-@media (max-width: 576px) {
-    .metrics-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .metrics-compact .metric-item {
-        font-size: 0.8rem;
+        text-align: center;
     }
     
     .metric-badge {
@@ -388,4 +330,65 @@
         padding: 0.15rem 0.4rem;
     }
 }
+
+/* Enhanced category color integration (specific to this component) */
+.metric-icon[style*="--category-color"] {
+    background: rgba(var(--category-color), 0.1) !important;
+    color: var(--category-color) !important;
+    border: 1px solid rgba(var(--category-color), 0.3);
+}
+
+.metric-badge[style*="--category-color"] {
+    background: rgba(var(--category-color), 0.1) !important;
+    border-color: rgba(var(--category-color), 0.3) !important;
+    color: var(--category-color) !important;
+}
+
+/* Accessibility enhancements specific to metrics */
+.post-metrics-display[aria-label]:before {
+    content: attr(aria-label);
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* Focus indicators for interactive metric items */
+.metric-item:focus,
+.metric-badge:focus {
+    outline: 2px solid var(--color-lavender);
+    outline-offset: 2px;
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+    .metric-item,
+    .metric-badge {
+        border-width: 2px;
+    }
+    
+    .metrics-detailed .primary-metrics {
+        border-bottom-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .metric-item:hover {
+        transform: none;
+    }
+}
 </style>
+
+<!-- 
+REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Metric item hover effects via initializeCardInteractions()
+- Intersection observers for entrance animations
+- Click handlers for interactive metrics
+- Touch interactions and responsive behavior
+- All state management and accessibility
+
+Metrics functionality is fully managed by DatalogInterface.initializeMetricCards()
+-->
