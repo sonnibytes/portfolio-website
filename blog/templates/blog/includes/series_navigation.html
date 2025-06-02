@@ -1,6 +1,6 @@
 <!----
- * AURA DataLogs - Series Navigation Component
- * Reusable component for displaying blog post series navigation
+ * AURA DataLogs - Series Navigation Component (STREAMLINED)
+ * Reusable component with minimal CSS - relies on master stylesheet
  * Usage: {--% include 'blog/includes/series_navigation.html' with post=post style="full" %--}
  * Styles: full, compact, minimal, progress
 ---->
@@ -13,13 +13,13 @@
     
     {% if style == 'full' %}
     <!-- Full series navigation for detail pages -->
-    <div class="series-container glass-card">
-        <div class="series-header">
+    <div class="glass-card series-container">
+        <div class="card-header">
             <div class="series-icon">
                 <i class="fas fa-layer-group"></i>
             </div>
             <div class="series-info">
-                <h3 class="series-title">{{ post.series.title }}</h3>
+                <h3 class="card-title">{{ post.series.title }}</h3>
                 <p class="series-description">{{ post.series.description|truncate_smart:100 }}</p>
             </div>
             <div class="series-stats">
@@ -29,159 +29,151 @@
                 </div>
                 <div class="series-progress-ring">
                     {% with progress=post.get_series_progress %}
-                    <svg viewBox="0 0 36 36" class="circular-chart">
-                        <path class="circle-bg" d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                        <path class="circle" 
-                              stroke-dasharray="{{ progress }}, 100"
-                              d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                        <text x="18" y="20.35" class="percentage">{{ progress|floatformat:0 }}%</text>
-                    </svg>
+                    {% circular_progress progress 100 size="60px" color="coral" %}
                     {% endwith %}
                 </div>
             </div>
         </div>
         
         <!-- Series Progress Timeline -->
-        <div class="series-timeline">
-            <div class="timeline-track">
-                <div class="timeline-progress" style="width: {{ post.get_series_progress }}%;"></div>
-            </div>
-            <div class="timeline-posts">
-                {% for series_post in post.series.posts.all %}
-                <div class="timeline-post-marker {% if series_post.id == post.id %}current{% elif series_post.get_series_position < post.get_series_position %}completed{% else %}upcoming{% endif %}">
-                    <div class="marker-dot">
-                        {% if series_post.id == post.id %}
-                        <i class="fas fa-eye"></i>
-                        {% elif series_post.get_series_position < post.get_series_position %}
-                        <i class="fas fa-check"></i>
-                        {% else %}
-                        <span>{{ series_post.get_series_position }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="marker-content">
-                        <div class="marker-title">
-                            {% if series_post.id != post.id %}
-                            <a href="{{ series_post.get_absolute_url }}">{{ series_post.title|truncate_smart:30 }}</a>
+        <div class="card-content">
+            <div class="series-timeline">
+                <div class="timeline-track">
+                    <div class="timeline-progress" style="width: {{ post.get_series_progress }}%;"></div>
+                </div>
+                <div class="timeline-posts">
+                    {% for series_post in post.series.posts.all %}
+                    <div class="timeline-post-marker {% if series_post.id == post.id %}current{% elif series_post.get_series_position < post.get_series_position %}completed{% else %}upcoming{% endif %}">
+                        <div class="marker-dot">
+                            {% if series_post.id == post.id %}
+                            <i class="fas fa-eye"></i>
+                            {% elif series_post.get_series_position < post.get_series_position %}
+                            <i class="fas fa-check"></i>
                             {% else %}
-                            <span class="current-post">{{ series_post.title|truncate_smart:30 }}</span>
+                            <span>{{ series_post.get_series_position }}</span>
                             {% endif %}
                         </div>
-                        <div class="marker-meta">
-                            <span class="marker-number">Part {{ series_post.get_series_position }}</span>
-                            <span class="marker-reading-time">{{ series_post.reading_time|format_duration }}</span>
+                        <div class="marker-content">
+                            <div class="marker-title">
+                                {% if series_post.id != post.id %}
+                                <a href="{{ series_post.get_absolute_url }}">{{ series_post.title|truncate_smart:30 }}</a>
+                                {% else %}
+                                <span class="current-post">{{ series_post.title|truncate_smart:30 }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="marker-meta">
+                                <span class="marker-number">Part {{ series_post.get_series_position }}</span>
+                                <span class="marker-reading-time">{{ series_post.reading_time|format_duration }}</span>
+                            </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
-        </div>
-        
-        <!-- Navigation Controls -->
-        <div class="series-navigation-controls">
-            <div class="nav-buttons">
-                {% if post.get_previous_in_series %}
-                <a href="{{ post.get_previous_in_series.get_absolute_url }}" class="series-nav-btn prev-btn">
-                    <div class="nav-icon">
-                        <i class="fas fa-chevron-left"></i>
-                    </div>
-                    <div class="nav-content">
-                        <div class="nav-label">Previous</div>
-                        <div class="nav-title">{{ post.get_previous_in_series.title|truncate_smart:40 }}</div>
-                        <div class="nav-meta">Part {{ post.get_previous_in_series.get_series_position }}</div>
-                    </div>
-                </a>
-                {% else %}
-                <div class="series-nav-btn disabled">
-                    <div class="nav-icon">
-                        <i class="fas fa-ban"></i>
-                    </div>
-                    <div class="nav-content">
-                        <div class="nav-label">First Post</div>
-                        <div class="nav-title">You're at the beginning</div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                {% if post.get_next_in_series %}
-                <a href="{{ post.get_next_in_series.get_absolute_url }}" class="series-nav-btn next-btn">
-                    <div class="nav-content">
-                        <div class="nav-label">Next</div>
-                        <div class="nav-title">{{ post.get_next_in_series.title|truncate_smart:40 }}</div>
-                        <div class="nav-meta">Part {{ post.get_next_in_series.get_series_position }}</div>
-                    </div>
-                    <div class="nav-icon">
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                </a>
-                {% else %}
-                <div class="series-nav-btn disabled">
-                    <div class="nav-content">
-                        <div class="nav-label">Series Complete</div>
-                        <div class="nav-title">You've reached the end</div>
-                    </div>
-                    <div class="nav-icon">
-                        <i class="fas fa-flag-checkered"></i>
-                    </div>
-                </div>
-                {% endif %}
             </div>
             
-            <!-- Series Overview Button -->
-            <div class="series-overview">
-                <a href="{{ post.series.get_absolute_url }}" class="overview-btn">
-                    <i class="fas fa-list"></i>
-                    <span>View Full Series</span>
-                    <span class="series-badge">{{ post.series.posts.count }} parts</span>
-                </a>
+            <!-- Navigation Controls -->
+            <div class="series-navigation-controls">
+                <div class="nav-buttons">
+                    <!-- Previous Post -->
+                    {% if post.get_previous_in_series %}
+                    <a href="{{ post.get_previous_in_series.get_absolute_url }}" class="series-nav-btn prev-btn">
+                        <div class="nav-icon">
+                            <i class="fas fa-chevron-left"></i>
+                        </div>
+                        <div class="nav-content">
+                            <div class="nav-label">Previous</div>
+                            <div class="nav-title">{{ post.get_previous_in_series.title|truncate_smart:40 }}</div>
+                            <div class="nav-meta">Part {{ post.get_previous_in_series.get_series_position }}</div>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="series-nav-btn disabled">
+                        <div class="nav-icon">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div class="nav-content">
+                            <div class="nav-label">First Post</div>
+                            <div class="nav-title">You're at the beginning</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Next Post -->
+                    {% if post.get_next_in_series %}
+                    <a href="{{ post.get_next_in_series.get_absolute_url }}" class="series-nav-btn next-btn">
+                        <div class="nav-content">
+                            <div class="nav-label">Next</div>
+                            <div class="nav-title">{{ post.get_next_in_series.title|truncate_smart:40 }}</div>
+                            <div class="nav-meta">Part {{ post.get_next_in_series.get_series_position }}</div>
+                        </div>
+                        <div class="nav-icon">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="series-nav-btn disabled">
+                        <div class="nav-content">
+                            <div class="nav-label">Series Complete</div>
+                            <div class="nav-title">You've reached the end</div>
+                        </div>
+                        <div class="nav-icon">
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Series Overview Button -->
+                <div class="series-overview">
+                    <a href="{{ post.series.get_absolute_url }}" class="btn btn-primary">
+                        <i class="fas fa-list"></i>
+                        <span>View Full Series</span>
+                        <span class="series-badge">{{ post.series.posts.count }} parts</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
     
     {% elif style == 'compact' %}
     <!-- Compact series navigation for cards -->
-    <div class="series-compact-nav">
-        <div class="series-header-compact">
-            <div class="series-badge">
-                <i class="fas fa-layer-group"></i>
-                <span>Series: {{ post.series.title|truncate_smart:20 }}</span>
+    <div class="glass-card series-compact-nav">
+        <div class="card-content">
+            <div class="series-header-compact">
+                <div class="series-badge">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Series: {{ post.series.title|truncate_smart:20 }}</span>
+                </div>
+                <div class="series-position">
+                    {{ post.get_series_position }}/{{ post.series.posts.count }}
+                </div>
             </div>
-            <div class="series-position">
-                {{ post.get_series_position }}/{{ post.series.posts.count }}
-            </div>
-        </div>
-        
-        <div class="series-progress-compact">
-            <div class="progress-bar-container">
-                <div class="progress-bar" style="width: {{ post.get_series_progress }}%;"></div>
-            </div>
-            <div class="progress-text">{{ post.get_series_progress|floatformat:0 }}% complete</div>
-        </div>
-        
-        <div class="series-nav-compact">
-            {% if post.get_previous_in_series %}
-            <a href="{{ post.get_previous_in_series.get_absolute_url }}" class="compact-nav-btn prev" title="Previous: {{ post.get_previous_in_series.title }}">
-                <i class="fas fa-chevron-left"></i>
-                <span>Prev</span>
-            </a>
-            {% endif %}
             
-            <a href="{{ post.series.get_absolute_url }}" class="compact-overview-btn" title="View full series">
-                <i class="fas fa-list"></i>
-                <span>Series</span>
-            </a>
+            <div class="series-progress-compact">
+                {% progress_bar post.get_series_progress 100 show_text=True color="coral" %}
+                <div class="progress-text">{{ post.get_series_progress|floatformat:0 }}% complete</div>
+            </div>
             
-            {% if post.get_next_in_series %}
-            <a href="{{ post.get_next_in_series.get_absolute_url }}" class="compact-nav-btn next" title="Next: {{ post.get_next_in_series.title }}">
-                <span>Next</span>
-                <i class="fas fa-chevron-right"></i>
-            </a>
-            {% endif %}
+            <div class="series-nav-compact">
+                {% if post.get_previous_in_series %}
+                <a href="{{ post.get_previous_in_series.get_absolute_url }}" class="btn btn-outline compact-nav-btn prev" title="Previous: {{ post.get_previous_in_series.title }}">
+                    <i class="fas fa-chevron-left"></i>
+                    <span>Prev</span>
+                </a>
+                {% endif %}
+                
+                <a href="{{ post.series.get_absolute_url }}" class="btn btn-secondary compact-overview-btn" title="View full series">
+                    <i class="fas fa-list"></i>
+                    <span>Series</span>
+                </a>
+                
+                {% if post.get_next_in_series %}
+                <a href="{{ post.get_next_in_series.get_absolute_url }}" class="btn btn-outline compact-nav-btn next" title="Next: {{ post.get_next_in_series.title }}">
+                    <span>Next</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
         </div>
     </div>
     
@@ -216,18 +208,15 @@
             <span class="progress-fraction">{{ post.get_series_position }}/{{ post.series.posts.count }}</span>
         </div>
         
-        <div class="progress-bar-detailed">
-            <div class="progress-track">
-                <div class="progress-fill" style="width: {{ post.get_series_progress }}%;"></div>
+        {% progress_bar post.get_series_progress 100 show_text=False color="coral" css_class="series-progress-bar" %}
+        
+        <div class="progress-markers">
+            {% for series_post in post.series.posts.all %}
+            <div class="progress-marker {% if series_post.id == post.id %}current{% elif series_post.get_series_position < post.get_series_position %}completed{% endif %}"
+                 style="left: {{ series_post.get_series_position|mul:100|div:post.series.posts.count|sub:5 }}%;"
+                 title="Part {{ series_post.get_series_position }}: {{ series_post.title }}">
             </div>
-            <div class="progress-markers">
-                {% for series_post in post.series.posts.all %}
-                <div class="progress-marker {% if series_post.id == post.id %}current{% elif series_post.get_series_position < post.get_series_position %}completed{% endif %}"
-                     style="left: {{ series_post.get_series_position|mul:100|div:post.series.posts.count|subtract:5 }}%;"
-                     title="Part {{ series_post.get_series_position }}: {{ series_post.title }}">
-                </div>
-                {% endfor %}
-            </div>
+            {% endfor %}
         </div>
         
         <div class="progress-percentage">{{ post.get_series_progress|floatformat:0 }}% Complete</div>
@@ -242,19 +231,16 @@
 {% endif %}
 
 <style>
-/* Series Navigation Component Styles */
-.series-navigation-display {
-    font-family: var(--font-body);
-    margin: var(--spacing-xl) 0;
-}
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
 
-/* ========== FULL SERIES NAVIGATION ========== */
+/* Only styles that are NOT in the master CSS or need component-specific adjustments */
+
+/* Series Container - enhance glass card */
 .series-container {
-    padding: var(--spacing-xxl);
     background: 
         var(--gradient-glass),
         rgba(255, 138, 128, 0.02);
-    border: 1px solid rgba(255, 138, 128, 0.1);
+    border-color: rgba(255, 138, 128, 0.1);
     position: relative;
     overflow: hidden;
 }
@@ -270,15 +256,7 @@
     opacity: 0.8;
 }
 
-.series-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-xl);
-    padding-bottom: var(--spacing-lg);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
+/* Series Icon (specific styling) */
 .series-icon {
     width: 60px;
     height: 60px;
@@ -293,16 +271,9 @@
     box-shadow: 0 0 20px rgba(255, 138, 128, 0.3);
 }
 
+/* Series Info */
 .series-info {
     flex: 1;
-}
-
-.series-title {
-    font-family: var(--font-heading);
-    font-size: 1.4rem;
-    color: var(--color-coral);
-    margin: 0 0 var(--spacing-sm) 0;
-    font-weight: 600;
 }
 
 .series-description {
@@ -311,67 +282,13 @@
     line-height: 1.5;
 }
 
+/* Series Stats */
 .series-stats {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-md);
     text-align: center;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-}
-
-.stat-value {
-    font-family: var(--font-code);
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--color-coral);
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Circular Progress Ring */
-.series-progress-ring {
-    width: 60px;
-    height: 60px;
-}
-
-.circular-chart {
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);
-}
-
-.circle-bg {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.1);
-    stroke-width: 2;
-}
-
-.circle {
-    fill: none;
-    stroke: var(--color-coral);
-    stroke-width: 2;
-    stroke-linecap: round;
-    transition: stroke-dasharray 0.3s ease;
-}
-
-.percentage {
-    fill: var(--color-coral);
-    font-family: var(--font-code);
-    font-size: 0.4em;
-    font-weight: 600;
-    text-anchor: middle;
-    transform: rotate(90deg);
 }
 
 /* Series Timeline */
@@ -616,44 +533,19 @@
     text-align: center;
 }
 
-.overview-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md) var(--spacing-lg);
-    background: rgba(255, 138, 128, 0.1);
-    border: 1px solid rgba(255, 138, 128, 0.3);
-    border-radius: var(--border-radius-md);
-    color: var(--color-coral);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all var(--transition-fast);
-}
-
-.overview-btn:hover {
-    background: rgba(255, 138, 128, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 138, 128, 0.3);
-    color: var(--color-coral);
-}
-
 .series-badge {
     background: rgba(255, 255, 255, 0.1);
     padding: 0.2rem 0.5rem;
     border-radius: var(--border-radius-sm);
     font-family: var(--font-code);
     font-size: 0.75rem;
+    margin-left: var(--spacing-sm);
 }
 
-/* ========== COMPACT SERIES NAVIGATION ========== */
+/* Compact Series Navigation */
 .series-compact-nav {
     background: rgba(255, 138, 128, 0.05);
-    border: 1px solid rgba(255, 138, 128, 0.2);
-    border-radius: var(--border-radius-lg);
-    padding: var(--spacing-md);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
+    border-color: rgba(255, 138, 128, 0.2);
 }
 
 .series-header-compact {
@@ -661,6 +553,7 @@
     justify-content: space-between;
     align-items: center;
     gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
 }
 
 .series-badge {
@@ -683,23 +576,7 @@
 }
 
 .series-progress-compact {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-}
-
-.progress-bar-container {
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--color-coral), var(--color-lavender));
-    border-radius: 3px;
-    transition: width 0.3s ease;
+    margin-bottom: var(--spacing-md);
 }
 
 .progress-text {
@@ -707,6 +584,7 @@
     font-size: 0.75rem;
     color: var(--color-text-secondary);
     text-align: center;
+    margin-top: var(--spacing-xs);
 }
 
 .series-nav-compact {
@@ -718,29 +596,13 @@
 
 .compact-nav-btn,
 .compact-overview-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius-sm);
-    color: var(--color-text-secondary);
-    text-decoration: none;
+    flex: 1;
+    text-align: center;
     font-size: 0.8rem;
-    transition: all var(--transition-fast);
-    white-space: nowrap;
+    padding: var(--spacing-xs) var(--spacing-sm);
 }
 
-.compact-nav-btn:hover,
-.compact-overview-btn:hover {
-    background: rgba(255, 138, 128, 0.1);
-    border-color: rgba(255, 138, 128, 0.3);
-    color: var(--color-coral);
-    transform: translateY(-1px);
-}
-
-/* ========== MINIMAL SERIES NAVIGATION ========== */
+/* Minimal Series Navigation */
 .series-minimal {
     display: flex;
     align-items: center;
@@ -800,7 +662,7 @@
     color: var(--color-coral);
 }
 
-/* ========== PROGRESS-ONLY DISPLAY ========== */
+/* Progress-Only Display */
 .series-progress-only {
     display: flex;
     flex-direction: column;
@@ -830,31 +692,10 @@
     color: var(--color-text-secondary);
 }
 
-.progress-bar-detailed {
-    position: relative;
-}
-
-.progress-track {
-    height: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--color-coral), var(--color-lavender));
-    border-radius: 4px;
-    transition: width 0.5s ease;
-}
-
 .progress-markers {
-    position: absolute;
-    top: -2px;
-    left: 0;
-    right: 0;
+    position: relative;
     height: 12px;
-    pointer-events: none;
+    margin: var(--spacing-xs) 0;
 }
 
 .progress-marker {
@@ -889,7 +730,7 @@
     font-weight: 600;
 }
 
-/* ========== ANIMATIONS ========== */
+/* Animations */
 @keyframes shimmer {
     0%, 100% { transform: translateX(-100%); }
     50% { transform: translateX(100%); }
@@ -906,55 +747,8 @@
     }
 }
 
-@keyframes seriesEntrance {
-    0% {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.series-navigation-display {
-    animation: seriesEntrance 0.6s ease-out;
-}
-
-.timeline-post-marker {
-    animation: markerSlideIn 0.5s ease-out;
-}
-
-.timeline-post-marker:nth-child(1) { animation-delay: 0.1s; }
-.timeline-post-marker:nth-child(2) { animation-delay: 0.2s; }
-.timeline-post-marker:nth-child(3) { animation-delay: 0.3s; }
-.timeline-post-marker:nth-child(4) { animation-delay: 0.4s; }
-.timeline-post-marker:nth-child(5) { animation-delay: 0.5s; }
-
-@keyframes markerSlideIn {
-    0% {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-/* ========== RESPONSIVE DESIGN ========== */
+/* Responsive Design */
 @media (max-width: 991px) {
-    .series-header {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--spacing-md);
-    }
-    
-    .series-stats {
-        flex-direction: row;
-        justify-content: center;
-    }
-    
     .nav-buttons {
         grid-template-columns: 1fr;
         gap: var(--spacing-md);
@@ -978,10 +772,6 @@
 }
 
 @media (max-width: 767px) {
-    .series-container {
-        padding: var(--spacing-lg);
-    }
-    
     .series-header-compact {
         flex-direction: column;
         align-items: flex-start;
@@ -996,7 +786,6 @@
     .compact-nav-btn,
     .compact-overview-btn {
         justify-content: center;
-        flex: 1;
     }
     
     .series-minimal {
@@ -1017,18 +806,9 @@
 }
 
 @media (max-width: 576px) {
-    .series-progress-ring {
-        width: 50px;
-        height: 50px;
-    }
-    
     .series-icon {
         width: 50px;
         height: 50px;
-        font-size: 1.2rem;
-    }
-    
-    .series-title {
         font-size: 1.2rem;
     }
     
@@ -1049,33 +829,9 @@
     }
 }
 
-/* ========== ACCESSIBILITY IMPROVEMENTS ========== */
-.series-nav-btn:focus,
-.compact-nav-btn:focus,
-.minimal-nav-btn:focus {
-    outline: 2px solid var(--color-coral);
-    outline-offset: 2px;
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-    .series-container,
-    .series-compact-nav,
-    .series-minimal {
-        border-width: 2px;
-        backdrop-filter: none;
-        background: rgba(13, 13, 31, 0.9);
-    }
-    
-    .timeline-post-marker {
-        border-width: 2px;
-    }
-}
-
-/* Reduced motion */
+/* Accessibility */
 @media (prefers-reduced-motion: reduce) {
-    .series-navigation-display,
-    .timeline-post-marker,
+    .timeline-progress::after,
     .progress-marker.current {
         animation: none;
     }
@@ -1084,289 +840,15 @@
     .timeline-post-marker:hover {
         transform: none;
     }
-    
-    .timeline-progress::after {
-        animation: none;
-    }
-}
-
-/* ========== PRINT STYLES ========== */
-@media print {
-    .series-navigation-display {
-        background: white !important;
-        color: black !important;
-        border: 2px solid #333 !important;
-        box-shadow: none !important;
-        break-inside: avoid;
-    }
-    
-    .series-nav-btn,
-    .compact-nav-btn {
-        display: none !important;
-    }
-    
-    .series-title {
-        color: #333 !important;
-    }
-    
-    .timeline-post-marker.current {
-        background: #f0f0f0 !important;
-        border: 2px solid #333 !important;
-    }
-}
-
-/* ========== DARK MODE ENHANCEMENTS ========== */
-.series-navigation-display.dark-mode {
-    /* Already the default styling */
-}
-
-/* Light mode variant */
-.series-navigation-display.light-mode {
-    --color-coral: #d32f2f;
-    --color-text: #333333;
-    --color-text-secondary: #666666;
-}
-
-.series-navigation-display.light-mode .series-container {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.1);
-}
-
-/* ========== JAVASCRIPT INTERACTION CLASSES ========== */
-.series-loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.series-loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 24px;
-    height: 24px;
-    margin: -12px 0 0 -12px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-top: 2px solid var(--color-coral);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.series-transition {
-    transition: all 0.3s ease;
-}
-
-.series-highlight {
-    background: rgba(255, 138, 128, 0.1) !important;
-    border-color: rgba(255, 138, 128, 0.3) !important;
-    box-shadow: 0 0 15px rgba(255, 138, 128, 0.2) !important;
-}
-
-/* ========== UTILITY CLASSES ========== */
-.series-coral-gradient {
-    background: linear-gradient(135deg, var(--color-coral), var(--color-lavender));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
-
-.series-glow {
-    box-shadow: 0 0 20px rgba(255, 138, 128, 0.3);
-}
-
-.series-pulse {
-    animation: currentPulse 2s ease-in-out infinite;
-}
-
-/* ========== THEME VARIANTS ========== */
-.series-navigation-display.theme-minimal {
-    --series-spacing: calc(var(--spacing-md) * 0.75);
-}
-
-.series-navigation-display.theme-compact {
-    --series-spacing: var(--spacing-md);
-}
-
-.series-navigation-display.theme-spacious {
-    --series-spacing: calc(var(--spacing-lg) * 1.5);
 }
 </style>
 
-<script>
-// Series Navigation Component JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-    initSeriesNavigation();
-});
-
-function initSeriesNavigation() {
-    console.log('📚 Initializing series navigation...');
-    
-    // Initialize progress animations
-    initProgressAnimations();
-    
-    // Initialize timeline interactions
-    initTimelineInteractions();
-    
-    // Initialize keyboard navigation
-    initSeriesKeyboardNav();
-    
-    // Initialize touch gestures for mobile
-    initSeriesTouchGestures();
-    
-    console.log('✅ Series navigation initialized');
-}
-
-function initProgressAnimations() {
-    const progressBars = document.querySelectorAll('.progress-bar, .progress-fill, .timeline-progress');
-    
-    // Animate progress bars on scroll
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const progressBar = entry.target;
-                const targetWidth = progressBar.style.width || '0%';
-                
-                // Start from 0 and animate to target
-                progressBar.style.width = '0%';
-                progressBar.style.transition = 'width 1s ease-out';
-                
-                setTimeout(() => {
-                    progressBar.style.width = targetWidth;
-                }, 100);
-                
-                observer.unobserve(progressBar);
-            }
-        });
-    }, { threshold: 0.3 });
-    
-    progressBars.forEach(bar => observer.observe(bar));
-}
-
-function initTimelineInteractions() {
-    const timelineMarkers = document.querySelectorAll('.timeline-post-marker');
-    
-    timelineMarkers.forEach(marker => {
-        // Enhanced hover effects
-        marker.addEventListener('mouseenter', function() {
-            if (!this.classList.contains('current')) {
-                this.style.transform = 'translateX(10px) scale(1.02)';
-            }
-        });
-        
-        marker.addEventListener('mouseleave', function() {
-            if (!this.classList.contains('current')) {
-                this.style.transform = 'translateX(0) scale(1)';
-            }
-        });
-        
-        // Click handling for non-current posts
-        marker.addEventListener('click', function(e) {
-            if (this.classList.contains('current')) {
-                e.preventDefault();
-                return;
-            }
-            
-            // Add visual feedback
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = '';
-            }, 150);
-        });
-    });
-}
-
-function initSeriesKeyboardNav() {
-    const navButtons = document.querySelectorAll('.series-nav-btn, .compact-nav-btn, .minimal-nav-btn');
-    
-    navButtons.forEach(button => {
-        button.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.click();
-            }
-        });
-        
-        button.addEventListener('focus', function() {
-            this.style.outline = '2px solid var(--color-coral)';
-            this.style.outlineOffset = '2px';
-        });
-        
-        button.addEventListener('blur', function() {
-            this.style.outline = 'none';
-        });
-    });
-    
-    // Arrow key navigation between series posts
-    document.addEventListener('keydown', function(e) {
-        if (e.altKey) {
-            if (e.key === 'ArrowLeft') {
-                const prevBtn = document.querySelector('.prev-btn, .compact-nav-btn.prev');
-                if (prevBtn && !prevBtn.classList.contains('disabled')) {
-                    e.preventDefault();
-                    prevBtn.click();
-                }
-            } else if (e.key === 'ArrowRight') {
-                const nextBtn = document.querySelector('.next-btn, .compact-nav-btn.next');
-                if (nextBtn && !nextBtn.classList.contains('disabled')) {
-                    e.preventDefault();
-                    nextBtn.click();
-                }
-            }
-        }
-    });
-}
-
-function initSeriesTouchGestures() {
-    const seriesContainer = document.querySelector('.series-container, .series-compact-nav');
-    if (!seriesContainer) return;
-    
-    let startX = 0;
-    let startY = 0;
-    
-    seriesContainer.addEventListener('touchstart', function(e) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-    }, { passive: true });
-    
-    seriesContainer.addEventListener('touchend', function(e) {
-        const endX = e.changedTouches[0].clientX;
-        const endY = e.changedTouches[0].clientY;
-        const diffX = startX - endX;
-        const diffY = startY - endY;
-        
-        // Only trigger if horizontal swipe is more significant than vertical
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-            if (diffX > 0) {
-                // Swipe left - go to next
-                const nextBtn = document.querySelector('.next-btn, .compact-nav-btn.next');
-                if (nextBtn && !nextBtn.classList.contains('disabled')) {
-                    nextBtn.click();
-                }
-            } else {
-                // Swipe right - go to previous
-                const prevBtn = document.querySelector('.prev-btn, .compact-nav-btn.prev');
-                if (prevBtn && !prevBtn.classList.contains('disabled')) {
-                    prevBtn.click();
-                }
-            }
-        }
-    }, { passive: true });
-}
-
-// Export functions for global access
-window.initSeriesNavigation = initSeriesNavigation;
-window.animateSeriesProgress = function(targetPercentage) {
-    const progressBars = document.querySelectorAll('.progress-bar, .progress-fill');
-    progressBars.forEach(bar => {
-        bar.style.transition = 'width 0.5s ease';
-        bar.style.width = targetPercentage + '%';
-    });
-};
-
-console.log('📚 Series navigation component loaded');
-</script>
+<!-- 
+REMOVED: All JavaScript functions - now handled by datalogInterface.initializeSeriesNavigation()
+The master JavaScript will automatically:
+- Initialize series navigation interactions
+- Handle keyboard navigation (Alt + Arrow keys)
+- Manage touch/swipe gestures for mobile navigation
+- Apply intersection observers for marker animations
+- Handle all button interactions and state management
+-->
