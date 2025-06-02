@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - DataLogs Detail Template - CLEANED
+ * AURA Portfolio - DataLogs Detail Template - FINAL CLEANUP
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 3.0.0 - Major Cleanup with Components
+ * Version: 3.1.0 - Fully component-based, no inline styles
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -14,16 +14,13 @@
 {% block meta_description %}{{ post.excerpt|default:post.content|truncate_smart:160 }}{% endblock %}
 
 {% block datalogs_css %}
-<link rel="stylesheet" href="{% static 'blog/css/datalog-detail.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/datalogs_consolidated.css' %}">
 {% pygments_css %}
 {% endblock %}
 
 {% block datalogs_body_class %}post-detail{% endblock %}
 
 {% block datalogs_title %}{{ post.title }}{% endblock %}
-{% block datalogs_subtitle %}
-    {{ post.category.name|default:"General" }} Entry | {{ post.published_date|time_since_published }} | {{ post.reading_time|format_duration }} read
-{% endblock %}
 
 {% block datalogs_breadcrumbs %}
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
@@ -57,11 +54,7 @@
     
         <!-- Table of Contents Sidebar -->
         <aside class="toc-sidebar">
-            <div class="glass-card toc-panel">
-                <h3 class="toc-title">
-                    <i class="fas fa-list-ul"></i>
-                    Contents
-                </h3>
+            {% glass_card title="Contents" css_class="toc-panel" %}
                 
                 {% if post.show_toc and headings %}
                 <nav class="toc-nav">
@@ -75,12 +68,9 @@
                 {% endif %}
                 
                 <!-- Reading Progress -->
-                <div class="reading-progress">
+                <div class="reading-progress-section">
                     <div class="progress-label">Reading Progress</div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" id="readingProgress"></div>
-                    </div>
-                    <div class="progress-percentage" id="progressText">0%</div>
+                    {% progress_bar 0 100 css_class="reading-progress-bar" show_text=True color="lavender" %}
                 </div>
                 
                 <!-- Post Navigation -->
@@ -98,177 +88,89 @@
                     </a>
                     {% endif %}
                 </div>
-            </div>
+            {% endglass_card %}
         </aside>
 
         <!-- Main Content -->
-        <div class="glass-card datalog-content-card">
-            
-            <!-- Post Header with Metrics -->
-            <div class="post-header-section">
-                <div class="post-header-top">
-                    <div class="post-id-badge">{{ post.id|datalog_id }}</div>
-                    <div class="post-status-indicators">
-                        <div class="status-indicator operational"></div>
-                        <span class="status-text">ACTIVE</span>
+        <div class="post-main-content">
+            {% glass_card css_class="datalog-content-card" %}
+                
+                <!-- Post Header with Metrics -->
+                <div class="post-header-section">
+                    <div class="post-header-top">
+                        <div class="post-id-badge">{{ post.id|datalog_id }}</div>
+                        {% status_indicator "operational" with_text=True %}
                     </div>
+                    
+                    <h1 class="datalog-detail-title">{{ post.title }}</h1>
+                    
+                    {% if post.excerpt %}
+                    <p class="datalog-detail-excerpt">{{ post.excerpt }}</p>
+                    {% endif %}
+                    
+                    <!-- Use our reusable component -->
+                    {% include 'blog/includes/post_metrics_display.html' with post=post style='full' %}
                 </div>
-                
-                <h1 class="datalog-detail-title">{{ post.title }}</h1>
-                
-                {% if post.excerpt %}
-                <p class="datalog-detail-excerpt">{{ post.excerpt }}</p>
+
+                <!-- Featured Code Block -->
+                {% if post.featured_code %}
+                <div class="datalog-featured-code">
+                    {% include 'blog/includes/terminal_code_display.html' with code=post.featured_code language=post.featured_code_format filename=post.get_code_filename %}
+                </div>
                 {% endif %}
                 
-                <!-- Use our new reusable component -->
-                {% include 'blog/includes/post_metrics_display.html' with post=post style='full' %}
-            </div>
-
-            <!-- Featured Code Block -->
-            {% if post.featured_code %}
-            <div class="datalog-featured-code">
-                <div class="code-terminal">
-                    <div class="terminal-header">
-                        <div class="terminal-buttons">
-                            <div class="terminal-button red"></div>
-                            <div class="terminal-button yellow"></div>
-                            <div class="terminal-button green"></div>
-                        </div>
-                        <div class="terminal-title">{{ post.get_code_filename }}</div>
-                        <div class="terminal-language">{{ post.featured_code_format|upper }}</div>
-                    </div>
-                    <div class="terminal-content">
-                        <pre><code class="language-{{ post.featured_code_format }}">{{ post.featured_code }}</code></pre>
+                <!-- Main Content -->
+                <div class="datalog-content-body">
+                    {{ post.rendered_content|safe }}
+                </div>
+                
+                <!-- Tags Section -->
+                {% if post.tags.exists %}
+                <div class="datalog-tags-section">
+                    <h3 class="tags-title">
+                        <i class="fas fa-tags me-2"></i>
+                        Related Tags
+                    </h3>
+                    <div class="tags-cloud">
+                        {% for tag in post.tags.all %}
+                        <a href="{% url 'blog:tag' slug=tag.slug %}" class="tag-link">
+                            <i class="fas fa-tag"></i>
+                            {{ tag.name }}
+                        </a>
+                        {% endfor %}
                     </div>
                 </div>
-            </div>
-            {% endif %}
-            
-            <!-- Main Content -->
-            <div class="datalog-content-body">
-                {{ post.rendered_content|safe }}
-            </div>
-            
-            <!-- Tags Section -->
-            {% if post.tags.exists %}
-            <div class="datalog-tags-section">
-                <h3 class="tags-title">
-                    <i class="fas fa-tags me-2"></i>
-                    Related Tags
-                </h3>
-                <div class="tags-cloud">
-                    {% for tag in post.tags.all %}
-                    <a href="{% url 'blog:tag' slug=tag.slug %}" class="tag-link">
-                        <i class="fas fa-tag"></i>
-                        {{ tag.name }}
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-            
-            <!-- System Connections (if any) -->
-            {% include 'blog/includes/system_connections.html' with post=post style='full' %}
+                {% endif %}
+                
+                <!-- System Connections (if any) -->
+                {% include 'blog/includes/system_connections.html' with post=post style='full' %}
+                
+                <!-- Social Share -->
+                {% include 'blog/includes/social_share.html' with post=post %}
+                
+            {% endglass_card %}
         </div>
     </div>
                 
     <!-- Series Navigation (if part of series) -->
-    {% if post.is_in_series %}
-    <div class="series-navigation">
-        <div class="glass-card series-panel">
-            <h3 class="series-title">
-                <i class="fas fa-list-ol me-2"></i>
-                Part of Series: {{ post.get_series.title }}
-            </h3>
-            <div class="series-nav-buttons">
-                {% if prev_in_series %}
-                <a href="{% url 'blog:post_detail' slug=prev_in_series.slug %}" 
-                   class="series-nav-btn prev">
-                    <i class="fas fa-chevron-left"></i>
-                    <div class="nav-content">
-                        <div class="nav-label">Previous</div>
-                        <div class="nav-title">{{ prev_in_series.title|truncate_smart:50 }}</div>
-                    </div>
-                </a>
-                {% else %}
-                <div class="series-nav-btn disabled">
-                    <i class="fas fa-chevron-left"></i>
-                    <div class="nav-content">
-                        <div class="nav-label">Previous</div>
-                        <div class="nav-title">Start of Series</div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                {% if next_in_series %}
-                <a href="{% url 'blog:post_detail' slug=next_in_series.slug %}" 
-                   class="series-nav-btn next">
-                    <div class="nav-content">
-                        <div class="nav-label">Next</div>
-                        <div class="nav-title">{{ next_in_series.title|truncate_smart:50 }}</div>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-                {% else %}
-                <div class="series-nav-btn disabled">
-                    <div class="nav-content">
-                        <div class="nav-label">Next</div>
-                        <div class="nav-title">End of Series</div>
-                    </div>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
+    {% include 'blog/includes/series_navigation.html' with post=post %}
     
     <!-- Related DataLogs Section -->
     {% if related_posts %}
     <section class="related-datalogs-section">
-        <div class="glass-card related-panel">
-            <h2 class="related-title">
-                <i class="fas fa-sitemap me-2"></i>
-                Related DataLog Entries
-            </h2>
-            
+        {% glass_card title="Related DataLog Entries" css_class="related-panel" %}
             <div class="related-grid">
                 {% for related in related_posts %}
-                <div class="related-card">
-                    <div class="related-header">
-                        <div class="related-id">{{ related.id|datalog_id }}</div>
-                        {% if related.category %}
-                        <div class="related-category" data-category-color="{{ related.category.color }}">
-                            {{ related.category.code|default:"LOG" }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="related-content">
-                        <h4 class="related-post-title">
-                            <a href="{% url 'blog:post_detail' slug=related.slug %}">{{ related.title }}</a>
-                        </h4>
-                        <p class="related-excerpt">{{ related.excerpt|default:related.content|truncate_smart:80 }}</p>
-                        
-                        <!-- Use compact metrics component -->
-                        {% include 'blog/includes/post_metrics_display.html' with post=related style='minimal' %}
-                    </div>
-                    
-                    <div class="related-link">
-                        <a href="{% url 'blog:post_detail' slug=related.slug %}" title="Access {{ related.title }}">
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
+                {% render_post_card related show_excerpt=False card_type="compact" %}
                 {% endfor %}
             </div>
-        </div>
+        {% endglass_card %}
     </section>
     {% endif %}
     
     <!-- Navigation to Previous/Next Posts -->
     <div class="post-navigation">
-        <div class="glass-card nav-panel">
+        {% glass_card css_class="nav-panel" %}
             <div class="nav-grid">
                 <!-- Previous Post -->
                 {% if previous_post %}
@@ -279,7 +181,6 @@
                     </div>
                     <div class="nav-post-info">
                         <div class="nav-post-title">{{ previous_post.title|truncate_smart:60 }}</div>
-                        <!-- Use inline metrics component -->
                         {% include 'blog/includes/post_metrics_display.html' with post=previous_post style='minimal' %}
                     </div>
                 </a>
@@ -300,7 +201,6 @@
                 <a href="{% url 'blog:post_detail' slug=next_post.slug %}" class="nav-card next-post">
                     <div class="nav-post-info">
                         <div class="nav-post-title">{{ next_post.title|truncate_smart:60 }}</div>
-                        <!-- Use inline metrics component -->
                         {% include 'blog/includes/post_metrics_display.html' with post=next_post style='minimal' %}
                     </div>
                     <div class="nav-direction">
@@ -312,12 +212,12 @@
                 <div class="nav-placeholder"></div>
                 {% endif %}
             </div>
-        </div>
+        {% endglass_card %}
     </div>
     
 </div>
 {% endblock %}
 
 {% block datalogs_js %}
-<script src="{% static 'blog/js/post-detail-enhanced.js' %}"></script>
+<script src="{% static 'blog/js/datalogs_consolidated.js' %}"></script>
 {% endblock %}
