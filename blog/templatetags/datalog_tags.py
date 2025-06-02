@@ -673,7 +673,7 @@ def datalog_meta_tags(post, request=None):
     return mark_safe("\n".join(meta_tags))
 
 
-# =========== Enhanced Inclusion Tags (added w rework to combine various tag files) =========== #
+# =========== Enhanced Inclusion Tags =========== #
 
 @register.inclusion_tag('blog/includes/post_card.html')
 def render_post_card(post, show_excerpt=True, card_type='default'):
@@ -898,7 +898,7 @@ def markdownify(text):
     # Return modified HTML
     return mark_safe(str(soup))
 
-# =========== Code Formating (Pygments) Filter =========== #
+# =========== CODE FORMATTING w PYGMENTS / TERMINAL COMPONENT =========== #
 
 
 @register.filter(name="highlight_code")
@@ -941,6 +941,30 @@ def pygments_css():
 
     # Wrap CSS in style tag, mark safe for rendering
     return mark_safe(f"<style>{css_rules}</style>")
+
+
+@register.inclusion_tag("blog/includes/terminal_code_display.html")
+def terminal_display(post, style='default'):
+    """
+    Renders a terminal code display with syntax highlighting.
+
+    Usage:
+    {% terminal_display post=post %}  # default style
+    {% terminal_display post=post style="compact" %}
+    {% terminal_display post=post style="minimal" %}
+    {% terminal_display post=post style="fullscreen" %}
+
+    Args:
+        post: post
+        style: 'default', 'compact', 'minimal', 'fullscreen'
+    """
+    return {
+        "post": post,
+        "code": post.featured_code,
+        "language": post.featured_code_format,
+        "filename": post.get_code_filename(),
+        "style": style,
+    }
 
 
 # =========== ADDED AFTER GLOBAL FILTERS =============#
@@ -1451,3 +1475,89 @@ def category_quick_stats(categories):
         "max_posts": getattr(most_active, "post_count", 0),
         "min_posts": getattr(least_active, "post_count", 0),
     }
+
+# =========== POST DETAIL PAGE TAGS/FILTERS =============#
+
+
+@register.simple_tag
+def get_related_posts(post, limit=3):
+    """
+    Get related posts based on tags and category.
+    Usage: {% get_related_posts post 3 as related_posts %}
+    """
+    if not post:
+        return Post.objects.none()
+
+    try:
+        # Get posts with same tags or category
+        related_posts = Post.objects.filter(status="published").exclude(id=post.id)
+
+        # Filter by same category first
+        same_category = related_posts.filter(category=post.category)
+
+        # If we have enough from same category, use those
+        if same_category.count() >= limit:
+            return same_category.order_by("-published_date")[:limit]
+
+        # Otherwise, get posts with similar tags
+        if post.tags.exists():
+            tag_ids = post.tags.values_list("id", flat=True)
+            similar_tags = (
+                related_posts.filter(tags__in=tag_ids)
+                .annotate(tag_count=Count("tags"))
+                .order_by("-tag_count", "-published_date")
+            )
+
+            # Combine same category and similar tags
+            combined = list(same_category) + list(similar_tags)
+            seen_ids = set()
+            unique_posts = []
+
+            for p in combined:
+                if p.id not in seen_ids:
+                    unique_posts.append(p)
+                    seen_ids.add(p.id)
+                if len(unique_posts) >= limit:
+                    break
+
+            return unique_posts
+
+        # Fallback to recent posts from same category
+        return same_category.order_by("-published_date")[:limit]
+
+    except Exception:
+        return (
+            Post.objects.filter(status="published")
+            .exclude(id=post.id)
+            .order_by("-published_date")[:limit]
+        )
+
+
+@register.simple_tag
+def get_previous_next_posts(post):
+    """
+    Get previous and next posts in chronological order.
+    Usage: {% get_previous_next_posts post as nav_posts %}
+    """
+    try:
+        # Get previous post (older)
+        previous_post = (
+            Post.objects.filter(
+                status="published", published_date__lt=post.published_date
+            )
+            .order_by("-published_date")
+            .first()
+        )
+
+        # Get next post (newer)
+        next_post = (
+            Post.objects.filter(
+                status="published", published_date__gt=post.published_date
+            )
+            .order_by("published_date")
+            .first()
+        )
+
+        return {"previous": previous_post, "next": next_post}
+    except Exception:
+        return {"previous": None, "next": None}

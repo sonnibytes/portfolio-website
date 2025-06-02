@@ -1,7 +1,7 @@
 /**
- * AURA DataLogs - Consolidated Master JavaScript
+ * AURA DataLogs - Master Consolidated JavaScript (Cleaned & Optimized)
  * Advanced User Repository & Archive - Complete DataLogs Functionality
- * Version: 3.0.0 - Consolidated from all components and templates
+ * Version: 3.2.0 - Cleaned, optimized, and error-free
  * 
  * This file contains ALL DataLogs JavaScript in organized modules:
  * - Glass hexagon navigation with smooth scrolling
@@ -11,8 +11,14 @@
  * - Card hover effects and state management
  * - View toggles and sorting functionality
  * - Terminal code display enhancements
+ * - Post detail functionality (TOC, reading progress)
  * - Responsive behavior and touch support
  */
+
+// ========== PERFORMANCE MARKING ========== //
+if (window.performance && window.performance.mark) {
+    window.performance.mark('datalogs-js-start');
+}
 
 // ========== DATALOG INTERFACE CORE ========== //
 
@@ -20,13 +26,16 @@ class DatalogInterface {
     constructor() {
         this.isInitialized = false;
         this.components = {};
+        this.observers = new Set();
+        this.timers = new Set();
         this.state = {
             currentView: 'grid',
             searchQuery: '',
             activeFilters: {},
             currentCategory: null,
             isFilterPanelOpen: false,
-            isSearchPanelOpen: false
+            isSearchPanelOpen: false,
+            currentPage: 'list' // list, detail, category, archive, search
         };
         
         // Configuration
@@ -36,13 +45,16 @@ class DatalogInterface {
             scrollDuration: 500,
             maxSearchSuggestions: 5,
             cardAnimationDelay: 100,
-            enableDebugMode: false
+            enableDebugMode: false,
+            typewriterSpeed: 20, // ms per character
+            tocUpdateThrottle: 100 // TOC scroll update throttle
         };
         
-        // Bind methods
+        // Bind methods to maintain context
         this.init = this.init.bind(this);
         this.handleResize = this.handleResize.bind(this);
         this.handleKeyboardShortcuts = this.handleKeyboardShortcuts.bind(this);
+        this.cleanup = this.cleanup.bind(this);
     }
     
     // ========== INITIALIZATION ========== //
@@ -53,7 +65,10 @@ class DatalogInterface {
         console.log('🚀 DataLogs interface initializing...');
         
         try {
-            // Initialize components in order
+            // Detect page type first
+            this.detectPageType();
+            
+            // Initialize core components (always needed)
             this.initializeHexagonNavigation();
             this.initializeEnhancedSearch();
             this.initializeFilterPanels();
@@ -66,6 +81,11 @@ class DatalogInterface {
             this.initializeScrollEffects();
             this.initializePerformanceOptimizations();
             
+            // Initialize page-specific components
+            if (this.state.currentPage === 'detail') {
+                this.initializePostDetail();
+            }
+            
             // Set up global event listeners
             this.setupGlobalEventListeners();
             
@@ -77,12 +97,245 @@ class DatalogInterface {
             
             // Dispatch custom event
             window.dispatchEvent(new CustomEvent('datalogsInitialized', {
-                detail: { interface: this }
+                detail: { interface: this, pageType: this.state.currentPage }
             }));
             
         } catch (error) {
             console.error('❌ DataLogs initialization failed:', error);
         }
+    }
+    
+    detectPageType() {
+        const body = document.body;
+        
+        if (body.classList.contains('post-detail') || document.getElementById('postContent')) {
+            this.state.currentPage = 'detail';
+        } else if (body.classList.contains('category-view')) {
+            this.state.currentPage = 'category';
+        } else if (body.classList.contains('archive-view')) {
+            this.state.currentPage = 'archive';
+        } else if (body.classList.contains('search-results')) {
+            this.state.currentPage = 'search';
+        } else {
+            this.state.currentPage = 'list';
+        }
+        
+        console.log(`📄 Detected page type: ${this.state.currentPage}`);
+    }
+    
+    // ========== POST DETAIL FUNCTIONALITY ========== //
+    
+    initializePostDetail() {
+        console.log('📖 Initializing post detail functionality...');
+        
+        // Initialize all post detail components
+        this.generateTableOfContents();
+        this.initializeReadingProgress();
+        this.initializePostTerminals();
+        this.initializeSmoothScrolling();
+        this.initializePostCopyButtons();
+        
+        console.log('✅ Post detail functionality initialized');
+    }
+    
+    generateTableOfContents() {
+        const tocNav = document.getElementById('tocNav');
+        const postContent = document.getElementById('postContent');
+        
+        if (!tocNav || !postContent) return;
+        
+        console.log('📑 Generating table of contents...');
+        
+        // Find all headings in the content
+        const headings = postContent.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        
+        if (headings.length === 0) {
+            tocNav.innerHTML = `
+                <div class="toc-empty">
+                    <i class="fas fa-info-circle"></i>
+                    <span>No headings found in this entry</span>
+                </div>
+            `;
+            return;
+        }
+        
+        // Generate TOC HTML
+        let tocHTML = '';
+        headings.forEach((heading, index) => {
+            const level = parseInt(heading.tagName.substring(1));
+            const text = heading.textContent.trim();
+            const id = `heading-${index}`;
+            
+            // Add ID to heading for linking
+            heading.id = id;
+            
+            // Create indent markers based on level
+            const indent = '›'.repeat(Math.max(1, level - 1));
+            
+            tocHTML += `
+                <a href="#${id}" class="toc-link toc-level-${level}" data-level="${level}">
+                    <span class="toc-marker">${indent}</span>
+                    <span class="toc-text">${text}</span>
+                </a>
+            `;
+        });
+        
+        tocNav.innerHTML = tocHTML;
+        
+        // Store reference for scroll tracking
+        this.components.toc = {
+            nav: tocNav,
+            headings: headings,
+            links: tocNav.querySelectorAll('.toc-link')
+        };
+        
+        // Add click handlers for smooth scrolling
+        this.components.toc.links.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                
+                if (targetElement) {
+                    // Remove active class from all links
+                    this.components.toc.links.forEach(l => l.classList.remove('active'));
+                    // Add active class to clicked link
+                    link.classList.add('active');
+                    
+                    // Smooth scroll to target
+                    this.smoothScrollToElement(targetElement);
+                }
+            });
+        });
+        
+        const scrollHandler = this.throttle(() => {
+            this.updateTOCActiveState();
+        }, this.config.tocUpdateThrottle);
+        
+        window.addEventListener('scroll', scrollHandler);
+        this.timers.add(() => window.removeEventListener('scroll', scrollHandler));
+        
+        console.log(`✅ Generated TOC with ${headings.length} headings`);
+    }
+    
+    updateTOCActiveState() {
+        if (!this.components.toc) return;
+        
+        const { headings, links } = this.components.toc;
+        const scrollPos = window.pageYOffset + 100;
+        
+        let current = '';
+        headings.forEach((heading, index) => {
+            if (heading.offsetTop <= scrollPos) {
+                current = `heading-${index}`;
+            }
+        });
+        
+        // Update active state
+        links.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${current}`) {
+                link.classList.add('active');
+            }
+        });
+    }
+    
+    initializePostTerminals() {
+        const terminals = document.querySelectorAll('.terminal-window');
+        
+        terminals.forEach(terminal => {
+            // Add entrance animation when in viewport
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('terminal-active');
+                        
+                        // Add typing effect to code
+                        const codeDisplay = entry.target.querySelector('.code-display');
+                        if (codeDisplay && !codeDisplay.dataset.animated) {
+                            codeDisplay.dataset.animated = 'true';
+                            this.addTypingEffect(codeDisplay);
+                        }
+                        
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.3 });
+            
+            observer.observe(terminal);
+            this.observers.add(observer);
+            
+            // Terminal button interactions
+            const buttons = terminal.querySelectorAll('.terminal-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    button.style.transform = 'scale(0.8)';
+                    const timer = setTimeout(() => {
+                        button.style.transform = 'scale(1)';
+                    }, 100);
+                    this.timers.add(() => clearTimeout(timer));
+                });
+            });
+        });
+    }
+    
+    addTypingEffect(codeElement) {
+        const originalHTML = codeElement.innerHTML;
+        const textContent = codeElement.textContent;
+        
+        // Don't animate if content is too long (performance)
+        if (textContent.length > 500) return;
+        
+        codeElement.innerHTML = '';
+        
+        let i = 0;
+        const typeCharacter = () => {
+            if (i < textContent.length) {
+                codeElement.textContent += textContent.charAt(i);
+                i++;
+                const timer = setTimeout(typeCharacter, this.config.typewriterSpeed);
+                this.timers.add(() => clearTimeout(timer));
+            } else {
+                codeElement.innerHTML = originalHTML;
+            }
+        };
+        
+        const timer = setTimeout(typeCharacter, 500);
+        this.timers.add(() => clearTimeout(timer));
+    }
+    
+    initializeSmoothScrolling() {
+        // Smooth scroll for all anchor links
+        const anchorLinks = document.querySelectorAll('a[href^="#"]');
+        
+        anchorLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                const targetId = link.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                
+                if (targetElement) {
+                    e.preventDefault();
+                    this.smoothScrollToElement(targetElement);
+                }
+            });
+        });
+    }
+    
+    initializePostCopyButtons() {
+        const copyButtons = document.querySelectorAll('.copy-button, [data-copy-text]');
+        
+        copyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const textToCopy = button.dataset.copyText || 
+                                 button.getAttribute('data-copy-text') ||
+                                 button.closest('.terminal-window')?.querySelector('.code-display')?.textContent ||
+                                 button.closest('pre')?.textContent;
+                
+                if (textToCopy) {
+                    this.copyToClipboard(textToCopy, button);
+                }
+            });
+        });
     }
     
     // ========== GLASS HEXAGON NAVIGATION ========== //
@@ -111,23 +364,18 @@ class DatalogInterface {
             rightBtn.addEventListener('click', () => this.scrollCategories('right'));
         }
         
-        // Touch/swipe support
         this.initializeTouchNavigation(scrollContainer);
         
-        // Scroll position tracking
-        scrollContainer.addEventListener('scroll', 
-            this.debounce(() => this.updateScrollButtons(), 100)
-        );
+        const scrollHandler = this.debounce(() => this.updateScrollButtons(), 100);
+        scrollContainer.addEventListener('scroll', scrollHandler);
         
-        // Initial button state
-        setTimeout(() => this.updateScrollButtons(), 100);
+        const timer = setTimeout(() => this.updateScrollButtons(), 100);
+        this.timers.add(() => clearTimeout(timer));
         
-        // Resize handler
-        window.addEventListener('resize', 
-            this.debounce(() => this.updateScrollButtons(), 200)
-        );
+        const resizeHandler = this.debounce(() => this.updateScrollButtons(), 200);
+        window.addEventListener('resize', resizeHandler);
+        this.timers.add(() => window.removeEventListener('resize', resizeHandler));
         
-        // Enhanced hexagon interactions
         this.initializeHexagonInteractions();
         
         console.log('✅ Hexagon navigation initialized');
@@ -154,7 +402,7 @@ class DatalogInterface {
     
     updateScrollButtons() {
         const nav = this.components.hexagonNav;
-        if (!nav.container || !nav.leftBtn || !nav.rightBtn) return;
+        if (!nav || !nav.container || !nav.leftBtn || !nav.rightBtn) return;
         
         const { scrollLeft, scrollWidth, clientWidth } = nav.container;
         
@@ -185,7 +433,7 @@ class DatalogInterface {
             if (!isTouch) return;
             
             const x = e.touches[0].pageX;
-            const walk = (startX - x) * 2; // Multiply for faster scroll
+            const walk = (startX - x) * 2;
             container.scrollLeft = scrollStart + walk;
         }, { passive: true });
         
@@ -213,11 +461,11 @@ class DatalogInterface {
                 this.createRippleEffect(item, e);
             });
             
-            // Staggered entrance animation
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 item.style.opacity = '1';
                 item.style.transform = 'translateY(0)';
             }, index * 100);
+            this.timers.add(() => clearTimeout(timer));
         });
     }
     
@@ -234,7 +482,8 @@ class DatalogInterface {
             // Add scanning effect
             if (!item.classList.contains('scanning-hex')) {
                 item.classList.add('scanning-hex');
-                setTimeout(() => item.classList.remove('scanning-hex'), 1500);
+                const timer = setTimeout(() => item.classList.remove('scanning-hex'), 1500);
+                this.timers.add(() => clearTimeout(timer));
             }
         } else {
             const baseScale = item.classList.contains('active') ? '1.1' : '1';
@@ -269,7 +518,8 @@ class DatalogInterface {
         element.style.position = 'relative';
         element.appendChild(ripple);
         
-        setTimeout(() => ripple.remove(), 600);
+        const timer = setTimeout(() => ripple.remove(), 600);
+        this.timers.add(() => clearTimeout(timer));
     }
     
     // ========== ENHANCED SEARCH SYSTEM ========== //
@@ -308,13 +558,15 @@ class DatalogInterface {
             this.initializeSearchKeyboardNav(searchSuggestions);
         }
         
-        // Global search shortcut (Ctrl/Cmd + K)
-        document.addEventListener('keydown', (e) => {
+        const shortcutHandler = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 this.focusSearch();
             }
-        });
+        };
+        
+        document.addEventListener('keydown', shortcutHandler);
+        this.timers.add(() => document.removeEventListener('keydown', shortcutHandler));
         
         console.log('✅ Enhanced search initialized');
     }
@@ -333,6 +585,7 @@ class DatalogInterface {
                 searchTimeout = setTimeout(() => {
                     this.loadSearchSuggestions(query);
                 }, this.config.debounceDelay);
+                this.timers.add(() => clearTimeout(searchTimeout));
             } else {
                 this.hideSearchSuggestions();
             }
@@ -350,11 +603,11 @@ class DatalogInterface {
         });
         
         input.addEventListener('blur', () => {
-            // Delay hiding to allow for suggestion clicks
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 this.hideSearchSuggestions();
                 input.closest('.search-input-wrapper')?.classList.remove('search-focused');
             }, 200);
+            this.timers.add(() => clearTimeout(timer));
         });
         
         // Enhanced keyboard navigation
@@ -367,6 +620,51 @@ class DatalogInterface {
                 this.submitSearch(input.value);
             }
         });
+    }
+    
+    initializeSearchKeyboardNav(suggestionsContainer) {
+        const keyHandler = (e) => {
+            if (!suggestionsContainer.classList.contains('show')) return;
+            
+            const suggestions = suggestionsContainer.querySelectorAll('.search-suggestion-item');
+            const currentActive = suggestionsContainer.querySelector('.search-suggestion-item.active');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (currentActive) {
+                    currentActive.classList.remove('active');
+                    const next = currentActive.nextElementSibling;
+                    if (next) {
+                        next.classList.add('active');
+                    } else {
+                        suggestions[0]?.classList.add('active');
+                    }
+                } else {
+                    suggestions[0]?.classList.add('active');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentActive) {
+                    currentActive.classList.remove('active');
+                    const prev = currentActive.previousElementSibling;
+                    if (prev) {
+                        prev.classList.add('active');
+                    } else {
+                        suggestions[suggestions.length - 1]?.classList.add('active');
+                    }
+                } else {
+                    suggestions[suggestions.length - 1]?.classList.add('active');
+                }
+            } else if (e.key === 'Enter') {
+                if (currentActive) {
+                    e.preventDefault();
+                    currentActive.click();
+                }
+            }
+        };
+        
+        document.addEventListener('keydown', keyHandler);
+        this.timers.add(() => document.removeEventListener('keydown', keyHandler));
     }
     
     loadSearchSuggestions(query) {
@@ -382,12 +680,12 @@ class DatalogInterface {
         // Show loading state
         this.showSearchLoading();
         
-        // Simulate API call with enhanced suggestions
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             const suggestionsData = this.generateSearchSuggestions(query);
             suggestionCache.set(query, suggestionsData);
             this.displaySearchSuggestions(suggestionsData);
         }, 200);
+        this.timers.add(() => clearTimeout(timer));
     }
     
     generateSearchSuggestions(query) {
@@ -463,8 +761,7 @@ class DatalogInterface {
         if (!suggestions) return;
         
         suggestions.style.display = 'block';
-        // Force reflow
-        suggestions.offsetHeight;
+        suggestions.offsetHeight; // Force reflow
         suggestions.classList.add('show');
     }
     
@@ -473,9 +770,10 @@ class DatalogInterface {
         if (!suggestions) return;
         
         suggestions.classList.remove('show');
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             suggestions.style.display = 'none';
         }, 200);
+        this.timers.add(() => clearTimeout(timer));
     }
     
     selectSuggestion(suggestionText, url) {
@@ -523,7 +821,8 @@ class DatalogInterface {
             // Focus search input
             const searchInput = panel.querySelector('.datalog-search-input');
             if (searchInput) {
-                setTimeout(() => searchInput.focus(), 100);
+                const timer = setTimeout(() => searchInput.focus(), 100);
+                this.timers.add(() => clearTimeout(timer));
             }
             
             // Close filter panel if open
@@ -581,15 +880,17 @@ class DatalogInterface {
         this.initializeDateRangeFilters();
         this.initializeQuickFilters();
         
-        // Close panel when clicking outside
-        document.addEventListener('click', (e) => {
+        const clickHandler = (e) => {
             if (filterPanel && 
                 this.state.isFilterPanelOpen && 
                 !filterPanel.contains(e.target) && 
                 !filterToggle?.contains(e.target)) {
                 this.closeFilterPanel();
             }
-        });
+        };
+        
+        document.addEventListener('click', clickHandler);
+        this.timers.add(() => document.removeEventListener('click', clickHandler));
         
         console.log('✅ Filter panels initialized');
     }
@@ -604,13 +905,11 @@ class DatalogInterface {
             this.closeFilterPanel();
         } else {
             panel.style.display = 'block';
-            // Force reflow
-            panel.offsetHeight;
+            panel.offsetHeight; // Force reflow
             panel.classList.add('show');
             toggle.classList.add('active');
             this.state.isFilterPanelOpen = true;
             
-            // Close search panel if open
             if (this.state.isSearchPanelOpen) {
                 this.toggleSearchPanel();
             }
@@ -625,9 +924,10 @@ class DatalogInterface {
         toggle.classList.remove('active');
         this.state.isFilterPanelOpen = false;
         
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             panel.style.display = 'none';
         }, this.config.animationDuration);
+        this.timers.add(() => clearTimeout(timer));
     }
     
     clearAllFilters() {
@@ -700,9 +1000,10 @@ class DatalogInterface {
             filter.addEventListener('click', (e) => {
                 // Add visual feedback
                 filter.style.transform = 'scale(0.95)';
-                setTimeout(() => {
+                const timer = setTimeout(() => {
                     filter.style.transform = '';
                 }, 150);
+                this.timers.add(() => clearTimeout(timer));
                 
                 // Track filter usage
                 const filterType = filter.textContent.trim();
@@ -715,7 +1016,7 @@ class DatalogInterface {
     
     initializeGridControls() {
         const viewToggleButtons = document.querySelectorAll('.view-toggle-btn, .view-btn');
-        const sortSelects = document.querySelectorAll('#datalogsSort, #categorySort, #archiveSort');
+        const sortSelects = document.querySelectorAll('#datalogsSort, #categorySort, #archiveSort, #resultsSort');
         
         console.log('📊 Initializing grid controls...');
         
@@ -755,7 +1056,7 @@ class DatalogInterface {
     
     updateContentView(viewType) {
         const gridContainers = document.querySelectorAll(
-            '.datalogs-grid, .datalogs-main-content, #datalogsGrid, .category-posts-grid, #searchResultsGrid'
+            '.datalogs-grid, .datalogs-main-content, #datalogsGrid, .category-posts-grid, #searchResultsGrid, #archiveTimelineContainer'
         );
         
         gridContainers.forEach(container => {
@@ -765,8 +1066,7 @@ class DatalogInterface {
             container.style.opacity = '0.7';
             container.style.pointerEvents = 'none';
             
-            setTimeout(() => {
-                // Update classes
+            const timer = setTimeout(() => {
                 container.className = container.className.replace(/\b\w+-view\b/g, '');
                 container.classList.add(`${viewType}-view`);
                 
@@ -778,6 +1078,7 @@ class DatalogInterface {
                 this.animateCardsEntrance(container);
                 
             }, 200);
+            this.timers.add(() => clearTimeout(timer));
         });
     }
     
@@ -793,11 +1094,11 @@ class DatalogInterface {
             container.style.opacity = '0.6';
             container.style.pointerEvents = 'none';
             
-            // In a real app, this would trigger a reload or AJAX update
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 container.style.opacity = '1';
                 container.style.pointerEvents = 'auto';
             }, 500);
+            this.timers.add(() => clearTimeout(timer));
         }
     }
     
@@ -842,17 +1143,18 @@ class DatalogInterface {
             
             // Click handling with ripple effect
             card.addEventListener('click', (e) => {
-                if (e.target.closest('a, button')) return; // Don't interfere with links/buttons
+                if (e.target.closest('a, button')) return;
                 
                 // Create ripple effect
                 this.createCardRipple(card, e);
                 
                 // Navigate to post
-                const link = card.querySelector('.datalog-title a, .read-more-btn');
+                const link = card.querySelector('.datalog-title a, .read-more-btn, .item-link');
                 if (link) {
-                    setTimeout(() => {
+                    const timer = setTimeout(() => {
                         link.click();
                     }, 200);
+                    this.timers.add(() => clearTimeout(timer));
                 }
             });
             
@@ -902,8 +1204,8 @@ class DatalogInterface {
                 scanLine.className = 'card-scanning-line';
                 card.appendChild(scanLine);
                 
-                // Remove after animation
-                setTimeout(() => scanLine.remove(), 1500);
+                const timer = setTimeout(() => scanLine.remove(), 1500);
+                this.timers.add(() => clearTimeout(timer));
             }
         } else {
             card.style.transform = 'translateY(0) scale(1)';
@@ -936,7 +1238,8 @@ class DatalogInterface {
         card.style.position = 'relative';
         card.appendChild(ripple);
         
-        setTimeout(() => ripple.remove(), 600);
+        const timer = setTimeout(() => ripple.remove(), 600);
+        this.timers.add(() => clearTimeout(timer));
     }
     
     observeCardEntrance(card, index) {
@@ -947,11 +1250,12 @@ class DatalogInterface {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    setTimeout(() => {
+                    const timer = setTimeout(() => {
                         entry.target.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
                         entry.target.style.opacity = '1';
                         entry.target.style.transform = 'translateY(0)';
                     }, index * this.config.cardAnimationDelay);
+                    this.timers.add(() => clearTimeout(timer));
                     
                     observer.unobserve(entry.target);
                 }
@@ -959,6 +1263,7 @@ class DatalogInterface {
         }, { threshold: 0.1 });
         
         observer.observe(card);
+        this.observers.add(observer);
     }
     
     animateCardsEntrance(container) {
@@ -968,11 +1273,12 @@ class DatalogInterface {
             card.style.opacity = '0.7';
             card.style.transform = 'scale(0.95)';
             
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 card.style.transition = 'all 0.3s ease';
                 card.style.opacity = '1';
                 card.style.transform = 'scale(1)';
             }, index * 50);
+            this.timers.add(() => clearTimeout(timer));
         });
     }
     
@@ -998,25 +1304,30 @@ class DatalogInterface {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    setTimeout(() => {
+                    const timer = setTimeout(() => {
                         entry.target.classList.add('terminal-active');
-                        this.typewriterEffect(entry.target);
+                        if (this.state.currentPage !== 'detail') {
+                            this.typewriterEffect(entry.target);
+                        }
                     }, 300);
+                    this.timers.add(() => clearTimeout(timer));
                     observer.unobserve(entry.target);
                 }
             });
         }, { threshold: 0.3 });
         
         observer.observe(terminal);
+        this.observers.add(observer);
         
         // Terminal button interactions
         const buttons = terminal.querySelectorAll('.terminal-button');
         buttons.forEach(button => {
             button.addEventListener('click', () => {
                 button.style.transform = 'scale(0.8)';
-                setTimeout(() => {
+                const timer = setTimeout(() => {
                     button.style.transform = 'scale(1)';
                 }, 100);
+                this.timers.add(() => clearTimeout(timer));
             });
         });
     }
@@ -1026,19 +1337,23 @@ class DatalogInterface {
         if (!codeContent) return;
         
         const originalText = codeContent.textContent;
+        if (originalText.length > 500) return; // Skip for long content
+        
         codeContent.textContent = '';
         
         let i = 0;
-        const speed = 20; // Milliseconds per character
         
-        const typeInterval = setInterval(() => {
+        const typeInterval = () => {
             if (i < originalText.length) {
                 codeContent.textContent += originalText.charAt(i);
                 i++;
-            } else {
-                clearInterval(typeInterval);
+                const timer = setTimeout(typeInterval, this.config.typewriterSpeed);
+                this.timers.add(() => clearTimeout(timer));
             }
-        }, speed);
+        };
+        
+        const timer = setTimeout(typeInterval, 500);
+        this.timers.add(() => clearTimeout(timer));
     }
     
     initializeCopyButtons() {
@@ -1048,7 +1363,8 @@ class DatalogInterface {
             button.addEventListener('click', () => {
                 const textToCopy = button.dataset.copyText || 
                                  button.getAttribute('data-copy-text') ||
-                                 button.closest('.terminal-window')?.querySelector('.code-display')?.textContent;
+                                 button.closest('.terminal-window')?.querySelector('.code-display')?.textContent ||
+                                 button.closest('pre')?.textContent;
                 
                 if (textToCopy) {
                     this.copyToClipboard(textToCopy, button);
@@ -1060,27 +1376,50 @@ class DatalogInterface {
     copyToClipboard(text, button) {
         navigator.clipboard.writeText(text).then(() => {
             // Visual feedback
+            const originalContent = button.innerHTML;
             const originalText = button.textContent;
-            const originalIcon = button.querySelector('i')?.className;
             
-            button.textContent = 'Copied!';
             if (button.querySelector('i')) {
-                button.querySelector('i').className = 'fas fa-check';
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            } else {
+                button.textContent = 'Copied!';
             }
             
             button.style.background = 'rgba(179, 157, 219, 0.2)';
             button.style.color = 'var(--color-lavender)';
             
-            setTimeout(() => {
-                button.textContent = originalText;
-                if (button.querySelector('i') && originalIcon) {
-                    button.querySelector('i').className = originalIcon;
+            const timer = setTimeout(() => {
+                if (originalContent.includes('<')) {
+                    button.innerHTML = originalContent;
+                } else {
+                    button.textContent = originalText;
                 }
                 button.style.background = '';
                 button.style.color = '';
             }, 2000);
+            this.timers.add(() => clearTimeout(timer));
         }).catch(err => {
             console.error('Failed to copy text:', err);
+            
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            } catch (err) {
+                button.innerHTML = '<i class="fas fa-exclamation"></i> Copy failed';
+            }
+            
+            document.body.removeChild(textArea);
+            
+            const timer = setTimeout(() => {
+                button.innerHTML = '<i class="fas fa-copy"></i> Copy Code';
+            }, 2000);
+            this.timers.add(() => clearTimeout(timer));
         });
     }
     
@@ -1089,13 +1428,8 @@ class DatalogInterface {
     initializeTimelineComponents() {
         console.log('📅 Initializing timeline components...');
         
-        // Timeline markers
         this.initializeTimelineMarkers();
-        
-        // Timeline navigation
         this.initializeTimelineNavigation();
-        
-        // Timeline animations
         this.initializeTimelineAnimations();
         
         console.log('✅ Timeline components initialized');
@@ -1111,15 +1445,17 @@ class DatalogInterface {
                         entry.target.style.transform = 'scale(1.2)';
                         entry.target.style.boxShadow = '0 0 15px var(--color-teal)';
                         
-                        setTimeout(() => {
+                        const timer = setTimeout(() => {
                             entry.target.style.transform = 'scale(1)';
                             entry.target.style.boxShadow = '0 0 8px var(--color-teal)';
                         }, 500);
+                        this.timers.add(() => clearTimeout(timer));
                     }
                 });
             }, { threshold: 0.5 });
             
             observer.observe(marker);
+            this.observers.add(observer);
         });
     }
     
@@ -1146,12 +1482,77 @@ class DatalogInterface {
             item.style.opacity = '0';
             item.style.transform = 'translateX(-30px)';
             
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 item.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
                 item.style.opacity = '1';
                 item.style.transform = 'translateX(0)';
             }, index * 150);
+            this.timers.add(() => clearTimeout(timer));
         });
+    }
+    
+    // ========== READING PROGRESS ========== //
+    
+    initializeReadingProgress() {
+        const progressBar = document.querySelector('.reading-progress-bar .aura-progress-bar');
+        if (!progressBar) return;
+        
+        console.log('📖 Initializing reading progress...');
+        
+        const updateProgress = () => {
+            if (this.state.currentPage === 'detail') {
+                // Post detail specific progress calculation
+                const postContent = document.getElementById('postContent');
+                if (!postContent) return;
+                
+                const postTop = postContent.offsetTop;
+                //console.log('postTop = ' + postTop);
+                const postHeight = postContent.offsetHeight;
+                //console.log('postHeight = ' + postHeight);
+                const windowHeight = window.innerHeight;
+                //console.log('windowHeight = ' + windowHeight);
+                const scrollTop = window.pageYOffset;
+                //console.log('scrollTop = ' + scrollTop);
+
+                // Just for testing
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                //console.log('docHeight = ' + docHeight);
+                //const otherProg = (scrollTop / docHeight) * 100;
+                //console.log('otherProg = ' + otherProg);
+                
+                // Calculate progress based on post content
+                //const progress = Math.min(100, Math.max(0,
+                //    ((scrollTop - postTop + windowHeight) / postHeight) * 100
+                //));
+                //console.log('progress = ' + progress);
+
+                // TWEAKED: Calculate progress based on post content
+                const progress = Math.min(100, Math.max(0, 
+                    ((scrollTop - postTop + windowHeight) / docHeight) * 100
+                ));
+                //console.log('tryProg = ' + tryProg);
+                
+                progressBar.style.width = `${progress}%`;
+                
+                // Update text if present
+                const progressText = progressBar.closest('.aura-progress-container')?.querySelector('.progress-text');
+                if (progressText) {
+                    progressText.textContent = `${Math.round(progress)}%`;
+                }
+            } else {
+                // General page progress
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const scrolled = window.pageYOffset;
+                const progress = (scrolled / docHeight) * 100;
+                
+                progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+            }
+        };
+        
+        const scrollHandler = this.throttle(updateProgress, 50);
+        window.addEventListener('scroll', scrollHandler);
+        this.timers.add(() => window.removeEventListener('scroll', scrollHandler));
+        updateProgress();
     }
     
     // ========== RESPONSIVE BEHAVIOR ========== //
@@ -1159,26 +1560,19 @@ class DatalogInterface {
     initializeResponsiveBehavior() {
         console.log('📱 Initializing responsive behavior...');
         
-        // Window resize handler
-        window.addEventListener('resize', this.debounce(this.handleResize, 250));
+        const resizeHandler = this.debounce(this.handleResize, 250);
+        window.addEventListener('resize', resizeHandler);
+        this.timers.add(() => window.removeEventListener('resize', resizeHandler));
         
-        // Touch and gesture support
         this.initializeTouchGestures();
-        
-        // Responsive navigation
         this.initializeResponsiveNavigation();
         
         console.log('✅ Responsive behavior initialized');
     }
     
     handleResize() {
-        // Update scroll buttons
         this.updateScrollButtons();
-        
-        // Adjust grid layouts
         this.adjustGridLayouts();
-        
-        // Recalculate positions
         this.recalculatePositions();
     }
     
@@ -1319,6 +1713,7 @@ class DatalogInterface {
         
         // Global keyboard shortcuts
         document.addEventListener('keydown', this.handleKeyboardShortcuts);
+        this.timers.add(() => document.removeEventListener('keydown', this.handleKeyboardShortcuts));
         
         // Focus management
         this.initializeFocusManagement();
@@ -1423,13 +1818,10 @@ class DatalogInterface {
     initializeScrollEffects() {
         console.log('📜 Initializing scroll effects...');
         
-        // Parallax effects
         this.initializeParallaxEffects();
-        
-        // Scroll-to-top button
         this.initializeScrollToTop();
         
-        // Reading progress (for detail pages)
+        // Reading progress (unified for all pages)
         this.initializeReadingProgress();
         
         console.log('✅ Scroll effects initialized');
@@ -1438,14 +1830,17 @@ class DatalogInterface {
     initializeParallaxEffects() {
         const parallaxElements = document.querySelectorAll('.terminal-window, .featured-datalog-container');
         
-        window.addEventListener('scroll', this.throttle(() => {
+        const parallaxHandler = this.throttle(() => {
             const scrolled = window.pageYOffset;
             
             parallaxElements.forEach(element => {
                 const rate = scrolled * -0.1;
                 element.style.transform = `translateY(${rate}px)`;
             });
-        }, 16)); // 60fps
+        }, 16);
+        
+        window.addEventListener('scroll', parallaxHandler);
+        this.timers.add(() => window.removeEventListener('scroll', parallaxHandler));
     }
     
     initializeScrollToTop() {
@@ -1477,8 +1872,7 @@ class DatalogInterface {
         
         document.body.appendChild(scrollToTopBtn);
         
-        // Show/hide based on scroll position
-        window.addEventListener('scroll', this.throttle(() => {
+        const scrollHandler = this.throttle(() => {
             if (window.pageYOffset > 300) {
                 scrollToTopBtn.style.opacity = '1';
                 scrollToTopBtn.style.visibility = 'visible';
@@ -1486,20 +1880,10 @@ class DatalogInterface {
                 scrollToTopBtn.style.opacity = '0';
                 scrollToTopBtn.style.visibility = 'hidden';
             }
-        }, 100));
-    }
-    
-    initializeReadingProgress() {
-        const progressBar = document.querySelector('.reading-progress-bar .aura-progress-bar');
-        if (!progressBar) return;
+        }, 100);
         
-        window.addEventListener('scroll', this.throttle(() => {
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const scrolled = window.pageYOffset;
-            const progress = (scrolled / docHeight) * 100;
-            
-            progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
-        }, 16));
+        window.addEventListener('scroll', scrollHandler);
+        this.timers.add(() => window.removeEventListener('scroll', scrollHandler));
     }
     
     // ========== PERFORMANCE OPTIMIZATIONS ========== //
@@ -1507,13 +1891,8 @@ class DatalogInterface {
     initializePerformanceOptimizations() {
         console.log('⚡ Initializing performance optimizations...');
         
-        // Lazy loading for images
         this.initializeLazyLoading();
-        
-        // Intersection observer optimizations
         this.optimizeIntersectionObservers();
-        
-        // Memory management
         this.initializeMemoryManagement();
         
         console.log('✅ Performance optimizations initialized');
@@ -1535,6 +1914,7 @@ class DatalogInterface {
             });
             
             images.forEach(img => imageObserver.observe(img));
+            this.observers.add(imageObserver);
         }
     }
     
@@ -1551,18 +1931,21 @@ class DatalogInterface {
         // Observe all cards with a single observer
         const cards = document.querySelectorAll('.datalog-card, .timeline-post-card, .metric-item');
         cards.forEach(card => cardObserver.observe(card));
+        this.observers.add(cardObserver);
     }
     
     initializeMemoryManagement() {
-        // Clean up event listeners on page unload
-        window.addEventListener('beforeunload', () => {
+        const beforeUnloadHandler = () => {
             this.cleanup();
-        });
+        };
         
-        // Garbage collection for cached data
-        setInterval(() => {
+        window.addEventListener('beforeunload', beforeUnloadHandler);
+        this.timers.add(() => window.removeEventListener('beforeunload', beforeUnloadHandler));
+        
+        const cacheCleanupInterval = setInterval(() => {
             this.cleanupCache();
-        }, 300000); // 5 minutes
+        }, 300000);
+        this.timers.add(() => clearInterval(cacheCleanupInterval));
     }
     
     cleanupCache() {
@@ -1584,20 +1967,23 @@ class DatalogInterface {
     // ========== UTILITY METHODS ========== //
     
     setupGlobalEventListeners() {
-        // Global click handler for closing panels
-        document.addEventListener('click', (e) => {
+        const clickHandler = (e) => {
             if (!e.target.closest('.search-suggestions, .filter-panel, .search-panel')) {
-                // Close suggestions if clicking outside
                 if (this.components.search?.suggestions) {
                     this.hideSearchSuggestions();
                 }
             }
-        });
+        };
         
-        // Handle browser back/forward
-        window.addEventListener('popstate', () => {
+        document.addEventListener('click', clickHandler);
+        this.timers.add(() => document.removeEventListener('click', clickHandler));
+        
+        const popstateHandler = () => {
             this.loadUserPreferences();
-        });
+        };
+        
+        window.addEventListener('popstate', popstateHandler);
+        this.timers.add(() => window.removeEventListener('popstate', popstateHandler));
     }
     
     loadUserPreferences() {
@@ -1683,7 +2069,7 @@ class DatalogInterface {
         return function executedFunction(...args) {
             const later = () => {
                 clearTimeout(timeout);
-                func(...args);
+                func.call(this, ...args);
             };
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
@@ -1702,19 +2088,32 @@ class DatalogInterface {
     }
     
     cleanup() {
-        // Clean up event listeners and observers
-        Object.values(this.components).forEach(component => {
-            if (component.observer) {
-                component.observer.disconnect();
+        console.log('🧹 DataLogs interface cleaning up...');
+        
+        // Clear all timers
+        this.timers.forEach(clearFn => {
+            try {
+                clearFn();
+            } catch (e) {
+                // Silently handle cleanup errors
             }
         });
+        this.timers.clear();
         
-        // Clear timers
-        if (this.searchTimeout) {
-            clearTimeout(this.searchTimeout);
-        }
+        // Disconnect all observers
+        this.observers.forEach(observer => {
+            try {
+                observer.disconnect();
+            } catch (e) {
+                // Silently handle cleanup errors
+            }
+        });
+        this.observers.clear();
         
-        console.log('🧹 DataLogs interface cleaned up');
+        // Clear component references
+        this.components = {};
+        
+        console.log('✅ DataLogs interface cleaned up');
     }
 }
 
@@ -1854,6 +2253,70 @@ dynamicStyles.textContent = `
     transition: opacity 0.3s ease;
 }
 
+/* TOC Styles */
+.toc-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    border-left: 2px solid transparent;
+    transition: all var(--transition-fast);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.toc-link:hover {
+    color: var(--color-lavender);
+    border-left-color: var(--color-lavender);
+    background: rgba(179, 157, 219, 0.05);
+}
+
+.toc-link.active {
+    color: var(--color-lavender);
+    border-left-color: var(--color-lavender);
+    background: rgba(179, 157, 219, 0.1);
+    font-weight: 600;
+}
+
+.toc-marker {
+    color: var(--color-lavender);
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    min-width: 20px;
+}
+
+.toc-text {
+    flex: 1;
+}
+
+.toc-level-1 { margin-left: 0; }
+.toc-level-2 { margin-left: var(--spacing-sm); }
+.toc-level-3 { margin-left: var(--spacing-md); }
+.toc-level-4 { margin-left: var(--spacing-lg); }
+.toc-level-5 { margin-left: calc(var(--spacing-lg) + var(--spacing-sm)); }
+.toc-level-6 { margin-left: calc(var(--spacing-lg) + var(--spacing-md)); }
+
+.toc-empty {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    color: var(--color-text-tertiary);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.toc-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
 /* Accessibility improvements */
 .skip-link:focus {
     top: 6px !important;
@@ -1946,7 +2409,7 @@ if (!navigator.clipboard) {
 
 // ========== LEGACY BROWSER SUPPORT ========== //
 
-// Support for older browsers that don't have arrow functions
+// Support for older browsers that don't have Set/Map
 if (!window.Set) {
     window.Set = function() {
         this.items = [];
@@ -1967,7 +2430,6 @@ if (!window.Set) {
     };
 }
 
-// Support for Map if not available
 if (!window.Map) {
     window.Map = function() {
         this.keys = [];
@@ -2031,6 +2493,19 @@ window.selectSuggestion = function(text, url) {
     }
 };
 
+// Post detail specific functions
+window.generateTableOfContents = function() {
+    if (window.datalogInterface && window.datalogInterface.generateTableOfContents) {
+        window.datalogInterface.generateTableOfContents();
+    }
+};
+
+window.updateReadingProgress = function() {
+    if (window.datalogInterface && window.datalogInterface.initializeReadingProgress) {
+        window.datalogInterface.initializeReadingProgress();
+    }
+};
+
 // ========== DEBUGGING UTILITIES ========== //
 
 // Debug mode functions
@@ -2054,7 +2529,8 @@ window.getDatalogState = function() {
     return window.datalogInterface ? window.datalogInterface.state : null;
 };
 
-// Performance monitoring
+// ========== PERFORMANCE MONITORING ========== //
+
 if (window.performance && window.performance.mark) {
     window.performance.mark('datalogs-js-end');
     
@@ -2071,16 +2547,8 @@ if (window.performance && window.performance.mark) {
     });
 }
 
-// Mark start of execution
-if (window.performance && window.performance.mark) {
-    window.performance.mark('datalogs-js-start');
-}
+// ========== MODULE EXPORTS ========== //
 
-console.log('🚀 DataLogs consolidated JavaScript loaded successfully');
-console.log('📋 Available functions: initDatalogsInterface(), updateCategoryScroll(), focusDatalogSearch(), toggleDatalogFilters()');
-console.log('🐛 Debug functions: enableDatalogDebug(), disableDatalogDebug(), getDatalogState()');
-
-// Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = DatalogInterface;
 }
@@ -2090,3 +2558,10 @@ if (typeof define === 'function' && define.amd) {
         return DatalogInterface;
     });
 }
+
+console.log('🚀 DataLogs consolidated JavaScript loaded successfully');
+console.log('📋 Available functions: initDatalogsInterface(), updateCategoryScroll(), focusDatalogSearch(), toggleDatalogFilters()');
+console.log('📖 Post detail functions: generateTableOfContents(), updateReadingProgress()');
+console.log('🐛 Debug functions: enableDatalogDebug(), disableDatalogDebug(), getDatalogState()');
+console.log('💫 Interface ready with enhanced performance and memory management');
+        
