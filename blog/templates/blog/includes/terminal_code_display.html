@@ -1,0 +1,1125 @@
+<!----
+ * AURA DataLogs - Terminal Code Display Component
+ * Reusable component for displaying code in terminal-style windows
+ * Usage: {% include 'blog/includes/terminal_code_display.html' with code=post.featured_code language=post.featured_code_format filename=post.get_code_filename %}
+ * Styles: default, compact, minimal, fullscreen
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="terminal-code-display terminal-{{ style|default:'default' }}">
+    
+    {% if style == 'compact' %}
+    <!-- Compact terminal for cards and previews -->
+    <div class="terminal-window compact">
+        <div class="terminal-header compact">
+            <div class="terminal-controls">
+                <span class="terminal-button red"></span>
+                <span class="terminal-button yellow"></span>
+                <span class="terminal-button green"></span>
+            </div>
+            <div class="terminal-title">{{ filename|default:"code.txt" }}</div>
+        </div>
+        <div class="terminal-content compact">
+            <div class="code-display">
+                {% if code %}
+                {{ code|highlight_code:language }}
+                {% else %}
+                <pre><code class="language-{{ language|default:'text' }}">// Code example not available</code></pre>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal code display without terminal chrome -->
+    <div class="code-minimal-display">
+        <div class="minimal-header">
+            <span class="code-language">{{ language|upper|default:"TEXT" }}</span>
+            {% if filename %}
+            <span class="code-filename">{{ filename }}</span>
+            {% endif %}
+        </div>
+        <div class="minimal-code-content">
+            {% if code %}
+            {{ code|highlight_code:language }}
+            {% else %}
+            <pre><code>Code not available</code></pre>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% elif style == 'fullscreen' %}
+    <!-- Fullscreen terminal with all features -->
+    <div class="terminal-window fullscreen">
+        <div class="terminal-header fullscreen">
+            <div class="terminal-controls">
+                <span class="terminal-button red" title="Close"></span>
+                <span class="terminal-button yellow" title="Minimize"></span>
+                <span class="terminal-button green" title="Maximize"></span>
+            </div>
+            <div class="terminal-title-bar">
+                <div class="terminal-title">{{ filename|default:"terminal" }}</div>
+                <div class="terminal-subtitle">{{ language|upper|default:"TEXT" }}</div>
+            </div>
+            <div class="terminal-actions">
+                <button class="terminal-action-btn" onclick="copyTerminalCode(this)" title="Copy Code">
+                    <i class="fas fa-copy"></i>
+                </button>
+                <button class="terminal-action-btn" onclick="toggleTerminalFullscreen(this)" title="Toggle Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+        <div class="terminal-content fullscreen">
+            <div class="code-display">
+                {% if code %}
+                {{ code|highlight_code:language }}
+                {% else %}
+                <pre><code class="language-{{ language|default:'text' }}">// No code available</code></pre>
+                {% endif %}
+            </div>
+        </div>
+        <div class="terminal-footer">
+            <div class="terminal-stats">
+                <span class="stat-item">
+                    <i class="fas fa-code"></i>
+                    <span>{{ code|linecount|default:"0" }} lines</span>
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-file"></i>
+                    <span>{{ code|length|default:"0" }} chars</span>
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-cog"></i>
+                    <span>{{ language|upper|default:"TEXT" }}</span>
+                </span>
+                {% if code %}
+                <span class="stat-item">
+                    <i class="fas fa-layer-group"></i>
+                    <span>{{ code|code_complexity }}</span>
+                </span>
+                {% endif %}
+            </div>
+            <div class="terminal-timestamp">
+                <i class="fas fa-clock"></i>
+                <span>Last modified: {{ "now"|date:"M d, Y H:i" }}</span>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Default terminal with standard features -->
+    <div class="terminal-window default">
+        <div class="terminal-header default">
+            <div class="terminal-controls">
+                <span class="terminal-button red"></span>
+                <span class="terminal-button yellow"></span>
+                <span class="terminal-button green"></span>
+            </div>
+            <div class="terminal-title-section">
+                <div class="terminal-title">{{ filename|default:"code.py" }}</div>
+                {% if language %}
+                <div class="terminal-language">{{ language|upper }}</div>
+                {% endif %}
+            </div>
+            <div class="terminal-status">
+                <div class="status-indicator operational"></div>
+                <span class="status-text">READY</span>
+            </div>
+        </div>
+        <div class="terminal-content default">
+            <div class="code-display">
+                {% if code %}
+                {{ code|highlight_code:language }}
+                {% else %}
+                <pre><code class="language-{{ language|default:'text' }}">// Code example will be displayed here</code></pre>
+                {% endif %}
+            </div>
+        </div>
+        <div class="terminal-footer">
+            <div class="terminal-info">
+                {% if code %}
+                <span class="line-count">{{ code|linecount }} lines</span>
+                <span class="lang-indicator">{{ language|upper|default:"TEXT" }}</span>
+                <span class="file-size">{{ code|length }} chars</span>
+                <span class="complexity-badge">{{ code|code_complexity }}</span>
+                {% endif %}
+            </div>
+            {% if code %}
+            <button class="copy-code-btn" onclick="copyTerminalCode(this)" data-copy-text="{{ code }}">
+                <i class="fas fa-copy"></i>
+                <span>Copy Code</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+
+<style>
+/* Terminal Code Display Component Styles */
+.terminal-code-display {
+    font-family: var(--font-body);
+    margin: var(--spacing-lg) 0;
+}
+
+/* ========== BASE TERMINAL WINDOW ========== */
+.terminal-window {
+    background: 
+        var(--gradient-glass),
+        rgba(7, 7, 18, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    position: relative;
+    transition: all var(--transition-normal);
+}
+
+.terminal-window::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-teal), var(--color-lavender));
+    opacity: 0.8;
+}
+
+.terminal-window:hover {
+    box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(38, 198, 218, 0.1);
+    transform: translateY(-2px);
+}
+
+/* ========== TERMINAL HEADER ========== */
+.terminal-header {
+    background: rgba(0, 0, 0, 0.4);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    gap: var(--spacing-md);
+}
+
+.terminal-header.compact {
+    padding: var(--spacing-xs) var(--spacing-md);
+}
+
+.terminal-header.fullscreen {
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.terminal-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.terminal-button {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    opacity: 0.8;
+}
+
+.terminal-button:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.terminal-button.red { 
+    background: var(--color-coral);
+    box-shadow: 0 0 6px rgba(255, 138, 128, 0.4);
+}
+.terminal-button.yellow { 
+    background: var(--color-yellow);
+    box-shadow: 0 0 6px rgba(255, 245, 157, 0.4);
+}
+.terminal-button.green { 
+    background: var(--color-mint);
+    box-shadow: 0 0 6px rgba(165, 214, 167, 0.4);
+}
+
+/* Terminal Title Section */
+.terminal-title,
+.terminal-title-section {
+    font-family: var(--font-code);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+}
+
+.terminal-title {
+    font-size: 0.85rem;
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.terminal-title-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex: 1;
+}
+
+.terminal-subtitle {
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+}
+
+.terminal-language {
+    font-size: 0.7rem;
+    color: var(--color-teal);
+    background: rgba(38, 198, 218, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--border-radius-sm);
+    margin-top: 0.2rem;
+}
+
+/* Terminal Status */
+.terminal-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.operational {
+    background: var(--color-mint);
+    box-shadow: 0 0 8px var(--color-mint);
+}
+
+.status-text {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-mint);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* Terminal Actions */
+.terminal-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.terminal-action-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.terminal-action-btn:hover {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+    transform: scale(1.05);
+}
+
+/* ========== TERMINAL CONTENT ========== */
+.terminal-content {
+    padding: var(--spacing-lg);
+    font-family: var(--font-code);
+    color: var(--color-text);
+    line-height: 1.6;
+    overflow-x: auto;
+    position: relative;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.terminal-content.compact {
+    padding: var(--spacing-md);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.terminal-content.fullscreen {
+    padding: var(--spacing-xl);
+    min-height: 300px;
+}
+
+.code-display {
+    position: relative;
+    border-radius: var(--border-radius-sm);
+    overflow-x: auto;
+}
+
+.code-display pre {
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font-code) !important;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.code-display code {
+    font-family: var(--font-code) !important;
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+/* Custom scrollbar for code areas */
+.terminal-content::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.terminal-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.terminal-content::-webkit-scrollbar-thumb {
+    background: rgba(38, 198, 218, 0.3);
+    border-radius: 4px;
+}
+
+.terminal-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(38, 198, 218, 0.5);
+}
+
+/* ========== TERMINAL FOOTER ========== */
+.terminal-footer {
+    background: rgba(0, 0, 0, 0.3);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    gap: var(--spacing-md);
+}
+
+.terminal-info,
+.terminal-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.2rem 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+    white-space: nowrap;
+}
+
+.stat-item i {
+    font-size: 0.7rem;
+    color: var(--color-teal);
+}
+
+.line-count,
+.lang-indicator,
+.file-size,
+.complexity-badge {
+    padding: 0.2rem 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+    white-space: nowrap;
+}
+
+.lang-indicator {
+    color: var(--color-teal);
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+}
+
+.complexity-badge {
+    color: var(--color-lavender);
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+}
+
+.terminal-timestamp {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+}
+
+.terminal-timestamp i {
+    color: var(--color-teal);
+}
+
+/* Copy Button */
+.copy-code-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-teal);
+    cursor: pointer;
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    transition: all var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.copy-code-btn:hover {
+    background: rgba(38, 198, 218, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(38, 198, 218, 0.3);
+}
+
+.copy-code-btn.copied {
+    background: rgba(165, 214, 167, 0.2);
+    border-color: rgba(165, 214, 167, 0.4);
+    color: var(--color-mint);
+}
+
+.copy-code-btn i {
+    font-size: 0.7rem;
+}
+
+/* ========== MINIMAL CODE DISPLAY ========== */
+.code-minimal-display {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.minimal-header {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--spacing-xs) var(--spacing-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.code-language {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-teal);
+    background: rgba(38, 198, 218, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--border-radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.code-filename {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+}
+
+.minimal-code-content {
+    padding: var(--spacing-md);
+    font-family: var(--font-code);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.minimal-code-content pre {
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* ========== TERMINAL SIZE VARIANTS ========== */
+
+/* Compact Terminal */
+.terminal-window.compact {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.terminal-window.compact .terminal-button {
+    width: 10px;
+    height: 10px;
+}
+
+.terminal-window.compact .terminal-title {
+    font-size: 0.75rem;
+}
+
+/* Fullscreen Terminal */
+.terminal-window.fullscreen {
+    min-height: 400px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+.terminal-window.fullscreen .terminal-button {
+    width: 14px;
+    height: 14px;
+}
+
+.terminal-window.fullscreen .terminal-title {
+    font-size: 1rem;
+}
+
+.terminal-window.fullscreen.maximized {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    border-radius: 0;
+    margin: 0;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes terminalBoot {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.02) translateY(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.terminal-window {
+    animation: terminalBoot 0.8s ease-out;
+}
+
+@keyframes typewriter {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+.terminal-window.typewriter-effect .code-display {
+    overflow: hidden;
+    white-space: nowrap;
+    animation: typewriter 2s steps(40, end);
+}
+
+@keyframes codeHighlight {
+    0%, 100% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(38, 198, 218, 0.1);
+    }
+}
+
+.code-display.highlight-animation {
+    animation: codeHighlight 2s ease-in-out;
+}
+
+/* Scanning line effect */
+.terminal-window.scanning::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(38, 198, 218, 0.1) 50%, 
+        transparent 100%);
+    animation: terminalScan 3s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 10;
+}
+
+@keyframes terminalScan {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 991px) {
+    .terminal-header {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        text-align: center;
+    }
+    
+    .terminal-header.fullscreen {
+        flex-direction: row;
+        gap: var(--spacing-md);
+    }
+    
+    .terminal-actions {
+        margin-top: var(--spacing-sm);
+    }
+    
+    .terminal-footer {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        text-align: center;
+    }
+    
+    .terminal-info,
+    .terminal-stats {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 767px) {
+    .terminal-content {
+        padding: var(--spacing-md);
+        font-size: 0.85rem;
+    }
+    
+    .terminal-content.fullscreen {
+        padding: var(--spacing-lg);
+    }
+    
+    .terminal-footer {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .terminal-info,
+    .terminal-stats {
+        gap: var(--spacing-sm);
+    }
+    
+    .stat-item {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.3rem;
+    }
+    
+    .code-display pre {
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
+}
+
+@media (max-width: 576px) {
+    .terminal-header {
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+    
+    .terminal-content {
+        padding: var(--spacing-sm);
+    }
+    
+    .terminal-title {
+        font-size: 0.75rem;
+    }
+    
+    .terminal-button {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .copy-code-btn span {
+        display: none;
+    }
+    
+    .stat-item span:not(:first-child) {
+        display: none;
+    }
+}
+
+/* ========== ACCESSIBILITY ========== */
+.terminal-window:focus,
+.copy-code-btn:focus,
+.terminal-action-btn:focus {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .terminal-window {
+        border-width: 2px;
+        backdrop-filter: none;
+        background: rgba(7, 7, 18, 0.95);
+    }
+    
+    .terminal-content {
+        background: rgba(0, 0, 0, 0.8);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .terminal-window {
+        animation: none;
+    }
+    
+    .terminal-window.scanning::after {
+        animation: none;
+    }
+    
+    .code-display.highlight-animation {
+        animation: none;
+    }
+    
+    .terminal-button:hover,
+    .copy-code-btn:hover,
+    .terminal-action-btn:hover {
+        transform: none;
+    }
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+    .terminal-window {
+        background: white !important;
+        color: black !important;
+        border: 2px solid #333 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+    
+    .terminal-header,
+    .terminal-footer {
+        background: #f5f5f5 !important;
+        color: #333 !important;
+        border-color: #333 !important;
+    }
+    
+    .terminal-actions,
+    .copy-code-btn {
+        display: none !important;
+    }
+    
+    .code-display pre {
+        background: #f8f8f8 !important;
+        border: 1px solid #ddd !important;
+        padding: 1rem !important;
+        color: #333 !important;
+    }
+}
+</style>
+
+<script>
+// Terminal Code Display JavaScript Functions
+function copyTerminalCode(button) {
+    const terminal = button.closest('.terminal-window, .terminal-code-display');
+    const codeElement = terminal.querySelector('.code-display pre, .code-display code');
+    
+    let textToCopy = '';
+    
+    // Get text from data attribute first, then from element
+    if (button.dataset.copyText) {
+        textToCopy = button.dataset.copyText;
+    } else if (codeElement) {
+        textToCopy = codeElement.textContent || codeElement.innerText;
+    }
+    
+    if (!textToCopy) {
+        console.warn('No code found to copy');
+        return;
+    }
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        // Visual feedback
+        const originalText = button.querySelector('span')?.textContent || 'Copy Code';
+        const originalIcon = button.querySelector('i')?.className || 'fas fa-copy';
+        
+        button.classList.add('copied');
+        if (button.querySelector('span')) {
+            button.querySelector('span').textContent = 'Copied!';
+        }
+        if (button.querySelector('i')) {
+            button.querySelector('i').className = 'fas fa-check';
+        }
+        
+        // Add terminal scanning effect
+        terminal.classList.add('scanning');
+        
+        setTimeout(() => {
+            button.classList.remove('copied');
+            if (button.querySelector('span')) {
+                button.querySelector('span').textContent = originalText;
+            }
+            if (button.querySelector('i')) {
+                button.querySelector('i').className = originalIcon;
+            }
+            terminal.classList.remove('scanning');
+        }, 2000);
+        
+    }).catch(err => {
+        console.error('Failed to copy code:', err);
+        
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+            document.execCommand('copy');
+            button.classList.add('copied');
+            setTimeout(() => button.classList.remove('copied'), 2000);
+        } catch (fallbackErr) {
+            console.error('Fallback copy failed:', fallbackErr);
+        }
+        
+        document.body.removeChild(textArea);
+    });
+}
+
+function toggleTerminalFullscreen(button) {
+    const terminal = button.closest('.terminal-window');
+    const icon = button.querySelector('i');
+    
+    if (!terminal) return;
+    
+    if (terminal.classList.contains('maximized')) {
+        // Exit fullscreen
+        terminal.classList.remove('maximized');
+        icon.className = 'fas fa-expand';
+        button.title = 'Toggle Fullscreen';
+        document.body.style.overflow = '';
+    } else {
+        // Enter fullscreen
+        terminal.classList.add('maximized');
+        icon.className = 'fas fa-compress';
+        button.title = 'Exit Fullscreen';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Initialize terminal effects when they come into view
+function initTerminalEffects() {
+    const terminals = document.querySelectorAll('.terminal-window');
+    
+    // Intersection Observer for entrance animations
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const terminal = entry.target;
+                
+                // Add typewriter effect for first time viewing
+                if (!terminal.dataset.viewed) {
+                    setTimeout(() => {
+                        terminal.classList.add('typewriter-effect');
+                        terminal.dataset.viewed = 'true';
+                        
+                        // Remove typewriter effect after animation
+                        setTimeout(() => {
+                            terminal.classList.remove('typewriter-effect');
+                        }, 2000);
+                    }, 300);
+                }
+                
+                observer.unobserve(terminal);
+            }
+        });
+    }, { threshold: 0.3 });
+    
+    terminals.forEach(terminal => {
+        observer.observe(terminal);
+        
+        // Add click handlers for terminal buttons
+        const buttons = terminal.querySelectorAll('.terminal-button');
+        buttons.forEach((button, index) => {
+            button.addEventListener('click', () => {
+                // Add click animation
+                button.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    button.style.transform = 'scale(1)';
+                }, 100);
+                
+                // Terminal button actions
+                if (button.classList.contains('red')) {
+                    // Close/minimize terminal (could hide or add overlay)
+                    terminal.style.opacity = '0.7';
+                    setTimeout(() => {
+                        terminal.style.opacity = '1';
+                    }, 500);
+                } else if (button.classList.contains('yellow')) {
+                    // Minimize effect
+                    terminal.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        terminal.style.transform = 'scale(1)';
+                    }, 200);
+                } else if (button.classList.contains('green')) {
+                    // Maximize/fullscreen toggle
+                    toggleTerminalFullscreen(terminal.querySelector('.terminal-action-btn[title*="Fullscreen"]') || button);
+                }
+            });
+        });
+    });
+}
+
+// Enhanced syntax highlighting effects
+function enhanceCodeDisplay() {
+    const codeDisplays = document.querySelectorAll('.code-display');
+    
+    codeDisplays.forEach(display => {
+        // Add line numbers if not present
+        const pre = display.querySelector('pre');
+        if (pre && !pre.dataset.lineNumbers) {
+            const code = pre.textContent || pre.innerText;
+            const lines = code.split('\n');
+            
+            if (lines.length > 1) {
+                // Create line numbers
+                const lineNumbers = document.createElement('div');
+                lineNumbers.className = 'line-numbers';
+                lineNumbers.innerHTML = lines.map((_, i) => 
+                    `<span class="line-number">${i + 1}</span>`
+                ).join('');
+                
+                display.style.position = 'relative';
+                display.style.paddingLeft = '3rem';
+                lineNumbers.style.cssText = `
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    padding: 0 0.5rem;
+                    background: rgba(0, 0, 0, 0.2);
+                    border-right: 1px solid rgba(255, 255, 255, 0.1);
+                    font-family: var(--font-code);
+                    font-size: 0.8rem;
+                    line-height: 1.6;
+                    color: var(--color-text-tertiary);
+                    text-align: right;
+                    user-select: none;
+                    min-width: 2.5rem;
+                `;
+                
+                display.appendChild(lineNumbers);
+                pre.dataset.lineNumbers = 'true';
+            }
+        }
+        
+        // Add hover effects for code blocks
+        display.addEventListener('mouseenter', () => {
+            display.classList.add('highlight-animation');
+            setTimeout(() => {
+                display.classList.remove('highlight-animation');
+            }, 2000);
+        });
+    });
+}
+
+// Keyboard shortcuts for terminals
+function initTerminalKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + Shift + C to copy code from focused terminal
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+            const focusedTerminal = document.querySelector('.terminal-window:focus-within');
+            const copyBtn = focusedTerminal?.querySelector('.copy-code-btn, .terminal-action-btn[title*="Copy"]');
+            
+            if (copyBtn) {
+                e.preventDefault();
+                copyBtn.click();
+            }
+        }
+        
+        // F11 to toggle fullscreen for focused terminal
+        if (e.key === 'F11') {
+            const focusedTerminal = document.querySelector('.terminal-window:focus-within');
+            const fullscreenBtn = focusedTerminal?.querySelector('.terminal-action-btn[title*="Fullscreen"]');
+            
+            if (fullscreenBtn) {
+                e.preventDefault();
+                fullscreenBtn.click();
+            }
+        }
+        
+        // Escape to exit fullscreen
+        if (e.key === 'Escape') {
+            const maximizedTerminal = document.querySelector('.terminal-window.maximized');
+            if (maximizedTerminal) {
+                const fullscreenBtn = maximizedTerminal.querySelector('.terminal-action-btn[title*="Fullscreen"], .terminal-action-btn[title*="Exit"]');
+                if (fullscreenBtn) {
+                    e.preventDefault();
+                    fullscreenBtn.click();
+                }
+            }
+        }
+    });
+}
+
+// Initialize all terminal functionality
+function initTerminalCodeDisplay() {
+    console.log('💻 Initializing terminal code displays...');
+    
+    initTerminalEffects();
+    enhanceCodeDisplay();
+    initTerminalKeyboardShortcuts();
+    
+    // Add terminal focus management
+    const terminals = document.querySelectorAll('.terminal-window');
+    terminals.forEach(terminal => {
+        terminal.setAttribute('tabindex', '0');
+        
+        terminal.addEventListener('focus', () => {
+            terminal.style.boxShadow = `
+                0 20px 50px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(38, 198, 218, 0.3),
+                0 0 0 2px rgba(38, 198, 218, 0.5)
+            `;
+        });
+        
+        terminal.addEventListener('blur', () => {
+            terminal.style.boxShadow = '';
+        });
+    });
+    
+    console.log('✅ Terminal code displays initialized');
+}
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTerminalCodeDisplay);
+} else {
+    initTerminalCodeDisplay();
+}
+
+// Export for global access
+window.copyTerminalCode = copyTerminalCode;
+window.toggleTerminalFullscreen = toggleTerminalFullscreen;
+window.initTerminalCodeDisplay = initTerminalCodeDisplay;
+</script>
