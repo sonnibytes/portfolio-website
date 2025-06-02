@@ -1,6 +1,6 @@
 <!----
- * AURA DataLogs - Category Hexagon Navigation Component
- * Reusable glass hexagon navigation with multiple styles
+ * AURA DataLogs - Category Hexagon Navigation Component (STREAMLINED)
+ * Reusable component with minimal CSS/JS - relies on consolidated files
  * Usage: {--% include 'blog/includes/category_hexagon_nav.html' with style="full" current_category=category %--}
  * Styles: full, compact, minimal, filter
 ---->
@@ -70,47 +70,51 @@
     
     {% elif style == 'compact' %}
     <!-- Compact Navigation (sidebar style) -->
-    <div class="categories-compact-panel">
-        <h3 class="compact-title">
-            <i class="fas fa-folder"></i>
-            Categories
-        </h3>
+    <div class="glass-card sidebar-panel">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-folder"></i>
+                Categories
+            </h3>
+        </div>
         
-        <div class="categories-compact-grid">
-            <!-- All Option -->
-            <a href="{% url 'blog:post_list' %}" 
-               class="category-compact-item {% if not current_category %}active{% endif %}"
-               title="All DataLogs">
-                <div class="category-hexagon glass-hex compact" 
-                     style="--hex-color: #26c6da;">
-                    <span class="hex-text">ALL</span>
-                </div>
-                <span class="compact-label">All</span>
-            </a>
-            
-            <!-- Categories -->
-            {% get_datalog_categories as categories %}
-            {% for category in categories|slice:":6" %}
-            <a href="{% url 'blog:category' slug=category.slug %}" 
-               class="category-compact-item {% if category.slug == current_category.slug %}active{% endif %}"
-               title="{{ category.name }}">
-                <div class="category-hexagon glass-hex compact" 
-                     style="--hex-color: {{ category.color }};">
-                    <span class="hex-text">{{ category.code }}</span>
-                </div>
-                <span class="compact-label">{{ category.name|truncate_smart:8 }}</span>
-            </a>
-            {% endfor %}
-            
-            {% if categories|length > 6 %}
-            <a href="{% url 'blog:post_list' %}" class="category-compact-item more-categories">
-                <div class="category-hexagon glass-hex compact" 
-                     style="--hex-color: #666666;">
-                    <span class="hex-text">+{{ categories|length|add:"-6" }}</span>
-                </div>
-                <span class="compact-label">More</span>
-            </a>
-            {% endif %}
+        <div class="card-content">
+            <div class="categories-compact-grid">
+                <!-- All Option -->
+                <a href="{% url 'blog:post_list' %}" 
+                   class="category-compact-item {% if not current_category %}active{% endif %}"
+                   title="All DataLogs">
+                    <div class="category-hexagon glass-hex compact" 
+                         style="--hex-color: #26c6da;">
+                        <span class="hex-text">ALL</span>
+                    </div>
+                    <span class="compact-label">All</span>
+                </a>
+                
+                <!-- Categories -->
+                {% get_datalog_categories as categories %}
+                {% for category in categories|slice:":6" %}
+                <a href="{% url 'blog:category' slug=category.slug %}" 
+                   class="category-compact-item {% if category.slug == current_category.slug %}active{% endif %}"
+                   title="{{ category.name }}">
+                    <div class="category-hexagon glass-hex compact" 
+                         style="--hex-color: {{ category.color }};">
+                        <span class="hex-text">{{ category.code }}</span>
+                    </div>
+                    <span class="compact-label">{{ category.name|truncate_smart:8 }}</span>
+                </a>
+                {% endfor %}
+                
+                {% if categories|length > 6 %}
+                <a href="{% url 'blog:post_list' %}" class="category-compact-item more-categories">
+                    <div class="category-hexagon glass-hex compact" 
+                         style="--hex-color: #666666;">
+                        <span class="hex-text">+{{ categories|length|add:"-6" }}</span>
+                    </div>
+                    <span class="compact-label">More</span>
+                </a>
+                {% endif %}
+            </div>
         </div>
     </div>
     
@@ -144,37 +148,54 @@
     
     {% elif style == 'filter' %}
     <!-- Filter Style (for search/archive pages) -->
-    <div class="categories-filter-panel">
-        <div class="filter-header">
-            <i class="fas fa-filter"></i>
-            <span class="filter-label">Filter by Category</span>
+    <div class="glass-card filters-panel">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-filter"></i>
+                Filter by Category
+            </h3>
         </div>
         
-        <div class="categories-filter-grid">
-            <!-- All Option -->
-            <label class="category-filter-item">
-                <input type="checkbox" name="category" value="" 
-                       {% if not request.GET.category %}checked{% endif %}>
-                <div class="category-hexagon glass-hex filter" 
-                     style="--hex-color: #26c6da;">
-                    <span class="hex-text">ALL</span>
+        <div class="card-content">
+            <form method="get" class="category-filter-form">
+                <div class="categories-filter-grid">
+                    <!-- All Option -->
+                    <label class="category-filter-item">
+                        <input type="checkbox" name="category" value="" 
+                               {% if not request.GET.category %}checked{% endif %}>
+                        <div class="category-hexagon glass-hex filter" 
+                             style="--hex-color: #26c6da;">
+                            <span class="hex-text">ALL</span>
+                        </div>
+                        <span class="filter-count">{{ total_posts|default:"24" }}</span>
+                    </label>
+                    
+                    <!-- Categories as Checkboxes -->
+                    {% get_datalog_categories as categories %}
+                    {% for category in categories %}
+                    <label class="category-filter-item">
+                        <input type="checkbox" name="category" value="{{ category.slug }}"
+                               {% if category.slug in request.GET.category %}checked{% endif %}>
+                        <div class="category-hexagon glass-hex filter" 
+                             style="--hex-color: {{ category.color }};">
+                            <span class="hex-text">{{ category.code }}</span>
+                        </div>
+                        <span class="filter-count">{{ category.post_count }}</span>
+                    </label>
+                    {% endfor %}
                 </div>
-                <span class="filter-count">{{ total_posts|default:"24" }}</span>
-            </label>
-            
-            <!-- Categories as Checkboxes -->
-            {% get_datalog_categories as categories %}
-            {% for category in categories %}
-            <label class="category-filter-item">
-                <input type="checkbox" name="category" value="{{ category.slug }}"
-                       {% if category.slug in request.GET.category %}checked{% endif %}>
-                <div class="category-hexagon glass-hex filter" 
-                     style="--hex-color: {{ category.color }};">
-                    <span class="hex-text">{{ category.code }}</span>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        Apply Filters
+                    </button>
+                    <button type="reset" class="btn btn-outline">
+                        <i class="fas fa-times"></i>
+                        Clear
+                    </button>
                 </div>
-                <span class="filter-count">{{ category.post_count }}</span>
-            </label>
-            {% endfor %}
+            </form>
         </div>
     </div>
     
@@ -186,314 +207,11 @@
 </div>
 
 <style>
-/* Category Hexagon Navigation Component Styles */
-.category-hexagon-navigation {
-    font-family: var(--font-body);
-}
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
 
-/* ========== SHARED HEXAGON STYLES ========== */
-.category-hexagon.glass-hex {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    background: 
-        linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.15) 0%,
-            rgba(255, 255, 255, 0.05) 50%, 
-            rgba(255, 255, 255, 0.08) 100%
-        ),
-        rgba(13, 13, 31, 0.6);
-    backdrop-filter: blur(15px);
-    border: 2px solid transparent;
-    transition: all var(--transition-normal);
-    z-index: 2;
-}
+/* Only styles that are NOT in the consolidated CSS or need component-specific adjustments */
 
-.category-hexagon.glass-hex::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    background: var(--hex-color, #26c6da);
-    clip-path: inherit;
-    z-index: -1;
-    opacity: 0.6;
-    filter: blur(1px);
-    transition: all var(--transition-fast);
-}
-
-.category-hexagon.glass-hex::after {
-    content: '';
-    position: absolute;
-    top: -6px;
-    left: -6px;
-    right: -6px;
-    bottom: -6px;
-    background: var(--hex-color, #26c6da);
-    clip-path: inherit;
-    z-index: -2;
-    opacity: 0.3;
-    filter: blur(4px);
-    transition: all var(--transition-fast);
-}
-
-.hex-text {
-    position: relative;
-    z-index: 3;
-    font-family: var(--font-code);
-    color: var(--color-text);
-    font-weight: 700;
-    text-transform: uppercase;
-    line-height: 1;
-    text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
-    transition: all var(--transition-fast);
-}
-
-/* ========== FULL NAVIGATION STYLE ========== */
-.category-nav-full .categories-glass-panel {
-    background: 
-        var(--gradient-glass),
-        rgba(13, 13, 31, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--border-radius-xl);
-    backdrop-filter: blur(20px);
-    padding: var(--spacing-xl);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    margin-bottom: var(--spacing-xl);
-}
-
-.category-nav-full .categories-glass-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--color-lavender), var(--color-teal), var(--color-coral));
-    opacity: 0.8;
-    border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
-}
-
-.categories-scroll-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-}
-
-.category-scroll-btn {
-    width: 40px;
-    height: 40px;
-    background: rgba(179, 157, 219, 0.1);
-    border: 1px solid rgba(179, 157, 219, 0.3);
-    border-radius: 50%;
-    color: var(--color-lavender);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
-}
-
-.category-scroll-btn:hover:not(:disabled) {
-    background: rgba(179, 157, 219, 0.2);
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(179, 157, 219, 0.3);
-}
-
-.category-scroll-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-    transform: scale(0.9);
-}
-
-.categories-grid {
-    display: flex;
-    gap: var(--spacing-lg);
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    padding: var(--spacing-sm) 0;
-    flex: 1;
-}
-
-.categories-grid::-webkit-scrollbar {
-    display: none;
-}
-
-.category-nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-lg);
-    text-decoration: none;
-    color: var(--color-text);
-    transition: all var(--transition-normal);
-    position: relative;
-    min-width: 140px;
-    flex-shrink: 0;
-    cursor: pointer;
-    overflow: visible;
-    border-radius: var(--border-radius-lg);
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.category-nav-item:hover {
-    background: rgba(179, 157, 219, 0.05);
-    border-color: rgba(179, 157, 219, 0.2);
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-glow-lavender);
-}
-
-.category-nav-item.active {
-    background: rgba(179, 157, 219, 0.1);
-    border-color: rgba(179, 157, 219, 0.3);
-    box-shadow: var(--shadow-glow-lavender);
-}
-
-.category-hexagon-container {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    margin-bottom: var(--spacing-sm);
-}
-
-.category-nav-full .category-hexagon.glass-hex {
-    width: 60px;
-    height: 60px;
-    font-size: 0.9rem;
-}
-
-.category-info {
-    text-align: center;
-    z-index: 2;
-}
-
-.category-name {
-    font-family: var(--font-heading);
-    font-size: 0.9rem;
-    color: var(--color-text);
-    margin: 0 0 0.2rem 0;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: color var(--transition-fast);
-}
-
-.category-count {
-    font-family: var(--font-code);
-    font-size: 0.75rem;
-    color: var(--color-text-tertiary);
-    white-space: nowrap;
-    transition: color var(--transition-fast);
-}
-
-.category-nav-item:hover .category-name,
-.category-nav-item.active .category-name {
-    color: var(--color-lavender);
-}
-
-.category-nav-item:hover .category-count,
-.category-nav-item.active .category-count {
-    color: var(--color-text-secondary);
-}
-
-/* Enhanced Hover Effects for Full Style */
-.category-nav-item:hover .category-hexagon.glass-hex {
-    background: 
-        linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.25) 0%,
-            rgba(255, 255, 255, 0.1) 50%, 
-            rgba(255, 255, 255, 0.15) 100%
-        ),
-        rgba(13, 13, 31, 0.7);
-    transform: scale(1.05);
-}
-
-.category-nav-item:hover .category-hexagon.glass-hex::before {
-    opacity: 0.8;
-    filter: blur(2px);
-    box-shadow: 0 0 15px var(--hex-color, #26c6da);
-}
-
-.category-nav-item:hover .category-hexagon.glass-hex::after {
-    opacity: 0.5;
-    filter: blur(6px);
-    transform: scale(1.1);
-}
-
-.category-nav-item:hover .hex-text {
-    color: var(--color-text);
-    text-shadow: 
-        0 0 12px rgba(255, 255, 255, 0.8),
-        0 0 6px var(--hex-color, #26c6da);
-    transform: scale(1.05);
-}
-
-.category-nav-item.active .category-hexagon.glass-hex {
-    background: 
-        linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.3) 0%,
-            rgba(255, 255, 255, 0.15) 50%, 
-            rgba(255, 255, 255, 0.2) 100%
-        ),
-        rgba(13, 13, 31, 0.8);
-    transform: scale(1.1);
-}
-
-.category-nav-item.active .category-hexagon.glass-hex::before {
-    opacity: 1;
-    filter: blur(3px);
-    box-shadow: 0 0 25px var(--hex-color, #26c6da);
-}
-
-.category-nav-item.active .category-hexagon.glass-hex::after {
-    opacity: 0.7;
-    filter: blur(8px);
-    transform: scale(1.2);
-    animation: hexGlow 2s ease-in-out infinite;
-}
-
-.category-nav-item.active .hex-text {
-    color: var(--color-text);
-    text-shadow: 
-        0 0 15px rgba(255, 255, 255, 1),
-        0 0 8px var(--hex-color, #26c6da);
-    transform: scale(1.1);
-    font-weight: 800;
-}
-
-/* ========== COMPACT NAVIGATION STYLE ========== */
-.category-nav-compact .categories-compact-panel {
-    background: 
-        var(--gradient-glass),
-        rgba(13, 13, 31, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--border-radius-lg);
-    padding: var(--spacing-lg);
-    backdrop-filter: blur(15px);
-}
-
-.compact-title {
-    font-family: var(--font-heading);
-    font-size: 1rem;
-    color: var(--color-lavender);
-    margin-bottom: var(--spacing-md);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-}
-
+/* Compact grid layout specific to this component */
 .categories-compact-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -527,12 +245,6 @@
     color: var(--color-lavender);
 }
 
-.category-nav-compact .category-hexagon.glass-hex.compact {
-    width: 40px;
-    height: 40px;
-    font-size: 0.8rem;
-}
-
 .compact-label {
     font-family: var(--font-code);
     font-size: 0.7rem;
@@ -551,8 +263,8 @@
     opacity: 1;
 }
 
-/* ========== MINIMAL NAVIGATION STYLE ========== */
-.category-nav-minimal .categories-minimal-panel {
+/* Minimal navigation specific styling */
+.categories-minimal-panel {
     padding: var(--spacing-md) 0;
 }
 
@@ -574,37 +286,12 @@
     transform: translateY(-2px);
 }
 
-.category-nav-minimal .category-hexagon.glass-hex.minimal {
-    width: 32px;
-    height: 32px;
-    font-size: 0.7rem;
-}
-
-/* ========== FILTER NAVIGATION STYLE ========== */
-.category-nav-filter .categories-filter-panel {
-    background: 
-        var(--gradient-glass),
-        rgba(13, 13, 31, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--border-radius-lg);
-    padding: var(--spacing-lg);
-    backdrop-filter: blur(15px);
-}
-
-.filter-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
-    font-family: var(--font-heading);
-    color: var(--color-lavender);
-    font-weight: 600;
-}
-
+/* Filter form specific styling */
 .categories-filter-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
 }
 
 .category-filter-item {
@@ -637,74 +324,19 @@
     transform: scale(1.1);
 }
 
-.category-filter-item input:checked + .category-hexagon.glass-hex::before {
-    opacity: 1;
-    box-shadow: 0 0 20px var(--hex-color, #26c6da);
-}
-
-.category-nav-filter .category-hexagon.glass-hex.filter {
-    width: 36px;
-    height: 36px;
-    font-size: 0.7rem;
-}
-
 .filter-count {
     font-family: var(--font-code);
     font-size: 0.75rem;
     color: var(--color-text-tertiary);
 }
 
-/* ========== ANIMATIONS ========== */
-@keyframes hexGlow {
-    0%, 100% {
-        opacity: 0.7;
-        transform: scale(1.2);
-    }
-    50% {
-        opacity: 0.9;
-        transform: scale(1.3);
-    }
+.filter-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
 }
 
-@keyframes hexagonEntrance {
-    0% {
-        opacity: 0;
-        transform: scale(0.8) rotate(-10deg);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1) rotate(0deg);
-    }
-}
-
-.category-hexagon.glass-hex {
-    animation: hexagonEntrance 0.6s ease-out;
-}
-
-.category-nav-item:nth-child(1) .category-hexagon { animation-delay: 0.1s; }
-.category-nav-item:nth-child(2) .category-hexagon { animation-delay: 0.2s; }
-.category-nav-item:nth-child(3) .category-hexagon { animation-delay: 0.3s; }
-.category-nav-item:nth-child(4) .category-hexagon { animation-delay: 0.4s; }
-.category-nav-item:nth-child(5) .category-hexagon { animation-delay: 0.5s; }
-.category-nav-item:nth-child(6) .category-hexagon { animation-delay: 0.6s; }
-
-/* ========== RESPONSIVE DESIGN ========== */
-@media (max-width: 1200px) {
-    .categories-grid {
-        gap: var(--spacing-md);
-    }
-    
-    .category-nav-item {
-        min-width: 120px;
-        padding: var(--spacing-md);
-    }
-    
-    .category-nav-full .category-hexagon.glass-hex {
-        width: 50px;
-        height: 50px;
-    }
-}
-
+/* Component-specific responsive adjustments */
 @media (max-width: 991px) {
     .categories-compact-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -721,341 +353,59 @@
 }
 
 @media (max-width: 767px) {
-    .category-nav-full .categories-glass-panel {
-        padding: var(--spacing-lg);
-    }
-    
-    .category-nav-item {
-        min-width: 100px;
-        padding: var(--spacing-sm);
-    }
-    
-    .category-nav-full .category-hexagon.glass-hex {
-        width: 40px;
-        height: 40px;
-        font-size: 0.8rem;
-    }
-    
-    .category-name {
-        font-size: 0.8rem;
-    }
-    
-    .category-count {
-        font-size: 0.7rem;
-    }
-    
     .categories-compact-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filter-actions {
+        flex-direction: column;
     }
 }
 
 @media (max-width: 576px) {
-    .category-scroll-btn {
-        display: none;
-    }
-    
-    .categories-scroll-container {
-        gap: 0;
-    }
-    
-    .categories-grid {
-        justify-content: flex-start;
-        padding: var(--spacing-xs) 0;
-    }
-    
     .minimal-categories {
         justify-content: center;
     }
-}
-</style>
-
-<script>
-// Category Hexagon Navigation JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-    initCategoryHexagonNav();
-});
-
-function initCategoryHexagonNav() {
-    console.log('🔷 Initializing Category Hexagon Navigation...');
     
-    // Initialize scroll functionality for full navigation
-    initScrollFunctionality();
-    
-    // Initialize filter functionality
-    initFilterFunctionality();
-    
-    // Initialize hover enhancements
-    initHoverEnhancements();
-    
-    // Initialize keyboard navigation
-    initKeyboardNavigation();
-    
-    console.log('✅ Category Hexagon Navigation initialized');
-}
-
-function initScrollFunctionality() {
-    const scrollContainer = document.querySelector('.categories-grid');
-    const leftBtn = document.querySelector('.category-scroll-left');
-    const rightBtn = document.querySelector('.category-scroll-right');
-    
-    if (!scrollContainer || !leftBtn || !rightBtn) return;
-    
-    // Check scroll position and update buttons
-    function updateScrollButtons() {
-        const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
-        
-        leftBtn.disabled = scrollLeft <= 0;
-        rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 1;
-        
-        leftBtn.style.opacity = leftBtn.disabled ? '0.3' : '1';
-        rightBtn.style.opacity = rightBtn.disabled ? '0.3' : '1';
-    }
-    
-    // Scroll functionality
-    leftBtn.addEventListener('click', function() {
-        scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
-    });
-    
-    rightBtn.addEventListener('click', function() {
-        scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
-    });
-    
-    // Update buttons on scroll
-    scrollContainer.addEventListener('scroll', updateScrollButtons);
-    
-    // Initial button state
-    setTimeout(updateScrollButtons, 100);
-    
-    // Update on resize
-    window.addEventListener('resize', updateScrollButtons);
-}
-
-function initFilterFunctionality() {
-    const filterItems = document.querySelectorAll('.category-filter-item');
-    
-    filterItems.forEach(item => {
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        const hexagon = item.querySelector('.category-hexagon');
-        
-        if (!checkbox || !hexagon) return;
-        
-        // Handle clicks on the entire item
-        item.addEventListener('click', function(e) {
-            if (e.target !== checkbox) {
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
-            }
-        });
-        
-        // Visual feedback for checkbox state
-        checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                item.classList.add('selected');
-                hexagon.style.transform = 'scale(1.1)';
-            } else {
-                item.classList.remove('selected');
-                hexagon.style.transform = 'scale(1)';
-            }
-        });
-        
-        // Set initial state
-        if (checkbox.checked) {
-            item.classList.add('selected');
-            hexagon.style.transform = 'scale(1.1)';
-        }
-    });
-}
-
-function initHoverEnhancements() {
-    const hexagons = document.querySelectorAll('.category-hexagon.glass-hex');
-    
-    hexagons.forEach(hexagon => {
-        const parentItem = hexagon.closest('.category-nav-item, .category-compact-item, .category-minimal-item');
-        
-        if (!parentItem) return;
-        
-        // Enhanced hover effect with ripple
-        parentItem.addEventListener('mouseenter', function() {
-            hexagon.style.transform = hexagon.style.transform.includes('scale') 
-                ? hexagon.style.transform.replace(/scale\([^)]*\)/, 'scale(1.05)')
-                : 'scale(1.05)';
-            
-            // Add scanning effect
-            this.classList.add('scanning-hex');
-        });
-        
-        parentItem.addEventListener('mouseleave', function() {
-            const baseScale = this.classList.contains('active') || this.classList.contains('selected') ? '1.1' : '1';
-            hexagon.style.transform = hexagon.style.transform.includes('scale') 
-                ? hexagon.style.transform.replace(/scale\([^)]*\)/, `scale(${baseScale})`)
-                : `scale(${baseScale})`;
-            
-            this.classList.remove('scanning-hex');
-        });
-        
-        // Add click ripple effect
-        parentItem.addEventListener('click', function(e) {
-            const ripple = document.createElement('div');
-            ripple.className = 'hex-ripple';
-            
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
-            
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            
-            this.appendChild(ripple);
-            
-            setTimeout(() => {
-                ripple.remove();
-            }, 600);
-        });
-    });
-}
-
-function initKeyboardNavigation() {
-    const navItems = document.querySelectorAll('.category-nav-item, .category-compact-item, .category-minimal-item');
-    
-    if (navItems.length === 0) return;
-    
-    // Make items focusable
-    navItems.forEach((item, index) => {
-        item.setAttribute('tabindex', index === 0 ? '0' : '-1');
-        item.setAttribute('role', 'button');
-        
-        item.addEventListener('keydown', function(e) {
-            let targetIndex = -1;
-            const currentIndex = Array.from(navItems).indexOf(this);
-            
-            switch(e.key) {
-                case 'ArrowRight':
-                case 'ArrowDown':
-                    e.preventDefault();
-                    targetIndex = (currentIndex + 1) % navItems.length;
-                    break;
-                case 'ArrowLeft':
-                case 'ArrowUp':
-                    e.preventDefault();
-                    targetIndex = (currentIndex - 1 + navItems.length) % navItems.length;
-                    break;
-                case 'Enter':
-                case ' ':
-                    e.preventDefault();
-                    this.click();
-                    return;
-                case 'Home':
-                    e.preventDefault();
-                    targetIndex = 0;
-                    break;
-                case 'End':
-                    e.preventDefault();
-                    targetIndex = navItems.length - 1;
-                    break;
-            }
-            
-            if (targetIndex >= 0) {
-                // Update tabindex
-                navItems.forEach((item, i) => {
-                    item.setAttribute('tabindex', i === targetIndex ? '0' : '-1');
-                });
-                
-                // Focus new item
-                navItems[targetIndex].focus();
-                
-                // Scroll into view if needed
-                const scrollContainer = navItems[targetIndex].closest('.categories-grid');
-                if (scrollContainer) {
-                    const itemRect = navItems[targetIndex].getBoundingClientRect();
-                    const containerRect = scrollContainer.getBoundingClientRect();
-                    
-                    if (itemRect.right > containerRect.right) {
-                        scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
-                    } else if (itemRect.left < containerRect.left) {
-                        scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
-                    }
-                }
-            }
-        });
-        
-        // Focus styling
-        item.addEventListener('focus', function() {
-            this.style.outline = '2px solid var(--color-lavender)';
-            this.style.outlineOffset = '2px';
-        });
-        
-        item.addEventListener('blur', function() {
-            this.style.outline = 'none';
-        });
-    });
-}
-
-// Add dynamic styles for enhanced effects
-const hexStyles = document.createElement('style');
-hexStyles.textContent = `
-.scanning-hex::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(179, 157, 219, 0.2) 50%, 
-        transparent 100%);
-    animation: hexScan 1.5s ease-in-out;
-    pointer-events: none;
-    z-index: 10;
-}
-
-@keyframes hexScan {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
-
-.hex-ripple {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(179, 157, 219, 0.3);
-    animation: hexRipple 0.6s ease-out;
-    pointer-events: none;
-    z-index: 5;
-}
-
-@keyframes hexRipple {
-    0% {
-        transform: scale(0);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 0;
+    .categories-filter-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
+/* Enhanced accessibility for this component */
 .category-filter-item.selected {
     background: rgba(179, 157, 219, 0.1);
     border-color: rgba(179, 157, 219, 0.3);
     transform: translateY(-2px);
 }
 
-.category-filter-item.selected .category-hexagon.glass-hex::before {
-    opacity: 1;
-    box-shadow: 0 0 20px var(--hex-color, #26c6da);
-}
-
 .category-filter-item.selected .filter-count {
     color: var(--color-lavender);
     font-weight: 600;
 }
-`;
 
-document.head.appendChild(hexStyles);
+/* Focus indicators */
+.category-compact-item:focus,
+.category-minimal-item:focus,
+.category-filter-item:focus {
+    outline: 2px solid var(--color-lavender);
+    outline-offset: 2px;
+}
+</style>
 
-// Export functions for global access
-window.initCategoryHexagonNav = initCategoryHexagonNav;
-window.updateCategoryScroll = updateScrollButtons;
-</script>
+<!-- 
+REMOVED: All JavaScript functions - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Scroll functionality via initializeHexagonNavigation()
+- Touch gestures and mobile interactions
+- Hover effects and ripple animations
+- Keyboard navigation and accessibility
+- Category filter form handling
+- All event handlers and state management
+
+All hexagon navigation functionality is managed by:
+- DatalogInterface.initializeHexagonNavigation()
+- DatalogInterface.scrollCategories()
+- DatalogInterface.updateScrollButtons()
+- DatalogInterface.initializeHexagonInteractions()
+-->
