@@ -364,28 +364,28 @@ class ArchiveIndexView(ListView):
 
         return queryset
 
-    # def get(self, request, *args, **kwargs):
-    #     # Current Date
-    #     current_date = datetime.now()
-    #     current_year = current_date.year
-    #     current_month = current_date.month
+    def get(self, request, *args, **kwargs):
+        # Current Date
+        current_date = datetime.now()
+        current_year = current_date.year
+        current_month = current_date.month
 
-    #     # Get year and month from kwargs
-    #     year = self.kwargs.get('year')
-    #     month = self.kwargs.get('month')
+        # Get year and month from kwargs
+        year = self.kwargs.get('year')
+        month = self.kwargs.get('month')
 
-    #     # Validate year and month
-    #     if year and (int(year) < self.start_year or int(year) > current_year):
-    #         return redirect('blog:archive')
+        # Validate year and month
+        if year and (int(year) < self.start_year or int(year) > current_year):
+            return redirect('blog:archive')
 
-    #     if month and year and (
-    #         (int(year) == self.start_year and int(month) > self.start_month) or
-    #         (int(year) == current_year and int(month) > current_month) or
-    #         int(month) < 1 or int(month) > 12
-    #     ):
-    #         return redirect('blog:archive_year', year=year)
+        if month and year and (
+            (int(year) == self.start_year and int(month) > self.start_month) or
+            (int(year) == current_year and int(month) > current_month) or
+            int(month) < 1 or int(month) > 12
+        ):
+            return redirect('blog:archive_year', year=year)
 
-    #     return super().get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -544,6 +544,7 @@ def nav_link(context, url_name, label, icon="", css_class=""):
 @register.simple_block_tag(takes_context=True)
 def glass_card(
     context,
+    content,
     title="",
     subtitle="",
     icon="",
@@ -560,6 +561,19 @@ def glass_card(
     expanded=True,
     card_id="",
     data_attributes="",
+    show_metrics=False,
+    metric_1_value="",
+    metric_1_label="",
+    metric_1_icon="fas fa-chart-line",
+    metric_2_value="",
+    metric_2_label="",
+    metric_2_icon="fas fa-check-circle",
+    metric_3_value="",
+    metric_3_label="",
+    metric_3_icon="fas fa-clock",
+    metric_4_value="",
+    metric_4_label="",
+    metric_4_icon="fas fa-star",
 ):
     """
     BLOCK TAG version of glass card - supports {% glass_card %}...{% endglass_card %} syntax.
@@ -671,52 +685,71 @@ def glass_card(
 
         # Header
         if with_header and (title or subtitle or icon):
-            card_html += f'<div class="{header_class}">'
+            card_html += f'<header class="glass-card-header">'
 
-            if header_style == "minimal":
-                # Minimal header - just title and icon inline
-                card_html += '<div class="card-title-row">'
-                if icon:
-                    card_html += f'<i class="{icon}"></i>'
+            # Main header content (similar to section_header)
+            card_html += '<div class="card-header-main">'
+            card_html += '<div class="card-header-left">'
+
+            # Simple icon (not holographic like section_header)
+            if icon:
+                card_html += f'<div class="card-icon-simple"><i class="fas {icon}"></i></div>'
+
+            # Title and subtitle section
+            if title or subtitle:
+                card_html += '<div class="card-text-section">'
                 if title:
-                    card_html += f'<h3 class="card-title">{title}</h3>'
-                if collapsible:
-                    card_html += f'<button class="card-collapse-btn" data-target="#{generated_id}"><i class="fas fa-chevron-down"></i></button>'
-                card_html += "</div>"
+                    # Style title like section_header
+                    card_html += f'<h3 class="card-main-title">{title}</h3>'
+                if subtitle:
+                    # Smaller subtitle
+                    card_html += f'<p class="card-subtitle-text">{subtitle}</p>'
+                card_html += '</div>'
 
-            elif header_style == "compact":
-                # Compact header - smaller spacing
-                card_html += '<div class="card-header-content">'
-                if icon:
-                    card_html += f'<div class="card-icon"><i class="{icon}"></i></div>'
-                if title or subtitle:
-                    card_html += '<div class="card-text">'
-                    if title:
-                        card_html += f'<h4 class="card-title">{title}</h4>'
-                    if subtitle:
-                        card_html += f'<p class="card-subtitle">{subtitle}</p>'
-                    card_html += "</div>"
-                if collapsible:
-                    card_html += f'<button class="card-collapse-btn" data-target="#{generated_id}"><i class="fas fa-chevron-down"></i></button>'
-                card_html += "</div>"
+            # End card-header-left
+            card_html += '</div>'
 
-            else:
-                # Default header - full styling
-                card_html += '<div class="card-header-content">'
-                if icon:
-                    card_html += f'<div class="card-icon"><i class="{icon}"></i></div>'
-                if title or subtitle:
-                    card_html += '<div class="card-text">'
-                    if title:
-                        card_html += f'<h3 class="card-title">{title}</h3>'
-                    if subtitle:
-                        card_html += f'<p class="card-subtitle">{subtitle}</p>'
-                    card_html += "</div>"
-                if collapsible:
-                    card_html += f'<button class="card-collapse-btn" data-target="#{generated_id}"><i class="fas fa-chevron-down"></i></button>'
-                card_html += "</div>"
-
+            # Right side (collapse button if needed)
+            card_html += '<div class="card-header-right">'
+            if collapsible:
+                card_html += f'<button class="card-collapse-btn" data-target="#{generated_id}"><i class="fas fa-chevron-down"></i></button>'
             card_html += "</div>"
+
+            card_html += "</div>"  # End card-header-main
+
+            # Metrics grid (like section_header)
+            if show_metrics and any(
+                [metric_1_value, metric_2_value, metric_3_value, metric_4_value]
+            ):
+                card_html += '<div class="card-metrics-bar">'
+                card_html += '<div class="card-metrics-grid">'
+
+                # Add metrics that have values
+                for i, (value, label, icon_class) in enumerate(
+                    [
+                        (metric_1_value, metric_1_label, metric_1_icon),
+                        (metric_2_value, metric_2_label, metric_2_icon),
+                        (metric_3_value, metric_3_label, metric_3_icon),
+                        (metric_4_value, metric_4_label, metric_4_icon),
+                    ]
+                ):
+                    if value:
+                        card_html += f'''
+                        <div class="card-metric-item">
+                            <div class="metric-icon">
+                                <i class="{icon_class}"></i>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value">{value}</div>
+                                <div class="metric-label">{label}</div>
+                            </div>
+                        </div>
+                        '''
+
+                card_html += "</div>"  # End card-metrics-grid
+                card_html += "</div>"  # End card-metrics-bar
+
+            card_html += "</header>"
 
         # Content
         content_class = "card-content"
@@ -757,6 +790,19 @@ def glass_card_include(
     collapsible=False,
     expanded=True,
     card_id="",
+    show_metrics=False,
+    metric_1_value="",
+    metric_1_label="",
+    metric_1_icon="fas fa-chart-line",
+    metric_2_value="",
+    metric_2_label="",
+    metric_2_icon="fas fa-check-circle",
+    metric_3_value="",
+    metric_3_label="",
+    metric_3_icon="fas fa-clock",
+    metric_4_value="",
+    metric_4_label="",
+    metric_4_icon="fas fa-star",
 ):
     """
     INCLUSION TAG version of glass card - for simple content passing.
@@ -791,6 +837,19 @@ def glass_card_include(
         "collapsible": collapsible,
         "expanded": expanded,
         "card_id": card_id,
+        "show_metrics": show_metrics,
+        "metric_1_value": metric_1_value,
+        "metric_1_label": metric_1_label,
+        "metric_1_icon": metric_1_icon,
+        "metric_2_value": metric_2_value,
+        "metric_2_label": metric_2_label,
+        "metric_2_icon": metric_2_icon,
+        "metric_3_value": metric_3_value,
+        "metric_3_label": metric_3_label,
+        "metric_3_icon": metric_3_icon,
+        "metric_4_value": metric_4_value,
+        "metric_4_label": metric_4_label,
+        "metric_4_icon": metric_4_icon,
         "request": context.get("request"),
     }
 

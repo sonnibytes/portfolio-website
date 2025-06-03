@@ -1564,6 +1564,41 @@ def get_previous_next_posts(post):
 
 
 # ================= PHASE 2 CLEANUP ENHANCEMENTS =================
+
+# Helper Post Color Scheme Getter
+def get_post_color_scheme(post, color_scheme='auto'):
+    # Determine color scheme
+    if color_scheme == "auto":
+        if hasattr(post, "featured") and post.featured:
+            primary_color = "var(--color-yellow)"
+            secondary_color = "rgba(255, 245, 157, 0.1)"
+        elif (hasattr(post, "category") and post.category and hasattr(post.category, "color")):
+            primary_color = post.category.color
+            secondary_color = hex_to_rgba(post.category.color, alpha=0.1)
+        else:
+            primary_color = "var(--color-lavendar)"
+            secondary_color = "rgba(179, 157, 219, 0.1)"
+    elif color_scheme == "category" and hasattr(post, "category") and post.category:
+        primary_color = getattr(post.category, "color", "var(--color-lavendar)")
+        secondary_color = hex_to_rgba(primary_color, alpha=0.1)
+    elif color_scheme == "featured":
+        primary_color = "var(--color-yellow)"
+        secondary_color = "rgba(255, 245, 157, 0.1)"
+    elif color_scheme == "status":
+        status = getattr(post, "status", "published")
+        primary_color = status_color(status)
+        secondary_color = hex_to_rgba(primary_color, alpha=0.1)
+    else:
+        primary_color = "var(--color-lavendar)"
+        secondary_color = "rgba(179, 157, 219, 0.1)"
+    return {
+        'primary_color': primary_color,
+        'secondary_color': secondary_color
+    }
+
+
+
+
 # ================= META  DISPLAY =================
 
 
@@ -1610,30 +1645,35 @@ def datalog_meta_display(
     # Get request for context-aware features
     request = context.get('request')
 
-    # Determine color scheme
-    if color_scheme == 'auto':
-        if hasattr(post, 'featured') and post.featured:
-            primary_color = 'var(--color-yellow)'
-            secondary_color = 'rgba(255, 245, 157, 0.1)'
-        elif hasattr(post, 'category') and post.category and hasattr(post.category, 'color'):
-            primary_color = post.category.color
-            secondary_color = hex_to_rgba(post.category.color, alpha=0.1)
-        else:
-            primary_color = 'var(--color-lavendar)'
-            secondary_color = 'rgba(179, 157, 219, 0.1)'
-    elif color_scheme == 'category' and hasattr(post, 'category') and post.category:
-        primary_color = getattr(post.category, 'color', 'var(--color-lavendar)')
-        secondary_color = hex_to_rgba(primary_color, alpha=0.1)
-    elif color_scheme == 'featured':
-        primary_color = 'var(--color-yellow)'
-        secondary_color = 'rgba(255, 245, 157, 0.1)'
-    elif color_scheme == 'status':
-        status = getattr(post, 'status', 'published')
-        primary_color = status_color(status)
-        secondary_color = hex_to_rgba(primary_color, alpha=0.1)
-    else:
-        primary_color = 'var(--color-lavendar)'
-        secondary_color = 'rgba(179, 157, 219, 0.1)'
+    # Determine color scheme - moved into sep helper get_post_color_scheme(post, color_scheme)
+    # if color_scheme == 'auto':
+    #     if hasattr(post, 'featured') and post.featured:
+    #         primary_color = 'var(--color-yellow)'
+    #         secondary_color = 'rgba(255, 245, 157, 0.1)'
+    #     elif hasattr(post, 'category') and post.category and hasattr(post.category, 'color'):
+    #         primary_color = post.category.color
+    #         secondary_color = hex_to_rgba(post.category.color, alpha=0.1)
+    #     else:
+    #         primary_color = 'var(--color-lavendar)'
+    #         secondary_color = 'rgba(179, 157, 219, 0.1)'
+    # elif color_scheme == 'category' and hasattr(post, 'category') and post.category:
+    #     primary_color = getattr(post.category, 'color', 'var(--color-lavendar)')
+    #     secondary_color = hex_to_rgba(primary_color, alpha=0.1)
+    # elif color_scheme == 'featured':
+    #     primary_color = 'var(--color-yellow)'
+    #     secondary_color = 'rgba(255, 245, 157, 0.1)'
+    # elif color_scheme == 'status':
+    #     status = getattr(post, 'status', 'published')
+    #     primary_color = status_color(status)
+    #     secondary_color = hex_to_rgba(primary_color, alpha=0.1)
+    # else:
+    #     primary_color = 'var(--color-lavendar)'
+    #     secondary_color = 'rgba(179, 157, 219, 0.1)'
+
+    # Determine color scheme with helper
+    colors = get_post_color_scheme(post, color_scheme=color_scheme)
+    primary_color = colors.get('primary_color')
+    secondary_color = colors.get('secondary_color')
 
     # Format date based on format preference
     if show_date and hasattr(post, 'published_date') and post.published_date:
@@ -2219,18 +2259,18 @@ def archive_period_display(group_data, group_by='month'):
     Usage: {% archive_period_display group 'month' %}
     """
     if group_by == "month":
-        month_name = group_data.get("month_name", "Unknown")
-        year = group_data.get("year", 2024)
+        month_name = getattr(group_data, "month_name", "Unknown")
+        year = getattr(group_data, "year", 2024)
         return f"{month_name} {year}"
     elif group_by == "year":
-        return str(group_data.get("year", 2024))
+        return str(getattr(group_data, "year", 2024))
     elif group_by == "quarter":
-        quarter = group_data.get("quarter", 1)
-        year = group_data.get("year", 2024)
+        quarter = getattr(group_data, "quarter", 1)
+        year = getattr(group_data, "year", 2024)
         return f"Q{quarter} {year}"
     elif group_by == "week":
-        week = group_data.get("week", 1)
-        year = group_data.get("year", 2024)
+        week = getattr(group_data, "week", 1)
+        year = getattr(group_data, "year", 2024)
         return f"Week {week}, {year}"
 
     return "Unknown Period"
@@ -2243,8 +2283,8 @@ def archive_period_url(group_data, group_by="month"):
     Usage: {% archive_period_url group 'month' %}
     """
     try:
-        year = group_data.get("year")
-        month = group_data.get("month")
+        year = getattr(group_data, "year")
+        month = getattr(group_data, "month")
 
         if group_by == "month" and year and month:
             return reverse("blog:archive_month", kwargs={"year": year, "month": month})
@@ -2335,15 +2375,15 @@ def archive_summary_stats(grouped_posts, group_by="month"):
         }
 
     total_periods = len(grouped_posts)
-    total_posts = sum(group.get("count", 0) for group in grouped_posts)
+    total_posts = sum(getattr(group, "count", 0) for group in grouped_posts)
     avg_posts = round(total_posts / total_periods, 1) if total_periods > 0 else 0
 
     # Find most/least active periods
     most_active = (
-        max(grouped_posts, key=lambda g: g.get("count", 0)) if grouped_posts else None
+        max(grouped_posts, key=lambda g: getattr(g, "count", 0)) if grouped_posts else None
     )
     least_active = (
-        min(grouped_posts, key=lambda g: g.get("count", 0)) if grouped_posts else None
+        min(grouped_posts, key=lambda g: getattr(g, "count", 0)) if grouped_posts else None
     )
 
     return {
@@ -2352,8 +2392,8 @@ def archive_summary_stats(grouped_posts, group_by="month"):
         "avg_posts_per_period": avg_posts,
         "most_active_period": most_active,
         "least_active_period": least_active,
-        "most_posts_in_period": most_active.get("count", 0) if most_active else 0,
-        "least_posts_in_period": least_active.get("count", 0) if least_active else 0,
+        "most_posts_in_period": getattr(most_active, "count", 0) if most_active else 0,
+        "least_posts_in_period": getattr(least_active, "count", 0) if least_active else 0,
         "group_by": group_by,
     }
 
@@ -2483,7 +2523,7 @@ def archive_smart_grouping(posts, max_groups=12):
 
     # Get date range
     date_range = timeline_date_range(posts)
-    span_days = date_range.get("span_days", 0)
+    span_days = getattr(date_range, "span_days", 0)
 
     # Determine best grouping based on span
     if span_days <= 90:  # 3 months or less
@@ -2523,8 +2563,8 @@ def archive_period_progress(group_data, group_by="month"):
 
     try:
         if group_by == "month":
-            year = group_data.get("year", now.year)
-            month = group_data.get("month", now.month)
+            year = getattr(group_data, "year", now.year)
+            month = getattr(group_data, "month", now.month)
 
             if year == now.year and month == now.month:
                 # Current month - calculate progress
@@ -2535,11 +2575,10 @@ def archive_period_progress(group_data, group_by="month"):
                 return round((current_day / days_in_month) * 100, 1)
 
         elif group_by == "year":
-            year = group_data.get("year", now.year)
+            year = getattr(group_data, "year", now.year)
 
             if year == now.year:
                 # Current year - calculate progress
-                import datetime
 
                 start_of_year = datetime.date(year, 1, 1)
                 end_of_year = datetime.date(year, 12, 31)
@@ -2612,3 +2651,344 @@ def archive_navigation_data(posts, current_year=None, current_month=None):
         "current_month": current_month,
         "has_navigation": bool(year_data),
     }
+
+
+# ================= READING PROGRESS INDICATOR =================
+
+
+@register.inclusion_tag(
+    "blog/includes/reading_progress_indicator.html", takes_context=True)
+def reading_progress_indicator(
+    context,
+    post=None,
+    style="bar",
+    position="top",
+    size="md",
+    color="auto",
+    show_percentage=True,
+    show_time=False,
+    show_position=False,
+    animate=True,
+    threshold=0.1,
+    smooth=True,
+    responsive=True,
+):
+    """
+    STREAMLINED reading progress indicator using existing AURA components.
+
+    Usage Examples:
+    {% reading_progress_indicator post style='bar' position='top' %}
+    {% reading_progress_indicator post style='circle' size='lg' show_time=True %}
+    {% reading_progress_indicator post style='minimal' show_percentage=False %}
+    {% reading_progress_indicator post style='floating' position='bottom-right' %}
+    {% reading_progress_indicator post style='sidebar' show_position=True %}
+
+    Args:
+        post: Post object (optional - if None, tracks whole page)
+        style: 'bar', 'circle', 'minimal', 'floating', 'sidebar', 'corner'
+        position: 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'sidebar'
+        size: 'xs', 'sm', 'md', 'lg', 'xl'
+        color: 'auto', 'teal', 'lavender', 'coral', 'mint', 'category'
+        show_percentage: Show percentage text
+        show_time: Show elapsed/remaining time
+        show_position: Show current position indicator
+        animate: Enable animations and transitions
+        threshold: Minimum scroll to start showing (0.0-1.0)
+        smooth: Use smooth animations
+        responsive: Responsive size adjustments
+    """
+
+    request = context.get("request")
+
+    # Determine color scheme - 
+    # TODO: convert to use reusable helper get_post_color_scheme() above
+    # colors = get_post_color_scheme(post, color_scheme=color)
+
+    if color == 'auto':
+        if post and hasattr(post, 'featured') and post.featured:
+            primary_color = 'var(--color-yellow)'
+            progress_color = 'yellow'
+        elif post and hasattr(post, 'category') and post.category and hasattr(post.category, 'color'):
+            primary_color = post.category.color
+            progress_color = 'category'
+        else:
+            primary_color = 'var(--color-lavender)'
+            progress_color = 'lavender'
+    elif color == 'category' and post and hasattr(post, 'category') and post.category:
+        primary_color = getattr(post.category, 'color', 'var(--color-lavender)')
+        progress_color = 'category'
+    else:
+        primary_color = f'var(--color-{color})'
+        progress_color = color
+
+    # Calculate reading data (REUSE existing calculations)
+    reading_data = {}
+    if post:
+        reading_data = {
+            "total_reading_time": getattr(post, "reading_time", 0),
+            "word_count": len(post.content.split()) if hasattr(post, "content") else 0,
+            "target_element": "postContent",  # Standard post content ID
+            "post_id": post.id,
+        }
+
+        # Fallback reading time calculation if not set
+        if not reading_data["total_reading_time"] and reading_data["word_count"]:
+            reading_data["total_reading_time"] = max(
+                1, reading_data["word_count"] // 200
+            )
+    else:
+        # Whole page tracking
+        reading_data = {
+            "total_reading_time": 0,
+            "word_count": 0,
+            "target_element": "body",
+            "post_id": None,
+        }
+    # Build configuration for JavaScript (🔄 REUSE pattern from content_navigator)
+    progress_config = {
+        'id': f'reading-progress-{reading_data.get("post_id", "page")}',
+        'target_element': reading_data['target_element'],
+        'style': style,
+        'position': position,
+        'threshold': threshold,
+        'smooth': smooth,
+        'animate': animate,
+        'show_percentage': show_percentage,
+        'show_time': show_time,
+        'show_position': show_position,
+        'update_frequency': 50,  # ms
+        'color': progress_color,
+    }
+    
+    # Build CSS classes using existing patterns
+    css_classes = [
+        'reading-progress-indicator',
+        f'progress-style-{style}',
+        f'progress-position-{position}',
+        f'progress-size-{size}',
+        f'progress-color-{progress_color}',
+    ]
+    
+    if animate:
+        css_classes.append('progress-animated')
+    if smooth:
+        css_classes.append('progress-smooth')
+    if responsive:
+        css_classes.append('progress-responsive')
+    if not show_percentage and not show_time:
+        css_classes.append('progress-minimal')
+
+    # Size configuration
+    size_config = {
+        'xs': {'height': '2px', 'circle_size': '30px', 'font_size': '0.7rem'},
+        'sm': {'height': '3px', 'circle_size': '40px', 'font_size': '0.75rem'},
+        'md': {'height': '4px', 'circle_size': '50px', 'font_size': '0.8rem'},
+        'lg': {'height': '6px', 'circle_size': '60px', 'font_size': '0.9rem'},
+        'xl': {'height': '8px', 'circle_size': '80px', 'font_size': '1rem'},
+    }
+
+    current_size_config = size_config.get(size, size_config['md'])
+
+    return {
+        'post': post,
+        'style': style,
+        'position': position,
+        'size': size,
+        'css_classes': ' '.join(css_classes),
+
+        # Configuration
+        'progress_config': progress_config,
+        'reading_data': reading_data,
+        'size_config': current_size_config,
+
+        # Display settings
+        'show_percentage': show_percentage,
+        'show_time': show_time,
+        'show_position': show_position,
+        'animate': animate,
+        'smooth': smooth,
+        'responsive': responsive,
+
+        # Theming (REUSE existing color system)
+        'primary_color': primary_color,
+        'progress_color': progress_color,
+        'threshold': threshold,
+
+        # Context
+        'request': request,
+    }
+
+
+# Helper tags for reading progress
+
+
+@register.simple_tag
+def progress_time_display(elapsed_minutes=0, total_minutes=0, format_type="both"):
+    """
+    Format time display for reading progress.
+    Usage: {% progress_time_display elapsed total 'remaining' %}
+    """
+    elapsed_time = format_duration(elapsed_minutes)
+    total_time = format_duration(total_minutes)
+    remaining_time = format_duration(max(0, total_minutes - elapsed_minutes))
+
+    if format_type == "elapsed":
+        return elapsed_time
+    elif format_type == "remaining":
+        return f"{remaining_time} left"
+    elif format_type == "total":
+        return total_time
+    elif format_type == "both":
+        return f"{elapsed_time} / {total_time}"
+    elif format_type == "remaining_only":
+        return remaining_time
+    else:
+        return f"{elapsed_time} of {total_time}"
+
+
+@register.filter
+def progress_color_for_percentage(percentage, thresholds="25,50,75"):
+    """
+    Get progress color based on completion percentage.
+    Usage: {{ progress_percentage|progress_color_for_percentage }}
+    """
+    try:
+        percentage = float(percentage)
+        low, medium, high = map(float, thresholds.split(','))
+
+        if percentage >= high:
+            # Green for near completion
+            return 'mint'
+        elif percentage >= medium:
+            # Teal for good progress
+            return 'teal'
+        elif percentage >= low:
+            # Coral for started
+            return 'coral'
+        else:
+            # Lavendar on load
+            return 'lavender'
+    except (ValueError, TypeError):
+        return 'lavendar'
+
+
+@register.simple_tag
+def progress_motivation_message(percentage):
+    """
+    Generate motivational messages based on progress.
+    Usage: {% progress_motivation_message 75 %}
+    """
+    try:
+        percentage = float(percentage)
+
+        if percentage >= 90:
+            messages = [
+                "Almost there! 🎉",
+                "You're crushing it! 💪",
+                "Final stretch! 🚀",
+                "Nearly complete! ⭐",
+            ]
+        elif percentage >= 75:
+            messages = [
+                "Great progress! 🔥",
+                "You're on fire! 💫",
+                "Keep it up! 📈",
+                "Awesome job! ⚡",
+            ]
+        elif percentage >= 50:
+            messages = [
+                "Halfway there! 🎯",
+                "Making good time! ⏰",
+                "Solid progress! 💎",
+                "Keep going! 🌟",
+            ]
+        elif percentage >= 25:
+            messages = [
+                "Good start! 🌱",
+                "Building momentum! 🔄",
+                "Nice pace! 👍",
+                "Making headway! 📊",
+            ]
+        else:
+            messages = [
+                "Let's dive in! 🏊‍♂️",
+                "Just getting started! 🚀",
+                "Ready to learn! 📚",
+                "Adventure begins! 🗺️",
+            ]
+
+        import random
+
+        return random.choice(messages)
+    except (ValueError, TypeError):
+        return "Let's go! 🚀"
+
+
+@register.filter
+def progress_json_config(config):
+    """
+    Convert progress configuration to JSON for JavaScript.
+    Usage: {{ progress_config|progress_json_config }}
+    """
+    try:
+        return mark_safe(json.dumps(config))
+    except (TypeError, ValueError):
+        return mark_safe("{}")
+
+
+@register.simple_tag
+def reading_session_stats(post=None):
+    """
+    Generate reading session statistics.
+    Usage: {% reading_session_stats post as session_stats %}
+    """
+    stats = {
+        "avg_reading_speed": 200,  # words per minute
+        "difficulty_multiplier": 1.0,
+        "estimated_breaks": 0,
+        "focus_score": "High",
+    }
+
+    if post:
+        # Calculate difficulty multiplier based on content
+        if hasattr(post, "content") and post.content:
+            # Check for code blocks (slower reading)
+            code_blocks = count_code_blocks(post.content)
+            if code_blocks > 0:
+                stats["difficulty_multiplier"] = 1.0 + (code_blocks * 0.2)
+                stats["avg_reading_speed"] = int(200 / stats["difficulty_multiplier"])
+                stats["focus_score"] = "High (Technical)"
+
+        # Calculate estimated breaks for longer content
+        reading_time = getattr(post, "reading_time", 0)
+        if reading_time > 15:
+            stats["estimated_breaks"] = max(1, reading_time // 10)
+            stats["focus_score"] = "Medium (Long Read)"
+        elif reading_time > 30:
+            stats["estimated_breaks"] = max(2, reading_time // 8)
+            stats["focus_score"] = "Intensive"
+
+    return stats
+
+
+@register.filter
+def progress_accessibility_label(style, percentage=0):
+    """
+    Generate accessibility labels for progress indicators.
+    Usage: {{ 'bar'|progress_accessibility_label:percentage }}
+    """
+    style_labels = {
+        "bar": "Reading progress bar",
+        "circle": "Circular reading progress",
+        "minimal": "Reading progress indicator",
+        "floating": "Floating progress display",
+        "sidebar": "Sidebar progress tracker",
+        "corner": "Corner progress indicator",
+    }
+
+    base_label = style_labels.get(style, "Reading progress")
+
+    if percentage > 0:
+        return f"{base_label}: {percentage:.0f}% complete"
+    else:
+        return base_label

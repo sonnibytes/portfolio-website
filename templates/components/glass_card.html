@@ -2,6 +2,7 @@
  * AURA Glass Card Component Template
  * File: templates/components/glass_card.html
  * Used by the glass_card_include inclusion tag
+ * Styled to match section_header aesthetic
 ---->
 
 {% load aura_filters %}
@@ -25,65 +26,120 @@
   {% if collapsible and not expanded %}{% with css_classes=css_classes|add:" glass-card-collapsed" %}{% endwith %}{% endif %}
   {% if css_class %}{% with css_classes=css_classes|add:" "|add:css_class %}{% endwith %}{% endif %}
 
-  {# Render the card #}
+  {# Render the card with section_header-inspired styling #}
   <div class="{{ css_classes }}" id="{{ card_id }}">
     
-    {# Header #}
+    {# Header with section_header styling #}
     {% if with_header and title or subtitle or icon %}
-    <div class="card-header{% if header_style == 'compact' %} card-header-compact{% elif header_style == 'minimal' %} card-header-minimal{% endif %}">
-      {% if header_style == 'minimal' %}
-        {# Minimal header - inline title and icon #}
-        <div class="card-title-row">
-          {% if icon %}<i class="{{ icon }}"></i>{% endif %}
-          {% if title %}<h3 class="card-title">{{ title }}</h3>{% endif %}
-          {% if collapsible %}
-          <button class="card-collapse-btn" data-target="#{{ card_id }}">
-            <i class="fas fa-chevron-down"></i>
-          </button>
-          {% endif %}
-        </div>
-      {% else %}
-        {# Default and compact headers #}
-        <div class="card-header-content">
+    <header class="glass-card-header">
+      {# Main header content #}
+      <div class="card-header-main">
+        <div class="card-header-left">
+          {# Simple icon (not holographic) #}
           {% if icon %}
-          <div class="card-icon">
+          <div class="card-icon-simple">
             <i class="{{ icon }}"></i>
           </div>
           {% endif %}
           
+          {# Title and subtitle section #}
           {% if title or subtitle %}
-          <div class="card-text">
+          <div class="card-text-section">
             {% if title %}
-            {% if header_style == 'compact' %}
-            <h4 class="card-title">{{ title }}</h4>
-            {% else %}
-            <h3 class="card-title">{{ title }}</h3>
-            {% endif %}
+            {# Title styled like section_header subtitle #}
+            <h3 class="card-main-title">{{ title }}</h3>
             {% endif %}
             {% if subtitle %}
-            <p class="card-subtitle">{{ subtitle }}</p>
+            {# Smaller subtitle #}
+            <p class="card-subtitle-text">{{ subtitle }}</p>
             {% endif %}
           </div>
           {% endif %}
-          
+        </div>
+        
+        <div class="card-header-right">
           {% if collapsible %}
           <button class="card-collapse-btn" data-target="#{{ card_id }}">
             <i class="fas fa-chevron-down"></i>
           </button>
           {% endif %}
         </div>
+      </div>
+      
+      {# Metrics bar (like section_header) #}
+      {% if show_metrics %}
+      {% with metrics_list="" %}
+        {% if metric_1_value %}{% with metrics_list=metrics_list|add:"1" %}{% endwith %}{% endif %}
+        {% if metric_2_value %}{% with metrics_list=metrics_list|add:"2" %}{% endwith %}{% endif %}
+        {% if metric_3_value %}{% with metrics_list=metrics_list|add:"3" %}{% endwith %}{% endif %}
+        {% if metric_4_value %}{% with metrics_list=metrics_list|add:"4" %}{% endwith %}{% endif %}
+        
+        {% if metrics_list %}
+        <div class="card-metrics-bar">
+          <div class="card-metrics-grid">
+            {% if metric_1_value %}
+            <div class="card-metric-item">
+              <div class="metric-icon">
+                <i class="{{ metric_1_icon }}"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ metric_1_value|format_number }}</div>
+                <div class="metric-label">{{ metric_1_label|default:"Metric 1" }}</div>
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if metric_2_value %}
+            <div class="card-metric-item">
+              <div class="metric-icon">
+                <i class="{{ metric_2_icon }}"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ metric_2_value|format_number }}</div>
+                <div class="metric-label">{{ metric_2_label|default:"Metric 2" }}</div>
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if metric_3_value %}
+            <div class="card-metric-item">
+              <div class="metric-icon">
+                <i class="{{ metric_3_icon }}"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ metric_3_value|format_duration }}</div>
+                <div class="metric-label">{{ metric_3_label|default:"Metric 3" }}</div>
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if metric_4_value %}
+            <div class="card-metric-item">
+              <div class="metric-icon">
+                <i class="{{ metric_4_icon }}"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ metric_4_value|format_number }}</div>
+                <div class="metric-label">{{ metric_4_label|default:"Metric 4" }}</div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      {% endwith %}
       {% endif %}
-    </div>
+    </header>
     {% endif %}
     
     {# Content #}
-    <div class="card-content{% if collapsible %} card-collapsible-content{% if not expanded %} card-content-collapsed{% endif %}{% endif %}">
+    <div class="glass-card-content{% if collapsible %} card-collapsible-content{% if not expanded %} card-content-collapsed{% endif %}{% endif %}">
       {{ content|safe }}
     </div>
     
     {# Footer #}
     {% if with_footer and footer %}
-    <div class="card-footer">
+    <div class="glass-card-footer">
       {{ footer|safe }}
     </div>
     {% endif %}
