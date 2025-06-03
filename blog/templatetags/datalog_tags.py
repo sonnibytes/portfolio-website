@@ -13,9 +13,12 @@ from django.utils.html import escape, format_html
 from django.urls import reverse
 from django.db.models import Count, Q, Avg
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import re
 import json
+from collections import Counter, defaultdict
+from itertools import groupby
+import calendar
 
 from bs4 import BeautifulSoup
 from markdownx.utils import markdownify as md
@@ -24,7 +27,7 @@ from pygments.lexers import get_lexer_by_name, TextLexer
 from pygments.formatters import HtmlFormatter
 
 from ..models import Post, Category, Tag
-from core.templatetags.aura_filters import status_color, time_since_published, format_duration, truncate_smart
+from core.templatetags.aura_filters import status_color, time_since_published, format_duration, truncate_smart, highlight_search
 
 register = template.Library()
 
@@ -1012,9 +1015,6 @@ def timeline_navigation(posts, current_year=None, current_month=None):
 
     Usage: {% timeline_navigation posts=all_posts current_year=year %}
     """
-    from collections import defaultdict
-    import calendar
-
     # Group posts by year and month
     timeline_data = defaultdict(lambda: defaultdict(int))
     years = set()
@@ -1064,9 +1064,6 @@ def timeline_stats(posts, period="all"):
 
     Usage: {% timeline_stats posts=posts period="month" %}
     """
-    # from django.utils import timezone
-    # from datetime import timedelta
-
     if not posts:
         return {
             "total_posts": 0,
@@ -1083,8 +1080,6 @@ def timeline_stats(posts, period="all"):
 
     # Find most active period
     if period == "month":
-        from collections import Counter
-
         month_counts = Counter()
         for post in posts:
             if hasattr(post, "published_date") and post.published_date:
@@ -1110,13 +1105,8 @@ def timeline_stats(posts, period="all"):
 def group_by_date(posts, group_type="month"):
     """
     Group posts by date period.
-
     Usage: {{ posts|group_by_date:"month" }}
     """
-    from itertools import groupby
-    from operator import attrgetter
-    import calendar
-
     if not posts:
         return []
 
@@ -1175,7 +1165,6 @@ def group_by_date(posts, group_type="month"):
 def timeline_date_range(posts):
     """
     Get the date range for a set of posts.
-
     Usage: {{ posts|timeline_date_range }}
     """
     if not posts:
@@ -1204,8 +1193,7 @@ def timeline_date_range(posts):
 
 @register.inclusion_tag("blog/includes/category_hexagon_nav.html", takes_context=True)
 def category_hexagon_nav(
-    context, style="full", current_category=None, show_all=True, limit=None
-):
+        context, style="full", current_category=None, show_all=True, limit=None):
     """
     Render category hexagon navigation with different styles.
 
@@ -1221,9 +1209,6 @@ def category_hexagon_nav(
         show_all (bool): Whether to show "All Categories" option
         limit (int): Limit number of categories shown (for compact/minimal)
     """
-    from ..models import Category
-    from django.db.models import Count, Q
-
     # Get categories w post counts
     categories = (
         Category.objects.annotate(
@@ -1238,8 +1223,6 @@ def category_hexagon_nav(
         categories = categories[:limit]
 
     # Get total posts count for "All" option
-    from ..models import Post
-
     total_posts = Post.objects.filter(status="published").count()
 
     # Get request for filter state
@@ -1405,8 +1388,6 @@ def category_distribution_data(categories, format="json"):
     Generate category distribution data for charts.
     Usage: {% category_distribution_data categories 'json' %}
     """
-    import json
-
     if not categories:
         return "[]" if format == "json" else []
 
@@ -1595,8 +1576,6 @@ def get_post_color_scheme(post, color_scheme='auto'):
         'primary_color': primary_color,
         'secondary_color': secondary_color
     }
-
-
 
 
 # ================= META  DISPLAY =================
@@ -2087,7 +2066,6 @@ def generate_toc_from_content(content, max_depth=3):
 
 def generate_unique_heading_id(text, existing_headings):
     """Generate unique heading ID from text."""
-
     base_id = slugify(text)
     heading_id = base_id
 
@@ -2275,6 +2253,15 @@ def archive_period_display(group_data, group_by='month'):
 
     return "Unknown Period"
 
+# Can I pass this and make it work...?
+@register.filter
+def archive_period_disp_filter(group_data, group_by='month'):
+    """
+    Helper to pass to archive_period_display if included in another simple block or tag.
+    Usage: {{ group_data|archive_period_disp_filter:group_by='month' }}
+    """
+    return archive_period_display(group_data, group_by)
+
 
 @register.simple_tag
 def archive_period_url(group_data, group_by="month"):
@@ -2343,8 +2330,6 @@ def archive_breadcrumb_data(year=None, month=None, group_by="month"):
         )
 
         if month and group_by == "month":
-            import calendar
-
             month_name = calendar.month_name[month]
             breadcrumbs.append(
                 {
@@ -2424,8 +2409,6 @@ def group_by_quarter(posts):
     Group posts by quarter.
     Usage: {{ posts|group_by_quarter }}
     """
-    from itertools import groupby
-
     if not posts:
         return []
 
@@ -2482,7 +2465,6 @@ def archive_filter_options(posts, current_year=None, current_month=None):
         year_posts = posts.filter(published_date__year=current_year)
         month_dates = year_posts.dates('published_date', 'month', order='DESC')
 
-        import calendar
         for date in month_dates:
             months.append({
                 'number': date.month,
@@ -2568,7 +2550,6 @@ def archive_period_progress(group_data, group_by="month"):
 
             if year == now.year and month == now.month:
                 # Current month - calculate progress
-                import calendar
 
                 days_in_month = calendar.monthrange(year, month)[1]
                 current_day = now.day
@@ -2588,7 +2569,6 @@ def archive_period_progress(group_data, group_by="month"):
                 elapsed_days = (current_date - start_of_year).days + 1
 
                 return round((elapsed_days / total_days) * 100, 1)
-
     except:
         pass
 
@@ -2602,9 +2582,6 @@ def archive_navigation_data(posts, current_year=None, current_month=None):
     Enhanced version of timeline_navigation.
     Usage: {% archive_navigation_data posts current_year current_month as nav_data %}
     """
-    from collections import defaultdict
-    import calendar
-
     # Group posts by year and month
     nav_data = defaultdict(lambda: defaultdict(int))
     years = set()
@@ -2700,7 +2677,7 @@ def reading_progress_indicator(
 
     request = context.get("request")
 
-    # Determine color scheme - 
+    # Determine color scheme
     # TODO: convert to use reusable helper get_post_color_scheme() above
     # colors = get_post_color_scheme(post, color_scheme=color)
 
@@ -2759,7 +2736,7 @@ def reading_progress_indicator(
         'update_frequency': 50,  # ms
         'color': progress_color,
     }
-    
+
     # Build CSS classes using existing patterns
     css_classes = [
         'reading-progress-indicator',
@@ -2768,7 +2745,7 @@ def reading_progress_indicator(
         f'progress-size-{size}',
         f'progress-color-{progress_color}',
     ]
-    
+
     if animate:
         css_classes.append('progress-animated')
     if smooth:
@@ -2992,3 +2969,414 @@ def progress_accessibility_label(style, percentage=0):
         return f"{base_label}: {percentage:.0f}% complete"
     else:
         return base_label
+
+
+# ================= ENHANCED SEARCH SUGGESTIONS =================
+
+
+@register.inclusion_tag('blog/includes/search_suggestions.html', takes_context=True)
+def search_suggestions(
+    context,
+    query="",
+    style="full",
+    max_suggestions=8,
+    show_icons=True,
+    show_counts=True,
+    show_descriptions=False,
+    enable_ajax=True,
+    group_by_type=True,
+    include_recent=True,
+    include_popular=True,
+    debounce_delay=300,
+    min_query_length=2,
+    highlight_matches=True,
+    position="below",
+    width="auto",
+    responsive=True,
+):
+    """
+    STREAMLINED enhanced search suggestions using existing AURA components.
+
+    Usage Examples:
+    {% search_suggestions query style='full' %}
+    {% search_suggestions query style='compact' max_suggestions=5 %}
+    {% search_suggestions query style='minimal' show_icons=False %}
+    {% search_suggestions query style='dropdown' position='overlay' %}
+    {% search_suggestions query style='sidebar' enable_ajax=False %}
+
+    Args:
+        query (str): Current search query
+        style (str): Display style - 'full', 'compact', 'minimal', 'dropdown', 'sidebar'
+        max_suggestions (int): Maximum number of suggestions to show
+        show_icons (bool): Show type icons for suggestions
+        show_counts (bool): Show result counts
+        show_descriptions (bool): Show suggestion descriptions
+        enable_ajax (bool): Enable real-time AJAX suggestions
+        group_by_type (bool): Group suggestions by type (posts, categories, tags)
+        include_recent (bool): Include recent searches
+        include_popular (bool): Include popular searches when no query
+        debounce_delay (int): AJAX debounce delay in milliseconds
+        min_query_length (int): Minimum query length for suggestions
+        highlight_matches (bool): Highlight matching text
+        position (str): Position relative to search input - 'below', 'overlay', 'sidebar'
+        width (str): Width of suggestions panel - 'auto', 'full', 'fixed'
+        responsive (bool): Enable responsive behavior
+    """
+    request = context.get("request")
+
+    # RESUSE: Get suggestions using existing function
+    if len(query) >= min_query_length:
+        suggestions_data = datalog_search_suggestions(query)
+    elif include_popular:
+        # REUSE: Get popular items when no query
+        suggestions_data = []
+
+        # Add popular categories
+        popular_categories = get_datalog_categories(popular_only=True)
+        for cat in popular_categories[:3]:
+            suggestions_data.append(
+                {
+                    "text": f"{cat.name} Category",
+                    "type": "category",
+                    "icon": getattr(cat, "icon", "fas fa-folder"),
+                    "url": cat.get_absolute_url()
+                    if hasattr(cat, "get_absolute_url")
+                    else "#",
+                    "count": getattr(cat, "post_count", 0),
+                    "description": f"{getattr(cat, 'post_count', 0)} posts",
+                }
+            )
+
+        # Add popular tags
+        popular_tags = get_popular_tags(5)
+        for tag in popular_tags[:3]:
+            suggestions_data.append(
+                {
+                    "text": f"#{tag.name}",
+                    "type": "tag",
+                    "icon": "fas fa-tag",
+                    "url": tag.get_absolute_url()
+                    if hasattr(tag, "get_absolute_url")
+                    else "#",
+                    "count": getattr(tag, "post_count", 0),
+                    "description": f"{getattr(tag, 'post_count', 0)} posts",
+                }
+            )
+
+        # Add recent popular searches
+        if include_recent:
+            suggestions_data.extend(
+                [
+                    {
+                        "text": "Machine Learning",
+                        "type": "topic",
+                        "icon": "fas fa-brain",
+                        "url": "#",
+                    },
+                    {
+                        "text": "Python Development",
+                        "type": "topic",
+                        "icon": "fab fa-python",
+                        "url": "#",
+                    },
+                ]
+            )
+    else:
+        suggestions_data = []
+
+    # Limit to max suggestions
+    suggestions_data = suggestions_data[:max_suggestions]
+
+    # group by type if requested
+    grouped_suggestions = {}
+    if group_by_type and suggestions_data:
+        for suggestion in suggestions_data:
+            suggestion_type = suggestion.get("type", "other")
+            if suggestion_type not in grouped_suggestions:
+                grouped_suggestions[suggestion_type] = []
+            grouped_suggestions[suggestion_type].append(suggestion)
+    
+    # Get search context
+    search_context = {
+        'total_posts': Post.objects.filter(status='published').count(),
+        'total_categories': Category.objects.count(),
+        'total_tags': Tag.objects.count(),
+    }
+
+    # AJAX config
+    ajax_config = {
+        'enabled': enable_ajax,
+        'url': reverse('blog:search_ajax') if enable_ajax else None,  # Fallback URL
+        'debounce_delay': debounce_delay,
+        'min_query_length': min_query_length,
+        'highlight_matches': highlight_matches,
+    } if enable_ajax else {}
+
+    # Build CSS classes
+    css_classes = [
+        'search-suggestions-container',
+        f'suggestions-style-{style}',
+        f'suggestions-position-{position}',
+        f'suggestions-width-{width}',
+    ]
+
+    if enable_ajax:
+        css_classes.append('suggestions-ajax-enabled')
+    if group_by_type:
+        css_classes.append('suggestions-grouped')
+    if responsive:
+        css_classes.append('suggestions-responsive')
+    if highlight_matches:
+        css_classes.append('suggestions-highlight')
+    
+    # Type config for icons and styling
+    type_config = {
+        'post': {
+            'icon': 'fas fa-file-alt',
+            'label': 'Posts',
+            'color': 'var(--color-lavender)',
+            'priority': 1,
+        },
+        'category': {
+            'icon': 'fas fa-folder',
+            'label': 'Categories',
+            'color': 'var(--color-teal)',
+            'priority': 2,
+        },
+        'tag': {
+            'icon': 'fas fa-lightbulb',
+            'label': 'Tags',
+            'color': 'var(--color-coral)',
+            'priority': 3,
+        },
+        'topic': {
+            'icon': 'fas fa-lightbulb',
+            'label': 'Topics',
+            'color': 'var(--color-mint)',
+            'priority': 4,
+        },
+        'system': {
+            'icon': 'fas fa-project-diagram',
+            'label': 'Systems',
+            'color': 'var(--color-yellow)',
+            'priority': 5,
+        },
+    }
+
+    # Generate search analytics
+    search_analytics = {
+        'query_length': len(query),
+        'suggestion_count': len(suggestions_data),
+        'has_results': len(suggestions_data) > 0,
+        'query_type': 'search' if query else 'browse',
+        'grouped_count': len(grouped_suggestions) if group_by_type else 0,
+    }
+
+    return {
+        "query": query,
+        "style": style,
+        "position": position,
+        "width": width,
+        "css_classes": " ".join(css_classes),
+
+        # Suggestion data (REUSED from existing functions)
+        "suggestions": suggestions_data,
+        "grouped_suggestions": grouped_suggestions,
+        "group_by_type": group_by_type,
+
+        # Configuration
+        "max_suggestions": max_suggestions,
+        "show_icons": show_icons,
+        "show_counts": show_counts,
+        "show_descriptions": show_descriptions,
+        "highlight_matches": highlight_matches,
+        "responsive": responsive,
+
+        # AJAX (REUSES existing patterns)
+        "enable_ajax": enable_ajax,
+        "ajax_config": ajax_config,
+        "debounce_delay": debounce_delay,
+        "min_query_length": min_query_length,
+
+        # Context (REUSED from existing functions)
+        "search_context": search_context,
+        "type_config": type_config,
+        "search_analytics": search_analytics,
+
+        # Request context
+        "request": request,
+    }
+
+
+# Helper tags for search suggestions
+
+
+@register.simple_tag
+def search_suggestion_highlight(text, query):
+    """
+    Highlight matching text in search suggestions.
+    Usage: {% search_suggestion_highlight suggestion.text query %}
+    """
+    if not query or not text:
+        return text
+
+    # REUSE: Use existing highlight_search filter
+    return highlight_search(text, query)
+
+
+@register.filter
+def suggestion_relevance_score(suggestion, query):
+    """
+    Calculate relevance score for suggestion sorting.
+    Usage: {{ suggestion|suggestion_relevance_score:query }}
+    """
+    if not query:
+        return 0
+
+    text = suggestion.get('text', '').lower()
+    query_lower = query.lower()
+
+    score = 0
+
+    # Exact match gets highest score
+    if text == query_lower:
+        score += 100
+
+    # Starts with query gets high score
+    elif text.startswith(query_lower):
+        score += 50
+
+    # Contain query gets medium score
+    elif query_lower in text:
+        score += 25
+
+    # Add type priority bonus (posts > categories > tags) may reorder
+    type_priority = {
+        'post': 10,
+        'category': 8,
+        'tag': 6,
+        'topic': 4,
+        'system': 2,
+    }
+    score += type_priority.get(suggestion.get('type', ''), 0)
+
+    # Add count bonus for popular items
+    count = suggestion.get('count', 0)
+    if count > 0:
+        # Max 10 bonus points
+        score += min(10, count // 5)
+
+    return score
+
+@register.simple_tag
+def search_quick_actions(query=''):
+    """
+    Generate quick action suggestions for search.
+    Usage: {% search_quick_actions query as quick_actions %}
+    """
+    actions = []
+
+    if query:
+        # Add search in specific contexts
+        actions.extend([
+            {
+                'text': f"Search logs for '{query}'",
+                'url': f"{reverse('blog:post_list')}?q={query}",
+                'icon': "fas fa-search",
+                'type': "action",
+            },
+            {
+                'text': f"Search in category",
+                'url': f"{reverse('blog:search')}?q={query}&type=category",
+                'icon': "fas fa-folder-open",
+                'type': "action",
+            },
+        ])
+    else:
+        # Default Quick Actions
+        actions.extend(
+            [
+                {
+                    "text": "Browse all posts",
+                    "url": reverse("blog:post_list"),
+                    "icon": "fas fa-list",
+                    "type": "action",
+                },
+                {
+                    "text": "View archive",
+                    "url": reverse("blog:archive") if reverse("blog:archive") else "#",
+                    "icon": "fas fa-archive",
+                    "type": "action",
+                },
+                {
+                    "text": "Popular tags",
+                    "url": reverse("blog:post_list") + "?popular=tags",
+                    "icon": "fas fa-tags",
+                    "type": "action",
+                },
+            ]
+        )
+
+    return actions
+
+
+@register.simple_tag
+def search_performance_hints(suggestion_count, query_length):
+    """
+    Generate performance hints for search optimization.
+    Usage: {% search_performance_hints suggestion_count query_length as hints %}
+    """
+    hints = []
+
+    if query_length < 3:
+        hints.append({
+            'type': 'tip',
+            'message': 'Type at least 3 characters for better results',
+            'icon': 'fas fa-info-circle',
+        })
+
+    if suggestion_count == 0:
+        hints.append({
+            'type': 'help',
+            'message': 'Try shorter keywords or browse categories',
+            'icon': 'fas fa-lightbulb',
+        })
+
+    elif suggestion_count > 20:
+        hints.append({
+            'type': 'tip',
+            'message': 'Too many results - narrow parameters',
+            'icon': 'fas fa-funnel-dollar',
+        })
+
+    return hints
+
+
+@register.filter
+def search_suggestion_preview(suggestion):
+    """
+    Generate preview content for suggestion hover.
+    Usage: {{ suggestion|search_suggestion_preview }}
+    """
+    preview = {
+        "title": suggestion.get("text", ""),
+        "type": suggestion.get("type", "").title(),
+        "description": suggestion.get("description", ""),
+        "url": suggestion.get("url", "#"),
+    }
+
+    # Add type-specific preview enhancements
+    suggestion_type = suggestion.get("type", "")
+
+    if suggestion_type == "post":
+        preview["preview_text"] = "Click to access this log"
+    elif suggestion_type == "category":
+        count = suggestion.get("count", 0)
+        preview["preview_text"] = f"Browse {count} entries in this category"
+    elif suggestion_type == "tag":
+        count = suggestion.get("count", 0)
+        preview["preview_text"] = f"View {count} entries with this tag"
+    else:
+        preview["preview_text"] = "Click to view"
+
+    return preview
