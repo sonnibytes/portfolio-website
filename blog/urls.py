@@ -12,11 +12,11 @@ urlpatterns = [
     path("tags/", views.TagListView.as_view(), name="tags"),
     path("tags/<slug:slug>/", views.TagView.as_view(), name="tag"),
     # Archive views
-    path("archive/", views.ArchiveView.as_view(), name="archive"),
-    path("archive/<int:year>/", views.ArchiveView.as_view(), name="archive_year"),
+    path("archive/", views.ArchiveIndexView.as_view(), name="archive"),
+    path("archive/<int:year>/", views.ArchiveYearView.as_view(), name="archive_year"),
     path(
         "archive/<int:year>/<int:month>/",
-        views.ArchiveView.as_view(),
+        views.ArchiveMonthView.as_view(),
         name="archive_month",
     ),
     # Search view

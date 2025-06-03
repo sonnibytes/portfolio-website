@@ -502,6 +502,52 @@ class ArchiveYearView(ListView):
         return context
 
 
+class ArchiveMonthView(ListView):
+    """
+    Month-based archive view.
+    URL: /blog/archive/<year>/<month>/
+    """
+
+    model = Post
+    template_name = "blog/archive_month.html"
+    context_object_name = "posts"
+
+    def get_queryset(self):
+        year = self.kwargs["year"]
+        month = self.kwargs["month"]
+        return (
+            Post.objects.filter(
+                status="published",
+                published_date__year=year,
+                published_date__month=month,
+            )
+            .select_related("category", "author")
+            .prefetch_related("tags")
+            .order_by("-published_date")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        year = self.kwargs["year"]
+        month = self.kwargs["month"]
+        month_name = calendar.month_name[month]
+
+        context.update(
+            {
+                "current_year": year,
+                "current_month": month,
+                "month_name": month_name,
+                "archive_style": "cards",
+                "page_title": f"DataLogs Archive - {month_name} {year}",
+                "page_description": f"All DataLog entries published in {month_name} {year}.",
+                "show_timeline_stats": True,
+                "show_timeline_navigation": True,
+            }
+        )
+
+        return context
+
+
 class SearchView(ListView):
     """View for search results."""
     template_name = 'blog/search.html'
