@@ -253,7 +253,6 @@ def recent_datalog_activity(days=30):
         }
 
 
-
 @register.simple_tag
 def get_recent_posts(limit=5, exclude_id=None):
     """
@@ -373,6 +372,7 @@ def datalog_terminal_info(post):
         'complexity': code_complexity(code),
         'size': f"{len(code.encode('utf-8'))} bytes"
     }
+
 
 # Enhanced and Fixed Color Scheme and Glow for Category Hexes
 @register.filter
@@ -805,7 +805,6 @@ def post_status_color(status):
         'published': '#27c93f',
     }
     return colors.get(status, '#26c6da')
-
 
 
 @register.simple_tag
@@ -1565,6 +1564,7 @@ def get_previous_next_posts(post):
 
 
 # ================= PHASE 2 CLEANUP ENHANCEMENTS =================
+# ================= META  DISPLAY =================
 
 
 @register.inclusion_tag('blog/includes/datalog_meta_display.html', takes_context=True)
@@ -1816,20 +1816,26 @@ def meta_separator(style='default', color='auto'):
 @register.filter
 def meta_truncate_title(title, style='full'):
     """
-    Truncate post title based on meta display style.
+    Truncate post title based on meta display style or context.
     Usage: {{ post.title|meta_truncate_title:style }}
     """
     if not title:
         return ''
 
     truncate_limits = {
-        'minimal': 30,
-        'compact': 40,
-        'inline': 35,
-        'card': 45,
-        'breadcrumb': 25,
-        'full': 80,
-        'detailed': 100,
+        "minimal": 30,
+        "compact": 40,
+        "inline": 35,
+        "card": 45,
+        "breadcrumb": 25,
+        "full": 80,
+        "detailed": 100,
+
+        # context limits
+        "mobile": 25,
+        "compact": 40,
+        "sidebar": 35,
+        "default": 50,
     }
 
     limit = truncate_limits.get(style, 80)
@@ -1919,3 +1925,171 @@ def meta_reading_difficulty(post):
     '''
 
     return mark_safe(html)
+
+
+# ================= CONTENT NAVIGATION =================
+
+
+@register.inclusion_tag('blog/includes/content_navigator.html', takes_context=True)
+def content_navigator(
+        context, post, style='sidebar', show_toc=True, show_progress=True,
+        show_stats=False, show_navigation=True, toc_depth=3, position='sticky'):
+    """
+    STREAMLINED content navigator using existing AURA components.
+
+    Usage Examples:
+    {% content_navigator post %}
+    {% content_navigator post style='full' show_stats=True %}
+    {% content_navigator post style='floating' %}
+    {% content_navigator post style='minimal' show_toc=False %}
+
+    Args:
+        post: Post object
+        style: 'sidebar', 'full', 'floating', 'minimal', 'compact'
+        show_toc: Generate TOC from content
+        show_progress: Show reading progress bar
+        show_stats: Show reading statistics
+        show_navigation: Show prev/next navigation
+        toc_depth: Maximum heading depth (1-6)
+        position: 'sticky', 'static', 'floating'
+    """
+    # Reuse: Get stats from existing tag
+    existing_stats = datalog_stats() if show_stats else {}
+
+    # Reuse: Get nav from existing tag
+    nav_data = get_previous_next_posts(post) if show_navigation else {}
+
+    # Generate TOC
+    toc_data = generate_toc_from_content(post.content, toc_depth) if show_toc else []
+
+    # Get reading time from post or calculate
+    reading_time = getattr(post, 'reading_time', 0)
+    if not reading_time and hasattr(post, 'content'):
+        word_count = len(post.content.split())
+        reading_time = max(1, word_count // 200)
+
+    # Build config for JavaScript
+    navigator_config = {
+        'id': f'content-navigator-{post.id}',
+        'target_content': 'postContent',
+        'toc_depth': toc_depth,
+        'smoot_scroll': True,
+    }
+
+    # Build CSS classes
+    css_classes = [
+        'content-navigator',
+        f'navigator-{style}',
+        f'navigator-{position}',
+    ]
+
+    return {
+        "post": post,
+        "style": style,
+        "position": position,
+        "css_classes": " ".join(css_classes),
+
+        # Feature flags
+        "show_toc": show_toc,
+        "show_progress": show_progress,
+        "show_stats": show_stats,
+        "show_navigation": show_navigation,
+
+        # REUSED DATA: No recalculation needed!
+        "toc_data": toc_data,
+        "existing_stats": existing_stats,
+        "nav_data": nav_data,
+        "navigator_config": navigator_config,
+
+        # Simple values
+        "total_reading_time": reading_time,
+        "initial_progress": 0,  # JS will update this
+        "toc_depth": toc_depth,
+
+        # Context
+        "request": context.get("request"),
+    }
+
+
+def generate_toc_from_content(content, max_depth=3):
+    """
+    Generate table of contents from markdown content.
+    """
+    if not content:
+        return []
+
+    # Find all markdown headings - replace/call markdown_headings tag?
+    heading_pattern = r'^(#{1,6})\s+(.+)$'
+    headings = []
+
+    for line_num, line in enumerate(content.split('\n')):
+        match = re.match(heading_pattern, line.strip())
+        if match:
+            level = len(match.group(1))
+            text = match.group(2).strip()
+
+            # skip if too deep
+            if level > max_depth:
+                continue
+
+            # Generate unique ID
+            heading_id = generate_unique_heading_id(text, headings)
+
+            headings.append({
+                'level': level,
+                'text': text,
+                'id': heading_id,
+                'line_number': line_num,
+            })
+
+    return headings
+
+
+def generate_unique_heading_id(text, existing_headings):
+    """Generate unique heading ID from text."""
+
+    base_id = slugify(text)
+    heading_id = base_id
+
+    # Ensure uniqueness
+    counter = 1
+    existing_ids = {h['id'] for h in existing_headings if 'id' in h}
+
+    while heading_id in existing_ids:
+        heading_id = f"{base_id}-{counter}"
+        counter += 1
+
+    return heading_id
+
+
+# 🔄 REUSE: Simple filter for TOC accessibility
+# Noted as reuse, but not sure from where..?
+@register.filter
+def toc_accessibility_label(heading):
+    """Generate accessibility label for TOC links."""
+    level_names = {
+        1: "Main section",
+        2: "Subsection",
+        3: "Sub-subsection",
+        4: "Fourth level",
+        5: "Fifth level",
+        6: "Sixth level",
+    }
+
+    level_name = level_names.get(heading.get("level", 1), "Section")
+    heading_text = heading.get("text", "Unknown")
+
+    return f"{level_name}: {heading_text}"
+
+
+# Reuse: JSON config helper - may be able to combine w json_encode in aura_filters
+# other return None from ex and is a simple_tag
+@register.filter
+def navigator_json_config(config):
+    """Convert config to JSON for JavaScript."""
+    try:
+        return mark_safe(json.dumps(config))
+    except (TypeError, ValueError):
+        return mark_safe('{}')
+
+# ================= ARCHIVE TIMELINE =================
