@@ -1,25 +1,92 @@
-<!---
+<!----
  * AURA Glass Card Component Template
- * Reusable glass-morphism card with header, content, and footer sections
- * Version 1.0.1: Added w global tags and filters
- -->
+ * File: templates/components/glass_card.html
+ * Used by the glass_card_include inclusion tag
+---->
 
-<div class="glass-card {{ css_class }}">
-    {% if with_header and title %}
-    <div class="glass-card-header">
-        <h3 class="card-title">{{ title }}</h3>
+{% load aura_filters %}
+
+{# Build CSS classes #}
+{% with css_classes="glass-card" %}
+  {% if size == 'xs' %}{% with css_classes=css_classes|add:" glass-card-xs" %}{% endwith %}{% endif %}
+  {% if size == 'sm' %}{% with css_classes=css_classes|add:" glass-card-sm" %}{% endwith %}{% endif %}
+  {% if size == 'lg' %}{% with css_classes=css_classes|add:" glass-card-lg" %}{% endwith %}{% endif %}
+  {% if size == 'xl' %}{% with css_classes=css_classes|add:" glass-card-xl" %}{% endwith %}{% endif %}
+  
+  {% if variant == 'featured' %}{% with css_classes=css_classes|add:" glass-card-featured" %}{% endwith %}{% endif %}
+  {% if variant == 'warning' %}{% with css_classes=css_classes|add:" glass-card-warning" %}{% endwith %}{% endif %}
+  {% if variant == 'success' %}{% with css_classes=css_classes|add:" glass-card-success" %}{% endwith %}{% endif %}
+  {% if variant == 'error' %}{% with css_classes=css_classes|add:" glass-card-error" %}{% endwith %}{% endif %}
+  {% if variant == 'info' %}{% with css_classes=css_classes|add:" glass-card-info" %}{% endwith %}{% endif %}
+  
+  {% if with_border %}{% with css_classes=css_classes|add:" glass-card-bordered" %}{% endwith %}{% endif %}
+  {% if with_glow %}{% with css_classes=css_classes|add:" glass-card-glow" %}{% endwith %}{% endif %}
+  {% if collapsible %}{% with css_classes=css_classes|add:" glass-card-collapsible" %}{% endwith %}{% endif %}
+  {% if collapsible and not expanded %}{% with css_classes=css_classes|add:" glass-card-collapsed" %}{% endwith %}{% endif %}
+  {% if css_class %}{% with css_classes=css_classes|add:" "|add:css_class %}{% endwith %}{% endif %}
+
+  {# Render the card #}
+  <div class="{{ css_classes }}" id="{{ card_id }}">
+    
+    {# Header #}
+    {% if with_header and title or subtitle or icon %}
+    <div class="card-header{% if header_style == 'compact' %} card-header-compact{% elif header_style == 'minimal' %} card-header-minimal{% endif %}">
+      {% if header_style == 'minimal' %}
+        {# Minimal header - inline title and icon #}
+        <div class="card-title-row">
+          {% if icon %}<i class="{{ icon }}"></i>{% endif %}
+          {% if title %}<h3 class="card-title">{{ title }}</h3>{% endif %}
+          {% if collapsible %}
+          <button class="card-collapse-btn" data-target="#{{ card_id }}">
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          {% endif %}
+        </div>
+      {% else %}
+        {# Default and compact headers #}
+        <div class="card-header-content">
+          {% if icon %}
+          <div class="card-icon">
+            <i class="{{ icon }}"></i>
+          </div>
+          {% endif %}
+          
+          {% if title or subtitle %}
+          <div class="card-text">
+            {% if title %}
+            {% if header_style == 'compact' %}
+            <h4 class="card-title">{{ title }}</h4>
+            {% else %}
+            <h3 class="card-title">{{ title }}</h3>
+            {% endif %}
+            {% endif %}
+            {% if subtitle %}
+            <p class="card-subtitle">{{ subtitle }}</p>
+            {% endif %}
+          </div>
+          {% endif %}
+          
+          {% if collapsible %}
+          <button class="card-collapse-btn" data-target="#{{ card_id }}">
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          {% endif %}
+        </div>
+      {% endif %}
     </div>
     {% endif %}
     
-    {% if content %}
-    <div class="glass-card-content">
-        {{ content|safe }}
+    {# Content #}
+    <div class="card-content{% if collapsible %} card-collapsible-content{% if not expanded %} card-content-collapsed{% endif %}{% endif %}">
+      {{ content|safe }}
+    </div>
+    
+    {# Footer #}
+    {% if with_footer and footer %}
+    <div class="card-footer">
+      {{ footer|safe }}
     </div>
     {% endif %}
     
-    {% if footer %}
-    <div class="glass-card-footer">
-        {{ footer|safe }}
-    </div>
-    {% endif %}
-</div>
+  </div>
+{% endwith %}

@@ -24,7 +24,7 @@ from pygments.lexers import get_lexer_by_name, TextLexer
 from pygments.formatters import HtmlFormatter
 
 from ..models import Post, Category, Tag
-from ...core.templatetags.aura_filters import status_color, time_since_published, format_duration, truncate_smart
+from core.templatetags.aura_filters import status_color, time_since_published, format_duration, truncate_smart
 
 register = template.Library()
 
