@@ -24,6 +24,7 @@ from pygments.lexers import get_lexer_by_name, TextLexer
 from pygments.formatters import HtmlFormatter
 
 from ..models import Post, Category, Tag
+from ...core.templatetags.aura_filters import status_color, time_since_published, format_duration, truncate_smart
 
 register = template.Library()
 
@@ -400,7 +401,7 @@ def category_color_scheme(category):
         hex_color = hex_color.lstrip('#')
         if len(hex_color) == 6:
             try:
-                return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+                return tuple(int(hex_color[i: i + 2], 16) for i in (0, 2, 4))
             except ValueError:
                 # Fallback to teal
                 return (38, 198, 218)
@@ -1561,3 +1562,360 @@ def get_previous_next_posts(post):
         return {"previous": previous_post, "next": next_post}
     except Exception:
         return {"previous": None, "next": None}
+
+
+# ================= PHASE 2 CLEANUP ENHANCEMENTS =================
+
+
+@register.inclusion_tag('blog/includes/datalog_meta_display.html', takes_context=True)
+def datalog_meta_display(
+        context, post, style='full', show_category=True, show_tags=True,
+        show_reading_time=True, show_date=True, show_author=False,
+        show_status=False, show_featured=True, show_systems=False,
+        date_format='relative', max_tags=None, compact_tags=False,
+        icon_style='auto', alignment='left', size='md', color_scheme='auto'):
+
+    """
+    Display post metadata with multiple style options and extensive customization.
+
+    Usage Examples:
+    {% datalog_meta_display post style='full' %}
+    {% datalog_meta_display post style='compact' show_tags=False %}
+    {% datalog_meta_display post style='minimal' show_category=False %}
+    {% datalog_meta_display post style='inline' date_format='short' %}
+    {% datalog_meta_display post style='detailed' show_author=True show_systems=True %}
+    {% datalog_meta_display post style='card' max_tags=3 compact_tags=True %}
+    {% datalog_meta_display post style='breadcrumb' show_reading_time=False %}
+
+    Args:
+        post: Post object
+        style (str): Display style - 'full', 'compact', 'minimal', 'inline', 'detailed', 'card', 'breadcrumb'
+        show_category (bool): Show category information
+        show_tags (bool): Show post tags
+        show_reading_time (bool): Show estimated reading time
+        show_date (bool): Show publication date
+        show_author (bool): Show post author
+        show_status (bool): Show post status (draft/published)
+        show_featured (bool): Show featured indicator
+        show_systems (bool): Show related systems
+        date_format (str): Date format - 'relative', 'short', 'long', 'iso'
+        max_tags (int): Maximum number of tags to show (None = all)
+        compact_tags (bool): Use compact tag display
+        icon_style (str): Icon style - 'auto', 'minimal', 'full', 'none'
+        alignment (str): Content alignment - 'left', 'center', 'right'
+        size (str): Overall size - 'xs', 'sm', 'md', 'lg', 'xl'
+        color_scheme (str): Color scheme - 'auto', 'category', 'featured', 'status'
+    """
+
+    # Get request for context-aware features
+    request = context.get('request')
+
+    # Determine color scheme
+    if color_scheme == 'auto':
+        if hasattr(post, 'featured') and post.featured:
+            primary_color = 'var(--color-yellow)'
+            secondary_color = 'rgba(255, 245, 157, 0.1)'
+        elif hasattr(post, 'category') and post.category and hasattr(post.category, 'color'):
+            primary_color = post.category.color
+            secondary_color = hex_to_rgba(post.category.color, alpha=0.1)
+        else:
+            primary_color = 'var(--color-lavendar)'
+            secondary_color = 'rgba(179, 157, 219, 0.1)'
+    elif color_scheme == 'category' and hasattr(post, 'category') and post.category:
+        primary_color = getattr(post.category, 'color', 'var(--color-lavendar)')
+        secondary_color = hex_to_rgba(primary_color, alpha=0.1)
+    elif color_scheme == 'featured':
+        primary_color = 'var(--color-yellow)'
+        secondary_color = 'rgba(255, 245, 157, 0.1)'
+    elif color_scheme == 'status':
+        status = getattr(post, 'status', 'published')
+        primary_color = status_color(status)
+        secondary_color = hex_to_rgba(primary_color, alpha=0.1)
+    else:
+        primary_color = 'var(--color-lavendar)'
+        secondary_color = 'rgba(179, 157, 219, 0.1)'
+
+    # Format date based on format preference
+    if show_date and hasattr(post, 'published_date') and post.published_date:
+        match date_format:
+            case 'relative':
+                formatted_date = time_since_published(post.published_date)
+            case 'short':
+                formatted_date = post.published_date.strftime('%b %d, %Y')
+            case 'long':
+                formatted_date = post.published_date.strftime('%B %d, %Y')
+            case 'iso':
+                formatted_date = post.published_date.isoformat()
+            case _:
+                formatted_date = time_since_published(post.published_date)
+    else:
+        formatted_date = None
+
+    # Process tags w limits
+    post_tags = []
+    if show_tags and hasattr(post, 'tags'):
+        try:
+            all_tags = post.tags.all()
+            if max_tags:
+                post_tags = list(all_tags[:max_tags])
+                remaining_tags = max(0, all_tags.count() - max_tags)
+            else:
+                post_tags = list(all_tags)
+                remaining_tags = 0
+        except:
+            post_tags = []
+            remaining_tags = 0
+    else:
+        remaining_tags = 0
+
+    # Get system connections if requested
+    related_systems = []
+    if show_systems and hasattr(post, 'related_systems'):
+        try:
+            # Limit to 3 for display
+            related_systems = post.related_systems.all()[:3]
+        except:
+            related_systems = []
+
+    # Determine icon visibility based on style and preference
+    match icon_style:
+        case 'auto':
+            show_icons = style in ['full', 'detailed', 'card']
+        case 'minimal':
+            show_icons = style in ['full', 'detailed']
+        case 'full':
+            show_icons = True
+        # None/else
+        case _:
+            show_icons = False
+
+    # Calculate reading time display
+    reading_time_display = None
+    if show_reading_time and hasattr(post, 'reading_time'):
+        reading_time = getattr(post, 'reading_time', 0)
+        if reading_time:
+            reading_time_display = format_duration(reading_time)
+        else:
+            # Fallback calculation if reading_time not set
+            content = getattr(post, 'content', '')
+            if content:
+                word_count = len(content.split())
+                estimated_minutes = max(1, word_count // 200)
+                reading_time_display = format_duration(estimated_minutes)
+
+    # Get author info
+    author_info = None
+    if show_author and hasattr(post, 'author'):
+        author = post.author
+        author_info = {
+            'name': author.get_full_name() if author.get_full_name() else author.username,
+            'username': author.username
+        }
+
+    # Status Info
+    status_info = None
+    if show_status and hasattr(post, 'status'):
+        status_info = {
+            'status': post.status,
+            'display': post.get_status_display() if hasattr(post, 'get_status_display') else post.status.replace('_', ' ').title(),
+            'color': status_color(post.status)
+        }
+
+    # Featured indicator
+    is_featured = show_featured and hasattr(post, 'featured') and post.featured
+
+    # Build CSS classes
+    css_classes = [
+        'datalog-meta-display',
+        f'meta-style-{style}',
+        f'meta-size-{size}',
+        f'meta-align-{alignment}',
+    ]
+
+    if is_featured:
+        css_classes.append('meta-featured')
+
+    if hasattr(post, 'category') and post.category:
+        css_classes.append(f'meta-category-{post.category.slug}')
+
+    return {
+        'post': post,
+        'style': style,
+        'size': size,
+        'alignment': alignment,
+        'css_classes': ' '.join(css_classes),
+
+        # Display flags
+        'show_category': show_category,
+        'show_tags': show_tags,
+        'show_reading_time': show_reading_time,
+        'show_date': show_date,
+        'show_author': show_author,
+        'show_status': show_status,
+        'show_featured': show_featured,
+        'show_systems': show_systems,
+        'show_icons': show_icons,
+
+        # Processed data
+        'formatted_date': formatted_date,
+        'post_tags': post_tags,
+        'remaining_tags': remaining_tags,
+        'compact_tags': compact_tags,
+        'related_systems': related_systems,
+        'reading_time_display': reading_time_display,
+        'author_info': author_info,
+        'status_info': status_info,
+        'is_featured': is_featured,
+
+        # Theming
+        'primary_color': primary_color,
+        'secondary_color': secondary_color,
+        'date_format': date_format,
+
+        # Context
+        'request': request,
+    }
+
+
+# # Found a better way to reuse existing hex_to_rgba function, leaving for now as reference
+# def get_rgb_values_from_hex(hex_color):
+#     """Extract RBG values from hex color using existing hex_to_rgba function."""
+#     if not hex_color:
+#         # Default lavendar RGB
+#         return '179, 157, 219'
+
+
+# Additional helper tags for meta display
+@register.simple_tag
+def meta_separator(style='default', color='auto'):
+    """
+    Generate a separator for meta elements.
+    Usage: {% meta_separator style='dot' color='teal' %}
+    """
+    separators = {
+        'default': '•',
+        'dot': '•',
+        'pipe': '|',
+        'slash': '/',
+        'arrow': '→',
+        'chevron': '›',
+        'diamond': '◆',
+        'bullet': '▸'
+    }
+
+    separator_char = separators.get(style, '•')
+
+    if color == 'auto':
+        color_class = 'meta-separator-auto'
+    else:
+        color_class = f'meta-separator-{color}'
+
+    return mark_safe(f'<span class="meta-separator {color_class}">{separator_char}</span>')
+
+
+@register.filter
+def meta_truncate_title(title, style='full'):
+    """
+    Truncate post title based on meta display style.
+    Usage: {{ post.title|meta_truncate_title:style }}
+    """
+    if not title:
+        return ''
+
+    truncate_limits = {
+        'minimal': 30,
+        'compact': 40,
+        'inline': 35,
+        'card': 45,
+        'breadcrumb': 25,
+        'full': 80,
+        'detailed': 100,
+    }
+
+    limit = truncate_limits.get(style, 80)
+    return truncate_smart(title, limit)
+
+
+@register.simple_tag
+def meta_category_display(
+        category, style='default', show_icon=True, show_code=True, show_name=True):
+    """
+    Display category information with consistent styling.
+    Usage: {% meta_category_display post.category style='compact' %}
+    """
+    if not category:
+        return ''
+
+    parts = []
+
+    # Icon
+    if show_icon and hasattr(category, 'icon') and category.icon:
+        parts.append(f'<i class="fas {category.icon}"></i>')
+
+    # Code
+    if show_code and hasattr(category, 'code') and category.code:
+        # Ensure max 3 chars
+        code = category.code.upper()[:3]
+        parts.append(f'<span class="category-code">{code}</span>')
+
+    # Name
+    if show_name:
+        name = category.name
+        if style in ["compact", "minimal"]:
+            name = truncate_smart(name, 20)
+        parts.append(f'<span class="category-name">{name}</span>')
+
+    # Get category color
+    color = getattr(category, "color", "#b39ddb")
+
+    category_content = " ".join(parts)
+
+    html = f'''
+    <span class="meta-category meta-category-{style}" 
+          style="--category-color: {color};" 
+          data-category="{category.slug}">
+        {category_content}
+    </span>
+    '''
+
+    return mark_safe(html)
+
+
+@register.filter
+def meta_reading_difficulty(post):
+    """
+    Calculate and display reading difficulty indicator for meta display.
+    Usage: {{ post|meta_reading_difficulty }}
+    """
+    difficulty = datalog_difficulty(post)
+
+    difficulty_config = {
+        "Beginner": {
+            "icon": "fas fa-leaf",
+            "color": "var(--color-mint)",
+            "class": "difficulty-beginner",
+        },
+        "Intermediate": {
+            "icon": "fas fa-fire",
+            "color": "var(--color-coral)",
+            "class": "difficulty-intermediate",
+        },
+        "Advanced": {
+            "icon": "fas fa-bolt",
+            "color": "var(--color-yellow)",
+            "class": "difficulty-advanced",
+        },
+    }
+
+    config = difficulty_config.get(difficulty, difficulty_config["Beginner"])
+
+    html = f'''
+    <span class="meta-difficulty {config["class"]}" 
+          style="--difficulty-color: {config["color"]};"
+          title="Difficulty: {difficulty}">
+        <i class="{config["icon"]}"></i>
+        <span class="difficulty-text">{difficulty}</span>
+    </span>
+    '''
+
+    return mark_safe(html)
