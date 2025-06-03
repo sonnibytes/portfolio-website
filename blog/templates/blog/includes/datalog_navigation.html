@@ -1,0 +1,832 @@
+<!----
+ * AURA DataLogs - DataLog Navigation Component (STREAMLINED)
+ * Reusable component with minimal CSS/JS - relies on consolidated files
+ * Usage: {--% include 'blog/includes/datalog_navigation.html' with current_post=post style="full" %--}
+ * Styles: full, compact, minimal, breadcrumb
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="datalog-navigation-display datalog-nav-{{ style|default:'full' }}">
+    
+    {% if style == 'full' %}
+    <!-- Full navigation for detail pages -->
+    <div class="glass-card datalog-nav-container">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-compass"></i>
+                DataLog Navigation
+            </h3>
+            <div class="nav-meta">
+                <span class="current-position">{{ current_post.id|datalog_id }}</span>
+            </div>
+        </div>
+        
+        <div class="card-content">
+            <!-- Previous/Next Navigation -->
+            <div class="nav-controls-grid">
+                <!-- Previous Post -->
+                {% get_previous_next_posts current_post as nav_posts %}
+                {% if nav_posts.previous %}
+                <a href="{{ nav_posts.previous.get_absolute_url }}" class="nav-control-card prev-post">
+                    <div class="nav-direction">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Previous Entry</span>
+                    </div>
+                    <div class="nav-post-info">
+                        <div class="nav-post-id">{{ nav_posts.previous.id|datalog_id }}</div>
+                        <div class="nav-post-title">{{ nav_posts.previous.title|truncate_smart:50 }}</div>
+                        <div class="nav-post-meta">
+                            {% include 'blog/includes/post_metrics_display.html' with post=nav_posts.previous style='minimal' %}
+                        </div>
+                    </div>
+                    {% if nav_posts.previous.category %}
+                    <div class="nav-category-indicator" style="--category-color: {{ nav_posts.previous.category.color }};">
+                        {{ nav_posts.previous.category.code }}
+                    </div>
+                    {% endif %}
+                </a>
+                {% else %}
+                <div class="nav-control-card disabled">
+                    <div class="nav-direction">
+                        <i class="fas fa-ban"></i>
+                        <span>First Entry</span>
+                    </div>
+                    <div class="nav-post-info">
+                        <div class="nav-post-title">Beginning of DataLog archive</div>
+                        <div class="nav-post-meta">No previous entries</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Next Post -->
+                {% if nav_posts.next %}
+                <a href="{{ nav_posts.next.get_absolute_url }}" class="nav-control-card next-post">
+                    <div class="nav-post-info">
+                        <div class="nav-post-id">{{ nav_posts.next.id|datalog_id }}</div>
+                        <div class="nav-post-title">{{ nav_posts.next.title|truncate_smart:50 }}</div>
+                        <div class="nav-post-meta">
+                            {% include 'blog/includes/post_metrics_display.html' with post=nav_posts.next style='minimal' %}
+                        </div>
+                    </div>
+                    <div class="nav-direction">
+                        <span>Next Entry</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    {% if nav_posts.next.category %}
+                    <div class="nav-category-indicator" style="--category-color: {{ nav_posts.next.category.color }};">
+                        {{ nav_posts.next.category.code }}
+                    </div>
+                    {% endif %}
+                </a>
+                {% else %}
+                <div class="nav-control-card disabled">
+                    <div class="nav-post-info">
+                        <div class="nav-post-title">End of DataLog archive</div>
+                        <div class="nav-post-meta">No newer entries</div>
+                    </div>
+                    <div class="nav-direction">
+                        <span>Latest Entry</span>
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Quick Navigation Links -->
+            <div class="quick-nav-section">
+                <div class="quick-nav-title">
+                    <i class="fas fa-bolt"></i>
+                    <span>Quick Navigation</span>
+                </div>
+                
+                <div class="quick-nav-grid">
+                    <!-- Back to List -->
+                    <a href="{% url 'blog:post_list' %}" class="quick-nav-item">
+                        <i class="fas fa-list"></i>
+                        <span>All DataLogs</span>
+                        <div class="nav-arrow"><i class="fas fa-arrow-right"></i></div>
+                    </a>
+                    
+                    <!-- Category -->
+                    {% if current_post.category %}
+                    <a href="{% url 'blog:category' slug=current_post.category.slug %}" class="quick-nav-item">
+                        {% if current_post.category.icon %}
+                        <i class="{{ current_post.category.icon }}"></i>
+                        {% else %}
+                        <span class="category-code">{{ current_post.category.code }}</span>
+                        {% endif %}
+                        <span>{{ current_post.category.name }}</span>
+                        <div class="nav-arrow"><i class="fas fa-arrow-right"></i></div>
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Archive -->
+                    <a href="{% url 'blog:archive' %}" class="quick-nav-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>Archive</span>
+                        <div class="nav-arrow"><i class="fas fa-arrow-right"></i></div>
+                    </a>
+                    
+                    <!-- Search -->
+                    <a href="{% url 'blog:search' %}" class="quick-nav-item">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                        <div class="nav-arrow"><i class="fas fa-arrow-right"></i></div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Related Posts Navigation -->
+            {% get_related_posts current_post 3 as related_posts %}
+            {% if related_posts %}
+            <div class="related-nav-section">
+                <div class="related-nav-title">
+                    <i class="fas fa-link"></i>
+                    <span>Related Entries</span>
+                </div>
+                
+                <div class="related-nav-list">
+                    {% for related in related_posts %}
+                    <a href="{{ related.get_absolute_url }}" class="related-nav-item">
+                        <div class="related-id">{{ related.id|datalog_id }}</div>
+                        <div class="related-content">
+                            <div class="related-title">{{ related.title|truncate_smart:40 }}</div>
+                            <div class="related-meta">
+                                <span>{{ related.published_date|time_since_published }}</span>
+                                <span>•</span>
+                                <span>{{ related.reading_time|format_duration }}</span>
+                                {% if related.category %}
+                                <span>•</span>
+                                <span>{{ related.category.name }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="related-arrow"><i class="fas fa-arrow-right"></i></div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% elif style == 'compact' %}
+    <!-- Compact navigation for cards and sidebars -->
+    <div class="glass-card datalog-nav-compact">
+        <div class="card-content">
+            <div class="compact-nav-header">
+                <i class="fas fa-compass"></i>
+                <span>Navigation</span>
+            </div>
+            
+            <div class="compact-nav-controls">
+                {% get_previous_next_posts current_post as nav_posts %}
+                {% if nav_posts.previous %}
+                <a href="{{ nav_posts.previous.get_absolute_url }}" class="compact-nav-btn prev" title="Previous: {{ nav_posts.previous.title }}">
+                    <i class="fas fa-chevron-left"></i>
+                    <span>{{ nav_posts.previous.id|datalog_id }}</span>
+                </a>
+                {% else %}
+                <div class="compact-nav-btn disabled">
+                    <i class="fas fa-ban"></i>
+                    <span>First</span>
+                </div>
+                {% endif %}
+                
+                <a href="{% url 'blog:post_list' %}" class="compact-nav-btn center" title="All DataLogs">
+                    <i class="fas fa-list"></i>
+                    <span>All</span>
+                </a>
+                
+                {% if nav_posts.next %}
+                <a href="{{ nav_posts.next.get_absolute_url }}" class="compact-nav-btn next" title="Next: {{ nav_posts.next.title }}">
+                    <span>{{ nav_posts.next.id|datalog_id }}</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% else %}
+                <div class="compact-nav-btn disabled">
+                    <span>Latest</span>
+                    <i class="fas fa-flag-checkered"></i>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal navigation for tight spaces -->
+    <div class="datalog-nav-minimal">
+        {% get_previous_next_posts current_post as nav_posts %}
+        <div class="minimal-nav-controls">
+            {% if nav_posts.previous %}
+            <a href="{{ nav_posts.previous.get_absolute_url }}" class="minimal-nav-btn" title="Previous DataLog">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            <span class="minimal-nav-position">{{ current_post.id|datalog_id }}</span>
+            
+            {% if nav_posts.next %}
+            <a href="{{ nav_posts.next.get_absolute_url }}" class="minimal-nav-btn" title="Next DataLog">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% elif style == 'breadcrumb' %}
+    <!-- Breadcrumb style for header areas -->
+    <div class="datalog-nav-breadcrumb">
+        <div class="breadcrumb-nav-container">
+            <a href="{% url 'blog:post_list' %}" class="breadcrumb-nav-link">
+                <i class="fas fa-list"></i>
+                <span>All DataLogs</span>
+            </a>
+            
+            {% if current_post.category %}
+            <i class="fas fa-chevron-right breadcrumb-separator"></i>
+            <a href="{% url 'blog:category' slug=current_post.category.slug %}" class="breadcrumb-nav-link">
+                {% if current_post.category.icon %}
+                <i class="{{ current_post.category.icon }}"></i>
+                {% endif %}
+                <span>{{ current_post.category.name }}</span>
+            </a>
+            {% endif %}
+            
+            <i class="fas fa-chevron-right breadcrumb-separator"></i>
+            <span class="breadcrumb-current">{{ current_post.id|datalog_id }}</span>
+        </div>
+        
+        <div class="breadcrumb-nav-actions">
+            {% get_previous_next_posts current_post as nav_posts %}
+            {% if nav_posts.previous %}
+            <a href="{{ nav_posts.previous.get_absolute_url }}" class="breadcrumb-action-btn" title="Previous DataLog">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            {% if nav_posts.next %}
+            <a href="{{ nav_posts.next.get_absolute_url }}" class="breadcrumb-action-btn" title="Next DataLog">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Default: compact style -->
+    {% include 'blog/includes/datalog_navigation.html' with current_post=current_post style='compact' %}
+    {% endif %}
+    
+</div>
+
+<style>
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
+
+/* Only styles that are NOT in the consolidated CSS or need component-specific adjustments */
+
+/* Navigation container - enhance glass card with navigation theming */
+.datalog-nav-container {
+    background: 
+        var(--gradient-glass),
+        rgba(38, 198, 218, 0.02);
+    border-color: rgba(38, 198, 218, 0.1);
+}
+
+.datalog-nav-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-teal), var(--color-lavender), var(--color-coral));
+    opacity: 0.8;
+}
+
+/* Navigation controls grid */
+.nav-controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+}
+
+.nav-control-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: 
+        var(--gradient-glass),
+        rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-control-card:hover {
+    background: 
+        var(--gradient-glass),
+        rgba(38, 198, 218, 0.05);
+    border-color: rgba(38, 198, 218, 0.2);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-glow-teal);
+    color: var(--color-text);
+}
+
+.nav-control-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.nav-direction {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-teal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.nav-direction i {
+    font-size: 1.2rem;
+    padding: var(--spacing-sm);
+    background: rgba(38, 198, 218, 0.1);
+    border-radius: 50%;
+    border: 1px solid rgba(38, 198, 218, 0.3);
+}
+
+.nav-post-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nav-post-id {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-teal);
+    margin-bottom: var(--spacing-xs);
+    font-weight: 600;
+}
+
+.nav-post-title {
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-xs);
+    line-height: 1.3;
+}
+
+.nav-post-meta {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.nav-category-indicator {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    padding: 0.2rem 0.5rem;
+    background: rgba(var(--category-color), 0.1);
+    border: 1px solid rgba(var(--category-color), 0.3);
+    border-radius: var(--border-radius-sm);
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--category-color);
+    font-weight: 600;
+}
+
+.next-post {
+    text-align: right;
+}
+
+.next-post .nav-post-info {
+    text-align: right;
+}
+
+/* Quick navigation section */
+.quick-nav-section {
+    margin-bottom: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.quick-nav-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    color: var(--color-lavender);
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+}
+
+.quick-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.quick-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.quick-nav-item:hover {
+    background: rgba(179, 157, 219, 0.05);
+    border-color: rgba(179, 157, 219, 0.2);
+    color: var(--color-text);
+    transform: translateX(5px);
+}
+
+.quick-nav-item i,
+.quick-nav-item .category-code {
+    color: var(--color-lavender);
+    width: 16px;
+    text-align: center;
+}
+
+.category-code {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.nav-arrow {
+    margin-left: auto;
+    color: var(--color-lavender);
+    font-size: 0.8rem;
+}
+
+/* Related navigation section */
+.related-nav-section {
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.related-nav-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    color: var(--color-coral);
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+}
+
+.related-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.related-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.related-nav-item:hover {
+    background: rgba(255, 138, 128, 0.05);
+    border-color: rgba(255, 138, 128, 0.2);
+    color: var(--color-text);
+    transform: translateX(5px);
+}
+
+.related-id {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-coral);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.related-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.related-title {
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+    line-height: 1.3;
+}
+
+.related-meta {
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.related-arrow {
+    color: var(--color-coral);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* Compact navigation styling */
+.datalog-nav-compact {
+    background: rgba(38, 198, 218, 0.05);
+    border-color: rgba(38, 198, 218, 0.2);
+}
+
+.compact-nav-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+    color: var(--color-teal);
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.compact-nav-controls {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.compact-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+    justify-content: center;
+}
+
+.compact-nav-btn:hover {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+    transform: translateY(-2px);
+}
+
+.compact-nav-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.compact-nav-btn.center {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: rgba(179, 157, 219, 0.3);
+    color: var(--color-lavender);
+}
+
+.compact-nav-btn.center:hover {
+    background: rgba(179, 157, 219, 0.2);
+    color: var(--color-lavender);
+}
+
+/* Minimal navigation styling */
+.datalog-nav-minimal {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-sm);
+}
+
+.minimal-nav-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.minimal-nav-btn {
+    width: 32px;
+    height: 32px;
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    border-radius: 50%;
+    color: var(--color-teal);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.minimal-nav-btn:hover {
+    background: rgba(38, 198, 218, 0.2);
+    transform: scale(1.1);
+    color: var(--color-teal);
+}
+
+.minimal-nav-position {
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+    color: var(--color-text);
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+}
+
+/* Breadcrumb navigation styling */
+.datalog-nav-breadcrumb {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
+}
+
+.breadcrumb-nav-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.breadcrumb-nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+    font-size: 0.9rem;
+}
+
+.breadcrumb-nav-link:hover {
+    color: var(--color-lavender);
+    background: rgba(179, 157, 219, 0.1);
+}
+
+.breadcrumb-separator {
+    color: var(--color-text-tertiary);
+    font-size: 0.7rem;
+    opacity: 0.6;
+}
+
+.breadcrumb-current {
+    font-family: var(--font-code);
+    color: var(--color-teal);
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(38, 198, 218, 0.1);
+    border-radius: var(--border-radius-sm);
+}
+
+.breadcrumb-nav-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.breadcrumb-action-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: 50%;
+    color: var(--color-lavender);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+}
+
+.breadcrumb-action-btn:hover {
+    background: rgba(179, 157, 219, 0.2);
+    transform: scale(1.1);
+    color: var(--color-lavender);
+}
+
+/* Component-specific responsive adjustments */
+@media (max-width: 991px) {
+    .nav-controls-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+    
+    .quick-nav-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    
+    .nav-control-card {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-sm);
+    }
+    
+    .next-post .nav-post-info {
+        text-align: center;
+    }
+}
+
+@media (max-width: 767px) {
+    .quick-nav-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .compact-nav-controls {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .datalog-nav-breadcrumb {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .breadcrumb-nav-container {
+        flex-wrap: wrap;
+    }
+    
+    .minimal-nav-controls {
+        gap: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 576px) {
+    .nav-control-card {
+        padding: var(--spacing-md);
+    }
+    
+    .related-nav-item {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-sm);
+    }
+    
+    .nav-category-indicator {
+        position: static;
+        align-self: center;
+        margin-top: var(--spacing-sm);
+    }
+}
+
+/* Accessibility enhancements */
+.nav-control-card:focus,
+.quick-nav-item:focus,
+.related-nav-item:focus,
+.compact-nav-btn:focus,
+.minimal-nav-btn:focus,
+.breadcrumb-action-btn:focus {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+    .nav-control-card,
+    .datalog-nav-compact {
+        border-width: 2px;
+        backdrop-filter: none;
+        background: rgba(13, 13, 31, 0.9);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .nav-control-card:hover,
+    .quick-nav-item:hover,
+    .related-nav-item:hover {
+        transform: none;
+    }
+}
