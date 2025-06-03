@@ -17,6 +17,7 @@
 <!-- DataLogs App Specific Styles -->
 <link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
 
+
 {% pygments_css %}
 {% block datalogs_css %}{% endblock %}
 {% endblock %}
@@ -92,10 +93,10 @@
                     <i class="fas fa-filter"></i>
                     <span>Filters</span>
                 </button>
-                <button class="subnav-action-btn" id="datalogsViewToggle">
+                {% comment %} <button class="subnav-action-btn" id="datalogsViewToggle">
                     <i class="fas fa-th-large"></i>
                     <span>View</span>
-                </button>
+                </button> {% endcomment %}
                 <button class="subnav-action-btn" id="datalogsSearchToggle">
                     <i class="fas fa-search"></i>
                     <span>Search</span>
@@ -406,6 +407,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log(`📄 Page detected: ${this.state.currentPage} (view: ${context.viewName})`);
         };
+
+        // Override terminal config for consistency
+        window.datalogInterface.config.typewriterSpeed = 15; // slightly faster 
+        window.datalogInterface.config.enableTerminalAnimation = true;
         
         // Initialize with enhanced context
         if (!window.datalogInterface.isInitialized) {
@@ -531,6 +536,19 @@ window.DATALOG_DEBUG = {
             window.datalogInterface.config.enableDebugMode = false;
             document.body.classList.remove('debug');
             console.log('✅ DataLog debug mode disabled');
+        }
+    },
+    // Terminal Debug functions
+    skipTerminalAnimation: () => {
+        if (window.datalogInterface) {
+            window.datalogInterface.config.enableTerminalAnimation = false;
+            console.log('⏩ Terminal animations disabled');
+        }
+    },
+    enableTerminalAnimation: () => {
+        if (window.datalogInterface) {
+            window.datalogInterface.config.enableTerminalAnimation = true;
+            console.log('🎬 Terminal animations enabled');
         }
     }
 };

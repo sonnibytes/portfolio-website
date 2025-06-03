@@ -27,10 +27,15 @@
 {% endblock %}
 
 {% block datalogs_css %}
-<link rel="stylesheet" href="{% static 'blog/css/datalogs_consolidated.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/datalog-detail.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
 {% endblock %}
 
+
 {% block datalogs_body_class %}search-results{% endblock %}
+
+{% block show_breadcrumbs %}True{% endblock %}
+{% block show_filters%}True{% endblock %}
 
 {% block datalogs_title %}
     {% if query %}
@@ -58,71 +63,139 @@
 
 {% block datalogs_content %}
 
-<!-- Enhanced Search Interface Section -->
-<section class="search-interface-section">
-    {% glass_card css_class="search-control-panel" %}
-        <!-- Main Search Interface -->
-        <div class="primary-search-container">
-            {% include 'blog/includes/enhanced_search_interface.html' with style='full' query=query %}
+{% comment %} <div class="datalog-content-layout"> {% endcomment %}
+    <!-- Search Sidebar -->
+    <aside class="search-sidebar">
+        <!-- Popular Searches -->
+        <div class="glass-card sidebar-panel">
+        {% comment %} {% glass_card css_class="sidebar-panel" title="Popular Searches" %} {% endcomment %}
+            <div class="popular-searches">
+                {% for popular_term in popular_searches %}
+                <a href="?q={{ popular_term.term|urlencode }}" class="popular-search-link">
+                    <span class="search-term">{{ popular_term.term }}</span>
+                    <span class="search-count">{{ popular_term.count }}</span>
+                </a>
+                {% empty %}
+                <a href="?q=machine+learning" class="popular-search-link">
+                    <span class="search-term">Machine Learning</span>
+                    <span class="search-count">24</span>
+                </a>
+                <a href="?q=python" class="popular-search-link">
+                    <span class="search-term">Python Development</span>
+                    <span class="search-count">18</span>
+                </a>
+                <a href="?q=api" class="popular-search-link">
+                    <span class="search-term">API Design</span>
+                    <span class="search-count">12</span>
+                </a>
+                <a href="?q=database" class="popular-search-link">
+                    <span class="search-term">Database</span>
+                    <span class="search-count">15</span>
+                </a>
+                <a href="?q=neural" class="popular-search-link">
+                    <span class="search-term">Neural Networks</span>
+                    <span class="search-count">9</span>
+                </a>
+                {% endfor %}
+            </div>
         </div>
-        
-        <!-- Search Results Summary -->
-        {% if query %}
-        <div class="search-results-summary">
-            <div class="summary-left">
-                <div class="results-count-display">
-                    <span class="count-value">{{ posts|length|format_number }}</span>
-                    <span class="count-label">result{{ posts|length|pluralize }} found</span>
-                    {% if search_time %}
-                    <span class="search-time">({{ search_time }}ms)</span>
+        <!-- Quick Category Access -->
+        <div class="glass-card sidebar-panel">
+        {% comment %} {% glass_card css_class="sidebar-panel" title="Quick Access" %} {% endcomment %}
+            <!-- Compact hexagon navigation -->
+            {% include 'blog/includes/category_hexagon_nav.html' with style='compact' %}
+        </div>
+        <!-- Search Tips -->
+        <div class="sidebar-panel">
+        {% comment %} {% glass_card css_class="sidebar-panel" title="Search Tips" %} {% endcomment %}
+            <div class="search-tips">
+                <div class="tip-item" data-example='"machine learning"'>
+                    <div class="tip-example">"machine learning"</div>
+                    <div class="tip-description">Search for exact phrases</div>
+                </div>
+                <div class="tip-item" data-example="python OR django">
+                    <div class="tip-example">python OR django</div>
+                    <div class="tip-description">Search for either term</div>
+                </div>
+                <div class="tip-item" data-example="api -rest">
+                    <div class="tip-example">api -rest</div>
+                    <div class="tip-description">Exclude specific terms</div>
+                </div>
+                <div class="tip-item" data-example="neural*">
+                    <div class="tip-example">neural*</div>
+                    <div class="tip-description">Use wildcards</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+    <!-- Enhanced Search Interface Section -->
+    <section class="search-interface-section">
+        <div class="glass-card search-control-panel">
+
+        {% comment %} {% glass_card css_class="search-control-panel" %} {% endcomment %}
+            <!-- Main Search Interface -->
+            <div class="primary-search-container">
+                {% include 'blog/includes/enhanced_search_interface.html' with style='full' query=query %}
+            </div>
+            
+            <!-- Search Results Summary -->
+            {% if query %}
+            <div class="search-results-summary">
+                <div class="summary-left">
+                    <div class="results-count-display">
+                        <span class="count-value">{{ posts|length|format_number }}</span>
+                        <span class="count-label">result{{ posts|length|pluralize }} found</span>
+                        {% if search_time %}
+                        <span class="search-time">({{ search_time }}ms)</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if search_suggestions %}
+                    <div class="search-suggestions-inline">
+                        <span class="suggestions-label">Related:</span>
+                        {% for suggestion in search_suggestions %}
+                        <a href="{{ suggestion.url }}" class="suggestion-link">
+                            <i class="{{ suggestion.icon }}"></i>
+                            {{ suggestion.text }}
+                        </a>
+                        {% endfor %}
+                    </div>
                     {% endif %}
                 </div>
                 
-                {% if search_suggestions %}
-                <div class="search-suggestions-inline">
-                    <span class="suggestions-label">Related:</span>
-                    {% for suggestion in search_suggestions %}
-                    <a href="{{ suggestion.url }}" class="suggestion-link">
-                        <i class="{{ suggestion.icon }}"></i>
-                        {{ suggestion.text }}
-                    </a>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-            
-            <div class="summary-right">
-                <!-- Search Scope Indicators -->
-                <div class="search-scope">
-                    <span class="scope-label">Searched in:</span>
-                    <div class="scope-indicators">
-                        <span class="scope-item active">
-                            <i class="fas fa-file-alt"></i>
-                            <span>Content</span>
-                        </span>
-                        <span class="scope-item active">
-                            <i class="fas fa-heading"></i>
-                            <span>Titles</span>
-                        </span>
-                        <span class="scope-item active">
-                            <i class="fas fa-tags"></i>
-                            <span>Tags</span>
-                        </span>
-                        <span class="scope-item active">
-                            <i class="fas fa-code"></i>
-                            <span>Code</span>
-                        </span>
+                <div class="summary-right">
+                    <!-- Search Scope Indicators -->
+                    <div class="search-scope">
+                        <span class="scope-label">Searched in:</span>
+                        <div class="scope-indicators">
+                            <span class="scope-item active">
+                                <i class="fas fa-file-alt"></i>
+                                <span>Content</span>
+                            </span>
+                            <span class="scope-item active">
+                                <i class="fas fa-heading"></i>
+                                <span>Titles</span>
+                            </span>
+                            <span class="scope-item active">
+                                <i class="fas fa-tags"></i>
+                                <span>Tags</span>
+                            </span>
+                            <span class="scope-item active">
+                                <i class="fas fa-code"></i>
+                                <span>Code</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
-    {% endglass_card %}
-</section>
+    </section>
 
 <!-- Advanced Filter Section -->
 <section class="search-filters-section">
-    {% glass_card css_class="filters-control-panel" %}
+    <div class="glass-card filters-control-panel">
+    {% comment %} {% glass_card css_class="filters-control-panel" %} {% endcomment %}
         <div class="filters-header">
             <h3 class="filters-title">
                 <i class="fas fa-sliders-h"></i>
@@ -275,7 +348,7 @@
                 </div>
             </form>
         </div>
-    {% endglass_card %}
+    </div>
 </section>
 
 <!-- Search Results Section -->
@@ -341,7 +414,8 @@
     {% else %}
     
     <!-- No Results State -->
-    {% glass_card css_class="no-results-panel" %}
+     <div class="glass-card no-results-panel">
+    {% comment %} {% glass_card css_class="no-results-panel" %} {% endcomment %}
         <div class="no-results-content">
             <div class="no-results-icon">
                 <i class="fas fa-search-minus"></i>
@@ -403,73 +477,12 @@
                 {% endif %}
             </div>
         </div>
-    {% endglass_card %}
+    </div>
     {% endif %}
 </section>
+{% comment %} </div> {% endcomment %}
 
-<!-- Search Sidebar -->
-<aside class="search-sidebar">
-    <!-- Popular Searches -->
-    {% glass_card css_class="sidebar-panel" title="Popular Searches" %}
-        <div class="popular-searches">
-            {% for popular_term in popular_searches %}
-            <a href="?q={{ popular_term.term|urlencode }}" class="popular-search-link">
-                <span class="search-term">{{ popular_term.term }}</span>
-                <span class="search-count">{{ popular_term.count }}</span>
-            </a>
-            {% empty %}
-            <a href="?q=machine+learning" class="popular-search-link">
-                <span class="search-term">Machine Learning</span>
-                <span class="search-count">24</span>
-            </a>
-            <a href="?q=python" class="popular-search-link">
-                <span class="search-term">Python Development</span>
-                <span class="search-count">18</span>
-            </a>
-            <a href="?q=api" class="popular-search-link">
-                <span class="search-term">API Design</span>
-                <span class="search-count">12</span>
-            </a>
-            <a href="?q=database" class="popular-search-link">
-                <span class="search-term">Database</span>
-                <span class="search-count">15</span>
-            </a>
-            <a href="?q=neural" class="popular-search-link">
-                <span class="search-term">Neural Networks</span>
-                <span class="search-count">9</span>
-            </a>
-            {% endfor %}
-        </div>
-    {% endglass_card %}
-    
-    <!-- Quick Category Access -->
-    {% glass_card css_class="sidebar-panel" title="Quick Access" %}
-        <!-- Compact hexagon navigation -->
-        {% include 'blog/includes/category_hexagon_nav.html' with style='compact' %}
-    {% endglass_card %}
-    
-    <!-- Search Tips -->
-    {% glass_card css_class="sidebar-panel" title="Search Tips" %}
-        <div class="search-tips">
-            <div class="tip-item" data-example='"machine learning"'>
-                <div class="tip-example">"machine learning"</div>
-                <div class="tip-description">Search for exact phrases</div>
-            </div>
-            <div class="tip-item" data-example="python OR django">
-                <div class="tip-example">python OR django</div>
-                <div class="tip-description">Search for either term</div>
-            </div>
-            <div class="tip-item" data-example="api -rest">
-                <div class="tip-example">api -rest</div>
-                <div class="tip-description">Exclude specific terms</div>
-            </div>
-            <div class="tip-item" data-example="neural*">
-                <div class="tip-example">neural*</div>
-                <div class="tip-description">Use wildcards</div>
-            </div>
-        </div>
-    {% endglass_card %}
-</aside>
+
 
 {% endblock %}
 

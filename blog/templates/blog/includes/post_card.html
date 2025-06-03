@@ -1,6 +1,6 @@
 <!----
- * AURA DataLogs - Post Card Component
- * Modern post card with AURA styling and multiple card types
+ * AURA DataLogs - Post Card Component (STREAMLINED)
+ * Reusable component with minimal CSS/JS - relies on consolidated files
  * Usage: {--% render_post_card post show_excerpt=True card_type="default" %--}
  * Card Types: default, search, category, featured, compact
 ---->
@@ -9,6 +9,7 @@
 {% load datalog_tags %}
 
 <article class="datalog-card datalog-card-{{ card_type|default:'default' }}" data-category="{{ post.category.slug|default:'general' }}">
+    
     <!-- Card Header -->
     <div class="datalog-card-header">
         <div class="card-id">{{ post.id|datalog_id }}</div>
@@ -26,7 +27,7 @@
             {% if post.featured %}
             <span class="featured-badge">
                 <i class="fas fa-star"></i>
-                Featured
+                <span>Featured</span>
             </span>
             {% endif %}
         </div>
@@ -38,7 +39,7 @@
         <!-- Post Meta -->
         <div class="post-meta-top">
             {% if post.category %}
-            <div class="category-badge" data-category-color="{{ post.category.color }}">
+            <div class="category-badge" style="--category-color: {{ post.category.color }};">
                 {% if post.category.icon %}
                 <i class="{{ post.category.icon }}"></i>
                 {% endif %}
@@ -49,7 +50,7 @@
             {% if card_type == 'search' and query %}
             <div class="search-match-badge">
                 <i class="fas fa-search"></i>
-                Match
+                <span>Match</span>
             </div>
             {% endif %}
         </div>
@@ -66,13 +67,13 @@
         <p class="datalog-card-excerpt">{{ post.content|truncate_smart:120 }}</p>
         {% endif %}
         
-        <!-- Post Metrics (using our component) -->
+        <!-- Post Metrics (using our reusable component) -->
         <div class="card-metrics">
             {% include 'blog/includes/post_metrics_display.html' with post=post style='compact' %}
         </div>
         
         <!-- System Connections (if any) -->
-        {% if post.has_system_connections %}
+        {% if post|has_system_connection %}
         <div class="card-connections">
             {% include 'blog/includes/system_connections.html' with post=post style='minimal' %}
         </div>
@@ -98,12 +99,12 @@
         <div class="footer-stats">
             <span class="stat-item">
                 <i class="fas fa-eye"></i>
-                {{ post.views.count|default:"0"|format_number }}
+                <span>{{ post.views.count|default:"0"|format_number }}</span>
             </span>
             {% if post.tags.exists %}
             <span class="stat-item">
                 <i class="fas fa-tags"></i>
-                {{ post.tags.count }}
+                <span>{{ post.tags.count }}</span>
             </span>
             {% endif %}
         </div>
@@ -114,174 +115,14 @@
         </a>
     </div>
     
-    <!-- Scanning Line Effect -->
-    <div class="card-scanning-line"></div>
 </article>
 
 <style>
-/* DataLog Card Component Styles */
-.datalog-card {
-    background: 
-        var(--gradient-glass), 
-        rgba(13, 13, 31, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--border-radius-xl);
-    overflow: hidden;
-    backdrop-filter: blur(20px);
-    transition: all var(--transition-normal);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
 
-.datalog-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--color-lavender), var(--color-coral));
-    opacity: 0.7;
-}
+/* Only styles that are NOT in the consolidated CSS or need component-specific adjustments */
 
-.datalog-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.3),
-        0 0 20px rgba(179, 157, 219, 0.15);
-    border-color: rgba(179, 157, 219, 0.2);
-}
-
-/* Card Header */
-.datalog-card-header {
-    padding: var(--spacing-md);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.card-id {
-    font-family: var(--font-code);
-    font-size: 0.8rem;
-    color: var(--color-lavender);
-    background: rgba(179, 157, 219, 0.1);
-    padding: 0.2rem 0.6rem;
-    border-radius: var(--border-radius-sm);
-    border: 1px solid rgba(179, 157, 219, 0.3);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.card-status {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-size: 0.8rem;
-}
-
-.status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-.status-indicator.published {
-    background: var(--color-mint);
-    box-shadow: 0 0 8px var(--color-mint);
-}
-
-.status-text {
-    font-family: var(--font-code);
-    color: var(--color-mint);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Featured Image */
-.datalog-image {
-    position: relative;
-    height: 200px;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.datalog-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform var(--transition-normal);
-}
-
-.datalog-card:hover .datalog-image img {
-    transform: scale(1.05);
-}
-
-.image-overlay {
-    position: absolute;
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
-    display: flex;
-    gap: var(--spacing-xs);
-}
-
-.featured-badge {
-    background: rgba(255, 245, 157, 0.9);
-    color: #333;
-    padding: 0.3rem 0.6rem;
-    border-radius: var(--border-radius-sm);
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Card Content */
-.datalog-card-content {
-    padding: var(--spacing-lg);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-}
-
-.post-meta-top {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-}
-
-.category-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    padding: 0.2rem 0.6rem;
-    background: rgba(179, 157, 219, 0.1);
-    border: 1px solid rgba(179, 157, 219, 0.3);
-    border-radius: var(--border-radius-sm);
-    font-family: var(--font-code);
-    font-size: 0.75rem;
-    color: var(--color-lavender);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.category-badge[data-category-color] {
-    border-color: var(--category-color, rgba(179, 157, 219, 0.3));
-    background: var(--category-color, rgba(179, 157, 219, 0.1));
-    color: var(--category-color, var(--color-lavender));
-}
-
+/* Search match badge (specific to search card type) */
 .search-match-badge {
     display: inline-flex;
     align-items: center;
@@ -296,51 +137,26 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    animation: searchGlow 2s ease-in-out infinite;
 }
 
-.datalog-card-title {
-    font-family: var(--font-heading);
-    font-size: 1.2rem;
-    color: var(--color-text);
-    margin: 0;
-    line-height: 1.3;
+@keyframes searchGlow {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(38, 198, 218, 0.4); 
+    }
+    50% { 
+        box-shadow: 0 0 0 6px rgba(38, 198, 218, 0); 
+    }
 }
 
-.datalog-card-title a {
-    color: inherit;
-    text-decoration: none;
-    transition: color var(--transition-fast);
-}
-
-.datalog-card-title a:hover {
-    color: var(--color-lavender);
-}
-
-.datalog-card-excerpt {
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin: 0;
-    flex: 1;
-}
-
-/* Card Metrics and Connections */
-.card-metrics {
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    padding-top: var(--spacing-sm);
-}
-
-.card-connections {
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    padding-top: var(--spacing-sm);
-}
-
-/* Featured Code Preview */
+/* Featured code preview (specific to featured card type) */
 .card-code-preview {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(179, 157, 219, 0.2);
     border-radius: var(--border-radius-md);
     overflow: hidden;
     font-family: var(--font-code);
+    margin-top: var(--spacing-md);
 }
 
 .code-preview-header {
@@ -366,18 +182,50 @@
     line-height: 1.4;
     white-space: pre-wrap;
     overflow: hidden;
+    max-height: 120px;
 }
 
-/* Card Footer */
-.datalog-card-footer {
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
+/* Card type variations - enhance consolidated CSS */
+.datalog-card-compact {
+    max-height: 350px;
 }
 
+.datalog-card-compact .datalog-image {
+    height: 120px;
+}
+
+.datalog-card-compact .datalog-card-content {
+    padding: var(--spacing-md);
+}
+
+.datalog-card-search {
+    /* Search results get subtle highlight */
+    border-color: rgba(38, 198, 218, 0.2);
+}
+
+.datalog-card-featured {
+    /* Featured posts get special border */
+    border: 2px solid rgba(255, 245, 157, 0.3);
+}
+
+.datalog-card-featured::before {
+    background: linear-gradient(90deg, var(--color-yellow), var(--color-coral), var(--color-lavender));
+}
+
+/* Category-specific card enhancements */
+.datalog-card[data-category="ml"] {
+    border-color: rgba(156, 39, 176, 0.2);
+}
+
+.datalog-card[data-category="dev"] {
+    border-color: rgba(76, 175, 80, 0.2);
+}
+
+.datalog-card[data-category="data"] {
+    border-color: rgba(255, 152, 0, 0.2);
+}
+
+/* Footer stats - specific styling not in consolidated CSS */
 .footer-stats {
     display: flex;
     align-items: center;
@@ -397,90 +245,8 @@
     color: var(--color-lavender);
 }
 
-.read-more-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    color: var(--color-lavender);
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all var(--transition-fast);
-}
-
-.read-more-btn:hover {
-    color: var(--color-lavender);
-    transform: translateX(5px);
-}
-
-.read-more-btn i {
-    font-size: 0.8rem;
-    transition: transform var(--transition-fast);
-}
-
-.read-more-btn:hover i {
-    transform: translateX(3px);
-}
-
-/* Scanning Line Effect */
-.card-scanning-line {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(179, 157, 219, 0.1) 50%, 
-        transparent 100%);
-    transition: left var(--transition-slow);
-    pointer-events: none;
-}
-
-.datalog-card:hover .card-scanning-line {
-    left: 100%;
-}
-
-/* Card Type Variations */
-.datalog-card-compact {
-    max-height: 300px;
-}
-
-.datalog-card-compact .datalog-image {
-    height: 120px;
-}
-
-.datalog-card-compact .datalog-card-content {
-    padding: var(--spacing-md);
-}
-
-.datalog-card-search .search-match-badge {
-    animation: searchGlow 2s ease-in-out infinite;
-}
-
-@keyframes searchGlow {
-    0%, 100% { 
-        box-shadow: 0 0 0 0 rgba(38, 198, 218, 0.4); 
-    }
-    50% { 
-        box-shadow: 0 0 0 6px rgba(38, 198, 218, 0); 
-    }
-}
-
-.datalog-card-featured {
-    border: 2px solid rgba(255, 245, 157, 0.3);
-}
-
-.datalog-card-featured::before {
-    background: linear-gradient(90deg, var(--color-yellow), var(--color-coral), var(--color-lavender));
-}
-
-/* Responsive Design */
+/* Component-specific responsive adjustments */
 @media (max-width: 767px) {
-    .datalog-card-content {
-        padding: var(--spacing-md);
-    }
-    
     .datalog-card-footer {
         flex-direction: column;
         gap: var(--spacing-sm);
@@ -505,6 +271,64 @@
     
     .post-meta-top {
         justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .code-preview-header {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        text-align: center;
+    }
+    
+    .code-lines {
+        margin-left: 0;
+    }
+}
+
+/* Accessibility enhancements */
+.datalog-card:focus {
+    outline: 2px solid var(--color-lavender);
+    outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .datalog-card {
+        border-width: 2px;
+        backdrop-filter: none;
+        background: rgba(13, 13, 31, 0.9);
+    }
+    
+    .search-match-badge,
+    .featured-badge {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .search-match-badge {
+        animation: none;
+    }
+    
+    .datalog-card:hover {
+        transform: none;
     }
 }
 </style>
+
+<!-- 
+REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Card hover effects and animations via initializeCardInteractions()
+- Click handling with ripple effects via createCardRipple()
+- Entrance animations via observeCardEntrance()
+- Touch interactions and responsive behavior
+- All event handlers and state management
+
+Card functionality is fully managed by:
+- DatalogInterface.initializeDatalogCards()
+- DatalogInterface.animateCardHover()
+- DatalogInterface.createCardRipple()
+- DatalogInterface.observeCardEntrance()
+-->
