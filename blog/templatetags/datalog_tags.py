@@ -27,7 +27,7 @@ from pygments.lexers import get_lexer_by_name, TextLexer
 from pygments.formatters import HtmlFormatter
 
 from ..models import Post, Category, Tag
-from core.templatetags.aura_filters import status_color, time_since_published, format_duration, truncate_smart, highlight_search
+from core.templatetags.aura_filters import status_color, time_since_published, format_duration, format_number, truncate_smart, highlight_search
 
 register = template.Library()
 
@@ -3095,7 +3095,7 @@ def search_suggestions(
             if suggestion_type not in grouped_suggestions:
                 grouped_suggestions[suggestion_type] = []
             grouped_suggestions[suggestion_type].append(suggestion)
-    
+
     # Get search context
     search_context = {
         'total_posts': Post.objects.filter(status='published').count(),
@@ -3128,7 +3128,7 @@ def search_suggestions(
         css_classes.append('suggestions-responsive')
     if highlight_matches:
         css_classes.append('suggestions-highlight')
-    
+
     # Type config for icons and styling
     type_config = {
         'post': {
@@ -3380,3 +3380,389 @@ def search_suggestion_preview(suggestion):
         preview["preview_text"] = "Click to view"
 
     return preview
+
+
+# ================= DATALOG FILTERS PANEL =================
+
+@register.inclusion_tag("blog/includes/datalog_filters_panel.html", takes_context=True)
+def datalog_filters_panel(
+    context,
+    style="sidebar",
+    position="right",
+    show_categories=True,
+    show_tags=True,
+    show_dates=True,
+    show_reading_time=True,
+    show_difficulty=False,
+    show_status=False,
+    show_featured=True,
+    show_search=True,
+    show_sorting=True,
+    show_view_options=True,
+    collapsible=True,
+    responsive=True,
+    max_categories=None,
+    max_tags=15,
+    enable_multi_select=True,
+    show_counts=True,
+    auto_apply=False,
+    reset_option=True,
+):
+    """
+    STREAMLINED comprehensive filtering panel using existing AURA components.
+
+    Usage Examples:
+    {% datalog_filters_panel style='sidebar' position='right' %}
+    {% datalog_filters_panel style='horizontal' show_difficulty=True %}
+    {% datalog_filters_panel style='compact' max_tags=10 %}
+    {% datalog_filters_panel style='modal' collapsible=False %}
+    {% datalog_filters_panel style='floating' auto_apply=True %}
+
+    Args:
+        style (str): Panel style - 'sidebar', 'horizontal', 'compact', 'modal', 'floating'
+        position (str): Panel position - 'left', 'right', 'top', 'bottom'
+        show_categories (bool): Show category filters
+        show_tags (bool): Show tag filters  
+        show_dates (bool): Show date range filters
+        show_reading_time (bool): Show reading time filters
+        show_difficulty (bool): Show difficulty level filters
+        show_status (bool): Show post status filters
+        show_featured (bool): Show featured filter
+        show_search (bool): Show search input
+        show_sorting (bool): Show sorting options
+        show_view_options (bool): Show view mode toggles
+        collapsible (bool): Make filter sections collapsible
+        responsive (bool): Enable responsive behavior
+        max_categories (int): Limit displayed categories (None = all)
+        max_tags (int): Limit displayed tags
+        enable_multi_select (bool): Allow multiple selections
+        show_counts (bool): Show post counts for filters
+        auto_apply (bool): Auto-apply filters without submit button
+        reset_option (bool): Show reset/clear filters option
+    """
+
+    request = context.get("request")
+    current_params = request.GET.copy() if request else {}
+
+    # REUSE: Get filter data using existing functions
+    filter_data = {}
+
+    if show_categories:
+        # REUSE: Get categories with counts
+        categories = get_datalog_categories()
+        if max_categories:
+            categories = categories[:max_categories]
+        filter_data['categories'] = categories
+
+    if show_tags:
+        # REUSE: Get popular tags
+        tags = get_popular_tags(max_tags)
+        filter_data['tags'] = tags
+
+    if show_dates:
+        # REUSE: Get date ranges using existing patterns
+        filter_data['date_ranges'] = get_date_filter_ranges()
+        filter_data['archive_years'] = archive_years()
+
+    if show_reading_time:
+        filter_data['reading_time_ranges'] = [
+            {'value': '0-5', 'label': 'Quick Read (0-5 min)', 'icon': 'fas fa-bolt'},
+            {'value': '5-15', 'label': 'Medium Read (5-15 min)', 'icon': 'fas fa-book'},
+            {'value': '15+', 'label': 'Long Read (15+ min)', 'icon': 'fas fa-book-open'},
+        ]
+
+    if show_difficulty:
+        filter_data['difficulty_levels'] = [
+            {'value': 'Beginner', 'label': 'Beginner', 'icon': 'fas fa-leaf', 'color': 'var(--color-mint)'},
+            {'value': 'Intermediate', 'label': 'Intermediate', 'icon': 'fas fa-fire', 'color': 'var(--color-coral)'},
+            {'value': 'Advanced', 'label': 'Advanced', 'icon': 'fas fa-bolt', 'color': 'var(--color-yellow)'},
+        ]
+
+    if show_status:
+        filter_data['status_options'] = [
+            {'value': 'published', 'label': 'Published', 'icon': 'fas fa-check', 'color': 'var(--color-mint)'},
+            {'value': 'draft', 'label': 'Draft', 'icon': 'fas fa-edit', 'color': 'var(--color-coral)'},
+        ]
+
+    # Sorting options
+    if show_sorting:
+        filter_data['sort_options'] = [
+            {'value': 'newest', 'label': 'Newest First', 'icon': 'fas fa-sort-amount-down'},
+            {'value': 'oldest', 'label': 'Oldest First', 'icon': 'fas fa-sort-amount-up'},
+            {'value': 'title', 'label': 'Title A-Z', 'icon': 'fas fa-sort-alpha-down'},
+            {'value': 'reading-time', 'label': 'Reading Time', 'icon': 'fas fa-clock'},
+            {'value': 'category', 'label': 'By Category', 'icon': 'fas fa-folder'},
+        ]
+
+    # View options
+    if show_view_options:
+        filter_data['view_options'] = [
+            {'value': 'grid', 'label': 'Grid View', 'icon': 'fas fa-th'},
+            {'value': 'list', 'label': 'List View', 'icon': 'fas fa-list'},
+            {'value': 'timeline', 'label': 'Timeline View', 'icon': 'fas fa-stream'},
+        ]
+
+    # Current filter state (REUSE existing patterns)
+    current_filters = extract_current_filters(current_params)
+
+    # Filter statistics (REUSE existing stats)
+    filter_stats = calculate_filter_statistics(filter_data, current_filters)
+
+    # Build CSS classes
+    css_classes = [
+        "datalog-filters-panel",
+        f"filters-style-{style}",
+        f"filters-position-{position}",
+    ]
+
+    if collapsible:
+        css_classes.append("filters-collapsible")
+    if responsive:
+        css_classes.append("filters-responsive")
+    if auto_apply:
+        css_classes.append("filters-auto-apply")
+    if enable_multi_select:
+        css_classes.append("filters-multi-select")
+
+    # Panel configuration for JavaScript
+    panel_config = {
+        "id": "datalogFiltersPanel",
+        "style": style,
+        "position": position,
+        "auto_apply": auto_apply,
+        "multi_select": enable_multi_select,
+        "collapsible": collapsible,
+        "form_selector": "#filterForm",
+        "target_container": "#datalogResults",
+    }
+
+    return {
+        "style": style,
+        "position": position,
+        "css_classes": " ".join(css_classes),
+
+        # Filter data (REUSED from existing functions)
+        "filter_data": filter_data,
+        "current_filters": current_filters,
+        "filter_stats": filter_stats,
+
+        # Feature flags
+        "show_categories": show_categories,
+        "show_tags": show_tags,
+        "show_dates": show_dates,
+        "show_reading_time": show_reading_time,
+        "show_difficulty": show_difficulty,
+        "show_status": show_status,
+        "show_featured": show_featured,
+        "show_search": show_search,
+        "show_sorting": show_sorting,
+        "show_view_options": show_view_options,
+        "show_counts": show_counts,
+
+        # Configuration
+        "collapsible": collapsible,
+        "responsive": responsive,
+        "max_categories": max_categories,
+        "max_tags": max_tags,
+        "enable_multi_select": enable_multi_select,
+        "auto_apply": auto_apply,
+        "reset_option": reset_option,
+        "panel_config": panel_config,
+
+        # Context
+        "request": request,
+        "current_params": current_params,
+    }
+
+
+# Helper functions for filters panel
+def get_date_filter_ranges():
+    """Generate date filter ranges for the panel."""
+    return [
+        {"value": "today", "label": "Today", "icon": "fas fa-calendar-day"},
+        {"value": "week", "label": "This Week", "icon": "fas fa-calendar-week"},
+        {"value": "month", "label": "This Month", "icon": "fas fa-calendar-alt"},
+        {"value": "quarter", "label": "This Quarter", "icon": "fas fa-calendar"},
+        {"value": "year", "label": "This Year", "icon": "fas fa-calendar"},
+        {"value": "custom", "label": "Custom Range", "icon": "fas fa-calendar-plus"},
+    ]
+
+
+def extract_current_filters(params):
+    """Extract current filter state from request parameters."""
+    filters = {
+        "categories": params.getlist("category", []),
+        "tags": params.getlist("tag", []),
+        "date_range": params.get("date_range", ""),
+        "reading_time": params.get("reading_time", ""),
+        "difficulty": params.get("difficulty", ""),
+        "status": params.get("status", ""),
+        "featured": params.get("featured", "") == "true",
+        "sort": params.get("sort", "newest"),
+        "view": params.get("view", "grid"),
+        "search": params.get("q", ""),
+    }
+
+    # Count active filters
+    active_count = 0
+    for key, value in filters.items():
+        if isinstance(value, list) and value:
+            active_count += len(value)
+        # Don't count default sort/view
+        elif value and key != 'sort' and key != 'view':
+            active_count += 1
+
+    filters['active_count'] = active_count
+    filters['has_active'] = active_count > 0
+
+    return filters
+
+
+def calculate_filter_statistics(filter_data, current_filters):
+    """Calculate statistics for the filter panel."""
+    stats = {
+        "total_categories": len(filter_data.get("categories", [])),
+        "total_tags": len(filter_data.get("tags", [])),
+        "active_filters": current_filters.get("active_count", 0),
+        "available_posts": 0,  # Would be calculated from actual query
+    }
+
+    # Calculate potential results (simplified)
+    if current_filters.get('has_active'):
+        stats['filter_mode'] = 'filtered'
+        # Would be from actual query
+        stats['estimated_results'] = 'Calculating...'
+    else:
+        stats['filter_mode'] = 'browse'
+        # REUSE: Get total from existing stats
+        blog_stats = datalog_stats()
+        stats['estimated_results'] = blog_stats.get('total_posts', 0)
+
+    return stats
+
+# Helper tags for filters panel
+@register.simple_tag
+def filter_category_color_vars(category):
+    """
+    Generate CSS variables for category filter styling.
+    Usage: {% filter_category_color_vars category %}
+    """
+    if not category:
+        return ""
+
+    # REUSE: Use existing category color scheme
+    color_scheme = category_color_scheme(category)
+
+    vars_list = []
+    for key, value in color_scheme.items():
+        vars_list.append(f"--filter-{key}: {value};")
+
+    return mark_safe(" ".join(vars_list))
+
+
+@register.filter
+def filter_count_display(count):
+    """
+    Format filter counts for display.
+    Usage: {{ category.post_count|filter_count_display }}
+    """
+    if not count:
+        return ""
+
+    # REUSE: Use existing format_number filter
+    return f"({format_number(count)})"
+
+
+@register.simple_tag
+def build_filter_url(current_params, **new_filters):
+    """
+    Build URL with updated filter parameters.
+    Usage: {% build_filter_url current_params category='ml' %}
+    """
+    # REUSE: Use existing build_url pattern
+    params = current_params.copy()
+
+    for key, value in new_filters.items():
+        if value is None or value == "":
+            params.pop(key, None)
+        elif key in ["category", "tag"] and params.get(key):
+            # Handle multi-select for categories/tags
+            current_values = params.getlist(key)
+            if value in current_values:
+                current_values.remove(value)
+            else:
+                current_values.append(value)
+
+            if current_values:
+                params.setlist(key, current_values)
+            else:
+                params.pop(key, None)
+        else:
+            params[key] = value
+
+    # Remove page when filters change
+    params.pop("page", None)
+
+    return f"?{params.urlencode()}" if params else ""
+
+
+@register.filter
+def is_filter_active(current_filters, filter_key):
+    """
+    Check if a filter is currently active.
+    Usage: {{ current_filters|is_filter_active:'featured' }}
+    """
+    return current_filters.get(filter_key) not in [None, "", [], False]
+
+
+@register.simple_tag
+def filter_reset_url(current_params, keep_search=True):
+    """
+    Generate URL to reset all filters.
+    Usage: {% filter_reset_url current_params keep_search=False %}
+    """
+    if keep_search and current_params.get("q"):
+        return f"?q={current_params.get('q')}"
+    return "?"
+
+
+@register.filter
+def filter_option_class(option, current_value):
+    """
+    Get CSS class for filter option based on current state.
+    Usage: {{ option|filter_option_class:current_filters.sort }}
+    """
+    is_active = option.get("value") == current_value
+    base_class = "filter-option"
+
+    if is_active:
+        base_class += " active"
+
+    return base_class
+
+
+@register.simple_tag
+def filter_summary_text(current_filters, filter_stats):
+    """
+    Generate human-readable filter summary.
+    Usage: {% filter_summary_text current_filters filter_stats %}
+    """
+    active_count = current_filters.get("active_count", 0)
+
+    if active_count == 0:
+        return f"Showing all {filter_stats.get('estimated_results', 0)} posts"
+    elif active_count == 1:
+        return f"1 filter applied • {filter_stats.get('estimated_results', 'Loading')} results"
+    else:
+        return f"{active_count} filters applied • {filter_stats.get('estimated_results', 'Loading')} results"
+
+@register.filter
+def json_config(config):
+    """
+    Convert configuration to JSON for JavaScript.
+    Usage: {{ panel_config|json_config }}
+    """
+    try:
+        return mark_safe(json.dumps(config))
+    except (TypeError, ValueError):
+        return mark_safe("{}")
