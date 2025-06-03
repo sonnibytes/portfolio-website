@@ -2093,3 +2093,522 @@ def navigator_json_config(config):
         return mark_safe('{}')
 
 # ================= ARCHIVE TIMELINE =================
+
+
+@register.inclusion_tag('blog/includes/archive_timeline.html', takes_context=True)
+def archive_timeline(
+        context, posts=None, style='full', group_by='month',
+        show_stats=True, show_navigation=True, show_filters=False,
+        year=None, month=None, auto_expand=False, max_posts_per_group=None, compact_threshold=10):
+    """
+    STREAMLINED archive timeline using existing AURA components.
+
+    Usage Examples:
+    {% archive_timeline posts style='full' group_by='month' %}
+    {% archive_timeline posts style='compact' year=2024 %}
+    {% archive_timeline posts style='minimal' show_stats=False %}
+    {% archive_timeline posts style='yearly' group_by='year' %}
+    {% archive_timeline posts style='cards' max_posts_per_group=5 %}
+
+    Args:
+        posts: QuerySet of posts (if None, gets all published)
+        style: 'full', 'compact', 'minimal', 'yearly', 'cards'
+        group_by: 'month', 'year', 'quarter', 'week'
+        show_stats: Show timeline statistics
+        show_navigation: Show year/month navigation
+        show_filters: Show filtering options
+        year: Filter to specific year
+        month: Filter to specific month (requires year)
+        auto_expand: Auto-expand current period
+        max_posts_per_group: Limit posts shown per group
+        compact_threshold: Switch to compact if more than X groups
+    """
+
+    # REUSE: Get posts using existing patterns
+    if posts is None:
+        posts = Post.objects.filter(status='published').order_by('-published_date')
+
+    # Apply year/month filtering if specified
+    if year:
+        posts = posts.filter(published_date__year=year)
+        if month:
+            posts = posts.filter(published_date__month=month)
+
+    # REUSE: Group posts using existing filter
+    grouped_posts = group_by_date(posts, group_by)
+
+    # Auto-switch to compact if too many groups
+    if len(grouped_posts) > compact_threshold and style == 'full':
+        style = 'compact'
+
+    # REUSE: Get timeline nav using existing tag
+    timeline_nav = timeline_navigation(posts, year, month) if show_navigation else {}
+
+    # REUSE: Get stats using existing tag
+    timeline_statistics = timeline_stats(posts, group_by) if show_stats else {}
+
+    # Get current period for auto-expansion
+    now = timezone.now()
+    current_period = None
+    if auto_expand:
+        if group_by == 'month':
+            current_period = f"{now.year}-{now.month:02d}"
+        elif group_by == 'year':
+            current_period = str(now.year)
+
+    # Limit posts per group if specified
+    if max_posts_per_group:
+        for group in grouped_posts:
+            if 'posts' in group and len(group['posts']) > max_posts_per_group:
+                group['posts'] = group['posts'][:max_posts_per_group]
+                group['has_more'] = True
+                group['remaining_count'] = len(group['posts']) - max_posts_per_group
+
+    # Build CSS classes
+    css_classes = [
+        'archive-timeline',
+        f'timeline-style-{style}',
+        f'timeline-group-{group_by}',
+    ]
+
+    if auto_expand:
+        css_classes.append('timeline-auto-expand')
+
+    if show_filters:
+        css_classes.append('timeline-with-filters')
+
+    # Determine if we should show year selector
+    years_available = list(posts.dates('published_date', 'year', order='DESC'))
+
+    return {
+        'posts': posts,
+        'grouped_posts': grouped_posts,
+        'style': style,
+        'group_by': group_by,
+        'css_classes': ' '.join(css_classes),
+
+        # Feature flags
+        'show_stats': show_stats,
+        'show_navigation': show_navigation,
+        'show_filters': show_filters,
+        'auto_expand': auto_expand,
+
+        # REUSED DATA: No recalculation needed
+        'timeline_nav': timeline_nav,
+        'timeline_statistics': timeline_statistics,
+
+        # Current state
+        'current_year': year or now.year,
+        'current_month': month,
+        'current_period': current_period,
+        'years_available': years_available,
+
+        # Configuration
+        'max_posts_per_group': max_posts_per_group,
+        'compact_threshold': compact_threshold,
+
+        # Context
+        'request': context.get('request'),
+    }
+
+# Helper tags for archive timeline
+@register.simple_tag
+def archive_period_display(group_data, group_by='month'):
+    """
+    Generate display text for archive periods.
+    Usage: {% archive_period_display group 'month' %}
+    """
+    if group_by == "month":
+        month_name = group_data.get("month_name", "Unknown")
+        year = group_data.get("year", 2024)
+        return f"{month_name} {year}"
+    elif group_by == "year":
+        return str(group_data.get("year", 2024))
+    elif group_by == "quarter":
+        quarter = group_data.get("quarter", 1)
+        year = group_data.get("year", 2024)
+        return f"Q{quarter} {year}"
+    elif group_by == "week":
+        week = group_data.get("week", 1)
+        year = group_data.get("year", 2024)
+        return f"Week {week}, {year}"
+
+    return "Unknown Period"
+
+
+@register.simple_tag
+def archive_period_url(group_data, group_by="month"):
+    """
+    Generate URL for archive period filtering.
+    Usage: {% archive_period_url group 'month' %}
+    """
+    try:
+        year = group_data.get("year")
+        month = group_data.get("month")
+
+        if group_by == "month" and year and month:
+            return reverse("blog:archive_month", kwargs={"year": year, "month": month})
+        elif group_by == "year" and year:
+            return reverse("blog:archive_year", kwargs={"year": year})
+
+        return reverse("blog:archive")
+    except:
+        # Fallback to archive main page
+        return reverse("blog:post_list")
+
+
+@register.filter
+def archive_group_icon(group_by):
+    """
+    Get icon for archive group type.
+    Usage: {{ 'month'|archive_group_icon }}
+    """
+    icons = {
+        "month": "fas fa-calendar-alt",
+        "year": "fas fa-calendar",
+        "quarter": "fas fa-calendar-week",
+        "week": "fas fa-calendar-day",
+        "day": "fas fa-clock",
+    }
+    return icons.get(group_by, "fas fa-calendar")
+
+
+@register.simple_tag
+def archive_breadcrumb_data(year=None, month=None, group_by="month"):
+    """
+    Generate breadcrumb data for archive pages.
+    Usage: {% archive_breadcrumb_data year month 'month' as breadcrumb_data %}
+    """
+    breadcrumbs = [
+        {
+            "title": "DataLogs",
+            "url": reverse("blog:post_list"),
+            "icon": "fas fa-database",
+        },
+        {
+            "title": "Archive",
+            "url": reverse("blog:post_list"),
+            "icon": "fas fa-archive",
+        },  # Fallback URL
+    ]
+
+    if year:
+        breadcrumbs.append(
+            {
+                "title": str(year),
+                "url": reverse("blog:post_list")
+                + f"?year={year}",  # Fallback with query param
+                "icon": "fas fa-calendar",
+            }
+        )
+
+        if month and group_by == "month":
+            import calendar
+
+            month_name = calendar.month_name[month]
+            breadcrumbs.append(
+                {
+                    "title": month_name,
+                    "url": reverse("blog:post_list")
+                    + f"?year={year}&month={month}",  # Fallback with query params
+                    "icon": "fas fa-calendar-alt",
+                    "current": True,
+                }
+            )
+
+    return breadcrumbs
+
+
+@register.simple_tag
+def archive_summary_stats(grouped_posts, group_by="month"):
+    """
+    Generate summary statistics for archive timeline.
+    Usage: {% archive_summary_stats grouped_posts 'month' as summary %}
+    """
+    if not grouped_posts:
+        return {
+            "total_periods": 0,
+            "total_posts": 0,
+            "avg_posts_per_period": 0,
+            "most_active_period": None,
+            "least_active_period": None,
+        }
+
+    total_periods = len(grouped_posts)
+    total_posts = sum(group.get("count", 0) for group in grouped_posts)
+    avg_posts = round(total_posts / total_periods, 1) if total_periods > 0 else 0
+
+    # Find most/least active periods
+    most_active = (
+        max(grouped_posts, key=lambda g: g.get("count", 0)) if grouped_posts else None
+    )
+    least_active = (
+        min(grouped_posts, key=lambda g: g.get("count", 0)) if grouped_posts else None
+    )
+
+    return {
+        "total_periods": total_periods,
+        "total_posts": total_posts,
+        "avg_posts_per_period": avg_posts,
+        "most_active_period": most_active,
+        "least_active_period": least_active,
+        "most_posts_in_period": most_active.get("count", 0) if most_active else 0,
+        "least_posts_in_period": least_active.get("count", 0) if least_active else 0,
+        "group_by": group_by,
+    }
+
+
+@register.filter
+def archive_activity_level(post_count, avg_posts=5):
+    """
+    Determine activity level for styling.
+    Usage: {{ group.count|archive_activity_level:avg_posts }}
+    """
+    if post_count >= avg_posts * 2:
+        return "high-activity"
+    elif post_count >= avg_posts:
+        return "normal-activity"
+    elif post_count > 0:
+        return "low-activity"
+    else:
+        return "no-activity"
+
+
+# Enhanced version of exisiting functions for archive use
+# May be able to rework/consolidate later
+
+
+@register.filter
+def group_by_quarter(posts):
+    """
+    Group posts by quarter.
+    Usage: {{ posts|group_by_quarter }}
+    """
+    from itertools import groupby
+
+    if not posts:
+        return []
+
+    # Sort posts by date first
+    sorted_posts = sorted(
+        posts, key=lambda p: getattr(p, 'published_date', timezone.now()), reverse=True
+    )
+
+    def quarter_key(post):
+        if hasattr(post, 'published_date') and post.published_date:
+            quarter = (post.published_date.month - 1) // 3 + 1
+            return (post.published_date.year, quarter)
+        # Fallback
+        return (2024, 1)
+
+    grouped = []
+    for key, group in groupby(sorted_posts, key=quarter_key):
+        year, quarter = key
+        posts_lists = list(group)
+
+        # Get quarter months for display
+        quarter_months = {
+            1: "Jan-Mar",
+            2: "Apr-Jun",
+            3: "Jul-Sep",
+            4: "Oct-Dec"
+        }
+
+        grouped.append({
+            'date_key': f'{year}-Q{quarter}',
+            'year': year,
+            'quarter': quarter,
+            'quarter_name': f"Q{quarter}",
+            'quarter_months': quarter_months[quarter],
+            'posts': posts_lists,
+            'count': len(posts_lists),
+        })
+
+    return grouped
+
+
+@register.simple_tag
+def archive_filter_options(posts, current_year=None, current_month=None):
+    """
+    Generate filter options for archive timeline.
+    Usage: {% archive_filter_options posts current_year current_month as filter_options %}
+    """
+    # Get available years
+    years = posts.dates('published_date', 'year', order='DESC')
+
+    # Get available months for current year
+    months = []
+    if current_year:
+        year_posts = posts.filter(published_date__year=current_year)
+        month_dates = year_posts.dates('published_date', 'month', order='DESC')
+
+        import calendar
+        for date in month_dates:
+            months.append({
+                'number': date.month,
+                'name': calendar.month_name[date.month],
+                'short_name': calendar.month_name[date.month][:3],
+                'year': date.year,
+                'count': year_posts.filter(published_date__month=date.month).count(),
+                'is_current': date.month == current_month,
+            })
+
+    # Get available categories
+    categories = (
+        Category.objects.annotate(
+            archive_post_count=Count("posts", filter=Q(posts__in=posts))
+        )
+        .filter(archive_post_count__gt=0)
+        .order_by("-archive_post_count")
+    )
+
+    return {
+        "years": [
+            {"year": y.year, "is_current": y.year == current_year} for y in years
+        ],
+        "months": months,
+        "categories": categories,
+        "has_filters": bool(years or months or categories),
+    }
+
+
+@register.simple_tag
+def archive_smart_grouping(posts, max_groups=12):
+    """
+    Automatically determine the best grouping for archive display.
+    Usage: {% archive_smart_grouping posts 10 as smart_group %}
+    """
+    if not posts:
+        return {"group_by": "month", "posts": []}
+
+    # Get date range
+    date_range = timeline_date_range(posts)
+    span_days = date_range.get("span_days", 0)
+
+    # Determine best grouping based on span
+    if span_days <= 90:  # 3 months or less
+        group_by = "week"
+    elif span_days <= 730:  # 2 years or less
+        group_by = "month"
+    else:  # More than 2 years
+        group_by = "year"
+
+    # Group and check if we have too many groups
+    grouped = group_by_date(posts, group_by)
+
+    # If still too many groups, switch to larger grouping
+    if len(grouped) > max_groups:
+        if group_by == "week":
+            group_by = "month"
+            grouped = group_by_date(posts, group_by)
+        elif group_by == "month":
+            group_by = "year"
+            grouped = group_by_date(posts, group_by)
+
+    return {
+        "group_by": group_by,
+        "grouped_posts": grouped,
+        "total_groups": len(grouped),
+        "span_days": span_days,
+    }
+
+
+@register.filter
+def archive_period_progress(group_data, group_by="month"):
+    """
+    Calculate how much of the period has passed (for current periods).
+    Usage: {{ group|archive_period_progress:'month' }}
+    """
+    now = timezone.now()
+
+    try:
+        if group_by == "month":
+            year = group_data.get("year", now.year)
+            month = group_data.get("month", now.month)
+
+            if year == now.year and month == now.month:
+                # Current month - calculate progress
+                import calendar
+
+                days_in_month = calendar.monthrange(year, month)[1]
+                current_day = now.day
+                return round((current_day / days_in_month) * 100, 1)
+
+        elif group_by == "year":
+            year = group_data.get("year", now.year)
+
+            if year == now.year:
+                # Current year - calculate progress
+                import datetime
+
+                start_of_year = datetime.date(year, 1, 1)
+                end_of_year = datetime.date(year, 12, 31)
+                current_date = now.date()
+
+                total_days = (end_of_year - start_of_year).days + 1
+                elapsed_days = (current_date - start_of_year).days + 1
+
+                return round((elapsed_days / total_days) * 100, 1)
+
+    except:
+        pass
+
+    return 100  # Period is complete or error occurred
+
+
+@register.simple_tag
+def archive_navigation_data(posts, current_year=None, current_month=None):
+    """
+    Generate comprehensive navigation data for archive pages.
+    Enhanced version of timeline_navigation.
+    Usage: {% archive_navigation_data posts current_year current_month as nav_data %}
+    """
+    from collections import defaultdict
+    import calendar
+
+    # Group posts by year and month
+    nav_data = defaultdict(lambda: defaultdict(int))
+    years = set()
+
+    for post in posts:
+        if hasattr(post, "published_date") and post.published_date:
+            year = post.published_date.year
+            month = post.published_date.month
+            nav_data[year][month] += 1
+            years.add(year)
+
+    # Convert to sorted structure
+    year_data = []
+    for year in sorted(years, reverse=True):
+        months = []
+        for month in range(1, 13):
+            if nav_data[year][month] > 0:
+                months.append(
+                    {
+                        "number": month,
+                        "name": calendar.month_name[month],
+                        "short_name": calendar.month_name[month][:3],
+                        "count": nav_data[year][month],
+                        "is_current": (year == current_year and month == current_month),
+                        "url": reverse("blog:post_list")
+                        + f"?year={year}&month={month}",  # Fallback URL
+                    }
+                )
+
+        year_data.append(
+            {
+                "year": year,
+                "total_posts": sum(nav_data[year].values()),
+                "months": months,
+                "is_current": (year == current_year),
+                "url": reverse("blog:post_list") + f"?year={year}",  # Fallback URL
+            }
+        )
+
+    return {
+        "years": year_data,
+        "total_posts": sum(sum(months.values()) for months in nav_data.values()),
+        "current_year": current_year,
+        "current_month": current_month,
+        "has_navigation": bool(year_data),
+    }
