@@ -1,962 +1,104 @@
 <!----
- * AURA DataLogs - Search Suggestions Component (STREAMLINED)
+ * SIMPLIFIED Search Suggestions Template for debugging
  * File: blog/templates/blog/includes/search_suggestions.html
- * Uses existing AURA components for maximum reuse
+ * This is a minimal version to test basic functionality
 ---->
 
 {% load aura_filters %}
-{% load aura_components %}
-{% load datalog_tags %}
 
-<div class="{{ css_classes }}" 
-     id="searchSuggestions"
-     data-query="{{ query }}"
-     data-style="{{ style }}"
-     {% if enable_ajax %}data-ajax-config="{{ ajax_config|json_config }}"{% endif %}>
-
+<div class="search-suggestions-debug" style="border: 2px solid lime; padding: 20px; margin: 10px;">
+    <h3>🔧 Search Suggestions Debug (Style: {{ style }})</h3>
+    
+    <p><strong>Query:</strong> "{{ query|default:'NO QUERY' }}"</p>
+    <p><strong>Style:</strong> {{ style }}</p>
+    <p><strong>Enable AJAX:</strong> {{ enable_ajax|yesno:"Yes,No" }}</p>
+    
     {% if style == 'full' %}
-    <!-- Full search suggestions using existing glass_card -->
-    {% glass_card title="Search Suggestions" icon="fas fa-search" css_class="search-suggestions-card" %}
+    <!-- Full search suggestions -->
+    <div class="search-suggestions-full" style="background: rgba(0,100,0,0.2); padding: 15px; margin: 10px;">
+        <h4>Full Search Interface</h4>
         
-        {% if query %}
-        <!-- Search Results Header using existing section_header -->
-        {% section_header title="Search Results" subtitle="for \"{{ query }}\"" icon="fas fa-search" show_metrics=True metric_1_value=search_analytics.suggestion_count metric_1_label="Suggestions" metric_1_icon="fas fa-lightbulb" metric_2_value=search_context.total_posts metric_2_label="Total Posts" metric_2_icon="fas fa-database" %}
-        {% endif %}
-        
-        {% if grouped_suggestions and group_by_type %}
-        <!-- Grouped suggestions using existing components -->
-        {% for type, type_suggestions in grouped_suggestions.items %}
-        {% with type_info=type_config|get_item:type %}
-        <div class="suggestion-group">
-            <div class="suggestion-group-header breadcrumb-item">
-                {% if show_icons %}<i class="{{ type_info.icon }}"></i>{% endif %}
-                <span class="group-title">{{ type_info.label }}</span>
-                <span class="group-count">({{ type_suggestions|length }})</span>
+        <form method="get" action="{% url 'blog:search' %}">
+            <div style="display: flex; gap: 10px; margin: 10px 0;">
+                <input type="text" 
+                       name="q" 
+                       value="{{ query }}"
+                       placeholder="Search DataLogs..."
+                       style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid #ccc; color: white;">
+                <button type="submit" style="padding: 10px 20px; background: #007cba; color: white; border: none;">
+                    Search
+                </button>
             </div>
-            
-            <div class="suggestion-list">
-                {% for suggestion in type_suggestions %}
-                <a href="{{ suggestion.url }}" class="suggestion-item breadcrumb-item" data-type="{{ suggestion.type }}">
-                    {% if show_icons %}
-                    <div class="suggestion-icon">
-                        <i class="{{ suggestion.icon }}"></i>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="suggestion-content">
-                        <div class="suggestion-text">
-                            {% if highlight_matches %}
-                                {{ suggestion.text|highlight_search:query }}
-                            {% else %}
-                                {{ suggestion.text }}
-                            {% endif %}
-                        </div>
-                        
-                        {% if show_descriptions and suggestion.description %}
-                        <div class="suggestion-description">{{ suggestion.description }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    {% if show_counts and suggestion.count %}
-                    <div class="suggestion-count">
-                        <span class="count-value">{{ suggestion.count|format_number }}</span>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="suggestion-arrow">
-                        <i class="fas fa-arrow-right"></i>
-                    </div>
-                </a>
+        </form>
+        
+        {% if suggestions %}
+        <div style="margin: 15px 0;">
+            <h5>Suggestions ({{ suggestions|length }}):</h5>
+            <ul>
+                {% for suggestion in suggestions %}
+                <li style="margin: 5px 0;">
+                    <a href="{{ suggestion.url|default:'#' }}" style="color: #4CAF50;">
+                        {{ suggestion.text }} ({{ suggestion.type }})
+                    </a>
+                </li>
                 {% endfor %}
-            </div>
+            </ul>
         </div>
-        {% endwith %}
-        {% endfor %}
-        
-        {% elif suggestions %}
-        <!-- Simple suggestion list -->
-        <div class="suggestion-list">
-            {% for suggestion in suggestions %}
-            <a href="{{ suggestion.url }}" class="suggestion-item breadcrumb-item" data-type="{{ suggestion.type }}">
-                {% if show_icons %}
-                <div class="suggestion-icon">
-                    <i class="{{ suggestion.icon }}"></i>
-                </div>
-                {% endif %}
-                
-                <div class="suggestion-content">
-                    <div class="suggestion-text">
-                        {% if highlight_matches %}
-                            {{ suggestion.text|highlight_search:query }}
-                        {% else %}
-                            {{ suggestion.text }}
-                        {% endif %}
-                    </div>
-                    
-                    {% if show_descriptions and suggestion.description %}
-                    <div class="suggestion-description">{{ suggestion.description }}</div>
-                    {% endif %}
-                </div>
-                
-                {% if show_counts and suggestion.count %}
-                <div class="suggestion-count">
-                    <span class="count-value">{{ suggestion.count|format_number }}</span>
-                </div>
-                {% endif %}
-                
-                <div class="suggestion-arrow">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        
         {% else %}
-        <!-- No suggestions state using existing alert_box -->
-        {% if query %}
-        {% alert_box "No suggestions found for your search" "info" dismissible=False icon="fas fa-search" %}
-        {% else %}
-        <div class="no-suggestions-state">
-            <div class="empty-icon">
-                <i class="fas fa-search"></i>
-            </div>
-            <div class="empty-message">Start typing to see suggestions</div>
-        </div>
-        {% endif %}
+        <p style="color: yellow;">No suggestions available</p>
         {% endif %}
         
-        <!-- Quick actions using existing components -->
-        {% search_quick_actions query as quick_actions %}
-        {% if quick_actions %}
-        <div class="quick-actions-section">
-            <div class="quick-actions-header breadcrumb-item">
-                <i class="fas fa-bolt"></i>
-                <span>Quick Actions</span>
-            </div>
-            <div class="quick-actions-list subnav-stats">
-                {% for action in quick_actions %}
-                <a href="{{ action.url }}" class="quick-action-btn">
-                    <i class="{{ action.icon }}"></i>
-                    <span>{{ action.text }}</span>
-                </a>
-                {% endfor %}
-            </div>
+        <div style="margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.1);">
+            <h5>Context Info:</h5>
+            <p>Total Posts: {{ search_context.total_posts|default:'Unknown' }}</p>
+            <p>Total Categories: {{ search_context.total_categories|default:'Unknown' }}</p>
+            <p>Total Tags: {{ search_context.total_tags|default:'Unknown' }}</p>
         </div>
-        {% endif %}
-        
-    {% endglass_card %}
+    </div>
     
     {% elif style == 'compact' %}
-    <!-- Compact suggestions for dropdown -->
-    <div class="search-suggestions-compact glass-effect">
+    <!-- Compact search suggestions -->
+    <div class="search-suggestions-compact" style="background: rgba(100,0,0,0.2); padding: 15px; margin: 10px;">
+        <h4>Compact Search Interface</h4>
+        
         {% if suggestions %}
-        <div class="compact-suggestions-list">
+        <ul style="list-style: none; padding: 0;">
             {% for suggestion in suggestions|slice:":5" %}
-            <a href="{{ suggestion.url }}" class="compact-suggestion-item breadcrumb-item">
-                {% if show_icons %}<i class="{{ suggestion.icon }}"></i>{% endif %}
-                <span class="suggestion-text">
-                    {% if highlight_matches %}
-                        {{ suggestion.text|highlight_search:query }}
-                    {% else %}
-                        {{ suggestion.text|truncate_smart:40 }}
-                    {% endif %}
-                </span>
-                {% if show_counts and suggestion.count %}
-                <span class="suggestion-count">({{ suggestion.count }})</span>
-                {% endif %}
-            </a>
-            {% endfor %}
-            
-            {% if suggestions|length > 5 %}
-            <div class="compact-more-results">
-                <a href="{% url 'blog:search' %}?q={{ query }}" class="more-results-link">
-                    <i class="fas fa-plus"></i>
-                    <span>{{ suggestions|length|add:"-5" }} more results</span>
+            <li style="margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.1);">
+                <a href="{{ suggestion.url|default:'#' }}" style="color: #FF9800;">
+                    {{ suggestion.text|truncate_smart:40 }}
                 </a>
-            </div>
-            {% endif %}
-        </div>
+            </li>
+            {% endfor %}
+        </ul>
         {% else %}
-        <div class="compact-no-results">
-            <i class="fas fa-search"></i>
-            <span>No suggestions</span>
-        </div>
+        <p style="color: yellow;">No compact suggestions</p>
         {% endif %}
     </div>
     
     {% elif style == 'minimal' %}
-    <!-- Minimal suggestions for small spaces -->
-    <div class="search-suggestions-minimal">
-        {% if suggestions %}
-        <div class="minimal-suggestions-list">
-            {% for suggestion in suggestions|slice:":3" %}
-            <a href="{{ suggestion.url }}" class="minimal-suggestion-item">
-                <span class="suggestion-text">{{ suggestion.text|truncate_smart:30 }}</span>
-            </a>
-            {% endfor %}
-        </div>
-        {% endif %}
+    <!-- Minimal search suggestions -->
+    <div class="search-suggestions-minimal" style="background: rgba(0,0,100,0.2); padding: 15px; margin: 10px;">
+        <h4>Minimal Search Interface</h4>
+        <p>Query: {{ query|default:'None' }}</p>
+        <p>Suggestions count: {{ suggestions|length|default:0 }}</p>
     </div>
-    
-    {% elif style == 'dropdown' %}
-    <!-- Dropdown overlay suggestions -->
-    <div class="search-suggestions-dropdown glass-effect">
-        <div class="dropdown-content">
-            {% if suggestions %}
-            <div class="dropdown-suggestions">
-                {% for suggestion in suggestions %}
-                <a href="{{ suggestion.url }}" class="dropdown-suggestion-item" data-type="{{ suggestion.type }}">
-                    {% if show_icons %}
-                    <div class="suggestion-icon" style="color: {{ type_config|get_item:suggestion.type.icon }};">
-                        <i class="{{ suggestion.icon }}"></i>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="suggestion-content">
-                        <div class="suggestion-text">
-                            {% if highlight_matches %}
-                            {{ suggestion.text|highlight_search:query }}
-                            {% else %}
-                                {{ suggestion.text }}
-                            {% endif %}
-                        </div>
-                        <div class="suggestion-type">{{ suggestion.type|title }}</div>
-                    </div>
-                    
-                    {% if show_counts and suggestion.count %}
-                    <div class="suggestion-count">{{ suggestion.count }}</div>
-                    {% endif %}
-                </a>
-                {% endfor %}
-            </div>
-            
-            <!-- Search all action -->
-            <div class="dropdown-footer">
-                <a href="{% url 'blog:search' %}?q={{ query }}" class="search-all-action breadcrumb-item">
-                    <i class="fas fa-search"></i>
-                    <span>Search all for "{{ query }}"</span>
-                    <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-            
-            {% else %}
-            <div class="dropdown-no-results">
-                {% if query %}
-                <div class="no-results-content">
-                    <i class="fas fa-search"></i>
-                    <span>No results for "{{ query }}"</span>
-                </div>
-                {% else %}
-                <div class="no-query-content">
-                    <i class="fas fa-keyboard"></i>
-                    <span>Start typing to search...</span>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    
-    {% elif style == 'sidebar' %}
-    <!-- Sidebar suggestions -->
-    {% glass_card title="Search" icon="fas fa-search" size="sm" css_class="search-suggestions-sidebar" %}
-        
-        {% if suggestions %}
-        <div class="sidebar-suggestions">
-            {% for suggestion in suggestions|slice:":4" %}
-            <div class="sidebar-suggestion-item">
-                <a href="{{ suggestion.url }}" class="suggestion-link">
-                    {% if show_icons %}<i class="{{ suggestion.icon }}"></i>{% endif %}
-                    <span class="suggestion-text">{{ suggestion.text|truncate_smart:25 }}</span>
-                </a>
-                <div class="suggestion-meta">
-                    <span class="suggestion-type">{{ suggestion.type|title }}</span>
-                    {% if show_counts and suggestion.count %}
-                    <span class="suggestion-count">({{ suggestion.count }})</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <div class="sidebar-search-action">
-            <a href="{% url 'blog:search' %}?q={{ query }}" class="search-all-btn">
-                <i class="fas fa-search"></i>
-                <span>View All Results</span>
-            </a>
-        </div>
-        
-        {% else %}
-        <div class="sidebar-no-suggestions">
-            {% if query %}
-            <p>No suggestions for "{{ query }}"</p>
-            {% else %}
-            <p>Enter a search term</p>
-            {% endif %}
-        </div>
-        {% endif %}
-        
-    {% endglass_card %}
     
     {% else %}
-    <!-- Default: use compact style -->
-    {% include 'blog/includes/search_suggestions.html' with style='compact' %}
+    <!-- Default/other styles -->
+    <div class="search-suggestions-default" style="background: rgba(100,100,0,0.2); padding: 15px; margin: 10px;">
+        <h4>Default Search Interface ({{ style }})</h4>
+        <p>This is a fallback for style: "{{ style }}"</p>
+    </div>
     {% endif %}
-
+    
+    <!-- Debug info -->
+    <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); font-family: monospace; font-size: 12px;">
+        <strong>Debug Variables:</strong><br>
+        css_classes: {{ css_classes|default:'None' }}<br>
+        max_suggestions: {{ max_suggestions|default:'None' }}<br>
+        show_icons: {{ show_icons|default:'None' }}<br>
+        enable_ajax: {{ enable_ajax|default:'None' }}<br>
+        suggestions_count: {{ suggestions|length|default:0 }}<br>
+    </div>
 </div>
-
-<style>
-/* ========== SEARCH SUGGESTIONS COMPONENT STYLES (Minimal Overrides) ========== */
-
-/* Only styles that are NOT in the consolidated CSS or need component-specific adjustments */
-
-/* Search suggestions base */
-.search-suggestions-container {
-    font-family: var(--font-body);
-    position: relative;
-    z-index: 1000;
-}
-
-/* Position variants */
-.suggestions-position-below {
-    margin-top: var(--spacing-sm);
-}
-
-.suggestions-position-overlay {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    margin-top: var(--spacing-xs);
-}
-
-.suggestions-position-sidebar {
-    position: sticky;
-    top: var(--spacing-lg);
-}
-
-/* Width variants */
-.suggestions-width-auto {
-    width: auto;
-}
-
-.suggestions-width-full {
-    width: 100%;
-}
-
-.suggestions-width-fixed {
-    width: 400px;
-}
-
-/* ========== SUGGESTION GROUPS ========== */
-.suggestion-group {
-    margin-bottom: var(--spacing-lg);
-}
-
-.suggestion-group:last-child {
-    margin-bottom: 0;
-}
-
-.suggestion-group-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: var(--border-radius-md);
-    font-weight: 600;
-}
-
-.group-title {
-    flex: 1;
-    color: var(--color-text);
-}
-
-.group-count {
-    font-family: var(--font-code);
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-}
-
-/* ========== SUGGESTION ITEMS ========== */
-.suggestion-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-}
-
-.suggestion-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--border-radius-md);
-    text-decoration: none;
-    color: var(--color-text-secondary);
-    transition: all var(--transition-fast);
-}
-
-.suggestion-item:hover {
-    background: rgba(179, 157, 219, 0.05);
-    border-color: rgba(179, 157, 219, 0.2);
-    color: var(--color-text);
-    transform: translateX(5px);
-}
-
-.suggestion-icon {
-    width: 20px;
-    display: flex;
-    justify-content: center;
-    color: var(--color-lavender);
-    flex-shrink: 0;
-}
-
-.suggestion-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.suggestion-text {
-    font-weight: 500;
-    color: var(--color-text);
-    line-height: 1.3;
-}
-
-.suggestion-description {
-    font-size: 0.8rem;
-    color: var(--color-text-tertiary);
-    margin-top: 0.2rem;
-}
-
-.suggestion-count {
-    font-family: var(--font-code);
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    flex-shrink: 0;
-}
-
-.suggestion-arrow {
-    color: var(--color-lavender);
-    font-size: 0.8rem;
-    flex-shrink: 0;
-    opacity: 0.7;
-    transition: all var(--transition-fast);
-}
-
-.suggestion-item:hover .suggestion-arrow {
-    opacity: 1;
-    transform: translateX(3px);
-}
-
-/* ========== COMPACT STYLE ========== */
-.search-suggestions-compact {
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-lg);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.compact-suggestions-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-}
-
-.compact-suggestion-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--border-radius-sm);
-    transition: all var(--transition-fast);
-}
-
-.compact-suggestion-item:hover {
-    background: rgba(179, 157, 219, 0.1);
-    transform: translateX(3px);
-}
-
-.compact-more-results {
-    margin-top: var(--spacing-sm);
-    padding-top: var(--spacing-sm);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    text-align: center;
-}
-
-.more-results-link {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    color: var(--color-lavender);
-    text-decoration: none;
-    font-size: 0.8rem;
-    transition: color var(--transition-fast);
-}
-
-.more-results-link:hover {
-    color: var(--color-text);
-}
-
-.compact-no-results {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    color: var(--color-text-tertiary);
-    font-style: italic;
-    justify-content: center;
-}
-
-/* ========== MINIMAL STYLE ========== */
-.search-suggestions-minimal {
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-sm);
-}
-
-.minimal-suggestions-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-}
-
-.minimal-suggestion-item {
-    display: block;
-    padding: var(--spacing-xs);
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    border-radius: var(--border-radius-sm);
-    transition: all var(--transition-fast);
-    font-size: 0.9rem;
-}
-
-.minimal-suggestion-item:hover {
-    background: rgba(179, 157, 219, 0.1);
-    color: var(--color-text);
-}
-
-/* ========== DROPDOWN STYLE ========== */
-.search-suggestions-dropdown {
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius-lg);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-    max-height: 400px;
-    overflow-y: auto;
-    min-width: 300px;
-}
-
-.dropdown-suggestions {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
-}
-
-.dropdown-suggestion-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--border-radius-md);
-    text-decoration: none;
-    color: var(--color-text-secondary);
-    transition: all var(--transition-fast);
-}
-
-.dropdown-suggestion-item:hover {
-    background: rgba(179, 157, 219, 0.05);
-    border-color: rgba(179, 157, 219, 0.2);
-    color: var(--color-text);
-    transform: translateY(-2px);
-}
-
-.dropdown-suggestion-item .suggestion-icon {
-    width: 24px;
-    height: 24px;
-    background: rgba(179, 157, 219, 0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-}
-
-.dropdown-suggestion-item .suggestion-content {
-    flex: 1;
-}
-
-.dropdown-suggestion-item .suggestion-text {
-    font-weight: 500;
-    margin-bottom: 0.2rem;
-}
-
-.dropdown-suggestion-item .suggestion-type {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--color-text-tertiary);
-}
-
-.dropdown-footer {
-    padding-top: var(--spacing-md);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.search-all-action {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    background: rgba(179, 157, 219, 0.1);
-    border: 1px solid rgba(179, 157, 219, 0.3);
-    border-radius: var(--border-radius-md);
-    text-decoration: none;
-    color: var(--color-lavender);
-    font-weight: 500;
-    transition: all var(--transition-fast);
-    justify-content: space-between;
-}
-
-.search-all-action:hover {
-    background: rgba(179, 157, 219, 0.2);
-    transform: translateY(-2px);
-    color: var(--color-lavender);
-}
-
-.dropdown-no-results {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-xl);
-    color: var(--color-text-tertiary);
-}
-
-.no-results-content,
-.no-query-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-sm);
-    text-align: center;
-}
-
-.no-results-content i,
-.no-query-content i {
-    font-size: 2rem;
-    opacity: 0.5;
-}
-
-/* ========== SIDEBAR STYLE ========== */
-.search-suggestions-sidebar {
-    background: rgba(179, 157, 219, 0.05);
-    border-color: rgba(179, 157, 219, 0.2);
-}
-
-.sidebar-suggestions {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
-}
-
-.sidebar-suggestion-item {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-}
-
-.suggestion-link {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    color: var(--color-text);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color var(--transition-fast);
-}
-
-.suggestion-link:hover {
-    color: var(--color-lavender);
-}
-
-.suggestion-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.7rem;
-    color: var(--color-text-tertiary);
-}
-
-.sidebar-search-action {
-    text-align: center;
-    padding-top: var(--spacing-md);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.search-all-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: rgba(179, 157, 219, 0.1);
-    border: 1px solid rgba(179, 157, 219, 0.3);
-    border-radius: var(--border-radius-md);
-    color: var(--color-lavender);
-    text-decoration: none;
-    font-size: 0.8rem;
-    transition: all var(--transition-fast);
-}
-
-.search-all-btn:hover {
-    background: rgba(179, 157, 219, 0.2);
-    transform: translateY(-1px);
-    color: var(--color-lavender);
-}
-
-.sidebar-no-suggestions {
-    text-align: center;
-    color: var(--color-text-tertiary);
-    font-style: italic;
-    padding: var(--spacing-md);
-}
-
-/* ========== QUICK ACTIONS ========== */
-.quick-actions-section {
-    margin-top: var(--spacing-lg);
-    padding-top: var(--spacing-lg);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.quick-actions-header {
-    margin-bottom: var(--spacing-md);
-    font-weight: 600;
-}
-
-.quick-actions-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
-    justify-content: center;
-}
-
-.quick-action-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: rgba(38, 198, 218, 0.1);
-    border: 1px solid rgba(38, 198, 218, 0.3);
-    border-radius: var(--border-radius-md);
-    color: var(--color-teal);
-    text-decoration: none;
-    font-size: 0.8rem;
-    transition: all var(--transition-fast);
-}
-
-.quick-action-btn:hover {
-    background: rgba(38, 198, 218, 0.2);
-    transform: translateY(-2px);
-    color: var(--color-teal);
-}
-
-/* ========== NO SUGGESTIONS STATE ========== */
-.no-suggestions-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-xl);
-    text-align: center;
-}
-
-.empty-icon {
-    font-size: 3rem;
-    color: var(--color-lavender);
-    opacity: 0.6;
-}
-
-.empty-message {
-    color: var(--color-text-secondary);
-    font-size: 1rem;
-}
-
-/* ========== SEARCH HIGHLIGHT ========== */
-.search-highlight {
-    background: rgba(255, 245, 157, 0.3);
-    color: var(--color-text);
-    padding: 0.1rem 0.2rem;
-    border-radius: var(--border-radius-sm);
-    font-weight: 600;
-}
-
-/* ========== AJAX LOADING STATES ========== */
-.suggestions-ajax-enabled.loading {
-    pointer-events: none;
-    opacity: 0.7;
-}
-
-.suggestions-ajax-enabled.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 2px solid rgba(179, 157, 219, 0.3);
-    border-top: 2px solid var(--color-lavender);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* ========== RESPONSIVE DESIGN ========== */
-@media (max-width: 991px) {
-    .suggestions-width-fixed {
-        width: 100%;
-    }
-    
-    .search-suggestions-dropdown {
-        min-width: auto;
-        max-width: 90vw;
-    }
-    
-    .quick-actions-list {
-        flex-direction: column;
-    }
-    
-    .suggestion-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-sm);
-    }
-    
-    .suggestion-arrow {
-        align-self: flex-end;
-    }
-}
-
-@media (max-width: 767px) {
-    .suggestion-group-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-xs);
-    }
-    
-    .dropdown-suggestion-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-sm);
-    }
-    
-    .dropdown-suggestion-item .suggestion-icon {
-        align-self: center;
-    }
-    
-    .search-all-action {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--spacing-sm);
-    }
-    
-    .sidebar-suggestion-item {
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: var(--border-radius-sm);
-        padding: var(--spacing-sm);
-    }
-}
-
-@media (max-width: 576px) {
-    .suggestion-item,
-    .compact-suggestion-item,
-    .dropdown-suggestion-item {
-        padding: var(--spacing-xs);
-    }
-    
-    .suggestion-text {
-        font-size: 0.9rem;
-    }
-    
-    .suggestion-description {
-        font-size: 0.75rem;
-    }
-    
-    .quick-action-btn {
-        font-size: 0.75rem;
-        padding: var(--spacing-xs) var(--spacing-sm);
-    }
-}
-
-/* ========== ACCESSIBILITY ========== */
-.suggestion-item:focus,
-.compact-suggestion-item:focus,
-.dropdown-suggestion-item:focus,
-.quick-action-btn:focus {
-    outline: 2px solid var(--color-teal);
-    outline-offset: 2px;
-}
-
-/* ========== HIGH CONTRAST MODE ========== */
-@media (prefers-contrast: high) {
-    .search-suggestions-compact,
-    .search-suggestions-dropdown {
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        backdrop-filter: none;
-        background: rgba(13, 13, 31, 0.95);
-    }
-    
-    .suggestion-item,
-    .dropdown-suggestion-item {
-        border-width: 2px;
-    }
-}
-
-/* ========== REDUCED MOTION ========== */
-@media (prefers-reduced-motion: reduce) {
-    .suggestion-item,
-    .quick-action-btn,
-    .search-all-action {
-        transition: none;
-    }
-    
-    .suggestion-item:hover,
-    .dropdown-suggestion-item:hover {
-        transform: none;
-    }
-    
-    .suggestions-ajax-enabled.loading::after {
-        animation: none;
-    }
-}
-</style>
-
-<!-- 
-REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
-The consolidated JavaScript automatically handles:
-- AJAX search requests and response handling via initializeSearch()
-- Real-time suggestion updates via updateSearchSuggestions()
-- Debounced input handling via debounceSearch()
-- Keyboard navigation (arrow keys, enter, escape) via handleSearchKeyboard()
-- Click handling and URL navigation via handleSuggestionClick()
-- Loading states and error handling via toggleSearchLoading()
-- Responsive behavior and mobile interactions
-- All event handlers, state management, and DOM updates
-
-Search suggestions functionality is fully managed by:
-- DatalogInterface.initializeSearch()
-- DatalogInterface.updateSearchSuggestions()
-- DatalogInterface.handleSearchInput()
-- DatalogInterface.handleSearchKeyboard()
-- DatalogInterface.debounceSearch()
--->
