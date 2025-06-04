@@ -1,0 +1,1454 @@
+<!----
+ * AURA DataLogs - Filters Panel Component (STREAMLINED)
+ * File: blog/templates/blog/includes/datalog_filters_panel.html
+ * Uses existing AURA components for maximum reuse
+---->
+
+{% load aura_filters %}
+{% load aura_components %}
+{% load datalog_tags %}
+
+<div class="{{ css_classes }}" 
+     id="{{ panel_config.id }}"
+     data-config="{{ panel_config|json_config }}">
+
+    {% if style == 'sidebar' %}
+    <!-- Sidebar filters using existing glass_card -->
+    {% glass_card title="Filter DataLogs" icon="fas fa-filter" css_class="filters-sidebar-card" %}
+        
+        <!-- Filter Summary using existing section_header -->
+        {% section_header title="Active Filters" show_metrics=True metric_1_value=current_filters.active_count metric_1_label="Applied" metric_1_icon="fas fa-check" metric_2_value=filter_stats.estimated_results metric_2_label="Results" metric_2_icon="fas fa-database" %}
+        
+        <form id="filterForm" class="filters-form" method="get">
+            
+            <!-- Search Filter -->
+            {% if show_search %}
+            <div class="filter-section">
+                <div class="filter-section-header breadcrumb-item">
+                    <i class="fas fa-search"></i>
+                    <span class="filter-section-title">Search</span>
+                </div>
+                <div class="filter-section-content">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" 
+                               name="q" 
+                               value="{{ current_filters.search }}" 
+                               placeholder="Search posts..."
+                               class="filter-search-input">
+                        {% if current_filters.search %}
+                        <button type="button" class="search-clear" title="Clear search">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Categories Filter -->
+            {% if show_categories and filter_data.categories %}
+            <div class="filter-section {% if collapsible %}collapsible{% endif %}">
+                <div class="filter-section-header breadcrumb-item collapsible-header">
+                    <i class="fas fa-folder"></i>
+                    <span class="filter-section-title">Categories</span>
+                    <span class="filter-count">{{ filter_data.categories|length }}</span>
+                    {% if collapsible %}
+                    <i class="fas fa-chevron-down collapse-icon"></i>
+                    {% endif %}
+                </div>
+                <div class="filter-section-content collapsible-content">
+                    <div class="category-filters-grid">
+                        {% for category in filter_data.categories %}
+                        {% with color_scheme=category|category_color_scheme %}
+                        <label class="filter-checkbox-item category-filter-item" 
+                               style="{% filter_category_color_vars category %}">
+                            <input type="checkbox" 
+                                   name="category" 
+                                   value="{{ category.slug }}"
+                                   {% if category.slug in current_filters.categories %}checked{% endif %}
+                                   class="filter-checkbox">
+                            <div class="filter-checkbox-content">
+                                <div class="category-hex-mini" style="--hex-color: {{ category.color }};">
+                                    <span class="hex-code">{{ category.code|default:"CAT" }}</span>
+                                </div>
+                                <span class="filter-label">{{ category.name }}</span>
+                                {% if show_counts %}
+                                <span class="filter-count">{{ category.post_count|filter_count_display }}</span>
+                                {% endif %}
+                            </div>
+                        </label>
+                        {% endwith %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Tags Filter -->
+            {% if show_tags and filter_data.tags %}
+            <div class="filter-section {% if collapsible %}collapsible{% endif %}">
+                <div class="filter-section-header breadcrumb-item collapsible-header">
+                    <i class="fas fa-tags"></i>
+                    <span class="filter-section-title">Tags</span>
+                    <span class="filter-count">{{ filter_data.tags|length }}</span>
+                    {% if collapsible %}
+                    <i class="fas fa-chevron-down collapse-icon"></i>
+                    {% endif %}
+                </div>
+                <div class="filter-section-content collapsible-content">
+                    <div class="tag-filters-list">
+                        {% for tag in filter_data.tags %}
+                        <label class="filter-tag-item">
+                            <input type="checkbox" 
+                                   name="tag" 
+                                   value="{{ tag.slug }}"
+                                   {% if tag.slug in current_filters.tags %}checked{% endif %}
+                                   class="filter-checkbox">
+                            <span class="filter-tag-label">
+                                <i class="fas fa-tag"></i>
+                                <span class="tag-name">{{ tag.name }}</span>
+                                {% if show_counts %}
+                                <span class="tag-count">{{ tag.post_count|filter_count_display }}</span>
+                                {% endif %}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Date Range Filter -->
+            {% if show_dates and filter_data.date_ranges %}
+            <div class="filter-section {% if collapsible %}collapsible{% endif %}">
+                <div class="filter-section-header breadcrumb-item collapsible-header">
+                    <i class="fas fa-calendar"></i>
+                    <span class="filter-section-title">Date Range</span>
+                    {% if collapsible %}
+                    <i class="fas fa-chevron-down collapse-icon"></i>
+                    {% endif %}
+                </div>
+                <div class="filter-section-content collapsible-content">
+                    <div class="date-filter-options">
+                        {% for range in filter_data.date_ranges %}
+                        <label class="filter-radio-item">
+                            <input type="radio" 
+                                   name="date_range" 
+                                   value="{{ range.value }}"
+                                   {% if range.value == current_filters.date_range %}checked{% endif %}
+                                   class="filter-radio">
+                            <span class="filter-radio-label">
+                                <i class="{{ range.icon }}"></i>
+                                <span>{{ range.label }}</span>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Reading Time Filter -->
+            {% if show_reading_time and filter_data.reading_time_ranges %}
+            <div class="filter-section {% if collapsible %}collapsible{% endif %}">
+                <div class="filter-section-header breadcrumb-item collapsible-header">
+                    <i class="fas fa-clock"></i>
+                    <span class="filter-section-title">Reading Time</span>
+                    {% if collapsible %}
+                    <i class="fas fa-chevron-down collapse-icon"></i>
+                    {% endif %}
+                </div>
+                <div class="filter-section-content collapsible-content">
+                    <div class="reading-time-options">
+                        {% for range in filter_data.reading_time_ranges %}
+                        <label class="filter-radio-item reading-time-item">
+                            <input type="radio" 
+                                   name="reading_time" 
+                                   value="{{ range.value }}"
+                                   {% if range.value == current_filters.reading_time %}checked{% endif %}
+                                   class="filter-radio">
+                            <span class="filter-radio-label">
+                                <i class="{{ range.icon }}"></i>
+                                <span>{{ range.label }}</span>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Difficulty Filter -->
+            {% if show_difficulty and filter_data.difficulty_levels %}
+            <div class="filter-section {% if collapsible %}collapsible{% endif %}">
+                <div class="filter-section-header breadcrumb-item collapsible-header">
+                    <i class="fas fa-layer-group"></i>
+                    <span class="filter-section-title">Difficulty</span>
+                    {% if collapsible %}
+                    <i class="fas fa-chevron-down collapse-icon"></i>
+                    {% endif %}
+                </div>
+                <div class="filter-section-content collapsible-content">
+                    <div class="difficulty-options">
+                        {% for level in filter_data.difficulty_levels %}
+                        <label class="filter-radio-item difficulty-item" style="--difficulty-color: {{ level.color }};">
+                            <input type="radio" 
+                                   name="difficulty" 
+                                   value="{{ level.value }}"
+                                   {% if level.value == current_filters.difficulty %}checked{% endif %}
+                                   class="filter-radio">
+                            <span class="filter-radio-label">
+                                <i class="{{ level.icon }}"></i>
+                                <span>{{ level.label }}</span>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Featured Filter -->
+            {% if show_featured %}
+            <div class="filter-section">
+                <div class="filter-section-content">
+                    <label class="filter-checkbox-item featured-filter-item">
+                        <input type="checkbox" 
+                               name="featured" 
+                               value="true"
+                               {% if current_filters.featured %}checked{% endif %}
+                               class="filter-checkbox">
+                        <div class="filter-checkbox-content">
+                            <i class="fas fa-star featured-icon"></i>
+                            <span class="filter-label">Featured Posts Only</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Sorting Options -->
+            {% if show_sorting and filter_data.sort_options %}
+            <div class="filter-section {% if collapsible %}collapsible{% endif %}">
+                <div class="filter-section-header breadcrumb-item collapsible-header">
+                    <i class="fas fa-sort"></i>
+                    <span class="filter-section-title">Sort By</span>
+                    {% if collapsible %}
+                    <i class="fas fa-chevron-down collapse-icon"></i>
+                    {% endif %}
+                </div>
+                <div class="filter-section-content collapsible-content">
+                    <div class="sort-options">
+                        {% for option in filter_data.sort_options %}
+                        <label class="filter-radio-item sort-item">
+                            <input type="radio" 
+                                   name="sort" 
+                                   value="{{ option.value }}"
+                                   {% if option.value == current_filters.sort %}checked{% endif %}
+                                   class="filter-radio">
+                            <span class="filter-radio-label">
+                                <i class="{{ option.icon }}"></i>
+                                <span>{{ option.label }}</span>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- View Options -->
+            {% if show_view_options and filter_data.view_options %}
+            <div class="filter-section">
+                <div class="filter-section-header breadcrumb-item">
+                    <i class="fas fa-eye"></i>
+                    <span class="filter-section-title">View Mode</span>
+                </div>
+                <div class="filter-section-content">
+                    <div class="view-options subnav-stats">
+                        {% for option in filter_data.view_options %}
+                        <label class="view-option-item">
+                            <input type="radio" 
+                                   name="view" 
+                                   value="{{ option.value }}"
+                                   {% if option.value == current_filters.view %}checked{% endif %}
+                                   class="view-radio">
+                            <span class="view-option-label">
+                                <i class="{{ option.icon }}"></i>
+                                <span class="view-label-text">{{ option.label }}</span>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Filter Actions -->
+            <div class="filter-actions">
+                {% if not auto_apply %}
+                <button type="submit" class="filter-apply-btn">
+                    <i class="fas fa-check"></i>
+                    <span>Apply Filters</span>
+                </button>
+                {% endif %}
+                
+                {% if reset_option and current_filters.has_active %}
+                <a href="{% filter_reset_url current_params %}" class="filter-reset-btn">
+                    <i class="fas fa-times"></i>
+                    <span>Clear All</span>
+                </a>
+                {% endif %}
+            </div>
+            
+            <!-- Filter Summary -->
+            <div class="filter-summary">
+                <div class="filter-summary-text">
+                    {% filter_summary_text current_filters filter_stats %}
+                </div>
+                {% if current_filters.has_active %}
+                <div class="active-filters-list">
+                    {% for category_slug in current_filters.categories %}
+                    <span class="active-filter-tag">
+                        <i class="fas fa-folder"></i>
+                        <span>{{ category_slug|title }}</span>
+                        <a href="{% build_filter_url current_params category=category_slug %}" class="remove-filter">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </span>
+                    {% endfor %}
+                    
+                    {% for tag_slug in current_filters.tags %}
+                    <span class="active-filter-tag">
+                        <i class="fas fa-tag"></i>
+                        <span>{{ tag_slug|title }}</span>
+                        <a href="{% build_filter_url current_params tag=tag_slug %}" class="remove-filter">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+        </form>
+        
+    {% endglass_card %}
+    
+    {% elif style == 'horizontal' %}
+    <!-- Horizontal filters for top of page -->
+    <div class="filters-horizontal-container glass-effect">
+        <form id="filterForm" class="filters-horizontal-form" method="get">
+            
+            <div class="horizontal-filters-grid">
+                
+                <!-- Quick Search -->
+                {% if show_search %}
+                <div class="horizontal-filter-item search-filter">
+                    <div class="filter-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" 
+                               name="q" 
+                               value="{{ current_filters.search }}" 
+                               placeholder="Search..."
+                               class="horizontal-search-input">
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Category Dropdown -->
+                {% if show_categories and filter_data.categories %}
+                <div class="horizontal-filter-item">
+                    <select name="category" class="filter-select">
+                        <option value="">All Categories</option>
+                        {% for category in filter_data.categories %}
+                        <option value="{{ category.slug }}" 
+                                {% if category.slug in current_filters.categories %}selected{% endif %}>
+                            {{ category.name }} {% if show_counts %}({{ category.post_count }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                <!-- Quick Sort -->
+                {% if show_sorting %}
+                <div class="horizontal-filter-item">
+                    <select name="sort" class="filter-select">
+                        {% for option in filter_data.sort_options %}
+                        <option value="{{ option.value }}" 
+                                {% if option.value == current_filters.sort %}selected{% endif %}>
+                            {{ option.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                <!-- View Toggle -->
+                {% if show_view_options %}
+                <div class="horizontal-filter-item view-toggle">
+                    {% for option in filter_data.view_options %}
+                    <button type="button" 
+                            class="view-toggle-btn {% if option.value == current_filters.view %}active{% endif %}"
+                            data-view="{{ option.value }}"
+                            title="{{ option.label }}">
+                        <i class="{{ option.icon }}"></i>
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Filter Summary -->
+                <div class="horizontal-filter-item filter-summary-horizontal">
+                    <span class="results-count">{{ filter_stats.estimated_results }} posts</span>
+                    {% if current_filters.has_active %}
+                    <span class="active-count">({{ current_filters.active_count }} filter{{ current_filters.active_count|pluralize }})</span>
+                    {% endif %}
+                </div>
+                
+            </div>
+            
+        </form>
+    </div>
+    
+    {% elif style == 'compact' %}
+    <!-- Compact filters for smaller spaces -->
+    {% glass_card title="Filters" icon="fas fa-filter" size="sm" css_class="filters-compact-card" %}
+        
+        <form id="filterForm" class="filters-compact-form" method="get">
+            
+            <!-- Essential filters only -->
+            {% if show_categories and filter_data.categories %}
+            <div class="compact-filter-group">
+                <label class="compact-filter-label">Category:</label>
+                <select name="category" class="compact-filter-select">
+                    <option value="">All</option>
+                    {% for category in filter_data.categories|slice:":5" %}
+                    <option value="{{ category.slug }}" 
+                            {% if category.slug in current_filters.categories %}selected{% endif %}>
+                        {{ category.name|truncate_smart:20 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            {% if show_sorting %}
+            <div class="compact-filter-group">
+                <label class="compact-filter-label">Sort:</label>
+                <select name="sort" class="compact-filter-select">
+                    {% for option in filter_data.sort_options|slice:":3" %}
+                    <option value="{{ option.value }}" 
+                            {% if option.value == current_filters.sort %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            <div class="compact-filter-actions subnav-stats">
+                <button type="submit" class="compact-apply-btn">Apply</button>
+                {% if current_filters.has_active %}
+                <a href="{% filter_reset_url current_params %}" class="compact-reset-btn">Reset</a>
+                {% endif %}
+            </div>
+            
+        </form>
+        
+    {% endglass_card %}
+    
+    {% elif style == 'modal' %}
+    <!-- Modal filters overlay -->
+    <div class="filters-modal-overlay" id="filtersModal">
+        <div class="filters-modal-container glass-effect">
+            
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-filter"></i>
+                    Filter DataLogs
+                </h3>
+                <button type="button" class="modal-close" data-target="#filtersModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-content">
+                <!-- Reuse sidebar content in modal -->
+                {% include 'blog/includes/datalog_filters_panel.html' with style='sidebar' collapsible=False %}
+            </div>
+            
+        </div>
+    </div>
+    
+    {% elif style == 'floating' %}
+    <!-- Floating filters button -->
+    <div class="filters-floating-container">
+        <button class="filters-floating-toggle" id="filtersToggle">
+            <i class="fas fa-filter"></i>
+            {% if current_filters.has_active %}
+            <span class="floating-filter-count">{{ current_filters.active_count }}</span>
+            {% endif %}
+        </button>
+        
+        <div class="filters-floating-panel glass-effect" id="floatingFiltersPanel" style="display: none;">
+            <!-- Compact filters in floating panel -->
+            {% include 'blog/includes/datalog_filters_panel.html' with style='compact' %}
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Default: use sidebar style -->
+    {% include 'blog/includes/datalog_filters_panel.html' with style='sidebar' %}
+    {% endif %}
+
+</div>
+
+<style>
+/* ========== FILTERS PANEL COMPONENT STYLES (Minimal Overrides) ========== */
+
+/* Only styles that are NOT in the consolidated CSS or need component-specific adjustments */
+
+/* Base filters panel */
+.datalog-filters-panel {
+    font-family: var(--font-body);
+}
+
+/* Position variants */
+.filters-position-left {
+    position: fixed;
+    left: 0;
+    top: var(--spacing-xl);
+    bottom: var(--spacing-xl);
+    z-index: 999;
+}
+
+.filters-position-right {
+    position: fixed;
+    right: 0;
+    top: var(--spacing-xl);
+    bottom: var(--spacing-xl);
+    z-index: 999;
+}
+
+.filters-position-top {
+    position: sticky;
+    top: 0;
+    z-index: 998;
+}
+
+/* ========== FILTER SECTIONS ========== */
+.filter-section {
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: var(--spacing-md);
+}
+
+.filter-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.filter-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    transition: background-color var(--transition-fast);
+}
+
+.filter-section-header:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.filter-section-title {
+    flex: 1;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.filter-count {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.collapse-icon {
+    transition: transform var(--transition-fast);
+}
+
+.collapsible.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.collapsible-content {
+    overflow: hidden;
+    transition: all var(--transition-normal);
+}
+
+.collapsible.collapsed .collapsible-content {
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+}
+
+/* ========== SEARCH FILTER ========== */
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--spacing-sm);
+    color: var(--color-lavender);
+    font-size: 0.9rem;
+    z-index: 2;
+}
+
+.filter-search-input,
+.horizontal-search-input {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 2.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.filter-search-input:focus,
+.horizontal-search-input:focus {
+    outline: none;
+    border-color: var(--color-lavender);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 2px rgba(179, 157, 219, 0.2);
+}
+
+.search-clear {
+    position: absolute;
+    right: var(--spacing-sm);
+    background: none;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+}
+
+.search-clear:hover {
+    color: var(--color-coral);
+    background: rgba(255, 138, 128, 0.1);
+}
+
+/* ========== CATEGORY FILTERS ========== */
+.category-filters-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+}
+
+.category-filter-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.category-filter-item:hover {
+    background: var(--filter-secondary, rgba(179, 157, 219, 0.05));
+    border-color: var(--filter-border, rgba(179, 157, 219, 0.2));
+}
+
+.filter-checkbox {
+    display: none;
+}
+
+.filter-checkbox:checked + .filter-checkbox-content {
+    background: var(--filter-secondary, rgba(179, 157, 219, 0.1));
+    border-color: var(--filter-border, rgba(179, 157, 219, 0.3));
+}
+
+.filter-checkbox-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-xs);
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.category-hex-mini {
+    width: 20px;
+    height: 20px;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: var(--hex-color, var(--color-lavender));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hex-code {
+    font-family: var(--font-code);
+    font-size: 0.6rem;
+    color: var(--color-text);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.filter-label {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+/* ========== TAG FILTERS ========== */
+.tag-filters-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.filter-tag-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.filter-tag-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+    flex: 1;
+}
+
+.filter-tag-item:hover .filter-tag-label {
+    background: rgba(255, 138, 128, 0.05);
+    border-color: rgba(255, 138, 128, 0.2);
+}
+
+.filter-checkbox:checked + .filter-tag-label {
+    background: rgba(255, 138, 128, 0.1);
+    border-color: rgba(255, 138, 128, 0.3);
+    color: var(--color-coral);
+}
+
+.tag-name {
+    font-size: 0.85rem;
+}
+
+.tag-count {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-left: auto;
+}
+
+/* ========== RADIO FILTERS ========== */
+.filter-radio-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+    cursor: pointer;
+}
+
+.filter-radio {
+    display: none;
+}
+
+.filter-radio-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+    width: 100%;
+}
+
+.filter-radio-item:hover .filter-radio-label {
+    background: rgba(38, 198, 218, 0.05);
+    border-color: rgba(38, 198, 218, 0.2);
+}
+
+.filter-radio:checked + .filter-radio-label {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+}
+
+/* Difficulty specific styling */
+.difficulty-item:hover .filter-radio-label {
+    background: var(--difficulty-color, rgba(179, 157, 219, 0.05));
+    border-color: var(--difficulty-color, rgba(179, 157, 219, 0.2));
+}
+
+.difficulty-item .filter-radio:checked + .filter-radio-label {
+    background: var(--difficulty-color, rgba(179, 157, 219, 0.1));
+    border-color: var(--difficulty-color, rgba(179, 157, 219, 0.3));
+    color: var(--difficulty-color, var(--color-lavender));
+}
+
+/* ========== FEATURED FILTER ========== */
+.featured-filter-item {
+    padding: var(--spacing-md);
+    background: rgba(255, 245, 157, 0.05);
+    border: 1px solid rgba(255, 245, 157, 0.2);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.featured-filter-item:hover {
+    background: rgba(255, 245, 157, 0.1);
+    border-color: rgba(255, 245, 157, 0.3);
+}
+
+.filter-checkbox:checked + .filter-checkbox-content .featured-icon {
+    color: var(--color-yellow);
+    text-shadow: 0 0 8px var(--color-yellow);
+}
+
+.featured-icon {
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+/* ========== FILTER ACTIONS ========== */
+.filter-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.filter-apply-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: var(--border-radius-md);
+    color: var(--color-lavender);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-apply-btn:hover {
+    background: rgba(179, 157, 219, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(179, 157, 219, 0.3);
+}
+
+.filter-reset-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 138, 128, 0.1);
+    border: 1px solid rgba(255, 138, 128, 0.3);
+    border-radius: var(--border-radius-md);
+    color: var(--color-coral);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.filter-reset-btn:hover {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+    transform: translateY(-2px);
+}
+
+/* ========== FILTER SUMMARY ========== */
+.filter-summary {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.filter-summary-text {
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.active-filters-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    justify-content: center;
+}
+
+.active-filter-tag {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-teal);
+    font-size: 0.75rem;
+}
+
+.remove-filter {
+    color: var(--color-coral);
+    text-decoration: none;
+    padding: 0.1rem;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+}
+
+.remove-filter:hover {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+}
+
+/* ========== HORIZONTAL STYLE ========== */
+.filters-horizontal-container {
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.horizontal-filters-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto auto;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.horizontal-filter-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.filter-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.filter-input-wrapper i {
+    position: absolute;
+    left: var(--spacing-sm);
+    color: var(--color-lavender);
+    z-index: 2;
+}
+
+.horizontal-search-input {
+    padding-left: 2.5rem;
+}
+
+.filter-select,
+.compact-filter-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-select:focus,
+.compact-filter-select:focus {
+    outline: none;
+    border-color: var(--color-lavender);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.view-toggle {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.view-toggle-btn {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.view-toggle-btn:hover {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: rgba(179, 157, 219, 0.3);
+    color: var(--color-lavender);
+}
+
+.view-toggle-btn.active {
+    background: rgba(179, 157, 219, 0.2);
+    border-color: rgba(179, 157, 219, 0.4);
+    color: var(--color-lavender);
+}
+
+.filter-summary-horizontal {
+    text-align: right;
+}
+
+.results-count {
+    font-family: var(--font-code);
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.active-count {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+/* ========== COMPACT STYLE ========== */
+.filters-compact-card {
+    background: rgba(38, 198, 218, 0.05);
+    border-color: rgba(38, 198, 218, 0.2);
+}
+
+.filters-compact-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.compact-filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.compact-filter-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    min-width: 60px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.compact-filter-select {
+    flex: 1;
+    font-size: 0.8rem;
+}
+
+.compact-filter-actions {
+    justify-content: center;
+    gap: var(--spacing-sm);
+}
+
+.compact-apply-btn,
+.compact-reset-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.compact-apply-btn {
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    color: var(--color-lavender);
+    cursor: pointer;
+}
+
+.compact-apply-btn:hover {
+    background: rgba(179, 157, 219, 0.2);
+}
+
+.compact-reset-btn {
+    background: rgba(255, 138, 128, 0.1);
+    border: 1px solid rgba(255, 138, 128, 0.3);
+    color: var(--color-coral);
+}
+
+.compact-reset-btn:hover {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+}
+
+/* ========== MODAL STYLE ========== */
+.filters-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.filters-modal-container {
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: var(--border-radius-xl);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: 0;
+    color: var(--color-text);
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 138, 128, 0.1);
+    border: 1px solid rgba(255, 138, 128, 0.3);
+    border-radius: 50%;
+    color: var(--color-coral);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: rgba(255, 138, 128, 0.2);
+    transform: scale(1.1);
+}
+
+.modal-content {
+    padding: var(--spacing-lg);
+}
+
+/* ========== FLOATING STYLE ========== */
+.filters-floating-container {
+    position: fixed;
+    bottom: var(--spacing-xl);
+    right: var(--spacing-xl);
+    z-index: 1500;
+}
+
+.filters-floating-toggle {
+    width: 56px;
+    height: 56px;
+    background: rgba(179, 157, 219, 0.1);
+    border: 2px solid rgba(179, 157, 219, 0.3);
+    border-radius: 50%;
+    color: var(--color-lavender);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 20px rgba(179, 157, 219, 0.3);
+    position: relative;
+}
+
+.filters-floating-toggle:hover {
+    background: rgba(179, 157, 219, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(179, 157, 219, 0.4);
+}
+
+.floating-filter-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background: var(--color-coral);
+    border: 2px solid var(--color-bg-primary);
+    border-radius: 50%;
+    color: var(--color-text);
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+.filters-floating-panel {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    width: 300px;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    transform-origin: bottom right;
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ========== VIEW OPTIONS ========== */
+.view-options {
+    display: flex;
+    gap: var(--spacing-xs);
+    justify-content: center;
+}
+
+.view-option-item {
+    flex: 1;
+    cursor: pointer;
+}
+
+.view-radio {
+    display: none;
+}
+
+.view-option-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.view-option-item:hover .view-option-label {
+    background: rgba(179, 157, 219, 0.05);
+    border-color: rgba(179, 157, 219, 0.2);
+}
+
+.view-radio:checked + .view-option-label {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: rgba(179, 157, 219, 0.3);
+    color: var(--color-lavender);
+}
+
+.view-label-text {
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 1200px) {
+    .filters-position-left,
+    .filters-position-right {
+        position: static;
+        margin: var(--spacing-lg) 0;
+    }
+    
+    .horizontal-filters-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 991px) {
+    .category-filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .horizontal-filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .filters-floating-panel {
+        width: 280px;
+        bottom: 60px;
+    }
+}
+
+@media (max-width: 767px) {
+    .filter-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .active-filters-list {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filters-modal-container {
+        width: 95%;
+        margin: var(--spacing-md);
+    }
+    
+    .compact-filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-xs);
+    }
+    
+    .compact-filter-label {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .filters-floating-container {
+        bottom: var(--spacing-lg);
+        right: var(--spacing-lg);
+    }
+    
+    .filters-floating-toggle {
+        width: 48px;
+        height: 48px;
+        font-size: 1rem;
+    }
+    
+    .filters-floating-panel {
+        width: calc(100vw - 2rem);
+        right: calc(-100vw + 3rem);
+    }
+    
+    .filter-checkbox-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-xs);
+    }
+}
+
+/* ========== ACCESSIBILITY ========== */
+.filter-checkbox-item:focus-within,
+.filter-tag-item:focus-within,
+.filter-radio-item:focus-within {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+}
+
+.filter-apply-btn:focus,
+.filter-reset-btn:focus,
+.modal-close:focus {
+    outline: 2px solid var(--color-lavender);
+    outline-offset: 2px;
+}
+
+/* ========== HIGH CONTRAST MODE ========== */
+@media (prefers-contrast: high) {
+    .filters-horizontal-container,
+    .filters-floating-panel,
+    .filters-modal-container {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: none;
+        background: rgba(13, 13, 31, 0.95);
+    }
+    
+    .filter-checkbox-content,
+    .filter-tag-label,
+    .filter-radio-label {
+        border-width: 2px;
+    }
+}
+
+/* ========== REDUCED MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+    .filter-apply-btn,
+    .view-toggle-btn,
+    .filters-floating-toggle {
+        transition: none;
+    }
+    
+    .filter-apply-btn:hover,
+    .filters-floating-toggle:hover {
+        transform: none;
+    }
+    
+    .filters-floating-panel {
+        animation: none;
+    }
+    
+    .floating-filter-count {
+        animation: none;
+    }
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+    .datalog-filters-panel {
+        display: none !important;
+    }
+}
+</style>
+
+<!-- 
+REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Filter form submission and AJAX updates via initializeFilters()
+- Collapsible section toggling via toggleFilterSection()
+- Multi-select filter handling via handleFilterChange()
+- Auto-apply filter functionality via autoApplyFilters()
+- URL parameter management via updateFilterURL()
+- Modal/floating panel toggles via toggleFilterModal()
+- View mode switching via handleViewModeChange()
+- Filter reset functionality via resetAllFilters()
+- Responsive behavior and mobile interactions
+- All event handlers, state management, and DOM updates
+
+Filter panel functionality is fully managed by:
+- DatalogInterface.initializeFilters()
+- DatalogInterface.handleFilterChange()
+- DatalogInterface.updateFilterResults()
+- DatalogInterface.toggleFilterSection()
+- DatalogInterface.autoApplyFilters()
+-->

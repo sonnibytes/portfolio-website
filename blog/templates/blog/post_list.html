@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - DataLogs List Template - CLEANED
- * Advanced User Repository & Archive - Main DataLogs Landing Page
- * Version: 2.1.0 - Cleaned and Optimized
+ * AURA Portfolio - DataLogs List Template - COMPLETELY UPDATED
+ * Advanced User Repository & Archive - Enhanced with Phase 2+ Components
+ * Version: 3.0.0 - Maximum component reuse and streamlined code
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -13,8 +13,7 @@
 {% block datalogs_title %}DataLogs Archive{% endblock %}
 
 {% block datalogs_css %}
-<link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
-{% pygments_css %}
+<!-- All styling now handled by consolidated CSS -->
 {% endblock %}
 
 {% block show_breadcrumbs %}False{% endblock %}
@@ -22,272 +21,127 @@
 
 {% block datalogs_content %}
 
-<!-- Categories Navigation Container -->
-<section class="categories-navigation-section">
-    <div class="container">
-        <div class="categories-glass-panel">
-            <div class="categories-scroll-container">
-                <button class="category-scroll-btn category-scroll-left" id="categoryScrollLeft" aria-label="Scroll categories left">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                
-                <div class="categories-grid" id="categoriesGrid">
-                    <!-- All Categories Option -->
-                    <a href="{% url 'blog:post_list' %}" 
-                       class="category-nav-item {% if not current_category %}active{% endif %}"
-                       data-category="all">
-                        <div class="category-hexagon-container">
-                            <div class="category-hexagon glass-hex" data-color="#26c6da">
-                                <span class="hex-text">ALL</span>
-                            </div>
-                        </div>
-                        <div class="category-info">
-                            <h3 class="category-name">All DataLogs</h3>
-                            <span class="category-count">{{ total_posts|default:"24" }} entries</span>
-                        </div>
-                    </a>
-                    
-                    <!-- Individual Categories -->
-                    {% for category in categories %}
-                    <a href="{% url 'blog:category' slug=category.slug %}" 
-                       class="category-nav-item {% if category.slug == current_category.slug %}active{% endif %}"
-                       data-category="{{ category.slug }}">
-                        <div class="category-hexagon-container">
-                            <div class="category-hexagon glass-hex" data-color="{{ category.color }}">
-                                <span class="hex-text">{{ category.code }}</span>
-                            </div>
-                        </div>
-                        <div class="category-info">
-                            <h3 class="category-name">{{ category.name }}</h3>
-                            <span class="category-count">{{ category.posts.count }} entries</span>
-                        </div>
-                    </a>
-                    {% endfor %}
-                </div>
-                
-                <button class="category-scroll-btn category-scroll-right" id="categoryScrollRight" aria-label="Scroll categories right">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Enhanced Search Section -->
+<!-- Enhanced Search Interface (NEW COMPONENT) -->
 <section class="datalogs-search-section">
     <div class="container">
-       {% include 'blog/includes/enhanced_search_interface.html' with style='full' query=query %}
+        {% search_suggestions query=query style='full' enable_ajax=True max_suggestions=8 show_descriptions=True %}
     </div>
 </section>
 
-<!-- Featured DataLog Entry -->
+<!-- Category Navigation using Phase 1 Component (ENHANCED) -->
+<section class="categories-navigation-section">
+    <div class="container">
+        {% category_hexagon_nav style="full" current_category=current_category show_all=True limit=None %}
+    </div>
+</section>
+
+<!-- Featured DataLog Entry (STREAMLINED) -->
 {% if featured_post %}
 <section class="featured-datalog-section">
     <div class="container">
-        {% section_header title="Featured DataLog Entry" subtitle="Highlighted Technical Insights" icon="fas fa-star" %}
+        {% section_header title="Featured DataLog Entry" subtitle="Highlighted Technical Insights" icon="fas fa-star" show_metrics=True metric_1_value=featured_post.reading_time|format_duration metric_1_label="Read Time" metric_1_icon="fas fa-clock" metric_2_value=featured_post.category.name metric_2_label="Category" metric_2_icon="fas fa-folder" %}
         
         <div class="featured-datalog-container">
-            <!-- Featured Post Content -->
+            <!-- Featured Post Content using NEW META COMPONENT -->
             <div class="featured-content">
-                <div class="featured-header">
-                    <div class="post-meta">
-                        {% if featured_post.category %}
-                        <span class="category-badge" data-color="{{ featured_post.category.color }}">
-                            {{ featured_post.category.code }}
-                        </span>
-                        {% endif %}
-                        <span class="post-date">{{ featured_post.published_date|date:"M d, Y" }}</span>
-                        <span class="reading-time">{{ featured_post.reading_time }}min read</span>
-                    </div>
-                    
-                    <h2 class="featured-title">
-                        <a href="{{ featured_post.get_absolute_url }}">{{ featured_post.title }}</a>
-                    </h2>
-                    
-                    {% if featured_post.excerpt %}
-                    <p class="featured-excerpt">{{ featured_post.excerpt|truncate_smart:200 }}</p>
-                    {% endif %}
-                </div>
+                <!-- Use new meta display component -->
+                {% datalog_meta_display featured_post style='detailed' show_author=True show_systems=True show_featured=True %}
                 
-                <div class="featured-tags">
-                    {% for tag in featured_post.tags.all|slice:":4" %}
-                    <a href="{% url 'blog:tag' slug=tag.slug %}" class="tag-link">
-                        #{{ tag.name }}
-                    </a>
-                    {% endfor %}
-                </div>
+                <h2 class="featured-title">
+                    <a href="{{ featured_post.get_absolute_url }}">{{ featured_post.title }}</a>
+                </h2>
+                
+                {% if featured_post.excerpt %}
+                <p class="featured-excerpt">{{ featured_post.excerpt|truncate_smart:200 }}</p>
+                {% endif %}
                 
                 <div class="featured-actions">
                     <a href="{{ featured_post.get_absolute_url }}" class="btn btn-primary">
                         <i class="fas fa-arrow-right"></i>
                         Read Full DataLog
                     </a>
+                    
+                    <!-- Use system connections component if available -->
                     {% if featured_post.related_systems.exists %}
-                    <a href="{% url 'projects:system_detail' slug=featured_post.get_primary_system.slug %}" class="btn btn-outline">
-                        <i class="fas fa-project-diagram"></i>
-                        View System
-                    </a>
+                    {% include 'blog/includes/system_connections.html' with post=featured_post style='compact' %}
                     {% endif %}
                 </div>
             </div>
             
-            <!-- Enhanced Terminal Display -->
+            <!-- Enhanced Terminal Display (EXISTING COMPONENT) -->
             {% if featured_post.featured_code %}
-            {% terminal_display post=featured_post %}
+            {% terminal_display post=featured_post style="enhanced" %}
             {% endif %}
         </div>
     </div>
 </section>
 {% endif %}
 
-<!-- DataLog Entries Grid -->
+<!-- DataLog Entries using NEW DATA GRID COMPONENT -->
 <section class="datalogs-grid-section">
     <div class="container">
-        <!-- Grid Header with Controls -->
-        <div class="grid-header">
-            <div class="grid-stats">
-                <div class="stat-group">
-                    <span class="stat-value">{{ posts|length }}</span>
-                    <span class="stat-label">Showing</span>
-                </div>
-                <div class="stat-group">
-                    <span class="stat-value">{{ page_obj.paginator.count|default:"24" }}</span>
-                    <span class="stat-label">Total Entries</span>
-                </div>
-                {% if current_category %}
-                <div class="stat-group">
-                    <span class="stat-value">{{ current_category.name }}</span>
-                    <span class="stat-label">Category</span>
-                </div>
-                {% endif %}
-            </div>
-            
-            <div class="view-controls">
-                <button class="view-toggle-btn active" data-view="grid" title="Grid View">
-                    <i class="fas fa-th-large"></i>
-                </button>
-                <button class="view-toggle-btn" data-view="list" title="List View">
-                    <i class="fas fa-list"></i>
-                </button>
-                <button class="view-toggle-btn" data-view="timeline" title="Timeline View">
-                    <i class="fas fa-stream"></i>
-                </button>
-            </div>
-        </div>
         
-        <!-- DataLog Entries -->
-        <div class="datalogs-grid" id="datalogsGrid">
-            {% for post in posts %}
-            <article class="datalog-card" data-category="{{ post.category.slug|default:'general' }}">
-                {% if post.thumbnail %}
-                <div class="datalog-image">
-                    <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" loading="lazy">
-                    <div class="image-overlay">
-                        {% if post.featured %}
-                        <span class="featured-badge">
-                            <i class="fas fa-star"></i>
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-                
-                <div class="datalog-content">
-                    <div class="datalog-header">
-                        <div class="post-meta">
-                            {% if post.category %}
-                            <span class="category-badge" data-color="{{ post.category.color }}">
-                                {{ post.category.code }}
-                            </span>
-                            {% endif %}
-                            <span class="post-date">{{ post.published_date|time_since_published }}</span>
-                        </div>
-                        
-                        <h3 class="datalog-title">
-                            <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
-                        </h3>
-                        
-                        {% if post.excerpt %}
-                        <p class="datalog-excerpt">{{ post.excerpt|truncate_smart:120 }}</p>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="datalog-footer">
-                        <div class="datalog-stats">
-                            <span class="read-time">
-                                <i class="fas fa-clock"></i>
-                                {{ post.reading_time }}min
-                            </span>
-                            {% if post.tags.exists %}
-                            <span class="tag-count">
-                                <i class="fas fa-tags"></i>
-                                {{ post.tags.count }} tags
-                            </span>
-                            {% endif %}
-                            {% if post.related_systems.exists %}
-                            <span class="system-link">
-                                <i class="fas fa-project-diagram"></i>
-                                System
-                            </span>
-                            {% endif %}
-                        </div>
-                        
-                        <a href="{{ post.get_absolute_url }}" class="read-more-btn">
-                            <span>Read Entry</span>
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </article>
-            {% empty %}
-            <div class="no-posts-message">
-                <div class="no-posts-icon">
-                    <i class="fas fa-database"></i>
-                </div>
-                <h3>No DataLog entries found</h3>
-                <p>Try adjusting your search criteria or check back later for new entries.</p>
-                <a href="{% url 'blog:post_list' %}" class="btn btn-outline">
-                    <i class="fas fa-refresh"></i>
-                    Reset Filters
-                </a>
-            </div>
-            {% endfor %}
-        </div>
+        <!-- Enhanced Header with Statistics using existing section_header -->
+        {% section_header title="DataLog Entries" subtitle="Technical Documentation Archive" icon="fas fa-database" show_metrics=True metric_1_value=page_obj.paginator.count|default:posts|length metric_1_label="Total Entries" metric_1_icon="fas fa-file-alt" metric_2_value=current_category.name|default:"All Categories" metric_2_label="Category" metric_2_icon="fas fa-folder" metric_3_value=posts|length metric_3_label="Showing" metric_3_icon="fas fa-eye" animated=True %}
         
-        <!-- Pagination -->
-        {% if is_paginated %}
-        <div class="pagination-container">
-            <nav class="datalog-pagination">
-                {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="pagination-btn">
-                    <i class="fas fa-chevron-left"></i>
-                    Previous
-                </a>
-                {% endif %}
-                
-                <div class="pagination-info">
-                    <span class="page-numbers">
-                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                    </span>
-                    <span class="entry-range">
-                        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
-                    </span>
-                </div>
-                
-                {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="pagination-btn">
-                    Next
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-                {% endif %}
-            </nav>
-        </div>
-        {% endif %}
+        <!-- Use NEW DATA GRID component for all post display -->
+        {% include 'components/data_grid.html' with items=posts grid_type="datalogs" columns=3 show_controls=True show_sort=True show_filters=True allow_compact=True view_mode="grid" count_label="DataLog entries" %}
+        
     </div>
 </section>
+
+<!-- Enhanced Pagination (SIMPLIFIED using existing patterns) -->
+{% if is_paginated %}
+<section class="pagination-section">
+    <div class="container">
+        {% render_pagination page_obj request %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Filter Panel (NEW COMPONENT) - Handled by datalogs_base.html but enhanced -->
+<!-- The filter panel is automatically included via datalogs_base.html show_filters=True -->
+<!-- Enhanced with our new datalog_filters_panel component -->
 
 {% endblock %}
 
 {% block datalogs_js %}
-<script src="{% static 'blog/js/datalogs-consolidated.js' %}"></script>
+<!-- All JavaScript now handled by consolidated JS -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced post list specific initialization
+    if (window.datalogInterface) {
+        // Initialize search suggestions with AJAX
+        window.datalogInterface.initializeSearchSuggestions({
+            container: '.datalogs-search-section',
+            enableAjax: true,
+            debounceDelay: 300,
+            minQueryLength: 2
+        });
+        
+        // Initialize enhanced filtering
+        window.datalogInterface.initializeEnhancedFilters({
+            autoApply: false,
+            multiSelect: true,
+            saveState: true
+        });
+        
+        // Initialize data grid functionality
+        window.datalogInterface.initializeDataGrid({
+            container: '#dataGridContainer',
+            defaultView: 'grid',
+            enableSorting: true,
+            enableFiltering: true
+        });
+        
+        // Track list view analytics
+        window.datalogInterface.trackEvent('page_view', {
+            page_type: 'post_list',
+            category: '{{ current_category.slug|default:"all" }}',
+            total_posts: {{ posts|length }},
+            has_query: {% if query %}'{{ query|length }}'{% else %}false{% endif %}
+        });
+    }
+});
+</script>
 {% endblock %}

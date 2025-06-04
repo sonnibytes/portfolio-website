@@ -13,31 +13,34 @@
 {% block title %}{{ category.name }} Category | DataLogs | AURA{% endblock %}
 {% block meta_description %}Browse DataLog entries in {{ category.name|upper }} category - {{ posts|length }} development insights and technical documentation.{% endblock %}
 
+{% block datalogs_title %}[ CATEGORY: {{ category.name|upper }} ]{% endblock %}
+
 {% block datalogs_css %}
-<link rel="stylesheet" href="{% static 'blog/css/datalogs-list.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
 {% endblock %}
 
 {% block datalogs_body_class %}category-view{% endblock %}
-
-{% block show_breadcrumbs %}True{% endblock %}
-
-{% block datalogs_title %}[ CATEGORY: {{ category.name|upper }} ]{% endblock %}
-{% block datalogs_subtitle %}
-    {{ posts|length|format_number }} {{ category.name }} entries
-    {% if posts %}
-    | {% calculate 'multiply' posts.0.reading_time posts|length as total_reading %}{{ total_reading|format_duration }} total reading
-    {% endif %}
-{% endblock %}
 
 {% block datalogs_breadcrumbs %}
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
 <span class="breadcrumb-item active">{{ category.name }}</span>
 {% endblock %}
 
+
+{% comment %} {% block datalogs_subtitle %}
+    {{ posts|length|format_number }} {{ category.name }} entries
+    {% if posts %}
+    | {% calculate 'multiply' posts.0.reading_time posts|length as total_reading %}{{ total_reading|format_duration }} total reading
+    {% endif %}
+{% endblock %} {% endcomment %}
+
+
 {% block datalogs_content %}
 
 <!-- Category Header Section -->
 <section class="category-header-section">
+    {% section_header title=category.name subtitle=category.description icon="fas {{category.icon}}" show_metrics=True metric_1_value=category_post_count metric_1_label="Total Entries" metric_1_icon="fas fa-file-alt" metric_2_value=category_avg_reading_time|format_duration metric_2_label="Total Reading" metric_2_icon="fas fa-clock" metric_3_value=posts.categories.count|default:"0" metric_3_label="Categories" metric_3_icon="fas fa-folder" %}
+
     <div class="glass-card category-display-card">
         <div class="category-hero-display">
             <!-- Large Category Hexagon -->
