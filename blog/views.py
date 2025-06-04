@@ -427,7 +427,6 @@ class ArchiveIndexView(ListView):
             # Default - full timeline
             archive_style = 'full'
 
-
         # Add archive-specific context data
         context.update({
             'current_year': current_year,
@@ -458,7 +457,7 @@ class ArchiveIndexView(ListView):
             return f"DataLogs Archive - {category.replace('-', ' ').title()}"
         else:
             return "DataLogs Archive - All Entries"
-    
+
     def get_page_description(self):
         year = self.request.GET.get("year")
         month = self.request.GET.get("month")
@@ -677,6 +676,9 @@ class SearchView(ListView):
         context['query'] = query
         context['total_results'] = self.get_queryset().count() if query else 0
 
+        # Active filters for display
+        context["active_filters"] = self.get_active_filters()
+
         # Search metadata
         context['search_metadata'] = {
             'query': query,
@@ -692,15 +694,12 @@ class SearchView(ListView):
 
         # Filter options for the template
         context['categories'] = Category.objects.annotate(
-            post_count=Count('posts', filter=Q(post__satus='pubished'))
+            post_count=Count('posts', filter=Q(posts__status='pubished'))
         ).filter(post_count__gt=0)
 
         context['popular_tags'] = Tag.objects.annotate(
-            post_count=Count('posts', filter=Q(post_status='published'))
+            post_count=Count('posts', filter=Q(posts__status='published'))
         ).filter(post_count__gt=0).order_by('-post_count')[:10]
-
-        # Active filters for display
-        context['active_filters'] = self.get_active_filters()
 
         return context
 
@@ -778,7 +777,7 @@ def search_suggestionss_ajax(request):
             'query': query,
             'total': len(enhanced_suggestions),
             'success': True,
-            'metadata' : {
+            'metadata': {
                 'query_length': len(query),
                 'has_results': len(enhanced_suggestions) > 0,
                 # TODO: add actual timing here
@@ -963,13 +962,13 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         # DEBUG: Print form data and POST Data
-        print("=" * 50)
-        print("FORM SUBMITTED")
-        print("POST Data:")
+        # print("=" * 50)
+        # print("FORM SUBMITTED")
+        # print("POST Data:")
         pprint.pprint(dict(self.request.POST))
-        print("Cleaned Data:")
+        # print("Cleaned Data:")
         pprint.pprint(form.cleaned_data)
-        print("=" * 50)
+        # print("=" * 50)
 
         # Set the author to current user
         form.instance.author = self.request.user

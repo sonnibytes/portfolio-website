@@ -376,148 +376,262 @@ def datalog_terminal_info(post):
         'size': f"{len(code.encode('utf-8'))} bytes"
     }
 
+# ========== IMPROVED COLOR FUNCTIONS FOR DATALOG TAGS ==========
 
-# Enhanced and Fixed Color Scheme and Glow for Category Hexes
 @register.filter
-def category_color_scheme(category):
+def hex_to_rgb(hex_color):
     """
-    Generate comprehensive color scheme for category display with proper RGBA conversion
-    Usage: {% with color_scheme=category|category_color_scheme %}
+    Convert hex color to RGB tuple - SIMPLIFIED and more reliable
+    Usage: {{ "#ff0000"|hex_to_rgb }} -> "255, 0, 0"
+    """
+    if not hex_color:
+        # Default to lavendar
+        return "179, 157, 219"
+
+    # Clean hex_color
+    hex_color = hex_color.strip()
+
+    hex_color = hex_color.lstrip('#')
+    if len(hex_color) != 6:
+        # Fallback
+        return "179, 157, 219"
+
+    try:
+        # Convert to RBG
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        return f"{r}, {g}, {b}"
+    except ValueError:
+        return "179, 157, 219"
+
+
+@register.filter
+def category_safe_color(category, fallback="#b39ddb"):
+    """
+    Get category color safely with fallback
+    Usage: {{ post.category|category_safe_color }}
     """
     if not category:
-        return {
-            "primary": "#26c6da",
-            "secondary": "rgba(38, 198, 218, 0.1)",
-            "glow": "rgba(38, 198, 218, 0.4)"
-        }
+        return fallback
 
-    # Get primary color from category
-    primary_color = getattr(category, 'color', '#26c6da')
+    # Try to get color from category
+    color = getattr(category, 'color', None)
+    if not color:
+        return fallback
 
-    # Ensure color starts with #
-    if not primary_color.startswith('#'):
-        primary_color = '#' + primary_color
+    # Ensure it's valid hex color
+    if not color.startswith('#'):
+        color = '#' + color
 
-    # Convert hex to RGB for RGBA calculations
-    def hex_to_rgb(hex_color):
-        """Convert hex color to RGB tuple."""
-        hex_color = hex_color.lstrip('#')
-        if len(hex_color) == 6:
-            try:
-                return tuple(int(hex_color[i: i + 2], 16) for i in (0, 2, 4))
-            except ValueError:
-                # Fallback to teal
-                return (38, 198, 218)
-        # Fallback to Teal
-        return (38, 198, 218)
-
-    try:
-        r, g, b = hex_to_rgb(primary_color)
-
-        # Generate comprehensive color scheme
-        color_scheme = {
-            'primary': primary_color,
-            'secondary': f'rgba({r}, {g}, {b}, 0.1)',
-            'glow': f'rgba({r}, {g}, {b}, 0.4)',
-            'border': f'rgba({r}, {g}, {b}, 0.3)',
-            'hover': f'rgba({r}, {g}, {b}, 0.2)',
-            'active': f'rgba({r}, {g}, {b}, 0.15)',
-            'shadow': f'rgba({r}, {g}, {b}, 0.25)',
-            'text': primary_color,
-            # Additional utility colors
-            'rgb': f'{r}, {g}, {b}',
-            'light': f'rgba({r}, {g}, {b}, 0.05)',
-            'medium': f'rgba({r}, {g}, {b}, 0.2)',
-            'strong': f'rgba({r}, {g}, {b}, 0.6)',
-        }
-
-        return color_scheme
-
-    except Exception:
-        # Fallback to color scheme if anything goes wrong
-        return {
-            "primary": "#26c6da",
-            "secondary": "rgba(38, 198, 218, 0.1)",
-            "glow": "rgba(38, 198, 218, 0.4)",
-            "border": "rgba(38, 198, 218, 0.3)",
-            "hover": "rgba(38, 198, 218, 0.2)",
-            "active": "rgba(38, 198, 218, 0.15)",
-            "shadow": "rgba(38, 198, 218, 0.25)",
-            "text": "#26c6da",
-            "rgb": "38, 198, 218",
-            "light": "rgba(38, 198, 218, 0.05)",
-            "medium": "rgba(38, 198, 218, 0.2)",
-            "strong": "rgba(38, 198, 218, 0.6)",
-        }
+    # Basic validation
+    if len(color) == 7 and all(c in '0123456789abcdefABCDEF' for c in color[:1]):
+        return color
+    else:
+        return fallback
 
 
 @register.filter
-def hex_to_rgba(hex_color, alpha=1.0):
+def category_rgb_values(category, fallback="179, 157, 219"):
     """
-    Convert hex color to RGBA
-    Usage: {{ "#ff0000"|hex_to_rgba:0.5 }}
+    Get category RGB values as string for CSS custom properties
+    Usage: {{ post.category|category_rgb_values }}
     """
-    if not hex_color or not hex_color.startswith('#'):
-        return f"rgba(38, 198, 218, {alpha})"
-
-    try:
-        hex_color = hex_color.lstrip('#')
-
-        # Convert hex to rgb and add alpha
-        if len(hex_color) == 6:  # rrggbb format
-            r = int(hex_color[0:2], 16)
-            g = int(hex_color[2:4], 16)
-            b = int(hex_color[4:6], 16)
-            return f"rgba({r}, {g}, {b}, {alpha})"
-
-    except ValueError:
-        pass
-
-    return f"rgba(38, 198, 218, {alpha})"
+    color = category_safe_color(category)
+    return hex_to_rgb(color)
 
 
 @register.simple_tag
-def generate_category_css_vars(category):
+def category_css_vars(category):
     """
-    Generate CSS custom properties for a category
-    Usage: {% generate_category_css_vars category %}
+    Generate CSS custom properties for a category - SIMPLIFIED
+    Usage: {% category_css_vars category %}
     """
-    color_scheme = category_color_scheme(category)
+    if not category:
+        return mark_safe(
+            "--category-color: #b39ddb; "
+            "--category-rgb: 179, 157, 219; "
+            "--category-bg: rgba(179, 157, 219, 0.1); "
+            "--category-border: rgba(179, 157, 219, 0.3);"
+        )
 
-    css_vars = []
-    for key, value in color_scheme.items():
-        css_vars.append(f"--category-{key}: {value};")
+    # Get safe color
+    color = category_safe_color(category)
+    rgb = hex_to_rgb(color)
 
-    return mark_safe(' '.join(css_vars))
+    # Generate CSS variables
+    css_vars = f"""
+        --category-color: {color};
+        --category-rgb: {rgb};
+        --category-bg: rgba({rgb}, 0.1);
+        --category-border: rgba({rgb}, 0.3);
+        --category-hover: rgba({rgb}, 0.2);
+        --category-active: rgba({rgb}, 0.15);
+        --category-glow: rgba({rgb}, 0.4);
+    """.strip()
+
+    return mark_safe(css_vars)
+
+
+@register.simple_tag
+def unified_container_vars(category=None, theme="default"):
+    """
+    Generate CSS variables for unified container theming
+    Usage: {% unified_container_vars post.category %}
+    """
+    if not category:
+        # Default theme
+        rgb = "179, 157, 219"
+        color = "#b39ddb"
+    else:
+        color = category_safe_color(category)
+        rgb = category_rgb_values(category)
+
+    # Theme variations
+    if theme == "featured":
+        rgb = "255, 245, 157"  # Gold
+        color = "#fff59d"
+    elif theme == "success":
+        rgb = "165, 214, 167"  # Mint
+        color = "#a5d6a7"
+    elif theme == "warning":
+        rgb = "255, 138, 128"  # Coral
+        color = "#ff8a80"
+    elif theme == "info":
+        rgb = "38, 198, 218"  # Teal
+        color = "#26c6da"
+
+    css_vars = f"""
+        --container-category-rgb: {rgb};
+        --container-category-color: {color};
+        --container-bg: rgba({rgb}, 0.08);
+        --container-border: rgba({rgb}, 0.25);
+        --container-glow: rgba({rgb}, 0.12);
+    """.strip()
+
+    return mark_safe(css_vars)
+
+@register.filter
+def smart_color_contrast(hex_color, light_threshold=150):
+    """
+    Determine if text should be light or dark based on background color
+    Usage: {{ category.color|smart_color_contrast }}
+    Returns: "light" or "dark"
+    """
+    if not hex_color:
+        return "light"
+
+    rgb = hex_to_rgb(hex_color)
+    try:
+        r, g, b = map(int, rgb.split(", "))
+        # Calculate luminance
+        luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return "dark" if luminance > light_threshold else "light"
+    except:
+        return "light"
 
 
 @register.filter
-def adjust_color_brightness(hex_color, factor=1.2):
+def darken_color(hex_color, factor=0.8):
     """
-    Adjust the brightness of a hex color
-    Usage: {{ "#ff0000"|adjust_color_brightness:1.5 }}
-    factor > 1 makes it brighter, < 1 makes it darker
+    Darken a hex color by a factor
+    Usage: {{ category.color|darken_color:0.7 }}
     """
-    if not hex_color or not hex_color.startswith('#'):
+    if not hex_color:
+        return "#b39ddb"
+
+    rgb = hex_to_rgb(hex_color)
+    try:
+        r, g, b = map(int, rgb.split(", "))
+        # Darken each component
+        r = max(0, int(r * factor))
+        g = max(0, int(g * factor))
+        b = max(0, int(b * factor))
+        return f"#{r:02x}{g:02x}{b:02x}"
+    except:
         return hex_color
 
+
+@register.filter
+def lighten_color(hex_color, factor=1.2):
+    """
+    Lighten a hex color by a factor
+    Usage: {{ category.color|lighten_color:1.3 }}
+    """
+    if not hex_color:
+        return "#b39ddb"
+
+    rgb = hex_to_rgb(hex_color)
     try:
-        hex_color = hex_color.lstrip('#')
-        if len(hex_color) == 6:
-            r = int(hex_color[0:2], 16)
-            g = int(hex_color[2:4], 16)
-            b = int(hex_color[4:6], 16)
+        r, g, b = map(int, rgb.split(", "))
+        # Lighten each component
+        r = min(255, int(r * factor))
+        g = min(255, int(g * factor))
+        b = min(255, int(b * factor))
+        return f"#{r:02x}{g:02x}{b:02x}"
+    except:
+        return hex_color
 
-            # Adjust brightness
-            r = min(255, int(r * factor))
-            g = min(255, int(g * factor))
-            b = min(255, int(b * factor))
 
-            return f"#{r:02x}{g:02x}{b:02x}"
-    except ValueError:
-        pass
+@register.simple_tag
+def category_theme_classes(category):
+    """
+    Generate theme classes based on category
+    Usage: {% category_theme_classes post.category %}
+    """
+    if not category:
+        return "theme-lavender"
 
-    return hex_color
+    # Map common category types to themes
+    category_name = getattr(category, "name", "").lower()
+    category_code = getattr(category, "code", "").lower()
+
+    theme_map = {
+        "ml": "theme-purple",
+        "ai": "theme-purple",
+        "machine learning": "theme-purple",
+        "dev": "theme-green",
+        "development": "theme-green",
+        "coding": "theme-green",
+        "data": "theme-orange",
+        "analytics": "theme-orange",
+        "visualization": "theme-orange",
+        "system": "theme-teal",
+        "infrastructure": "theme-teal",
+        "devops": "theme-teal",
+    }
+
+    # Check code first, then name
+    theme = theme_map.get(category_code) or theme_map.get(category_name)
+    return theme or "theme-lavender"
+
+
+# Replaced with hex_to_rgb and other above, leaving for ref for now
+# @register.filter
+# def hex_to_rgba(hex_color, alpha=1.0):
+#     """
+#     Convert hex color to RGBA
+#     Usage: {{ "#ff0000"|hex_to_rgba:0.5 }}
+#     """
+#     if not hex_color or not hex_color.startswith('#'):
+#         return f"rgba(38, 198, 218, {alpha})"
+
+#     try:
+#         hex_color = hex_color.lstrip('#')
+
+#         # Convert hex to rgb and add alpha
+#         if len(hex_color) == 6:  # rrggbb format
+#             r = int(hex_color[0:2], 16)
+#             g = int(hex_color[2:4], 16)
+#             b = int(hex_color[4:6], 16)
+#             return f"rgba({r}, {g}, {b}, {alpha})"
+
+#     except ValueError:
+#         pass
+
+#     return f"rgba(38, 198, 218, {alpha})"
+
+
 
 
 @register.simple_tag
@@ -1555,20 +1669,20 @@ def get_post_color_scheme(post, color_scheme='auto'):
             secondary_color = "rgba(255, 245, 157, 0.1)"
         elif (hasattr(post, "category") and post.category and hasattr(post.category, "color")):
             primary_color = post.category.color
-            secondary_color = hex_to_rgba(post.category.color, alpha=0.1)
+            secondary_color = f'rgba({hex_to_rgb(post.category.color)}, 0.1)'
         else:
             primary_color = "var(--color-lavendar)"
             secondary_color = "rgba(179, 157, 219, 0.1)"
     elif color_scheme == "category" and hasattr(post, "category") and post.category:
         primary_color = getattr(post.category, "color", "var(--color-lavendar)")
-        secondary_color = hex_to_rgba(primary_color, alpha=0.1)
+        secondary_color = f'rgba({hex_to_rgb(primary_color)}, 0.1)'
     elif color_scheme == "featured":
         primary_color = "var(--color-yellow)"
         secondary_color = "rgba(255, 245, 157, 0.1)"
     elif color_scheme == "status":
         status = getattr(post, "status", "published")
         primary_color = status_color(status)
-        secondary_color = hex_to_rgba(primary_color, alpha=0.1)
+        secondary_color = f"rgba({hex_to_rgb(primary_color)}, 0.1)"
     else:
         primary_color = "var(--color-lavendar)"
         secondary_color = "rgba(179, 157, 219, 0.1)"
@@ -1623,31 +1737,6 @@ def datalog_meta_display(
 
     # Get request for context-aware features
     request = context.get('request')
-
-    # Determine color scheme - moved into sep helper get_post_color_scheme(post, color_scheme)
-    # if color_scheme == 'auto':
-    #     if hasattr(post, 'featured') and post.featured:
-    #         primary_color = 'var(--color-yellow)'
-    #         secondary_color = 'rgba(255, 245, 157, 0.1)'
-    #     elif hasattr(post, 'category') and post.category and hasattr(post.category, 'color'):
-    #         primary_color = post.category.color
-    #         secondary_color = hex_to_rgba(post.category.color, alpha=0.1)
-    #     else:
-    #         primary_color = 'var(--color-lavendar)'
-    #         secondary_color = 'rgba(179, 157, 219, 0.1)'
-    # elif color_scheme == 'category' and hasattr(post, 'category') and post.category:
-    #     primary_color = getattr(post.category, 'color', 'var(--color-lavendar)')
-    #     secondary_color = hex_to_rgba(primary_color, alpha=0.1)
-    # elif color_scheme == 'featured':
-    #     primary_color = 'var(--color-yellow)'
-    #     secondary_color = 'rgba(255, 245, 157, 0.1)'
-    # elif color_scheme == 'status':
-    #     status = getattr(post, 'status', 'published')
-    #     primary_color = status_color(status)
-    #     secondary_color = hex_to_rgba(primary_color, alpha=0.1)
-    # else:
-    #     primary_color = 'var(--color-lavendar)'
-    #     secondary_color = 'rgba(179, 157, 219, 0.1)'
 
     # Determine color scheme with helper
     colors = get_post_color_scheme(post, color_scheme=color_scheme)
@@ -1794,14 +1883,6 @@ def datalog_meta_display(
         # Context
         'request': request,
     }
-
-
-# # Found a better way to reuse existing hex_to_rgba function, leaving for now as reference
-# def get_rgb_values_from_hex(hex_color):
-#     """Extract RBG values from hex color using existing hex_to_rgba function."""
-#     if not hex_color:
-#         # Default lavendar RGB
-#         return '179, 157, 219'
 
 
 # Additional helper tags for meta display
@@ -3024,7 +3105,7 @@ def search_suggestions(
     """
     request = context.get("request")
 
-    # RESUSE: Get suggestions using existing function
+    # REUSE: Get suggestions using existing function
     if len(query) >= min_query_length:
         suggestions_data = datalog_search_suggestions(query)
     elif include_popular:
@@ -3087,7 +3168,7 @@ def search_suggestions(
     # Limit to max suggestions
     suggestions_data = suggestions_data[:max_suggestions]
 
-    # group by type if requested
+    # Group by type if requested
     grouped_suggestions = {}
     if group_by_type and suggestions_data:
         for suggestion in suggestions_data:
@@ -3103,31 +3184,35 @@ def search_suggestions(
         'total_tags': Tag.objects.count(),
     }
 
-    # AJAX config
-    ajax_config = {
-        'enabled': enable_ajax,
-        'url': reverse('blog:search_ajax') if enable_ajax else None,  # Fallback URL
-        'debounce_delay': debounce_delay,
-        'min_query_length': min_query_length,
-        'highlight_matches': highlight_matches,
-    } if enable_ajax else {}
+    # AJAX configuration
+    ajax_config = (
+        {
+            "enabled": enable_ajax,
+            "url": reverse("blog:search_ajax") if enable_ajax else None,  # Fallback URL
+            "debounce_delay": debounce_delay,
+            "min_query_length": min_query_length,
+            "highlight_matches": highlight_matches,
+        }
+        if enable_ajax
+        else {}
+    )
 
     # Build CSS classes
     css_classes = [
-        'search-suggestions-container',
-        f'suggestions-style-{style}',
-        f'suggestions-position-{position}',
-        f'suggestions-width-{width}',
+        "search-suggestions-container",
+        f"suggestions-style-{style}",
+        f"suggestions-position-{position}",
+        f"suggestions-width-{width}",
     ]
 
     if enable_ajax:
-        css_classes.append('suggestions-ajax-enabled')
+        css_classes.append("suggestions-ajax-enabled")
     if group_by_type:
-        css_classes.append('suggestions-grouped')
+        css_classes.append("suggestions-grouped")
     if responsive:
-        css_classes.append('suggestions-responsive')
+        css_classes.append("suggestions-responsive")
     if highlight_matches:
-        css_classes.append('suggestions-highlight')
+        css_classes.append("suggestions-highlight")
 
     # Type config for icons and styling
     type_config = {
@@ -3209,13 +3294,11 @@ def search_suggestions(
 
 
 # Helper tags for search suggestions
-
-
-@register.simple_tag
+@register.filter
 def search_suggestion_highlight(text, query):
     """
     Highlight matching text in search suggestions.
-    Usage: {% search_suggestion_highlight suggestion.text query %}
+    Usage: {{ suggestion.text|search_suggestion_highlight:query }}
     """
     if not query or not text:
         return text
