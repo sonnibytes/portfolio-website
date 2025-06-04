@@ -19,26 +19,60 @@ urlpatterns = [
         views.ArchiveMonthView.as_view(),
         name="archive_month",
     ),
-    # Search view
+    # Search views w AJAX
     path("search/", views.SearchView.as_view(), name="search"),
+    path("search/suggestions/", views.search_suggestionss_ajax, name="search_ajax"),
+    path("search/autocomplete/", views.search_autocomplete, name="search-autocomplete"),
+    path("search/export/", views.search_export, name="search_export"),
+
 
     # Admin/Management URLs
     path("admin/dashboard/", views.DashboardView.as_view(), name="dashboard"),
-
     # Post Management
     path("admin/post/new/", views.PostCreateView.as_view(), name="post_create"),
-    path("admin/post/<slug:slug>/edit/", views.PostUpdateView.as_view(), name="post_edit"),
-    path("admin/post/<slug:slug>/delete/", views.PostDeleteView.as_view(), name="post_delete"),
-
+    path(
+        "admin/post/<slug:slug>/edit/", views.PostUpdateView.as_view(), name="post_edit"
+    ),
+    path(
+        "admin/post/<slug:slug>/delete/",
+        views.PostDeleteView.as_view(),
+        name="post_delete",
+    ),
     # Category Management
     path("admin/categories/", views.CategoryListView.as_view(), name="category_list"),
-    path("admin/category/new/", views.CategoryCreateView.as_view(), name="category_create"),
-    path("admin/category/<slug:slug>/edit/", views.CategoryUpdateView.as_view(), name="category_edit"),
-    path("admin/category/<slug:slug>/delete/", views.CategoryDeleteView.as_view(), name="category_delete"),
-
+    path(
+        "admin/category/new/",
+        views.CategoryCreateView.as_view(),
+        name="category_create",
+    ),
+    path(
+        "admin/category/<slug:slug>/edit/",
+        views.CategoryUpdateView.as_view(),
+        name="category_edit",
+    ),
+    path(
+        "admin/category/<slug:slug>/delete/",
+        views.CategoryDeleteView.as_view(),
+        name="category_delete",
+    ),
     # Test DataLog Features
-    path("test-features/", TemplateView.as_view(template_name='blog/test_features.html'), name='test_features'),
+    path(
+        "test-features/",
+        TemplateView.as_view(template_name="blog/test_features.html"),
+        name="test_features",
+    ),
     # path("test/posts/", views.PostEnhList2.as_view(), name="post_enh2"),
 ]
 
 app_name = 'blog'
+
+"""
+# If you need API endpoints for mobile or other integrations
+api_urlpatterns = [
+    path('api/search/', views.search_suggestions_ajax, name='api_search'),
+    path('api/autocomplete/', views.search_autocomplete, name='api_autocomplete'),
+]
+
+# Add API patterns if needed
+# urlpatterns += api_urlpatterns
+"""
