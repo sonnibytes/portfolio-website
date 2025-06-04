@@ -2,6 +2,7 @@ from django.views.generic import ListView, DetailView, DeleteView, CreateView, U
 from django.views.generic.detail import SingleObjectMixin
 # from django.views.generic.edit import CreateView, UpdateView
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin

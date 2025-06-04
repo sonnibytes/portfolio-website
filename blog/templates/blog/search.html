@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - DataLogs Search Template - CLEANED
- * Advanced User Repository & Archive - Component-Based Architecture
- * Version: 3.0.0 - Clean, component-based implementation
+ * AURA Portfolio - DataLogs Search Results Template
+ * Advanced User Repository & Archive - Enhanced Search with AJAX
+ * Version: 3.0.0 - Integrated with Phase 2+ search components
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -10,482 +10,380 @@
 {% load aura_components %}
 {% load datalog_tags %}
 
-{% block title %}
-    {% if query %}
-        Search Results for "{{ query }}" | DataLogs | AURA
-    {% else %}
-        Search DataLogs | AURA
-    {% endif %}
-{% endblock %}
-
-{% block meta_description %}
-    {% if query %}
-        Search results for "{{ query }}" in DataLog entries - {{ posts|length }} matches found.
-    {% else %}
-        Advanced search through DataLog entries and technical documentation with category filters.
-    {% endif %}
-{% endblock %}
-
-{% block datalogs_css %}
-<link rel="stylesheet" href="{% static 'blog/css/datalog-detail.css' %}">
-<link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
-{% endblock %}
-
-
-{% block datalogs_body_class %}search-results{% endblock %}
+{% block datalogs_title %}{% if query %}Search: "{{ query }}"{% else %}Search DataLogs{% endif %}{% endblock %}
 
 {% block show_breadcrumbs %}True{% endblock %}
-{% block show_filters%}True{% endblock %}
-
-{% block datalogs_title %}
-    {% if query %}
-        [ SEARCH: "{{ query|upper }}" ]
-    {% else %}
-        [ SEARCH INTERFACE ]
-    {% endif %}
-{% endblock %}
-
-{% block datalogs_subtitle %}
-    {% if query %}
-        {{ posts|length|format_number }} matching entries found
-        {% if search_results_count != posts|length %} | Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}{% endif %}
-    {% else %}
-        Advanced search through technical insights and development documentation
-    {% endif %}
-{% endblock %}
+{% block show_filters %}True{% endblock %}
 
 {% block datalogs_breadcrumbs %}
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
 <span class="breadcrumb-item active">
-    {% if query %}Search: "{{ query }}"{% else %}Search{% endif %}
+    <i class="fas fa-search"></i>
+    <span>Search{% if query %}: "{{ query|truncate_smart:30 }}"{% endif %}</span>
 </span>
 {% endblock %}
 
 {% block datalogs_content %}
 
-{% comment %} <div class="datalog-content-layout"> {% endcomment %}
-    <!-- Search Sidebar -->
-    <aside class="search-sidebar">
-        <!-- Popular Searches -->
-        <div class="glass-card sidebar-panel">
-        {% comment %} {% glass_card css_class="sidebar-panel" title="Popular Searches" %} {% endcomment %}
-            <div class="popular-searches">
-                {% for popular_term in popular_searches %}
-                <a href="?q={{ popular_term.term|urlencode }}" class="popular-search-link">
-                    <span class="search-term">{{ popular_term.term }}</span>
-                    <span class="search-count">{{ popular_term.count }}</span>
-                </a>
-                {% empty %}
-                <a href="?q=machine+learning" class="popular-search-link">
-                    <span class="search-term">Machine Learning</span>
-                    <span class="search-count">24</span>
-                </a>
-                <a href="?q=python" class="popular-search-link">
-                    <span class="search-term">Python Development</span>
-                    <span class="search-count">18</span>
-                </a>
-                <a href="?q=api" class="popular-search-link">
-                    <span class="search-term">API Design</span>
-                    <span class="search-count">12</span>
-                </a>
-                <a href="?q=database" class="popular-search-link">
-                    <span class="search-term">Database</span>
-                    <span class="search-count">15</span>
-                </a>
-                <a href="?q=neural" class="popular-search-link">
-                    <span class="search-term">Neural Networks</span>
-                    <span class="search-count">9</span>
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-        <!-- Quick Category Access -->
-        <div class="glass-card sidebar-panel">
-        {% comment %} {% glass_card css_class="sidebar-panel" title="Quick Access" %} {% endcomment %}
-            <!-- Compact hexagon navigation -->
-            {% include 'blog/includes/category_hexagon_nav.html' with style='compact' %}
-        </div>
-        <!-- Search Tips -->
-        <div class="sidebar-panel">
-        {% comment %} {% glass_card css_class="sidebar-panel" title="Search Tips" %} {% endcomment %}
-            <div class="search-tips">
-                <div class="tip-item" data-example='"machine learning"'>
-                    <div class="tip-example">"machine learning"</div>
-                    <div class="tip-description">Search for exact phrases</div>
-                </div>
-                <div class="tip-item" data-example="python OR django">
-                    <div class="tip-example">python OR django</div>
-                    <div class="tip-description">Search for either term</div>
-                </div>
-                <div class="tip-item" data-example="api -rest">
-                    <div class="tip-example">api -rest</div>
-                    <div class="tip-description">Exclude specific terms</div>
-                </div>
-                <div class="tip-item" data-example="neural*">
-                    <div class="tip-example">neural*</div>
-                    <div class="tip-description">Use wildcards</div>
-                </div>
-            </div>
-        </div>
-    </aside>
-    <!-- Enhanced Search Interface Section -->
-    <section class="search-interface-section">
-        <div class="glass-card search-control-panel">
+<!-- Enhanced Search Interface using new component -->
+<section class="search-interface-section">
+    <div class="container">
+        {% search_suggestions query=query style='full' enable_ajax=True max_suggestions=8 show_descriptions=True %}
+    </div>
+</section>
 
-        {% comment %} {% glass_card css_class="search-control-panel" %} {% endcomment %}
-            <!-- Main Search Interface -->
-            <div class="primary-search-container">
-                {% include 'blog/includes/enhanced_search_interface.html' with style='full' query=query %}
+<!-- Search Results Summary -->
+{% if query %}
+<section class="search-results-summary">
+    <div class="container">
+        {% section_header title="Search Results" subtitle='for "{{ query }}"' icon="fas fa-search" show_metrics=True metric_1_value=search_metadata.total_results metric_1_label="Results Found" metric_1_icon="fas fa-database" metric_2_value=active_filters|length metric_2_label="Filters Applied" metric_2_icon="fas fa-filter" metric_3_value=search_metadata.sort_by|title metric_3_label="Sort Method" metric_3_icon="fas fa-sort" %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Active Filters Display -->
+{% if active_filters %}
+<section class="active-filters-section">
+    <div class="container">
+        <div class="active-filters-display glass-effect">
+            <div class="filters-header breadcrumb-item">
+                <i class="fas fa-filter"></i>
+                <span class="filters-title">Active Filters</span>
             </div>
             
-            <!-- Search Results Summary -->
-            {% if query %}
-            <div class="search-results-summary">
-                <div class="summary-left">
-                    <div class="results-count-display">
-                        <span class="count-value">{{ posts|length|format_number }}</span>
-                        <span class="count-label">result{{ posts|length|pluralize }} found</span>
-                        {% if search_time %}
-                        <span class="search-time">({{ search_time }}ms)</span>
-                        {% endif %}
-                    </div>
-                    
-                    {% if search_suggestions %}
-                    <div class="search-suggestions-inline">
-                        <span class="suggestions-label">Related:</span>
-                        {% for suggestion in search_suggestions %}
-                        <a href="{{ suggestion.url }}" class="suggestion-link">
-                            <i class="{{ suggestion.icon }}"></i>
-                            {{ suggestion.text }}
+            <div class="filters-list subnav-stats">
+                {% for key, value in active_filters.items %}
+                <div class="active-filter-item">
+                    <span class="filter-name">{{ key|title }}</span>
+                    <span class="filter-value">{{ value }}</span>
+                    <a href="{% build_url sort=search_metadata.sort_by %}" class="remove-filter-btn">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endfor %}
+                
+                <a href="{% url 'blog:search' %}?q={{ query }}" class="clear-all-filters-btn">
+                    <i class="fas fa-times-circle"></i>
+                    <span>Clear All</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Search Results -->
+{% if query %}
+<section class="search-results-section">
+    <div class="container">
+        
+        {% if posts %}
+        <!-- Results using data grid component -->
+        {% include 'components/data_grid.html' with items=posts grid_type="datalogs" columns=3 show_controls=True show_sort=True show_filters=False allow_compact=True view_mode="grid" count_label="search results" %}
+        
+        {% else %}
+        <!-- No Results State -->
+        {% glass_card title="No Results Found" icon="fas fa-search" variant="warning" %}
+            
+            <div class="no-results-content">
+                <div class="no-results-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 class="no-results-title">No DataLogs found for "{{ query }}"</h3>
+                <p class="no-results-message">
+                    We couldn't find any DataLog entries matching your search. Try adjusting your search terms or browse our categories below.
+                </p>
+                
+                <!-- Search suggestions for no results -->
+                <div class="no-results-suggestions">
+                    <h4 class="suggestions-title">Try searching for:</h4>
+                    <div class="suggestion-tags">
+                        {% for tag in popular_tags|slice:":8" %}
+                        <a href="{% url 'blog:search' %}?q={{ tag.name }}" class="suggestion-tag">
+                            <i class="fas fa-tag"></i>
+                            <span>{{ tag.name }}</span>
                         </a>
                         {% endfor %}
                     </div>
-                    {% endif %}
                 </div>
                 
-                <div class="summary-right">
-                    <!-- Search Scope Indicators -->
-                    <div class="search-scope">
-                        <span class="scope-label">Searched in:</span>
-                        <div class="scope-indicators">
-                            <span class="scope-item active">
-                                <i class="fas fa-file-alt"></i>
-                                <span>Content</span>
-                            </span>
-                            <span class="scope-item active">
-                                <i class="fas fa-heading"></i>
-                                <span>Titles</span>
-                            </span>
-                            <span class="scope-item active">
-                                <i class="fas fa-tags"></i>
-                                <span>Tags</span>
-                            </span>
-                            <span class="scope-item active">
-                                <i class="fas fa-code"></i>
-                                <span>Code</span>
-                            </span>
-                        </div>
-                    </div>
+                <!-- Quick actions -->
+                <div class="no-results-actions subnav-stats">
+                    <a href="{% url 'blog:post_list' %}" class="no-results-action-btn">
+                        <i class="fas fa-list"></i>
+                        <span>Browse All DataLogs</span>
+                    </a>
+                    <a href="{% url 'blog:categories' %}" class="no-results-action-btn">
+                        <i class="fas fa-folder"></i>
+                        <span>Browse Categories</span>
+                    </a>
+                    <a href="{% url 'blog:archive' %}" class="no-results-action-btn">
+                        <i class="fas fa-calendar"></i>
+                        <span>Browse Archive</span>
+                    </a>
                 </div>
             </div>
-            {% endif %}
-        </div>
-    </section>
-
-<!-- Advanced Filter Section -->
-<section class="search-filters-section">
-    <div class="glass-card filters-control-panel">
-    {% comment %} {% glass_card css_class="filters-control-panel" %} {% endcomment %}
-        <div class="filters-header">
-            <h3 class="filters-title">
-                <i class="fas fa-sliders-h"></i>
-                Advanced Filters
-            </h3>
-            <button class="filters-toggle" id="filtersToggle">
-                <span class="toggle-text">Show Filters</span>
-                <i class="fas fa-chevron-down"></i>
-            </button>
-        </div>
+            
+        {% endglass_card %}
+        {% endif %}
         
-        <div class="filters-content" id="filtersContent" style="display: none;">
-            <form method="get" class="search-filters-form" id="searchFiltersForm">
-                <!-- Preserve search query -->
-                {% if query %}
-                <input type="hidden" name="q" value="{{ query }}">
-                {% endif %}
-                
-                <!-- Category Filter with Hexagons -->
-                <div class="filter-group category-filter-group">
-                    <h4 class="filter-group-title">
-                        <i class="fas fa-folder"></i>
-                        Filter by Category
-                    </h4>
-                    
-                    <!-- Use our hexagon component! -->
-                    {% include 'blog/includes/category_hexagon_nav.html' with style='filter' %}
-                </div>
-                
-                <!-- Quick Filters -->
-                <div class="filter-group quick-filters-group">
-                    <h4 class="filter-group-title">
-                        <i class="fas fa-bolt"></i>
-                        Quick Filters
-                    </h4>
-                    
-                    <div class="quick-filters-grid">
-                        <label class="filter-option">
-                            <input type="checkbox" name="featured" value="true" {% if request.GET.featured %}checked{% endif %}>
-                            <div class="filter-option-content">
-                                <i class="fas fa-star"></i>
-                                <span>Featured Entries</span>
-                            </div>
-                        </label>
-                        
-                        <label class="filter-option">
-                            <input type="checkbox" name="has_code" value="true" {% if request.GET.has_code %}checked{% endif %}>
-                            <div class="filter-option-content">
-                                <i class="fas fa-code"></i>
-                                <span>Code Examples</span>
-                            </div>
-                        </label>
-                        
-                        <label class="filter-option">
-                            <input type="checkbox" name="has_systems" value="true" {% if request.GET.has_systems %}checked{% endif %}>
-                            <div class="filter-option-content">
-                                <i class="fas fa-project-diagram"></i>
-                                <span>System Connected</span>
-                            </div>
-                        </label>
-                        
-                        <label class="filter-option">
-                            <input type="checkbox" name="recent" value="true" {% if request.GET.recent %}checked{% endif %}>
-                            <div class="filter-option-content">
-                                <i class="fas fa-clock"></i>
-                                <span>Recent (30 days)</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Reading Time Filter -->
-                <div class="filter-group reading-time-group">
-                    <h4 class="filter-group-title">
-                        <i class="fas fa-hourglass-half"></i>
-                        Reading Time
-                    </h4>
-                    
-                    <div class="reading-time-options">
-                        <label class="time-option">
-                            <input type="radio" name="reading_time" value="quick" {% if request.GET.reading_time == 'quick' %}checked{% endif %}>
-                            <div class="time-option-content">
-                                <div class="time-range">< 5 min</div>
-                                <div class="time-label">Quick Read</div>
-                            </div>
-                        </label>
-                        
-                        <label class="time-option">
-                            <input type="radio" name="reading_time" value="medium" {% if request.GET.reading_time == 'medium' %}checked{% endif %}>
-                            <div class="time-option-content">
-                                <div class="time-range">5-15 min</div>
-                                <div class="time-label">Medium Read</div>
-                            </div>
-                        </label>
-                        
-                        <label class="time-option">
-                            <input type="radio" name="reading_time" value="long" {% if request.GET.reading_time == 'long' %}checked{% endif %}>
-                            <div class="time-option-content">
-                                <div class="time-range">15+ min</div>
-                                <div class="time-label">Deep Dive</div>
-                            </div>
-                        </label>
-                        
-                        <label class="time-option">
-                            <input type="radio" name="reading_time" value="" {% if not request.GET.reading_time %}checked{% endif %}>
-                            <div class="time-option-content">
-                                <div class="time-range">All</div>
-                                <div class="time-label">Any Length</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Date Range Filter -->
-                <div class="filter-group date-range-group">
-                    <h4 class="filter-group-title">
-                        <i class="fas fa-calendar-alt"></i>
-                        Date Range
-                    </h4>
-                    
-                    <div class="date-range-inputs">
-                        <div class="date-input-group">
-                            <label for="date_from">From:</label>
-                            <input type="date" id="date_from" name="date_from" value="{{ request.GET.date_from }}" class="hud-date-input">
-                        </div>
-                        <div class="date-separator">
-                            <i class="fas fa-arrow-right"></i>
-                        </div>
-                        <div class="date-input-group">
-                            <label for="date_to">To:</label>
-                            <input type="date" id="date_to" name="date_to" value="{{ request.GET.date_to }}" class="hud-date-input">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Filter Actions -->
-                <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i>
-                        Apply Filters
-                    </button>
-                    <button type="button" class="btn btn-outline" id="clearFilters">
-                        <i class="fas fa-times"></i>
-                        Clear All
-                    </button>
-                    <button type="button" class="btn btn-outline" id="saveSearch">
-                        <i class="fas fa-bookmark"></i>
-                        Save Search
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 </section>
 
-<!-- Search Results Section -->
-<section class="search-results-section">
-    {% if posts %}
-    
-    <!-- Results Header -->
-    <div class="results-header">
-        <div class="results-info">
-            <h3 class="results-title">
-                <i class="fas fa-search"></i>
-                Search Results
-            </h3>
-            <div class="results-metadata">
-                <span class="result-count">{{ posts|length }} entries</span>
-                {% if page_obj.paginator.count != posts|length %}
-                <span class="total-count">of {{ page_obj.paginator.count }} total matches</span>
-                {% endif %}
-                {% if query %}
-                <span class="search-query">for "{{ query }}"</span>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Sort and View Controls -->
-        <div class="results-controls">
-            <div class="sort-controls">
-                <label for="resultsSort" class="sort-label">Sort by:</label>
-                <select class="hud-select" id="resultsSort">
-                    <option value="relevance" {% if request.GET.sort == 'relevance' %}selected{% endif %}>Relevance</option>
-                    <option value="newest" {% if request.GET.sort == 'newest' %}selected{% endif %}>Newest First</option>
-                    <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Oldest First</option>
-                    <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>Title A-Z</option>
-                    <option value="reading_time" {% if request.GET.sort == 'reading_time' %}selected{% endif %}>Reading Time</option>
-                </select>
-            </div>
-            
-            <div class="view-controls">
-                <button class="view-btn active" data-view="grid" title="Grid View">
-                    <i class="fas fa-th"></i>
-                </button>
-                <button class="view-btn" data-view="list" title="List View">
-                    <i class="fas fa-list"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Search Results Grid -->
-    <div class="search-results-grid" id="searchResultsGrid">
-        {% for post in posts %}
-        {% render_post_card post show_excerpt=True card_type="search" %}
-        {% endfor %}
-    </div>
-    
-    <!-- Pagination -->
-    {% if is_paginated %}
-    <div class="pagination-container">
+<!-- Enhanced Pagination -->
+{% if is_paginated %}
+<section class="pagination-section">
+    <div class="container">
         {% render_pagination page_obj request %}
     </div>
-    {% endif %}
-    
-    {% else %}
-    
-    <!-- No Results State -->
-     <div class="glass-card no-results-panel">
-    {% comment %} {% glass_card css_class="no-results-panel" %} {% endcomment %}
-        <div class="no-results-content">
-            <div class="no-results-icon">
-                <i class="fas fa-search-minus"></i>
-            </div>
-            
-            {% if query %}
-            <h3 class="no-results-title">No results found for "{{ query }}"</h3>
-            <p class="no-results-message">
-                Your search didn't match any DataLog entries. Here are some suggestions to improve your search:
-            </p>
-            
-            <div class="search-suggestions-list">
-                <div class="suggestion-item">
-                    <i class="fas fa-spell-check"></i>
-                    <span>Check your spelling</span>
-                </div>
-                <div class="suggestion-item">
-                    <i class="fas fa-expand-arrows-alt"></i>
-                    <span>Try more general keywords</span>
-                </div>
-                <div class="suggestion-item">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Use different search terms</span>
-                </div>
-                <div class="suggestion-item">
-                    <i class="fas fa-filter"></i>
-                    <span>Remove some filters</span>
-                </div>
-                <div class="suggestion-item">
-                    <i class="fas fa-folder"></i>
-                    <span>Browse categories instead</span>
-                </div>
-            </div>
-            
-            {% else %}
-            <h3 class="no-results-title">Start Your Search Journey</h3>
-            <p class="no-results-message">
-                Enter your search terms above to find DataLog entries, code examples, and technical insights.
-                Use the filters to narrow down your search and find exactly what you need.
-            </p>
-            {% endif %}
-            
-            <div class="no-results-actions">
-                <a href="{% url 'blog:post_list' %}" class="btn btn-primary">
-                    <i class="fas fa-list"></i>
-                    Browse All DataLogs
-                </a>
-                {% if categories %}
-                <a href="{% url 'blog:post_list' %}" class="btn btn-outline">
-                    <i class="fas fa-folder"></i>
-                    Browse Categories
-                </a>
-                {% endif %}
-                {% if query %}
-                <button class="btn btn-outline" onclick="clearSearch()">
-                    <i class="fas fa-times"></i>
-                    Clear Search
-                </button>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </section>
-{% comment %} </div> {% endcomment %}
+{% endif %}
 
-
+{% else %}
+<!-- Search Landing Page -->
+<section class="search-landing-section">
+    <div class="container">
+        
+        <!-- Welcome Search Interface -->
+        {% glass_card title="Search DataLogs Archive" subtitle="Find technical documentation and insights" icon="fas fa-search" %}
+            
+            <!-- Enhanced search form -->
+            <form method="get" class="search-landing-form">
+                <div class="search-landing-input-wrapper">
+                    <i class="fas fa-search search-landing-icon"></i>
+                    <input type="text" 
+                           name="q" 
+                           class="search-landing-input" 
+                           placeholder="Search through technical documentation, code examples, and insights..."
+                           autocomplete="off"
+                           autofocus>
+                    <button type="submit" class="search-landing-submit">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                
+                <!-- Quick search suggestions -->
+                <div class="search-landing-suggestions">
+                    <div class="suggestions-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Popular searches:</span>
+                    </div>
+                    <div class="suggestions-list">
+                        <a href="{% url 'blog:search' %}?q=machine+learning" class="suggestion-link">Machine Learning</a>
+                        <a href="{% url 'blog:search' %}?q=python" class="suggestion-link">Python Development</a>
+                        <a href="{% url 'blog:search' %}?q=api+design" class="suggestion-link">API Design</a>
+                        <a href="{% url 'blog:search' %}?q=database" class="suggestion-link">Database</a>
+                        <a href="{% url 'blog:search' %}?q=neural+networks" class="suggestion-link">Neural Networks</a>
+                    </div>
+                </div>
+            </form>
+            
+        {% endglass_card %}
+        
+        <!-- Search Stats and Categories -->
+        <div class="search-landing-grid">
+            
+            <!-- Search Statistics -->
+            {% glass_card title="Archive Statistics" icon="fas fa-chart-bar" size="sm" %}
+                
+                <div class="search-stats-grid subnav-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ total_posts|default:"24" }}</span>
+                        <span class="stat-label">DataLog Entries</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ categories.count }}</span>
+                        <span class="stat-label">Categories</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ popular_tags.count }}</span>
+                        <span class="stat-label">Topics</span>
+                    </div>
+                </div>
+                
+            {% endglass_card %}
+            
+            <!-- Browse Categories -->
+            {% glass_card title="Browse by Category" icon="fas fa-folder" size="sm" %}
+                
+                <div class="category-browse-list">
+                    {% for category in categories|slice:":6" %}
+                    <a href="{% url 'blog:category' slug=category.slug %}" class="category-browse-item breadcrumb-item">
+                        <div class="category-hex-mini" style="--hex-color: {{ category.color }};">
+                            <span class="hex-code">{{ category.code|default:"CAT" }}</span>
+                        </div>
+                        <span class="category-name">{{ category.name }}</span>
+                        <span class="category-count">({{ category.post_count }})</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                
+                <div class="browse-all-link">
+                    <a href="{% url 'blog:categories' %}" class="browse-all-btn">
+                        <span>View All Categories</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                
+            {% endglass_card %}
+            
+        </div>
+        
+    </div>
+</section>
+{% endif %}
 
 {% endblock %}
 
 {% block datalogs_js %}
-<script src="{% static 'blog/js/datalogs-consolidated.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced search page initialization
+    if (window.datalogInterface) {
+        // Initialize search with AJAX for this page
+        window.datalogInterface.initializeSearch({
+            enableAjax: true,
+            searchUrl: '{% url "blog:search_ajax" %}',
+            autocompleteUrl: '{% url "blog:search_autocomplete" %}',
+            minQueryLength: 2,
+            debounceDelay: 300,
+            maxSuggestions: 8,
+            enableHighlighting: true
+        });
+        
+        // Initialize enhanced filters for search results
+        if (document.querySelector('.search-results-section')) {
+            window.datalogInterface.initializeEnhancedFilters({
+                container: '.search-results-section',
+                autoApply: true,
+                multiSelect: true,
+                saveState: false // Don't save search filter state
+            });
+        }
+        
+        // Track search analytics
+        const searchData = {
+            query: '{{ query|escapejs }}',
+            totalResults: {{ search_metadata.total_results|default:0 }},
+            hasFilters: {{ active_filters|length > 0|yesno:"true,false" }},
+            sortBy: '{{ search_metadata.sort_by|default:"relevance"|escapejs }}'
+        };
+        
+        if (searchData.query) {
+            window.datalogInterface.trackEvent('search_performed', {
+                query_length: searchData.query.length,
+                total_results: searchData.totalResults,
+                has_filters: searchData.hasFilters,
+                sort_method: searchData.sortBy,
+                page_type: 'search_results'
+            });
+        } else {
+            window.datalogInterface.trackEvent('search_landing_viewed', {
+                page_type: 'search_landing'
+            });
+        }
+        
+        // Initialize search landing features
+        const searchLandingInput = document.querySelector('.search-landing-input');
+        if (searchLandingInput) {
+            // Add search suggestions on focus
+            searchLandingInput.addEventListener('focus', function() {
+                if (!this.value) {
+                    // Show popular searches or recent queries
+                    window.datalogInterface.showSearchSuggestions(this, []);
+                }
+            });
+            
+            // Track landing page search
+            searchLandingInput.closest('form').addEventListener('submit', function(e) {
+                const query = searchLandingInput.value.trim();
+                if (query) {
+                    window.datalogInterface.trackEvent('search_from_landing', {
+                        query_length: query.length,
+                        source: 'landing_page'
+                    });
+                }
+            });
+        }
+        
+        // Initialize suggestion click tracking
+        document.addEventListener('click', function(e) {
+            const suggestionItem = e.target.closest('.suggestion-item, .suggestion-link');
+            if (suggestionItem) {
+                const suggestionType = suggestionItem.dataset.type || 'unknown';
+                const suggestionText = suggestionItem.textContent.trim();
+                
+                window.datalogInterface.trackEvent('search_suggestion_clicked', {
+                    suggestion_type: suggestionType,
+                    suggestion_text: suggestionText,
+                    query: '{{ query|escapejs }}',
+                    position: Array.from(suggestionItem.parentNode.children).indexOf(suggestionItem)
+                });
+            }
+        });
+        
+        // Initialize filter removal tracking
+        document.addEventListener('click', function(e) {
+            const removeFilterBtn = e.target.closest('.remove-filter-btn');
+            if (removeFilterBtn) {
+                const filterItem = removeFilterBtn.closest('.active-filter-item');
+                const filterName = filterItem.querySelector('.filter-name').textContent;
+                
+                window.datalogInterface.trackEvent('search_filter_removed', {
+                    filter_name: filterName,
+                    query: '{{ query|escapejs }}',
+                    remaining_filters: document.querySelectorAll('.active-filter-item').length - 1
+                });
+            }
+            
+            const clearAllBtn = e.target.closest('.clear-all-filters-btn');
+            if (clearAllBtn) {
+                window.datalogInterface.trackEvent('search_filters_cleared', {
+                    query: '{{ query|escapejs }}',
+                    total_filters_cleared: document.querySelectorAll('.active-filter-item').length
+                });
+            }
+        });
+        
+        // Initialize no results tracking
+        {% if query and not posts %}
+        window.datalogInterface.trackEvent('search_no_results', {
+            query: '{{ query|escapejs }}',
+            query_length: '{{ query|length }}',
+            has_filters: {{ active_filters|length > 0|yesno:"true,false" }}
+        });
+        {% endif %}
+    }
+});
+
+// Search keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Focus search input with '/' key (like GitHub)
+    if (e.key === '/' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        const searchInput = document.querySelector('.search-landing-input, .datalog-search-input');
+        if (searchInput) {
+            searchInput.focus();
+        }
+    }
+    
+    // Clear search with Escape (when focused on search input)
+    if (e.key === 'Escape' && e.target.matches('.search-landing-input, .datalog-search-input')) {
+        e.target.value = '';
+        e.target.blur();
+    }
+});
+
+// Auto-focus search input on load (search landing page only)
+{% if not query %}
+window.addEventListener('load', function() {
+    const searchInput = document.querySelector('.search-landing-input');
+    if (searchInput && window.innerWidth > 768) { // Don't auto-focus on mobile
+        setTimeout(() => {
+            searchInput.focus();
+        }, 500); // Small delay to avoid interfering with page load
+    }
+});
+{% endif %}
+</script>
 {% endblock %}
