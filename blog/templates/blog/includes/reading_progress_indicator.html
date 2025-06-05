@@ -1,79 +1,56 @@
 <!----
- * AURA DataLogs - Reading Progress Indicator Template (STREAMLINED)
+ * AURA DataLogs - Reading Progress Indicator Template (SIMPLIFIED)
  * File: blog/templates/blog/includes/reading_progress_indicator.html  
- * Uses existing AURA components to eliminate redundant code
+ * SIMPLIFIED: Focus on working progress tracking without complex configurations
 ---->
 
 {% load aura_filters %}
 {% load aura_components %}
-{% load datalog_tags %}
 
-<div class="{{ css_classes }}" 
-     id="{{ progress_config.id }}"
-     data-config="{{ progress_config|progress_json_config }}"
-     data-target="{{ progress_config.target_element }}"
-     role="progressbar"
-     aria-label="{{ style|progress_accessibility_label }}"
-     aria-valuemin="0"
-     aria-valuemax="100"
-     aria-valuenow="0">
+<div class="reading-progress-indicator reading-progress-{{ style|default:'bar' }}" 
+     id="readingProgressIndicator">
 
     {% if style == 'bar' %}
-    <!-- Bar progress indicator using existing progress_bar component -->
+    <!-- Bar progress indicator -->
     <div class="progress-bar-container">
         {% if position == 'top' or position == 'bottom' %}
         <!-- Fixed position progress bar -->
         <div class="fixed-progress-wrapper">
-            {% progress_bar 0 100 css_class="reading-progress-bar" show_text=show_percentage color=progress_color size=size height=size_config.height %}
+            {% progress_bar 0 100 css_class="reading-progress-bar" show_text=show_percentage|default:True color="lavender" size="sm" %}
             
-            {% if show_time or show_position %}
-            <div class="progress-info-overlay">
-                {% if show_time %}
-                <div class="progress-time-display">
-                    <span class="time-elapsed">0min</span>
-                    {% if reading_data.total_reading_time %}
-                    <span class="time-separator"> / </span>
-                    <span class="time-total">{{ reading_data.total_reading_time|format_duration }}</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-                
-                {% if show_position %}
-                <div class="progress-position-display">
-                    <span class="position-current">0</span>
-                    <span class="position-separator"> of </span>
-                    <span class="position-total">{{ reading_data.word_count|format_number }}</span>
-                    <span class="position-unit">words</span>
-                </div>
+            {% if show_time %}
+            <div class="progress-time-info">
+                <span class="time-elapsed">0min</span>
+                {% if total_reading_time %}
+                <span class="time-separator"> / </span>
+                <span class="time-total">{{ total_reading_time|format_duration }}</span>
                 {% endif %}
             </div>
             {% endif %}
         </div>
         
         {% else %}
-        <!-- Sidebar or inline progress bar -->
-        <div class="inline-progress-wrapper">
-            {% if show_time or show_position %}
+        <!-- Sidebar progress bar -->
+        <div class="sidebar-progress-wrapper">
+            {% if total_reading_time %}
             <div class="progress-header">
                 <span class="progress-label">Reading Progress</span>
-                {% if show_time and reading_data.total_reading_time %}
-                <span class="progress-estimate">{{ reading_data.total_reading_time|format_duration }} read</span>
-                {% endif %}
+                <span class="progress-estimate">{{ total_reading_time|format_duration }} read</span>
             </div>
             {% endif %}
             
-            {% progress_bar 0 100 css_class="reading-progress-bar" show_text=show_percentage color=progress_color size=size label="Progress" %}
+            {% progress_bar 0 100 css_class="reading-progress-bar" show_text=show_percentage|default:True color="lavender" size="md" %}
             
             {% if show_time %}
             <div class="progress-details">
-                <div class="stat-item">
+                <div class="time-stat">
                     <span class="stat-label">Elapsed</span>
                     <span class="stat-value time-elapsed">0min</span>
                 </div>
-                {% if reading_data.total_reading_time %}
-                <div class="stat-item">
+                {% if total_reading_time %}
+                <div class="time-stat">
                     <span class="stat-label">Remaining</span>
-                    <span class="stat-value time-remaining">{{ reading_data.total_reading_time|format_duration }}</span>
+                    <span class="stat-value time-remaining">{{ total_reading_time|format_duration }}</span>
                 </div>
                 {% endif %}
             </div>
@@ -83,34 +60,26 @@
     </div>
     
     {% elif style == 'circle' %}
-    <!-- Circular progress indicator using existing circular_progress component -->
+    <!-- Circular progress indicator -->
     <div class="circle-progress-container">
-        {% circular_progress 0 100 size=size_config.circle_size color=progress_color %}
-        
-        {% if show_percentage or show_time %}
-        <div class="circle-progress-overlay">
-            {% if show_percentage %}
-            <div class="circle-percentage">0%</div>
-            {% endif %}
+        <div class="circle-progress-wrapper">
+            {% circular_progress 0 100 size="60px" color="lavender" %}
             
-            {% if show_time %}
-            <div class="circle-time">
-                <div class="time-elapsed">0min</div>
-                {% if reading_data.total_reading_time %}
-                <div class="time-remaining">{{ reading_data.total_reading_time|format_duration }} left</div>
+            <div class="circle-progress-overlay">
+                {% if show_percentage %}
+                <div class="circle-percentage">0%</div>
+                {% endif %}
+                
+                {% if show_time %}
+                <div class="circle-time">
+                    <div class="time-elapsed">0min</div>
+                    {% if total_reading_time %}
+                    <div class="time-remaining">{{ total_reading_time|format_duration }} left</div>
+                    {% endif %}
+                </div>
                 {% endif %}
             </div>
-            {% endif %}
         </div>
-        {% endif %}
-        
-        {% if show_position %}
-        <div class="circle-position-info">
-            <span class="position-text">
-                <span class="position-current">0</span>/<span class="position-total">{{ reading_data.word_count|format_number }}</span> words
-            </span>
-        </div>
-        {% endif %}
     </div>
     
     {% elif style == 'minimal' %}
@@ -120,111 +89,15 @@
         <span class="minimal-percentage">0%</span>
         {% endif %}
         
-        {% progress_bar 0 100 css_class="minimal-progress-bar" show_text=False color=progress_color size="xs" height="2px" %}
+        {% progress_bar 0 100 css_class="minimal-progress-bar" show_text=False color="lavender" size="xs" %}
         
-        {% if show_time %}
+        {% if show_time and total_reading_time %}
         <span class="minimal-time">
             <span class="time-elapsed">0min</span>
-            {% if reading_data.total_reading_time %}
-            /<span class="time-total">{{ reading_data.total_reading_time|format_duration }}</span>
-            {% endif %}
+            /<span class="time-total">{{ total_reading_time|format_duration }}</span>
         </span>
         {% endif %}
     </div>
-    
-    {% elif style == 'floating' %}
-    <!-- Floating progress indicator -->
-    <div class="floating-progress-container glass-effect">
-        {% if position|slice:":6" == 'corner' %}
-        <!-- Corner style floating -->
-        <div class="corner-progress">
-            {% circular_progress 0 100 size="40px" color=progress_color %}
-            {% if show_percentage %}
-            <div class="corner-percentage">0%</div>
-            {% endif %}
-        </div>
-        
-        {% else %}
-        <!-- Full floating panel -->
-        <div class="floating-progress-panel">
-            {% if show_percentage or show_time %}
-            <div class="floating-header">
-                {% if show_percentage %}
-                <span class="floating-percentage">0%</span>
-                {% endif %}
-                {% if show_time %}
-                <span class="floating-time">
-                    <span class="time-elapsed">0min</span>
-                    {% if reading_data.total_reading_time %}
-                    /<span class="time-total">{{ reading_data.total_reading_time|format_duration }}</span>
-                    {% endif %}
-                </span>
-                {% endif %}
-            </div>
-            {% endif %}
-            
-            {% progress_bar 0 100 css_class="floating-progress-bar" show_text=False color=progress_color size="sm" %}
-            
-            {% if show_position %}
-            <div class="floating-position">
-                <span class="position-current">0</span> / <span class="position-total">{{ reading_data.word_count|format_number }}</span> words
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-    </div>
-    
-    {% elif style == 'sidebar' %}
-    <!-- Sidebar progress indicator using existing glass_card -->
-    {% glass_card title="Reading Progress" css_class="progress-sidebar-card" %}
-        
-        {% if show_time and reading_data.total_reading_time %}
-        <div class="sidebar-progress-header">
-            <div class="stat-item">
-                <span class="stat-value">{{ reading_data.total_reading_time|format_duration }}</span>
-                <span class="stat-label">Total Reading Time</span>
-            </div>
-        </div>
-        {% endif %}
-        
-        <div class="sidebar-progress-main">
-            {% progress_bar 0 100 css_class="sidebar-progress-bar" show_text=show_percentage color=progress_color size=size label="Progress" %}
-            
-            {% if show_time %}
-            <div class="sidebar-progress-stats subnav-stats">
-                <div class="stat-item">
-                    <i class="fas fa-clock"></i>
-                    <span class="stat-value time-elapsed">0min</span>
-                    <span class="stat-label">Elapsed</span>
-                </div>
-                {% if reading_data.total_reading_time %}
-                <div class="stat-item">
-                    <i class="fas fa-hourglass-half"></i>
-                    <span class="stat-value time-remaining">{{ reading_data.total_reading_time|format_duration }}</span>
-                    <span class="stat-label">Remaining</span>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-            
-            {% if show_position %}
-            <div class="sidebar-position-info">
-                <div class="position-bar">
-                    <span class="position-indicator"></span>
-                </div>
-                <div class="position-text">
-                    <span class="position-current">0</span> of <span class="position-total">{{ reading_data.word_count|format_number }}</span> words
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        
-        <!-- Motivational message -->
-        <div class="sidebar-motivation">
-            <span class="motivation-message">Let's dive in! 🚀</span>
-        </div>
-        
-    {% endglass_card %}
     
     {% else %}
     <!-- Default: bar style -->
@@ -234,26 +107,24 @@
 </div>
 
 <style>
-/* ========== READING PROGRESS COMPONENT STYLES ========== */
-/* Most base styling comes from existing AURA components */
+/* ========== SIMPLIFIED READING PROGRESS STYLES ========== */
 
 .reading-progress-indicator {
     font-family: var(--font-body);
     color: var(--color-text-secondary);
-    z-index: 1000;
 }
 
 /* ========== POSITION VARIANTS ========== */
 
-.progress-position-top {
+.reading-progress-top {
     position: fixed;
-    top: 140px; /* Below both navs */
+    top: 140px; /* Below navs */
     left: 0;
     right: 0;
     z-index: 999;
 }
 
-.progress-position-bottom {
+.reading-progress-bottom {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -261,41 +132,11 @@
     z-index: 999;
 }
 
-.progress-position-sidebar {
-    position: sticky;
-    top: var(--spacing-xl);
+.reading-progress-sidebar {
     margin: var(--spacing-lg) 0;
 }
 
-.progress-position-top-left {
-    position: fixed;
-    top: 160px;
-    left: var(--spacing-lg);
-    z-index: 1000;
-}
-
-.progress-position-top-right {
-    position: fixed;
-    top: 160px;
-    right: var(--spacing-lg);
-    z-index: 1000;
-}
-
-.progress-position-bottom-left {
-    position: fixed;
-    bottom: var(--spacing-lg);
-    left: var(--spacing-lg);
-    z-index: 1000;
-}
-
-.progress-position-bottom-right {
-    position: fixed;
-    bottom: var(--spacing-lg);
-    right: var(--spacing-lg);
-    z-index: 1000;
-}
-
-/* ========== BAR STYLE COMPONENTS ========== */
+/* ========== BAR STYLE ========== */
 
 .fixed-progress-wrapper {
     background: 
@@ -307,21 +148,22 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.progress-position-bottom .fixed-progress-wrapper {
+.reading-progress-bottom .fixed-progress-wrapper {
     border-bottom: none;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.progress-info-overlay {
+.progress-time-info {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-top: var(--spacing-xs);
     font-size: 0.75rem;
     color: var(--color-text-tertiary);
+    font-family: var(--font-code);
 }
 
-.inline-progress-wrapper {
+.sidebar-progress-wrapper {
     padding: var(--spacing-md);
     background: 
         var(--gradient-glass),
@@ -357,14 +199,38 @@
     gap: var(--spacing-md);
 }
 
-/* ========== CIRCLE STYLE COMPONENTS ========== */
-
-.circle-progress-container {
-    position: relative;
+.time-stat {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
+}
+
+.stat-label {
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    color: var(--color-text);
+    font-weight: 600;
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+}
+
+/* ========== CIRCLE STYLE ========== */
+
+.circle-progress-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.circle-progress-wrapper {
+    position: relative;
+    display: inline-block;
 }
 
 .circle-progress-overlay {
@@ -378,7 +244,7 @@
 
 .circle-percentage {
     font-family: var(--font-code);
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--color-lavender);
     line-height: 1;
@@ -390,30 +256,21 @@
 
 .time-elapsed {
     font-family: var(--font-code);
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: var(--color-text);
     font-weight: 600;
+    display: block;
 }
 
 .time-remaining {
     font-family: var(--font-code);
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: var(--color-text-secondary);
     margin-top: 0.1rem;
+    display: block;
 }
 
-.circle-position-info {
-    margin-top: var(--spacing-sm);
-    text-align: center;
-}
-
-.position-text {
-    font-family: var(--font-code);
-    font-size: 0.75rem;
-    color: var(--color-text-tertiary);
-}
-
-/* ========== MINIMAL STYLE COMPONENTS ========== */
+/* ========== MINIMAL STYLE ========== */
 
 .minimal-progress-container {
     display: flex;
@@ -429,13 +286,14 @@
     font-family: var(--font-code);
     font-weight: 600;
     color: var(--color-lavender);
-    min-width: 30px;
+    min-width: 35px;
 }
 
 .minimal-time {
     font-family: var(--font-code);
     color: var(--color-text-secondary);
     white-space: nowrap;
+    font-size: 0.75rem;
 }
 
 .minimal-progress-bar {
@@ -443,371 +301,66 @@
     min-width: 100px;
 }
 
-/* ========== FLOATING STYLE COMPONENTS ========== */
+/* ========== TIME DISPLAYS ========== */
 
-.floating-progress-container {
-    background: 
-        var(--gradient-glass),
-        rgba(7, 7, 18, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--border-radius-lg);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    padding: var(--spacing-md);
-}
-
-.corner-progress {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.corner-percentage {
-    position: absolute;
+.time-elapsed,
+.time-remaining,
+.time-total {
     font-family: var(--font-code);
-    font-size: 0.7rem;
     font-weight: 600;
-    color: var(--color-lavender);
 }
 
-.floating-progress-panel {
-    min-width: 200px;
+.time-elapsed {
+    color: var(--color-teal);
 }
 
-.floating-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-sm);
-}
-
-.floating-percentage {
-    font-family: var(--font-code);
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-lavender);
-}
-
-.floating-time {
-    font-family: var(--font-code);
-    font-size: 0.8rem;
+.time-remaining {
     color: var(--color-text-secondary);
 }
 
-.floating-position {
-    margin-top: var(--spacing-xs);
-    text-align: center;
-    font-family: var(--font-code);
-    font-size: 0.7rem;
-    color: var(--color-text-tertiary);
-}
-
-/* ========== SIDEBAR STYLE COMPONENTS ========== */
-
-.progress-sidebar-card {
-    max-width: 280px;
-}
-
-.sidebar-progress-header {
-    margin-bottom: var(--spacing-md);
-    text-align: center;
-}
-
-.sidebar-progress-main {
-    margin-bottom: var(--spacing-lg);
-}
-
-.sidebar-progress-stats {
-    margin-top: var(--spacing-md);
-    flex-direction: column;
-    gap: var(--spacing-sm);
-}
-
-.sidebar-position-info {
-    margin-top: var(--spacing-md);
-    text-align: center;
-}
-
-.position-bar {
-    width: 100%;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    margin-bottom: var(--spacing-xs);
-    position: relative;
-    overflow: hidden;
-}
-
-.position-indicator {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 0%;
-    background: var(--color-lavender);
-    border-radius: 2px;
-    transition: width 0.3s ease;
-}
-
-.sidebar-motivation {
-    text-align: center;
-    padding: var(--spacing-sm);
-    background: rgba(179, 157, 219, 0.05);
-    border-radius: var(--border-radius-md);
-    border: 1px solid rgba(179, 157, 219, 0.1);
-}
-
-.motivation-message {
-    font-size: 0.85rem;
-    color: var(--color-lavender);
-    font-weight: 500;
-}
-
-/* ========== TIME AND POSITION DISPLAYS ========== */
-
-.progress-time-display,
-.progress-position-display {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-family: var(--font-code);
-    font-size: 0.75rem;
-}
-
-.time-separator,
-.position-separator {
+.time-separator {
     color: var(--color-text-tertiary);
     opacity: 0.7;
-}
-
-.position-current,
-.position-total {
-    color: var(--color-teal);
-    font-weight: 600;
-}
-
-.position-unit {
-    color: var(--color-text-tertiary);
-    margin-left: var(--spacing-xs);
-}
-
-/* ========== COLOR VARIANTS ========== */
-
-.progress-color-teal .reading-progress-bar .aura-progress-bar,
-.progress-color-teal .position-indicator {
-    background: var(--color-teal);
-}
-
-.progress-color-lavender .reading-progress-bar .aura-progress-bar,
-.progress-color-lavender .position-indicator {
-    background: var(--color-lavender);
-}
-
-.progress-color-coral .reading-progress-bar .aura-progress-bar,
-.progress-color-coral .position-indicator {
-    background: var(--color-coral);
-}
-
-.progress-color-mint .reading-progress-bar .aura-progress-bar,
-.progress-color-mint .position-indicator {
-    background: var(--color-mint);
-}
-
-.progress-color-yellow .reading-progress-bar .aura-progress-bar,
-.progress-color-yellow .position-indicator {
-    background: var(--color-yellow);
-}
-
-.progress-color-category .reading-progress-bar .aura-progress-bar,
-.progress-color-category .position-indicator {
-    background: var(--category-color, var(--color-lavender));
-}
-
-/* ========== SIZE VARIANTS ========== */
-
-.progress-size-xs {
-    font-size: 0.7rem;
-}
-
-.progress-size-sm {
-    font-size: 0.75rem;
-}
-
-.progress-size-md {
-    font-size: 0.8rem;
-}
-
-.progress-size-lg {
-    font-size: 0.9rem;
-}
-
-.progress-size-xl {
-    font-size: 1rem;
-}
-
-/* Adjust component sizes based on overall size */
-.progress-size-xs .floating-progress-container {
-    padding: var(--spacing-sm);
-    min-width: 150px;
-}
-
-.progress-size-lg .floating-progress-container,
-.progress-size-xl .floating-progress-container {
-    padding: var(--spacing-lg);
-    min-width: 250px;
-}
-
-/* ========== ANIMATION STATES ========== */
-
-.progress-animated .reading-progress-bar .aura-progress-bar {
-    transition: width 0.3s ease-out;
-}
-
-.progress-smooth .reading-progress-bar .aura-progress-bar {
-    transition: width 0.1s linear;
-}
-
-.progress-animated .circle-percentage,
-.progress-animated .minimal-percentage,
-.progress-animated .floating-percentage {
-    transition: all 0.2s ease;
-}
-
-/* Pulsing effect for active reading */
-.progress-animated.reading-active .circle-percentage {
-    animation: progressPulse 2s ease-in-out infinite;
-}
-
-@keyframes progressPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
+    margin: 0 var(--spacing-xs);
 }
 
 /* ========== RESPONSIVE DESIGN ========== */
 
-.progress-responsive.progress-position-top,
-.progress-responsive.progress-position-bottom {
-    /* Full width on mobile */
-}
-
-.progress-responsive.progress-position-top-left,
-.progress-responsive.progress-position-top-right,
-.progress-responsive.progress-position-bottom-left,
-.progress-responsive.progress-position-bottom-right {
-    /* Adjust positioning on smaller screens */
-}
-
-@media (max-width: 1200px) {
-    .progress-position-sidebar {
-        position: static;
-        margin: var(--spacing-md) 0;
-    }
-    
-    .floating-progress-container {
-        min-width: 180px;
+@media (max-width: 991px) {
+    .reading-progress-top {
+        top: 120px; /* Adjust for mobile nav */
     }
     
     .progress-details {
         flex-direction: column;
         gap: var(--spacing-xs);
-    }
-}
-
-@media (max-width: 991px) {
-    .progress-position-top {
-        top: 140px; /* Adjust for mobile nav height */
+        align-items: center;
     }
     
-    .progress-position-top-left,
-    .progress-position-top-right {
-        top: 150px;
-        left: var(--spacing-md);
-        right: var(--spacing-md);
-    }
-    
-    .progress-position-top-left {
-        right: auto;
-        max-width: 200px;
-    }
-    
-    .progress-position-top-right {
-        left: auto;
-        max-width: 200px;
-    }
-    
-    .floating-progress-panel {
-        min-width: 160px;
-    }
-    
-    .progress-info-overlay {
+    .progress-time-info {
         flex-direction: column;
         gap: var(--spacing-xs);
-        align-items: flex-start;
-    }
-    
-    .sidebar-progress-stats {
-        align-items: center;
     }
 }
 
 @media (max-width: 767px) {
-    .progress-position-top-left,
-    .progress-position-top-right,
-    .progress-position-bottom-left,
-    .progress-position-bottom-right {
-        position: static;
-        margin: var(--spacing-md) 0;
+    .fixed-progress-wrapper {
+        padding: var(--spacing-xs);
     }
     
-    .floating-progress-container {
-        position: static;
-        margin: var(--spacing-md) 0;
-        min-width: auto;
-    }
-    
-    .corner-progress {
-        justify-content: flex-start;
-        gap: var(--spacing-sm);
-    }
-    
-    .corner-percentage {
-        position: static;
-        margin-left: var(--spacing-sm);
+    .sidebar-progress-wrapper {
+        padding: var(--spacing-sm);
     }
     
     .minimal-progress-container {
         flex-direction: column;
         gap: var(--spacing-sm);
         align-items: stretch;
+        text-align: center;
     }
     
     .minimal-percentage {
         min-width: auto;
-        text-align: center;
-    }
-    
-    .progress-info-overlay {
-        text-align: center;
-    }
-    
-    .progress-time-display,
-    .progress-position-display {
-        justify-content: center;
-    }
-}
-
-@media (max-width: 576px) {
-    .fixed-progress-wrapper {
-        padding: var(--spacing-xs);
-    }
-    
-    .inline-progress-wrapper {
-        padding: var(--spacing-sm);
-    }
-    
-    .floating-progress-container {
-        padding: var(--spacing-sm);
     }
     
     .progress-header {
@@ -815,24 +368,21 @@
         gap: var(--spacing-xs);
         text-align: center;
     }
-    
-    .sidebar-progress-stats .stat-item {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--spacing-xs);
-    }
-    
-    /* Hide position display on very small screens */
-    .progress-position-display {
-        display: none;
-    }
-    
-    /* Simplify time display */
-    .time-total {
-        display: none;
-    }
-    
+}
+
+@media (max-width: 576px) {
+    /* Hide time displays on very small screens */
+    .time-remaining,
+    .time-total,
     .time-separator {
+        display: none;
+    }
+    
+    .circle-time {
+        display: none;
+    }
+    
+    .progress-time-info {
         display: none;
     }
 }
@@ -847,58 +397,18 @@
 /* High contrast mode */
 @media (prefers-contrast: high) {
     .fixed-progress-wrapper,
-    .inline-progress-wrapper,
-    .floating-progress-container {
+    .sidebar-progress-wrapper {
         border-width: 2px;
         backdrop-filter: none;
         background: rgba(7, 7, 18, 0.95);
-    }
-    
-    .reading-progress-bar .aura-progress-bar {
-        border: 1px solid var(--color-text);
     }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-    .progress-animated .reading-progress-bar .aura-progress-bar,
-    .progress-smooth .reading-progress-bar .aura-progress-bar,
-    .progress-animated .circle-percentage,
-    .progress-animated .minimal-percentage,
-    .progress-animated .floating-percentage,
-    .position-indicator {
-        transition: none;
+    .reading-progress-bar .aura-progress-bar {
+        transition: none !important;
     }
-    
-    .progress-animated.reading-active .circle-percentage {
-        animation: none;
-    }
-}
-
-/* ========== LOADING STATES ========== */
-
-.reading-progress-indicator.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.reading-progress-indicator.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 16px;
-    height: 16px;
-    margin: -8px 0 0 -8px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-top: 2px solid var(--color-lavender);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
 
 /* ========== PRINT STYLES ========== */
@@ -909,87 +419,35 @@
     }
 }
 
-/* ========== THEME VARIANTS ========== */
+/* ========== ANIMATION STATES ========== */
 
-/* Featured post styling */
-.reading-progress-indicator.featured-progress {
-    border-color: rgba(255, 245, 157, 0.3);
-}
-
-.featured-progress .motivation-message {
-    color: var(--color-yellow);
-}
-
-/* Category-specific styling */
-.reading-progress-indicator[data-category] {
-    border-color: var(--category-color, rgba(179, 157, 219, 0.3));
-}
-
-/* ========== UTILITY CLASSES ========== */
-
-.progress-hidden {
+.reading-progress-indicator.progress-hidden {
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
 }
 
-.progress-visible {
+.reading-progress-indicator.progress-visible {
     opacity: 1;
     visibility: visible;
 }
 
-.progress-paused {
-    filter: grayscale(0.5);
-    opacity: 0.7;
+.reading-progress-indicator.reading-active .circle-percentage {
+    animation: progressPulse 2s ease-in-out infinite;
 }
 
-.progress-completed {
-    border-color: var(--color-mint);
-}
-
-.progress-completed .motivation-message {
-    color: var(--color-mint);
-}
-
-/* Reading state indicators */
-.reading-state-starting .motivation-message::before {
-    content: '🚀 ';
-}
-
-.reading-state-progress .motivation-message::before {
-    content: '📖 ';
-}
-
-.reading-state-halfway .motivation-message::before {
-    content: '🎯 ';
-}
-
-.reading-state-almost .motivation-message::before {
-    content: '🔥 ';
-}
-
-.reading-state-complete .motivation-message::before {
-    content: '🎉 ';
+@keyframes progressPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
 }
 </style>
 
-<!-- 
-REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
-The consolidated JavaScript automatically handles:
-- Reading progress calculation and updates via initializeReadingProgress()
-- Smooth progress bar animations and state management
-- Time tracking and display updates
-- Position tracking within content
-- Motivational message updates
-- Responsive behavior and mobile interactions
-- Auto-hiding/showing based on scroll threshold
-- All event handlers, animations, and state management
-
-Reading progress functionality is fully managed by:
-- DatalogInterface.initializeReadingProgress()
-- Real-time progress tracking with configurable update frequency
-- Smart content detection (post content vs whole page)
-- Automatic color scheme and theming based on post/category
-- Performance optimized with throttled updates
-- Memory management and cleanup on navigation
+<!-- REMOVED: All JavaScript functionality moved to datalogs-consolidated.js -->
+<!-- The consolidated JavaScript handles all functionality including:
+     - Progress calculation and updates
+     - Time tracking and display updates
+     - Smooth progress bar animations
+     - Responsive behavior
+     - All event handlers and state management
+     - SEE ARCHIVE FOR PREVIOUS VERSION
 -->

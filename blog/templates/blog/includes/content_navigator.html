@@ -1,257 +1,152 @@
 <!----
  * AURA DataLogs - Content Navigator Template (STREAMLINED)
  * File: blog/templates/blog/includes/content_navigator.html  
- * Uses existing AURA components to eliminate redundant code
+ * SIMPLIFIED: Focus on working TOC generation and reading progress
 ---->
 
 {% load aura_filters %}
 {% load aura_components %}
 {% load datalog_tags %}
 
-<div class="{{ css_classes }}" 
-     id="{{ navigator_config.id }}"
-     data-target="{{ navigator_config.target_content }}"
-     data-config="{{ navigator_config|navigator_json_config }}">
+<div class="content-navigator content-navigator-{{ style|default:'sidebar' }}" 
+     id="contentNavigator">
 
-    {% if style == 'full' %}
-    <!-- Full content navigator using existing components -->
-    {% glass_card title="Content Navigator" css_class="content-navigator-card" with_header=True %}
-        
-        <!-- Reading Progress Section using existing progress_bar -->
-        {% if show_progress %}
-        <div class="navigator-section">
-            {% section_header title="Reading Progress" icon="fas fa-chart-line" %}
-            
-            <div class="progress-container">
-                {% progress_bar initial_progress 100 css_class="navigator-progress" show_text=True color="lavender" label="Progress" %}
-                <div class="subnav-stats progress-stats">
-                    <div class="stat-item">
-                        <span class="stat-value" id="time-elapsed">0min</span>
-                        <span class="stat-label">Elapsed</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="time-remaining">{{ total_reading_time|format_duration }}</span>
-                        <span class="stat-label">Remaining</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Table of Contents Section -->
-        {% if show_toc and toc_data %}
-        <div class="navigator-section">
-            {% section_header title="Table of Contents" subtitle="Navigate sections" icon="fas fa-list" %}
-            
-            <nav class="toc-navigation" role="navigation" aria-label="Table of Contents" id="tocNav">
-                {% for heading in toc_data %}
-                <div class="toc-item toc-level-{{ heading.level }}">
-                    <a href="#{{ heading.id }}" 
-                       class="toc-link breadcrumb-item" 
-                       data-heading-id="{{ heading.id }}"
-                       aria-label="{{ heading|toc_accessibility_label }}">
-                        <span class="toc-marker">{{ heading.level }}.</span>
-                        <span class="toc-text">{{ heading.text }}</span>
-                    </a>
-                </div>
-                {% endfor %}
-            </nav>
-        </div>
-        {% endif %}
-        
-        <!-- Reading Statistics using existing metric_card -->
-        {% if show_stats and existing_stats %}
-        <div class="navigator-section">
-            {% section_header title="Reading Stats" icon="fas fa-chart-bar" %}
-            
-            <div class="subnav-stats stats-grid">
-                {% metric_card existing_stats.total_words "Words" icon="fas fa-book" color="teal" size="sm" %}
-                {% metric_card toc_data|length "Sections" icon="fas fa-list" color="lavender" size="sm" %}
-                {% metric_card total_reading_time|format_duration "Read Time" icon="fas fa-clock" color="coral" size="sm" %}
-                {% if existing_stats.posts_with_code > 0 %}
-                {% metric_card "Technical" "Content" icon="fas fa-code" color="mint" size="sm" %}
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Navigation using existing navigation component -->
-        {% if show_navigation and nav_data %}
-        <div class="navigator-section">
-            {% section_header title="Navigation" icon="fas fa-arrows-alt-h" %}
-            
-            <div class="subnav-stats nav-grid">
-                {% if nav_data.previous %}
-                <a href="{{ nav_data.previous.get_absolute_url }}" class="breadcrumb-item nav-control">
-                    <i class="fas fa-chevron-left"></i>
-                    <span>{{ nav_data.previous.title|meta_truncate_title:"compact" }}</span>
-                </a>
-                {% endif %}
-                
-                <a href="{% url 'blog:post_list' %}" class="breadcrumb-item nav-control center">
-                    <i class="fas fa-list"></i>
-                    <span>All DataLogs</span>
-                </a>
-                
-                {% if nav_data.next %}
-                <a href="{{ nav_data.next.get_absolute_url }}" class="breadcrumb-item nav-control">
-                    <span>{{ nav_data.next.title|meta_truncate_title:"compact" }}</span>
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-        
-    {% endglass_card %}
-    
-    {% elif style == 'sidebar' %}
+    {% if style == 'sidebar' %}
     <!-- Sidebar content navigator -->
-    {% glass_card title="Navigator" css_class="navigator-sidebar-card" %}
+    <div class="glass-card content-navigator-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-compass"></i>
+                Navigator
+            </h3>
+        </div>
         
-        {% if show_progress %}
-        <div class="sidebar-section">
-            {% progress_bar initial_progress 100 css_class="sidebar-progress" show_text=True color="teal" size="sm" label="Progress" %}
-            <div class="stat-item progress-time">
-                <span class="stat-value">{{ total_reading_time|format_duration }}</span>
-                <span class="stat-label">Estimated Read</span>
+        <div class="card-content">
+            
+            <!-- Reading Progress Section -->
+            <div class="navigator-section">
+                <div class="section-label">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Reading Progress</span>
+                </div>
+                {% progress_bar 0 100 css_class="reading-progress-bar" show_text=True color="lavender" size="sm" %}
+                
+                <!-- Reading stats -->
+                <div class="progress-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Time</span>
+                        <span class="stat-value">{{ post.reading_time|format_duration|default:"5min" }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Words</span>
+                        <span class="stat-value">{{ post.content|count_words|format_number|default:"1.2k" }}</span>
+                    </div>
+                </div>
             </div>
-        </div>
-        {% endif %}
-        
-        {% if show_toc and toc_data %}
-        <nav class="sidebar-toc" role="navigation" id="tocNav">
-            {% for heading in toc_data %}
-            <a href="#{{ heading.id }}" 
-               class="subnav-link toc-link toc-level-{{ heading.level }}"
-               data-heading-id="{{ heading.id }}">
-                <span class="toc-marker">{{ heading.level|mul:">" }}.</span>
-                <span class="toc-text">{{ heading.text|meta_truncate_title:"sidebar" }}</span>
-            </a>
-            {% endfor %}
-        </nav>
-        {% endif %}
-        
-        {% if show_navigation and nav_data %}
-        <div class="sidebar-navigation subnav-stats">
-            {% if nav_data.previous %}
-            <a href="{{ nav_data.previous.get_absolute_url }}" class="breadcrumb-nav-btn" title="Previous">
-                <i class="fas fa-chevron-left"></i>
-            </a>
+            
+            <!-- Table of Contents Section -->
+            <div class="navigator-section">
+                <div class="section-label">
+                    <i class="fas fa-list"></i>
+                    <span>Contents</span>
+                </div>
+                
+                <!-- TOC will be generated by JavaScript -->
+                <nav class="toc-navigation" id="tocNav" role="navigation" aria-label="Table of Contents">
+                    <div class="toc-loading">
+                        <i class="fas fa-spinner"></i>
+                        <span>Generating table of contents...</span>
+                    </div>
+                </nav>
+            </div>
+            
+            <!-- Navigation Section -->
+            {% if show_navigation %}
+            <div class="navigator-section">
+                <div class="section-label">
+                    <i class="fas fa-arrows-alt-h"></i>
+                    <span>Navigation</span>
+                </div>
+                
+                <div class="nav-controls">
+                    {% get_previous_next_posts post as nav_posts %}
+                    {% if nav_posts.previous %}
+                    <a href="{{ nav_posts.previous.get_absolute_url }}" class="nav-btn nav-prev">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Previous</span>
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'blog:post_list' %}" class="nav-btn nav-center">
+                        <i class="fas fa-list"></i>
+                        <span>All Logs</span>
+                    </a>
+                    
+                    {% if nav_posts.next %}
+                    <a href="{{ nav_posts.next.get_absolute_url }}" class="nav-btn nav-next">
+                        <span>Next</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
             {% endif %}
             
-            <a href="{% url 'blog:post_list' %}" class="breadcrumb-nav-btn center" title="All DataLogs">
-                <i class="fas fa-list"></i>
-            </a>
-            
-            {% if nav_data.next %}
-            <a href="{{ nav_data.next.get_absolute_url }}" class="breadcrumb-nav-btn" title="Next">
-                <i class="fas fa-chevron-right"></i>
-            </a>
-            {% endif %}
         </div>
-        {% endif %}
-        
-    {% endglass_card %}
+    </div>
     
     {% elif style == 'floating' %}
     <!-- Floating content navigator -->
     <div class="navigator-floating glass-effect">
-        {% if show_progress %}
         <div class="floating-progress">
-            {% circular_progress initial_progress 100 size="50px" color="lavender" %}
+            {% circular_progress 0 100 size="50px" color="lavender" %}
         </div>
-        {% endif %}
         
-        {% if show_toc %}
-        <button class="subnav-action-btn floating-toc-toggle" title="Toggle Contents">
+        <button class="floating-toc-toggle" id="floatingTocToggle" title="Toggle Contents">
             <i class="fas fa-list"></i>
         </button>
         
-        <div class="floating-toc-panel glass-effect" style="display: none;">
+        <!-- TOC Panel (hidden by default) -->
+        <div class="floating-toc-panel" id="floatingTocPanel" style="display: none;">
             <div class="floating-toc-header">
                 <span>Contents</span>
-                <button class="floating-toc-close">
+                <button class="floating-toc-close" id="floatingTocClose">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <nav class="floating-toc">
-                {% for heading in toc_data %}
-                <a href="#{{ heading.id }}" 
-                   class="breadcrumb-item toc-link"
-                   data-heading-id="{{ heading.id }}">
-                    <span class="toc-text">{{ heading.text|meta_truncate_title:"mobile" }}</span>
-                </a>
-                {% endfor %}
+            <nav class="floating-toc" id="floatingTocNav">
+                <div class="toc-loading">
+                    <i class="fas fa-spinner"></i>
+                    <span>Loading...</span>
+                </div>
             </nav>
         </div>
-        {% endif %}
     </div>
     
     {% elif style == 'minimal' %}
     <!-- Minimal content navigator -->
-    <div class="navigator-minimal subnav-stats">
-        {% if show_progress %}
+    <div class="navigator-minimal">
         <div class="minimal-progress">
-            <span class="stat-value">0%</span>
-            {% progress_bar initial_progress 100 css_class="minimal-progress-bar" show_text=False color="lavender" size="xs" %}
+            <span class="progress-percentage">0%</span>
+            {% progress_bar 0 100 css_class="minimal-progress-bar" show_text=False color="lavender" size="xs" %}
         </div>
-        {% endif %}
         
-        {% if show_navigation and nav_data %}
+        {% if show_navigation %}
         <div class="minimal-navigation">
-            {% if nav_data.previous %}
-            <a href="{{ nav_data.previous.get_absolute_url }}" class="breadcrumb-nav-btn" title="Previous">
+            {% get_previous_next_posts post as nav_posts %}
+            {% if nav_posts.previous %}
+            <a href="{{ nav_posts.previous.get_absolute_url }}" class="minimal-nav-btn" title="Previous">
                 <i class="fas fa-chevron-left"></i>
             </a>
             {% endif %}
             
-            <span class="stat-item">
-                <span class="stat-value">{{ post.id|datalog_id }}</span>
-            </span>
+            <span class="current-post">{{ post.id|datalog_id }}</span>
             
-            {% if nav_data.next %}
-            <a href="{{ nav_data.next.get_absolute_url }}" class="breadcrumb-nav-btn" title="Next">
+            {% if nav_posts.next %}
+            <a href="{{ nav_posts.next.get_absolute_url }}" class="minimal-nav-btn" title="Next">
                 <i class="fas fa-chevron-right"></i>
             </a>
             {% endif %}
-        </div>
-        {% endif %}
-    </div>
-    
-    {% elif style == 'compact' %}
-    <!-- Compact content navigator -->
-    <div class="navigator-compact glass-effect">
-        <div class="subnav-stats compact-stats">
-            {% if show_progress %}
-            <div class="stat-item">
-                <span class="stat-label">Progress</span>
-                <span class="stat-value">0%</span>
-            </div>
-            {% endif %}
-            
-            {% if show_toc %}
-            <div class="stat-item">
-                <span class="stat-label">Sections</span>
-                <span class="stat-value">{{ toc_data|length }}</span>
-            </div>
-            {% endif %}
-            
-            <div class="stat-item">
-                <span class="stat-label">Read Time</span>
-                <span class="stat-value">{{ total_reading_time|format_duration }}</span>
-            </div>
-        </div>
-        
-        {% if show_toc and toc_data %}
-        <div class="compact-toc tocNav">
-            {% for heading in toc_data %}
-            <a href="#{{ heading.id }}" 
-               class="toc-link breadcrumb-item compact-toc-item"
-               data-heading-id="{{ heading.id }}">
-                {{ heading.text|meta_truncate_title:"compact" }}
-            </a>
-            {% endfor %}
         </div>
         {% endif %}
     </div>
@@ -264,27 +159,15 @@
 </div>
 
 <style>
-/* ========== MINIMAL ADDITIONAL STYLES ========== */
-/* Most styling comes from existing navigation.css and consolidated CSS */
+/* ========== STREAMLINED CONTENT NAVIGATOR STYLES ========== */
 
 .content-navigator {
     font-family: var(--font-body);
     margin: var(--spacing-lg) 0;
 }
 
-.navigator-sticky {
-    position: sticky;
-    top: var(--spacing-xl);
-    z-index: 100;
-}
-
-.navigator-floating {
-    position: fixed;
-    top: 50%;
-    right: var(--spacing-lg);
-    transform: translateY(-50%);
-    z-index: 1000;
-    max-width: 200px;
+.content-navigator-card {
+    max-width: 300px;
 }
 
 /* Navigator sections */
@@ -299,13 +182,56 @@
     margin-bottom: 0;
 }
 
-/* TOC specific styles */
-.toc-navigation,
-.sidebar-toc,
-.floating-toc {
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.9rem;
+}
+
+.section-label i {
+    color: var(--color-lavender);
+    font-size: 0.8rem;
+}
+
+/* Progress stats */
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--spacing-sm);
+    font-size: 0.8rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.stat-label {
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    color: var(--color-text);
+    font-weight: 600;
+    font-family: var(--font-code);
+}
+
+/* TOC Styles */
+.toc-navigation {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .toc-link {
@@ -313,35 +239,41 @@
     align-items: center;
     gap: var(--spacing-xs);
     padding: var(--spacing-xs) var(--spacing-sm);
-    transition: all var(--transition-fast);
+    text-decoration: none;
+    color: var(--color-text-secondary);
     border-left: 2px solid transparent;
+    transition: all var(--transition-fast);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    border-radius: var(--border-radius-sm);
 }
 
 .toc-link:hover {
+    color: var(--color-lavender);
     border-left-color: var(--color-lavender);
     background: rgba(179, 157, 219, 0.05);
     transform: translateX(3px);
 }
 
 .toc-link.active {
+    color: var(--color-lavender);
     border-left-color: var(--color-lavender);
     background: rgba(179, 157, 219, 0.1);
     font-weight: 600;
 }
 
 .toc-marker {
-    font-family: var(--font-code);
-    font-size: 0.75rem;
     color: var(--color-lavender);
+    font-family: var(--font-code);
+    font-size: 0.8rem;
     min-width: 20px;
 }
 
 .toc-text {
     flex: 1;
-    font-size: 0.85rem;
 }
 
-/* TOC indentation using existing spacing */
+/* TOC indentation */
 .toc-level-1 { margin-left: 0; }
 .toc-level-2 { margin-left: var(--spacing-md); }
 .toc-level-3 { margin-left: calc(var(--spacing-md) * 2); }
@@ -349,38 +281,137 @@
 .toc-level-5 { margin-left: calc(var(--spacing-md) * 4); }
 .toc-level-6 { margin-left: calc(var(--spacing-md) * 5); }
 
-/* Navigation grid using existing stats layout */
-.nav-grid {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: var(--spacing-sm);
+.toc-loading {
+    display: flex;
     align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    justify-content: center;
 }
 
-.nav-control.center {
-    text-align: center;
+.toc-loading i {
+    animation: spin 1s linear infinite;
 }
 
-/* Floating panel */
+.toc-empty {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    color: var(--color-text-tertiary);
+    font-style: italic;
+    font-size: 0.85rem;
+    justify-content: center;
+}
+
+/* Navigation controls */
+.nav-controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: var(--border-radius-md);
+    color: var(--color-lavender);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all var(--transition-fast);
+}
+
+.nav-btn:hover {
+    background: rgba(179, 157, 219, 0.2);
+    color: var(--color-lavender);
+    transform: translateX(3px);
+}
+
+.nav-btn.nav-center {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+}
+
+.nav-btn.nav-center:hover {
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+}
+
+.nav-btn.nav-next {
+    justify-content: flex-end;
+}
+
+/* ========== FLOATING NAVIGATOR ========== */
+
+.navigator-floating {
+    position: fixed;
+    top: 50%;
+    right: var(--spacing-lg);
+    transform: translateY(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+}
+
+.floating-progress {
+    position: relative;
+}
+
+.floating-toc-toggle {
+    width: 40px;
+    height: 40px;
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: 50%;
+    color: var(--color-lavender);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+}
+
+.floating-toc-toggle:hover {
+    background: rgba(179, 157, 219, 0.2);
+    transform: scale(1.1);
+}
+
 .floating-toc-panel {
     position: absolute;
-    right: 100%;
+    right: calc(100% + var(--spacing-md));
     top: 0;
     width: 300px;
-    margin-right: var(--spacing-md);
-    padding: var(--spacing-lg);
+    max-height: 400px;
+    background: 
+        var(--gradient-glass),
+        rgba(7, 7, 18, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--border-radius-lg);
+    backdrop-filter: blur(20px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
 }
 
 .floating-toc-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
-    padding-bottom: var(--spacing-sm);
+    padding: var(--spacing-md);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     font-weight: 600;
+    color: var(--color-text);
 }
 
 .floating-toc-close {
@@ -389,19 +420,35 @@
     color: var(--color-text-secondary);
     cursor: pointer;
     font-size: 1rem;
+    padding: var(--spacing-xs);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
 }
 
 .floating-toc-close:hover {
     color: var(--color-coral);
+    background: rgba(255, 138, 128, 0.1);
 }
 
-/* Minimal and compact styles */
+.floating-toc {
+    padding: var(--spacing-md);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* ========== MINIMAL NAVIGATOR ========== */
+
 .navigator-minimal {
     display: flex;
     align-items: center;
     gap: var(--spacing-lg);
-    padding: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: 
+        var(--gradient-glass),
+        rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--border-radius-md);
+    backdrop-filter: blur(10px);
 }
 
 .minimal-progress {
@@ -411,70 +458,95 @@
     flex: 1;
 }
 
+.progress-percentage {
+    font-family: var(--font-code);
+    font-weight: 600;
+    color: var(--color-lavender);
+    min-width: 35px;
+    font-size: 0.85rem;
+}
+
+.minimal-progress-bar {
+    flex: 1;
+    min-width: 100px;
+}
+
 .minimal-navigation {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
 }
 
-.navigator-compact {
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-lg);
-}
-
-.compact-stats {
-    margin-bottom: var(--spacing-md);
-    justify-content: center;
-}
-
-.compact-toc {
+.minimal-nav-btn {
+    width: 32px;
+    height: 32px;
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: 50%;
+    color: var(--color-lavender);
+    text-decoration: none;
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs);
-}
-
-.compact-toc-item {
-    font-size: 0.8rem;
-    padding: var(--spacing-xs);
-}
-
-/* Progress time display */
-.progress-time {
-    text-align: center;
-    margin-top: var(--spacing-sm);
-}
-
-.progress-stats {
+    align-items: center;
     justify-content: center;
-    margin-top: var(--spacing-md);
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
 }
 
-/* Responsive adjustments */
+.minimal-nav-btn:hover {
+    background: rgba(179, 157, 219, 0.2);
+    transform: scale(1.1);
+    color: var(--color-lavender);
+}
+
+.current-post {
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+    color: var(--color-text);
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+
 @media (max-width: 1200px) {
-    .navigator-sticky {
-        position: static;
-        margin: var(--spacing-lg) 0;
+    .content-navigator-card {
+        max-width: 280px;
     }
-}
-
-@media (max-width: 991px) {
+    
     .navigator-floating {
         position: static;
         transform: none;
         margin: var(--spacing-lg) 0;
+        align-self: center;
+    }
+}
+
+@media (max-width: 991px) {
+    .content-navigator-card {
         max-width: none;
     }
     
     .floating-toc-panel {
         position: static;
         width: 100%;
-        margin-right: 0;
         margin-top: var(--spacing-md);
+        right: auto;
     }
     
-    .nav-grid {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-md);
+    .nav-controls {
+        flex-direction: row;
+        gap: var(--spacing-sm);
+    }
+    
+    .nav-btn {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .nav-btn.nav-next {
+        justify-content: center;
     }
 }
 
@@ -484,13 +556,14 @@
         gap: var(--spacing-md);
     }
     
-    .compact-stats {
-        flex-direction: column;
-        gap: var(--spacing-sm);
+    .minimal-progress {
+        width: 100%;
     }
     
-    .compact-toc {
+    .progress-stats {
         flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: center;
     }
     
     /* Hide deeper TOC levels on mobile */
@@ -499,51 +572,93 @@
     .toc-level-6 {
         display: none;
     }
+    
+    .floating-toc-panel {
+        width: calc(100vw - 2rem);
+        max-width: 350px;
+    }
 }
 
-/* Accessibility */
-.toc-link:focus {
+/* ========== ANIMATIONS ========== */
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Entrance animation for TOC items */
+.toc-link {
+    opacity: 0;
+    transform: translateX(-10px);
+    animation: tocItemEntrance 0.3s ease-out forwards;
+}
+
+.toc-link:nth-child(1) { animation-delay: 0.1s; }
+.toc-link:nth-child(2) { animation-delay: 0.2s; }
+.toc-link:nth-child(3) { animation-delay: 0.3s; }
+.toc-link:nth-child(4) { animation-delay: 0.4s; }
+.toc-link:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes tocItemEntrance {
+    0% {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ========== ACCESSIBILITY ========== */
+
+.toc-link:focus,
+.nav-btn:focus,
+.floating-toc-toggle:focus,
+.minimal-nav-btn:focus {
     outline: 2px solid var(--color-teal);
     outline-offset: 2px;
 }
 
 /* High contrast mode */
 @media (prefers-contrast: high) {
-    .content-navigator {
+    .content-navigator-card,
+    .navigator-floating,
+    .floating-toc-panel {
         border-width: 2px;
-    }
-    
-    .toc-link.active {
-        background: rgba(179, 157, 219, 0.3);
+        backdrop-filter: none;
+        background: rgba(7, 7, 18, 0.95);
     }
 }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-    .toc-link {
+    .toc-link,
+    .nav-btn,
+    .floating-toc-toggle,
+    .minimal-nav-btn {
         transition: none;
+        animation: none;
     }
     
-    .toc-link:hover {
+    .toc-link:hover,
+    .nav-btn:hover {
         transform: none;
+    }
+    
+    .toc-loading i {
+        animation: none;
     }
 }
 </style>
 
-<!-- 
-REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
-The consolidated JavaScript automatically handles:
-- Table of contents generation and navigation via initializePostDetail()
-- Reading progress calculation and updates via initializeReadingProgress()
-- Smooth scrolling to headings via initializeSmoothScrolling()
-- Auto-highlighting current sections via updateTOCActiveState()
-- Responsive behavior and mobile interactions
-- All event handlers, animations, and state management
-
-Content navigator functionality is fully managed by:
-- DatalogInterface.initializePostDetail()
-- DatalogInterface.generateTableOfContents()
-- DatalogInterface.initializeReadingProgress()
-- DatalogInterface.updateTOCActiveState()
-- DatalogInterface.smoothScrollToElement()
+<!-- REMOVED: All JavaScript functionality moved to datalogs-consolidated.js -->
+<!-- The consolidated JavaScript handles all functionality including:
+     - TOC generation via DatalogInterface.generateTableOfContents()
+     - Reading progress via DatalogInterface.initializeReadingProgress()
+     - Floating panel toggle interactions
+     - Smooth scrolling to sections
+     - Active state management
+     - All event handlers and animations
+     - SEE ARCHIVE FOR PREVIOUS VERSION
 -->
