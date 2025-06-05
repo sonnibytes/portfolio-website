@@ -43,7 +43,7 @@
         <div class="navigator-section">
             {% section_header title="Table of Contents" subtitle="Navigate sections" icon="fas fa-list" %}
             
-            <nav class="toc-navigation" role="navigation" aria-label="Table of Contents">
+            <nav class="toc-navigation" role="navigation" aria-label="Table of Contents" id="tocNav">
                 {% for heading in toc_data %}
                 <div class="toc-item toc-level-{{ heading.level }}">
                     <a href="#{{ heading.id }}" 
@@ -120,12 +120,12 @@
         {% endif %}
         
         {% if show_toc and toc_data %}
-        <nav class="sidebar-toc" role="navigation">
+        <nav class="sidebar-toc" role="navigation" id="tocNav">
             {% for heading in toc_data %}
             <a href="#{{ heading.id }}" 
-               class="subnav-link toc-link"
+               class="subnav-link toc-link toc-level-{{ heading.level }}"
                data-heading-id="{{ heading.id }}">
-                <span class="toc-marker">{{ heading.level }}.</span>
+                <span class="toc-marker">{{ heading.level|mul:">" }}.</span>
                 <span class="toc-text">{{ heading.text|meta_truncate_title:"sidebar" }}</span>
             </a>
             {% endfor %}
@@ -244,7 +244,7 @@
         </div>
         
         {% if show_toc and toc_data %}
-        <div class="compact-toc">
+        <div class="compact-toc tocNav">
             {% for heading in toc_data %}
             <a href="#{{ heading.id }}" 
                class="toc-link breadcrumb-item compact-toc-item"

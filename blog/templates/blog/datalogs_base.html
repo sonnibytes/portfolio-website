@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - Blog/Datalogs App Base Template
- * Advanced User Repository & Archive - Complete Foundation
- * Version: 3.0.0 - Aligned with Master Consolidated JavaScript
+ * AURA Portfolio - Blog/Datalogs App Base Template (FIXED)
+ * Advanced User Repository & Archive - Clean JavaScript Loading
+ * Version: 4.0.0 - Fixed initialization and file loading
 ---->
 
 {% extends "base.html" %}
@@ -16,8 +16,6 @@
 {% block extra_css %}
 <!-- DataLogs App Specific Styles -->
 <link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
-
-
 {% pygments_css %}
 {% block datalogs_css %}{% endblock %}
 {% endblock %}
@@ -93,10 +91,6 @@
                     <i class="fas fa-filter"></i>
                     <span>Filters</span>
                 </button>
-                {% comment %} <button class="subnav-action-btn" id="datalogsViewToggle">
-                    <i class="fas fa-th-large"></i>
-                    <span>View</span>
-                </button> {% endcomment %}
                 <button class="subnav-action-btn" id="datalogsSearchToggle">
                     <i class="fas fa-search"></i>
                     <span>Search</span>
@@ -295,11 +289,7 @@
         <div class="container">
             
             <!-- Page Header Section -->
-            {% block datalogs_header %}
-            {% comment %} {% if page_title %}
-            {% section_header title=page_title subtitle=page_subtitle icon=page_icon show_metrics=show_header_metrics %}
-            {% endif %} {% endcomment %}
-            {% endblock %}
+            {% block datalogs_header %}{% endblock %}
             
             <!-- Alert/Notification Bar -->
             {% if messages %}
@@ -343,18 +333,6 @@
     </div>
     
 </div>
-
-<!-- DataLogs Analytics Overlay -->
-<div class="datalogs-data-overlay" id="datalogsDataOverlay">
-    <div class="data-stream" id="datalogsDataStream">
-        <h3 class="data-stream-title">
-            <i class="fas fa-chart-bar"></i>
-            DataLog Analytics
-        </h3>
-        <!-- Real-time analytics data will be populated here -->
-    </div>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -362,14 +340,16 @@
 <script src="{% static 'blog/js/datalogs-consolidated.js' %}"></script>
 {% block datalogs_js %}{% endblock %}
 
-<!-- DataLogs Page-Specific Initialization -->
+<!-- STREAMLINED: Base template initialization -->
 <script>
+console.log('🚀 DataLogs base template initializing...');
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DataLogs base template initializing...');
-    
-    // Set page context data for the master JavaScript
+    // Ensure datalogInterface is available
     if (window.datalogInterface) {
-        // Enhanced page detection with template context
+        console.log('✅ DatalogInterface found');
+        
+        // Set page context data for the master JavaScript
         const pageContext = {
             viewName: '{{ request.resolver_match.view_name|default:"" }}',
             appName: '{{ request.resolver_match.app_name|default:"" }}',
@@ -385,43 +365,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Pass context to the interface
         window.datalogInterface.pageContext = pageContext;
         
-        // Enhanced page detection
-        window.datalogInterface.detectPageType = function() {
-            const body = document.body;
-            const context = this.pageContext;
-            
-            // Use Django context for more accurate detection
-            if (context.viewName.includes('post_detail') || body.classList.contains('post-detail')) {
-                this.state.currentPage = 'detail';
-            } else if (context.viewName.includes('category') || body.classList.contains('category-view')) {
-                this.state.currentPage = 'category';
-            } else if (context.viewName.includes('archive') || body.classList.contains('archive-view')) {
-                this.state.currentPage = 'archive';
-            } else if (context.viewName.includes('search') || body.classList.contains('search-results')) {
-                this.state.currentPage = 'search';
-            } else if (context.viewName.includes('tag')) {
-                this.state.currentPage = 'tag';
-            } else {
-                this.state.currentPage = 'list';
-            }
-            
-            console.log(`📄 Page detected: ${this.state.currentPage} (view: ${context.viewName})`);
-        };
-
-        // Override terminal config for consistency
-        window.datalogInterface.config.typewriterSpeed = 15; // slightly faster 
-        window.datalogInterface.config.enableTerminalAnimation = true;
-        
-        // Initialize with enhanced context
+        // Initialize if not already done
         if (!window.datalogInterface.isInitialized) {
             window.datalogInterface.init();
         }
+    } else {
+        console.error('❌ DatalogInterface not found - check datalogs-consolidated.js loading');
     }
     
     console.log('✅ DataLogs base template initialized');
 });
 
-// Global keyboard shortcuts for DataLogs
+// Global keyboard shortcuts for DataLogs (simplified)
 document.addEventListener('keydown', function(e) {
     // Don't trigger shortcuts when typing in inputs
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -431,42 +386,21 @@ document.addEventListener('keydown', function(e) {
         switch(e.key) {
             case 'k': // Ctrl/Cmd + K for search
                 e.preventDefault();
-                if (window.datalogInterface) {
+                if (window.datalogInterface?.focusSearch) {
                     window.datalogInterface.focusSearch();
                 }
                 break;
             case 'f': // Ctrl/Cmd + F for filters  
                 e.preventDefault();
-                if (window.datalogInterface) {
+                if (window.datalogInterface?.toggleFilterPanel) {
                     window.datalogInterface.toggleFilterPanel();
-                }
-                break;
-        }
-    }
-    
-    // View shortcuts (no modifier keys)
-    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-        switch(e.key) {
-            case '1':
-                if (window.datalogInterface) {
-                    window.datalogInterface.setView('grid');
-                }
-                break;
-            case '2':
-                if (window.datalogInterface) {
-                    window.datalogInterface.setView('list');
-                }
-                break;
-            case '3':
-                if (window.datalogInterface) {
-                    window.datalogInterface.setView('timeline');
                 }
                 break;
         }
     }
 });
 
-// Enhanced analytics for DataLogs
+// Simple analytics tracking
 function trackDatalogEvent(eventName, eventData = {}) {
     if (window.gtag) {
         window.gtag('event', eventName, {
@@ -480,75 +414,20 @@ function trackDatalogEvent(eventName, eventData = {}) {
     }
 }
 
-// Track navigation events
-document.addEventListener('click', function(e) {
-    const link = e.target.closest('a');
-    if (link && link.href) {
-        const url = new URL(link.href, window.location.origin);
-        
-        if (url.pathname.includes('/blog/') || url.pathname.includes('/datalogs/')) {
-            const linkType = link.closest('.datalog-card') ? 'post_card' :
-                           link.closest('.category-nav-item') ? 'category_nav' :
-                           link.closest('.tag-link') ? 'tag' :
-                           link.closest('.breadcrumb') ? 'breadcrumb' :
-                           'other';
-            
-            trackDatalogEvent('navigation_click', {
-                link_type: linkType,
-                destination: url.pathname,
-                source_page: window.datalogInterface?.state.currentPage || 'unknown'
-            });
-        }
-    }
-});
-
-// Track search usage
-document.addEventListener('submit', function(e) {
-    if (e.target.classList.contains('search-form')) {
-        const query = e.target.querySelector('input[name="q"]')?.value;
-        if (query) {
-            trackDatalogEvent('search_performed', {
-                query_length: query.length,
-                source_page: window.datalogInterface?.state.currentPage || 'unknown'
-            });
-        }
-    }
-});
-
 // Debug helpers (only in development)
 {% if settings.DEBUG %}
 window.DATALOG_DEBUG = {
     interface: () => window.datalogInterface,
     state: () => window.datalogInterface?.state,
-    config: () => window.datalogInterface?.config,
-    components: () => window.datalogInterface?.components,
-    pageContext: () => window.datalogInterface?.pageContext,
     trackEvent: trackDatalogEvent,
-    enableDebug: () => {
-        if (window.datalogInterface) {
-            window.datalogInterface.config.enableDebugMode = true;
-            document.body.classList.add('debug');
-            console.log('🐛 DataLog debug mode enabled');
+    generateTOC: () => {
+        if (window.datalogInterface?.generateTableOfContents) {
+            window.datalogInterface.generateTableOfContents();
         }
     },
-    disableDebug: () => {
-        if (window.datalogInterface) {
-            window.datalogInterface.config.enableDebugMode = false;
-            document.body.classList.remove('debug');
-            console.log('✅ DataLog debug mode disabled');
-        }
-    },
-    // Terminal Debug functions
-    skipTerminalAnimation: () => {
-        if (window.datalogInterface) {
-            window.datalogInterface.config.enableTerminalAnimation = false;
-            console.log('⏩ Terminal animations disabled');
-        }
-    },
-    enableTerminalAnimation: () => {
-        if (window.datalogInterface) {
-            window.datalogInterface.config.enableTerminalAnimation = true;
-            console.log('🎬 Terminal animations enabled');
+    initProgress: () => {
+        if (window.datalogInterface?.initializeReadingProgress) {
+            window.datalogInterface.initializeReadingProgress();
         }
     }
 };

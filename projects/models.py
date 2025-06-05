@@ -304,7 +304,7 @@ class SystemModule(models.Model):
                 h["id"] = slugify(h.get_text())
 
         return str(soup)
-    
+
     def render_technical_details(self):
         """Return technical details as HTML."""
         return markdownify(self.technical_details)
@@ -324,11 +324,11 @@ class SystemModule(models.Model):
     def is_in_development(self):
         """Check if the system is still in development."""
         return self.status in ['draft', 'in_development', 'testing']
-    
+
     def is_live(self):
         """Check if system is deployed and live."""
         return self.status in ['deployed', 'published']
-    
+
     def get_status_color(self):
         """Return status color for HUD display."""
         status_colors = {
@@ -456,7 +456,7 @@ class SystemFeature(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.system.title})"
-    
+
     def get_status_color(self):
         """Return status color for HUD display."""
         colors = {
@@ -466,7 +466,7 @@ class SystemFeature(models.Model):
             "tested": "#00f0ff",
         }
         return colors.get(self.implementation_status, "#00f0ff")
-    
+
 
 class SystemMetric(models.Model):
     """Performance and operational metrics for HUD dashboard display."""
