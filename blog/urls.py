@@ -64,6 +64,7 @@ urlpatterns = [
     # path("test/posts/", views.PostEnhList2.as_view(), name="post_enh2"),
     path("test-search/", TemplateView.as_view(template_name="blog/test_search.html"), name="test-search"),
     path("test-base/", TemplateView.as_view(template_name="blog/test_datalog_base.html"), name="test-base"),
+    path("test-inherit/", TemplateView.as_view(template_name="blog/test_inheritance.html"), name="test-inherit"),
 ]
 
 app_name = 'blog'
