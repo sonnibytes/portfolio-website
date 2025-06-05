@@ -467,114 +467,45 @@
 
 {% endblock %}
 
-{% block datalogs_js %}
+<!-- TRY OPTION 1: Use extra_js instead -->
+{% block extra_js %}
+{{ block.super }}
 <script>
+console.log('🔥 TEST: JavaScript is loading! (extra_js block)');
+console.log('🎯 DatalogInterface available:', !!window.datalogInterface);
+console.log('📄 Current page type detected:', window.datalogInterface?.state?.currentPage);
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Enhanced post detail specific initialization
-    if (window.datalogInterface) {
-        
-        // Initialize content navigator with enhanced TOC
-        window.datalogInterface.initializeContentNavigator({
-            post: {
-                id: {{ post.id }},
-                readingTime: {{ post.reading_time|default:0 }},
-                wordCount: {{ post.content|count_words|default:0 }}
-            },
-            enableTOC: {% if post.show_toc %}true{% else %}false{% endif %},
-            enableProgress: true,
-            enableNavigation: true
-        });
-        
-        // Initialize reading progress with enhanced tracking
-        window.datalogInterface.initializeReadingProgress({
-            container: '#postContent',
-            style: 'floating',
-            position: 'top-right',
-            showTime: true,
-            showPercentage: true,
-            updateFrequency: 100
-        });
-        
-        // Enhanced terminal animations for code blocks
-        window.datalogInterface.enhanceTerminalUnified();
-        
-        // Initialize social sharing tracking
-        window.datalogInterface.initializeSocialSharing({
-            postId: {{ post.id }},
-            postTitle: '{{ post.title|escapejs }}',
-            postUrl: '{{ request.build_absolute_uri }}'
-        });
-        
-        // Track detailed analytics
-        window.datalogInterface.trackEvent('post_detail_view', {
-            post_id: {{ post.id }},
-            post_title: '{{ post.title|escapejs }}',
-            category: '{{ post.category.slug|default:"none" }}',
-            reading_time: {{ post.reading_time|default:0 }},
-            has_code: {% if post.featured_code %}true{% else %}false{% endif %},
-            has_systems: {% if post|has_system_connection %}true{% else %}false{% endif %},
-            is_featured: {% if post.featured %}true{% else %}false{% endif %}
-        });
-        
-        // Enhanced keyboard shortcuts for post detail
-        document.addEventListener('keydown', function(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            
-            switch(e.key) {
-                case 'ArrowLeft':
-                    // Navigate to previous post
-                    {% if nav_posts.previous %}
-                    if (e.altKey) {
-                        e.preventDefault();
-                        window.location.href = '{{ nav_posts.previous.get_absolute_url }}';
-                    }
-                    {% endif %}
-                    break;
-                case 'ArrowRight':
-                    // Navigate to next post
-                    {% if nav_posts.next %}
-                    if (e.altKey) {
-                        e.preventDefault();
-                        window.location.href = '{{ nav_posts.next.get_absolute_url }}';
-                    }
-                    {% endif %}
-                    break;
-                case 't':
-                    // Toggle TOC
-                    if (window.datalogInterface.toggleTOC) {
-                        window.datalogInterface.toggleTOC();
-                    }
-                    break;
-                case 'p':
-                    // Toggle reading progress display
-                    if (window.datalogInterface.toggleReadingProgress) {
-                        window.datalogInterface.toggleReadingProgress();
-                    }
-                    break;
-            }
-        });
-        
-        // Track reading engagement
-        let readingStartTime = Date.now();
-        let scrollDepth = 0;
-        
-        window.addEventListener('scroll', function() {
-            const scrollPercent = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
-            scrollDepth = Math.max(scrollDepth, scrollPercent);
-        });
-        
-        // Track reading completion and engagement
-        window.addEventListener('beforeunload', function() {
-            const readingTime = Math.round((Date.now() - readingStartTime) / 1000);
-            
-            window.datalogInterface.trackEvent('reading_session_complete', {
-                post_id: {{ post.id }},
-                reading_time_seconds: readingTime,
-                scroll_depth_percent: scrollDepth,
-                estimated_reading_time: {{ post.reading_time|default:0 }},
-                completion_rate: Math.min(100, Math.round((readingTime / ({{ post.reading_time|default:1 }} * 60)) * 100))
-            });
-        });
+    console.log('📖 POST DETAIL: DOMContentLoaded fired');
+    
+    // Simple test
+    const tocNav = document.getElementById('tocNav');
+    const postContent = document.getElementById('postContent');
+    const progressBar = document.querySelector('.reading-progress-bar .aura-progress-bar');
+    
+    console.log('🔍 Elements found:');
+    console.log('- TOC Nav:', !!tocNav);
+    console.log('- Post Content:', !!postContent);  
+    console.log('- Progress Bar:', !!progressBar);
+    
+    // Test basic progress bar
+    if (progressBar) {
+        setTimeout(() => {
+            progressBar.style.width = '30%';
+            console.log('✅ Progress bar test successful');
+        }, 2000);
+    }
+    
+    // Test TOC generation if datalogInterface exists
+    if (window.datalogInterface && window.datalogInterface.generateTableOfContents) {
+        try {
+            window.datalogInterface.generateTableOfContents();
+            console.log('✅ TOC generation attempted');
+        } catch (error) {
+            console.error('❌ TOC generation failed:', error);
+        }
+    } else {
+        console.warn('⚠️ DatalogInterface or generateTableOfContents not available');
     }
 });
 </script>
