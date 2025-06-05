@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - DataLogs Detail Template - COMPLETELY UPDATED
- * Advanced User Repository & Archive - Enhanced with Phase 2+ Components
- * Version: 4.0.0 - Maximum component reuse and streamlined code
+ * AURA Portfolio - DataLogs Detail Template - FIXED
+ * Advanced User Repository & Archive - Clean working implementation
+ * Version: 4.1.0 - Fixed TOC generation and reading progress
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -14,22 +14,12 @@
 {% block meta_description %}{{ post.excerpt|default:post.content|truncate_smart:160 }}{% endblock %}
 
 {% block datalogs_css %}
-<!-- All styling now handled by consolidated CSS + reusable datalog-unified-container component -->
+<!-- All styling now handled by consolidated CSS -->
 {% pygments_css %}
 
 <style>
-/* ========== DEBUGGING & LAYOUT FIXES ========== */
+/* ========== POST DETAIL LAYOUT FIXES ========== */
 
-/* Debug: Force color visibility */
-.datalog-unified-container {
-    /* Fallback colors if custom properties don't work */
-    background: 
-        var(--gradient-glass),
-        rgba(var(--container-category-rgb, 179, 157, 219), 0.08) !important;
-    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.25) !important;
-}
-
-/* Debug: Make sure layout is working */
 .datalog-detail-layout {
     display: grid;
     grid-template-columns: 300px 1fr;
@@ -49,54 +39,273 @@
     min-width: 0; /* Prevent overflow */
 }
 
-/* Debug: Fallback TOC styles if component doesn't load */
-.toc-panel {
-    max-width: 280px;
+/* ========== UNIFIED CONTAINER STYLES ========== */
+
+.datalog-unified-container {
+    background: 
+        var(--gradient-glass),
+        rgba(var(--container-category-rgb, 179, 157, 219), 0.08);
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.25);
+    border-radius: var(--border-radius-xl);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
 }
 
-.reading-progress-section {
-    margin: var(--spacing-lg) 0;
+.datalog-unified-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--container-category-color, #b39ddb), var(--color-teal), var(--color-coral));
+    opacity: 0.8;
 }
 
-.progress-label {
-    font-size: 0.9rem;
+.unified-container-header {
+    margin-bottom: var(--spacing-xl);
+}
+
+.unified-featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: rgba(255, 245, 157, 0.2);
+    border: 1px solid rgba(255, 245, 157, 0.4);
+    border-radius: var(--border-radius-md);
+    color: var(--color-yellow);
+    font-family: var(--font-code);
+    font-size: 0.8rem;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-md);
+}
+
+.unified-container-title {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    font-weight: 600;
+    line-height: 1.2;
     color: var(--color-text);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
 }
 
-.sidebar-navigation {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    margin-top: var(--spacing-lg);
-}
-
-.sidebar-nav-btn {
+.unified-container-status {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: rgba(179, 157, 219, 0.1);
-    border: 1px solid rgba(179, 157, 219, 0.3);
-    border-radius: var(--border-radius-md);
-    color: var(--color-lavender);
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.unified-post-id {
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+    color: var(--container-category-color, var(--color-lavender));
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.1);
+    padding: 0.3rem 0.8rem;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.unified-category-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--container-category-color, var(--color-lavender));
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.1);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.unified-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+}
+
+.unified-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.2rem 0.5rem;
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.08);
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.2);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    color: var(--container-category-color, var(--color-lavender));
     text-decoration: none;
-    font-size: 0.85rem;
     transition: all var(--transition-fast);
 }
 
-.sidebar-nav-btn:hover {
-    background: rgba(179, 157, 219, 0.2);
-    color: var(--color-lavender);
-    transform: translateX(3px);
+.unified-tag:hover {
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.15);
+    color: var(--container-category-color, var(--color-lavender));
+    transform: translateY(-1px);
 }
 
-.sidebar-nav-btn.next {
-    justify-content: flex-end;
+.unified-tag i {
+    font-size: 0.7rem;
 }
 
-/* Debug: Content body spacing */
+.unified-more-tags {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+.unified-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    align-items: flex-start;
+    margin-bottom: var(--spacing-xl);
+}
+
+.unified-content-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.unified-excerpt {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
+
+.unified-section {
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.unified-section:last-child {
+    border-bottom: none;
+}
+
+.unified-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.95rem;
+}
+
+.unified-section-header i {
+    color: var(--container-category-color, var(--color-lavender));
+    font-size: 0.9rem;
+}
+
+.unified-actions-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.unified-action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: 
+        var(--gradient-glass),
+        rgba(var(--container-category-rgb, 179, 157, 219), 0.1);
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.3);
+    border-radius: var(--border-radius-md);
+    color: var(--container-category-color, var(--color-lavender));
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all var(--transition-normal);
+    backdrop-filter: blur(15px);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    justify-content: center;
+}
+
+.unified-action-btn:hover {
+    background: 
+        var(--gradient-glass),
+        rgba(var(--container-category-rgb, 179, 157, 219), 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(var(--container-category-rgb, 179, 157, 219), 0.4);
+    color: var(--container-category-color, var(--color-lavender));
+}
+
+.unified-container-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: var(--spacing-lg);
+}
+
+.unified-footer-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.unified-stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+}
+
+.unified-stat-item i {
+    font-size: 0.75rem;
+    color: var(--container-category-color, var(--color-lavender));
+}
+
+.unified-footer-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.unified-footer-action-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.1);
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.3);
+    border-radius: 50%;
+    color: var(--container-category-color, var(--color-lavender));
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.unified-footer-action-btn:hover {
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(var(--container-category-rgb, 179, 157, 219), 0.3);
+}
+
+/* ========== CONTENT BODY STYLES ========== */
+
 .post-content-body {
     background: 
         var(--gradient-glass),
@@ -114,32 +323,21 @@
     font-size: 1.05rem;
 }
 
-/* Debug: Force category colors with fallback */
-.datalog-unified-container[data-category="ml"] {
-    --container-category-rgb: 156, 39, 176 !important;
-    --container-category-color: #9c27b0 !important;
-}
+/* ========== RESPONSIVE DESIGN ========== */
 
-.datalog-unified-container[data-category="dev"] {
-    --container-category-rgb: 76, 175, 80 !important;
-    --container-category-color: #4caf50 !important;
-}
-
-.datalog-unified-container[data-category="data"] {
-    --container-category-rgb: 255, 152, 0 !important;
-    --container-category-color: #ff9800 !important;
-}
-
-.datalog-unified-container[data-category="ai"] {
-    --container-category-rgb: 103, 58, 183 !important;
-    --container-category-color: #673ab7 !important;
-}
-
-/* Responsive design */
 @media (max-width: 1200px) {
     .datalog-detail-layout {
         grid-template-columns: 280px 1fr;
         gap: var(--spacing-lg);
+    }
+    
+    .unified-content-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+    
+    .unified-container-title {
+        font-size: 2rem;
     }
 }
 
@@ -153,6 +351,60 @@
         position: static;
         order: 2; /* Move sidebar below content on mobile */
         max-height: none;
+    }
+    
+    .unified-container-footer {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        align-items: stretch;
+    }
+    
+    .unified-footer-stats {
+        justify-content: center;
+    }
+    
+    .unified-footer-actions {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 767px) {
+    .unified-container {
+        padding: var(--spacing-lg);
+    }
+    
+    .content-wrapper {
+        padding: var(--spacing-lg);
+        font-size: 1rem;
+    }
+    
+    .unified-container-title {
+        font-size: 1.8rem;
+    }
+    
+    .unified-container-status {
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .unified-footer-stats {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        text-align: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .unified-actions-section {
+        align-items: stretch;
+    }
+    
+    .unified-action-btn {
+        width: 100%;
+    }
+    
+    .unified-tags-list {
+        justify-content: center;
     }
 }
 </style>
@@ -170,7 +422,7 @@
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
 <span class="breadcrumb-item active">{{ post.id|datalog_id }}</span>
 
-<!-- Enhanced navigation using NEW component -->
+<!-- Enhanced navigation -->
 <div class="breadcrumb-actions">
     {% get_previous_next_posts post as nav_posts %}
     {% if nav_posts.previous %}
@@ -191,60 +443,19 @@
 <!-- Enhanced DataLog Entry Container -->
 <div class="datalog-entry-container">
 
-    <!-- UNIFIED LAYOUT using NEW COMPONENTS -->
+    <!-- FIXED LAYOUT using SIMPLIFIED COMPONENTS -->
     <div class="datalog-detail-layout">
         
-        <!-- Enhanced Sidebar using NEW content_navigator component -->
+        <!-- Enhanced Sidebar with FIXED content_navigator -->
         <aside class="detail-sidebar">
-            {% if post.show_toc %}
-            {% content_navigator post style='sidebar' show_toc=True show_progress=True show_stats=True show_navigation=True toc_depth=3 position='sticky' %}
-            {% else %}
-            <!-- Fallback sidebar without TOC -->
-            <div class="glass-card toc-panel">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-info-circle"></i>
-                        DataLog Info
-                    </h3>
-                </div>
-                <div class="card-content">
-                    <!-- Reading Progress -->
-                    <div class="reading-progress-section">
-                        <div class="progress-label">Reading Progress</div>
-                        {% progress_bar 0 100 css_class="reading-progress-bar" show_text=True color="lavender" %}
-                    </div>
-                    
-                    <!-- Post Navigation -->
-                    {% get_previous_next_posts post as nav_posts %}
-                    <div class="sidebar-navigation">
-                        {% if nav_posts.previous %}
-                        <a href="{{ nav_posts.previous.get_absolute_url }}" class="sidebar-nav-btn prev">
-                            <i class="fas fa-chevron-left"></i>
-                            <span>Previous</span>
-                        </a>
-                        {% endif %}
-                        {% if nav_posts.next %}
-                        <a href="{{ nav_posts.next.get_absolute_url }}" class="sidebar-nav-btn next">
-                            <span>Next</span>
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+            {% include 'blog/includes/content_navigator.html' with post=post style='sidebar' show_navigation=True %}
         </aside>
 
         <!-- Main Content Section -->
         <div class="detail-main-content">
             
-            {% comment %} <!-- DEBUG: Category color information -->
-            {% if settings.DEBUG %}
-            {% category_debug_info post.category %}
-            {% endif %} {% endcomment %}
-            
             <!-- UNIFIED POST CONTAINER using IMPROVED COLOR FUNCTIONS -->
-            <div class="datalog-unified-container {% if post.featured %}featured{% endif %} {% category_theme_classes post.category %}" 
+            <div class="datalog-unified-container {% if post.featured %}featured{% endif %}" 
                  data-category="{{ post.category.slug|default:'none' }}"
                  style="{% smart_unified_container_vars post=post %}">
                 
@@ -270,12 +481,13 @@
                             {{ post.category.code }}
                         </span>
                         {% endif %}
+                        
                         <!-- Tags Section -->
                         {% if post.tags.exists %}
                             <div class="unified-tags-list">
                                 {% for tag in post.tags.all|slice:":6" %}
                                 <a href="{% url 'blog:tag' slug=tag.slug %}" class="unified-tag">
-                                    <i class="fas fa-tags"></i>{{ tag.name }}
+                                <i class="fas fa-tag"></i>{{ tag.name }}
                                 </a>
                                 {% endfor %}
                                 {% if post.tags.count > 6 %}
@@ -283,7 +495,6 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-                        {% comment %} {% status_indicator "operational" with_text=True pulsing=True %} {% endcomment %}
                     </div>
                 </div>
                 
@@ -300,11 +511,6 @@
                         </div>
                         {% endif %}
                         
-                        <!-- Meta Information Section -->
-                        {% comment %} <div class="unified-section unified-meta-section">
-                            {% datalog_meta_display post style='compact' show_category=False show_featured=False icon_style='auto' color_scheme='category' size='md' %}
-                        </div> {% endcomment %}
-                        
                         <!-- System Connections Section -->
                         {% if post|has_system_connection %}
                         <div class="unified-section unified-systems-section">
@@ -315,40 +521,9 @@
                             {% include 'blog/includes/system_connections.html' with post=post style='compact' max_systems=3 %}
                         </div>
                         {% endif %}
-                        
-                        {% comment %} <!-- Tags Section -->
-                        {% if post.tags.exists %}
-                        <div class="unified-section unified-tags-section">
-                            <div class="unified-section-header">
-                                <i class="fas fa-tags"></i>
-                                <span>Topics</span>
-                            </div>
-                            <div class="unified-tags-list">
-                                {% for tag in post.tags.all|slice:":6" %}
-                                <a href="{% url 'blog:tag' slug=tag.slug %}" class="unified-tag">
-                                    #{{ tag.name }}
-                                </a>
-                                {% endfor %}
-                                {% if post.tags.count > 6 %}
-                                <span class="unified-more-tags">+{{ post.tags.count|add:"-6" }} more</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endif %} {% endcomment %}
-                        
-                        {% comment %} <!-- Progress Section -->
-                        <div class="unified-section unified-progress-section">
-                            {% reading_progress_indicator post style='compact' position='inline' size='md' color='category' show_percentage=True show_time=True animate=True %}
-                        </div> {% endcomment %}
-                        
                        
                         <!-- Actions Section -->
                         <div class="unified-actions-section">
-                            {% comment %} <a href="{% url 'blog:post_list' %}" class="unified-action-btn">
-                                <i class="fas fa-list"></i>
-                                Browse All DataLogs
-                            </a> {% endcomment %}
-                            
                             {% if post.category %}
                             <a href="{% url 'blog:category' slug=post.category.slug %}" class="unified-action-btn">
                                 <i class="fas {{ post.category.icon|default:'fas fa-folder' }}"></i>
@@ -379,10 +554,10 @@
                             <i class="fas fa-calendar-alt"></i>
                             <span>{{ post.published_date|time_since_published }}</span>
                         </div>
-                        {% if post.tags %}
+                        {% if post.tags.exists %}
                         <div class="unified-stat-item">
                             <i class="fas fa-tags"></i>
-                            <span>{{ post.tags.count }} tags</span>
+                            <span>{{ post.tags.count }} tag{{ post.tags.count|pluralize }}</span>
                         </div>
                         {% endif %}
                         {% if post.content|count_words %}
@@ -394,14 +569,14 @@
                     </div>
                     
                     <div class="unified-footer-actions">
-                        <button class="unified-footer-action-btn" title="Bookmark" onclick="window.datalogInterface?.bookmarkPost({{ post.id }})">
+                        <button class="unified-footer-action-btn" title="Bookmark">
                             <i class="fas fa-bookmark"></i>
                         </button>
-                        <button class="unified-footer-action-btn" title="Share" onclick="window.datalogInterface?.sharePost({{ post.id }})">
+                        <button class="unified-footer-action-btn" title="Share">
                             <i class="fas fa-share-alt"></i>
                         </button>
                         {% if post.featured_code %}
-                        <button class="unified-footer-action-btn" title="Copy Code" onclick="window.datalogInterface?.copyFeaturedCode()">
+                        <button class="unified-footer-action-btn" title="Copy Code">
                             <i class="fas fa-code"></i>
                         </button>
                         {% endif %}
@@ -411,7 +586,7 @@
             </div>
             
             <!-- Main Content Body -->
-            <div class="post-content-body glass-effect">
+            <div class="post-content-body">
                 <div class="content-wrapper" id="postContent">
                     {{ post.content|markdownify }}
                 </div>
@@ -432,12 +607,12 @@
         </div>
     </div>
     
-    <!-- Series Navigation (if part of series) -->
+    {% comment %} <!-- Series Navigation (if part of series) -->
     {% if post.series %}
     <div class="series-navigation-section">
         {% include 'blog/includes/series_navigation.html' with post=post %}
     </div>
-    {% endif %}
+    {% endif %} {% endcomment %}
     
     <!-- Related DataLogs using enhanced display -->
     {% get_related_posts post 4 as related_posts %}
@@ -461,46 +636,51 @@
 {% block extra_js %}
 {{ block.super }}
 <script>
-console.log('🚀 Post detail loading...');
+console.log('🚀 Post detail page loading...');
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📖 Post detail DOMContentLoaded fired');
+    console.log('📖 Post detail DOMContentLoaded');
     
-    if (window.datalogInterface && window.datalogInterface.isInitialized) {
-        console.log('🎯 DatalogInterface available, initializing post detail...');
+    // SIMPLIFIED: Wait for datalogInterface to be ready
+    if (window.datalogInterface) {
+        console.log('✅ DatalogInterface available');
         
-        // Ensure we're detected as detail page
+        // Set page type
         window.datalogInterface.state.currentPage = 'detail';
         
         // Initialize post detail features
+        setTimeout(() => {
         try {
+                console.log('🎯 Initializing post detail features...');
+                
             // Generate table of contents
+                if (window.datalogInterface.generateTableOfContents) {
             window.datalogInterface.generateTableOfContents();
+                    console.log('✅ TOC generation called');
+                } else {
+                    console.warn('⚠️ generateTableOfContents not available');
+                }
             
             // Initialize reading progress
+                if (window.datalogInterface.initializeReadingProgress) {
             window.datalogInterface.initializeReadingProgress();
-            
-            console.log('✅ Post detail features initialized successfully');
-        } catch (error) {
-            console.warn('⚠️ Post detail initialization error:', error);
+                    console.log('✅ Reading progress initialization called');
+                } else {
+                    console.warn('⚠️ initializeReadingProgress not available');
         }
         
-        // Track analytics
-        window.datalogInterface.trackEvent('post_detail_view', {
-            post_id: {{ post.id }},
-            post_title: '{{ post.title|escapejs }}',
-            category: '{{ post.category.slug|default:"none" }}',
-            reading_time: {{ post.reading_time|default:0 }},
-            has_code: {% if post.featured_code %}true{% else %}false{% endif %},
-            has_systems: {% if post|has_system_connection %}true{% else %}false{% endif %},
-            is_featured: {% if post.featured %}true{% else %}false{% endif %}
-        });
+                console.log('✅ Post detail features initialized');
+            } catch (error) {
+                console.error('❌ Post detail initialization error:', error);
+            }
+        }, 100); // Small delay to ensure DOM is ready
         
     } else {
-        console.error('❌ DatalogInterface not available or not initialized');
+        console.error('❌ DatalogInterface not available');
         
-        // Fallback: Basic progress bar
-        const progressBar = document.querySelector('.reading-progress-bar');
+        // FALLBACK: Simple progress bar
+        console.log('💡 Setting up fallback progress tracking...');
+        const progressBar = document.querySelector('.reading-progress-bar .aura-progress-bar');
         if (progressBar) {
             window.addEventListener('scroll', function() {
                 const docHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -508,12 +688,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const progress = Math.min(100, Math.max(0, (scrolled / docHeight) * 100));
                 progressBar.style.width = progress + '%';
                 
+                // Update percentage text
                 const progressText = progressBar.closest('.aura-progress-container')?.querySelector('.progress-text');
                 if (progressText) {
                     progressText.textContent = Math.round(progress) + '%';
                 }
             });
-            console.log('💡 Using fallback progress tracking');
+            console.log('✅ Fallback progress tracking active');
         }
     }
     
@@ -523,6 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         switch(e.key) {
             case 'ArrowLeft':
+                {% get_previous_next_posts post as nav_posts %}
                 {% if nav_posts.previous %}
                 if (e.altKey) {
                     e.preventDefault();
@@ -540,39 +722,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
             case 't':
                 // Toggle TOC visibility
-                const tocPanel = document.querySelector('.toc-panel');
-                if (tocPanel) {
-                    tocPanel.style.display = tocPanel.style.display === 'none' ? 'block' : 'none';
+                const tocNav = document.getElementById('tocNav');
+                if (tocNav) {
+                    tocNav.style.display = tocNav.style.display === 'none' ? 'block' : 'none';
                 }
                 break;
         }
     });
     
-    // Track reading engagement
-    let readingStartTime = Date.now();
-    let scrollDepth = 0;
-    
-    window.addEventListener('scroll', function() {
-        const scrollPercent = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
-        scrollDepth = Math.max(scrollDepth, scrollPercent);
-    });
-    
-    // Track completion on page unload
-    window.addEventListener('beforeunload', function() {
-        if (window.datalogInterface && window.datalogInterface.trackEvent) {
-            const readingTime = Math.round((Date.now() - readingStartTime) / 1000);
-            
-            window.datalogInterface.trackEvent('reading_session_complete', {
-                post_id: {{ post.id }},
-                reading_time_seconds: readingTime,
-                scroll_depth_percent: scrollDepth,
-                estimated_reading_time: {{ post.reading_time|default:0 }},
-                completion_rate: Math.min(100, Math.round((readingTime / ({{ post.reading_time|default:1 }} * 60)) * 100))
-            });
-    }
-    });
-    
-    console.log('✅ Post detail JavaScript initialization complete');
+    console.log('✅ Post detail JavaScript setup complete');
 });
+
+// Debug helpers for development
+{% if settings.DEBUG %}
+window.POST_DEBUG = {
+    generateTOC: () => {
+        if (window.datalogInterface?.generateTableOfContents) {
+            window.datalogInterface.generateTableOfContents();
+            console.log('🔧 Manual TOC generation triggered');
+        }
+    },
+    initProgress: () => {
+        if (window.datalogInterface?.initializeReadingProgress) {
+            window.datalogInterface.initializeReadingProgress();
+            console.log('🔧 Manual progress initialization triggered');
+        }
+    },
+    checkElements: () => {
+        console.log('🔍 Checking key elements:');
+        console.log('tocNav:', document.getElementById('tocNav'));
+        console.log('postContent:', document.getElementById('postContent'));
+        console.log('progressBar:', document.querySelector('.reading-progress-bar'));
+        console.log('contentNavigator:', document.getElementById('contentNavigator'));
+    }
+};
+    
+console.log('🔧 Post debug helpers available at window.POST_DEBUG');
+{% endif %}
 </script>
 {% endblock %}
