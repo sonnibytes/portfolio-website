@@ -1,9 +1,3 @@
-<!----
- * AURA Portfolio - DataLogs Search Results Template
- * Advanced User Repository & Archive - Enhanced Search with AJAX
- * Version: 3.0.0 - Integrated with Phase 2+ search components
----->
-
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
 {% load aura_filters %}
@@ -27,13 +21,7 @@
 
 {% block datalogs_content %}
 
-<div style="background: yellow; color: black; padding: 10px; margin: 10px; border: 2px solid red;">
-    <h3>🔍 TEMPLATE DEBUGGING - TRACKING GLASS_CARD CALLS</h3>
-    <p>About to start rendering search template content...</p>
-</div>
-
-<!-- Add this debug section temporarily to your search template -->
-
+{% comment %} <!-- DEBUG SECTION (temporarily) -->
 {% if settings.DEBUG %}
 <div style="background: red; color: white; padding: 10px; margin: 10px; border: 2px solid white;">
     <h3>🐛 DEBUG INFO</h3>
@@ -48,16 +36,15 @@
     <p>active_filters length: {{ active_filters|length }}</p>
     {% endif %}
 </div>
-{% endif %}
+{% endif %} {% endcomment %}
 
 {% if query %}
 <!-- ========== SEARCH RESULTS MODE ========== -->
-{% comment %}
+
 <!-- Enhanced Search Interface for results page -->
 <section class="search-interface-section">
     <div class="container">
-         {% search_suggestions query=query style='compact' enable_ajax=True max_suggestions=5 show_descriptions=False %}
-        SIMPLIFIED{% search_suggestions query=query style='compact' enable_ajax=True %}
+        {% search_suggestions query=query style='compact' enable_ajax=True max_suggestions=5 show_descriptions=False %}
     </div>
 </section>
 
@@ -171,7 +158,7 @@
 <!-- Enhanced Search Interface using new component -->
 <section class="search-interface-section">
     <div class="container">
-        {% search_suggestions query="" style='full' enable_ajax=True %}
+        {% search_suggestions query="" style='full' enable_ajax=True max_suggestions=8 show_descriptions=True %}
     </div>
 </section>
 
@@ -266,183 +253,7 @@
         
     </div>
 </section>
-{% endcomment %}
-{% endif %}
-<div style="background: blue; color: white; padding: 10px; margin: 10px;">
-    <h3>🔍 END OF TEMPLATE DEBUGGING</h3>
-    <p>If you see function objects below this, they're coming from somewhere else!</p>
-</div>
-{% endblock %}
 
-{% block datalogs_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Enhanced search page initialization
-        if (window.datalogInterface) {
-            // Initialize search with AJAX for this page
-            window.datalogInterface.initializeSearch({
-                enableAjax: true,
-                searchUrl: '{% url "blog:search_ajax" %}',
-                autocompleteUrl: '{% url "blog:search_autocomplete" %}',
-                minQueryLength: 2,
-                debounceDelay: 300,
-                maxSuggestions: 8,
-                enableHighlighting: true
-            });
-            
-            // Initialize enhanced filters for search results
-            if (document.querySelector('.search-results-section')) {
-                window.datalogInterface.initializeEnhancedFilters({
-                    container: '.search-results-section',
-                    autoApply: true,
-                    multiSelect: true,
-                    saveState: false
-                });
-            }
-            
-            // Safe analytics tracking - FIXED SYNTAX
-            const query = '{{ query|escapejs }}';
-            
-            if (query) {
-                // Search results page
-                const searchAnalytics = {
-                    query: query,
-                    query_length: query.length,
-                    page_type: 'search_results'
-                };
-                
-                // Add total_results if available
-                {% if search_metadata.total_results %}
-                searchAnalytics.total_results = {{ search_metadata.total_results }};
-                {% elif total_results %}
-                searchAnalytics.total_results = {{ total_results }};
-                {% else %}
-                searchAnalytics.total_results = 0;
-                {% endif %}
-                
-                // Add has_filters if available  
-                {% if active_filters %}
-                searchAnalytics.has_filters = {{ active_filters|length }} > 0;
-                {% else %}
-                searchAnalytics.has_filters = false;
-                {% endif %}
-                
-                // Add sort method if available
-                {% if search_metadata.sort_by %}
-                searchAnalytics.sort_method = '{{ search_metadata.sort_by|escapejs }}';
-                {% elif request.GET.sort %}
-                searchAnalytics.sort_method = '{{ request.GET.sort|escapejs }}';
-                {% else %}
-                searchAnalytics.sort_method = 'relevance';
-                {% endif %}
-                
-                window.datalogInterface.trackEvent('search_performed', searchAnalytics);
-                
-            } else {
-                // Search landing page
-                window.datalogInterface.trackEvent('search_landing_viewed', {
-                    page_type: 'search_landing'
-                });
-            }
-            
-            // Initialize search landing features
-            const searchLandingInput = document.querySelector('.search-landing-input');
-            if (searchLandingInput) {
-                searchLandingInput.addEventListener('focus', function() {
-                    if (!this.value) {
-                        window.datalogInterface.showSearchSuggestions(this, []);
-                    }
-                });
-                
-                searchLandingInput.closest('form').addEventListener('submit', function(e) {
-                    const query = searchLandingInput.value.trim();
-                    if (query) {
-                        window.datalogInterface.trackEvent('search_from_landing', {
-                            query_length: query.length,
-                            source: 'landing_page'
-                        });
-                    }
-                });
-            }
-            
-            // Initialize suggestion click tracking
-            document.addEventListener('click', function(e) {
-                const suggestionItem = e.target.closest('.suggestion-item, .suggestion-link');
-                if (suggestionItem) {
-                    const suggestionType = suggestionItem.dataset.type || 'unknown';
-                    const suggestionText = suggestionItem.textContent.trim();
-                    
-                    window.datalogInterface.trackEvent('search_suggestion_clicked', {
-                        suggestion_type: suggestionType,
-                        suggestion_text: suggestionText,
-                        query: query,
-                        position: Array.from(suggestionItem.parentNode.children).indexOf(suggestionItem)
-                    });
-                }
-            });
-            
-            // Initialize filter removal tracking
-            document.addEventListener('click', function(e) {
-                const removeFilterBtn = e.target.closest('.remove-filter-btn');
-                if (removeFilterBtn) {
-                    const filterItem = removeFilterBtn.closest('.active-filter-item');
-                    if (filterItem) {
-                        const filterName = filterItem.querySelector('.filter-name')?.textContent || 'unknown';
-                        
-                        window.datalogInterface.trackEvent('search_filter_removed', {
-                            filter_name: filterName,
-                            query: query,
-                            remaining_filters: document.querySelectorAll('.active-filter-item').length - 1
-                        });
-                    }
-                }
-                
-                const clearAllBtn = e.target.closest('.clear-all-filters-btn');
-                if (clearAllBtn) {
-                    window.datalogInterface.trackEvent('search_filters_cleared', {
-                        query: query,
-                        total_filters_cleared: document.querySelectorAll('.active-filter-item').length
-                    });
-                }
-            });
-            
-            // Track no results if applicable
-            {% if query and not posts %}
-            window.datalogInterface.trackEvent('search_no_results', {
-                query: query,
-                query_length: query.length,
-                has_filters: {% if active_filters %}{{ active_filters|length }} > 0{% else %}false{% endif %}
-            });
-            {% endif %}
-        }
-    });
-    
-    // Search keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        if (e.key === '/' && !e.target.matches('input, textarea')) {
-            e.preventDefault();
-            const searchInput = document.querySelector('.search-landing-input, .datalog-search-input');
-            if (searchInput) {
-                searchInput.focus();
-            }
-        }
-        
-        if (e.key === 'Escape' && e.target.matches('.search-landing-input, .datalog-search-input')) {
-            e.target.value = '';
-            e.target.blur();
-        }
-    });
-    
-    // Auto-focus search input on load (search landing page only)
-    {% if not query %}
-    window.addEventListener('load', function() {
-        const searchInput = document.querySelector('.search-landing-input');
-        if (searchInput && window.innerWidth > 768) {
-            setTimeout(() => {
-                searchInput.focus();
-            }, 500);
-        }
-    });
-    {% endif %}
-    </script>
-    {% endblock %}
+{% endif %}
+
+{% endblock %}

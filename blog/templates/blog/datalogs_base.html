@@ -1,64 +1,559 @@
-<!-- Replace your entire datalogs_base.html content with this minimal version to isolate the issue -->
+<!----
+ * AURA Portfolio - Blog/Datalogs App Base Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 3.0.0 - Aligned with Master Consolidated JavaScript
+---->
 
 {% extends "base.html" %}
 {% load static %}
 
-<!-- TEST 1: Just the template loading -->
-<div style="background: red; color: white; padding: 10px; text-align: center;">
-    <h2>🔍 MINIMAL BASE TEMPLATE TEST</h2>
-    <p>If function objects appear below this, they're in the template loading section</p>
-</div>
-
-<!-- TEST 2: Try loading the template tags one by one -->
-
 {% load aura_filters %}
-
-
-<div style="background: orange; color: white; padding: 10px; text-align: center;">
-    <h3>After aura_filters load (commented out)</h3>
-</div>
-
 {% load aura_components %}
-
-<div style="background: yellow; color: black; padding: 10px; text-align: center;">
-    <h3>After aura_components load (commented out)</h3>
-</div>
-
-
 {% load datalog_tags %}
 
+{% block title %}{% block datalogs_title %}DataLogs{% endblock %} | AURA DataLogs{% endblock %}
 
-<div style="background: green; color: white; padding: 10px; text-align: center;">
-    <h3>After datalog_tags load (commented out)</h3>
+{% block extra_css %}
+<!-- DataLogs App Specific Styles -->
+<link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
+
+
+{% pygments_css %}
+{% block datalogs_css %}{% endblock %}
+{% endblock %}
+
+{% block body_class %}datalogs-interface {% block datalogs_body_class %}{% endblock %}{% endblock %}
+
+{% block subnav %}
+<!-- DataLogs Sub-Navigation - Enhanced -->
+<nav class="app-subnav datalogs-subnav" id="datalogsSubnav">
+    <div class="container subnav-container">
+        
+        <div class="subnav-left">
+            <!-- DataLogs Brand/Title -->
+            <div class="subnav-title">
+                <i class="fas fa-database subnav-title-icon"></i>
+                <span>DataLogs</span>
+            </div>
+            
+            <!-- DataLogs Navigation Links -->
+            <div class="subnav-links">
+                <a href="{% url 'blog:post_list' %}" class="subnav-action-btn {% if 'post_list' in request.resolver_match.view_name %}active{% endif %}">
+                    <i class="fas fa-list subnav-icon"></i>
+                    <span>All Logs</span>
+                </a>
+                <a href="{% url 'blog:archive' %}" class="subnav-action-btn {% if 'archive' in request.resolver_match.view_name %}active{% endif %}">
+                    <i class="fas fa-calendar-alt subnav-icon"></i>
+                    <span>Archive</span>
+                </a>
+                <a href="{% url 'blog:tags' %}" class="subnav-action-btn {% active_nav 'blog:tags' %}">
+                    <i class="fas fa-tags subnav-icon"></i>
+                    <span>Tags</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="subnav-right">
+            <!-- Real-time DataLog Metrics -->
+            <div class="subnav-stats">
+                <div class="stat-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="stat-value">{{ total_posts|default:"24" }}</span>
+                    <span class="stat-label">Entries</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <span class="stat-value">{{ total_views|default:"1.2K" }}</span>
+                    <span class="stat-label">Views</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-tags"></i>
+                    <span class="stat-value">{{ total_tags|default:"18" }}</span>
+                    <span class="stat-label">Tags</span>
+                </div>
+                <span class="stat-separator">|</span>
+                <div class="stat-item">
+                    <i class="fas fa-folder"></i>
+                    <span class="stat-value">{{ total_categories|default:"5" }}</span>
+                    <span class="stat-label">Categories</span>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="subnav-actions">
+                {% if user.is_authenticated %}
+                <a href="{% url 'blog:post_create' %}" class="subnav-action-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>New Entry</span>
+                </a>
+                {% endif %}
+                <button class="subnav-action-btn" id="datalogsFilterToggle">
+                    <i class="fas fa-filter"></i>
+                    <span>Filters</span>
+                </button>
+                {% comment %} <button class="subnav-action-btn" id="datalogsViewToggle">
+                    <i class="fas fa-th-large"></i>
+                    <span>View</span>
+                </button> {% endcomment %}
+                <button class="subnav-action-btn" id="datalogsSearchToggle">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </button>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- DataLogs Scanning Line -->
+    <div class="subnav-scanning-line"></div>
+</nav>
+{% endblock %}
+
+{% block breadcrumbs %}
+{% if show_breadcrumbs %}
+<div class="container">
+    <nav class="datalogs-breadcrumbs">
+        <div class="breadcrumb-container">
+            <a href="{% url 'core:home' %}" class="breadcrumb-item">
+                <i class="fas fa-home"></i>
+                <span>AURA</span>
+            </a>
+            <i class="fas fa-chevron-right breadcrumb-separator"></i>
+            <a href="{% url 'blog:post_list' %}" class="breadcrumb-item">
+                <i class="fas fa-database"></i>
+                <span>DataLogs</span>
+            </a>
+            {% block datalogs_breadcrumbs %}{% endblock %}
+        </div>
+        
+        <!-- Optional Category/Status Indicators -->
+        {% if current_post %}
+        <div class="breadcrumb-status">
+            <div class="status-indicator {{ current_post.status|default:'published' }}"></div>
+            <span class="status-text">{{ current_post.get_status_display|upper|default:"PUBLISHED" }}</span>
+            {% if current_post.category %}
+            <span class="category-code">{{ current_post.category.code }}</span>
+            {% endif %}
+        </div>
+        {% elif current_category %}
+        <div class="breadcrumb-status">
+            <div class="category-indicator" style="color: {{ current_category.color }};">
+                <span class="category-code">{{ current_category.code }}</span>
+            </div>
+            <span class="status-text">{{ current_category.name|upper }}</span>
+        </div>
+        {% endif %}
+    </nav>
 </div>
+{% endif %}
+{% endblock %}
 
-<!-- TEST 3: Try basic template variables -->
-
-{% block title %}{{ block.super }}{% endblock %}
-
-
-<div style="background: blue; color: white; padding: 10px; text-align: center;">
-    <h3>After title block (commented out)</h3>
-</div>
-
-<!-- TEST 4: Try block definitions -->
-
-{% block extra_css %}{% endblock %}
-{% block body_class %}{% endblock %}
-{% block subnav %}{% endblock %}
-{% block breadcrumbs %}{% endblock %}
-{% glass_card title="test" %}{% endglass_card %}
-{% block extra_js %}{% endblock %}
-
-
-<div style="background: purple; color: white; padding: 10px; text-align: center;">
-    <h3>After block definitions (commented out)</h3>
-</div>
-
-<!-- THE MOST BASIC CONTENT POSSIBLE -->
 {% block content %}
-<div style="background: white; color: black; padding: 20px; text-align: center;">
-    <h1>MINIMAL CONTENT BLOCK</h1>
-    <p>This should render without any function objects</p>
+<!-- DataLogs Interface Container -->
+<div class="datalogs-interface-container">
+    
+    <!-- DataLogs Filter Panel (Collapsible) -->
+    {% if show_filters %}
+    <div class="datalogs-filter-panel" id="datalogsFilterPanel" style="display: none;">
+        <div class="filter-panel-header">
+            <h3 class="filter-title">
+                <i class="fas fa-sliders-h"></i>
+                DataLog Filters
+            </h3>
+            <button class="filter-close" id="closeFilters">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="filter-panel-content">
+            <form method="get" class="filter-form" id="datalogsFilterForm">
+                
+                <!-- Category Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Categories</label>
+                    <div class="filter-options">
+                        {% for category in categories %}
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="category" value="{{ category.slug }}" {% if category.slug in request.GET.category %}checked{% endif %}>
+                            <span class="category-badge" style="--category-color: {{ category.color }};">{{ category.code }}</span>
+                            <span>{{ category.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Tag Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Tags</label>
+                    <div class="filter-search">
+                        <input type="text" class="tag-search" placeholder="Search tags..." id="tagSearch">
+                    </div>
+                    <div class="filter-options tag-filters" id="tagFilters">
+                        {% for tag in tags %}
+                        <label class="filter-checkbox tag-option" data-tag="{{ tag.name|lower }}">
+                            <input type="checkbox" name="tag" value="{{ tag.slug }}" {% if tag.slug in request.GET.tag %}checked{% endif %}>
+                            <span class="tag-badge">{{ tag.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Date Range Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Date Range</label>
+                    <div class="filter-date-range">
+                        <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="filter-date-input">
+                        <span class="date-separator">to</span>
+                        <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="filter-date-input">
+                    </div>
+                </div>
+                
+                <!-- Reading Time Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Reading Time</label>
+                    <div class="filter-options">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="quick" {% if 'quick' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Quick Read (< 5 min)</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="medium" {% if 'medium' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Medium Read (5-15 min)</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reading_time" value="long" {% if 'long' in request.GET.reading_time %}checked{% endif %}>
+                            <span>Deep Dive (15+ min)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Featured Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Special</label>
+                    <div class="filter-options">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="featured" value="true" {% if request.GET.featured %}checked{% endif %}>
+                            <span class="featured-badge">Featured Entries</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="has_code" value="true" {% if request.GET.has_code %}checked{% endif %}>
+                            <span class="code-badge">Code Examples</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                        Apply Filters
+                    </button>
+                    <button type="button" class="btn btn-outline" id="clearFilters">
+                        <i class="fas fa-times"></i>
+                        Clear All
+                    </button>
+                </div>
+                
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- DataLogs Search Panel -->
+    <div class="datalogs-search-panel" id="datalogsSearchPanel" style="display: none;">
+        <div class="search-panel-content">
+            <form method="get" class="search-form" action="{% url 'blog:search' %}">
+                <div class="datalog-search-container">
+                    <i class="fas fa-search datalog-search-icon"></i>
+                    <input type="text" 
+                           name="q" 
+                           class="datalog-search-input" 
+                           placeholder="Search through DataLog entries..."
+                           value="{{ query|default:'' }}"
+                           autocomplete="off">
+                    <button type="submit" class="search-submit-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                
+                <div class="search-suggestions" id="searchSuggestions" style="display: none;">
+                    <div class="suggestions-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Search Suggestions</span>
+                    </div>
+                    <div class="suggestions-content" id="suggestionsContent">
+                        <!-- Dynamic search suggestions will be populated here -->
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Main DataLogs Content Area -->
+    <div class="datalogs-content-area">
+        <div class="container">
+            
+            <!-- Page Header Section -->
+            {% block datalogs_header %}
+            {% comment %} {% if page_title %}
+            {% section_header title=page_title subtitle=page_subtitle icon=page_icon show_metrics=show_header_metrics %}
+            {% endif %} {% endcomment %}
+            {% endblock %}
+            
+            <!-- Alert/Notification Bar -->
+            {% if messages %}
+            <div class="datalogs-alerts">
+                {% for message in messages %}
+                {% alert_box message message.tags dismissible=True %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- DataLog Stats (Optional) -->
+            {% if show_stats %}
+            <div class="datalog-stats-grid">
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_posts|format_number }}</span>
+                    <span class="datalog-stat-label">Total Entries</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_words|format_number }}</span>
+                    <span class="datalog-stat-label">Words Written</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ avg_reading_time|default:"8" }}min</span>
+                    <span class="datalog-stat-label">Avg Read Time</span>
+                </div>
+                <div class="datalog-stat-card">
+                    <span class="datalog-stat-value">{{ total_views|format_number }}</span>
+                    <span class="datalog-stat-label">Total Views</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Main Content Block -->
+            <div class="datalogs-main-content" id="main-content">
+                {% block datalogs_content %}
+                <!-- Individual datalog pages will override this -->
+                {% endblock %}
+            </div>
+            
+        </div>
+    </div>
+    
 </div>
+
+<!-- DataLogs Analytics Overlay -->
+<div class="datalogs-data-overlay" id="datalogsDataOverlay">
+    <div class="data-stream" id="datalogsDataStream">
+        <h3 class="data-stream-title">
+            <i class="fas fa-chart-bar"></i>
+            DataLog Analytics
+        </h3>
+        <!-- Real-time analytics data will be populated here -->
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataLogs Master Consolidated JavaScript -->
+<script src="{% static 'blog/js/datalogs-consolidated.js' %}"></script>
+{% block datalogs_js %}{% endblock %}
+
+<!-- DataLogs Page-Specific Initialization -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DataLogs base template initializing...');
+    
+    // Set page context data for the master JavaScript
+    if (window.datalogInterface) {
+        // Enhanced page detection with template context
+        const pageContext = {
+            viewName: '{{ request.resolver_match.view_name|default:"" }}',
+            appName: '{{ request.resolver_match.app_name|default:"" }}',
+            urlName: '{{ request.resolver_match.url_name|default:"" }}',
+            currentPost: {% if current_post %}'{{ current_post.id }}'{% else %}null{% endif %},
+            currentCategory: {% if current_category %}'{{ current_category.slug }}'{% else %}null{% endif %},
+            query: '{{ query|default:"" }}',
+            hasFilters: {% if show_filters %}true{% else %}false{% endif %},
+            totalPosts: {{ total_posts|default:0 }},
+            isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %}
+        };
+        
+        // Pass context to the interface
+        window.datalogInterface.pageContext = pageContext;
+        
+        // Enhanced page detection
+        window.datalogInterface.detectPageType = function() {
+            const body = document.body;
+            const context = this.pageContext;
+            
+            // Use Django context for more accurate detection
+            if (context.viewName.includes('post_detail') || body.classList.contains('post-detail')) {
+                this.state.currentPage = 'detail';
+            } else if (context.viewName.includes('category') || body.classList.contains('category-view')) {
+                this.state.currentPage = 'category';
+            } else if (context.viewName.includes('archive') || body.classList.contains('archive-view')) {
+                this.state.currentPage = 'archive';
+            } else if (context.viewName.includes('search') || body.classList.contains('search-results')) {
+                this.state.currentPage = 'search';
+            } else if (context.viewName.includes('tag')) {
+                this.state.currentPage = 'tag';
+            } else {
+                this.state.currentPage = 'list';
+            }
+            
+            console.log(`📄 Page detected: ${this.state.currentPage} (view: ${context.viewName})`);
+        };
+
+        // Override terminal config for consistency
+        window.datalogInterface.config.typewriterSpeed = 15; // slightly faster 
+        window.datalogInterface.config.enableTerminalAnimation = true;
+        
+        // Initialize with enhanced context
+        if (!window.datalogInterface.isInitialized) {
+            window.datalogInterface.init();
+        }
+    }
+    
+    console.log('✅ DataLogs base template initialized');
+});
+
+// Global keyboard shortcuts for DataLogs
+document.addEventListener('keydown', function(e) {
+    // Don't trigger shortcuts when typing in inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    // Global DataLogs shortcuts
+    if ((e.ctrlKey || e.metaKey)) {
+        switch(e.key) {
+            case 'k': // Ctrl/Cmd + K for search
+                e.preventDefault();
+                if (window.datalogInterface) {
+                    window.datalogInterface.focusSearch();
+                }
+                break;
+            case 'f': // Ctrl/Cmd + F for filters  
+                e.preventDefault();
+                if (window.datalogInterface) {
+                    window.datalogInterface.toggleFilterPanel();
+                }
+                break;
+        }
+    }
+    
+    // View shortcuts (no modifier keys)
+    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        switch(e.key) {
+            case '1':
+                if (window.datalogInterface) {
+                    window.datalogInterface.setView('grid');
+                }
+                break;
+            case '2':
+                if (window.datalogInterface) {
+                    window.datalogInterface.setView('list');
+                }
+                break;
+            case '3':
+                if (window.datalogInterface) {
+                    window.datalogInterface.setView('timeline');
+                }
+                break;
+        }
+    }
+});
+
+// Enhanced analytics for DataLogs
+function trackDatalogEvent(eventName, eventData = {}) {
+    if (window.gtag) {
+        window.gtag('event', eventName, {
+            event_category: 'DataLogs',
+            ...eventData
+        });
+    }
+    
+    if (window.datalogInterface?.config.enableDebugMode) {
+        console.log('📊 DataLog Event:', eventName, eventData);
+    }
+}
+
+// Track navigation events
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('a');
+    if (link && link.href) {
+        const url = new URL(link.href, window.location.origin);
+        
+        if (url.pathname.includes('/blog/') || url.pathname.includes('/datalogs/')) {
+            const linkType = link.closest('.datalog-card') ? 'post_card' :
+                           link.closest('.category-nav-item') ? 'category_nav' :
+                           link.closest('.tag-link') ? 'tag' :
+                           link.closest('.breadcrumb') ? 'breadcrumb' :
+                           'other';
+            
+            trackDatalogEvent('navigation_click', {
+                link_type: linkType,
+                destination: url.pathname,
+                source_page: window.datalogInterface?.state.currentPage || 'unknown'
+            });
+        }
+    }
+});
+
+// Track search usage
+document.addEventListener('submit', function(e) {
+    if (e.target.classList.contains('search-form')) {
+        const query = e.target.querySelector('input[name="q"]')?.value;
+        if (query) {
+            trackDatalogEvent('search_performed', {
+                query_length: query.length,
+                source_page: window.datalogInterface?.state.currentPage || 'unknown'
+            });
+        }
+    }
+});
+
+// Debug helpers (only in development)
+{% if settings.DEBUG %}
+window.DATALOG_DEBUG = {
+    interface: () => window.datalogInterface,
+    state: () => window.datalogInterface?.state,
+    config: () => window.datalogInterface?.config,
+    components: () => window.datalogInterface?.components,
+    pageContext: () => window.datalogInterface?.pageContext,
+    trackEvent: trackDatalogEvent,
+    enableDebug: () => {
+        if (window.datalogInterface) {
+            window.datalogInterface.config.enableDebugMode = true;
+            document.body.classList.add('debug');
+            console.log('🐛 DataLog debug mode enabled');
+        }
+    },
+    disableDebug: () => {
+        if (window.datalogInterface) {
+            window.datalogInterface.config.enableDebugMode = false;
+            document.body.classList.remove('debug');
+            console.log('✅ DataLog debug mode disabled');
+        }
+    },
+    // Terminal Debug functions
+    skipTerminalAnimation: () => {
+        if (window.datalogInterface) {
+            window.datalogInterface.config.enableTerminalAnimation = false;
+            console.log('⏩ Terminal animations disabled');
+        }
+    },
+    enableTerminalAnimation: () => {
+        if (window.datalogInterface) {
+            window.datalogInterface.config.enableTerminalAnimation = true;
+            console.log('🎬 Terminal animations enabled');
+        }
+    }
+};
+
+console.log('🔧 DataLog debug helpers available at window.DATALOG_DEBUG');
+{% endif %}
+</script>
 {% endblock %}

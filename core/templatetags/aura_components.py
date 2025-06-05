@@ -544,7 +544,7 @@ def nav_link(context, url_name, label, icon="", css_class=""):
 @register.simple_block_tag(takes_context=True)
 def glass_card(
     context,
-    content,
+    content,  # This is the block content between {% glass_card %} and {% endglass_card %}
     title="",
     subtitle="",
     icon="",
@@ -577,198 +577,164 @@ def glass_card(
 ):
     """
     BLOCK TAG version of glass card - supports {% glass_card %}...{% endglass_card %} syntax.
-
-    Usage Examples:
-    {% glass_card title="System Status" %}
-        <p>Your content goes here</p>
-    {% endglass_card %}
-
-    {% glass_card title="Metrics" subtitle="Live Data" icon="fas fa-chart-bar" css_class="metrics-card" %}
-        {{ your_content_here }}
-    {% endglass_card %}
-
-    {% glass_card title="Collapsible" collapsible=True expanded=False %}
-        <div>Hidden by default</div>
-    {% endglass_card %}
-
-    Args:
-        content: The block content between tags (automatically provided)
-        title: Card title
-        subtitle: Optional subtitle
-        icon: Icon class for header
-        css_class: Additional CSS classes
-        with_header: Show/hide header
-        header_style: Header variant (default, compact, minimal)
-        footer: Footer content
-        with_footer: Show/hide footer
-        size: Card size (xs, sm, md, lg, xl)
-        variant: Card variant (default, featured, warning, success, error)
-        with_border: Show card border
-        with_glow: Add glow effect
-        collapsible: Make card collapsible
-        expanded: Initial expanded state (if collapsible)
-        card_id: Custom ID for the card
-        data_attributes: Additional data attributes as string
     """
 
-    def render_glass_card(content):
-        # Generate unique ID if not provided
-        if not card_id:
-            import uuid
+    # Generate unique ID if not provided
+    if not card_id:
+        import uuid
 
-            generated_id = f"glass-card-{uuid.uuid4().hex[:8]}"
-        else:
-            generated_id = card_id
+        generated_id = f"glass-card-{uuid.uuid4().hex[:8]}"
+    else:
+        generated_id = card_id
 
-        # Build CSS classes
-        css_classes = ["glass-card"]
+    # Build CSS classes
+    css_classes = ["glass-card"]
 
-        # Size classes
-        size_classes = {
-            "xs": "glass-card-xs",
-            "sm": "glass-card-sm",
-            "md": "glass-card-md",
-            "lg": "glass-card-lg",
-            "xl": "glass-card-xl",
-        }
-        if size in size_classes:
-            css_classes.append(size_classes[size])
+    # Size classes
+    size_classes = {
+        "xs": "glass-card-xs",
+        "sm": "glass-card-sm",
+        "md": "glass-card-md",
+        "lg": "glass-card-lg",
+        "xl": "glass-card-xl",
+    }
+    if size in size_classes:
+        css_classes.append(size_classes[size])
 
-        # Variant classes
-        variant_classes = {
-            "default": "",
-            "featured": "glass-card-featured",
-            "warning": "glass-card-warning",
-            "success": "glass-card-success",
-            "error": "glass-card-error",
-            "info": "glass-card-info",
-        }
-        if variant in variant_classes and variant_classes[variant]:
-            css_classes.append(variant_classes[variant])
+    # Variant classes
+    variant_classes = {
+        "default": "",
+        "featured": "glass-card-featured",
+        "warning": "glass-card-warning",
+        "success": "glass-card-success",
+        "error": "glass-card-error",
+        "info": "glass-card-info",
+    }
+    if variant in variant_classes and variant_classes[variant]:
+        css_classes.append(variant_classes[variant])
 
-        # Header style classes
-        header_classes = {
-            "default": "card-header",
-            "compact": "card-header card-header-compact",
-            "minimal": "card-header card-header-minimal",
-        }
-        header_class = header_classes.get(header_style, "card-header")
+    # Header style classes
+    header_classes = {
+        "default": "card-header",
+        "compact": "card-header card-header-compact",
+        "minimal": "card-header card-header-minimal",
+    }
+    header_class = header_classes.get(header_style, "card-header")
 
-        # Additional classes
-        if with_border:
-            css_classes.append("glass-card-bordered")
-        if with_glow:
-            css_classes.append("glass-card-glow")
-        if collapsible:
-            css_classes.append("glass-card-collapsible")
-            if not expanded:
-                css_classes.append("glass-card-collapsed")
-        if css_class:
-            css_classes.append(css_class)
+    # Additional classes
+    if with_border:
+        css_classes.append("glass-card-bordered")
+    if with_glow:
+        css_classes.append("glass-card-glow")
+    if collapsible:
+        css_classes.append("glass-card-collapsible")
+        if not expanded:
+            css_classes.append("glass-card-collapsed")
+    if css_class:
+        css_classes.append(css_class)
 
-        # Parse data attributes
-        data_attrs = ""
-        if data_attributes:
-            # Convert string like "key1:value1,key2:value2" to data attributes
-            try:
-                pairs = data_attributes.split(",")
-                for pair in pairs:
-                    key, value = pair.split(":")
-                    data_attrs += f' data-{key.strip()}="{value.strip()}"'
-            except:
-                pass
+    # Parse data attributes
+    data_attrs = ""
+    if data_attributes:
+        # Convert string like "key1:value1,key2:value2" to data attributes
+        try:
+            pairs = data_attributes.split(",")
+            for pair in pairs:
+                key, value = pair.split(":")
+                data_attrs += f' data-{key.strip()}="{value.strip()}"'
+        except:
+            pass
 
-        # Build the card HTML
-        card_html = (
-            f'<div class="{" ".join(css_classes)}" id="{generated_id}"{data_attrs}>'
-        )
+    # Build the card HTML
+    card_html = f'<div class="{" ".join(css_classes)}" id="{generated_id}"{data_attrs}>'
 
-        # Header
-        if with_header and (title or subtitle or icon):
-            card_html += f'<header class="glass-card-header">'
+    # Header
+    if with_header and (title or subtitle or icon):
+        card_html += f'<header class="glass-card-header">'
 
-            # Main header content (similar to section_header)
-            card_html += '<div class="card-header-main">'
-            card_html += '<div class="card-header-left">'
+        # Main header content (similar to section_header)
+        card_html += '<div class="card-header-main">'
+        card_html += '<div class="card-header-left">'
 
-            # Simple icon (not holographic like section_header)
-            if icon:
-                card_html += f'<div class="card-icon-simple"><i class="fas {icon}"></i></div>'
+        # Simple icon (not holographic like section_header)
+        if icon:
+            card_html += (
+                f'<div class="card-icon-simple"><i class="fas {icon}"></i></div>'
+            )
 
-            # Title and subtitle section
-            if title or subtitle:
-                card_html += '<div class="card-text-section">'
-                if title:
-                    # Style title like section_header
-                    card_html += f'<h3 class="card-main-title">{title}</h3>'
-                if subtitle:
-                    # Smaller subtitle
-                    card_html += f'<p class="card-subtitle-text">{subtitle}</p>'
-                card_html += '</div>'
-
-            # End card-header-left
-            card_html += '</div>'
-
-            # Right side (collapse button if needed)
-            card_html += '<div class="card-header-right">'
-            if collapsible:
-                card_html += f'<button class="card-collapse-btn" data-target="#{generated_id}"><i class="fas fa-chevron-down"></i></button>'
+        # Title and subtitle section
+        if title or subtitle:
+            card_html += '<div class="card-text-section">'
+            if title:
+                # Style title like section_header
+                card_html += f'<h3 class="card-main-title">{title}</h3>'
+            if subtitle:
+                # Smaller subtitle
+                card_html += f'<p class="card-subtitle-text">{subtitle}</p>'
             card_html += "</div>"
 
-            card_html += "</div>"  # End card-header-main
-
-            # Metrics grid (like section_header)
-            if show_metrics and any(
-                [metric_1_value, metric_2_value, metric_3_value, metric_4_value]
-            ):
-                card_html += '<div class="card-metrics-bar">'
-                card_html += '<div class="card-metrics-grid">'
-
-                # Add metrics that have values
-                for i, (value, label, icon_class) in enumerate(
-                    [
-                        (metric_1_value, metric_1_label, metric_1_icon),
-                        (metric_2_value, metric_2_label, metric_2_icon),
-                        (metric_3_value, metric_3_label, metric_3_icon),
-                        (metric_4_value, metric_4_label, metric_4_icon),
-                    ]
-                ):
-                    if value:
-                        card_html += f'''
-                        <div class="card-metric-item">
-                            <div class="metric-icon">
-                                <i class="{icon_class}"></i>
-                            </div>
-                            <div class="metric-content">
-                                <div class="metric-value">{value}</div>
-                                <div class="metric-label">{label}</div>
-                            </div>
-                        </div>
-                        '''
-
-                card_html += "</div>"  # End card-metrics-grid
-                card_html += "</div>"  # End card-metrics-bar
-
-            card_html += "</header>"
-
-        # Content
-        content_class = "card-content"
-        if collapsible:
-            content_class += " card-collapsible-content"
-            if not expanded:
-                content_class += " card-content-collapsed"
-
-        card_html += f'<div class="{content_class}">{content}</div>'
-
-        # Footer
-        if with_footer and footer:
-            card_html += f'<div class="card-footer">{footer}</div>'
-
+        # End card-header-left
         card_html += "</div>"
 
-        return mark_safe(card_html)
+        # Right side (collapse button if needed)
+        card_html += '<div class="card-header-right">'
+        if collapsible:
+            card_html += f'<button class="card-collapse-btn" data-target="#{generated_id}"><i class="fas fa-chevron-down"></i></button>'
+        card_html += "</div>"
 
-    return render_glass_card
+        card_html += "</div>"  # End card-header-main
+
+        # Metrics grid (like section_header)
+        if show_metrics and any(
+            [metric_1_value, metric_2_value, metric_3_value, metric_4_value]
+        ):
+            card_html += '<div class="card-metrics-bar">'
+            card_html += '<div class="card-metrics-grid">'
+
+            # Add metrics that have values
+            for i, (value, label, icon_class) in enumerate(
+                [
+                    (metric_1_value, metric_1_label, metric_1_icon),
+                    (metric_2_value, metric_2_label, metric_2_icon),
+                    (metric_3_value, metric_3_label, metric_3_icon),
+                    (metric_4_value, metric_4_label, metric_4_icon),
+                ]
+            ):
+                if value:
+                    card_html += f'''
+                    <div class="card-metric-item">
+                        <div class="metric-icon">
+                            <i class="{icon_class}"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value">{value}</div>
+                            <div class="metric-label">{label}</div>
+                        </div>
+                    </div>
+                    '''
+
+            card_html += "</div>"  # End card-metrics-grid
+            card_html += "</div>"  # End card-metrics-bar
+
+        card_html += "</header>"
+
+    # Content
+    content_class = "card-content"
+    if collapsible:
+        content_class += " card-collapsible-content"
+        if not expanded:
+            content_class += " card-content-collapsed"
+
+    card_html += f'<div class="{content_class}">{content}</div>'
+
+    # Footer
+    if with_footer and footer:
+        card_html += f'<div class="card-footer">{footer}</div>'
+
+    card_html += "</div>"
+
+    # ✅ FIXED: Return the HTML directly, not a function!
+    return mark_safe(card_html)
 
 
 @register.inclusion_tag("components/glass_card.html", takes_context=True)
