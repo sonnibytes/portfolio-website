@@ -420,15 +420,24 @@ def category_safe_color(category, fallback="#b39ddb"):
     if not color:
         return fallback
 
+    # Clean color
+    color = str(color).strip()
+
     # Ensure it's valid hex color
     if not color.startswith('#'):
         color = '#' + color
 
     # Basic validation
-    if len(color) == 7 and all(c in '0123456789abcdefABCDEF' for c in color[:1]):
-        return color
-    else:
-        return fallback
+    if len(color) == 7:
+        try:
+            # Try to convert to int to validate
+            int(color[1:], 16)
+            return color
+        except ValueError:
+            pass
+    # if len(color) == 7 and all(c in '0123456789abcdefABCDEF' for c in color[:1]):
+    #     return color
+    return fallback
 
 
 @register.filter
@@ -437,8 +446,26 @@ def category_rgb_values(category, fallback="179, 157, 219"):
     Get category RGB values as string for CSS custom properties
     Usage: {{ post.category|category_rgb_values }}
     """
+    if not category:
+        return fallback
+
     color = category_safe_color(category)
-    return hex_to_rgb(color)
+    rgb = hex_to_rgb(color)
+
+    # Double check valid result
+    if rgb == "179, 157, 219" and hasattr(category, 'color') and category.color:
+        # Category has color but conversion failed, try direct approach
+        try:
+            hex_color = category.color.strip().lstrip('#')
+            if len(hex_color) == 6:
+                r = int(hex_color[0:2], 16)
+                g = int(hex_color[2:4], 16)
+                b = int(hex_color[4:6], 16)
+                return f"{r}, {g}, {b}"
+        except:
+            pass
+
+    return rgb
 
 
 @register.simple_tag
@@ -479,27 +506,28 @@ def unified_container_vars(category=None, theme="default"):
     Generate CSS variables for unified container theming
     Usage: {% unified_container_vars post.category %}
     """
-    if not category:
-        # Default theme
-        rgb = "179, 157, 219"
-        color = "#b39ddb"
-    else:
+    # If we have category, use its color directly
+    if category and hasattr(category, 'color') and category.color:
         color = category_safe_color(category)
         rgb = category_rgb_values(category)
-
-    # Theme variations
-    if theme == "featured":
-        rgb = "255, 245, 157"  # Gold
-        color = "#fff59d"
-    elif theme == "success":
-        rgb = "165, 214, 167"  # Mint
-        color = "#a5d6a7"
-    elif theme == "warning":
-        rgb = "255, 138, 128"  # Coral
-        color = "#ff8a80"
-    elif theme == "info":
-        rgb = "38, 198, 218"  # Teal
-        color = "#26c6da"
+    else:
+        # Theme variations if no category
+        if theme == "featured":
+            rgb = "255, 245, 157"  # Gold
+            color = "#fff59d"
+        elif theme == "success":
+            rgb = "165, 214, 167"  # Mint
+            color = "#a5d6a7"
+        elif theme == "warning":
+            rgb = "255, 138, 128"  # Coral
+            color = "#ff8a80"
+        elif theme == "info":
+            rgb = "38, 198, 218"  # Teal
+            color = "#26c6da"
+        else:
+            # Default Lavender
+            rgb = "179, 157, 219"
+            color = "#b39ddb"
 
     css_vars = f"""
         --container-category-rgb: {rgb};
@@ -507,9 +535,55 @@ def unified_container_vars(category=None, theme="default"):
         --container-bg: rgba({rgb}, 0.08);
         --container-border: rgba({rgb}, 0.25);
         --container-glow: rgba({rgb}, 0.12);
+        --container-hover-bg: rgba({rgb}, 0.15);
+        --container-active-bg: rgba({rgb}, 0.2);
     """.strip()
 
     return mark_safe(css_vars)
+
+
+@register.simple_tag
+def category_debug_info(category):
+    """
+    Debug function to see what's happening with category colors
+    Usage: {% category_debug_info post.category %}
+    """
+    if not category:
+        return mark_safe("No category provided")
+
+    debug_info = f"""
+    <div style="background: #333; color: #fff; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px;">
+        <strong>CATEGORY DEBUG:</strong><br>
+        Name: {getattr(category, "name", "N/A")}<br>
+        Slug: {getattr(category, "slug", "N/A")}<br>
+        Code: {getattr(category, "code", "N/A")}<br>
+        Color (raw): {getattr(category, "color", "N/A")}<br>
+        Color (safe): {category_safe_color(category)}<br>
+        RGB: {category_rgb_values(category)}<br>
+        Theme Class: {category_theme_classes(category)}<br>
+    </div>
+    """
+    return mark_safe(debug_info)
+
+
+@register.simple_tag
+def smart_unified_container_vars(post=None, category=None, theme="auto"):
+    """
+    Smart container vars that handles post, category, or theme
+    Usage: {% smart_unified_container_vars post=post %}
+    Usage: {% smart_unified_container_vars category=category %}
+    Usage: {% smart_unified_container_vars theme="featured" %}
+    """
+    # Get category from post if provided
+    if post and hasattr(post, "category"):
+        category = post.category
+
+    # Special theme override for featured posts
+    if post and hasattr(post, "featured") and post.featured and theme == "auto":
+        theme = "featured"
+
+    return unified_container_vars(category, theme)
+
 
 @register.filter
 def smart_color_contrast(hex_color, light_threshold=150):
