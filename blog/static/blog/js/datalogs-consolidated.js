@@ -1564,366 +1564,366 @@ class DatalogInterface {
 
     // ========== ENHANCED READING PROGRESS (EXTENDS EXISTING) ==========
 
-    enhanceReadingProgressIndicators() {
-        const progressIndicators = document.querySelectorAll('.reading-progress-indicator');
+    // enhanceReadingProgressIndicators() {
+    //     const progressIndicators = document.querySelectorAll('.reading-progress-indicator');
         
-        progressIndicators.forEach(indicator => {
-            this.initializeProgressIndicator(indicator);
-        });
+    //     progressIndicators.forEach(indicator => {
+    //         this.initializeProgressIndicator(indicator);
+    //     });
         
-        console.log(`✅ Enhanced ${progressIndicators.length} reading progress indicators`);
-    }
+    //     console.log(`✅ Enhanced ${progressIndicators.length} reading progress indicators`);
+    // }
 
-    initializeProgressIndicator(indicator) {
-        try {
-            const config = JSON.parse(indicator.dataset.config || '{}');
-            const targetElement = document.getElementById(config.target_element) || 
-                                document.querySelector(config.target_element) || 
-                                document.body;
+    // initializeProgressIndicator(indicator) {
+    //     try {
+    //         const config = JSON.parse(indicator.dataset.config || '{}');
+    //         const targetElement = document.getElementById(config.target_element) || 
+    //                             document.querySelector(config.target_element) || 
+    //                             document.body;
             
-            // Create progress tracker
-            const progressTracker = {
-                indicator: indicator,
-                config: config,
-                target: targetElement,
-                isVisible: false,
-                lastProgress: 0,
-                startTime: Date.now(),
-                totalReadingTime: config.total_reading_time || 0,
-                elements: this.getProgressElements(indicator),
-                updateTimer: null,
-            };
+    //         // Create progress tracker
+    //         const progressTracker = {
+    //             indicator: indicator,
+    //             config: config,
+    //             target: targetElement,
+    //             isVisible: false,
+    //             lastProgress: 0,
+    //             startTime: Date.now(),
+    //             totalReadingTime: config.total_reading_time || 0,
+    //             elements: this.getProgressElements(indicator),
+    //             updateTimer: null,
+    //         };
             
-            // Store reference for cleanup
-            this.components.progressTrackers = this.components.progressTrackers || [];
-            this.components.progressTrackers.push(progressTracker);
+    //         // Store reference for cleanup
+    //         this.components.progressTrackers = this.components.progressTrackers || [];
+    //         this.components.progressTrackers.push(progressTracker);
             
-            // Initialize based on style
-            this.setupProgressTracker(progressTracker);
+    //         // Initialize based on style
+    //         this.setupProgressTracker(progressTracker);
             
-            // Start tracking
-            this.startProgressTracking(progressTracker);
+    //         // Start tracking
+    //         this.startProgressTracking(progressTracker);
             
-        } catch (error) {
-            console.warn('Failed to initialize progress indicator:', error);
-        }
-    }
+    //     } catch (error) {
+    //         console.warn('Failed to initialize progress indicator:', error);
+    //     }
+    // }
 
-    getProgressElements(indicator) {
-        return {
-            progressBar: indicator.querySelector('.aura-progress-bar'),
-            circleProgress: indicator.querySelector('.circular-progress-svg .progress-circle'),
-            percentageText: indicator.querySelector('.circle-percentage, .minimal-percentage, .floating-percentage'),
-            timeElapsed: indicator.querySelector('.time-elapsed'),
-            timeRemaining: indicator.querySelector('.time-remaining'),
-            positionCurrent: indicator.querySelector('.position-current'),
-            positionIndicator: indicator.querySelector('.position-indicator'),
-            motivationMessage: indicator.querySelector('.motivation-message'),
-        };
-    }
+    // getProgressElements(indicator) {
+    //     return {
+    //         progressBar: indicator.querySelector('.aura-progress-bar'),
+    //         circleProgress: indicator.querySelector('.circular-progress-svg .progress-circle'),
+    //         percentageText: indicator.querySelector('.circle-percentage, .minimal-percentage, .floating-percentage'),
+    //         timeElapsed: indicator.querySelector('.time-elapsed'),
+    //         timeRemaining: indicator.querySelector('.time-remaining'),
+    //         positionCurrent: indicator.querySelector('.position-current'),
+    //         positionIndicator: indicator.querySelector('.position-indicator'),
+    //         motivationMessage: indicator.querySelector('.motivation-message'),
+    //     };
+    // }
 
-    setupProgressTracker(tracker) {
-        const { config, indicator, elements } = tracker;
+    // setupProgressTracker(tracker) {
+    //     const { config, indicator, elements } = tracker;
         
-        // Set initial visibility based on threshold
-        if (config.threshold > 0) {
-            indicator.style.opacity = '0';
-            indicator.style.visibility = 'hidden';
-            indicator.classList.add('progress-hidden');
-        }
+    //     // Set initial visibility based on threshold
+    //     if (config.threshold > 0) {
+    //         indicator.style.opacity = '0';
+    //         indicator.style.visibility = 'hidden';
+    //         indicator.classList.add('progress-hidden');
+    //     }
         
-        // Setup animations if enabled
-        if (config.animate) {
-            indicator.classList.add('progress-animated');
-        }
+    //     // Setup animations if enabled
+    //     if (config.animate) {
+    //         indicator.classList.add('progress-animated');
+    //     }
         
-        if (config.smooth) {
-            indicator.classList.add('progress-smooth');
-        }
+    //     if (config.smooth) {
+    //         indicator.classList.add('progress-smooth');
+    //     }
         
-        // Initialize ARIA attributes
-        indicator.setAttribute('aria-valuemin', '0');
-        indicator.setAttribute('aria-valuemax', '100');
-        indicator.setAttribute('aria-valuenow', '0');
+    //     // Initialize ARIA attributes
+    //     indicator.setAttribute('aria-valuemin', '0');
+    //     indicator.setAttribute('aria-valuemax', '100');
+    //     indicator.setAttribute('aria-valuenow', '0');
         
-        // Set up position tracking if needed
-        if (config.show_position && tracker.target !== document.body) {
-            this.calculateContentMetrics(tracker);
-        }
-    }
+    //     // Set up position tracking if needed
+    //     if (config.show_position && tracker.target !== document.body) {
+    //         this.calculateContentMetrics(tracker);
+    //     }
+    // }
 
-    calculateContentMetrics(tracker) {
-        const content = tracker.target.textContent || '';
-        tracker.contentMetrics = {
-            totalWords: content.split(/\s+/).filter(word => word.length > 0).length,
-            totalCharacters: content.length,
-            paragraphs: content.split(/\n\s*\n/).length,
-        };
-    }
+    // calculateContentMetrics(tracker) {
+    //     const content = tracker.target.textContent || '';
+    //     tracker.contentMetrics = {
+    //         totalWords: content.split(/\s+/).filter(word => word.length > 0).length,
+    //         totalCharacters: content.length,
+    //         paragraphs: content.split(/\n\s*\n/).length,
+    //     };
+    // }
 
-    startProgressTracking(tracker) {
-        const { config } = tracker;
-        const updateFrequency = config.update_frequency || 100;
+    // startProgressTracking(tracker) {
+    //     const { config } = tracker;
+    //     const updateFrequency = config.update_frequency || 100;
         
-        // Throttled scroll handler
-        const scrollHandler = this.throttle(() => {
-            this.updateProgress(tracker);
-        }, updateFrequency);
+    //     // Throttled scroll handler
+    //     const scrollHandler = this.throttle(() => {
+    //         this.updateProgress(tracker);
+    //     }, updateFrequency);
         
-        // Start tracking
-        window.addEventListener('scroll', scrollHandler);
-        window.addEventListener('resize', scrollHandler);
+    //     // Start tracking
+    //     window.addEventListener('scroll', scrollHandler);
+    //     window.addEventListener('resize', scrollHandler);
         
-        // Store cleanup function
-        const cleanup = () => {
-            window.removeEventListener('scroll', scrollHandler);
-            window.removeEventListener('resize', scrollHandler);
-            if (tracker.updateTimer) {
-                clearInterval(tracker.updateTimer);
-            }
-        };
+    //     // Store cleanup function
+    //     const cleanup = () => {
+    //         window.removeEventListener('scroll', scrollHandler);
+    //         window.removeEventListener('resize', scrollHandler);
+    //         if (tracker.updateTimer) {
+    //             clearInterval(tracker.updateTimer);
+    //         }
+    //     };
         
-        this.timers.add(cleanup);
+    //     this.timers.add(cleanup);
         
-        // Initial update
-        this.updateProgress(tracker);
+    //     // Initial update
+    //     this.updateProgress(tracker);
         
-        // Setup time tracking for reading time estimates
-        if (config.show_time && tracker.totalReadingTime > 0) {
-            this.startTimeTracking(tracker);
-        }
-    }
+    //     // Setup time tracking for reading time estimates
+    //     if (config.show_time && tracker.totalReadingTime > 0) {
+    //         this.startTimeTracking(tracker);
+    //     }
+    // }
 
-    updateProgress(tracker) {
-        const { config, target, elements, indicator } = tracker;
+    // updateProgress(tracker) {
+    //     const { config, target, elements, indicator } = tracker;
         
-        // Calculate scroll progress
-        const progress = this.calculateScrollProgress(target);
+    //     // Calculate scroll progress
+    //     const progress = this.calculateScrollProgress(target);
         
-        // Check visibility threshold
-        if (config.threshold > 0) {
-            const shouldShow = progress >= (config.threshold * 100);
-            this.toggleProgressVisibility(tracker, shouldShow);
-        }
+    //     // Check visibility threshold
+    //     if (config.threshold > 0) {
+    //         const shouldShow = progress >= (config.threshold * 100);
+    //         this.toggleProgressVisibility(tracker, shouldShow);
+    //     }
         
-        // Update progress if changed significantly
-        if (Math.abs(progress - tracker.lastProgress) > 0.5) {
-            this.updateProgressDisplay(tracker, progress);
-            tracker.lastProgress = progress;
+    //     // Update progress if changed significantly
+    //     if (Math.abs(progress - tracker.lastProgress) > 0.5) {
+    //         this.updateProgressDisplay(tracker, progress);
+    //         tracker.lastProgress = progress;
             
-            // Update reading state
-            this.updateReadingState(tracker, progress);
-        }
+    //         // Update reading state
+    //         this.updateReadingState(tracker, progress);
+    //     }
         
-        // Update ARIA
-        indicator.setAttribute('aria-valuenow', Math.round(progress));
-    }
+    //     // Update ARIA
+    //     indicator.setAttribute('aria-valuenow', Math.round(progress));
+    // }
 
-    calculateScrollProgress(target) {
-        if (target === document.body) {
-            // Whole page progress
-            const windowHeight = window.innerHeight;
-            const documentHeight = document.documentElement.scrollHeight - windowHeight;
-            const scrolled = window.pageYOffset;
-            return Math.min(100, Math.max(0, (scrolled / documentHeight) * 100));
-        } else {
-            // Element-specific progress
-            const rect = target.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
-            const elementTop = window.pageYOffset + rect.top;
-            const elementHeight = rect.height;
-            const scrolled = window.pageYOffset;
+    // calculateScrollProgress(target) {
+    //     if (target === document.body) {
+    //         // Whole page progress
+    //         const windowHeight = window.innerHeight;
+    //         const documentHeight = document.documentElement.scrollHeight - windowHeight;
+    //         const scrolled = window.pageYOffset;
+    //         return Math.min(100, Math.max(0, (scrolled / documentHeight) * 100));
+    //     } else {
+    //         // Element-specific progress
+    //         const rect = target.getBoundingClientRect();
+    //         const windowHeight = window.innerHeight;
+    //         const elementTop = window.pageYOffset + rect.top;
+    //         const elementHeight = rect.height;
+    //         const scrolled = window.pageYOffset;
             
-            // Calculate progress through the element
-            const startReading = elementTop - windowHeight * 0.1; // Start when 10% visible
-            const finishReading = elementTop + elementHeight;
+    //         // Calculate progress through the element
+    //         const startReading = elementTop - windowHeight * 0.1; // Start when 10% visible
+    //         const finishReading = elementTop + elementHeight;
             
-            if (scrolled < startReading) return 0;
-            if (scrolled > finishReading) return 100;
+    //         if (scrolled < startReading) return 0;
+    //         if (scrolled > finishReading) return 100;
             
-            return ((scrolled - startReading) / (finishReading - startReading)) * 100;
-        }
-    }
+    //         return ((scrolled - startReading) / (finishReading - startReading)) * 100;
+    //     }
+    // }
 
-    toggleProgressVisibility(tracker, shouldShow) {
-        const { indicator } = tracker;
+    // toggleProgressVisibility(tracker, shouldShow) {
+    //     const { indicator } = tracker;
         
-        if (shouldShow && !tracker.isVisible) {
-            indicator.classList.remove('progress-hidden');
-            indicator.classList.add('progress-visible');
-            indicator.style.opacity = '1';
-            indicator.style.visibility = 'visible';
-            tracker.isVisible = true;
-        } else if (!shouldShow && tracker.isVisible) {
-            indicator.classList.add('progress-hidden');
-            indicator.classList.remove('progress-visible');
-            indicator.style.opacity = '0';
-            indicator.style.visibility = 'hidden';
-            tracker.isVisible = false;
-        }
-    }
+    //     if (shouldShow && !tracker.isVisible) {
+    //         indicator.classList.remove('progress-hidden');
+    //         indicator.classList.add('progress-visible');
+    //         indicator.style.opacity = '1';
+    //         indicator.style.visibility = 'visible';
+    //         tracker.isVisible = true;
+    //     } else if (!shouldShow && tracker.isVisible) {
+    //         indicator.classList.add('progress-hidden');
+    //         indicator.classList.remove('progress-visible');
+    //         indicator.style.opacity = '0';
+    //         indicator.style.visibility = 'hidden';
+    //         tracker.isVisible = false;
+    //     }
+    // }
 
-    updateProgressDisplay(tracker, progress) {
-        const { elements, config } = tracker;
+    // updateProgressDisplay(tracker, progress) {
+    //     const { elements, config } = tracker;
         
-        // Update progress bar
-        if (elements.progressBar) {
-            elements.progressBar.style.width = `${progress}%`;
-        }
+    //     // Update progress bar
+    //     if (elements.progressBar) {
+    //         elements.progressBar.style.width = `${progress}%`;
+    //     }
         
-        // Update circular progress
-        if (elements.circleProgress) {
-            const circumference = 2 * Math.PI * 40; // Assuming 40px radius
-            const offset = circumference - (progress / 100 * circumference);
-            elements.circleProgress.style.strokeDashoffset = offset;
-        }
+    //     // Update circular progress
+    //     if (elements.circleProgress) {
+    //         const circumference = 2 * Math.PI * 40; // Assuming 40px radius
+    //         const offset = circumference - (progress / 100 * circumference);
+    //         elements.circleProgress.style.strokeDashoffset = offset;
+    //     }
         
-        // Update percentage text
-        if (elements.percentageText && config.show_percentage) {
-            elements.percentageText.textContent = `${Math.round(progress)}%`;
-        }
+    //     // Update percentage text
+    //     if (elements.percentageText && config.show_percentage) {
+    //         elements.percentageText.textContent = `${Math.round(progress)}%`;
+    //     }
         
-        // Update position indicator
-        if (elements.positionIndicator) {
-            elements.positionIndicator.style.width = `${progress}%`;
-        }
+    //     // Update position indicator
+    //     if (elements.positionIndicator) {
+    //         elements.positionIndicator.style.width = `${progress}%`;
+    //     }
         
-        // Update word position
-        if (elements.positionCurrent && tracker.contentMetrics) {
-            const currentWords = Math.round((progress / 100) * tracker.contentMetrics.totalWords);
-            elements.positionCurrent.textContent = this.formatNumber(currentWords);
-        }
-    }
+    //     // Update word position
+    //     if (elements.positionCurrent && tracker.contentMetrics) {
+    //         const currentWords = Math.round((progress / 100) * tracker.contentMetrics.totalWords);
+    //         elements.positionCurrent.textContent = this.formatNumber(currentWords);
+    //     }
+    // }
 
-    startTimeTracking(tracker) {
-        const { config, elements } = tracker;
+    // startTimeTracking(tracker) {
+    //     const { config, elements } = tracker;
         
-        if (!config.show_time || !elements.timeElapsed) return;
+    //     if (!config.show_time || !elements.timeElapsed) return;
         
-        const updateTimeDisplay = () => {
-            const elapsed = (Date.now() - tracker.startTime) / 1000 / 60; // minutes
-            const elapsedFormatted = this.formatDuration(Math.round(elapsed));
+    //     const updateTimeDisplay = () => {
+    //         const elapsed = (Date.now() - tracker.startTime) / 1000 / 60; // minutes
+    //         const elapsedFormatted = this.formatDuration(Math.round(elapsed));
             
-            if (elements.timeElapsed) {
-                elements.timeElapsed.textContent = elapsedFormatted;
-            }
+    //         if (elements.timeElapsed) {
+    //             elements.timeElapsed.textContent = elapsedFormatted;
+    //         }
             
-            // Update remaining time estimate
-            if (elements.timeRemaining && tracker.totalReadingTime > 0) {
-                const progressRatio = tracker.lastProgress / 100;
-                let remainingTime;
+    //         // Update remaining time estimate
+    //         if (elements.timeRemaining && tracker.totalReadingTime > 0) {
+    //             const progressRatio = tracker.lastProgress / 100;
+    //             let remainingTime;
                 
-                if (progressRatio > 0.1) {
-                    // Estimate based on actual reading speed
-                    const estimatedTotalTime = elapsed / progressRatio;
-                    remainingTime = Math.max(0, estimatedTotalTime - elapsed);
-                } else {
-                    // Use initial estimate
-                    remainingTime = tracker.totalReadingTime - elapsed;
-                }
+    //             if (progressRatio > 0.1) {
+    //                 // Estimate based on actual reading speed
+    //                 const estimatedTotalTime = elapsed / progressRatio;
+    //                 remainingTime = Math.max(0, estimatedTotalTime - elapsed);
+    //             } else {
+    //                 // Use initial estimate
+    //                 remainingTime = tracker.totalReadingTime - elapsed;
+    //             }
                 
-                elements.timeRemaining.textContent = this.formatDuration(Math.round(remainingTime));
-            }
-        };
+    //             elements.timeRemaining.textContent = this.formatDuration(Math.round(remainingTime));
+    //         }
+    //     };
         
-        // Update every 30 seconds
-        tracker.updateTimer = setInterval(updateTimeDisplay, 30000);
-        updateTimeDisplay(); // Initial update
-    }
+    //     // Update every 30 seconds
+    //     tracker.updateTimer = setInterval(updateTimeDisplay, 30000);
+    //     updateTimeDisplay(); // Initial update
+    // }
 
-    updateReadingState(tracker, progress) {
-        const { elements, indicator } = tracker;
+    // updateReadingState(tracker, progress) {
+    //     const { elements, indicator } = tracker;
         
-        // Remove previous state classes
-        const stateClasses = ['reading-state-starting', 'reading-state-progress', 'reading-state-halfway', 'reading-state-almost', 'reading-state-complete'];
-        indicator.classList.remove(...stateClasses);
+    //     // Remove previous state classes
+    //     const stateClasses = ['reading-state-starting', 'reading-state-progress', 'reading-state-halfway', 'reading-state-almost', 'reading-state-complete'];
+    //     indicator.classList.remove(...stateClasses);
         
-        // Add current state class and update motivation
-        let stateClass, motivationText;
+    //     // Add current state class and update motivation
+    //     let stateClass, motivationText;
         
-        if (progress >= 95) {
-            stateClass = 'reading-state-complete';
-            motivationText = this.getMotivationMessage(progress, 'complete');
-            indicator.classList.add('progress-completed');
-        } else if (progress >= 80) {
-            stateClass = 'reading-state-almost';
-            motivationText = this.getMotivationMessage(progress, 'almost');
-            indicator.classList.add('reading-active');
-        } else if (progress >= 45) {
-            stateClass = 'reading-state-halfway';
-            motivationText = this.getMotivationMessage(progress, 'halfway');
-            indicator.classList.add('reading-active');
-        } else if (progress >= 10) {
-            stateClass = 'reading-state-progress';
-            motivationText = this.getMotivationMessage(progress, 'progress');
-            indicator.classList.add('reading-active');
-        } else {
-            stateClass = 'reading-state-starting';
-            motivationText = this.getMotivationMessage(progress, 'starting');
-        }
+    //     if (progress >= 95) {
+    //         stateClass = 'reading-state-complete';
+    //         motivationText = this.getMotivationMessage(progress, 'complete');
+    //         indicator.classList.add('progress-completed');
+    //     } else if (progress >= 80) {
+    //         stateClass = 'reading-state-almost';
+    //         motivationText = this.getMotivationMessage(progress, 'almost');
+    //         indicator.classList.add('reading-active');
+    //     } else if (progress >= 45) {
+    //         stateClass = 'reading-state-halfway';
+    //         motivationText = this.getMotivationMessage(progress, 'halfway');
+    //         indicator.classList.add('reading-active');
+    //     } else if (progress >= 10) {
+    //         stateClass = 'reading-state-progress';
+    //         motivationText = this.getMotivationMessage(progress, 'progress');
+    //         indicator.classList.add('reading-active');
+    //     } else {
+    //         stateClass = 'reading-state-starting';
+    //         motivationText = this.getMotivationMessage(progress, 'starting');
+    //     }
         
-        indicator.classList.add(stateClass);
+    //     indicator.classList.add(stateClass);
         
-        // Update motivation message
-        if (elements.motivationMessage) {
-            elements.motivationMessage.textContent = motivationText;
-        }
-    }
+    //     // Update motivation message
+    //     if (elements.motivationMessage) {
+    //         elements.motivationMessage.textContent = motivationText;
+    //     }
+    // }
 
-    getMotivationMessage(progress, stage) {
-        const messages = {
-            starting: [
-                "Let's dive in! 🚀",
-                "Ready to learn! 📚",
-                "Adventure begins! 🗺️",
-                "Time to explore! 🔍"
-            ],
-            progress: [
-                "Great start! 🌱",
-                "Making progress! 📈",
-                "You're doing great! ⭐",
-                "Keep it up! 💪"
-            ],
-            halfway: [
-                "Halfway there! 🎯",
-                "Excellent progress! 🔥",
-                "You're crushing it! 💫",
-                "Outstanding work! 🌟"
-            ],
-            almost: [
-                "Almost there! ⚡",
-                "Final stretch! 🏁",
-                "You're so close! 🎊",
-                "Nearly done! 🚀"
-            ],
-            complete: [
-                "Fantastic work! 🎉",
-                "Mission complete! ✅",
-                "You did it! 🏆",
-                "Excellent job! 💎"
-            ]
-        };
+    // getMotivationMessage(progress, stage) {
+    //     const messages = {
+    //         starting: [
+    //             "Let's dive in! 🚀",
+    //             "Ready to learn! 📚",
+    //             "Adventure begins! 🗺️",
+    //             "Time to explore! 🔍"
+    //         ],
+    //         progress: [
+    //             "Great start! 🌱",
+    //             "Making progress! 📈",
+    //             "You're doing great! ⭐",
+    //             "Keep it up! 💪"
+    //         ],
+    //         halfway: [
+    //             "Halfway there! 🎯",
+    //             "Excellent progress! 🔥",
+    //             "You're crushing it! 💫",
+    //             "Outstanding work! 🌟"
+    //         ],
+    //         almost: [
+    //             "Almost there! ⚡",
+    //             "Final stretch! 🏁",
+    //             "You're so close! 🎊",
+    //             "Nearly done! 🚀"
+    //         ],
+    //         complete: [
+    //             "Fantastic work! 🎉",
+    //             "Mission complete! ✅",
+    //             "You did it! 🏆",
+    //             "Excellent job! 💎"
+    //         ]
+    //     };
         
-        const stageMessages = messages[stage] || messages.starting;
-        return stageMessages[Math.floor(Math.random() * stageMessages.length)];
-    }
+    //     const stageMessages = messages[stage] || messages.starting;
+    //     return stageMessages[Math.floor(Math.random() * stageMessages.length)];
+    // }
 
-    formatDuration(minutes) {
-        if (minutes < 1) return "< 1min";
-        if (minutes < 60) return `${minutes}min`;
+    // formatDuration(minutes) {
+    //     if (minutes < 1) return "< 1min";
+    //     if (minutes < 60) return `${minutes}min`;
         
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
+    //     const hours = Math.floor(minutes / 60);
+    //     const remainingMinutes = minutes % 60;
         
-        if (remainingMinutes === 0) return `${hours}h`;
-        return `${hours}h ${remainingMinutes}m`;
-    }
+    //     if (remainingMinutes === 0) return `${hours}h`;
+    //     return `${hours}h ${remainingMinutes}m`;
+    // }
 
-    formatNumber(num) {
-        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-        if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
-        return num.toString();
-    }
+    // formatNumber(num) {
+    //     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    //     if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+    //     return num.toString();
+    // }
     
     // ========== RESPONSIVE BEHAVIOR ========== //
     
