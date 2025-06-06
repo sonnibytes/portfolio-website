@@ -20,41 +20,22 @@
 {% endif %}
 
 {% block datalogs_content %}
-
-{% comment %} <!-- DEBUG SECTION (temporarily) -->
-{% if settings.DEBUG %}
-<div style="background: red; color: white; padding: 10px; margin: 10px; border: 2px solid white;">
-    <h3>🐛 DEBUG INFO</h3>
-    <p>query: "{{ query|default:'NOT_SET' }}"</p>
-    <p>Has query: {% if query %}YES{% else %}NO{% endif %}</p>
-    <p>search_metadata exists: {% if search_metadata %}YES{% else %}NO{% endif %}</p>
-    <p>active_filters exists: {% if active_filters %}YES{% else %}NO{% endif %}</p>
-    {% if search_metadata %}
-    <p>search_metadata.total_results: {{ search_metadata.total_results|default:'NOT_SET' }}</p>
-    {% endif %}
-    {% if active_filters %}
-    <p>active_filters length: {{ active_filters|length }}</p>
-    {% endif %}
-</div>
-{% endif %} {% endcomment %}
-
 {% if query %}
 <!-- ========== SEARCH RESULTS MODE ========== -->
 
 <!-- Enhanced Search Interface for results page -->
 <section class="search-interface-section">
     <div class="container">
-        {% search_suggestions query=query style='compact' enable_ajax=True max_suggestions=5 show_descriptions=False %}
+        {% search_suggestions query style='compact' enable_ajax=True max_suggestions=5 show_descriptions=False %}
     </div>
 </section>
 
-<!-- Search Results Summary -->
+{% comment %} <!-- Search Results Summary -->
 <section class="search-results-summary">
     <div class="container">
-        {% with query|upper as sub %}
-        {% section_header title="Search Results" subtitle={{ sub }} icon="fas fa-search" show_metrics=True metric_1_value=search_metadata.total_results|default:total_results|default:0 metric_1_label="Results Found" metric_1_icon="fas fa-database" metric_2_value=active_filters|length|default:0 metric_2_label="Filters Applied" metric_2_icon="fas fa-filter" metric_3_value=search_metadata.sort_by|default:"relevance"|title metric_3_label="Sort Method" metric_3_icon="fas fa-sort" %}
+        {% section_header title="Search Results" subtitle="PARAMETERS: {{ query }}" icon="fas fa-search" show_metrics=True metric_1_value=search_metadata.total_results|default:total_results|default:0 metric_1_label="Results Found" metric_1_icon="fas fa-database" metric_2_value=active_filters|length|default:0 metric_2_label="Filters Applied" metric_2_icon="fas fa-filter" metric_3_value=search_metadata.sort_by|default:"relevance"|title metric_3_label="Sort Method" metric_3_icon="fas fa-sort" %}
     </div>
-</section>
+</section> {% endcomment %}
 
 <!-- Active Filters Display -->
 {% if active_filters %}
@@ -97,48 +78,41 @@
         
         {% else %}
         <!-- No Results State -->
-        {% glass_card title="No Results Found" icon="fas fa-search" variant="warning" %}
-            
-            <div class="no-results-content">
-                <div class="no-results-icon">
-                    <i class="fas fa-search"></i>
-                </div>
-                <h3 class="no-results-title">No DataLogs found for "{{ query }}"</h3>
-                <p class="no-results-message">
-                    We couldn't find any DataLog entries matching your search. Try adjusting your search terms or browse our categories below.
-                </p>
-                
+        <div class="datalog-unified-container" style="glass-effect glass-card-error">
+            <!-- Container Header -->
+            <div class="unified-container-header">
+                <h3 class="unified-container-title"><i class="fas fa-search"></i> No DataLogs matching query: "{{ query|upper }}"</h3>
+            </div>
+            <div class="unified-content tags-header">
+                <h6 style="font-weight: 500;">Adjust parameters or browse topics below.</h6>
+            </div>
                 <!-- Search suggestions for no results -->
-                <div class="no-results-suggestions">
-                    <h4 class="suggestions-title">Try searching for:</h4>
-                    <div class="suggestion-tags">
+                <div class="unified-section no-results-suggestions">
+                    <h4 class="tags-header">Try searching for:</h4>
+                    <div class="unified-tags-list">
                         {% for tag in popular_tags|slice:":8" %}
-                        <a href="{% url 'blog:search' %}?q={{ tag.name }}" class="suggestion-tag">
+                        <a href="{% url 'blog:search' %}?q={{ tag.name }}" class="unified-tag">
                             <i class="fas fa-tag"></i>
                             <span>{{ tag.name }}</span>
                         </a>
                         {% endfor %}
                     </div>
                 </div>
-                
-                <!-- Quick actions -->
-                <div class="no-results-actions subnav-stats">
-                    <a href="{% url 'blog:post_list' %}" class="no-results-action-btn">
-                        <i class="fas fa-list"></i>
-                        <span>Browse All DataLogs</span>
-                    </a>
-                    <a href="{% url 'blog:post_list' %}" class="no-results-action-btn">
-                        <i class="fas fa-folder"></i>
-                        <span>Browse Categories</span>
-                    </a>
-                    <a href="{% url 'blog:archive' %}" class="no-results-action-btn">
-                        <i class="fas fa-calendar"></i>
-                        <span>Browse Archive</span>
-                    </a>
-                </div>
-            </div>
             
-        {% endglass_card %}
+                <!-- Quick actions using existing components -->
+                {% search_quick_actions query='' as quick_actions %}
+                {% if quick_actions %}
+                <div class="quick-actions-section unified-container-footer">
+                    <div class="unified-footer-actions">
+                        {% for action in quick_actions %}
+                        <a href="{{ action.url }}" class="quick-action-btn">
+                            <i class="{{ action.icon }}"></i>
+                            <span>{{ action.text }}</span>
+                        </a>
+                        {% endfor %}
+                </div>
+                {% endif %}
+        </div>
         {% endif %}
         
     </div>
@@ -155,13 +129,6 @@
 
 {% else %}
 <!-- ========== SEARCH LANDING PAGE MODE ========== -->
-
-<!-- Enhanced Search Interface using new component -->
-<section class="search-interface-section">
-    <div class="container">
-        {% search_suggestions query="" style='full' enable_ajax=True max_suggestions=8 show_descriptions=True %}
-    </div>
-</section>
 
 <!-- Search Landing Page -->
 <section class="search-landing-section">
@@ -204,7 +171,7 @@
         {% endglass_card %}
         
         <!-- Search Stats and Categories -->
-        <div class="search-landing-grid">
+        {% comment %} <div class="search-landing-grid">
             
             <!-- Search Statistics -->
             {% glass_card title="Archive Statistics" icon="fas fa-chart-bar" size="sm" %}
@@ -250,8 +217,14 @@
                 
             {% endglass_card %}
             
-        </div>
+        </div> {% endcomment %}
         
+    </div>
+</section>
+<!-- Enhanced Search Interface using new component -->
+<section class="search-interface-section">
+    <div class="container">
+        {% search_suggestions query="" style='full' enable_ajax=True max_suggestions=8 show_descriptions=True %}
     </div>
 </section>
 
