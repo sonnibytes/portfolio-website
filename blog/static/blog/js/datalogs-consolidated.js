@@ -459,289 +459,429 @@ class DatalogInterface {
         this.timers.add(() => clearTimeout(timer));
     }
     
-    // ========== ENHANCED SEARCH SYSTEM ========== //
+    // ========== UNIFIED SEARCH SYSTEM ========== //
     
     initializeEnhancedSearch() {
-        const searchInputs = document.querySelectorAll('.search-input-enhanced, .datalog-search-input');
-        const searchSuggestions = document.getElementById('searchSuggestions');
+        console.log('🔍 Initializing unified search system...');
+        
+        // Find unified search components
+        const searchInput = document.getElementById('unifiedSearchInput');
+        const suggestionsDropdown = document.getElementById('searchSuggestionsDropdown');
+        const suggestionsContent = document.getElementById('suggestionsContent');
+        const clearBtn = document.getElementById('searchClearBtn');
         const searchToggle = document.getElementById('datalogsSearchToggle');
         const searchPanel = document.getElementById('datalogsSearchPanel');
         
-        console.log('🔍 Initializing enhanced search...');
+        if (!searchInput) {
+            console.log('No unified search input found, skipping search initialization');
+            return;
+        }
         
-        // Create search component
-        this.components.search = {
-            inputs: searchInputs,
-            suggestions: searchSuggestions,
+        console.log('✅ Found unified search input, setting up search system...');
+        
+        // Create unified search component
+        this.components.unifiedSearch = {
+            input: searchInput,
+            dropdown: suggestionsDropdown,
+            content: suggestionsContent,
+            clearBtn: clearBtn,
             toggle: searchToggle,
             panel: searchPanel,
             currentQuery: '',
             suggestionCache: new Map(),
-            isLoading: false
-        };
-        
-        // Initialize search inputs
-        searchInputs.forEach(input => {
-            this.initializeSearchInput(input);
-        });
-        
-        // Search panel toggle
-        if (searchToggle && searchPanel) {
-            searchToggle.addEventListener('click', () => this.toggleSearchPanel());
-        }
-        
-        // Enhanced keyboard navigation in suggestions
-        if (searchSuggestions) {
-            this.initializeSearchKeyboardNav(searchSuggestions);
-        }
-        
-        const shortcutHandler = (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                this.focusSearch();
+            isLoading: false,
+            activeIndex: -1,
+            
+            // Configuration
+            config: {
+                endpoint: this.pageContext?.ajaxEndpoint || '/datalogs/search/ajax/',
+                debounceDelay: 300,
+                minQueryLength: 2,
+                maxSuggestions: 6,
+                enableKeyboardNav: true,
+                enableAjax: true
             }
         };
         
-        document.addEventListener('keydown', shortcutHandler);
-        this.timers.add(() => document.removeEventListener('keydown', shortcutHandler));
+        // Initialize unified search components
+        this.initializeUnifiedSearchInput();
+        this.initializeSearchClearButton();
+        this.initializeSearchKeyboardNavigation();
+        this.initializeSearchClickOutside();
+        this.initializeSearchToggle();
         
-        console.log('✅ Enhanced search initialized');
+        // Show clear button if there's an initial query
+        const initialQuery = searchInput.value.trim();
+        if (initialQuery) {
+            this.showClearButton();
+            this.components.unifiedSearch.currentQuery = initialQuery;
+        }
+        
+        console.log('✅ Unified search system initialized');
     }
     
-    initializeSearchInput(input) {
+    initializeUnifiedSearchInput() {
+        const { input, dropdown, content } = this.components.unifiedSearch;
+        if (!input) return;
+        
         let searchTimeout;
         
-        // Real-time search with debouncing
+        // Input event with debouncing
         input.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
             const query = e.target.value.trim();
+            this.components.unifiedSearch.currentQuery = query;
             
-            this.components.search.currentQuery = query;
+            clearTimeout(searchTimeout);
             
-            if (query.length >= 2) {
+            // Show/hide clear button
+            if (query.length > 0) {
+                this.showClearButton();
+            } else {
+                this.hideClearButton();
+            }
+            
+            // Handle suggestions
+            if (query.length >= this.components.unifiedSearch.config.minQueryLength) {
                 searchTimeout = setTimeout(() => {
-                    this.loadSearchSuggestions(query);
-                }, this.config.debounceDelay);
+                    this.loadUnifiedSearchSuggestions(query);
+                }, this.components.unifiedSearch.config.debounceDelay);
                 this.timers.add(() => clearTimeout(searchTimeout));
+            } else if (query.length === 0) {
+                // Show popular terms when empty
+                this.loadPopularSearchTerms();
             } else {
                 this.hideSearchSuggestions();
             }
         });
         
-        // Enhanced focus behavior
+        // Focus event
         input.addEventListener('focus', () => {
             const query = input.value.trim();
-            if (query.length >= 2) {
-                this.loadSearchSuggestions(query);
+            if (query.length >= this.components.unifiedSearch.config.minQueryLength) {
+                this.loadUnifiedSearchSuggestions(query);
+            } else if (query.length === 0) {
+                this.loadPopularSearchTerms();
             }
-            
-            // Add search focus effect
-            input.closest('.search-input-wrapper')?.classList.add('search-focused');
         });
         
+        // Blur event (with delay to allow clicking suggestions)
         input.addEventListener('blur', () => {
             const timer = setTimeout(() => {
                 this.hideSearchSuggestions();
-                input.closest('.search-input-wrapper')?.classList.remove('search-focused');
             }, 200);
             this.timers.add(() => clearTimeout(timer));
         });
+    }
+    
+    initializeSearchClearButton() {
+        const { clearBtn, input } = this.components.unifiedSearch;
+        if (!clearBtn || !input) return;
         
-        // Enhanced keyboard navigation
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.hideSearchSuggestions();
-                input.blur();
-            } else if (e.key === 'Enter' && !this.hasActiveSuggestion()) {
-                // Submit search if no suggestion is selected
-                this.submitSearch(input.value);
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            input.value = '';
+            input.focus();
+            this.hideClearButton();
+            this.hideSearchSuggestions();
+            this.components.unifiedSearch.currentQuery = '';
+            
+            // Clear URL if we're on search page
+            if (window.location.pathname.includes('/search/')) {
+                // Use the page context to get the correct URL
+                const postListUrl = this.pageContext?.postListUrl || '/datalogs/';
+                window.location.href = postListUrl;
             }
         });
     }
     
-    initializeSearchKeyboardNav(suggestionsContainer) {
-        const keyHandler = (e) => {
-            if (!suggestionsContainer.classList.contains('show')) return;
+    initializeSearchKeyboardNavigation() {
+        const { input, dropdown } = this.components.unifiedSearch;
+        if (!input || !dropdown) return;
+        
+        input.addEventListener('keydown', (e) => {
+            if (!dropdown.classList.contains('show')) return;
             
-            const suggestions = suggestionsContainer.querySelectorAll('.search-suggestion-item');
-            const currentActive = suggestionsContainer.querySelector('.search-suggestion-item.active');
+            const suggestions = dropdown.querySelectorAll('.suggestion-item');
+            if (suggestions.length === 0) return;
             
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (currentActive) {
-                    currentActive.classList.remove('active');
-                    const next = currentActive.nextElementSibling;
-                    if (next) {
-                        next.classList.add('active');
-                    } else {
-                        suggestions[0]?.classList.add('active');
-                    }
-                } else {
-                    suggestions[0]?.classList.add('active');
-                }
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (currentActive) {
-                    currentActive.classList.remove('active');
-                    const prev = currentActive.previousElementSibling;
-                    if (prev) {
-                        prev.classList.add('active');
-                    } else {
-                        suggestions[suggestions.length - 1]?.classList.add('active');
-                    }
-                } else {
-                    suggestions[suggestions.length - 1]?.classList.add('active');
-                }
-            } else if (e.key === 'Enter') {
-                if (currentActive) {
+            const search = this.components.unifiedSearch;
+            
+            switch (e.key) {
+                case 'ArrowDown':
                     e.preventDefault();
-                    currentActive.click();
-                }
+                    search.activeIndex = Math.min(search.activeIndex + 1, suggestions.length - 1);
+                    this.updateActiveSuggestion(suggestions);
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    search.activeIndex = Math.max(search.activeIndex - 1, -1);
+                    this.updateActiveSuggestion(suggestions);
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (search.activeIndex >= 0 && suggestions[search.activeIndex]) {
+                        suggestions[search.activeIndex].click();
+                    } else {
+                        // Submit the form if no suggestion is active
+                        input.closest('form')?.submit();
+                    }
+                    break;
+                    
+                case 'Escape':
+                    this.hideSearchSuggestions();
+                    input.blur();
+                    search.activeIndex = -1;
+                    break;
+            }
+        });
+    }
+    
+    updateActiveSuggestion(suggestions) {
+        const activeIndex = this.components.unifiedSearch.activeIndex;
+        
+        // Remove active class from all suggestions
+        suggestions.forEach(suggestion => suggestion.classList.remove('active'));
+        
+        // Add active class to current suggestion
+        if (activeIndex >= 0 && suggestions[activeIndex]) {
+            suggestions[activeIndex].classList.add('active');
+            
+            // Scroll into view if needed
+            suggestions[activeIndex].scrollIntoView({
+                block: 'nearest',
+                behavior: 'smooth'
+            });
+        }
+    }
+    
+    initializeSearchClickOutside() {
+        const clickHandler = (e) => {
+            if (!e.target.closest('.unified-search-form')) {
+                this.hideSearchSuggestions();
+                this.components.unifiedSearch.activeIndex = -1;
             }
         };
         
-        document.addEventListener('keydown', keyHandler);
-        this.timers.add(() => document.removeEventListener('keydown', keyHandler));
+        document.addEventListener('click', clickHandler);
+        this.timers.add(() => document.removeEventListener('click', clickHandler));
     }
     
-    loadSearchSuggestions(query) {
-        const { suggestions, suggestionCache } = this.components.search;
-        if (!suggestions) return;
+    initializeSearchToggle() {
+        const { toggle, panel } = this.components.unifiedSearch;
+        if (!toggle || !panel) return;
+        
+        toggle.addEventListener('click', () => {
+            this.toggleSearchPanel();
+        });
+    }
+    
+    loadUnifiedSearchSuggestions(query) {
+        const { config, suggestionCache } = this.components.unifiedSearch;
         
         // Check cache first
         if (suggestionCache.has(query)) {
-            this.displaySearchSuggestions(suggestionCache.get(query));
+            this.displaySearchSuggestions(suggestionCache.get(query), query);
             return;
         }
         
         // Show loading state
         this.showSearchLoading();
+        this.showSearchSuggestions(query);
         
-        const timer = setTimeout(() => {
-            const suggestionsData = this.generateSearchSuggestions(query);
-            suggestionCache.set(query, suggestionsData);
-            this.displaySearchSuggestions(suggestionsData);
-        }, 200);
-        this.timers.add(() => clearTimeout(timer));
+        // Make AJAX request
+        const url = `${config.endpoint}?q=${encodeURIComponent(query)}&max=${config.maxSuggestions}`;
+        
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Cache the results
+                    suggestionCache.set(query, data.suggestions);
+                    this.displaySearchSuggestions(data.suggestions, query);
+                } else {
+                    throw new Error(data.error || 'Search failed');
+                }
+            })
+            .catch(error => {
+                console.error('Search suggestions error:', error);
+                this.showSearchError();
+            });
     }
     
-    generateSearchSuggestions(query) {
-        const suggestions = [
-            { text: 'Machine Learning Fundamentals', type: 'post', icon: 'fas fa-brain', url: '#' },
-            { text: 'Python Data Analysis', type: 'post', icon: 'fas fa-chart-line', url: '#' },
-            { text: 'Django Best Practices', type: 'post', icon: 'fas fa-code', url: '#' },
-            { text: 'API Development', type: 'category', icon: 'fas fa-plug', url: '#' },
-            { text: 'Database Optimization', type: 'post', icon: 'fas fa-database', url: '#' },
-            { text: 'Neural Networks', type: 'tag', icon: 'fas fa-tag', url: '#' },
-            { text: 'System Architecture', type: 'post', icon: 'fas fa-sitemap', url: '#' },
-            { text: 'Algorithms & Data Structures', type: 'post', icon: 'fas fa-project-diagram', url: '#' }
+    loadPopularSearchTerms() {
+        const popularTerms = [
+            { text: 'Machine Learning', type: 'topic', icon: 'fas fa-brain', url: '/datalogs/search/?q=machine+learning', description: 'AI and ML concepts' },
+            { text: 'Python Development', type: 'topic', icon: 'fab fa-python', url: '/datalogs/search/?q=python', description: 'Programming and development' },
+            { text: 'API Design', type: 'topic', icon: 'fas fa-plug', url: '/datalogs/search/?q=api', description: 'API design and development' },
+            { text: 'Database', type: 'topic', icon: 'fas fa-database', url: '/datalogs/search/?q=database', description: 'Database design and optimization' },
+            { text: 'Neural Networks', type: 'topic', icon: 'fas fa-project-diagram', url: '/datalogs/search/?q=neural+networks', description: 'Deep learning and neural networks' }
         ];
         
-        return suggestions
-            .filter(s => s.text.toLowerCase().includes(query.toLowerCase()))
-            .slice(0, this.config.maxSearchSuggestions);
+        this.displaySearchSuggestions(popularTerms, '');
+        this.showSearchSuggestions('');
     }
     
-    showSearchLoading() {
-        const { suggestions } = this.components.search;
-        if (!suggestions) return;
+    displaySearchSuggestions(suggestions, query) {
+        const { content } = this.components.unifiedSearch;
+        if (!content) return;
         
-        const suggestionsContent = suggestions.querySelector('#suggestionsContent') || 
-                                 suggestions.querySelector('.suggestions-content');
+        this.components.unifiedSearch.activeIndex = -1; // Reset active index
         
-        if (suggestionsContent) {
-            suggestionsContent.innerHTML = `
-                <div class="suggestions-loading">
-                    <span>Searching...</span>
+        if (!suggestions || suggestions.length === 0) {
+            content.innerHTML = `
+                <div class="no-suggestions">
+                    <i class="fas fa-search"></i>
+                    <span>No suggestions found</span>
                 </div>
             `;
+            return;
         }
         
-        this.showSearchSuggestions();
-    }
-    
-    displaySearchSuggestions(suggestionsData) {
-        const { suggestions } = this.components.search;
-        if (!suggestions) return;
-        
-        const suggestionsContent = suggestions.querySelector('#suggestionsContent') || 
-                                 suggestions.querySelector('.suggestions-content');
-        
-        if (!suggestionsContent) return;
-        
-        if (suggestionsData.length === 0) {
-            suggestionsContent.innerHTML = `
-                <div class="search-suggestion-item no-results">
-                    <i class="fas fa-info-circle"></i>
-                    <span class="suggestion-text">No suggestions found</span>
-                </div>
-            `;
-        } else {
-            const suggestionsHTML = suggestionsData.map((suggestion, index) => `
-                <div class="search-suggestion-item" 
-                     data-index="${index}"
-                     onclick="datalogInterface.selectSuggestion('${suggestion.text}', '${suggestion.url}')">
+        const html = suggestions.map(suggestion => `
+            <div class="suggestion-item" data-url="${suggestion.url}" data-type="${suggestion.type}">
+                <div class="suggestion-icon">
                     <i class="${suggestion.icon}"></i>
-                    <span class="suggestion-text">${suggestion.text}</span>
-                    <span class="suggestion-type">${suggestion.type}</span>
                 </div>
-            `).join('');
-            
-            suggestionsContent.innerHTML = suggestionsHTML;
-        }
+                <div class="suggestion-content">
+                    <div class="suggestion-text">${this.highlightSearchTerm(suggestion.text, query)}</div>
+                    <div class="suggestion-type">${suggestion.type}</div>
+                    ${suggestion.description ? `<div class="suggestion-description">${suggestion.description}</div>` : ''}
+                </div>
+                <div class="suggestion-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+        `).join('');
         
-        this.showSearchSuggestions();
+        content.innerHTML = html;
+        
+        // Add click handlers
+        content.querySelectorAll('.suggestion-item').forEach((item, index) => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const url = item.dataset.url;
+                if (url && url !== '#') {
+                    // Track the click
+                    this.trackSearchSuggestionClick(item.dataset.type, query);
+                    window.location.href = url;
+                }
+            });
+            
+            // Add mouseenter handler for keyboard navigation
+            item.addEventListener('mouseenter', () => {
+                this.components.unifiedSearch.activeIndex = index;
+                this.updateActiveSuggestion(content.querySelectorAll('.suggestion-item'));
+            });
+        });
     }
     
-    showSearchSuggestions() {
-        const { suggestions } = this.components.search;
-        if (!suggestions) return;
+    highlightSearchTerm(text, query) {
+        if (!query || !text) return text;
         
-        suggestions.style.display = 'block';
-        suggestions.offsetHeight; // Force reflow
-        suggestions.classList.add('show');
+        // Simple highlighting - escape HTML first
+        const escapedText = text.replace(/[&<>"']/g, (match) => {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            };
+            return map[match];
+        });
+        
+        // Highlight matching terms
+        const words = query.split(/\s+/);
+        let highlightedText = escapedText;
+        
+        words.forEach(word => {
+            if (word.length > 1) {
+                const regex = new RegExp(`(${word})`, 'gi');
+                highlightedText = highlightedText.replace(regex, '<mark class="search-highlight">$1</mark>');
+            }
+        });
+        
+        return highlightedText;
+    }
+    
+    showSearchSuggestions(query) {
+        const { dropdown } = this.components.unifiedSearch;
+        if (!dropdown) return;
+        
+        // Update query display
+        const queryElement = document.getElementById('suggestionsQuery');
+        if (queryElement) {
+            if (query) {
+                queryElement.textContent = `"${query}"`;
+                queryElement.style.display = 'inline';
+            } else {
+                queryElement.style.display = 'none';
+            }
+        }
+        
+        dropdown.style.display = 'block';
+        dropdown.offsetHeight; // Force reflow
+        dropdown.classList.add('show');
     }
     
     hideSearchSuggestions() {
-        const { suggestions } = this.components.search;
-        if (!suggestions) return;
+        const { dropdown } = this.components.unifiedSearch;
+        if (!dropdown) return;
         
-        suggestions.classList.remove('show');
+        dropdown.classList.remove('show');
         const timer = setTimeout(() => {
-            suggestions.style.display = 'none';
+            dropdown.style.display = 'none';
         }, 200);
         this.timers.add(() => clearTimeout(timer));
     }
     
-    selectSuggestion(suggestionText, url) {
-        const { inputs } = this.components.search;
+    showSearchLoading() {
+        const { content } = this.components.unifiedSearch;
+        if (!content) return;
         
-        inputs.forEach(input => {
-            input.value = suggestionText;
-        });
+        content.innerHTML = `
+            <div class="suggestions-loading">
+                <div class="loading-spinner"></div>
+                <span>Searching...</span>
+            </div>
+        `;
+    }
+    
+    showSearchError() {
+        const { content } = this.components.unifiedSearch;
+        if (!content) return;
         
-        this.hideSearchSuggestions();
-        
-        if (url && url !== '#') {
-            window.location.href = url;
-        } else {
-            this.submitSearch(suggestionText);
+        content.innerHTML = `
+            <div class="suggestions-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Unable to load suggestions</span>
+            </div>
+        `;
+    }
+    
+    showClearButton() {
+        const { clearBtn } = this.components.unifiedSearch;
+        if (clearBtn) {
+            clearBtn.style.display = 'flex';
         }
     }
     
-    submitSearch(query) {
-        if (!query.trim()) return;
-        
-        // Build search URL
-        const searchUrl = new URL(window.location.origin + '/blog/search/');
-        searchUrl.searchParams.set('q', query.trim());
-        
-        // Navigate to search results
-        window.location.href = searchUrl.toString();
+    hideClearButton() {
+        const { clearBtn } = this.components.unifiedSearch;
+        if (clearBtn) {
+            clearBtn.style.display = 'none';
+        }
     }
     
     toggleSearchPanel() {
-        const { panel, toggle } = this.components.search;
+        const { panel, toggle } = this.components.unifiedSearch;
         if (!panel || !toggle) return;
         
         const isOpen = this.state.isSearchPanelOpen;
@@ -768,13 +908,29 @@ class DatalogInterface {
     }
     
     focusSearch() {
-        const searchInput = document.querySelector('.search-input-enhanced, .datalog-search-input');
-        if (searchInput) {
-            searchInput.focus();
-            searchInput.select();
+        const { input } = this.components.unifiedSearch;
+        if (input) {
+            input.focus();
+            input.select();
         } else {
-            // Open search panel if no visible input
+            // Fallback: open search panel if no visible input
             this.toggleSearchPanel();
+        }
+    }
+    
+    // Track search interactions for analytics
+    trackSearchSuggestionClick(type, query) {
+        if (this.config.enableDebugMode) {
+            console.log('🔍 Search suggestion clicked:', { type, query });
+        }
+        
+        // You can extend this to send to your analytics service
+        if (window.gtag) {
+            window.gtag('event', 'search_suggestion_click', {
+                event_category: 'DataLogs',
+                search_term: query,
+                suggestion_type: type
+            });
         }
     }
     

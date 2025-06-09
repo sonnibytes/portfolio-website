@@ -53,6 +53,9 @@ class PostListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Helper function for search context
+        context.update(get_search_context(self.request))
+
         # Existing context
         context['categories'] = Category.objects.all()
         context['tags'] = Tag.objects.all()
@@ -62,7 +65,7 @@ class PostListView(ListView):
         ).select_related('category').prefetch_related('tags', 'related_systems').first()
 
         # Add search context
-        context.update(add_search_context(context, self.request))
+        # context.update(add_search_context(context, self.request))
 
         # Enhanced context for new template
         context.update({
@@ -872,36 +875,40 @@ class SearchView(ListView):
         queryset = Post.objects.filter(
             search_query,
             status='published'
-        ).select_related('category', 'author').prefetch_related('tags').distinct()
+        ).select_related('category', 'author').prefetch_related('tags').distinct().order_by('-published_date')
+
+        return queryset
 
         # Simple relevance ordering (title matches first, then by date)
-        return queryset.extra(
-            select={
-                'title_match': f"CASE WHEN title ILIKE %s THEN 1 ELSE 0 END"
-            },
-            select_params=[f'%{query}%']
-        ).order_by('-title_match', '-published_date')
+        # return queryset.extra(
+        #     select={
+        #         'title_match': f"CASE WHEN title ILIKE %s THEN 1 ELSE 0 END"
+        #     },
+        #     select_params=[f'%{query}%']
+        # ).order_by('-title_match', '-published_date')
 
     def get_context_data(self, **kwargs):
         """Add search-specific context."""
         context = super().get_context_data(**kwargs)
-        query = self.request.GET.get("q", "").strip()
+        context.update(get_search_context(self.request))
+        
+        # query = self.request.GET.get("q", "").strip()
 
-        context.update(
-            {
-                "query": query,
-                "search_results_count": self.get_queryset().count() if query else 0,
-                "has_results": self.get_queryset().exists() if query else False,
-                "popular_terms": [
-                    {"term": "Machine Learning", "count": 15},
-                    {"term": "Python", "count": 23},
-                    {"term": "API Development", "count": 12},
-                    {"term": "Database", "count": 8},
-                    {"term": "Django", "count": 18},
-                ],
-                'search_suggestions_enabled': True,
-            }
-        )
+        # context.update(
+        #     {
+        #         "query": query,
+        #         "search_results_count": self.get_queryset().count() if query else 0,
+        #         "has_results": self.get_queryset().exists() if query else False,
+        #         "popular_terms": [
+        #             {"term": "Machine Learning", "count": 15},
+        #             {"term": "Python", "count": 23},
+        #             {"term": "API Development", "count": 12},
+        #             {"term": "Database", "count": 8},
+        #             {"term": "Django", "count": 18},
+        #         ],
+        #         'search_suggestions_enabled': True,
+        #     }
+        # )
 
         return context
 

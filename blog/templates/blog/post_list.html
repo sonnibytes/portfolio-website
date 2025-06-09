@@ -203,290 +203,111 @@
 
 {% block datalogs_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔍 Initializing unified search system...');
-    
-    if (window.datalogInterface) {
-        // Configure the unified search
-        window.datalogInterface.unifiedSearch = {
-            endpoint: '{% url "blog:search_ajax" %}',
-            debounceDelay: 300,
-            minQueryLength: 2,
-            maxSuggestions: 6,
-            enableKeyboardNav: true,
-            enableAjax: true,
-            currentQuery: '{{ query|default:"" }}',
-            
-            // Initialize the unified search system
-            init: function() {
-                const searchInput = document.getElementById('unifiedSearchInput');
-                const suggestionsDropdown = document.getElementById('searchSuggestionsDropdown');
-                const suggestionsContent = document.getElementById('suggestionsContent');
-                const clearBtn = document.getElementById('searchClearBtn');
-                
-                if (!searchInput) return;
-                
-                console.log('✅ Found search input, setting up unified search...');
-                
-                // Initialize components
-                this.setupSearchInput(searchInput, suggestionsDropdown, suggestionsContent);
-                this.setupClearButton(searchInput, clearBtn);
-                this.setupKeyboardNavigation(searchInput, suggestionsDropdown);
-                this.setupClickOutside(suggestionsDropdown);
-                
-                // Show clear button if there's a query
-                if (this.currentQuery) {
-                    this.showClearButton(clearBtn);
-                }
-                
-                console.log('✅ Unified search system initialized');
-            },
-            
-            setupSearchInput: function(input, dropdown, content) {
-                let searchTimeout;
-                
-                // Input event with debouncing
-                input.addEventListener('input', (e) => {
-                    const query = e.target.value.trim();
-                    
-                    clearTimeout(searchTimeout);
-                    
-                    // Show/hide clear button
-                    const clearBtn = document.getElementById('searchClearBtn');
-                    if (query.length > 0) {
-                        this.showClearButton(clearBtn);
-                    } else {
-                        this.hideClearButton(clearBtn);
-                    }
-                    
-                    // Handle suggestions
-                    if (query.length >= this.minQueryLength) {
-                        searchTimeout = setTimeout(() => {
-                            this.loadSuggestions(query, dropdown, content);
-                        }, this.debounceDelay);
-                    } else if (query.length === 0) {
-                        // Show popular terms when empty
-                        this.loadPopularTerms(dropdown, content);
-                    } else {
-                        this.hideSuggestions(dropdown);
-                    }
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔍 Initializing post list with unified search...');
         
-                // Focus event
-                input.addEventListener('focus', () => {
-                    const query = input.value.trim();
-                    if (query.length >= this.minQueryLength) {
-                        this.loadSuggestions(query, dropdown, content);
-                    } else if (query.length === 0) {
-                        this.loadPopularTerms(dropdown, content);
-                    }
-                });
+        if (window.datalogInterface) {
+            // Set page context data for the unified search system
+            window.datalogInterface.pageContext = {
+                viewName: '{{ request.resolver_match.view_name|default:"" }}',
+                appName: '{{ request.resolver_match.app_name|default:"" }}',
+                urlName: '{{ request.resolver_match.url_name|default:"" }}',
+                currentPost: null,
+                currentCategory: {% if current_category %}'{{ current_category.slug }}'{% else %}null{% endif %},
+                query: '{{ query|default:"" }}',
+                hasFilters: {% if show_filters %}true{% else %}false{% endif %},
+                totalPosts: {{ posts|length }},
+                isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %},
                 
-                // Blur event (with delay to allow clicking suggestions)
-                input.addEventListener('blur', () => {
-                    setTimeout(() => {
-                        this.hideSuggestions(dropdown);
-                    }, 200);
-                });
-            },
-            
-            setupClearButton: function(input, clearBtn) {
-                if (!clearBtn) return;
+                // URLs for navigation
+                postListUrl: '{% url "blog:post_list" %}',
+                searchUrl: '{% url "blog:search" %}',
+                ajaxEndpoint: '{% url "blog:search_ajax" %}',
                 
-                clearBtn.addEventListener('click', () => {
-                    input.value = '';
-                    input.focus();
-                    this.hideClearButton(clearBtn);
-                    this.hideSuggestions(document.getElementById('searchSuggestionsDropdown'));
-                    
-                    // Clear URL if we're on search page
-                    if (window.location.pathname.includes('/search/')) {
-                        window.location.href = '{% url "blog:post_list" %}';
-                    }
-                });
-            },
+                // Search configuration
+                searchConfig: {
+                    debounceDelay: 300,
+                    minQueryLength: 2,
+                    maxSuggestions: 6,
+                    enableKeyboardNav: true,
+                    enableAjax: true
+                }
+            };
             
-            setupKeyboardNavigation: function(input, dropdown) {
-                input.addEventListener('keydown', (e) => {
-                    if (!dropdown.classList.contains('show')) return;
-                    
-                    const suggestions = dropdown.querySelectorAll('.suggestion-item');
-                    const current = dropdown.querySelector('.suggestion-item.active');
-                    
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        if (current) {
-                            current.classList.remove('active');
-                            const next = current.nextElementSibling;
-                            if (next) {
-                                next.classList.add('active');
-                            } else {
-                                suggestions[0]?.classList.add('active');
-                            }
-                        } else {
-                            suggestions[0]?.classList.add('active');
-                        }
-                    } else if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        if (current) {
-                            current.classList.remove('active');
-                            const prev = current.previousElementSibling;
-                            if (prev) {
-                                prev.classList.add('active');
-                            } else {
-                                suggestions[suggestions.length - 1]?.classList.add('active');
-                            }
-                        } else {
-                            suggestions[suggestions.length - 1]?.classList.add('active');
-                        }
-                    } else if (e.key === 'Enter') {
-                        if (current) {
-                            e.preventDefault();
-                            current.click();
-                        }
-                    } else if (e.key === 'Escape') {
-                        this.hideSuggestions(dropdown);
-                        input.blur();
-                    }
-                });
-            },
-            
-            setupClickOutside: function(dropdown) {
-                document.addEventListener('click', (e) => {
-                    if (!e.target.closest('.unified-search-form')) {
-                        this.hideSuggestions(dropdown);
-                    }
-                });
-            },
-            
-            loadSuggestions: function(query, dropdown, content) {
-                if (!this.enableAjax) return;
+            // Enhanced page detection using Django context
+            window.datalogInterface.detectPageType = function() {
+                const body = document.body;
+                const context = this.pageContext;
                 
-                // Show loading state
-                this.showLoading(content);
-                this.showSuggestions(dropdown, query);
-                
-                // Make AJAX request
-                fetch(`${this.endpoint}?q=${encodeURIComponent(query)}&max=${this.maxSuggestions}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        this.displaySuggestions(data.suggestions, content);
-                    })
-                    .catch(error => {
-                        console.error('Search suggestions error:', error);
-                        this.showError(content);
-                    });
-            },
-            
-            loadPopularTerms: function(dropdown, content) {
-                // Show popular terms when no query
-                const popularTerms = [
-                    { text: 'Machine Learning', type: 'topic', icon: 'fas fa-brain', url: '/blog/search/?q=machine+learning' },
-                    { text: 'Python Development', type: 'topic', icon: 'fab fa-python', url: '/blog/search/?q=python' },
-                    { text: 'API Design', type: 'topic', icon: 'fas fa-plug', url: '/blog/search/?q=api' },
-                    { text: 'Database', type: 'topic', icon: 'fas fa-database', url: '/blog/search/?q=database' },
-                    { text: 'Neural Networks', type: 'topic', icon: 'fas fa-project-diagram', url: '/blog/search/?q=neural+networks' }
-                ];
-                
-                this.displaySuggestions(popularTerms, content);
-                this.showSuggestions(dropdown, '');
-            },
-            
-            displaySuggestions: function(suggestions, content) {
-                if (!suggestions || suggestions.length === 0) {
-                    content.innerHTML = '<div class="no-suggestions">No suggestions found</div>';
-                    return;
+                // Use Django context for more accurate detection
+                if (context.viewName.includes('post_detail') || body.classList.contains('post-detail')) {
+                    this.state.currentPage = 'detail';
+                } else if (context.viewName.includes('category') || body.classList.contains('category-view')) {
+                    this.state.currentPage = 'category';
+                } else if (context.viewName.includes('archive') || body.classList.contains('archive-view')) {
+                    this.state.currentPage = 'archive';
+                } else if (context.viewName.includes('search') || body.classList.contains('search-results')) {
+                    this.state.currentPage = 'search';
+                } else if (context.viewName.includes('tag')) {
+                    this.state.currentPage = 'tag';
+                } else {
+                    this.state.currentPage = 'list';
                 }
                 
-                const html = suggestions.map(suggestion => `
-                    <div class="suggestion-item" data-url="${suggestion.url}">
-                        <div class="suggestion-icon">
-                            <i class="${suggestion.icon}"></i>
-                        </div>
-                        <div class="suggestion-content">
-                            <div class="suggestion-text">${suggestion.text}</div>
-                            <div class="suggestion-type">${suggestion.type}</div>
-                            ${suggestion.description ? `<div class="suggestion-description">${suggestion.description}</div>` : ''}
-                        </div>
-                        <div class="suggestion-arrow">
-                            <i class="fas fa-arrow-right"></i>
-                        </div>
-                    </div>
-                `).join('');
-                
-                content.innerHTML = html;
-                
-                // Add click handlers
-                content.querySelectorAll('.suggestion-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        const url = item.dataset.url;
-                        if (url && url !== '#') {
-                            window.location.href = url;
-                        }
-                    });
-                });
-            },
+                console.log(`📄 Page detected: ${this.state.currentPage} (view: ${context.viewName})`);
+            };
             
-            showSuggestions: function(dropdown, query) {
-                if (!dropdown) return;
-                
-                const queryElement = document.getElementById('suggestionsQuery');
-                if (queryElement) {
-                    if (query) {
-                        queryElement.textContent = `"${query}"`;
-                        queryElement.style.display = 'inline';
-                    } else {
-                        queryElement.style.display = 'none';
-                    }
-                }
-                
-                dropdown.style.display = 'block';
-                dropdown.offsetHeight; // Force reflow
-                dropdown.classList.add('show');
-            },
+            // Re-run page detection with new context
+            window.datalogInterface.detectPageType();
             
-            hideSuggestions: function(dropdown) {
-                if (!dropdown) return;
-                
-                dropdown.classList.remove('show');
-                setTimeout(() => {
-                    dropdown.style.display = 'none';
-                }, 200);
-            },
+            // The unified search system is automatically initialized by the consolidated JS
+            // No need for duplicate initialization code here!
             
-            showLoading: function(content) {
-                content.innerHTML = '<div class="suggestions-loading">Searching...</div>';
-            },
+            // Track page view analytics
+            window.datalogInterface.trackEvent('page_view', {
+                page_type: 'post_list',
+                category: '{{ current_category.slug|default:"all" }}',
+                total_posts: {{ posts|length }},
+                has_query: {% if query %}'{{ query|length }}'{% else %}false{% endif %},
+                search_enabled: true
+            });
             
-            showError: function(content) {
-                content.innerHTML = '<div class="suggestions-error">Unable to load suggestions</div>';
-            },
+            // Track search interface usage if there's a query
+            {% if query %}
+            window.datalogInterface.trackEvent('search_performed', {
+                query: '{{ query|escapejs }}',
+                query_length: {{ query|length }},
+                results_count: {{ search_results_count|default:0 }},
+                source_page: 'post_list'
+            });
+            {% endif %}
             
-            showClearButton: function(clearBtn) {
-                if (clearBtn) {
-                    clearBtn.style.display = 'flex';
-                }
-            },
-            
-            hideClearButton: function(clearBtn) {
-                if (clearBtn) {
-                    clearBtn.style.display = 'none';
-                }
+            console.log('✅ Post list with unified search ready');
+        } else {
+            console.warn('⚠️ DataLogs interface not found - search functionality may be limited');
+        }
+    });
+    
+    // Global search shortcuts that work with the unified system
+    document.addEventListener('keydown', function(e) {
+        // Don't trigger shortcuts when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        // Search shortcut (Ctrl/Cmd + K)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (window.datalogInterface && window.datalogInterface.focusSearch) {
+                window.datalogInterface.focusSearch();
             }
-        };
+        }
         
-        // Initialize the unified search
-        window.datalogInterface.unifiedSearch.init();
-        
-        // Track search events
-        window.datalogInterface.trackEvent('search_interface_loaded', {
-            has_query: {{ query|yesno:"true,false" }},
-            page_type: 'post_list',
-            total_posts: {{ posts|length }}
-        });
-    }
-    
-    console.log('✅ Post list with unified search ready');
-});
-</script>
-{% endblock %}
+        // Filter shortcut (Ctrl/Cmd + F)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            if (window.datalogInterface && window.datalogInterface.toggleFilterPanel) {
+                window.datalogInterface.toggleFilterPanel();
+            }
+        }
+    });
+    </script>
+    {% endblock %}
