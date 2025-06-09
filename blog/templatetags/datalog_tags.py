@@ -12,6 +12,8 @@ from django.utils.text import slugify
 from django.utils.html import escape, format_html
 from django.urls import reverse
 from django.db.models import Count, Q, Avg
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 
 from datetime import datetime, timedelta, date
 import re
@@ -19,6 +21,7 @@ import json
 from collections import Counter, defaultdict
 from itertools import groupby
 import calendar
+from urllib.parse import urlencode
 
 from bs4 import BeautifulSoup
 from markdownx.utils import markdownify as md
@@ -288,6 +291,7 @@ def get_datalog_categories(popular_only=False):
         return []
 
 
+# Think can replace with new search_ajax_suggestions as part of unified
 @register.simple_tag
 def datalog_search_suggestions(query=""):
     """
@@ -3128,7 +3132,6 @@ def progress_accessibility_label(style, percentage=0):
 
 # ================= ENHANCED SEARCH SUGGESTIONS =================
 
-
 @register.inclusion_tag('blog/includes/search_suggestions.html', takes_context=True)
 def search_suggestions(
     context,
@@ -3923,3 +3926,299 @@ def json_config(config):
         return mark_safe(json.dumps(config))
     except (TypeError, ValueError):
         return mark_safe("{}")
+
+# ================= UNIFIED SEARCH INTERFACE =================
+
+
+@register.inclusion_tag('blog/includes/unified_search_interface.html', takes_context=True)
+def unified_search_interface(
+    context,
+    query="",
+    style="full",
+    show_quick_filters=True,
+    enable_ajax=True,
+    placeholder="Search DataLog entries, code snippets, and technical insights...",
+    max_suggestions=6,
+    debounce_delay=300,
+    show_stats=True,
+):
+    """
+    UNIFIED search interface that combines search bar + suggestions + filters.
+    This replaces both enhanced_search_interface and search_suggestions.
+
+    Usage Examples:
+    {% unified_search_interface query=query %}
+    {% unified_search_interface query=query style='compact' %}
+    {% unified_search_interface query=query show_quick_filters=False %}
+
+    Args:
+        query (str): Current search query
+        style (str): Display style - 'full', 'compact', 'minimal'
+        show_quick_filters (bool): Show quick filter tags
+        enable_ajax (bool): Enable real-time suggestions
+        placeholder (str): Custom placeholder text
+        max_suggestions (int): Max suggestions to show
+        debounce_delay (int): AJAX delay in milliseconds
+        show_stats (bool): Show search statistics when there's a query
+    """
+    request = context.get('request')
+
+    # Get search results count if query
+    search_results_count = 0
+    if query:
+        try:
+            search_results_count = Post.objects.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(excerpt__icontains=query),
+                status='published'
+            ).count()
+        except:
+            search_results_count = 0
+
+    # Build AJAX config
+    ajax_config = {
+        "enabled": enable_ajax,
+        "url": reverse("blog:search_ajax") if enable_ajax else None,
+        "debounce_delay": debounce_delay,
+        "max_suggestions": max_suggestions,
+    } if enable_ajax else {}
+
+    return {
+        "query": query,
+        "style": style,
+        "show_quick_filters": show_quick_filters,
+        "enable_ajax": enable_ajax,
+        "placeholder": placeholder,
+        "show_stats": show_stats,
+        "search_results_count": search_results_count,
+        "ajax_config": ajax_config,
+        "request": request,
+    }
+
+
+@register.simple_tag
+def search_ajax_suggestions(query, max_results=6):
+    """
+    Generate AJAX search suggestions for real-time search.
+    Used by the JavaScript to get suggestions via AJAX.
+
+    Usage: Called by AJAX endpoint
+    """
+    suggestions = []
+
+    if not query or len(query) < 2:
+        # Return popular/recent items when no query
+        return [
+            {
+                "text": "Machine Learning",
+                "type": "topic",
+                "icon": "fas fa-brain",
+                "url": "#",
+            },
+            {
+                "text": "Python Development",
+                "type": "topic",
+                "icon": "fab fa-python",
+                "url": "#",
+            },
+            {"text": "API Design", "type": "topic", "icon": "fas fa-plug", "url": "#"},
+            {
+                "text": "Database",
+                "type": "topic",
+                "icon": "fas fa-database",
+                "url": "#",
+            },
+            {
+                "text": "Neural Networks",
+                "type": "topic",
+                "icon": "fas fa-project-diagram",
+                "url": "#",
+            },
+        ]
+    try:
+        query_lower = query.lower()
+
+        # Search in posts
+        matching_posts = Post.objects.filter(
+            Q(title__icontains=query) | Q(content__icontains=query),
+            status='published',
+        ).order_by('-published_date')[:3]
+
+        for post in matching_posts:
+            suggestions.append({
+                'text': post.title,
+                'type': 'post',
+                'icon': 'fas fa-file-alt',
+                'url': post.get_absolute_url(),
+                'description': f"Published {post.published_date.strftime('%b %d, %Y')}" if post.published_date else ""
+            })
+
+        # Search in categories
+        matching_categories = Category.objects.filter(
+            name__icontains=query
+        )[:2]
+
+        for category in matching_categories:
+            post_count = category.posts.filter(status='published').count()
+            suggestions.append({
+                'text': f"{category.name} Category",
+                'type': 'category',
+                'icon': getattr(category, 'icon', 'fas fa-folder'),
+                'url': category.get_absolute_url() if hasattr(category, 'get_absolute_url') else f"/datalogs/category/{category.slug}/",
+                'description': f"{post_count} post{'s' if post_count != 1 else ''}"
+            })
+
+        # Search in tags
+        matching_tags = Tag.objects.filter(
+            name__icontains=query
+        ).annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).filter(post_count__gt=0)[:2]
+
+        for tag in matching_tags:
+            suggestions.append({
+                'text': f"#{tag.name}",
+                'type': 'tag',
+                'icon': 'fas fa-tag',
+                'url': tag.get_absolute_url() if hasattr(tag, 'get_absolute_url') else f"/datalogs/tag/{tag.slug}/",
+                'description': f"{tag.post_count} post{'s' if tag.post_count != 1 else ''}"
+            })
+        
+        # Add topic suggestions based on content
+        if "python" in query_lower:
+            suggestions.append(
+                {
+                    "text": "Python Development",
+                    "type": "topic",
+                    "icon": "fab fa-python",
+                    "url": f"/datalogs/search/?q=python",
+                    "description": "Programming and development",
+                }
+            )
+
+        if any(term in query_lower for term in ["ml", "machine", "learning", "ai"]):
+            suggestions.append(
+                {
+                    "text": "Machine Learning",
+                    "type": "topic",
+                    "icon": "fas fa-brain",
+                    "url": f"/datalogs/search/?q=machine+learning",
+                    "description": "AI and ML concepts",
+                }
+            )
+
+        if any(term in query_lower for term in ["api", "rest", "endpoint"]):
+            suggestions.append(
+                {
+                    "text": "API Development",
+                    "type": "topic",
+                    "icon": "fas fa-plug",
+                    "url": f"/datalogs/search/?q=api",
+                    "description": "API design and development",
+                }
+            )
+
+    except Exception as e:
+        # Log error in production, return empty for now
+        pass
+
+    return suggestions[:max_results]
+
+
+@register.simple_tag
+def search_performance_metrics(query):
+    """
+    Generate search performance metrics for analytics.
+    Usage: {% search_performance_metrics query as metrics %}
+    """
+    if not query:
+        return {}
+
+    try:
+        start_time = timezone.now()
+
+        # Get basic search results
+        results = Post.objects.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(excerpt__icontains=query),
+            status='published'
+        )
+
+        total_results = results.count()
+
+        # Calculate metrics
+        end_time = timezone.now()
+        # Calculate, convert to ms
+        search_time = (end_time - start_time).total_seconds() * 1000
+
+        return {
+            'query': query,
+            'total_results': total_results,
+            'search_time_ms': round(search_time, 2),
+            'has_results': total_results > 0,
+            'query_length': len(query),
+            'word_count': len(query.split()),
+        }
+    except Exception:
+        return {
+            'query': query,
+            'total_results': 0,
+            'search_time_ms': 0,
+            'has_results': False,
+            'query_length': len(query),
+            'word_count': len(query.split()),
+        }
+
+
+# Replacing w global highlight_search in aura_filters
+# Just leaving here for ref until entire search comp done
+# @register.filter
+# def highlight_search_term(text, query):
+#     pass
+
+# Replace/combine w build_url later?
+@register.simple_tag
+def search_url_builder(**kwargs):
+    """
+    Build search URLs with parameters.
+    Usage: {% search_url_builder q="python" category="dev" %}
+    """
+    # Filter out empty values
+    params = {k: v for k, v in kwargs.items() if v}
+
+    base_url = reverse('blog:search')
+    if params:
+        return f"{base_url}?{urlencode(params)}"
+    return base_url
+
+
+@register.simple_tag
+def popular_search_terms(limit=5):
+    """
+    Get popular search terms based on content analysis.
+    Usage: {% popular_search_terms as popular_terms %}
+    """
+    # TODO: In real implementation, track actual search queries
+    # For now, return popular topics based on your content
+
+    popular_terms = [
+        {
+            "term": "Machine Learning",
+            "count": 15,
+            "url": "/datalogs/search/?q=machine+learning",
+        },
+        {"term": "Python", "count": 23, "url": "/datalogs/search/?q=python"},
+        {"term": "API Development", "count": 12, "url": "/datalogs/search/?q=api"},
+        {"term": "Database", "count": 8, "url": "/datalogs/search/?q=database"},
+        {
+            "term": "Neural Networks",
+            "count": 6,
+            "url": "/datalogs/search/?q=neural+networks",
+        },
+        {"term": "Django", "count": 18, "url": "/datalogs/search/?q=django"},
+        {"term": "Data Analysis", "count": 10, "url": "/datalogs/search/?q=data+analysis"},
+    ]
+
+    return popular_terms[:limit]

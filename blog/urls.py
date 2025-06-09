@@ -21,9 +21,9 @@ urlpatterns = [
     ),
     # Search views w AJAX
     path("search/", views.SearchView.as_view(), name="search"),
-    path("search/suggestions/", views.search_suggestionss_ajax, name="search_ajax"),
+    path("search/ajax/", views.search_ajax_endpoint, name="search_ajax"),
     path("search/autocomplete/", views.search_autocomplete, name="search_autocomplete"),
-    path("search/export/", views.search_export, name="search_export"),
+    # path("search/export/", views.search_export, name="search_export"),
 
 
     # Admin/Management URLs

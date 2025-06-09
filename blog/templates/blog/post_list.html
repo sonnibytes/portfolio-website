@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - DataLogs List Template - COMPLETELY UPDATED
- * Advanced User Repository & Archive - Enhanced with Phase 2+ Components
- * Version: 3.0.0 - Maximum component reuse and streamlined code
+ * AURA Portfolio - DataLogs List Template - UPDATED WITH UNIFIED SEARCH
+ * Advanced User Repository & Archive - Now using unified search system
+ * Version: 3.1.0 - Clean, organized search implementation
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -21,29 +21,29 @@
 
 {% block datalogs_content %}
 
-<!-- Enhanced Search Interface (NEW COMPONENT) -->
+<!-- UNIFIED SEARCH INTERFACE (Replaces old search components) -->
 <section class="datalogs-search-section">
     <div class="container">
-        {% search_suggestions query=query style='full' enable_ajax=True max_suggestions=8 show_descriptions=True %}
+        {% unified_search_interface query=query style='full' show_quick_filters=True enable_ajax=True show_stats=True %}
     </div>
 </section>
 
-<!-- Category Navigation using Phase 1 Component (ENHANCED) -->
+<!-- Category Navigation using Phase 1 Component -->
 <section class="categories-navigation-section">
     <div class="container">
         {% category_hexagon_nav style="full" current_category=current_category show_all=True limit=None %}
     </div>
 </section>
 
-<!-- Enhanced Featured DataLog Entry (REDESIGNED for Unified Container) -->
+<!-- Enhanced Featured DataLog Entry -->
 {% if featured_post %}
 <section class="featured-datalog-section">
     <div class="container">
         
-        <!-- UNIFIED FEATURED CONTAINER - Everything inside one sleek glass container -->
+        <!-- UNIFIED FEATURED CONTAINER -->
         <div class="featured-datalog-unified-container glass-effect">
             
-            <!-- Featured Post Header with Title and Featured Badge -->
+            <!-- Featured Post Header -->
             <div class="featured-post-header">
                 <div class="featured-badge">
                     <i class="fas fa-star"></i>
@@ -54,7 +54,7 @@
                     <a href="{{ featured_post.get_absolute_url }}">{{ featured_post.title }}</a>
                 </h2>
                 
-                <!-- Post ID and Status in header -->
+                <!-- Post ID and Status -->
                 <div class="featured-post-status">
                     <span class="post-id">{{ featured_post.id|datalog_id }}</span>
                     {% if featured_post.category %}
@@ -80,11 +80,6 @@
                         <p>{{ featured_post.excerpt|truncate_smart:180 }}</p>
                     </div>
                     {% endif %}
-                    
-                    {% comment %} <!-- Meta Information using SIMPLIFIED datalog_meta_display -->
-                    <div class="featured-meta-section">
-                        {% datalog_meta_display featured_post style='compact' show_category=False show_featured=False icon_style='auto' color_scheme='featured' size='md' %}
-                    </div> {% endcomment %}
                     
                     <!-- System Connections (if available) -->
                     {% if featured_post.related_systems.exists %}
@@ -143,7 +138,7 @@
                 
             </div>
             
-            <!-- Featured Footer with Additional Info -->
+            <!-- Featured Footer -->
             <div class="featured-post-footer">
                 <div class="footer-stats">
                     <div class="stat-item">
@@ -178,20 +173,20 @@
 </section>
 {% endif %}
 
-<!-- DataLog Entries using NEW DATA GRID COMPONENT -->
+<!-- DataLog Entries using DATA GRID COMPONENT -->
 <section class="datalogs-grid-section">
     <div class="container">
         
-        <!-- Enhanced Header with Statistics using existing section_header -->
+        <!-- Enhanced Header with Statistics -->
         {% section_header title="DataLog Entries" subtitle="Technical Documentation Archive" icon="fas fa-database" show_metrics=True metric_1_value=page_obj.paginator.count|default:posts|length metric_1_label="Total Entries" metric_1_icon="fas fa-file-alt" metric_2_value=current_category.name|default:"All Categories" metric_2_label="Category" metric_2_icon="fas fa-folder" metric_3_value=posts|length metric_3_label="Showing" metric_3_icon="fas fa-eye" animated=True %}
         
-        <!-- Use NEW DATA GRID component for all post display -->
+        <!-- Data Grid for Posts -->
         {% include 'components/data_grid.html' with items=posts grid_type="datalogs" columns=3 show_controls=True show_sort=True show_filters=True allow_compact=True view_mode="grid" count_label="DataLog entries" %}
         
     </div>
 </section>
 
-<!-- Enhanced Pagination (SIMPLIFIED using existing patterns) -->
+<!-- Enhanced Pagination -->
 {% if is_paginated %}
 <section class="pagination-section">
     <div class="container">
@@ -207,42 +202,291 @@
 {% endblock %}
 
 {% block datalogs_js %}
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Enhanced post list specific initialization
+    console.log('🔍 Initializing unified search system...');
+    
     if (window.datalogInterface) {
-        // Initialize search suggestions with AJAX
-        window.datalogInterface.initializeSearchSuggestions({
-            container: '.datalogs-search-section',
-            enableAjax: true,
+        // Configure the unified search
+        window.datalogInterface.unifiedSearch = {
+            endpoint: '{% url "blog:search_ajax" %}',
             debounceDelay: 300,
-            minQueryLength: 2
+            minQueryLength: 2,
+            maxSuggestions: 6,
+            enableKeyboardNav: true,
+            enableAjax: true,
+            currentQuery: '{{ query|default:"" }}',
+            
+            // Initialize the unified search system
+            init: function() {
+                const searchInput = document.getElementById('unifiedSearchInput');
+                const suggestionsDropdown = document.getElementById('searchSuggestionsDropdown');
+                const suggestionsContent = document.getElementById('suggestionsContent');
+                const clearBtn = document.getElementById('searchClearBtn');
+                
+                if (!searchInput) return;
+                
+                console.log('✅ Found search input, setting up unified search...');
+                
+                // Initialize components
+                this.setupSearchInput(searchInput, suggestionsDropdown, suggestionsContent);
+                this.setupClearButton(searchInput, clearBtn);
+                this.setupKeyboardNavigation(searchInput, suggestionsDropdown);
+                this.setupClickOutside(suggestionsDropdown);
+                
+                // Show clear button if there's a query
+                if (this.currentQuery) {
+                    this.showClearButton(clearBtn);
+                }
+                
+                console.log('✅ Unified search system initialized');
+            },
+            
+            setupSearchInput: function(input, dropdown, content) {
+                let searchTimeout;
+                
+                // Input event with debouncing
+                input.addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    
+                    clearTimeout(searchTimeout);
+                    
+                    // Show/hide clear button
+                    const clearBtn = document.getElementById('searchClearBtn');
+                    if (query.length > 0) {
+                        this.showClearButton(clearBtn);
+                    } else {
+                        this.hideClearButton(clearBtn);
+                    }
+                    
+                    // Handle suggestions
+                    if (query.length >= this.minQueryLength) {
+                        searchTimeout = setTimeout(() => {
+                            this.loadSuggestions(query, dropdown, content);
+                        }, this.debounceDelay);
+                    } else if (query.length === 0) {
+                        // Show popular terms when empty
+                        this.loadPopularTerms(dropdown, content);
+                    } else {
+                        this.hideSuggestions(dropdown);
+                    }
         });
         
-        // Initialize enhanced filtering
-        window.datalogInterface.initializeEnhancedFilters({
-            autoApply: false,
-            multiSelect: true,
-            saveState: true
-        });
+                // Focus event
+                input.addEventListener('focus', () => {
+                    const query = input.value.trim();
+                    if (query.length >= this.minQueryLength) {
+                        this.loadSuggestions(query, dropdown, content);
+                    } else if (query.length === 0) {
+                        this.loadPopularTerms(dropdown, content);
+                    }
+                });
+                
+                // Blur event (with delay to allow clicking suggestions)
+                input.addEventListener('blur', () => {
+                    setTimeout(() => {
+                        this.hideSuggestions(dropdown);
+                    }, 200);
+                });
+            },
+            
+            setupClearButton: function(input, clearBtn) {
+                if (!clearBtn) return;
+                
+                clearBtn.addEventListener('click', () => {
+                    input.value = '';
+                    input.focus();
+                    this.hideClearButton(clearBtn);
+                    this.hideSuggestions(document.getElementById('searchSuggestionsDropdown'));
+                    
+                    // Clear URL if we're on search page
+                    if (window.location.pathname.includes('/search/')) {
+                        window.location.href = '{% url "blog:post_list" %}';
+                    }
+                });
+            },
+            
+            setupKeyboardNavigation: function(input, dropdown) {
+                input.addEventListener('keydown', (e) => {
+                    if (!dropdown.classList.contains('show')) return;
+                    
+                    const suggestions = dropdown.querySelectorAll('.suggestion-item');
+                    const current = dropdown.querySelector('.suggestion-item.active');
+                    
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (current) {
+                            current.classList.remove('active');
+                            const next = current.nextElementSibling;
+                            if (next) {
+                                next.classList.add('active');
+                            } else {
+                                suggestions[0]?.classList.add('active');
+                            }
+                        } else {
+                            suggestions[0]?.classList.add('active');
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (current) {
+                            current.classList.remove('active');
+                            const prev = current.previousElementSibling;
+                            if (prev) {
+                                prev.classList.add('active');
+                            } else {
+                                suggestions[suggestions.length - 1]?.classList.add('active');
+                            }
+                        } else {
+                            suggestions[suggestions.length - 1]?.classList.add('active');
+                        }
+                    } else if (e.key === 'Enter') {
+                        if (current) {
+                            e.preventDefault();
+                            current.click();
+                        }
+                    } else if (e.key === 'Escape') {
+                        this.hideSuggestions(dropdown);
+                        input.blur();
+                    }
+                });
+            },
+            
+            setupClickOutside: function(dropdown) {
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.unified-search-form')) {
+                        this.hideSuggestions(dropdown);
+                    }
+                });
+            },
+            
+            loadSuggestions: function(query, dropdown, content) {
+                if (!this.enableAjax) return;
+                
+                // Show loading state
+                this.showLoading(content);
+                this.showSuggestions(dropdown, query);
+                
+                // Make AJAX request
+                fetch(`${this.endpoint}?q=${encodeURIComponent(query)}&max=${this.maxSuggestions}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        this.displaySuggestions(data.suggestions, content);
+                    })
+                    .catch(error => {
+                        console.error('Search suggestions error:', error);
+                        this.showError(content);
+                    });
+            },
+            
+            loadPopularTerms: function(dropdown, content) {
+                // Show popular terms when no query
+                const popularTerms = [
+                    { text: 'Machine Learning', type: 'topic', icon: 'fas fa-brain', url: '/blog/search/?q=machine+learning' },
+                    { text: 'Python Development', type: 'topic', icon: 'fab fa-python', url: '/blog/search/?q=python' },
+                    { text: 'API Design', type: 'topic', icon: 'fas fa-plug', url: '/blog/search/?q=api' },
+                    { text: 'Database', type: 'topic', icon: 'fas fa-database', url: '/blog/search/?q=database' },
+                    { text: 'Neural Networks', type: 'topic', icon: 'fas fa-project-diagram', url: '/blog/search/?q=neural+networks' }
+                ];
+                
+                this.displaySuggestions(popularTerms, content);
+                this.showSuggestions(dropdown, '');
+            },
+            
+            displaySuggestions: function(suggestions, content) {
+                if (!suggestions || suggestions.length === 0) {
+                    content.innerHTML = '<div class="no-suggestions">No suggestions found</div>';
+                    return;
+                }
+                
+                const html = suggestions.map(suggestion => `
+                    <div class="suggestion-item" data-url="${suggestion.url}">
+                        <div class="suggestion-icon">
+                            <i class="${suggestion.icon}"></i>
+                        </div>
+                        <div class="suggestion-content">
+                            <div class="suggestion-text">${suggestion.text}</div>
+                            <div class="suggestion-type">${suggestion.type}</div>
+                            ${suggestion.description ? `<div class="suggestion-description">${suggestion.description}</div>` : ''}
+                        </div>
+                        <div class="suggestion-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                `).join('');
+                
+                content.innerHTML = html;
+                
+                // Add click handlers
+                content.querySelectorAll('.suggestion-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const url = item.dataset.url;
+                        if (url && url !== '#') {
+                            window.location.href = url;
+                        }
+                    });
+                });
+            },
+            
+            showSuggestions: function(dropdown, query) {
+                if (!dropdown) return;
+                
+                const queryElement = document.getElementById('suggestionsQuery');
+                if (queryElement) {
+                    if (query) {
+                        queryElement.textContent = `"${query}"`;
+                        queryElement.style.display = 'inline';
+                    } else {
+                        queryElement.style.display = 'none';
+                    }
+                }
+                
+                dropdown.style.display = 'block';
+                dropdown.offsetHeight; // Force reflow
+                dropdown.classList.add('show');
+            },
+            
+            hideSuggestions: function(dropdown) {
+                if (!dropdown) return;
+                
+                dropdown.classList.remove('show');
+                setTimeout(() => {
+                    dropdown.style.display = 'none';
+                }, 200);
+            },
+            
+            showLoading: function(content) {
+                content.innerHTML = '<div class="suggestions-loading">Searching...</div>';
+            },
+            
+            showError: function(content) {
+                content.innerHTML = '<div class="suggestions-error">Unable to load suggestions</div>';
+            },
+            
+            showClearButton: function(clearBtn) {
+                if (clearBtn) {
+                    clearBtn.style.display = 'flex';
+                }
+            },
+            
+            hideClearButton: function(clearBtn) {
+                if (clearBtn) {
+                    clearBtn.style.display = 'none';
+                }
+            }
+        };
         
-        // Initialize data grid functionality
-        window.datalogInterface.initializeDataGrid({
-            container: '#dataGridContainer',
-            defaultView: 'grid',
-            enableSorting: true,
-            enableFiltering: true
-        });
+        // Initialize the unified search
+        window.datalogInterface.unifiedSearch.init();
         
-        // Track list view analytics
-        window.datalogInterface.trackEvent('page_view', {
+        // Track search events
+        window.datalogInterface.trackEvent('search_interface_loaded', {
+            has_query: {{ query|yesno:"true,false" }},
             page_type: 'post_list',
-            category: '{{ current_category.slug|default:"all" }}',
-            total_posts: {{ posts|length }},
-            has_query: {% if query %}'{{ query|length }}'{% else %}false{% endif %}
+            total_posts: {{ posts|length }}
         });
     }
+    
+    console.log('✅ Post list with unified search ready');
 });
 </script>
 {% endblock %}
