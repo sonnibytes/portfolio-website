@@ -737,7 +737,7 @@ def search_ajax_endpoint(request):
                 "query": query,
                 "count": len(suggestions),
                 "status": "success",
-                "cached": False,
+                # "cached": False,
             }
         )
 
@@ -801,24 +801,18 @@ def get_search_context(request, query=None):
 
     if query:
         # Get search results
-        results = (
-            Post.objects.filter(
-                Q(title__icontains=query) |
-                Q(content__icontains=query) |
-                Q(excerpt__icontains=query),
-                status="published",
-            )
-            .select_related("category", "author")
-            .prefetch_related("tags")
-        )
+        results = Post.objects.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(excerpt__icontains=query),
+            status='published'
+        ).select_related('category', 'author').prefetch_related('tags')
 
-        context.update(
-            {
-                "search_results": results,
-                "search_results_count": results.count(),
-                "has_results": results.exists(),
-            }
-        )
+        context.update({
+            'search_results': results,
+            'search_results_count': results.count(),
+            'has_results': results.exists(),
+        })
 
     return context
 

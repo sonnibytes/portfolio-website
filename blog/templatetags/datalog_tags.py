@@ -4084,7 +4084,7 @@ def search_ajax_suggestions(query, max_results=6):
                 'url': tag.get_absolute_url() if hasattr(tag, 'get_absolute_url') else f"/datalogs/tag/{tag.slug}/",
                 'description': f"{tag.post_count} post{'s' if tag.post_count != 1 else ''}"
             })
-        
+
         # Add topic suggestions based on content
         if "python" in query_lower:
             suggestions.append(
