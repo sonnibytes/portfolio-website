@@ -81,6 +81,8 @@ class DatalogInterface {
             this.initializeScrollEffects();
             this.initializePerformanceOptimizations();
             this.enhanceReadingProgressIndicators();
+            // this.initializeQuickFilters();    
+
             
             // Initialize page-specific components
             if (this.state.currentPage === 'detail') {

@@ -60,26 +60,54 @@
         <div class="quick-filters-section">
             <span class="filter-label">Quick Filters:</span>
             <div class="filter-tags-list">
-                <a href="?featured=true" class="filter-tag {% if request.GET.featured %}active{% endif %}">
+                <!-- Featured Filter -->
+                <a href="{% if request.GET.featured %}{% url 'blog:post_list' %}{% else %}?featured=true{% endif %}" 
+                class="filter-tag {% if request.GET.featured %}active{% endif %}" 
+                data-filter="featured">
                     <i class="fas fa-star"></i>
                     <span>Featured</span>
                 </a>
-                <a href="?has_code=true" class="filter-tag {% if request.GET.has_code %}active{% endif %}">
+                
+                <!-- Code Examples Filter -->
+                <a href="{% if request.GET.has_code %}{% url 'blog:post_list' %}{% else %}?has_code=true{% endif %}" 
+                class="filter-tag {% if request.GET.has_code %}active{% endif %}" 
+                data-filter="has_code">
                     <i class="fas fa-code"></i>
                     <span>Code Examples</span>
                 </a>
-                <a href="?reading_time=quick" class="filter-tag {% if 'quick' in request.GET.reading_time %}active{% endif %}">
+                
+                <!-- Reading Time Filters -->
+                <a href="{% if 'quick' in request.GET.reading_time %}{% url 'blog:post_list' %}{% else %}?reading_time=quick{% endif %}" 
+                class="filter-tag {% if 'quick' in request.GET.reading_time %}active{% endif %}" 
+                data-filter="reading_time_quick">
                     <i class="fas fa-clock"></i>
                     <span>Quick Read</span>
                 </a>
-                <a href="?category=ml" class="filter-tag">
+                
+                <!-- Category Filters (from your existing categories) -->
+                <a href="{% if 'ml' in request.GET.category %}{% url 'blog:post_list' %}{% else %}?category=ml{% endif %}" 
+                class="filter-tag {% if 'ml' in request.GET.category %}active{% endif %}" 
+                data-filter="category_ml">
                     <i class="fas fa-brain"></i>
                     <span>ML</span>
                 </a>
-                <a href="?category=dev" class="filter-tag">
+                
+                <a href="{% if 'dev' in request.GET.category %}{% url 'blog:post_list' %}{% else %}?category=dev{% endif %}" 
+                class="filter-tag {% if 'dev' in request.GET.category %}active{% endif %}" 
+                data-filter="category_dev">
                     <i class="fas fa-code-branch"></i>
                     <span>Dev</span>
                 </a>
+                
+                <!-- Clear All Filters (only show if any filters are active) -->
+                {% if request.GET.featured or request.GET.has_code or request.GET.reading_time or request.GET.category %}
+                <a href="{% url 'blog:post_list' %}" 
+                class="filter-tag clear-filters" 
+                data-filter="clear">
+                    <i class="fas fa-times"></i>
+                    <span>Clear All</span>
+                </a>
+                {% endif %}
             </div>
         </div>
         {% endif %}

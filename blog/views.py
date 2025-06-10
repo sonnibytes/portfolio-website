@@ -857,36 +857,31 @@ class SearchView(ListView):
         if not query:
             return Post.objects.none()
 
-        # Build search query w relevance sorting
-        search_query = (
-            Q(title__icontains=query) |
-            Q(content__icontains=query) |
-            Q(excerpt__icontains=query) |
-            Q(tags__name__icontains=query) |
-            Q(category__name__icontains=query)
+        # Base queryset - published posts only
+        queryset = (
+            Post.objects.filter(status="published")
+            .select_related("category", "author")
+            .prefetch_related("tags")
         )
 
-        queryset = Post.objects.filter(
-            search_query,
-            status='published'
-        ).select_related('category', 'author').prefetch_related('tags').distinct().order_by('-published_date')
+        # Build search query
+        search_query = self.build_search_query(query)
+        queryset = queryset.filter(search_query)
 
-        return queryset
+        # Apply additional filters
+        queryset = self.apply_filters(queryset)
 
-        # Simple relevance ordering (title matches first, then by date)
-        # return queryset.extra(
-        #     select={
-        #         'title_match': f"CASE WHEN title ILIKE %s THEN 1 ELSE 0 END"
-        #     },
-        #     select_params=[f'%{query}%']
-        # ).order_by('-title_match', '-published_date')
+        # Apply sorting
+        queryset = self.apply_sorting(queryset)
+
+        return queryset.distinct()
 
     def get_context_data(self, **kwargs):
         """Add search-specific context."""
         context = super().get_context_data(**kwargs)
-        context.update(get_search_context(self.request))
+        # context.update(get_search_context(self.request))
         
-        # query = self.request.GET.get("q", "").strip()
+        query = self.request.GET.get("q", "").strip()
 
         # context.update(
         #     {
@@ -904,134 +899,131 @@ class SearchView(ListView):
         #     }
         # )
 
-        return context
-
-
-        # Older, more complex logic
-        # context["query"] = query
-        # context["total_results"] = self.get_queryset().count() if query else 0
-
-        # # Active filters for display
-        # context["active_filters"] = self.get_active_filters()
-
-        # # Search metadata
-        # context["search_metadata"] = {
-        #     "query": query,
-        #     "total_results": context["total_results"],
-        #     "filters_applied": self.get_active_filters(),
-        #     "sort_by": self.request.GET.get("sort", "relevance"),
-        #     "has_results": context["total_results"] > 0,
-        # }
-
-        # # Get suggestions for the current query
-        # if query:
-        #     context["search_suggestions"] = datalog_search_suggestions(query)
-
-        # # Filter options for the template
-        # context["categories"] = Category.objects.annotate(
-        #     post_count=Count("posts", filter=Q(posts__status="pubished"))
-        # ).filter(post_count__gt=0)
-
-        # context["popular_tags"] = (
-        #     Tag.objects.annotate(
-        #         post_count=Count("posts", filter=Q(posts__status="published"))
-        #     )
-        #     .filter(post_count__gt=0)
-        #     .order_by("-post_count")[:10]
-        # )
-
         # return context
 
 
-    # def build_search_query(self, query):
-    #     """Build complex search query for title, content, excerpt, and tags."""
-    #     search_terms = query.split()
+        # Older, more complex logic
+        context["query"] = query
+        context["total_results"] = self.get_queryset().count() if query else 0
 
-    #     # Start w empty Q object
-    #     search_query = Q()
+        # Active filters for display
+        context["active_filters"] = self.get_active_filters()
 
-    #     for term in search_terms:
-    #         term_query = (
-    #             Q(title__icontains=term) |
-    #             Q(content__icontains=term) |
-    #             Q(excerpt__icontains=term) |
-    #             Q(tags__name__icontains=term) |
-    #             Q(category__name__icontains=term)
-    #         )
-    #         search_query &= term_query
+        # Search metadata
+        context["search_metadata"] = {
+            "query": query,
+            "total_results": context["total_results"],
+            "filters_applied": self.get_active_filters(),
+            "sort_by": self.request.GET.get("sort", "relevance"),
+            "has_results": context["total_results"] > 0,
+        }
 
-    #     return search_query
+        # Get suggestions for the current query
+        if query:
+            context["search_suggestions"] = datalog_search_suggestions(query)
 
-    # def apply_filters(self, queryset):
-    #     """Apply additional search filters."""
-    #     # Category filter
-    #     category_slug = self.request.GET.get('category')
-    #     if category_slug:
-    #         queryset = queryset.filter(category__slug=category_slug)
+        # Filter options for the template
+        context["categories"] = Category.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__status="pubished"))
+        ).filter(post_count__gt=0)
 
-    #     # Tag filter
-    #     tag_slug = self.request.GET.get('tag')
-    #     if tag_slug:
-    #         queryset = queryset.filter(tags__slug=tag_slug)
+        context["popular_tags"] = (
+            Tag.objects.annotate(
+                post_count=Count("posts", filter=Q(posts__status="published"))
+            )
+            .filter(post_count__gt=0)
+            .order_by("-post_count")[:10]
+        )
 
-    #     # Reading time filter
-    #     reading_time = self.request.GET.get('reading_time')
-    #     if reading_time:
-    #         if reading_time == '0-5':
-    #             queryset = queryset.filter(reading_time__lte=5)
-    #         elif reading_time == '5-15':
-    #             queryset = queryset.filter(reading_time__gt=5, reading_time__lte=15)
-    #         elif reading_time == '15+':
-    #             queryset = queryset.filter(reading_time__gt=15)
+        return context
 
-    #     # Featured filter
-    #     featured = self.request.GET.get('featured')
-    #     if featured == 'true':
-    #         queryset = queryset.filter(featured=True)
+    def build_search_query(self, query):
+        """Build complex search query for title, content, excerpt, and tags."""
+        search_terms = query.split()
 
-    #     # Date range filter
-    #     date_range = self.request.GET.get('date_range')
-    #     if date_range:
-    #         now = timezone.now()
+        # Start w empty Q object
+        search_query = Q()
 
-    #         if date_range == 'today':
-    #             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    #             queryset = queryset.filter(published_date__gte=start_date)
-    #         elif date_range == 'week':
-    #             start_date = now - timedelta(days=7)
-    #             queryset = queryset.filter(published_date__gte=start_date)
-    #         elif date_range == 'month':
-    #             start_date = now - timedelta(days=30)
-    #             queryset = queryset.filter(published_date__gte=start_date)
-    #         elif date_range == 'quarter':
-    #             start_date = now - timedelta(days=90)
-    #             queryset = queryset.filter(published_date__gte=start_date)
-    #         elif date_range == 'year':
-    #             start_date = now - timedelta(days=365)
-    #             queryset = queryset.filter(published_date__gte=start_date)
+        for term in search_terms:
+            term_query = (
+                Q(title__icontains=term) |
+                Q(content__icontains=term) |
+                Q(excerpt__icontains=term) |
+                Q(tags__name__icontains=term) |
+                Q(category__name__icontains=term)
+            )
+            search_query &= term_query
 
-    #     return queryset
+        return search_query
 
-    # def apply_sorting(self, queryset):
-    #     """Apply sorting to search results."""
-    #     sort_by = self.request.GET.get('sort', 'relevance')
+    def apply_filters(self, queryset):
+        """Apply additional search filters."""
+        # Category filter
+        category_slug = self.request.GET.get('category')
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
 
-    #     if sort_by == 'newest':
-    #         return queryset.order_by('-published_date')
-    #     elif sort_by == 'oldest':
-    #         return queryset.order_by('published_date')
-    #     elif sort_by == 'title':
-    #         return queryset.order_by('title')
-    #     elif sort_by == 'reading-time':
-    #         return queryset.order_by('reading_time')
-    #     elif sort_by == 'category':
-    #         return queryset.order_by('category__name', '-published_date')
-    #     else:
-    #         # Default relevance sorting (newest first for now)
-    #         # TODO: Implement proper relevance scoring
-    #         return queryset.order_by('-published_date')
+        # Tag filter
+        tag_slug = self.request.GET.get('tag')
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
 
-    
+        # Reading time filter
+        reading_time = self.request.GET.get('reading_time')
+        if reading_time:
+            if reading_time == '0-5':
+                queryset = queryset.filter(reading_time__lte=5)
+            elif reading_time == '5-15':
+                queryset = queryset.filter(reading_time__gt=5, reading_time__lte=15)
+            elif reading_time == '15+':
+                queryset = queryset.filter(reading_time__gt=15)
+
+        # Featured filter
+        featured = self.request.GET.get('featured')
+        if featured == 'true':
+            queryset = queryset.filter(featured=True)
+
+        # Date range filter
+        date_range = self.request.GET.get('date_range')
+        if date_range:
+            now = timezone.now()
+
+            if date_range == 'today':
+                start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                queryset = queryset.filter(published_date__gte=start_date)
+            elif date_range == 'week':
+                start_date = now - timedelta(days=7)
+                queryset = queryset.filter(published_date__gte=start_date)
+            elif date_range == 'month':
+                start_date = now - timedelta(days=30)
+                queryset = queryset.filter(published_date__gte=start_date)
+            elif date_range == 'quarter':
+                start_date = now - timedelta(days=90)
+                queryset = queryset.filter(published_date__gte=start_date)
+            elif date_range == 'year':
+                start_date = now - timedelta(days=365)
+                queryset = queryset.filter(published_date__gte=start_date)
+
+        return queryset
+
+    def apply_sorting(self, queryset):
+        """Apply sorting to search results."""
+        sort_by = self.request.GET.get('sort', 'relevance')
+
+        if sort_by == 'newest':
+            return queryset.order_by('-published_date')
+        elif sort_by == 'oldest':
+            return queryset.order_by('published_date')
+        elif sort_by == 'title':
+            return queryset.order_by('title')
+        elif sort_by == 'reading-time':
+            return queryset.order_by('reading_time')
+        elif sort_by == 'category':
+            return queryset.order_by('category__name', '-published_date')
+        else:
+            # Default relevance sorting (newest first for now)
+            # TODO: Implement proper relevance scoring
+            return queryset.order_by('-published_date')
 
     def get_active_filters(self):
         """Get currently active filters for display."""

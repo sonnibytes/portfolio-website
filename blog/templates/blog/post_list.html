@@ -203,111 +203,95 @@
 
 {% block datalogs_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🔍 Initializing post list with unified search...');
-        
+    {% comment %} document.addEventListener('DOMContentLoaded', function() {
+        // Enhanced post list specific initialization
         if (window.datalogInterface) {
-            // Set page context data for the unified search system
-            window.datalogInterface.pageContext = {
-                viewName: '{{ request.resolver_match.view_name|default:"" }}',
-                appName: '{{ request.resolver_match.app_name|default:"" }}',
-                urlName: '{{ request.resolver_match.url_name|default:"" }}',
-                currentPost: null,
-                currentCategory: {% if current_category %}'{{ current_category.slug }}'{% else %}null{% endif %},
-                query: '{{ query|default:"" }}',
-                hasFilters: {% if show_filters %}true{% else %}false{% endif %},
-                totalPosts: {{ posts|length }},
-                isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %},
-                
-                // URLs for navigation
-                postListUrl: '{% url "blog:post_list" %}',
-                searchUrl: '{% url "blog:search" %}',
-                ajaxEndpoint: '{% url "blog:search_ajax" %}',
-                
-                // Search configuration
-                searchConfig: {
-                    debounceDelay: 300,
-                    minQueryLength: 2,
-                    maxSuggestions: 6,
-                    enableKeyboardNav: true,
-                    enableAjax: true
-                }
-            };
+            // Initialize search suggestions with AJAX
+            window.datalogInterface.initializeSearchSuggestions({
+                container: '.datalogs-search-section',
+                enableAjax: true,
+                debounceDelay: 300,
+                minQueryLength: 2
+            });
             
-            // Enhanced page detection using Django context
-            window.datalogInterface.detectPageType = function() {
-                const body = document.body;
-                const context = this.pageContext;
-                
-                // Use Django context for more accurate detection
-                if (context.viewName.includes('post_detail') || body.classList.contains('post-detail')) {
-                    this.state.currentPage = 'detail';
-                } else if (context.viewName.includes('category') || body.classList.contains('category-view')) {
-                    this.state.currentPage = 'category';
-                } else if (context.viewName.includes('archive') || body.classList.contains('archive-view')) {
-                    this.state.currentPage = 'archive';
-                } else if (context.viewName.includes('search') || body.classList.contains('search-results')) {
-                    this.state.currentPage = 'search';
-                } else if (context.viewName.includes('tag')) {
-                    this.state.currentPage = 'tag';
-                } else {
-                    this.state.currentPage = 'list';
-                }
-                
-                console.log(`📄 Page detected: ${this.state.currentPage} (view: ${context.viewName})`);
-            };
+            // Initialize enhanced filtering
+            window.datalogInterface.initializeEnhancedFilters({
+                autoApply: false,
+                multiSelect: true,
+                saveState: true
+            });
             
-            // Re-run page detection with new context
-            window.datalogInterface.detectPageType();
+            // Initialize data grid functionality
+            window.datalogInterface.initializeDataGrid({
+                container: '#dataGridContainer',
+                defaultView: 'grid',
+                enableSorting: true,
+                enableFiltering: true
+            });
             
-            // The unified search system is automatically initialized by the consolidated JS
-            // No need for duplicate initialization code here!
-            
-            // Track page view analytics
+            // Track list view analytics
             window.datalogInterface.trackEvent('page_view', {
                 page_type: 'post_list',
                 category: '{{ current_category.slug|default:"all" }}',
                 total_posts: {{ posts|length }},
-                has_query: {% if query %}'{{ query|length }}'{% else %}false{% endif %},
-                search_enabled: true
+                has_query: {% if query %}'{{ query|length }}'{% else %}false{% endif %}
             });
-            
-            // Track search interface usage if there's a query
-            {% if query %}
-            window.datalogInterface.trackEvent('search_performed', {
-                query: '{{ query|escapejs }}',
-                query_length: {{ query|length }},
-                results_count: {{ search_results_count|default:0 }},
-                source_page: 'post_list'
-            });
-            {% endif %}
-            
-            console.log('✅ Post list with unified search ready');
-        } else {
-            console.warn('⚠️ DataLogs interface not found - search functionality may be limited');
         }
-    });
+    }); </script> {% endcomment %}
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Initializing post list with unified search and filters...');
     
-    // Global search shortcuts that work with the unified system
-    document.addEventListener('keydown', function(e) {
-        // Don't trigger shortcuts when typing in inputs
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (window.datalogInterface) {
+        // Set page context data for the unified search system
+        window.datalogInterface.pageContext = {
+            viewName: '{{ request.resolver_match.view_name|default:"" }}',
+            appName: '{{ request.resolver_match.app_name|default:"" }}',
+            urlName: '{{ request.resolver_match.url_name|default:"" }}',
+            currentPost: null,
+            currentCategory: {% if current_category %}'{{ current_category.slug }}'{% else %}null{% endif %},
+            query: '{{ query|default:"" }}',
+            hasFilters: {% if show_filters %}true{% else %}false{% endif %},
+            totalPosts: {{ posts|length }},
+            isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %},
+            
+            // URLs for navigation
+            postListUrl: '{% url "blog:post_list" %}',
+            searchUrl: '{% url "blog:search" %}',
+            ajaxEndpoint: '{% url "blog:search_ajax" %}'
+        };
         
-        // Search shortcut (Ctrl/Cmd + K)
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            if (window.datalogInterface && window.datalogInterface.focusSearch) {
-                window.datalogInterface.focusSearch();
-            }
+        // Re-run page detection with new context
+        window.datalogInterface.detectPageType();
+        
+        // Track page view analytics
+        window.datalogInterface.trackEvent('page_view', {
+            page_type: 'post_list',
+            category: '{{ current_category.slug|default:"all" }}',
+            total_posts: {{ posts|length }},
+            has_query: {% if query %}'{{ query|length }}'{% else %}false{% endif %},
+            search_enabled: true,
+            filters_enabled: true
+        });
+        
+        // Track active filters
+        const activeFilters = [];
+        {% if request.GET.featured %}activeFilters.push('featured');{% endif %}
+        {% if request.GET.has_code %}activeFilters.push('has_code');{% endif %}
+        {% if request.GET.reading_time %}activeFilters.push('reading_time_{{ request.GET.reading_time }}');{% endif %}
+        {% if request.GET.category %}activeFilters.push('category_{{ request.GET.category }}');{% endif %}
+        
+        if (activeFilters.length > 0) {
+            window.datalogInterface.trackEvent('filters_active', {
+                active_filters: activeFilters,
+                filter_count: activeFilters.length,
+                page_type: 'post_list'
+            });
         }
         
-        // Filter shortcut (Ctrl/Cmd + F)
-        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-            e.preventDefault();
-            if (window.datalogInterface && window.datalogInterface.toggleFilterPanel) {
-                window.datalogInterface.toggleFilterPanel();
-            }
-        }
-    });
-    </script>
-    {% endblock %}
+        console.log('✅ Post list with unified search and filters ready');
+    } else {
+        console.warn('⚠️ DataLogs interface not found - functionality may be limited');
+    }
+});
+</script>
+{% endblock %}
