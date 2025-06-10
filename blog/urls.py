@@ -14,12 +14,6 @@ urlpatterns = [
     path("tag/<slug:slug>/", views.TagView.as_view(), name="tag"),
     # Archive views
     path("archive/", views.ArchiveIndexView.as_view(), name="archive"),
-    path("archive/<int:year>/", views.ArchiveYearView.as_view(), name="archive_year"),
-    path(
-        "archive/<int:year>/<int:month>/",
-        views.ArchiveMonthView.as_view(),
-        name="archive_month",
-    ),
     # Search views w AJAX
     path("search/", views.SearchView.as_view(), name="search"),
     path("search/ajax/", views.search_ajax_endpoint, name="search_ajax"),
