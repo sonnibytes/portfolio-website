@@ -13,8 +13,9 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.html import escape
-from django.db.models import Count, Q, Avg, Sum
+from django.db.models import Count, Q, Avg, Sum, Max, Min
 from markdownx.utils import markdownify
+from django.core.paginator import Paginator
 
 from datetime import datetime, timedelta, date
 import calendar
@@ -22,6 +23,7 @@ import os
 import re
 from uuid import uuid4
 import pprint
+from collections import defaultdict
 
 from .models import Post, Category, Tag, Series, SeriesPost, PostView
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
@@ -33,7 +35,7 @@ class PostListView(ListView):
     model = Post
     template_name = "blog/post_list.html"
     context_object_name = "posts"
-    paginate_by = 12  # changed from 6 - 6 posts per page (2 rows of 3)
+    paginate_by = 6  # 6 posts per page (2 rows of 3)
 
     def get_queryset(self):
         """Get posts, potentially filtered by search or category."""
@@ -267,6 +269,7 @@ class CategoriesOverviewView(ListView):
     model = Category
     template_name = "blog/category.html"  # Same template as CategoryView, different context
     context_object_name = "categories"
+    
     # TODO: Add tags, maybe recent posts to category cards
     def get_queryset(self):
         # Get categories post counts if gt 0
@@ -404,9 +407,76 @@ class CategoryView(ListView):
 
 
 class TagListView(ListView):
+    """
+    Tags overview page - shows all tags w stats.
+    URL: /datalogs/tags/
+    """
     model = Tag
-    template_name = 'blog/tags.html'
+    template_name = 'blog/tag.html'  # Same temp as TagView, diff context
     context_object_name = 'tags'
+
+    def get_queryset(self):
+        return Tag.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        ).filter(post_count__gt=0).order_by('-post_count', 'name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        tags = context['tags']
+
+        # Tag stats
+        total_tagged_posts = Post.objects.filter(
+            tags__isnull=False, status="published"
+        ).distinct().count()
+        popular_tags_count = tags.filter(post_count__gte=3).count()
+
+        # Popular tags for cloud (top 20)
+        popular_tags = tags[:20]
+
+        # Group tags by category (if tags have category relationship)
+        tags_by_category = defaultdict(list)
+        for tag in tags:
+            # Get the most common category for this tag
+            common_category = Category.objects.filter(
+                posts__tags=tag,
+                posts__status="published"
+            ).annotate(
+                tag_usage=Count('posts')
+            ).order_by('-tag_usage').first()
+
+            # Add metadata to tag
+            tag.recent_posts = Post.objects.filter(
+                tags=tag, status="published"
+            ).order_by('-published_date')[:2]
+
+            tag.latest_post = tag.recent_posts.first() if tag.recent_posts else None
+            tag.avg_reading_time = Post.objects.filter(
+                tags=tag, status="published"
+            ).aggregate(avg_time=Avg("reading_time"))["avg_time"] or 0
+
+            if common_category:
+                tags_by_category[common_category].append(tag)
+            else:
+                tags_by_category[None].append(tag)
+
+        query = self.request.GET.get('q', '').strip()
+
+        context.update({
+            'tag': None,  # signals overview in template
+            'popular_tags': popular_tags,
+            'tags_by_category': dict(tags_by_category),
+            'total_tagged_posts': total_tagged_posts,
+            'popular_tags_count': popular_tags_count,
+            'query': query,
+            'page_title': 'Tags Overview',
+            'page_subtitle': 'Explore DataLog tags',
+            'show_breadcrumbs': True,
+        })
+
+        return context
+
+
 
 
 class TagView(ListView):
