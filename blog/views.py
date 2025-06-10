@@ -14,7 +14,7 @@ from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.html import escape
 from django.db.models import Count, Q, Avg, Sum, Max, Min
-from django.db.models.functions import Extract, TrucYear, TruncMonth
+from django.db.models.functions import Extract
 from markdownx.utils import markdownify
 from django.core.paginator import Paginator
 
@@ -564,7 +564,7 @@ class ArchiveIndexView(ListView):
     URL: /blog/archive/
     """
     template_name = "blog/archive.html"
-    context_object_name = 'posts_by_year'
+    context_object_name = 'all_posts'
     # Show all posts for timeline
     paginate_by = None
 
@@ -598,7 +598,7 @@ class ArchiveIndexView(ListView):
 
             # Initialize year if not exists
             if year not in posts_by_year:
-                posts_by_year[year] == {
+                posts_by_year[year] = {
                     'year': year,
                     'months': {},
                     'posts': []
@@ -621,13 +621,13 @@ class ArchiveIndexView(ListView):
             year_data = posts_by_year[year]
 
             # Convert monthly dicts to sorted list
-            month_list = []
+            months_list = []
             for month_key in sorted(year_data['months'].keys(), reverse=True):
-                months_list.append({year_data['months'][month_key]})
+                months_list.append(year_data['months'][month_key])
 
             formatted_years.append({
                 'year': year,
-                'months': month_list,
+                'months': months_list,
                 'posts': year_data['posts']
             })
 
@@ -635,7 +635,7 @@ class ArchiveIndexView(ListView):
         archive_years = Post.objects.filter(
             status="published"
         ).annotate(
-            year.Extract('published_date', 'year')
+            year=Extract('published_date', 'year')
         ).values('year').annotate(
             count=Count('id')
         ).order_by('-year')

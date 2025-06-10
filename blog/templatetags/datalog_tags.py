@@ -12,6 +12,7 @@ from django.utils.text import slugify
 from django.utils.html import escape, format_html
 from django.urls import reverse
 from django.db.models import Count, Q, Avg, Sum
+from django.db.models.functions import Extract
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 
@@ -1218,18 +1219,15 @@ def archive_years():
     Get all years that have published posts for archive navigation.
     Usage: {% archive_years as years %}
     """
-    return Post.objects.filter()
+    years = Post.objects.filter(
+        status="published"
+    ).annotate(
+        year=Extract('published_date', 'year')
+    ).values('year').annotate(
+        count=Count('id')
+    ).order_by('-year')
 
-    # extra dep, trying different approach
-    # years = Post.objects.filter(
-    #     status="published"
-    # ).extra(
-    #     select={'year': "EXTRACT(year FROM published_date)"}
-    # ).values('year').annotate(
-    #     count=Count('id')
-    # ).order_by('-year')
-
-    # return list(years)
+    return list(years)
 
 
 @register.simple_tag
