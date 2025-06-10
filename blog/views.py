@@ -610,7 +610,7 @@ class ArchiveIndexView(ListView):
                     'month': post.published_date.replace(day=1),
                     'posts': []
                 }
-            
+
             # Add post month and year
             posts_by_year[year]['months'][month_key]['posts'].append(post)
             posts_by_year[year]['posts'].append(post)
@@ -681,84 +681,6 @@ class ArchiveIndexView(ListView):
             'page_subtitle': 'Chronological timeline of all entries',
             'show_breadcrumbs': True,
         })
-
-        return context
-
-
-class ArchiveYearView(ListView):
-    """
-    Year-based archive view.
-    URL: /blog/archive/<year>/
-    """
-    model = Post
-    template_name = 'blog/archive_year.html'
-    context_object_name = 'posts'
-
-    def get_queryset(self):
-        year = self.kwargs['year']
-        return Post.objects.filter(
-            status='published',
-            published_date__year=year).select_related(
-                'category', 'author').prefetch_related('tags').order_by('-published_date')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        year = self.kwargs['year']
-
-        context.update({
-            'current_year': year,
-            'archive_style': 'compact',
-            'page_title': f'DataLogs Archive - {year}',
-            'page_description': f'All entries logged in {year}.',
-            'show_timeline_stats': True,
-            'show_timeline_navigation': True,
-        })
-
-        return context
-
-
-class ArchiveMonthView(ListView):
-    """
-    Month-based archive view.
-    URL: /blog/archive/<year>/<month>/
-    """
-
-    model = Post
-    template_name = "blog/archive_month.html"
-    context_object_name = "posts"
-
-    def get_queryset(self):
-        year = self.kwargs["year"]
-        month = self.kwargs["month"]
-        return (
-            Post.objects.filter(
-                status="published",
-                published_date__year=year,
-                published_date__month=month,
-            )
-            .select_related("category", "author")
-            .prefetch_related("tags")
-            .order_by("-published_date")
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        year = self.kwargs["year"]
-        month = self.kwargs["month"]
-        month_name = calendar.month_name[month]
-
-        context.update(
-            {
-                "current_year": year,
-                "current_month": month,
-                "month_name": month_name,
-                "archive_style": "cards",
-                "page_title": f"DataLogs Archive - {month_name} {year}",
-                "page_description": f"All DataLog entries published in {month_name} {year}.",
-                "show_timeline_stats": True,
-                "show_timeline_navigation": True,
-            }
-        )
 
         return context
 
