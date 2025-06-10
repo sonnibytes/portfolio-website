@@ -1218,15 +1218,18 @@ def archive_years():
     Get all years that have published posts for archive navigation.
     Usage: {% archive_years as years %}
     """
-    years = Post.objects.filter(
-        status="published"
-    ).extra(
-        select={'year': "EXTRACT(year FROM published_date)"}
-    ).values('year').annotate(
-        count=Count('id')
-    ).order_by('-year')
+    return Post.objects.filter()
 
-    return list(years)
+    # extra dep, trying different approach
+    # years = Post.objects.filter(
+    #     status="published"
+    # ).extra(
+    #     select={'year': "EXTRACT(year FROM published_date)"}
+    # ).values('year').annotate(
+    #     count=Count('id')
+    # ).order_by('-year')
+
+    # return list(years)
 
 
 @register.simple_tag

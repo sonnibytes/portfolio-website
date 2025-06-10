@@ -14,6 +14,7 @@ from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.html import escape
 from django.db.models import Count, Q, Avg, Sum, Max, Min
+from django.db.models.functions import Extract, TrucYear, TruncMonth
 from markdownx.utils import markdownify
 from django.core.paginator import Paginator
 
@@ -23,7 +24,7 @@ import os
 import re
 from uuid import uuid4
 import pprint
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from .models import Post, Category, Tag, Series, SeriesPost, PostView
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
@@ -567,10 +568,6 @@ class ArchiveIndexView(ListView):
     # Show all posts for timeline
     paginate_by = None
 
-    # Define the start date for timeline (April 2025)
-    # start_year = 2024
-    # start_month = 11
-
     def get_queryset(self):
         queryset = Post.objects.filter(status='published').select_related('category', 'author').prefetch_related('tags').order_by('-published_date')
 
@@ -590,51 +587,75 @@ class ArchiveIndexView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        posts = self.get_queryset()
+        all_posts = self.get_queryset()
 
-        # Group posts by year and month
-        posts_by_year = defaultdict(lambda: {'year': None, 'months': defaultdict(list)})
+        # Group posts by year and month (Python grouping)
+        posts_by_year = {}
 
-        for post in posts:
+        for post in all_posts:
             year = post.published_date.year
-            # First day of month for grouping
-            month = post.published_date.replace(day=1)
+            month_key = post.published_date.strftime('%Y-%m')
 
-            if not posts_by_year[year]['year']:
-                posts_by_year[year]['year'] = year
-     
-            posts_by_year[year]['months'][month].append(post)
+            # Initialize year if not exists
+            if year not in posts_by_year:
+                posts_by_year[year] == {
+                    'year': year,
+                    'months': {},
+                    'posts': []
+                }
+
+            # Initialize month if not exists
+            if month_key not in posts_by_year[year]['months']:
+                posts_by_year[year]['months'][month_key] = {
+                    'month': post.published_date.replace(day=1),
+                    'posts': []
+                }
+            
+            # Add post month and year
+            posts_by_year[year]['months'][month_key]['posts'].append(post)
+            posts_by_year[year]['posts'].append(post)
 
         # Convert to list format for template
         formatted_years = []
-        for year, year_data in sorted(posts_by_year['months'].items(), reverse=True):
-            formatted_months = []
-            for month, month_posts in sorted(year_data['months'].items(), reverse=True):
-                formatted_months.append({
-                    'month': month,
-                    'posts': month_posts
-                })
+        for year in sorted(posts_by_year.keys(), reverse=True):
+            year_data = posts_by_year[year]
 
-        formatted_years.append({
-            'year': year,
-            'months': formatted_months,
-            'posts': [post for month_data in formatted_months for post in month_data['posts']]
-        })
-    
-        # Archive Stats
-        total_posts = posts.count()
-        first_post = posts.order_by('published_date').first()
-        latest_post = post.order_by('-published_date').first()
+            # Convert monthly dicts to sorted list
+            month_list = []
+            for month_key in sorted(year_data['months'].keys(), reverse=True):
+                months_list.append({year_data['months'][month_key]})
 
-        current_year = datetime.now().year
-        posts_this_year = posts.filter(published_date__year=current_year).count()
+            formatted_years.append({
+                'year': year,
+                'months': month_list,
+                'posts': year_data['posts']
+            })
 
-        # Years w post counts for navigation
+        # Archive years for navigation using modern Django
         archive_years = Post.objects.filter(
-            status='published'
-        ).extra(select={'year': "EXTRACT(year FROM published_date)"}).values(
-            'year'
-        ).annotate(count=Count('id')).order_by('-year')
+            status="published"
+        ).annotate(
+            year.Extract('published_date', 'year')
+        ).values('year').annotate(
+            count=Count('id')
+        ).order_by('-year')
+
+        # Archive Stats
+        total_posts = all_posts.count()
+        current_year = datetime.now().year
+        posts_this_year = all_posts.filter(published_date__year=current_year).count()
+
+        # Date ranges
+        if all_posts.exists():
+            first_post = all_posts.order_by('published_date').first()
+            latest_post = all_posts.order_by('-published_date').first()
+            total_reading_time = all_posts.aggregate(
+                total=Sum('reading_time')
+            )['total'] or 0
+        else:
+            first_post = None
+            latest_post = None
+            total_reading_time = 0
 
         # Categories for filtering
         categories = Category.objects.filter(
@@ -643,32 +664,19 @@ class ArchiveIndexView(ListView):
             post_count=Count('posts')
         ).order_by('name')
 
-        # Recent posts for preview
-        recent_posts = posts[:5]
-
-        # Calculate years active
-        years_active = archive_years.count()
-
-        # Total reading time
-        total_reading_time = posts.aggregate(
-            total_time=Sum("reading_time")
-        )["total_time"] or 0
-
-        query = self.request.GET.get('q', '').strip()
-
         context.update({
             'posts_by_year': formatted_years,
+            'archive_years': list(archive_years),
             'total_posts': total_posts,
             'current_year': current_year,
             'posts_this_year': posts_this_year,
-            'years_active': years_active,
             'total_reading_time': total_reading_time,
             'first_post_date': first_post.published_date if first_post else None,
             'latest_post_date': latest_post.published_date if latest_post else None,
-            'archive_years': archive_years,
+            'years_active': len(set(post.published_date.year for post in all_posts)),
             'categories': categories,
-            'recent_posts': recent_posts,
-            'query': query,
+            'recent_posts': all_posts[:5],
+            'query': self.request.GET.get('q', '').strip(),
             'page_title': 'Archive',
             'page_subtitle': 'Chronological timeline of all entries',
             'show_breadcrumbs': True,
