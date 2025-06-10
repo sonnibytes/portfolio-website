@@ -41,7 +41,7 @@ class PostListView(ListView):
     def get_queryset(self):
         """Get posts, potentially filtered by search or category."""
         queryset = Post.objects.filter(
-            status="published").select_related('category', 'author').prefetch_related('tags')
+            status="published").select_related('category', 'author').prefetch_related('tags').order_by('-published_date')
 
         # Handle search from unified search interface
         query = self.request.GET.get('q', '').strip()
@@ -51,13 +51,27 @@ class PostListView(ListView):
                 Q(content__icontains=query) |
                 Q(excerpt__icontains=query)
             )
-        return queryset.order_by('-published_date')
+
+        # Apply filters
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category__slug=category)
+
+        featured = self.request.GET.get('featured')
+        if featured == 'true':
+            queryset = queryset.filter(featured=True)
+
+        has_code = self.request.GET.get('has_code')
+        if has_code == 'true':
+            queryset = queryset.exclude(featured_code__exact='')
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Helper function for search context
-        context.update(get_search_context(self.request))
+        # # Helper function for search context
+        # context.update(get_search_context(self.request))
 
         # Existing context
         context['categories'] = Category.objects.all()
@@ -68,7 +82,7 @@ class PostListView(ListView):
         ).select_related('category').prefetch_related('tags', 'related_systems').first()
 
         # Add search context
-        # context.update(add_search_context(context, self.request))
+        query = self.request.GET.get('q', '').strip()
 
         # Enhanced context for new template
         context.update({
