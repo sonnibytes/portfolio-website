@@ -339,24 +339,24 @@ class CategoriesOverviewView(ListView):
 
             # Template control flags
             "show_breadcrumbs": True,
-            "show_stats": True,
+            # "show_stats": True,
         })
 
         return context
 
 
 class CategoryView(ListView):
-    """View for posts filtered by category."""
+    """
+    View for posts filtered by category.
+    URL: /datalogs/category/<slug>/
+    """
     model = Post
-    template_name = "blog/category.html"
+    template_name = "blog/category.html"  # Same temp as overview, diff context
     context_object_name = "posts"
     paginate_by = 6
 
     def get_queryset(self):
-        # If no category slug, return empty queryset for overview
-        if 'slug' not in self.kwargs:
-            return Post.objects.none()
-
+        # Get specific category
         self.category = get_object_or_404(Category, slug=self.kwargs['slug'])
         return Post.objects.filter(
             category=self.category,
@@ -365,48 +365,40 @@ class CategoryView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        if 'slug' in kwargs:
-            # Focused category view
-            context.update(
-                {
-                    "category": self.category,
-                    "category_slug": self.kwargs['slug'],
-                    "page_title": f"{self.category.name} DataLogs",
-                    "page_subtitle": f"Technical insights in {self.category.name}",
-                    "page_icon": self.category.icon or "fas fa-folder",
-                    "show_breadcrumbs": True,
-                    "show_filters": True,
-                    "show_stats": False,
-                    # Category-specific stats
-                    "category_post_count": self.get_queryset().count(),
-                    "category_avg_reading_time": self.get_queryset().aggregate(
-                        avg_time=Avg("reading_time")
-                    )["avg_time"] or 0,
-                    # Related categories
-                    "related_categories": Category.objects.exclude(id=self.category.id)
-                    .annotate(
-                        post_count=Count(
-                            "posts", filter=Q(posts__status="published")
-                        )
-                    )
-                    .filter(post_count__gt=0)[:4],
-                }
-            )
-        else:
-            # Categories overview
-            categories = Category.objects.annotate(
-                post_count=Count("posts", filter=Q(posts__status='published'))
-            ).filter(post_count__gt=0)
+        # Category-specific stats
+        category_posts = self.get_queryset()
+        category_post_count = category_posts.count()
+        category_avg_reading_time = category_posts.aggregate(
+            avg_time=Avg("reading_time")
+        )["avg_time"] or 0
 
-            context.update({
-                "categories": categories,
-                "total_categories": categories.count(),
-                "total_posts": Post.objects.filter(status="published").count(),
-                "show_breadscrumbs": True,
-                "show_filters": True,
-                "show_stats": False,
-                # ...other overview stats
-            })
+        # Related Categories (excluding current, only those w posts)
+        related_categories = Category.objects.exclude(
+            id=self.category.id
+        ).annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        ).filter(post_count__gt=0).order_by("-post_count")[:4]
+
+        context.update({
+            # Category-specific data
+            "category": self.category,
+            "category_slug": self.kwargs['slug'],
+
+            # Page metadata
+            "page_title": f"{self.category.name} DataLogs",
+            "page_subtitle": f"Technical logs RE: {self.category.name}",
+            "page_icon": self.category.icon or "fas fa-folder",
+
+            # Category stats
+            "category_post_count": category_post_count,
+            "category_avg_reading_time": category_avg_reading_time,
+            "related_categories": related_categories,
+
+            # Template control flags
+            "show_breadcrumbs": True,
+            "show_filters": True,
+            "show_stats": False,
+        })
 
         return context
 
