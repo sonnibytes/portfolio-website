@@ -16,8 +16,8 @@ urlpatterns = [
     path("archive/", views.ArchiveIndexView.as_view(), name="archive"),
     # Search views w AJAX
     path("search/", views.SearchView.as_view(), name="search"),
-    path("search/ajax/", views.search_ajax_endpoint, name="search_ajax"),
-    path("search/autocomplete/", views.search_autocomplete, name="search_autocomplete"),
+    path("search/suggestions/", views.search_ajax_endpoint, name="search_ajax"),
+    # path("search/autocomplete/", views.search_autocomplete, name="search_autocomplete"),
     # path("search/export/", views.search_export, name="search_export"),
     # Admin/Management URLs
     path("admin/dashboard/", views.DashboardView.as_view(), name="dashboard"),

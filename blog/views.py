@@ -13,8 +13,8 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.html import escape
-from django.db.models import Count, Q, Avg, Sum, Max, Min
-from django.db.models.functions import Extract
+from django.db.models import Count, Q, Avg, Sum, Case, When, IntegerField, Value
+from django.db.models.functions import Extract, Length
 from markdownx.utils import markdownify
 from django.core.paginator import Paginator
 
@@ -685,639 +685,197 @@ class ArchiveIndexView(ListView):
         return context
 
 
-# ======================== ENHANCED SEARCH VIEW ===========================
+# # ======================== ENHANCED SEARCH VIEW ===========================
 
 
-@require_http_methods(["GET"])
-@cache_page(60 * 5)  # Cache for 5 minutes
-def search_ajax_endpoint(request):
-    """
-    AJAX endpoint for unified search suggestions.
-    Returns JSON w suggestions for real-time search.
-    """
-    query = request.GET.get('q', '').strip()
-    max_suggestions = int(request.GET.get('max', 6))
-
-    try:
-        if len(query) < 2:
-            # Return popular terms when query is too short
-            suggestions = [
-                {
-                    "text": "Machine Learning",
-                    "type": "topic",
-                    "icon": "fas fa-brain",
-                    "url": "/datalogs/search/?q=machine+learning",
-                    "description": "AI and ML concepts",
-                },
-                {
-                    "text": "Python Development",
-                    "type": "topic",
-                    "icon": "fab fa-python",
-                    "url": "/datalogs/search/?q=python",
-                    "description": "Programming and development",
-                },
-                {
-                    "text": "API Design",
-                    "type": "topic",
-                    "icon": "fas fa-plug",
-                    "url": "/datalogs/search/?q=api",
-                    "description": "API design and development",
-                },
-                {
-                    "text": "Database",
-                    "type": "topic",
-                    "icon": "fas fa-database",
-                    "url": "/datalogs/search/?q=database",
-                    "description": "Database design and optimization",
-                },
-                {
-                    "text": "Neural Networks",
-                    "type": "topic",
-                    "icon": "fas fa-project-diagram",
-                    "url": "/datalogs/search/?q=neural+networks",
-                    "description": "Deep learning and neural networks",
-                },
-            ]
-        else:
-            suggestions = []
-            query_lower = query.lower()
-
-            # Search in posts
-            matching_posts = (
-                Post.objects.filter(
-                    Q(title__icontains=query) | Q(content__icontains=query),
-                    status="published",
-                )
-                .select_related("category")
-                .order_by("-published_date")[:3]
-            )
-
-            for post in matching_posts:
-                suggestions.append(
-                    {
-                        "text": post.title,
-                        "type": "post",
-                        "icon": "fas fa-file-alt",
-                        "url": post.get_absolute_url(),
-                        "description": f"Published {post.published_date.strftime('%b %d, %Y')}"
-                        if post.published_date
-                        else "",
-                    }
-                )
-
-            # Search in categories
-            matching_categories = (
-                Category.objects.filter(name__icontains=query)
-                .annotate(
-                    post_count=Count("posts", filter=Q(posts__status="published"))
-                )
-                .filter(post_count__gt=0)[:2]
-            )
-
-            for category in matching_categories:
-                suggestions.append(
-                    {
-                        "text": f"{category.name} Category",
-                        "type": "category",
-                        "icon": getattr(category, "icon", "fas fa-folder"),
-                        "url": category.get_absolute_url() if hasattr(category, 'get_absolute_url') else f"/datalogs/category/{category.slug}/",
-                        "description": f"{category.post_count} post{'s' if category.post_count != 1 else ''}",
-                    }
-                )
-
-            # Search in tags
-            matching_tags = (
-                Tag.objects.filter(name__icontains=query)
-                .annotate(
-                    post_count=Count("posts", filter=Q(posts__status="published"))
-                )
-                .filter(post_count__gt=0)[:2]
-            )
-
-            for tag in matching_tags:
-                suggestions.append(
-                    {
-                        "text": f"#{tag.name}",
-                        "type": "tag",
-                        "icon": "fas fa-tag",
-                        "url": tag.get_absolute_url() if hasattr(tag, 'get_absolute_url') else f"/datalogs/tag/{tag.slug}/",
-                        "description": f"{tag.post_count} post{'s' if tag.post_count != 1 else ''}",
-                    }
-                )
-
-            # Add contextual topic suggestions
-            if "python" in query_lower and not any(
-                s["text"] == "Python Development" for s in suggestions
-            ):
-                suggestions.append(
-                    {
-                        "text": "Python Development",
-                        "type": "topic",
-                        "icon": "fab fa-python",
-                        "url": f"/datalogs/search/?q=python",
-                        "description": "Programming and development",
-                    }
-                )
-
-            if any(
-                term in query_lower for term in ["ml", "machine", "learning", "ai"]
-            ) and not any("Machine Learning" in s["text"] for s in suggestions):
-                suggestions.append(
-                    {
-                        "text": "Machine Learning",
-                        "type": "topic",
-                        "icon": "fas fa-brain",
-                        "url": f"/datalogs/search/?q=machine+learning",
-                        "description": "AI and ML concepts",
-                    }
-                )
-
-            if any(
-                term in query_lower for term in ["api", "rest", "endpoint"]
-            ) and not any("API" in s["text"] for s in suggestions):
-                suggestions.append(
-                    {
-                        "text": "API Development",
-                        "type": "topic",
-                        "icon": "fas fa-plug",
-                        "url": f"/datalogs/search/?q=api",
-                        "description": "API design and development",
-                    }
-                )
-
-        # Limit to max suggestions
-        suggestions = suggestions[:max_suggestions]
-
-        return JsonResponse(
-            {
-                "suggestions": suggestions,
-                "query": query,
-                "count": len(suggestions),
-                "status": "success",
-                # "cached": False,
-            }
-        )
-
-    except Exception as e:
-        return JsonResponse(
-            {
-                "suggestions": [],
-                "query": query,
-                "count": 0,
-                "status": "error",
-                "error": "Search temporarily unavailable",
-            },
-            status=500,
-        )
-
-
-@require_http_methods(["GET"])
-def search_autocomplete(request):
-    """
-    Faster autocomplete endpoint that just returns text suggestions.
-    For basic autocomplete functionality without full suggestion objects.
-    """
-    query = request.GET.get("q", "").strip()
-    limit = int(request.GET.get("limit", 5))
-
-    if len(query) < 2:
-        return JsonResponse({"suggestions": []})
-
-    try:
-        # Get post titles that match
-        post_titles = Post.objects.filter(
-            title__icontains=query, status="published"
-        ).values_list("title", flat=True)[:limit // 2]
-
-        # Get category names that match
-        category_names = Category.objects.filter(name__icontains=query).values_list(
-            "name", flat=True
-        )[:limit // 2]
-
-        # Combine and limit
-        suggestions = list(post_titles) + [f"{name} Category" for name in category_names]
-        suggestions = suggestions[:limit]
-
-        return JsonResponse(
-            {"suggestions": suggestions, "query": query, "count": len(suggestions)}
-        )
-
-    except Exception:
-        return JsonResponse({"suggestions": [], "error": "Autocomplete unavailable"})
-
-
-def get_search_context(request, query=None):
-    """
-    Get all search-related context data.
-    Use this in your main SearchView and PostListView to keep them clean.
-    """
-    if query is None:
-        query = request.GET.get('q', '').strip()
-
-    context = {'query': query}
-
-    if query:
-        # Get search results
-        results = Post.objects.filter(
-            Q(title__icontains=query) |
-            Q(content__icontains=query) |
-            Q(excerpt__icontains=query),
-            status='published'
-        ).select_related('category', 'author').prefetch_related('tags')
-
-        context.update({
-            'search_results': results,
-            'search_results_count': results.count(),
-            'has_results': results.exists(),
-        })
-
-    return context
-
-
-# Helper function for other views that might need search context
-def add_search_context(context, request):
-    """
-    Add search-related context to any view.
-    Usage: context.update(add_search_context(context, request))
-    """
-    query = request.GET.get('q', '').strip()
-
-    search_context = {
-        'query': query,
-        'has_search_query': bool(query),
-        'search_enabled': True,
-    }
-
-    if query:
-        # Add search results count for display
-        search_context['search_results_count'] = Post.objects.filter(
-            Q(title__icontains=query) | Q(content__icontains=query),
-            status='published'
-        ).count()
-
-    return search_context
-
-
-class SearchView(ListView):
-    """
-    Enhanced search view that works with the unified search interface.
-    """
-    model = Post
-    template_name = "blog/search.html"
-    context_object_name = "posts"
-    paginate_by = 12
-
-    def get_queryset(self):
-        """Get search results with better relevance scoring."""
-        query = self.request.GET.get('q', '').strip()
-
-        if not query:
-            return Post.objects.none()
-
-        # Base queryset - published posts only
-        queryset = (
-            Post.objects.filter(status="published")
-            .select_related("category", "author")
-            .prefetch_related("tags")
-        )
-
-        # Build search query
-        search_query = self.build_search_query(query)
-        queryset = queryset.filter(search_query)
-
-        # Apply additional filters
-        queryset = self.apply_filters(queryset)
-
-        # Apply sorting
-        queryset = self.apply_sorting(queryset)
-
-        return queryset.distinct()
-
-    def get_context_data(self, **kwargs):
-        """Add search-specific context."""
-        context = super().get_context_data(**kwargs)
-        # context.update(get_search_context(self.request))
-        
-        query = self.request.GET.get("q", "").strip()
-
-        # context.update(
-        #     {
-        #         "query": query,
-        #         "search_results_count": self.get_queryset().count() if query else 0,
-        #         "has_results": self.get_queryset().exists() if query else False,
-        #         "popular_terms": [
-        #             {"term": "Machine Learning", "count": 15},
-        #             {"term": "Python", "count": 23},
-        #             {"term": "API Development", "count": 12},
-        #             {"term": "Database", "count": 8},
-        #             {"term": "Django", "count": 18},
-        #         ],
-        #         'search_suggestions_enabled': True,
-        #     }
-        # )
-
-        # return context
-
-        # Older, more complex logic
-        context["query"] = query
-        context["total_results"] = self.get_queryset().count() if query else 0
-
-        # Active filters for display
-        context["active_filters"] = self.get_active_filters()
-
-        # Search metadata
-        context["search_metadata"] = {
-            "query": query,
-            "total_results": context["total_results"],
-            "filters_applied": self.get_active_filters(),
-            "sort_by": self.request.GET.get("sort", "relevance"),
-            "has_results": context["total_results"] > 0,
-        }
-
-        # Get suggestions for the current query
-        if query:
-            context["search_suggestions"] = datalog_search_suggestions(query)
-
-        # Filter options for the template
-        context["categories"] = Category.objects.annotate(
-            post_count=Count("posts", filter=Q(posts__status="pubished"))
-        ).filter(post_count__gt=0)
-
-        context["popular_tags"] = (
-            Tag.objects.annotate(
-                post_count=Count("posts", filter=Q(posts__status="published"))
-            )
-            .filter(post_count__gt=0)
-            .order_by("-post_count")[:10]
-        )
-       
-        return context
-
-    def build_search_query(self, query):
-        """Build complex search query for title, content, excerpt, and tags."""
-        search_terms = query.split()
-
-        # Start w empty Q object
-        search_query = Q()
-
-        for term in search_terms:
-            term_query = (
-                Q(title__icontains=term) |
-                Q(content__icontains=term) |
-                Q(excerpt__icontains=term) |
-                Q(tags__name__icontains=term) |
-                Q(category__name__icontains=term)
-            )
-            search_query &= term_query
-
-        return search_query
-
-    def apply_filters(self, queryset):
-        """Apply additional search filters."""
-        # Category filter
-        category_slug = self.request.GET.get('category')
-        if category_slug:
-            queryset = queryset.filter(category__slug=category_slug)
-
-        # Tag filter
-        tag_slug = self.request.GET.get('tag')
-        if tag_slug:
-            queryset = queryset.filter(tags__slug=tag_slug)
-
-        # Reading time filter
-        reading_time = self.request.GET.get('reading_time')
-        if reading_time:
-            if reading_time == '0-5':
-                queryset = queryset.filter(reading_time__lte=5)
-            elif reading_time == '5-15':
-                queryset = queryset.filter(reading_time__gt=5, reading_time__lte=15)
-            elif reading_time == '15+':
-                queryset = queryset.filter(reading_time__gt=15)
-
-        # Featured filter
-        featured = self.request.GET.get('featured')
-        if featured == 'true':
-            queryset = queryset.filter(featured=True)
-
-        # Date range filter
-        date_range = self.request.GET.get('date_range')
-        if date_range:
-            now = timezone.now()
-
-            if date_range == 'today':
-                start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-                queryset = queryset.filter(published_date__gte=start_date)
-            elif date_range == 'week':
-                start_date = now - timedelta(days=7)
-                queryset = queryset.filter(published_date__gte=start_date)
-            elif date_range == 'month':
-                start_date = now - timedelta(days=30)
-                queryset = queryset.filter(published_date__gte=start_date)
-            elif date_range == 'quarter':
-                start_date = now - timedelta(days=90)
-                queryset = queryset.filter(published_date__gte=start_date)
-            elif date_range == 'year':
-                start_date = now - timedelta(days=365)
-                queryset = queryset.filter(published_date__gte=start_date)
-
-        return queryset
-
-    def apply_sorting(self, queryset):
-        """Apply sorting to search results."""
-        sort_by = self.request.GET.get('sort', 'relevance')
-
-        if sort_by == 'newest':
-            return queryset.order_by('-published_date')
-        elif sort_by == 'oldest':
-            return queryset.order_by('published_date')
-        elif sort_by == 'title':
-            return queryset.order_by('title')
-        elif sort_by == 'reading-time':
-            return queryset.order_by('reading_time')
-        elif sort_by == 'category':
-            return queryset.order_by('category__name', '-published_date')
-        else:
-            # Default relevance sorting (newest first for now)
-            # TODO: Implement proper relevance scoring
-            return queryset.order_by('-published_date')
-
-    def get_active_filters(self):
-        """Get currently active filters for display."""
-        filters = {}
-
-        if self.request.GET.get('category'):
-            filters['category'] = self.request.GET.get('category')
-        if self.request.GET.get('tag'):
-            filters['tag'] = self.request.GET.get('tag')
-        if self.request.GET.get('reading_time'):
-            filters['reading_time'] = self.request.GET.get('reading_time')
-        if self.request.GET.get('featured') == 'true':
-            filters['featured'] = True
-        if self.request.GET.get('date_range'):
-            filters['date_range'] = self.request.GET.get('date_range')
-        if self.request.GET.get('sort', 'relevance') != 'relevance':
-            filters['sort'] = self.request.GET.get('sort')
-
-        return filters
-
-# PREVIOUS SEARCH IMPLEMENTATION
 # @require_http_methods(["GET"])
-# def search_suggestions_ajax(request):
+# @cache_page(60 * 5)  # Cache for 5 minutes
+# def search_ajax_endpoint(request):
 #     """
-#     AJAX endpoint for real-time sesarch suggestions.
-#     Returns JSON response with suggestions data.
+#     AJAX endpoint for unified search suggestions.
+#     Returns JSON w suggestions for real-time search.
 #     """
 #     query = request.GET.get('q', '').strip()
-#     max_suggestions = int(request.GET.get('max', 8))
-
-#     # minimum query len
-#     if len(query) < 2:
-#         return JsonResponse({
-#             'suggestions': [],
-#             'query': query,
-#             'total': 0,
-#             'success': True
-#         })
+#     max_suggestions = int(request.GET.get('max', 6))
 
 #     try:
-#         # Use existing template tag function for consistency
-#         suggestions = datalog_search_suggestions(query)
+#         if len(query) < 2:
+#             # Return popular terms when query is too short
+#             suggestions = [
+#                 {
+#                     "text": "Machine Learning",
+#                     "type": "topic",
+#                     "icon": "fas fa-brain",
+#                     "url": "/datalogs/search/?q=machine+learning",
+#                     "description": "AI and ML concepts",
+#                 },
+#                 {
+#                     "text": "Python Development",
+#                     "type": "topic",
+#                     "icon": "fab fa-python",
+#                     "url": "/datalogs/search/?q=python",
+#                     "description": "Programming and development",
+#                 },
+#                 {
+#                     "text": "API Design",
+#                     "type": "topic",
+#                     "icon": "fas fa-plug",
+#                     "url": "/datalogs/search/?q=api",
+#                     "description": "API design and development",
+#                 },
+#                 {
+#                     "text": "Database",
+#                     "type": "topic",
+#                     "icon": "fas fa-database",
+#                     "url": "/datalogs/search/?q=database",
+#                     "description": "Database design and optimization",
+#                 },
+#                 {
+#                     "text": "Neural Networks",
+#                     "type": "topic",
+#                     "icon": "fas fa-project-diagram",
+#                     "url": "/datalogs/search/?q=neural+networks",
+#                     "description": "Deep learning and neural networks",
+#                 },
+#             ]
+#         else:
+#             suggestions = []
+#             query_lower = query.lower()
 
-#         # Limit suggestions
+#             # Search in posts
+#             matching_posts = (
+#                 Post.objects.filter(
+#                     Q(title__icontains=query) | Q(content__icontains=query),
+#                     status="published",
+#                 )
+#                 .select_related("category")
+#                 .order_by("-published_date")[:3]
+#             )
+
+#             for post in matching_posts:
+#                 suggestions.append(
+#                     {
+#                         "text": post.title,
+#                         "type": "post",
+#                         "icon": "fas fa-file-alt",
+#                         "url": post.get_absolute_url(),
+#                         "description": f"Published {post.published_date.strftime('%b %d, %Y')}"
+#                         if post.published_date
+#                         else "",
+#                     }
+#                 )
+
+#             # Search in categories
+#             matching_categories = (
+#                 Category.objects.filter(name__icontains=query)
+#                 .annotate(
+#                     post_count=Count("posts", filter=Q(posts__status="published"))
+#                 )
+#                 .filter(post_count__gt=0)[:2]
+#             )
+
+#             for category in matching_categories:
+#                 suggestions.append(
+#                     {
+#                         "text": f"{category.name} Category",
+#                         "type": "category",
+#                         "icon": getattr(category, "icon", "fas fa-folder"),
+#                         "url": category.get_absolute_url() if hasattr(category, 'get_absolute_url') else f"/datalogs/category/{category.slug}/",
+#                         "description": f"{category.post_count} post{'s' if category.post_count != 1 else ''}",
+#                     }
+#                 )
+
+#             # Search in tags
+#             matching_tags = (
+#                 Tag.objects.filter(name__icontains=query)
+#                 .annotate(
+#                     post_count=Count("posts", filter=Q(posts__status="published"))
+#                 )
+#                 .filter(post_count__gt=0)[:2]
+#             )
+
+#             for tag in matching_tags:
+#                 suggestions.append(
+#                     {
+#                         "text": f"#{tag.name}",
+#                         "type": "tag",
+#                         "icon": "fas fa-tag",
+#                         "url": tag.get_absolute_url() if hasattr(tag, 'get_absolute_url') else f"/datalogs/tag/{tag.slug}/",
+#                         "description": f"{tag.post_count} post{'s' if tag.post_count != 1 else ''}",
+#                     }
+#                 )
+
+#             # Add contextual topic suggestions
+#             if "python" in query_lower and not any(
+#                 s["text"] == "Python Development" for s in suggestions
+#             ):
+#                 suggestions.append(
+#                     {
+#                         "text": "Python Development",
+#                         "type": "topic",
+#                         "icon": "fab fa-python",
+#                         "url": f"/datalogs/search/?q=python",
+#                         "description": "Programming and development",
+#                     }
+#                 )
+
+#             if any(
+#                 term in query_lower for term in ["ml", "machine", "learning", "ai"]
+#             ) and not any("Machine Learning" in s["text"] for s in suggestions):
+#                 suggestions.append(
+#                     {
+#                         "text": "Machine Learning",
+#                         "type": "topic",
+#                         "icon": "fas fa-brain",
+#                         "url": f"/datalogs/search/?q=machine+learning",
+#                         "description": "AI and ML concepts",
+#                     }
+#                 )
+
+#             if any(
+#                 term in query_lower for term in ["api", "rest", "endpoint"]
+#             ) and not any("API" in s["text"] for s in suggestions):
+#                 suggestions.append(
+#                     {
+#                         "text": "API Development",
+#                         "type": "topic",
+#                         "icon": "fas fa-plug",
+#                         "url": f"/datalogs/search/?q=api",
+#                         "description": "API design and development",
+#                     }
+#                 )
+
+#         # Limit to max suggestions
 #         suggestions = suggestions[:max_suggestions]
 
-#         # Add additional metadata for AJAX response
-#         enhanced_suggestions = []
-#         for suggestion in suggestions:
-#             enhanced_suggestion = {
-#                 'text': suggestion.get('text', ''),
-#                 'type': suggestion.get('type', 'other'),
-#                 'icon': suggestion.get('icon', 'fas fa-search'),
-#                 'url': suggestion.get('url', '#'),
-#                 'description': suggestion.get('description', ''),
-#                 'count': suggestion.get('count', 0),
-#                 'highlighted_text': highlight_query_in_text(
-#                     suggestion.get('text', ''), query
-#                 )
-#             }
-#             enhanced_suggestions.append(enhanced_suggestion)
-
-#         # Add quick actions
-#         quick_actions = get_search_quick_actions(query)
-
-#         # Performance hints
-#         hints = get_search_performance_hints(len(enhanced_suggestions), len(query))
-
-#         response_data = {
-#             'suggestions': enhanced_suggestions,
-#             'quick_actions': quick_actions,
-#             'hints': hints,
-#             'query': query,
-#             'total': len(enhanced_suggestions),
-#             'success': True,
-#             'metadata': {
-#                 'query_length': len(query),
-#                 'has_results': len(enhanced_suggestions) > 0,
-#                 # TODO: add actual timing here
-#                 'response_time': 'fast',
-#             }
-#         }
-
-#         return JsonResponse(response_data)
-
-#     except Exception as e:
-#         return JsonResponse({
-#             'suggestions': [],
-#             'error': 'Search temporarily unavailable',
-#             'query': query,
-#             'total': 0,
-#             'success': False
-#         }, status=500)
-
-
-# def highlight_query_in_text(text, query):
-#     """Highlight query terms in text for AJAX response."""
-#     if not query or not text:
-#         return text
-
-#     # Escape HTML to prevent XSS
-#     text = escape(text)
-#     query = escape(query)
-
-#     # Simple highlighting - replace with <mark> tags
-#     words = query.split()
-#     for word in words:
-#         pattern = re.compile(re.escape(word), re.IGNORECASE)
-#         text = pattern.sub(f'<mark class="search-highlight">{word}</mark>', text)
-
-#     return text
-
-
-# def get_search_quick_actions(query):
-#     """Generate quick actions for AJAX search."""
-#     actions = []
-
-#     if query:
-#         actions.extend([
+#         return JsonResponse(
 #             {
-#                 'text': f'Search logs for "{query}"',
-#                 'url': f"{reverse('blog:search')}?q={query}",
-#                 'icon': 'fas fa-search',
-#                 'type': 'action',
-#             },
-#             {
-#                 'text': f'Search logs in specific category',
-#                 'url': f"{reverse('blog:search')}?q={query}&show_filters=true",
-#                 'icon': 'fas fa-folder-open',
-#                 'type': 'action',
-#             },
-#         ])
-
-#     # Always include browse action
-#     actions.append({
-#         'text': 'Browse all DataLogs',
-#         'url': reverse('blog:post_list'),
-#         'icon': 'fas fa-database',
-#         'type': 'action',
-#     })
-
-#     return actions
-
-
-# def get_search_performance_hints(suggestion_count, query_length):
-#     """Generate performance hints for AJAX search."""
-#     hints = []
-
-#     if query_length < 3:
-#         hints.append({
-#             'type': 'tip',
-#             'message': 'Type at least 3 characters for better results',
-#             'icon': 'fas fa-into-circle',
-#         })
-
-#     if suggestion_count == 0:
-#         hints.append({
-#             'type': 'help',
-#             'message': 'Try shorter keywords or browse categories',
-#             'icon': 'fas fa-lightbulb',
-#         })
-
-#     elif suggestion_count > 15:
-#         hints.append(
-#             {
-#                 "type": "tip",
-#                 "message": "Too many results - narrow parameters",
-#                 "icon": "fas fa-filter",
+#                 "suggestions": suggestions,
+#                 "query": query,
+#                 "count": len(suggestions),
+#                 "status": "success",
+#                 # "cached": False,
 #             }
 #         )
-#     return hints
+
+#     except Exception as e:
+#         return JsonResponse(
+#             {
+#                 "suggestions": [],
+#                 "query": query,
+#                 "count": 0,
+#                 "status": "error",
+#                 "error": "Search temporarily unavailable",
+#             },
+#             status=500,
+#         )
 
 
 # @require_http_methods(["GET"])
 # def search_autocomplete(request):
 #     """
-#     Simple autocomplete endpoint for search input.
-#     Returns just the text suggestions for faster autocomplete.
+#     Faster autocomplete endpoint that just returns text suggestions.
+#     For basic autocomplete functionality without full suggestion objects.
 #     """
 #     query = request.GET.get("q", "").strip()
 #     limit = int(request.GET.get("limit", 5))
@@ -1329,60 +887,326 @@ class SearchView(ListView):
 #         # Get post titles that match
 #         post_titles = Post.objects.filter(
 #             title__icontains=query, status="published"
-#         ).values_list("title", flat=True)[: limit // 2]
+#         ).values_list("title", flat=True)[:limit // 2]
 
 #         # Get category names that match
 #         category_names = Category.objects.filter(name__icontains=query).values_list(
 #             "name", flat=True
-#         )[: limit // 2]
+#         )[:limit // 2]
 
 #         # Combine and limit
-#         suggestions = list(post_titles) + list(category_names)
+#         suggestions = list(post_titles) + [f"{name} Category" for name in category_names]
 #         suggestions = suggestions[:limit]
 
-#         return JsonResponse({"suggestions": suggestions, "query": query})
-
-#     except Exception:
-#         return JsonResponse({"suggestions": []})
-
-
-# # Additional helper views for search functionality
-# def search_export(request):
-#     """Export search results as JSON (for advanced users)."""
-#     if not request.user.is_staff:
-#         return JsonResponse({"error": "Permission denied"}, status=403)
-
-#     # Use the same logic as SearchView but return JSON
-#     search_view = SearchView()
-#     search_view.request = request
-#     queryset = search_view.get_queryset()
-
-#     results = []
-#     for post in queryset[:100]:  # Limit export to 100 results
-#         results.append(
-#             {
-#                 "id": post.id,
-#                 "title": post.title,
-#                 "slug": post.slug,
-#                 "url": post.get_absolute_url(),
-#                 "published_date": post.published_date.isoformat()
-#                 if post.published_date
-#                 else None,
-#                 "category": post.category.name if post.category else None,
-#                 "tags": [tag.name for tag in post.tags.all()],
-#                 "reading_time": post.reading_time,
-#                 "featured": post.featured,
-#             }
+#         return JsonResponse(
+#             {"suggestions": suggestions, "query": query, "count": len(suggestions)}
 #         )
 
-#     return JsonResponse(
-#         {
-#             "results": results,
-#             "total": len(results),
-#             "query": request.GET.get("q", ""),
-#             "exported_at": timezone.now().isoformat(),
-#         }
-#     )
+#     except Exception:
+#         return JsonResponse({"suggestions": [], "error": "Autocomplete unavailable"})
+
+
+# def get_search_context(request, query=None):
+#     """
+#     Get all search-related context data.
+#     Use this in your main SearchView and PostListView to keep them clean.
+#     """
+#     if query is None:
+#         query = request.GET.get('q', '').strip()
+
+#     context = {'query': query}
+
+#     if query:
+#         # Get search results
+#         results = Post.objects.filter(
+#             Q(title__icontains=query) |
+#             Q(content__icontains=query) |
+#             Q(excerpt__icontains=query),
+#             status='published'
+#         ).select_related('category', 'author').prefetch_related('tags')
+
+#         context.update({
+#             'search_results': results,
+#             'search_results_count': results.count(),
+#             'has_results': results.exists(),
+#         })
+
+#     return context
+
+
+# # Helper function for other views that might need search context
+# def add_search_context(context, request):
+#     """
+#     Add search-related context to any view.
+#     Usage: context.update(add_search_context(context, request))
+#     """
+#     query = request.GET.get('q', '').strip()
+
+#     search_context = {
+#         'query': query,
+#         'has_search_query': bool(query),
+#         'search_enabled': True,
+#     }
+
+#     if query:
+#         # Add search results count for display
+#         search_context['search_results_count'] = Post.objects.filter(
+#             Q(title__icontains=query) | Q(content__icontains=query),
+#             status='published'
+#         ).count()
+
+#     return search_context
+
+# ================ SIMPLIFIED SEARCH VIEW REWORK ================
+
+
+class SearchView(ListView):
+    """
+    Enhanced search view with landing page and results.
+    URL: /datalogs/search/
+    """
+    model = Post
+    template_name = "blog/search.html"
+    context_object_name = "posts"
+    paginate_by = 12
+
+    def get_queryset(self):
+        query = self.request.GET.get('q', '').strip()
+
+        if not query:
+            return Post.objects.none()
+
+        queryset = Post.objects.filter(
+            status="published").select_related("category", "author").prefetch_related("tags")
+
+        # Build search query with relevance
+        search_filter = (
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(excerpt__icontains=query) |
+            Q(tags__name__icontains=query) |
+            Q(category__name__icontains=query)
+        )
+
+        queryset = queryset.filter(search_filter)
+
+        # Apply additional filters
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category__slug=category)
+
+        featured = self.request.GET.get('featured')
+        if featured == 'true':
+            queryset = queryset.filter(featured=True)
+
+        # Sort by relevance (title matches first, then content)
+        sort_by = self.request.GET.get('sort', 'relevance')
+        if sort_by == 'date':
+            queryset = queryset.order_by('-published_date')
+        elif sort_by == 'reading':
+            queryset = queryset.order_by('reading_time')
+        else:
+            # Simple relevance: title matches first
+            queryset = self._apply_relevance_sorting(queryset, query)
+
+        return queryset.distinct()
+
+    def _apply_relevance_sorting(self, queryset, query):
+        """
+        Apply relevance-based sorting using modern Django ORM methods.
+        No .extra() method - uses Case/When for conditional logic.
+        """
+        # Create relevance score using Case/When (modern alt to .extra())
+        relevance_score = Case(
+            # Title exact match gets highest score (100)
+            When(title__iexact=query, then=Value(100)),
+            # Title contains gets high score (80)
+            When(title__icontains=query, then=Value(80)),
+            # Excerpt contains gets medium score (60)
+            When(excerpt__icontains=query, then=Value(60)),
+            # Content contains gets lower score (40)
+            When(content__icontains=query, then=Value(40)),
+            # Category/tag match gets base score (20)
+            When(
+                Q(category__name__icontains=query) | Q(tags__name__icontains=query),
+                then=Value(20)
+            ),
+            # Default score (10)
+            default=Value(10),
+            output_field=IntegerField()
+        )
+
+        # Apply relevance scoring and sort
+        return queryset.annotate(
+            relevance=relevance_score
+        ).order_by('-relevance', '-published_date')
+
+    def get_context_data(self, **kwargs):
+        """Add search-specific context."""
+        context = super().get_context_data(**kwargs)
+
+        query = self.request.GET.get("q", "").strip()
+        posts = context['posts'] if query else []
+
+        if not query:
+            # Search landing page context
+            context.update(self._get_landing_page_context())
+        else:
+            # Search results page context
+            context.update(self._get_results_page_context(posts, query))
+
+        context.update({
+            'query': query,
+            'page_title': f'Search Parameters: {query}' if query else 'Search',
+            'page_subtitle': f'Results for {query}' if query else 'Search DataLog entries',
+            'show_breadcrumbs': True,
+        })
+
+        return context
+
+    def _get_landing_page_context(self):
+        """Get context for search landing if no query"""
+        # Search stats
+        total_searchable_posts = Post.objects.filter(status="published").count()
+        total_searchable_tags = Tag.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).filter(post_count__gt=0).count()
+        total_categories = Category.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).filter(post_count__gt=0).count()
+        code_entries_count = Post.objects.filter(
+            status="published"
+        ).exclude(featured_code__exact='').count()
+
+        # Popular searches (can implment analytics for this later)
+        # TODO: For now, using static data - replace w real analytics later
+        popular_searches = [
+            {'term': 'python', 'count': 15},
+            {'term': 'django', 'count': 12},
+            {'term': 'javascript', 'count': 10},
+            {'term': 'react', 'count': 8},
+            {'term': 'data science', 'count': 6},
+        ]
+
+        # Recent posts
+        recent_posts = Post.objects.filter(
+            status="published"
+        ).order_by('-published_date')[:6]
+
+        # Featured categories for quick access
+        featured_categories = Category.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).filter(post_count__gt=0).order_by('-post_count')[:6]
+
+        return {
+            'total_searchable_posts': total_searchable_posts,
+            'total_searchable_tags': total_searchable_tags,
+            'total_categories': total_categories,
+            'coded_entries_count': code_entries_count,
+            'popular_searches': popular_searches,
+            'recent_posts': recent_posts,
+            'featured_categories': featured_categories,
+        }
+
+    def _get_results_page_context(self, posts, query):
+        """Get context for search results page."""
+        # Count results (handle both QuerySet and list)
+        if hasattr(posts, 'count'):
+            results_count = posts.count()
+        else:
+            results_count = len(posts)
+
+        # Calculate estimated reading time for results
+        estimated_total_time = 0
+        if posts and hasattr(posts, 'aggregate'):
+            estimated_total_time = posts.aggregate(
+                total_time=Sum("reading_time")
+            )["total_time"] or 0
+        elif posts:
+            # Fallback for list of posts
+            estimated_total_time = sum(
+                getattr(post, 'reading_time', 0) for post in posts
+            )
+
+        # Search performance timing (optional)
+        # TODO: Can add timing logic here later
+        search_time = None
+
+        # Related content for no results case
+        related_posts = []
+        if results_count == 0:
+            # Get some recent posts as suggestions
+            related_posts = Post.objects.filter(
+                status="published"
+            ).order_by('-published_date')[:3]
+
+        return {
+            'results_count': results_count,
+            'estimated_total_time': estimated_total_time,
+            'search_time': search_time,
+            'related_posts': related_posts,
+        }
+
+
+# ===================== SIMPLIFIED AJAX VIEWS FOR ENHANCED FEATURES =====================
+
+def search_suggestions(request):
+    """
+    AJAX endpoint for search suggestions.
+    URL: /datalogs/search/suggestions/
+    """
+    query = request.GET.get('q', '').strip()
+    limit = int(request.GET.get("limit", 6))
+
+    if len(query) < 2:
+        return JsonResponse({"suggestions": []})
+    
+    try:
+        suggestions = []
+
+        # Get post titles that match
+        post_titles = Post.objects.filter(
+            title__icontains=query, status="published"
+        ).values_list("title", flat=True)[:limit // 2]
+
+        for title in post_titles:
+            suggestions.append({
+                'type': 'post',
+                'text': title,
+                'url': title.get_absolute_url(),  # TODO: Build URL
+            })
+
+        # Get category names that match
+        categories = Category.object.filter(
+            name__icontains=query
+        ).values('name', 'slug')[:limit // 3]
+
+        for cat in categories:
+            suggestions.append({
+                'type': 'category',
+                'text': cat['name'],
+                'url': f'/datalogs/category/{cat["slug"]}/',
+            })
+
+        # Get tag names that match
+        tags = Tag.objects.filter(
+            name__icontains=query
+        ).values('name', 'slug')[:limit // 3]
+
+        for tag in tags:
+            suggestions.append({
+                'type': 'tag',
+                'text': tag['name'],
+                'url': f'/datalogs/tag/{tag["slug"]}/'
+            })
+
+        return JsonResponse({
+            "suggestions": suggestions[:limit],
+            "query": query
+        })
+
+    except Exception as e:
+        return JsonResponse({"suggestions": [], "error": str(e)})
 
 
 # ===================== ADMIN VIEWS FOR POST MANAGEMENT =====================
