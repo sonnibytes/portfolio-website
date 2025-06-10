@@ -901,7 +901,6 @@ class SearchView(ListView):
 
         # return context
 
-
         # Older, more complex logic
         context["query"] = query
         context["total_results"] = self.get_queryset().count() if query else 0
@@ -934,7 +933,7 @@ class SearchView(ListView):
             .filter(post_count__gt=0)
             .order_by("-post_count")[:10]
         )
-
+       
         return context
 
     def build_search_query(self, query):
