@@ -559,11 +559,11 @@ class TagView(ListView):
 # Updated with archive_timeline enhancements
 class ArchiveIndexView(ListView):
     """
-    Main archive view - shows timeline of all posts grouped by month.
+    Main archive view - shows timeline of all posts grouped by date.
     URL: /blog/archive/
     """
     template_name = "blog/archive.html"
-    context_object_name = 'posts'
+    context_object_name = 'posts_by_year'
     # Show all posts for timeline
     paginate_by = None
 
@@ -576,134 +576,105 @@ class ArchiveIndexView(ListView):
 
         # Apply filters from GET params
         year = self.request.GET.get('year')
-        month = self.request.GET.get('month')
-        category = self.request.GET.get('category')
-
+        category_slug = self.request.GET.get('category')
 
         if year:
             try:
                 queryset = queryset.filter(published_date__year=int(year))
             except ValueError:
                 pass
-
-            return Post.objects.filter(
-                status='published').order_by('-published_date')
-
-        # If month provided, filter by year and month
-        if month and year:
-            try:
-                queryset = queryset.filter(published_date__month=int(month))
-            except ValueError:
-                pass
-
-        if category:
-            queryset = queryset.filter(category__slug=category)
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
 
         return queryset
 
-    def get(self, request, *args, **kwargs):
-        # Current Date
-        current_date = datetime.now()
-        current_year = current_date.year
-        current_month = current_date.month
-
-        # Get year and month from kwargs
-        year = self.kwargs.get('year')
-        month = self.kwargs.get('month')
-
-        # Validate year and month
-        if year and (int(year) < self.start_year or int(year) > current_year):
-            return redirect('blog:archive')
-
-        if month and year and (
-            (int(year) == self.start_year and int(month) > self.start_month) or
-            (int(year) == current_year and int(month) > current_month) or
-            int(month) < 1 or int(month) > 12
-        ):
-            return redirect('blog:archive_year', year=year)
-
-        return super().get(request, *args, **kwargs)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        posts = self.get_queryset()
 
-        # Get filter params
-        year = self.request.GET.get('year')
-        month = self.request.GET.get('month')
-        category_slug = self.request.GET.get('category')
+        # Group posts by year and month
+        posts_by_year = defaultdict(lambda: {'year': None, 'months': defaultdict(list)})
 
-        # Convert to integers if present
-        current_year = int(year) if year else None
-        current_month = int(month) if month else None
+        for post in posts:
+            year = post.published_date.year
+            # First day of month for grouping
+            month = post.published_date.replace(day=1)
 
-        # Get category object if filtering
-        current_category = None
-        if category_slug:
-            try:
-                current_category = Category.objectcs.get(slug=category_slug)
-            except Category.DoesNotExist:
-                pass
+            if not posts_by_year[year]['year']:
+                posts_by_year[year]['year'] = year
+     
+            posts_by_year[year]['months'][month].append(post)
 
-        # Determine archive style based on data volume and filters
-        posts = context['posts']
+        # Convert to list format for template
+        formatted_years = []
+        for year, year_data in sorted(posts_by_year['months'].items(), reverse=True):
+            formatted_months = []
+            for month, month_posts in sorted(year_data['months'].items(), reverse=True):
+                formatted_months.append({
+                    'month': month,
+                    'posts': month_posts
+                })
+
+        formatted_years.append({
+            'year': year,
+            'months': formatted_months,
+            'posts': [post for month_data in formatted_months for post in month_data['posts']]
+        })
+    
+        # Archive Stats
         total_posts = posts.count()
+        first_post = posts.order_by('published_date').first()
+        latest_post = post.order_by('-published_date').first()
 
-        # Smart style detection
-        if current_year and current_month:
-            # Monthly View - use cards
-            archive_style = 'cards'
-        elif current_year:
-            # Yearly View - use compact
-            archive_style = 'compact'
-        elif total_posts > 50:
-            # Large dataset - yearly overview
-            archive_style = 'yearly'
-        else:
-            # Default - full timeline
-            archive_style = 'full'
+        current_year = datetime.now().year
+        posts_this_year = posts.filter(published_date__year=current_year).count()
 
-        # Add archive-specific context data
+        # Years w post counts for navigation
+        archive_years = Post.objects.filter(
+            status='published'
+        ).extra(select={'year': "EXTRACT(year FROM published_date)"}).values(
+            'year'
+        ).annotate(count=Count('id')).order_by('-year')
+
+        # Categories for filtering
+        categories = Category.objects.filter(
+            posts__status="published"
+        ).annotate(
+            post_count=Count('posts')
+        ).order_by('name')
+
+        # Recent posts for preview
+        recent_posts = posts[:5]
+
+        # Calculate years active
+        years_active = archive_years.count()
+
+        # Total reading time
+        total_reading_time = posts.aggregate(
+            total_time=Sum("reading_time")
+        )["total_time"] or 0
+
+        query = self.request.GET.get('q', '').strip()
+
         context.update({
+            'posts_by_year': formatted_years,
+            'total_posts': total_posts,
             'current_year': current_year,
-            'current_month': current_month,
-            'current_category': current_category,
-            'archive_style': archive_style,
-            'total_posts_in_archive': total_posts,
-            'page_title': self.get_page_title(),
-            'page_description': self.get_page_description(),
-            'show_timeline_stats': True,
-            'show_timeline_navigation': True,
-            'show_timeline_filters': True,
+            'posts_this_year': posts_this_year,
+            'years_active': years_active,
+            'total_reading_time': total_reading_time,
+            'first_post_date': first_post.published_date if first_post else None,
+            'latest_post_date': latest_post.published_date if latest_post else None,
+            'archive_years': archive_years,
+            'categories': categories,
+            'recent_posts': recent_posts,
+            'query': query,
+            'page_title': 'Archive',
+            'page_subtitle': 'Chronological timeline of all entries',
+            'show_breadcrumbs': True,
         })
 
         return context
-
-    def get_page_title(self):
-        year = self.request.GET.get('year')
-        month = self.request.GET.get('month')
-        category = self.request.GET.get('category')
-
-        if year and month:
-            month_name = calendar.month_name[int(month)]
-            return f"DataLogs Archive - {month_name} {year}"
-        elif year:
-            return f"DataLogs Archive - {year}"
-        elif category:
-            return f"DataLogs Archive - {category.replace('-', ' ').title()}"
-        else:
-            return "DataLogs Archive - All Entries"
-
-    def get_page_description(self):
-        year = self.request.GET.get("year")
-        month = self.request.GET.get("month")
-
-        if year and month:
-            month_name = calendar.month_name[int(month)]
-            return f"Browse all DataLog entries published in {month_name} {year}."
-        elif year:
-            return f"Browse all DataLog entries published in {year}."
-        else:
-            return "Browse the complete archive of DataLog entries organized by publication date."
 
 
 class ArchiveYearView(ListView):
