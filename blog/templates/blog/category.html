@@ -103,7 +103,7 @@ Explore all DataLog categories - comprehensive technical documentation organized
                     
                     <!-- Category Stats Section -->
                     <div class="category-stats-section">
-                        <div class="stats-header">
+                        <div class="stats-header unified-section-header" style="color:var(--color-text);">
                             <i class="fas fa-chart-bar"></i>
                             <span>Category Statistics</span>
                         </div>
@@ -130,23 +130,25 @@ Explore all DataLog categories - comprehensive technical documentation organized
                     <!-- Related Categories -->
                     {% if related_categories %}
                     <div class="related-categories-section">
-                        <div class="related-header">
+                        <div class="related-header unified-section-header" style="color:var(--color-text);">
                             <i class="fas fa-sitemap"></i>
                             <span>Related Categories</span>
                         </div>
                         <div class="related-categories-grid">
                             {% for related_cat in related_categories %}
-                            <span class="unified-category-badge">
+                            <div class="related-category-item">
                                 {% if related_cat.icon %}
                                 <i class="fas {{ related_cat.icon }}"></i>
+                                {% else %}
+                                <i class="fas fa-alien"></i>
                                 {% endif %}
                                 <a href="{% url 'blog:category' slug=related_cat.slug %}" class="related-category-item">
                                     {% comment %} {% category_hexagon_single related_cat size="sm" show_label=False %} {% endcomment %}
                                     <span class="related-cat-name">{{ related_cat.name }}</span>
                                     <span class="related-cat-count"> | {{ related_cat.post_count }}</span>
                                 </a>
-                            </span>
-                            <br>
+                            </div>
+                            {% comment %} <br> {% endcomment %}
                             
                             {% endfor %}
                         </div>
@@ -177,32 +179,32 @@ Explore all DataLog categories - comprehensive technical documentation organized
                             <i class="fas fa-eye"></i>
                             <span>Recent Entries</span>
                         </div>
-                        <div class="preview-posts-grid">
+                        <div class="preview-posts-list">
                             {% for post in posts|slice:":3" %}
-                            <div class="preview-post-item unified-section">
+                            <div class="preview-post-item">
                                 <a href="{{ post.get_absolute_url }}" class="preview-post-link">
                                     <div class="preview-post-header">
                                         <span class="preview-post-id">{{ post.id|datalog_id }}</span>
-                                        <span class="preview-post-date"> // {{ post.published_date|date:"M d" }}</span>
+                                        <span class="preview-post-date">{{ post.published_date|date:"M d" }}</span>
                                     </div>
                                     <h4 class="preview-post-title">{{ post.title|truncatechars:50 }}</h4>
                                     {% if post.excerpt %}
                                     <p class="preview-post-excerpt">{{ post.excerpt|truncatechars:80 }}</p>
                                     {% endif %}
-                                    <div class="preview-post-meta unified-actions-section">
+                                    <div class="preview-post-meta unified-tags-section" style="padding-top:inherit;">
                                         <span class="preview-reading-time">
                                             <i class="fas fa-clock"></i>
                                             {{ post.reading_time|format_duration }}
                                         </span>
                                         {% if post.tags.exists %}
                                         <span class="unified-tags-list">
-                                            {% for tag in post.tags.all|slice:":4" %}
+                                            {% for tag in post.tags.all|slice:":3" %}
                                             <a href="{% url 'blog:tag' slug=tag.slug %}" class="unified-tag">
                                             <i class="fas fa-tag"></i>{{ tag.name }}
                                             </a>
                                             {% endfor %}
                                             {% if post.tags.count > 4 %}
-                                            <span class="unified-more-tags">+{{ post.tags.count|add:"-4" }} more</span>
+                                            <span class="unified-more-tags">+{{ post.tags.count|add:"-3" }} more</span>
                                             {% endif %}
                                         </span>
                                         {% endif %}
@@ -328,7 +330,7 @@ Explore all DataLog categories - comprehensive technical documentation organized
         <div class="glass-card no-posts-panel">
             <div class="no-posts-content">
                 <div class="no-posts-icon">
-                    {% category_hexagon_single category size="lg" show_label=False link=False %}
+                    {% comment %} {% category_hexagon_single category size="lg" show_label=False link=False %} {% endcomment %}
                 </div>
                 <h3 class="no-posts-title">No Entries in {{ category.name }}</h3>
                 <p class="no-posts-message">

@@ -6,12 +6,12 @@ urlpatterns = [
     # Public blog urls - Post views
     path("", views.PostListView.as_view(), name="post_list"),
     path("post/<slug:slug>/", views.PostDetailView.as_view(), name="post_detail"),
-    # Category view
+    # Category views
     path("categories/", views.CategoriesOverviewView.as_view(), name="categories_overview"),
     path("category/<slug:slug>/", views.CategoryView.as_view(), name="category"),
     # Tags views
-    path("tags/", views.TagListView.as_view(), name="tags"),
-    path("tags/<slug:slug>/", views.TagView.as_view(), name="tag"),
+    path("tags/", views.TagListView.as_view(), name="tag_list"),
+    path("tag/<slug:slug>/", views.TagView.as_view(), name="tag"),
     # Archive views
     path("archive/", views.ArchiveIndexView.as_view(), name="archive"),
     path("archive/<int:year>/", views.ArchiveYearView.as_view(), name="archive_year"),

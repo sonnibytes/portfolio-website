@@ -11,7 +11,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.utils.html import escape, format_html
 from django.urls import reverse
-from django.db.models import Count, Q, Avg
+from django.db.models import Count, Q, Avg, Sum
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 
@@ -33,6 +33,81 @@ from ..models import Post, Category, Tag
 from core.templatetags.aura_filters import status_color, time_since_published, format_duration, format_number, truncate_smart, highlight_search
 
 register = template.Library()
+
+
+# ===================== TEMPLATE TAGS FOR VIEW CONTEXT =====================
+
+
+@register.simple_tag(takes_context=True)
+def current_url_with_params(context, **kwargs):
+    """
+    Get current URL with modified parameters.
+    Usage: {% current_url_with_params sort='date' %}
+    """
+    request = context["request"]
+    params = request.GET.copy()
+
+    for key, value in kwargs.items():
+        if value is None or value == "":
+            params.pop(key, None)
+        else:
+            params[key] = value
+
+    if params:
+        return f"{request.path}?{params.urlencode()}"
+    return request.path
+
+
+@register.simple_tag
+def query_string(**kwargs):
+    """
+    Build a query string from keyword arguments.
+    Usage: {% query_string q=query sort=sort_by %}
+    """
+    from urllib.parse import urlencode
+
+    # Filter out None and empty values
+    filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None and v != ""}
+
+    if filtered_kwargs:
+        return "?" + urlencode(filtered_kwargs)
+    return ""
+
+
+# ===================== DEBUG/DEVELOPMENT HELPERS =====================
+
+
+@register.simple_tag
+def debug_context(context_var):
+    """
+    Debug helper to inspect context variables during development.
+    Usage: {% debug_context some_variable %}
+    """
+    import json
+
+    try:
+        if hasattr(context_var, "__dict__"):
+            # For model instances
+            return json.dumps(str(context_var.__dict__), indent=2)
+        elif isinstance(context_var, (list, dict)):
+            # For collections
+            return json.dumps(str(context_var), indent=2)
+        else:
+            # For simple values
+            return str(context_var)
+    except Exception as e:
+        return f"Debug error: {str(e)}"
+
+
+@register.filter
+def model_name(obj):
+    """
+    Get the model name of an object.
+    Usage: {{ object|model_name }}
+    """
+    if hasattr(obj, "_meta"):
+        return obj._meta.model_name
+    return str(type(obj).__name__).lower()
 
 
 # ========== DATALOG SPECIFIC FILTERS ==========
@@ -182,20 +257,98 @@ def has_system_connection(post):
     return False
 
 
+@register.filter
+def scale_tag_size(count):
+    """
+    Scale tag size for tag cloud based on usage count.
+    Usage: {{ tag.post_count|scale_tag_size }}
+    """
+    if count <= 1:
+        return 0.8
+    elif count <= 3:
+        return 0.9
+    elif count <= 5:
+        return 1.0
+    elif count <= 10:
+        return 1.2
+    elif count <= 15:
+        return 1.4
+    elif count <= 20:
+        return 1.6
+    else:
+        return 1.8
+
+
+@register.filter
+def total_views(posts):
+    """
+    Calculate total views for a collection of posts.
+    Usage: {{ posts|total_views }}
+    """
+    if not posts:
+        return 0
+
+    total = 0
+    for post in posts:
+        if hasattr(post, "views") and hasattr(post.views, "count"):
+            total += post.views.count()
+        elif hasattr(post, "views_count"):
+            total += post.views_count
+
+    return total
+
+
+@register.filter
+def total_reading_time(posts):
+    """
+    Calculate total reading time for a collection of posts.
+    Usage: {{ posts|total_reading_time }}
+    """
+    if not posts:
+        return 0
+
+    total = 0
+    for post in posts:
+        if hasattr(post, "reading_time"):
+            total += post.reading_time or 0
+
+    return total
+
+
+@register.inclusion_tag("blog/includes/category_hexagon_single.html")
+def category_hexagon_single(category, size="md", show_label=True):
+    """
+    Render a single category hexagon.
+    Usage: {% category_hexagon_single category size="sm" show_label=False %}
+    """
+    return {
+        "category": category,
+        "size": size,
+        "show_label": show_label,
+    }
+
+
 # ========== DATALOG TEMPLATE TAGS ==========
 
 
-# Formerly blog_stats
 @register.simple_tag
 def datalog_stats():
     """
-    Generate DataLog statistics for dashboard display
+    Get general DataLog statistics for overview pages.
+    Usage: {% datalog_stats as stats %}
     Usage: {% datalog_stats %}
     """
     try:
         total_posts = Post.objects.filter(status="published").count()
-        total_categories = Category.objects.count()
-        total_tags = Tag.objects.count()
+        total_categories = Category.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        ).filter(post_count__gt=0).count()
+        total_tags = Tag.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        ).filter(post_count__gt=0).count()
+        total_reading_time = Post.objects.filter(
+            status="published"
+        ).aggregate(total=Sum('reading_time'))['total'] or 0
         total_words = sum(
             len(post.content.split()) for post in Post.objects.filter(status='published')
         )
@@ -213,6 +366,7 @@ def datalog_stats():
             'total_words': total_words,
             'avg_reading_time': round(avg_reading_time, 1),
             'posts_with_code': posts_with_code,
+            'total_reading_time': total_reading_time,
         }
 
         return stats
@@ -225,6 +379,7 @@ def datalog_stats():
             "total_words": 0,
             "avg_reading_time": 0,
             "posts_with_code": 0,
+            "total_reading_time": 0,
         }
 
 
@@ -274,9 +429,10 @@ def get_recent_posts(limit=5, exclude_id=None):
 
 
 @register.simple_tag
-def get_datalog_categories(popular_only=False):
+def get_datalog_categories(popular_only=False, limit=None):
     """
-    Get post count by category sorted by post count
+    Get categories with post counts for various contexts.
+    Usage: {% get_datalog_categories 6 as categories %}
     Usage: {% get_datalog_categories %}
     """
     try:
@@ -286,7 +442,11 @@ def get_datalog_categories(popular_only=False):
 
         if popular_only:
             return categories[:5]
+
+        if limit:
+            return categories[:limit]
         return categories
+
     except Exception:
         return []
 
@@ -571,12 +731,16 @@ def category_debug_info(category):
 
 
 @register.simple_tag
-def smart_unified_container_vars(post=None, category=None, theme="auto"):
+def smart_unified_container_vars(post=None, category=None, tag=None, archive=None, search=None, theme="auto"):
     """
-    Smart container vars that handles post, category, or theme
-    Usage: {% smart_unified_container_vars post=post %}
-    Usage: {% smart_unified_container_vars category=category %}
-    Usage: {% smart_unified_container_vars theme="featured" %}
+    Generate CSS custom properties for unified containers based on content type.
+    Usage:
+    {% smart_unified_container_vars post=post %}
+    {% smart_unified_container_vars category=category %}
+    {% smart_unified_container_vars theme="featured" %}
+    {% smart_unified_container_vars tag=tag %}
+    {% smart_unified_container_vars archive=True %}
+    {% smart_unified_container_vars search=True %}
     """
     # Get category from post if provided
     if post and hasattr(post, "category"):
@@ -585,6 +749,28 @@ def smart_unified_container_vars(post=None, category=None, theme="auto"):
     # Special theme override for featured posts
     if post and hasattr(post, "featured") and post.featured and theme == "auto":
         theme = "featured"
+
+    # Working in from view updates, may need more elegant solution later
+    # Can return unified_container_vars, just need rgb, but all work too
+    # category may conflict, others are new and should be fine
+    # wait can use themes above kind of, category already defaults to lavender, just adding others
+    # elif category:
+    #     # Lavender for categories (if not overruled)
+    #     return "--container-category-rgb: 179, 157, 219;"
+    elif category:
+        category=category
+    elif not category and tag:
+        # Teal theme for tags
+        # return "--container-category-rgb: 38, 198, 218;"
+        theme = "info"
+    elif not category and archive:
+        # Yellow theme for archive
+        # return "--container-category-rgb: 255, 193, 7;"
+        theme = "featured"
+    elif not category and search:
+        # Coral theme for search 
+        # return "--container-category-rgb: 38, 198, 218;"
+        theme = "warning"
 
     return unified_container_vars(category, theme)
 
@@ -1007,6 +1193,7 @@ def get_popular_tags(limit=10):
     """
     Returns most popular tags by post count.
     Usage: {% get_popular_tags %}
+    Usage: {% get_popular_tags 5 as popular_tags %}
     """
     return Tag.objects.annotate(
         post_count=Count('posts', filter=Q(posts__status='published'))
@@ -1028,12 +1215,18 @@ def get_featured_post():
 @register.simple_tag
 def archive_years():
     """
-    Returns years that have published posts.
-    Usage: {% archive_years %}
+    Get all years that have published posts for archive navigation.
+    Usage: {% archive_years as years %}
     """
-    return Post.objects.filter(
-        status='published'
-    ).dates('published_date', 'year', order='DESC')
+    years = Post.objects.filter(
+        status="published"
+    ).extra(
+        select={'year': "EXTRACT(year FROM published_date)"}
+    ).values('year').annotate(
+        count=Count('id')
+    ).order_by('-year')
+
+    return list(years)
 
 
 @register.simple_tag

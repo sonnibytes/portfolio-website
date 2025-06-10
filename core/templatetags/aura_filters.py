@@ -441,36 +441,36 @@ def days_until(value):
 def system_id_format(value):
     """
     Format system ID with zero padding.
-    Usage: {{ system.id|system_id_format }} -> "SYS-001"
+    Usage: {{ system.id|system_id_format }} -> "SID: // SYS-001"
     """
     try:
-        return f"SYS-{int(value):03d}"
+        return f"SID: // SYS-{int(value):03d}"
     except (ValueError, TypeError):
-        return "SYS-000"
+        return "SID: // SYS-000"
 
 
 @register.filter
 def datalog_id(value):
     """
     Format datalog ID with zero padding.
-    Usage: {{ post.id|datalog_id }} -> "LOG-001"
+    Usage: {{ post.id|datalog_id }} -> "SID: // LOG-001"
     """
     try:
-        return f"LOG-{int(value):03d}"
+        return f"SID: // LOG-{int(value):03d}"
     except (ValueError, TypeError):
-        return "LOG-000"
+        return "SID: // LOG-000"
 
 
 @register.filter
 def series_id(value):
     """
     Format series ID with zero padding.
-    Usage: {{ series.id|series_id }} -> "SER-001"
+    Usage: {{ series.id|series_id }} -> "SID: // SER-001"
     """
     try:
-        return f"SER-{int(value):03d}"
+        return f"SID: // SER-{int(value):03d}"
     except (ValueError, TypeError):
-        return "SER-000"
+        return "SID: // SER-000"
 
 
 @register.filter

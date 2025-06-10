@@ -31,7 +31,7 @@ def blog_context(request):
             },
             {
                 "label": "Tags",
-                "href": reverse("blog:tags")
+                "href": reverse("blog:tag_list")
             },
         ],
         "datalogs_stats": {

@@ -103,7 +103,7 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
                     
                     <!-- Tag Stats Section -->
                     <div class="tag-stats-section">
-                        <div class="stats-header">
+                        <div class="stats-header unified-section-header" style="color:var(--color-text);">
                             <i class="fas fa-chart-bar"></i>
                             <span>Tag Statistics</span>
                         </div>
@@ -134,17 +134,23 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
                     <!-- Related Categories for Tag -->
                     {% if tag_categories %}
                     <div class="related-categories-section">
-                        <div class="related-header">
+                        <div class="related-header unified-section-header" style="color:var(--color-text);">
                             <i class="fas fa-sitemap"></i>
                             <span>Related Categories</span>
                         </div>
                         <div class="related-categories-grid">
                             {% for category in tag_categories %}
+                            <span class="unified-category-badge">
+                              {% if category.icon %}
+                              <i class="fas {{ category.icon }}"></i>
+                              {% endif %}
                             <a href="{% url 'blog:category' slug=category.slug %}" class="related-category-item">
-                                {% category_hexagon_single category size="sm" show_label=False %}
+                                {% comment %} {% category_hexagon_single category size="sm" show_label=False %} {% endcomment %}
                                 <span class="related-cat-name">{{ category.name }}</span>
-                                <span class="related-cat-count">{{ category.post_count }} posts</span>
+                                <span class="related-cat-count"> | {{ category.post_count }}</span>
                             </a>
+                          </span>
+                          <br>
                             {% endfor %}
                         </div>
                     </div>
@@ -218,7 +224,7 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
                         <div class="preview-footer">
                             <a href="#tag-posts" class="preview-see-all">
                                 <i class="fas fa-arrow-down"></i>
-                                See all {{ tag_post_count }} entries
+                                See all {{ tag_post_count }} entr{{ tag_post_count|pluralize:"y,ies" }}
                             </a>
                         </div>
                     </div>
@@ -260,7 +266,7 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
 <!-- Search & Filters for Tag -->
 <section class="tag-search-section">
     <div class="container">
-        {% unified_search_interface query=query style='compact' show_quick_filters=True tag_filter=tag.slug %}
+        {% unified_search_interface query=query style='compact' show_quick_filters=True %}
     </div>
 </section>
 
@@ -318,7 +324,7 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
         {% else %}
         <!-- Empty State -->
         <div class="empty-state">
-            {% alert_box type="info" title="No Entries Found" message="No DataLog entries are currently tagged with this topic. Check back later for updates." %}
+            {% alert_box alert_type="info" message="No Entries Found: No DataLog entries are currently tagged with this topic. Check back later for updates." %}
         </div>
         {% endif %}
     </div>
@@ -381,7 +387,7 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
                    class="tag-cloud-item" 
                    data-weight="{{ tag.post_count }}"
                    style="font-size: {{ tag.post_count|scale_tag_size }}rem;">
-                    {{ tag.name }}
+                   <i class="fas fa-tag"></i> {{ tag.name }}
                     <span class="tag-count">({{ tag.post_count }})</span>
                 </a>
                 {% endfor %}
@@ -433,11 +439,11 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
                         {% for tag in category_tags %}
                         <div class="datalog-unified-container compact tag-card"
                              data-tag="{{ tag.slug }}"
-                             style="--container-category-rgb: 38, 198, 218;">
+                             style="{% smart_unified_container_vars tag=tag %}">
                             
                             <!-- Compact Tag Header -->
                             <div class="unified-container-header">
-                                <h5 class="unified-container-title">{{ tag.name }}</h5>
+                                <h5 class="unified-container-title"><i class="fas fa-tag"></i> {{ tag.name }}</h5>
                                 
                                 <div class="unified-container-status">
                                     <span class="unified-post-id">{{ tag.name|slice:":3"|upper }}</span>
