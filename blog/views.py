@@ -477,33 +477,82 @@ class TagListView(ListView):
         return context
 
 
-
-
 class TagView(ListView):
-    """View for posts filtered by tag."""
+    """
+    Individual tag view - shows posts with specific tag
+    URL: /datalogs/tag/<slug>/
+    """
     model = Post
-    template_name = "blog/tag.html"
+    template_name = "blog/tag.html"  # Same temp as TagListView, diff context
     context_object_name = "posts"
     paginate_by = 6
 
     def get_queryset(self):
         self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
-        return Post.objects.filter(
-            tags=self.tag, status="published").order_by('-published_date')
+        queryset = Post.objects.filter(
+            tags=self.tag,
+            status="published"
+        ).select_related("category", "author").prefetch_related("tags").order_by('-published_date')
+
+        # Apply search within tag
+        query = self.request.GET.get('q', '').strip()
+        if query:
+            queryset = queryset.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(excerpt__icontains=query)
+            )
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tag'] = self.tag
+        posts = context['posts']
+
+        # Tag stats
+        tag_post_count = self.get_queryset().count()
+        tag_avg_reading_time = self.get_queryset().aggregate(
+            avg_time=Avg("reading_time")
+        )["avg_time"] or 0
 
         # Get related tags that appear together with this tag
-        tag_posts = Post.objects.filter(tags=self.tag)
         related_tags = Tag.objects.filter(
-            posts__in=tag_posts
+            posts__tags=self.tag,
+            posts__status="published"
         ).exclude(id=self.tag.id).annotate(
             posts_count=Count('posts')
-        ).order_by('-posts_count')[:3]
+        ).order_by('-posts_count')[:6]
 
-        context['related_tags'] = related_tags
+        # Categories that use this tag
+        tag_categories = Category.objects.filter(
+            posts__tags=self.tag,
+            posts__status="published"
+        ).annotate(
+            post_count=Count("posts")
+        ).order_by('-post_count')[:5]
+
+        # Tag difficulty based on content
+        tag_difficulty = 'beginner'  # Default
+        if tag_avg_reading_time > 15:
+            tag_difficulty = 'advanced'
+        elif tag_avg_reading_time > 8:
+            tag_difficulty = 'intermediate'
+
+        query = self.request.GET.get('q', '').strip()
+
+        context.update({
+            'tag': self.tag,
+            'tag_post_count': tag_post_count,
+            'tag_avg_reading_time': tag_avg_reading_time,
+            'tag_difficulty': tag_difficulty,
+            'related_tags': related_tags,
+            'tag_categories': tag_categories,
+            'query': query,
+            'page_title': f"{self.tag.name} Tag",
+            'page_subtitle': f"Posts tagged w {self.tag.name}",
+            'show_breadcrumbs': True,
+            'show_filters': True,
+        })
+
         return context
 
 
