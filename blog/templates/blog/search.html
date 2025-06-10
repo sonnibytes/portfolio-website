@@ -1,184 +1,623 @@
+<!----
+ * AURA Portfolio - DataLogs Search Template - UNIFIED
+ * File: blog/templates/blog/search.html
+ * Enhanced search with suggestions, filters, and results
+ * Version: 3.0.0 - Updated with unified container system
+---->
+
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
 {% load aura_filters %}
 {% load aura_components %}
 {% load datalog_tags %}
 
-{% block datalogs_title %}{% if query %}Search: "{{ query }}"{% else %}Search DataLogs{% endif %}{% endblock %}
-
-{% block show_breadcrumbs %}{% if query %}True{% else %}False{% endif %}{% endblock %}
-{% block show_filters %}True{% endblock %}
-
+{% block meta_description %}
 {% if query %}
+Search results for "{{ query }}" - Find DataLog entries, technical insights, and documentation.
+{% else %}
+Search DataLog entries - comprehensive search across technical insights, documentation, and code examples.
+{% endif %}
+{% endblock %}
+
+{% block datalogs_title %}
+{% if query %}[ SEARCH: {{ query|upper|truncate_smart:30 }} ]{% else %}[ SEARCH INTERFACE ]{% endif %}
+{% endblock %}
+
+{% block datalogs_css %}
+<link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
+{% endblock %}
+
+{% block datalogs_body_class %}
+{% if query %}search-results{% else %}search-landing{% endif %}
+{% endblock %}
+
 {% block datalogs_breadcrumbs %}
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
-<span class="breadcrumb-item active">
-    <i class="fas fa-search"></i>
-    <span>Search: "{{ query|truncate_smart:30 }}"</span>
-</span>
-{% endblock %}
+{% if query %}
+<a href="{% url 'blog:search' %}" class="breadcrumb-item">Search</a>
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+<span class="breadcrumb-item active">{{ query|truncate_smart:40 }}</span>
+{% else %}
+<span class="breadcrumb-item active">Search</span>
 {% endif %}
+{% endblock %}
 
 {% block datalogs_content %}
-{% if query %}
-<!-- ========== SEARCH RESULTS MODE ========== -->
 
-<!-- Enhanced Search Interface for results page -->
-<section class="search-interface-section">
-    <div class="container">
-        {% search_suggestions query style='compact' enable_ajax=True max_suggestions=5 show_descriptions=False %}
-    </div>
-</section>
+{% if not query %}
+<!-- ========== SEARCH LANDING PAGE ========== -->
 
-{% comment %} <!-- Search Results Summary -->
-<section class="search-results-summary">
+<!-- Enhanced Search Interface -->
+<section class="search-landing-section">
     <div class="container">
-        {% section_header title="Search Results" subtitle="PARAMETERS: {{ query }}" icon="fas fa-search" show_metrics=True metric_1_value=search_metadata.total_results|default:total_results|default:0 metric_1_label="Results Found" metric_1_icon="fas fa-database" metric_2_value=active_filters|length|default:0 metric_2_label="Filters Applied" metric_2_icon="fas fa-filter" metric_3_value=search_metadata.sort_by|default:"relevance"|title metric_3_label="Sort Method" metric_3_icon="fas fa-sort" %}
-    </div>
-</section> {% endcomment %}
-
-<!-- Active Filters Display -->
-{% if active_filters %}
-<section class="active-filters-section">
-    <div class="container">
-        <div class="active-filters-display glass-effect">
-            <div class="filters-header breadcrumb-item">
-                <i class="fas fa-filter"></i>
-                <span class="filters-title">Active Filters</span>
+        <div class="datalog-unified-container large search-landing"
+             style="--container-category-rgb: 38, 198, 218;">
+            
+            <!-- Search Landing Header -->
+            <div class="unified-container-header">
+                <div class="unified-featured-badge" style="background: linear-gradient(135deg, var(--color-teal), var(--color-cyan));">
+                    <i class="fas fa-search"></i>
+                    <span>Search</span>
+                </div>
+                
+                <h1 class="unified-container-title">DataLog Search</h1>
+                
+                <div class="unified-container-status">
+                    <span class="unified-post-id">SEARCH-SYS</span>
+                    <span class="unified-category-badge" style="border-color: rgba(38, 198, 218, 0.4); background: rgba(38, 198, 218, 0.15); color: var(--color-teal);">
+                        <i class="fas fa-database"></i>
+                        {{ total_searchable_posts|format_number }} entries
+                    </span>
+                </div>
             </div>
             
-            <div class="filters-list subnav-stats">
-                {% for key, value in active_filters.items %}
-                <div class="active-filter-item">
-                    <span class="filter-name">{{ key|title }}</span>
-                    <span class="filter-value">{{ value }}</span>
-                    <a href="{% build_url sort=search_metadata.sort_by %}" class="remove-filter-btn">
-                        <i class="fas fa-times"></i>
+            <!-- Search Content Grid -->
+            <div class="unified-content-grid">
+                
+                <!-- LEFT SIDE: Search Interface -->
+                <div class="unified-content-info">
+                    
+                    <!-- Search Description -->
+                    <div class="unified-excerpt">
+                        <p>Search through comprehensive technical documentation, code examples, and insights. Use advanced filters to find exactly what you're looking for.</p>
+                    </div>
+                    
+                    <!-- Enhanced Search Interface -->
+                    <div class="search-interface-section">
+                        {% unified_search_interface query=query style='full' show_quick_filters=True enable_ajax=True show_stats=False %}
+                    </div>
+                    
+                    <!-- Search Tips Section -->
+                    <div class="search-tips-section">
+                        <div class="search-tips-header">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Search Tips</span>
+                        </div>
+                        <div class="search-tips-list">
+                            <div class="search-tip">
+                                <strong>Use quotes</strong> for exact phrases: "machine learning"
+                            </div>
+                            <div class="search-tip">
+                                <strong>Filter by category</strong> to narrow results by topic
+                            </div>
+                            <div class="search-tip">
+                                <strong>Search code content</strong> to find specific implementations
+                            </div>
+                            <div class="search-tip">
+                                <strong>Use multiple terms</strong> for more precise results
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Statistics -->
+                    <div class="search-stats-section">
+                        <div class="stats-header">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Search Statistics</span>
+                        </div>
+                        <div class="unified-stats-grid">
+                            <div class="unified-stat-item">
+                                <i class="fas fa-file-alt"></i>
+                                <span>{{ total_searchable_posts|format_number }} searchable entries</span>
+                            </div>
+                            <div class="unified-stat-item">
+                                <i class="fas fa-tags"></i>
+                                <span>{{ total_searchable_tags|format_number }} unique tags</span>
+                            </div>
+                            <div class="unified-stat-item">
+                                <i class="fas fa-folder"></i>
+                                <span>{{ total_categories }} categories</span>
+                            </div>
+                            <div class="unified-stat-item">
+                                <i class="fas fa-code"></i>
+                                <span>{{ code_entries_count }} code examples</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- RIGHT SIDE: Popular Searches & Recent -->
+                <div class="unified-content-media">
+                    
+                    <!-- Popular Searches -->
+                    {% if popular_searches %}
+                    <div class="popular-searches-section">
+                        <div class="preview-header">
+                            <i class="fas fa-fire"></i>
+                            <span>Popular Searches</span>
+                        </div>
+                        <div class="popular-searches-list">
+                            {% for search_term in popular_searches %}
+                            <a href="{% url 'blog:search' %}?q={{ search_term|urlencode }}" class="popular-search-item">
+                                <span class="search-term">{{ search_term }}</span>
+                                <span class="search-count">{{ search_term.count }} results</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Recent Entries -->
+                    {% if recent_posts %}
+                    <div class="recent-entries-section">
+                        <div class="preview-header">
+                            <i class="fas fa-clock"></i>
+                            <span>Recent Entries</span>
+                        </div>
+                        <div class="recent-entries-list">
+                            {% for post in recent_posts|slice:":4" %}
+                            <div class="recent-entry-item">
+                                <h4 class="recent-entry-title">
+                                    <a href="{{ post.get_absolute_url }}">{{ post.title|truncate_smart:40 }}</a>
+                                </h4>
+                                <div class="recent-entry-meta">
+                                    <span class="recent-meta-item">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        {{ post.published_date|time_since_published }}
+                                    </span>
+                                    <span class="recent-meta-item">
+                                        <i class="fas fa-folder"></i>
+                                        {{ post.category.name }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Quick Categories -->
+                    <div class="quick-categories-section">
+                        <div class="preview-header">
+                            <i class="fas fa-th-large"></i>
+                            <span>Browse by Category</span>
+                        </div>
+                        <div class="quick-categories-grid">
+                            {% for category in featured_categories|slice:":6" %}
+                            <a href="{% url 'blog:category' slug=category.slug %}" class="quick-category-item">
+                                {% if category.icon %}
+                                <i class="fas {{ category.icon }}"></i>
+                                {% else %}
+                                <i class="fas fa-folder"></i>
+                                {% endif %}
+                                <span class="category-name">{{ category.name }}</span>
+                                <span class="category-count">{{ category.post_count }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+            <!-- Search Landing Footer -->
+            <div class="unified-container-footer">
+                <div class="unified-footer-stats">
+                    <div class="unified-stat-item">
+                        <i class="fas fa-search"></i>
+                        <span>Advanced search available</span>
+                    </div>
+                    <div class="unified-stat-item">
+                        <i class="fas fa-filter"></i>
+                        <span>Multiple filter options</span>
+                    </div>
+                </div>
+                
+                <div class="unified-footer-actions">
+                    <a href="{% url 'blog:post_list' %}" class="unified-action-btn">
+                        <i class="fas fa-list"></i>
+                        Browse All
+                    </a>
+                    <a href="{% url 'blog:categories_overview' %}" class="unified-action-btn">
+                        <i class="fas fa-th-large"></i>
+                        Categories
                     </a>
                 </div>
-                {% endfor %}
-                
-                <a href="{% url 'blog:search' %}?q={{ query }}" class="clear-all-filters-btn">
-                    <i class="fas fa-times-circle"></i>
-                    <span>Clear All</span>
-                </a>
             </div>
+            
         </div>
     </div>
 </section>
-{% endif %}
 
-<!-- Search Results -->
-<section class="search-results-section">
+{% else %}
+<!-- ========== SEARCH RESULTS PAGE ========== -->
+
+<!-- Search Results Header -->
+<section class="search-results-header-section">
+    <div class="container">
+        <div class="datalog-unified-container search-results-header"
+             style="--container-category-rgb: 38, 198, 218;">
+            
+            <!-- Results Header -->
+            <div class="unified-container-header">
+                <h1 class="unified-container-title">Search Results</h1>
+                
+                <div class="unified-container-status">
+                    <span class="unified-post-id">QUERY-{{ query|slice:":6"|upper }}</span>
+                    <span class="unified-category-badge" style="border-color: rgba(38, 198, 218, 0.4); background: rgba(38, 198, 218, 0.15); color: var(--color-teal);">
+                        <i class="fas fa-search"></i>
+                        {{ results_count|format_number }} {% if results_count == 1 %}result{% else %}results{% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Search Results Info -->
+            <div class="search-results-info">
+                <div class="search-query-display">
+                    <span class="query-label">Search query:</span>
+                    <span class="query-text">"{{ query }}"</span>
+                </div>
+                
+                {% if search_time %}
+                <div class="search-performance">
+                    <span class="performance-label">Search completed in:</span>
+                    <span class="performance-time">{{ search_time }}ms</span>
+                </div>
+                {% endif %}
+            </div>
+            
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced Search Interface for Results -->
+<section class="search-results-interface-section">
+    <div class="container">
+        {% unified_search_interface query=query style='compact' show_quick_filters=True enable_ajax=True show_stats=True %}
+    </div>
+</section>
+
+<!-- Search Results Content -->
+<section class="search-results-content-section">
     <div class="container">
         
         {% if posts %}
-        <!-- Results using data grid component -->
-        {% include 'components/data_grid.html' with items=posts grid_type="datalogs" columns=3 show_controls=True show_sort=True show_filters=False allow_compact=True view_mode="grid" count_label="search results" %}
+        <!-- Results Grid Header -->
+        <div class="results-grid-header">
+            <div class="results-info">
+                <h2 class="results-title">
+                    <i class="fas fa-search"></i>
+                    Search Results
+                </h2>
+                <div class="results-stats">
+                    <span class="results-count">{{ results_count|format_number }} {% if results_count == 1 %}entry found{% else %}entries found{% endif %}</span>
+                    {% if estimated_total_time %}
+                    <span class="results-separator">•</span>
+                    <span class="results-reading">{{ estimated_total_time|format_duration }} total reading time</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="results-actions">
+                <div class="sort-controls">
+                    <button class="sort-btn active" data-sort="relevance">
+                        <i class="fas fa-fire"></i>
+                        Relevance
+                    </button>
+                    <button class="sort-btn" data-sort="date">
+                        <i class="fas fa-calendar-alt"></i>
+                        Date
+                    </button>
+                    <button class="sort-btn" data-sort="reading">
+                        <i class="fas fa-clock"></i>
+                        Reading Time
+                    </button>
+                </div>
+                
+                <div class="view-controls">
+                    <button class="view-btn active" data-view="grid">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button class="view-btn" data-view="list">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search Results Grid -->
+        <div class="search-results-grid" id="searchResultsGrid">
+            {% for post in posts %}
+            {% render_post_card post show_excerpt=True card_type='search' %}
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination-wrapper">
+            {% include 'core/includes/pagination.html' %}
+        </div>
+        {% endif %}
         
         {% else %}
-        <!-- No Results State -->
-        <div class="datalog-unified-container" style="glass-effect glass-card-error">
-            <!-- Container Header -->
-            <div class="unified-container-header">
-                <h3 class="unified-container-title"><i class="fas fa-search"></i> No DataLogs matching query: "{{ query|upper }}"</h3>
-            </div>
-            <div class="unified-content tags-header">
-                <h6 style="font-weight: 500;">Adjust parameters or browse topics below.</h6>
-            </div>
-                <!-- Search suggestions for no results -->
-                <div class="unified-section no-results-suggestions">
-                    <h4 class="tags-header">Try searching for:</h4>
-                    <div class="unified-tags-list">
-                        {% for tag in popular_tags|slice:":8" %}
-                        <a href="{% url 'blog:search' %}?q={{ tag.name }}" class="unified-tag">
-                            <i class="fas fa-tag"></i>
-                            <span>{{ tag.name }}</span>
-                        </a>
-                        {% endfor %}
+        <!-- No Results Found -->
+        <div class="no-results-section">
+            <div class="datalog-unified-container compact no-results"
+                 style="--container-category-rgb: 255, 107, 107;">
+                
+                <div class="unified-container-header">
+                    <div class="unified-featured-badge" style="background: linear-gradient(135deg, var(--color-coral), var(--color-red));">
+                        <i class="fas fa-search-minus"></i>
+                        <span>No Results</span>
+                    </div>
+                    
+                    <h2 class="unified-container-title">No Results Found</h2>
+                    
+                    <div class="unified-container-status">
+                        <span class="unified-post-id">EMPTY-SET</span>
+                        <span class="unified-category-badge" style="border-color: rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.15); color: var(--color-coral);">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            0 matches
+                        </span>
                     </div>
                 </div>
-            
-                <!-- Quick actions using existing components -->
-                {% search_quick_actions query='' as quick_actions %}
-                {% if quick_actions %}
-                <div class="quick-actions-section unified-container-footer">
-                    <div class="unified-footer-actions">
-                        {% for action in quick_actions %}
-                        <a href="{{ action.url }}" class="quick-action-btn">
-                            <i class="{{ action.icon }}"></i>
-                            <span>{{ action.text }}</span>
-                        </a>
-                        {% endfor %}
+                
+                <div class="unified-content-grid">
+                    <div class="unified-content-info">
+                        
+                        <div class="unified-excerpt">
+                            <p>No DataLog entries match your search query "<strong>{{ query }}</strong>". Try adjusting your search terms or explore our suggestions below.</p>
+                        </div>
+                        
+                        <!-- Search Suggestions -->
+                        <div class="search-suggestions-section">
+                            <div class="suggestions-header">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>Try These Instead</span>
+                            </div>
+                            <div class="suggestions-list">
+                                <div class="suggestion-item">
+                                    <strong>Check spelling:</strong> Make sure all words are spelled correctly
+                                </div>
+                                <div class="suggestion-item">
+                                    <strong>Use fewer keywords:</strong> Try more general terms
+                                </div>
+                                <div class="suggestion-item">
+                                    <strong>Try synonyms:</strong> Use different words with similar meaning
+                                </div>
+                                <div class="suggestion-item">
+                                    <strong>Browse categories:</strong> Explore topics by category
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Alternative Actions -->
+                        <div class="unified-actions-section">
+                            <a href="{% url 'blog:post_list' %}" class="unified-action-btn primary">
+                                <i class="fas fa-list"></i>
+                                Browse All Entries
+                            </a>
+                            <a href="{% url 'blog:categories_overview' %}" class="unified-action-btn">
+                                <i class="fas fa-th-large"></i>
+                                Explore Categories
+                            </a>
+                        </div>
+                        
+                    </div>
                 </div>
-                {% endif %}
+                
+            </div>
+            
+            <!-- Related Content Suggestions -->
+            {% if related_posts %}
+            <div class="related-content-section">
+                <h3 class="related-title">
+                    <i class="fas fa-lightbulb"></i>
+                    You Might Be Interested In
+                </h3>
+                <div class="related-posts-grid">
+                    {% for post in related_posts|slice:":3" %}
+                    {% render_post_card post show_excerpt=True card_type='suggestion' %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
         </div>
         {% endif %}
         
     </div>
 </section>
 
-<!-- Enhanced Pagination -->
-{% if is_paginated %}
-<section class="pagination-section">
-    <div class="container">
-        {% render_pagination page_obj request %}
-    </div>
-</section>
 {% endif %}
 
-{% else %}
-<!-- ========== SEARCH LANDING PAGE MODE ========== -->
+{% endblock %}
 
-<!-- Search Landing Page -->
-<section class="search-landing-section">
-    <div class="container">
+{% block datalogs_js %}
+<script>
+// Search-specific JavaScript functionality
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Results view toggle
+    const viewButtons = document.querySelectorAll('.view-btn');
+    const resultsGrid = document.getElementById('searchResultsGrid');
+    
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            viewButtons.forEach(b => b.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get view type
+            const viewType = this.dataset.view;
+            
+            // Update results grid class
+            if (resultsGrid) {
+                resultsGrid.className = resultsGrid.className.replace(/\b\w+-view\b/g, '');
+                resultsGrid.classList.add(viewType + '-view');
+            }
+        });
+    });
+    
+    // Sort functionality
+    const sortButtons = document.querySelectorAll('.sort-btn');
+    sortButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all sort buttons
+            sortButtons.forEach(b => b.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get sort type
+            const sortType = this.dataset.sort;
+            
+            // Implement sorting logic here (could be AJAX or page reload)
+            console.log('Sorting by:', sortType);
+            
+            // You can implement actual sorting here
+            // For example, reload page with sort parameter
+            // window.location.href = updateUrlParameter(window.location.href, 'sort', sortType);
+        });
+    });
+    
+    // Search result highlighting
+    const searchQuery = '{{ query|escapejs }}';
+    if (searchQuery && searchQuery.length > 2) {
+        highlightSearchTerms(searchQuery);
+    }
+    
+    function highlightSearchTerms(query) {
+        const terms = query.toLowerCase().split(' ').filter(term => term.length > 2);
+        const postCards = document.querySelectorAll('.post-card');
         
-        <!-- Welcome Search Interface -->
-        {% glass_card title="Search DataLogs Archive" subtitle="Find technical documentation and insights" icon="fas fa-search" %}
+        postCards.forEach(card => {
+            const titleElement = card.querySelector('.post-title a');
+            const excerptElement = card.querySelector('.post-excerpt');
             
-            <!-- Enhanced search form -->
-            <form method="get" class="search-landing-form">
-                <div class="search-landing-input-wrapper">
-                    <i class="fas fa-search search-landing-icon"></i>
-                    <input type="text" 
-                           name="q" 
-                           class="search-landing-input" 
-                           placeholder="Search through technical documentation, code examples, and insights..."
-                           autocomplete="off"
-                           autofocus>
-                    <button type="submit" class="search-landing-submit">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
-                
-                <!-- Quick search suggestions -->
-                <div class="search-landing-suggestions">
-                    <div class="suggestions-header">
-                        <i class="fas fa-lightbulb"></i>
-                        <span>Popular searches:</span>
-                    </div>
-                    <div class="suggestions-list">
-                        <a href="{% url 'blog:search' %}?q=machine+learning" class="suggestion-link">Machine Learning</a>
-                        <a href="{% url 'blog:search' %}?q=python" class="suggestion-link">Python Development</a>
-                        <a href="{% url 'blog:search' %}?q=api+design" class="suggestion-link">API Design</a>
-                        <a href="{% url 'blog:search' %}?q=database" class="suggestion-link">Database</a>
-                        <a href="{% url 'blog:search' %}?q=neural+networks" class="suggestion-link">Neural Networks</a>
-                    </div>
-                </div>
-            </form>
-            
-        {% endglass_card %}
-                
-    </div>
-</section>
-<!-- Enhanced Search Interface using new component -->
-<section class="search-interface-section">
-    <div class="container">
-        {% search_suggestions query="" style='full' enable_ajax=True max_suggestions=8 show_descriptions=True %}
-    </div>
-</section>
+            terms.forEach(term => {
+                if (titleElement) {
+                    highlightTerm(titleElement, term);
+                }
+                if (excerptElement) {
+                    highlightTerm(excerptElement, term);
+                }
+            });
+        });
+    }
+    
+    function highlightTerm(element, term) {
+        const regex = new RegExp(`(${term})`, 'gi');
+        element.innerHTML = element.innerHTML.replace(regex, '<mark class="search-highlight">$1</mark>');
+    }
+    
+    // Keyboard shortcuts for search
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchInput = document.querySelector('#unifiedSearchInput');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+        
+        // Escape to clear search
+        if (e.key === 'Escape') {
+            const searchInput = document.querySelector('#unifiedSearchInput');
+            if (searchInput && document.activeElement === searchInput) {
+                searchInput.blur();
+            }
+        }
+    });
+    
+    // Search analytics (track search queries)
+    if (searchQuery) {
+        // You can implement search analytics here
+        console.log('Search performed:', searchQuery);
+        
+        // Example: Send to analytics
+        // gtag('event', 'search', {
+        //     search_term: searchQuery,
+        //     results_count: {{ results_count|default:0 }}
+        // });
+    }
+    
+});
 
-{% endif %}
+// Helper function to update URL parameters
+function updateUrlParameter(url, param, paramVal) {
+    let newAdditionalURL = "";
+    let tempArray = url.split("?");
+    let baseURL = tempArray[0];
+    let additionalURL = tempArray[1];
+    let temp = "";
+    
+    if (additionalURL) {
+        tempArray = additionalURL.split("&");
+        for (let i = 0; i < tempArray.length; i++) {
+            if (tempArray[i].split('=')[0] != param) {
+                newAdditionalURL += temp + tempArray[i];
+                temp = "&";
+            }
+        }
+    }
+    
+    let rows_txt = temp + "" + param + "=" + paramVal;
+    return baseURL + "?" + newAdditionalURL + rows_txt;
+}
+</script>
 
+<style>
+/* Search-specific highlighting */
+.search-highlight {
+    background: rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+    padding: 0.1rem 0.2rem;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
+/* Search results specific styles */
+.search-results-grid.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.search-results-grid.list-view .post-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* Performance indicators */
+.search-performance {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+}
+
+.performance-time {
+    color: var(--color-teal);
+    font-weight: 600;
+}
+</style>
 {% endblock %}
