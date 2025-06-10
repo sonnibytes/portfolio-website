@@ -1160,7 +1160,7 @@ def search_suggestions(request):
 
     if len(query) < 2:
         return JsonResponse({"suggestions": []})
-    
+
     try:
         suggestions = []
 
