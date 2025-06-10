@@ -267,7 +267,7 @@ class CategoriesOverviewView(ListView):
     model = Category
     template_name = "blog/category.html"  # Same template as CategoryView, different context
     context_object_name = "categories"
-
+    # TODO: Add tags, maybe recent posts to category cards
     def get_queryset(self):
         # Get categories post counts if gt 0
         return Category.objects.annotate(
@@ -292,7 +292,7 @@ class CategoriesOverviewView(ListView):
                 if cat.posts.filter(status="published").exists():
                     newest_category = cat
                     break
-        
+
         # Calculate avg posts per category
         avg_posts_per_category = round(total_posts / total_categories, 1) if total_categories > 0 else 0
 
