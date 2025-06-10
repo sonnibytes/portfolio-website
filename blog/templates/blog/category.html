@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - Category Template - FIXED SPACING
- * Advanced User Repository & Archive - Complete Foundation
- * Version: 3.0.1 - Fixed breadcrumb spacing issues
+ * AURA Portfolio - Adaptive Category Template  
+ * Handles both category overview and focused category views
+ * Version: 4.0.0 - Complete adaptive implementation
 ---->
 
 {% extends "blog/datalogs_base.html" %}
@@ -10,224 +10,535 @@
 {% load aura_components %}
 {% load datalog_tags %}
 
-{% block title %}{{ category.name }} Category | DataLogs | AURA{% endblock %}
-{% block meta_description %}Browse DataLog entries in {{ category.name|upper }} category - {{ posts|length }} development insights and technical documentation.{% endblock %}
+{% block title %}
+{% if category %}{{ category.name }} Category{% else %}Categories Overview{% endif %} | DataLogs | AURA
+{% endblock %}
 
-{% block datalogs_title %}[ CATEGORY: {{ category.name|upper }} ]{% endblock %}
+{% block meta_description %}
+{% if category %}
+Browse {{ posts|length }} DataLog entries in {{ category.name }} - {{ category.description|default:"technical insights and development documentation" }}.
+{% else %}
+Explore all DataLog categories - comprehensive technical documentation organized by topic and expertise area.
+{% endif %}
+{% endblock %}
+
+{% block datalogs_title %}
+{% if category %}[ CATEGORY: {{ category.name|upper }} ]{% else %}[ CATEGORIES OVERVIEW ]{% endif %}
+{% endblock %}
 
 {% block datalogs_css %}
 <link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
 {% endblock %}
 
-{% block datalogs_body_class %}category-view{% endblock %}
+{% block datalogs_body_class %}
+{% if category %}category-view focused{% else %}categories-overview{% endif %}
+{% endblock %}
 
 {% block datalogs_breadcrumbs %}
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
+{% if category %}
+<a href="{% url 'blog:categories_overview' %}" class="breadcrumb-item">Categories</a>
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
 <span class="breadcrumb-item active">{{ category.name }}</span>
+{% else %}
+<span class="breadcrumb-item active">Categories Overview</span>
+{% endif %}
 {% endblock %}
-
-
-
-
-{% comment %} {% block datalogs_subtitle %}
-    {{ posts|length|format_number }} {{ category.name }} entries
-    {% if posts %}
-    | {% calculate 'multiply' posts.0.reading_time posts|length as total_reading %}{{ total_reading|format_duration }} total reading
-    {% endif %}
-{% endblock %} {% endcomment %}
-
 
 {% block datalogs_content %}
 
-<!-- Category Header Section -->
-<section class="category-header-section">
-    {% section_header title=category.name subtitle=category.description icon="fas {{category.icon}}" show_metrics=True metric_1_value=category_post_count metric_1_label="Total Entries" metric_1_icon="fas fa-file-alt" metric_2_value=category_avg_reading_time|format_duration metric_2_label="Total Reading" metric_2_icon="fas fa-clock" metric_3_value=posts.categories.count|default:"0" metric_3_label="Categories" metric_3_icon="fas fa-folder" %}
+{% if category %}
+<!-- ========== FOCUSED CATEGORY VIEW ========== -->
 
-    <div class="glass-card category-display-card">
-        <div class="category-hero-display">
-            <!-- Large Category Hexagon -->
-            <div class="category-hero-hexagon">
-                {% category_hexagon_single category size="xl" show_label=False link=False %}
-            </div>
+<!-- Unified Featured Container for Category -->
+<section class="category-unified-section">
+    <div class="container">
+        <div class="datalog-unified-container category-featured {% if category.featured %}featured{% endif %}" 
+             data-category="{{ category.slug }}"
+             style="{% smart_unified_container_vars category=category %}">
             
-            <!-- Category Information -->
-            <div class="category-hero-info">
-                <h2 class="category-display-name">{{ category.name }}</h2>
-                {% if category.description %}
-                <p class="category-display-description">{{ category.description }}</p>
+            <!-- Container Header -->
+            <div class="unified-container-header">
+                {% if category.featured %}
+                <div class="unified-featured-badge">
+                    <i class="fas fa-star"></i>
+                    <span>Featured Category</span>
+                </div>
                 {% endif %}
                 
-                <!-- Category Statistics -->
-                <div class="category-stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                        <div class="stat-content">
-                            <div class="stat-value">{{ posts|length|format_number }}</div>
-                            <div class="stat-label">Entries</div>
+                <h1 class="unified-container-title">{{ category.name }}</h1>
+                
+                <!-- Category Status -->
+                <div class="unified-container-status">
+                    <span class="unified-post-id">{{ category.code|default:category.name|slice:":3"|upper }}</span>
+                    
+                    <span class="unified-category-badge">
+                        {% if category.icon %}
+                        <i class="fas {{ category.icon }}"></i>
+                        {% endif %}
+                        {{ category_post_count }} entries
+                    </span>
+                    
+                    {% if category.difficulty %}
+                    <span class="unified-difficulty-badge" data-difficulty="{{ category.difficulty }}">
+                        <i class="fas fa-signal"></i>
+                        {{ category.get_difficulty_display }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Main Content Grid -->
+            <div class="unified-content-grid">
+                
+                <!-- LEFT SIDE: Category Information -->
+                <div class="unified-content-info">
+                    
+                    <!-- Category Description -->
+                    {% if category.description %}
+                    <div class="unified-excerpt">
+                        <p>{{ category.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Category Stats Section -->
+                    <div class="category-stats-section">
+                        <div class="stats-header">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Category Statistics</span>
+                        </div>
+                        <div class="unified-stats-grid">
+                            <div class="unified-stat-item">
+                                <i class="fas fa-file-alt"></i>
+                                <span>{{ category_post_count }} entries</span>
+                            </div>
+                            {% if category_avg_reading_time %}
+                            <div class="unified-stat-item">
+                                <i class="fas fa-clock"></i>
+                                <span>{{ category_avg_reading_time|format_duration }} avg reading</span>
+                            </div>
+                            {% endif %}
+                            {% if posts %}
+                            <div class="unified-stat-item">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ posts.views.count|default:21|format_number }} total views</span>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     
-                    <div class="stat-item">
-                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                        <div class="stat-content">
-                            {% calculate 'multiply' posts.0.reading_time|default:3 posts|length as total_reading %}
-                            <div class="stat-value">{{ total_reading|format_duration }}</div>
-                            <div class="stat-label">Total Reading</div>
+                    <!-- Related Categories -->
+                    {% if related_categories %}
+                    <div class="related-categories-section">
+                        <div class="related-header">
+                            <i class="fas fa-sitemap"></i>
+                            <span>Related Categories</span>
+                        </div>
+                        <div class="related-categories-grid">
+                            {% for related_cat in related_categories %}
+                            <a href="{% url 'blog:category' slug=related_cat.slug %}" class="related-category-item">
+                                {% category_hexagon_single related_cat size="sm" show_label=False %}
+                                <span class="related-cat-name">{{ related_cat.name }}</span>
+                                <span class="related-cat-count">{{ related_cat.post_count }}</span>
+                            </a>
+                            {% endfor %}
                         </div>
                     </div>
+                    {% endif %}
                     
-                    <div class="stat-item">
-                        <div class="stat-icon"><i class="fas fa-calendar"></i></div>
-                        <div class="stat-content">
-                            <div class="stat-value">{{ posts.0.published_date|time_since_published|default:"Recently" }}</div>
-                            <div class="stat-label">Latest Entry</div>
-                        </div>
+                    <!-- Actions Section -->
+                    <div class="unified-actions-section">
+                        <a href="{% url 'blog:categories_overview' %}" class="unified-action-btn">
+                            <i class="fas fa-th-large"></i>
+                            All Categories
+                        </a>
+                        {% if category.parent %}
+                        <a href="{% url 'blog:category' slug=category.parent.slug %}" class="unified-action-btn">
+                            <i class="fas fa-level-up-alt"></i>
+                            {{ category.parent.name }}
+                        </a>
+                        {% endif %}
                     </div>
                     
-                    {% if category.posts.count > posts|length %}
-                    <div class="stat-item">
-                        <div class="stat-icon"><i class="fas fa-archive"></i></div>
-                        <div class="stat-content">
-                            <div class="stat-value">{{ category.posts.count|add:posts|length|mul:"-1"|format_number }}</div>
-                            <div class="stat-label">Archived</div>
+                </div>
+                
+                <!-- RIGHT SIDE: Category Preview Posts -->
+                <div class="unified-content-media">
+                    {% if posts|slice:":3" %}
+                    <div class="category-preview-posts">
+                        <div class="preview-header">
+                            <i class="fas fa-eye"></i>
+                            <span>Recent Entries</span>
+                        </div>
+                        <div class="preview-posts-grid">
+                            {% for post in posts|slice:":3" %}
+                            <div class="preview-post-item">
+                                <a href="{{ post.get_absolute_url }}" class="preview-post-link">
+                                    <div class="preview-post-header">
+                                        <span class="preview-post-id">{{ post.id|datalog_id }}</span>
+                                        <span class="preview-post-date">{{ post.published_date|date:"M d" }}</span>
+                                    </div>
+                                    <h4 class="preview-post-title">{{ post.title|truncatechars:50 }}</h4>
+                                    {% if post.excerpt %}
+                                    <p class="preview-post-excerpt">{{ post.excerpt|truncatechars:80 }}</p>
+                                    {% endif %}
+                                    <div class="preview-post-meta">
+                                        <span class="preview-reading-time">
+                                            <i class="fas fa-clock"></i>
+                                            {{ post.reading_time|format_duration }}
+                                        </span>
+                                        {% if post.views.count %}
+                                        <span class="preview-views">
+                                            <i class="fas fa-eye"></i>
+                                            {{ post.views.count|format_number }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </a>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
                     {% endif %}
                 </div>
+                
             </div>
-        </div>
-        
-        <!-- Enhanced Search for Category -->
-        <div class="category-search-section">
-            {% include 'blog/includes/enhanced_search_interface.html' with style='full' query=query %}
+            
+            <!-- Container Footer -->
+            <div class="unified-container-footer">
+                <div class="unified-footer-stats">
+                    <div class="unified-stat-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Last updated {{ posts.0.published_date|time_since_published }}</span>
+                    </div>
+                    <div class="unified-stat-item">
+                        <i class="fas fa-tags"></i>
+                        <span>{{ category.tags.count|default:0 }} unique tags</span>
+                    </div>
+                </div>
+                
+                <div class="unified-footer-actions">
+                    <button class="unified-footer-action-btn" title="Subscribe to Category">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="unified-footer-action-btn" title="RSS Feed">
+                        <i class="fas fa-rss"></i>
+                    </button>
+                    <button class="unified-footer-action-btn" title="Share Category">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                </div>
+            </div>
+            
         </div>
     </div>
 </section>
 
-<!-- Category Navigation -->
-<section class="category-navigation-section">
-    {% category_hexagon_nav style="compact" current_category=category %}
+<!-- Search & Filters for Category -->
+<section class="category-search-section">
+    <div class="container">
+        {% unified_search_interface query=query style='compact' show_quick_filters=True %}
+    </div>
 </section>
 
 <!-- Category Posts Grid -->
 <section class="category-posts-section">
-    {% if posts %}
-    
-    <!-- Grid Header -->
-    <div class="category-grid-header">
-        <div class="grid-info">
-            <h3 class="grid-title">
-                <i class="fas fa-list"></i>
-                {{ category.name }} DataLog Entries
-            </h3>
-            <div class="grid-stats">
-                <span class="grid-count">{{ posts|length }} of {{ category.posts.count }} entries</span>
-                {% if posts %}
-                <span class="grid-separator">•</span>
-                <span class="grid-reading">{{ total_reading|format_duration }} total reading time</span>
-                {% endif %}
-            </div>
-        </div>
+    <div class="container">
+        {% if posts %}
         
-        <!-- View Controls -->
-        <div class="category-view-controls">
-            <div class="sort-controls">
-                <select class="hud-select" id="categorySort">
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="title">Title A-Z</option>
-                    <option value="reading-time">Reading Time</option>
-                </select>
-            </div>
-            
-            <div class="view-toggle">
-                <button class="view-btn active" data-view="grid" title="Grid View">
-                    <i class="fas fa-th"></i>
-                </button>
-                <button class="view-btn" data-view="list" title="List View">
-                    <i class="fas fa-list"></i>
-                </button>
-                <button class="view-btn" data-view="timeline" title="Timeline View">
-                    <i class="fas fa-stream"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Posts Grid -->
-    <div class="category-posts-grid" id="categoryPostsGrid">
-        {% for post in posts %}
-        {% render_post_card post show_excerpt=True card_type="category" %}
-        {% endfor %}
-    </div>
-    
-    <!-- Pagination -->
-    {% if is_paginated %}
-    <div class="pagination-container">
-        {% render_pagination page_obj request %}
-    </div>
-    {% endif %}
-    
-    {% else %}
-    <!-- No Posts in Category -->
-    <div class="glass-card no-posts-panel">
-        <div class="no-posts-content">
-            <div class="no-posts-icon">
-                {% category_hexagon_single category size="lg" show_label=False link=False %}
-            </div>
-            <h3 class="no-posts-title">No Entries in {{ category.name }}</h3>
-            <p class="no-posts-message">
-                There are currently no published entries in the {{ category.name }} category.
-                Check back later for new content, or explore other categories.
-            </p>
-            <div class="no-posts-actions">
-                <a href="{% url 'blog:post_list' %}" class="btn btn-primary">
-                    <i class="fas fa-list"></i>
-                    View All DataLogs
-                </a>
-                <a href="{% url 'blog:archive' %}" class="btn btn-outline">
-                    <i class="fas fa-calendar"></i>
-                    Browse Archive
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</section>
-
-<!-- Related Categories Suggestion -->
-{% get_datalog_categories as all_categories %}
-{% if all_categories|length > 1 %}
-<section class="related-categories-section">
-    <div class="glass-card related-categories-panel">
-        <h3 class="related-title">
-            <i class="fas fa-sitemap"></i>
-            Explore Other Categories
-        </h3>
-        
-        <div class="related-categories-grid">
-            {% for related_category in all_categories %}
-            {% if related_category.slug != category.slug %}
-            <a href="{% url 'blog:category' slug=related_category.slug %}" class="related-category-card">
-                <div class="related-category-hexagon">
-                    {% category_hexagon_single related_category size="md" show_label=False %}
-                </div>
-                <div class="related-category-info">
-                    <h4 class="related-category-name">{{ related_category.name }}</h4>
-                    <span class="related-category-count">{{ related_category.post_count }} entries</span>
-                    {% if related_category.description %}
-                    <p class="related-category-desc">{{ related_category.description|truncate_smart:60 }}</p>
+        <!-- Grid Header -->
+        <div class="category-grid-header">
+            <div class="grid-info">
+                <h3 class="grid-title">
+                    <i class="fas {{ category.icon|default:'fas fa-list' }}"></i>
+                    {{ category.name }} DataLog Entries
+                </h3>
+                <div class="grid-stats">
+                    <span class="grid-count">{{ posts|length }} {% if category_post_count > posts|length %}of {{ category_post_count }}{% endif %} entries</span>
+                    {% if posts %}
+                    <span class="grid-separator">•</span>
+                    {% timeline_stats posts as stats %}
+                    <span class="grid-reading">{{ stats.total_reading_time|format_duration }} total reading time</span>
                     {% endif %}
                 </div>
-                <div class="related-category-arrow">
-                    <i class="fas fa-arrow-right"></i>
+            </div>
+            
+            <!-- View Controls -->
+            <div class="category-view-controls">
+                <div class="sort-controls">
+                    <select class="hud-select" id="categorySort">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="title">Title A-Z</option>
+                        <option value="reading-time">Reading Time</option>
+                        <option value="views">Most Viewed</option>
+                    </select>
                 </div>
-            </a>
-            {% endif %}
+                
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid" title="Grid View">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="view-btn" data-view="list" title="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button class="view-btn" data-view="timeline" title="Timeline View">
+                        <i class="fas fa-stream"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Posts Grid -->
+        <div class="category-posts-grid" id="categoryPostsGrid">
+            {% for post in posts %}
+            {% render_post_card post show_excerpt=True card_type="category" %}
             {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination-container">
+            {% render_pagination page_obj request %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <!-- No Posts in Category -->
+        <div class="glass-card no-posts-panel">
+            <div class="no-posts-content">
+                <div class="no-posts-icon">
+                    {% category_hexagon_single category size="lg" show_label=False link=False %}
+                </div>
+                <h3 class="no-posts-title">No Entries in {{ category.name }}</h3>
+                <p class="no-posts-message">
+                    There are currently no published entries in the {{ category.name }} category.
+                    Check back later for new content, or explore other categories.
+                </p>
+                <div class="no-posts-actions">
+                    <a href="{% url 'blog:categories_overview' %}" class="glass-btn">
+                        <i class="fas fa-th-large"></i>
+                        Browse All Categories
+                    </a>
+                    <a href="{% url 'blog:post_list' %}" class="glass-btn primary">
+                        <i class="fas fa-list"></i>
+                        All DataLog Entries
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{% else %}
+<!-- ========== CATEGORIES OVERVIEW ========== -->
+
+<!-- Overview Header -->
+<section class="categories-overview-header">
+    <div class="container">
+        {% section_header title="DataLog Categories" subtitle="Explore technical insights organized by expertise area and topic focus" icon="fas fa-th-large" show_metrics=True metric_1_value=total_categories metric_1_label="Categories" metric_1_icon="fas fa-folder" metric_2_value=total_posts metric_2_label="Total Entries" metric_2_icon="fas fa-file-alt" metric_3_value=avg_posts_per_category metric_3_label="Avg per Category" metric_3_icon="fas fa-chart-bar" %}
+    </div>
+</section>
+
+<!-- Category Navigation -->
+<section class="categories-nav-section">
+    <div class="container">
+        {% category_hexagon_nav style="full" current_category=None show_all=False %}
+    </div>
+</section>
+
+<!-- Categories Grid -->
+<section class="categories-grid-section">
+    <div class="container">
+        
+        <!-- Grid Header -->
+        <div class="categories-grid-header">
+            <div class="grid-info">
+                <h3 class="grid-title">
+                    <i class="fas fa-th-large"></i>
+                    All Categories
+                </h3>
+                <div class="grid-stats">
+                    <span class="grid-count">{{ categories|length }} active categories</span>
+                    <span class="grid-separator">•</span>
+                    <span class="grid-total">{{ total_posts }} total entries</span>
+                </div>
+            </div>
+            
+            <!-- Sort Controls -->
+            <div class="categories-sort-controls">
+                <select class="hud-select" id="categoriesSort">
+                    <option value="posts">Most Posts</option>
+                    <option value="name">Name A-Z</option>
+                    <option value="recent">Recently Updated</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Categories Grid -->
+        <div class="categories-overview-grid" id="categoriesGrid">
+            {% for category in categories %}
+            <div class="category-overview-card glass-card" data-category="{{ category.slug }}">
+                
+                <!-- Category Header -->
+                <div class="category-card-header">
+                    <div class="category-card-hexagon">
+                        {% category_hexagon_single category size="lg" show_label=False link=False %}
+                    </div>
+                    <div class="category-card-info">
+                        <h4 class="category-card-title">
+                            <a href="{% url 'blog:category' slug=category.slug %}">{{ category.name }}</a>
+                        </h4>
+                        <div class="category-card-stats">
+                            <span class="category-post-count">
+                                <i class="fas fa-file-alt"></i>
+                                {{ category.post_count }} entries
+                            </span>
+                            {% if category.avg_reading_time %}
+                            <span class="category-reading-time">
+                                <i class="fas fa-clock"></i>
+                                {{ category.avg_reading_time|format_duration }} avg
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Category Description -->
+                {% if category.description %}
+                <div class="category-card-description">
+                    <p>{{ category.description|truncatechars:120 }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Recent Posts Preview -->
+                <div class="category-card-posts">
+                    <div class="recent-posts-header">
+                        <i class="fas fa-list"></i>
+                        <span>Recent Entries</span>
+                    </div>
+                    <div class="recent-posts-list">
+                        {% for post in category.recent_posts|slice:":3" %}
+                        <a href="{{ post.get_absolute_url }}" class="recent-post-item">
+                            <span class="recent-post-id">{{ post.id|datalog_id }}</span>
+                            <span class="recent-post-title">{{ post.title|truncatechars:35 }}</span>
+                            <span class="recent-post-date">{{ post.published_date|date:"M d" }}</span>
+                        </a>
+                        {% endfor %}
+                        {% if category.post_count > 3 %}
+                        <div class="recent-posts-more">
+                            <span>+{{ category.post_count|add:"-3" }} more entries</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Category Actions -->
+                <div class="category-card-actions">
+                    <a href="{% url 'blog:category' slug=category.slug %}" class="category-action-btn primary">
+                        <i class="fas fa-arrow-right"></i>
+                        View Category
+                    </a>
+                    {% if category.has_rss %}
+                    <button class="category-action-btn" title="RSS Feed">
+                        <i class="fas fa-rss"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                
+            </div>
+            {% endfor %}
+        </div>
+        
+    </div>
+</section>
+
+<!-- Category Stats Section -->
+<section class="categories-stats-section">
+    <div class="container">
+        <div class="glass-card categories-analytics">
+            <div class="analytics-header">
+                <h3 class="analytics-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Category Analytics
+                </h3>
+            </div>
+            <div class="analytics-grid">
+                <div class="analytics-item">
+                    <div class="analytics-number">{{ most_popular_category.post_count|default:0 }}</div>
+                    <div class="analytics-label">Most Popular</div>
+                    <div class="analytics-detail">{{ most_popular_category.name|default:"N/A" }}</div>
+                </div>
+                <div class="analytics-item">
+                    <div class="analytics-number">{{ newest_category.post_count|default:0 }}</div>
+                    <div class="analytics-label">Newest Category</div>
+                    <div class="analytics-detail">{{ newest_category.name|default:"N/A" }}</div>
+                </div>
+                <div class="analytics-item">
+                    <div class="analytics-number">{{ total_reading_time|format_duration }}</div>
+                    <div class="analytics-label">Total Content</div>
+                    <div class="analytics-detail">Reading Time</div>
+                </div>
+                <div class="analytics-item">
+                    <div class="analytics-number">{{ categories_with_recent_posts }}</div>
+                    <div class="analytics-label">Active Categories</div>
+                    <div class="analytics-detail">This Month</div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
+
 {% endif %}
 
+{% endblock %}
+
+{% block datalogs_js %}
+<script>
+// Category page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Category/Overview sorting
+    const sortSelect = document.getElementById('categorySort') || document.getElementById('categoriesSort');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            // Sort functionality (can be enhanced with AJAX)
+            console.log('Sorting by:', this.value);
+        });
+    }
+    
+    // View toggle functionality
+    const viewButtons = document.querySelectorAll('.view-btn');
+    const postsGrid = document.getElementById('categoryPostsGrid');
+    
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            viewButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Update grid view
+            const view = this.dataset.view;
+            if (postsGrid) {
+                postsGrid.className = `category-posts-grid view-${view}`;
+            }
+        });
+    });
+    
+    // Category card hover effects (for overview)
+    const categoryCards = document.querySelectorAll('.category-overview-card');
+    categoryCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+});
+</script>
 {% endblock %}

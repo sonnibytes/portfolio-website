@@ -7,6 +7,7 @@ urlpatterns = [
     path("", views.PostListView.as_view(), name="post_list"),
     path("post/<slug:slug>/", views.PostDetailView.as_view(), name="post_detail"),
     # Category view
+    path("categories/", views.CategoryView.as_view(), name="categories"),
     path("category/<slug:slug>/", views.CategoryView.as_view(), name="category"),
     # Tags views
     path("tags/", views.TagListView.as_view(), name="tags"),
@@ -24,8 +25,6 @@ urlpatterns = [
     path("search/ajax/", views.search_ajax_endpoint, name="search_ajax"),
     path("search/autocomplete/", views.search_autocomplete, name="search_autocomplete"),
     # path("search/export/", views.search_export, name="search_export"),
-
-
     # Admin/Management URLs
     path("admin/dashboard/", views.DashboardView.as_view(), name="dashboard"),
     # Post Management
@@ -62,11 +61,26 @@ urlpatterns = [
         name="test_features",
     ),
     # path("test/posts/", views.PostEnhList2.as_view(), name="post_enh2"),
-    path("test-search/", TemplateView.as_view(template_name="blog/debug/test_search.html"), name="test-search"),
-    path("test-base/", TemplateView.as_view(template_name="blog/debug/test_datalog_base.html"), name="test-base"),
-    path("test-inherit/", TemplateView.as_view(template_name="blog/debug/test_inheritance.html"), name="test-inherit"),
-    path("test-glass-card/", TemplateView.as_view(template_name="blog/debug/test_glass_card.html"), name="test-glass-card"),
-
+    path(
+        "test-search/",
+        TemplateView.as_view(template_name="blog/debug/test_search.html"),
+        name="test-search",
+    ),
+    path(
+        "test-base/",
+        TemplateView.as_view(template_name="blog/debug/test_datalog_base.html"),
+        name="test-base",
+    ),
+    path(
+        "test-inherit/",
+        TemplateView.as_view(template_name="blog/debug/test_inheritance.html"),
+        name="test-inherit",
+    ),
+    path(
+        "test-glass-card/",
+        TemplateView.as_view(template_name="blog/debug/test_glass_card.html"),
+        name="test-glass-card",
+    ),
 ]
 
 app_name = 'blog'

@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.html import escape
-from django.db.models import Count, Q, Avg
+from django.db.models import Count, Q, Avg, Sum
 from markdownx.utils import markdownify
 
 from datetime import datetime, timedelta, date
@@ -259,6 +259,92 @@ class PostDetailView(DetailView):
         }
 
 
+class CategoriesOverviewView(ListView):
+    """
+    View for categories overview page - shows all categories w stats.
+    URL: /datalogs/categories/
+    """
+    model = Category
+    template_name = "blog/category.html"  # Same template as CategoryView, different context
+    context_object_name = "categories"
+
+    def get_queryset(self):
+        # Get categories post counts if gt 0
+        return Category.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        ).filter(post_count__gt=0).order_by('-post_count', 'name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Calculate overview stats
+        categories = context['categories']
+        total_posts = Post.objects.filter(status="published").count()
+        total_categories = categories.count()
+
+        # Get most popular category
+        most_popular = categories.first() if categories else None
+
+        # Get newest category (by first post)
+        newest_category = None
+        if categories:
+            for cat in categories:
+                if cat.posts.filter(status="published").exists():
+                    newest_category = cat
+                    break
+        
+        # Calculate avg posts per category
+        avg_posts_per_category = round(total_posts / total_categories, 1) if total_categories > 0 else 0
+
+        # Add recent posts to each category
+        for category in categories:
+            category.recent_posts = category.posts.filter(
+                status="published"
+            ).order_by('-published_date')[:3]
+
+            # Calculate avg reading time for category
+            category.avg_reading_time = category.posts.filter(
+                status="published"
+            ).aggregate(avg_time=Avg("reading_time"))["avg_time"] or 0
+
+        # Categories w recent activity (posts in last 30 days)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        categories_with_recent_posts = Category.objects.filter(
+            posts__published_date__gte=thirty_days_ago,
+            posts__status="published"
+        ).distinct().count()
+
+        # Calculate total reading time across all categoriess
+        total_reading_time = Post.objects.filter(
+            status="published"
+        ).aggregate(total=Sum("reading_time"))["total"] or 0
+
+        context.update({
+            # Clear category to indicate overview mode
+            "category": None,
+
+            # Overview page metadata
+            "page_title": "Categories Overview",
+            "page_subtitle": "Explore technical insights by expertise area",
+            "page_icon": "fas fa-th-large",
+
+            # Overview Stats
+            "total_categories": total_categories,
+            "total_posts": total_posts,
+            "avg_posts_per_category": avg_posts_per_category,
+            "most_popular_category": most_popular,
+            "newest_category": newest_category,
+            "categories_with_recent_posts": categories_with_recent_posts,
+            "total_reading_time": total_reading_time,
+
+            # Template control flags
+            "show_breadcrumbs": True,
+            "show_stats": True,
+        })
+
+        return context
+
+
 class CategoryView(ListView):
     """View for posts filtered by category."""
     model = Post
@@ -267,6 +353,10 @@ class CategoryView(ListView):
     paginate_by = 6
 
     def get_queryset(self):
+        # If no category slug, return empty queryset for overview
+        if 'slug' not in self.kwargs:
+            return Post.objects.none()
+
         self.category = get_object_or_404(Category, slug=self.kwargs['slug'])
         return Post.objects.filter(
             category=self.category,
@@ -274,35 +364,50 @@ class CategoryView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # context['category'] = self.category
-        # context['category_slug'] = self.kwargs['slug']
 
-        context.update(
-            {
-                "category": self.category,
-                "category_slug": self.kwargs['slug'],
-                "page_title": f"{self.category.name} DataLogs",
-                "page_subtitle": f"Technical insights in {self.category.name}",
-                "page_icon": self.category.icon or "fas fa-folder",
-                "show_breadcrumbs": True,
+        if 'slug' in kwargs:
+            # Focused category view
+            context.update(
+                {
+                    "category": self.category,
+                    "category_slug": self.kwargs['slug'],
+                    "page_title": f"{self.category.name} DataLogs",
+                    "page_subtitle": f"Technical insights in {self.category.name}",
+                    "page_icon": self.category.icon or "fas fa-folder",
+                    "show_breadcrumbs": True,
+                    "show_filters": True,
+                    "show_stats": False,
+                    # Category-specific stats
+                    "category_post_count": self.get_queryset().count(),
+                    "category_avg_reading_time": self.get_queryset().aggregate(
+                        avg_time=Avg("reading_time")
+                    )["avg_time"] or 0,
+                    # Related categories
+                    "related_categories": Category.objects.exclude(id=self.category.id)
+                    .annotate(
+                        post_count=Count(
+                            "posts", filter=Q(posts__status="published")
+                        )
+                    )
+                    .filter(post_count__gt=0)[:4],
+                }
+            )
+        else:
+            # Categories overview
+            categories = Category.objects.annotate(
+                post_count=Count("posts", filter=Q(posts__status='published'))
+            ).filter(post_count__gt=0)
+
+            context.update({
+                "categories": categories,
+                "total_categories": categories.count(),
+                "total_posts": Post.objects.filter(status="published").count(),
+                "show_breadscrumbs": True,
                 "show_filters": True,
                 "show_stats": False,
-                # Category-specific stats
-                "category_post_count": self.get_queryset().count(),
-                "category_avg_reading_time": self.get_queryset().aggregate(
-                    avg_time=Avg("reading_time")
-                )["avg_time"]
-                or 0,
-                # Related categories
-                "related_categories": Category.objects.exclude(id=self.category.id)
-                .annotate(
-                    post_count=Count(
-                        "posts", filter=Q(posts__status="published")
-                    )
-                )
-                .filter(post_count__gt=0)[:4],
-            }
-        )
+                # ...other overview stats
+            })
+
         return context
 
 
