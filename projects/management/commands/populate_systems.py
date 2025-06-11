@@ -39,18 +39,11 @@ class Command(BaseCommand):
 
         self.stdout.write("🚀 Creating sample portfolio data...")
 
-        # Create user if needed
-        user, created = User.objects.get_or_create(
-            username="admin",
-            defaults={
-                "email": "admin@example.com",
-                "is_staff": True,
-                "is_superuser": True,
-            },
-        )
-        if created:
-            user.set_password("admin")
-            user.save()
+        # Better approach - don't create admin users in populate commands
+        user = User.objects.filter(is_superuser=True).first()
+        if not user:
+            self.stdout.write('No superuser found. Please create one with: python manage.py createsuperuser')
+            return
 
         # Create Core App Skills (if available)
         self.create_core_skills()
