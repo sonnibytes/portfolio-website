@@ -57,6 +57,9 @@ class Technology(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+    def get_absolute_url(self):
+        return reverse("projects:technology", args=[self.slug])
+
 
 class SystemType(models.Model):
     """System Type model for categorizing projects/systems."""
@@ -411,6 +414,9 @@ class SystemImage(models.Model):
     def __str__(self):
         return f"{self.image_type.title()} for {self.system.title}"
 
+    def get_absolute_url(self):
+        return f"{self.system.get_absolute_url()}#image-{self.pk}"
+
 
 class SystemFeature(models.Model):
     """Key features for a system with HUD-style display."""
@@ -468,6 +474,9 @@ class SystemFeature(models.Model):
         }
         return colors.get(self.implementation_status, "#00f0ff")
 
+    def get_absolute_url(self):
+        return f"{self.system.get_absolute_url()}#feature-{self.pk}"
+
 
 class SystemMetric(models.Model):
     """Performance and operational metrics for HUD dashboard display."""
@@ -519,3 +528,6 @@ class SystemMetric(models.Model):
                 metric_name=self.metric_name
             ).update(is_current=False)
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return f"{self.system.get_absolute_url()}#metric-{self.pk}"

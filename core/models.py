@@ -68,7 +68,7 @@ class Skill(models.Model):
 
     def get_absolute_url(self):
         return reverse("core:skill", args=[self.slug])
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
@@ -96,7 +96,7 @@ class Education(models.Model):
 
     def get_absolute_url(self):
         return reverse("core:education", args=[self.slug])
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
@@ -129,7 +129,7 @@ class Experience(models.Model):
         if self.technologies:
             return [tech.strip() for tech in self.technologies.split(",")]
         return []
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
