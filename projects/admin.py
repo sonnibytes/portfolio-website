@@ -264,7 +264,7 @@ class SystemModuleAdmin(admin.ModelAdmin):
     status_display.short_description = "Status"
 
     def completion_progress(self, obj):
-        percent = obj.get_completion_percentage()
+        percent = obj.completion_percent
         if percent >= 90:
             color = "#27c93f"
         elif percent >= 50:
