@@ -889,7 +889,7 @@ Development is progressing well with 72% completion.
                             connection_type=log_data["connection_type"],
                             priority=random.randint(1, 4),
                             log_entry_id=f"SYS-{log_data['system'].id:03d}-LOG-{i + 1:03d}",
-                            logged_at=post.published_date,
+                            created_at=post.published_date,
                         )
 
                         self.stdout.write(f"   Created log entry: {post.title}")

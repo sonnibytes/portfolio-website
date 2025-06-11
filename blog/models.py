@@ -510,7 +510,7 @@ class SystemLogEntry(models.Model):
     def get_affected_components_list(self):
         """Return affected components as a list."""
         now = timezone.now()
-        diff = now - self.logged_at
+        diff = now - self.created_at
 
         if diff.days > 0:
             return f"{diff.days} days ago"
