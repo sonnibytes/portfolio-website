@@ -328,6 +328,35 @@ class Series(models.Model):
     slug = models.SlugField(max_length=200, unique=True)
     description = models.TextField(blank=True)
 
+    # Visual Enhancement
+    thumbnail = models.ImageField(upload_to="blog/series/", null=True, blank=True, help_text="Series thumbnail image (400x300px recommended)")
+
+    # Auto-calculated metrics
+    post_count = models.IntegerField(default=0, help_text="Number of posts in series (auto-calculated)")
+    total_reading_time = models.IntegerField(default=0, help_text="Total reading time for all posts in series (auto-calculated)")
+
+    # Series Metadata
+    difficulty_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('beginner', 'Beginner'),
+            ('intermediate', 'Intermediate'),
+            ('advanced', 'Advanced'),
+            ('expert', 'Expert'),
+        ],
+        default='intermediate'
+    )
+
+    # Status Tracking
+    is_complete = models.BooleanField(default=False, help_text="Is this series complete or ongoing?")
+
+    # Visibility
+    is_featured = models.BooleanField(default=False, help_text="Feature this series prominently")
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name_plural = "Series"
         ordering = ['title']
@@ -342,6 +371,42 @@ class Series(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super(Series, self).save(*args, **kwargs)
+
+    def update_metrics(self):
+        """Update post_count and total_reading_time"""
+        posts = self.posts.all()
+        self.post_count = posts.count()
+        self.total_reading_time = sum(post.post.reading_time for post in posts)
+        self.save()
+
+    def get_progress_percentage(self):
+        """Get completion percentage if series has target post count"""
+        # This oculd be enhanced w a target_posts field
+        if hasattr(self, 'target_posts') and self.target_posts:
+            return min(100, (self.post_count / self.target_posts) * 100)
+        return 100 if self.is_complete else 0
+
+    def get_next_post(self, current_post):
+        """Get next post in series after current_post"""
+        try:
+            current_series_post = self.posts.get(post=current_post)
+            next_series_post = self.posts.filter(
+                order__gt=current_series_post.order
+            ).first()
+            return next_series_post.post if next_series_post else None
+        except:
+            return None
+
+    def get_previous_post(self, current_post):
+        """Get previous post in series before current_post"""
+        try:
+            current_series_post = self.posts.get(post=current_post)
+            prev_series_post = self.posts.filter(
+                order__lt=current_series_post.order
+            ).last()
+            return prev_series_post.post if prev_series_post else None
+        except:
+            return None
 
 
 class SeriesPost(models.Model):

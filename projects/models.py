@@ -628,4 +628,3 @@ class SystemDependency(models.Model):
 
     def get_absolute_url(self):
         return f"{self.system.get_absolute_url()}#dependency-{self.pk}"
-
