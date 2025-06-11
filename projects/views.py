@@ -434,6 +434,94 @@ class DashboardAPIView(TemplateView):
 
         return JsonResponse(data)
 
+
+# Enhanced System List (for system cards)
+class EnhancedSystemListView(ListView):
+    """Enhanced system list with new filtering and display capabilities"""
+    
+    model = SystemModule
+    template_name = "projects/system_list.html"
+    context_object_name = "systems"
+    paginate_by = 12
+
+    def get_queryset(self):
+        queryset = SystemModule.objects.select_related(
+            'system_type', 'author'
+        ).prefetch_related(
+            'technologies', 'features'
+        ).order_by('-updated_at')
+
+        # Enhanced filtering w new fields
+        status_filter = self.request.GET.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        complexity_filter = self.request.GET.get('complexity')
+        if complexity_filter:
+            queryset = queryset.filter(complexity=complexity_filter)
+
+        tech_filter = self.request.GET.get('technology')
+        if tech_filter:
+            queryset = queryset.filter(technologies__slug=tech_filter)
+
+        # Performance filtering using enhanced fields
+        min_performance = self.request.GET.get('min_performance')
+        if min_performance:
+            queryset = queryset.filter(performance_score__gte=min_performance)
+
+        health_filter = self.request.GET.get('health')
+        if health_filter:
+            # This would require custom filtering logic for health status, can work on later
+            pass
+
+        # Search across enhanced fields
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(technical_details__icontains=search) |
+                Q(technologies__name__icontains=search) |
+                Q(features__title__icontains=search)
+            ).distinct()
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "system_types": SystemType.objects.all().order_by("display_order"),
+                "technologies": Technology.objects.annotate(
+                    system_count=Count("systems")
+                )
+                .filter(system_count__gt=0)
+                .order_by("-system_count"),
+                "complexity_choices": SystemModule.COMPLEXITY_CHOICES,
+                "status_choices": SystemModule.STATUS_CHOICES,
+                "current_filters": {
+                    "status": self.request.GET.get("status", ""),
+                    "complexity": self.request.GET.get("complexity", ""),
+                    "technology": self.request.GET.get("technology", ""),
+                    "search": self.request.GET.get("search", ""),
+                    "min_performance": self.request.GET.get("min_performance", ""),
+                },
+                # Quick stats for the page header
+                "page_stats": {
+                    "total_systems": self.get_queryset().count(),
+                    "deployed_count": self.get_queryset()
+                    .filter(status="deployed")
+                    .count(),
+                    "avg_completion": self.get_queryset().aggregate(
+                        avg=Avg("completion_percent")
+                    )["avg"]
+                    or 0,
+                },
+            }
+        )
+        return context
+
+
 class SystemModuleListView(ListView):
     """Main systems overview page with HUD-style grid display."""
 
