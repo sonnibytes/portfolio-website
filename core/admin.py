@@ -97,7 +97,6 @@ class CorePageAdmin(admin.ModelAdmin):
 
 
 @admin.register(Skill)
-@admin.register(Skill)
 class SkillAdmin(admin.ModelAdmin):
     list_display = (
         "name",
@@ -107,6 +106,8 @@ class SkillAdmin(admin.ModelAdmin):
         "technology_link",
         "featured_status",
         "recency_status",
+        "display_order",
+        "is_featured",
     )
     list_filter = (
         "category",

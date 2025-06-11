@@ -500,6 +500,23 @@ class SystemLogEntry(models.Model):
     system_version = models.CharField(
         max_length=20, blank=True, help_text="System version this log relates to (e.g. v1.2.3)"
     )
+
+    # Impact assessment
+    impact_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('low', 'Low Impact'),
+            ('medium', 'Medium Impact'),
+            ('high', 'High Impact'),
+            ('critical', 'Critical Impact'),
+        ],
+        default='medium'
+    )
+
+    # Time tracking
+    estimated_hours = models.IntegerField(null=True, blank=True, help_text="Estimated hours to complete this work")
+    actual_hours = models.IntegerField(null=True, blank=True, help_text="Actual hours spent on this work")
+
     completion_impact = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -513,6 +530,9 @@ class SystemLogEntry(models.Model):
         blank=True,
         help_text="Comma-separated list of affected system components"
     )
+
+    # Resolution Tracking
+    resolution_notes = models.TextField(blank=True, help_text="Notes on how this issue was resolved")
 
     # For HUD dashboard display
     performance_impact = models.CharField(
@@ -582,20 +602,26 @@ class SystemLogEntry(models.Model):
         return icons.get(self.connection_type, "fa-file-alt")
 
     def get_affected_components_list(self):
-        """Return affected components as a list."""
-        now = timezone.now()
-        diff = now - self.created_at
+        """Return affected components as a list"""
+        if self.affected_components:
+            return [comp.strip() for comp in self.affected_components.split(",")]
+        return []
 
-        if diff.days > 0:
-            return f"{diff.days} days ago"
-        elif diff.seconds > 3600:
-            hours = diff.seconds // 3600
-            return f"{hours} hours ago"
-        elif diff.seconds > 60:
-            minutes = diff.seconds // 60
-            return f"{minutes} minutes ago"
-        else:
-            return "Just now"
+    def hours_variance(self):
+        """Calculate difference between estimated and actual hours"""
+        if self.estimated_hours and self.actual_hours:
+            return self.actual_hours - self.estimated_hours
+        return None
+
+    def get_impact_color(self):
+        """Return color for impact level display"""
+        colors = {
+            "low": "#27c93f",
+            "medium": "#ffbd2e",
+            "high": "#ff8a80",
+            "critical": "#f44336",
+        }
+        return colors.get(self.impact_level, "#00f0ff")
 
     def get_absolute_url(self):
         return f"{self.post.get_absolute_url()}#log-{self.pk}"

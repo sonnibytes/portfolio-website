@@ -163,28 +163,29 @@ class SeriesPostAdmin(admin.ModelAdmin):
 @admin.register(SystemLogEntry)
 class SystemLogEntryAdmin(admin.ModelAdmin):
     list_display = (
-        'log_entry_id',
-        'post',
-        'system',
-        'connection_type',
-        'impact_display',
-        'hours_variance_display',
-        'priority_display',
-        'status_display'
+        "log_entry_id",
+        "post",
+        "system",
+        "connection_type",
+        "impact_display",
+        "hours_variance_display",
+        "priority_display",
+        "status_display",
     )
     list_filter = (
-        'connection_type',
-        'impact_level',
-        'priority',
-        'log_status'
+        "connection_type",
+        "impact_level",
+        "priority",
+        "log_status",
+        "system__system_type",
     )
     search_fields = (
-        'post__title',
-        'system__title',
-        'log_entry_id',
-        'affected_components'
+        "post__title",
+        "system__title",
+        "log_entry_id",
+        "affected_components",
     )
-    readonly_fields = ('created_at', 'updated_at', 'hours_variance')
+    readonly_fields = ("created_at", "updated_at", "hours_variance")
 
     fieldsets = (
         (
@@ -217,59 +218,69 @@ class SystemLogEntryAdmin(admin.ModelAdmin):
         ("Resolution", {"fields": ("resolution_notes",)}),
         (
             "Timestamps",
-            {"fields": ("created_at", "updated_ at"), "classes": ("collapse",)},
+            {
+                "fields": ("created_at", "updated_at", "resolved_at"),
+                "classes": ("collapse",),
+            },
         ),
     )
 
-    def post_count_display(self, obj):
-        count = obj.post_count
-        if count == 0:
-            color = "#808080"
-        elif count < 3:
-            color = "#ffbd2e"
-        else:
-            color = "#27c93f"
-        return format_html('<span style="color: {};">{} posts</span>', color, count)
+    def impact_display(self, obj):
+        colors = {
+            "low": "#27c93f",
+            "medium": "#ffbd2e",
+            "high": "#ff8a80",
+            "critical": "#f44336",
+        }
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            colors.get(obj.impact_level, "#808080"),
+            obj.get_impact_level_display(),
+        )
 
-    post_count_display.short_description = "Posts"
+    impact_display.short_description = "Impact"
 
-    def completion_status(self, obj):
-        if obj.is_complete:
-            return format_html('<span style="color: #27c93f;">✓ Complete</span>')
-        else:
-            return format_html('<span style="color: #ffbd2e;">📝 Ongoing</span>')
-
-    completion_status.short_description = "Status"
-
-    def featured_status(self, obj):
-        if obj.is_featured:
-            return format_html('<span style="color: #27c93f;">⭐ Featured</span>')
+    def hours_variance_display(self, obj):
+        variance = obj.hours_variance()
+        if variance is not None:
+            if variance > 0:
+                return format_html(
+                    '<span style="color: #ff8a80;">+{} hrs</span>', variance
+                )
+            elif variance < 0:
+                return format_html(
+                    '<span style="color: #27c93f;">{} hrs</span>', variance
+                )
+            else:
+                return format_html('<span style="color: #27c93f;">On target</span>')
         return "-"
 
-    featured_status.short_description = "Featured"
+    hours_variance_display.short_description = "Hours Variance"
 
-    def total_reading_time_display(self, obj):
-        minutes = obj.total_reading_time
-        if minutes >= 60:
-            hours = minutes // 60
-            remaining_minutes = minutes % 60
-            return f"{hours}h {remaining_minutes}m"
-        return f"{minutes}m"
+    def priority_display(self, obj):
+        colors = {1: "#808080", 2: "#ffbd2e", 3: "#ff8a80", 4: "#f44336"}
+        return format_html(
+            '<span style="color: {};">Priority {}</span>',
+            colors.get(obj.priority, "#808080"),
+            obj.priority,
+        )
 
-    total_reading_time_display.short_description = "Reading Time"
+    priority_display.short_description = "Priority"
 
-    def update_series_metrics(self, request, queryset):
-        for series in queryset:
-            series.update_metrics()
-        self.message_user(request, f"Updated metrics for {queryset.count()} series.")
+    def status_display(self, obj):
+        colors = {
+            "draft": "#808080",
+            "active": "#ffbd2e",
+            "resolved": "#27c93f",
+            "archived": "#b39ddb",
+        }
+        return format_html(
+            '<span style="color: {};">{}</span>',
+            colors.get(obj.log_status, "#808080"),
+            obj.get_log_status_display(),
+        )
 
-    update_series_metrics.short_description = "Update series metrics"
-
-    def mark_as_complete(self, request, queryset):
-        queryset.update(is_complete=True)
-        self.message_user(request, f"Marked {queryset.count()} series as complete.")
-
-    mark_as_complete.short_description = "Mark as complete"
+    status_display.short_description = "Status"
 
 
 @admin.register(PostView)
