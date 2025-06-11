@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
-from django.utils.safestring import mark_safe
 
 from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics
 
@@ -98,6 +97,7 @@ class CorePageAdmin(admin.ModelAdmin):
 
 
 @admin.register(Skill)
+@admin.register(Skill)
 class SkillAdmin(admin.ModelAdmin):
     list_display = (
         "name",
@@ -114,9 +114,8 @@ class SkillAdmin(admin.ModelAdmin):
         "is_featured",
         "is_currently_learning",
         "is_certified",
-        "related_technology__category",
     )
-    search_fields = ("name", "description", "related_technology__name")
+    search_fields = ("name", "description")
     list_editable = ("display_order", "is_featured")
     prepopulated_fields = {"slug": ("name",)}
 
@@ -204,30 +203,21 @@ class EducationAdmin(admin.ModelAdmin):
         "institution",
         "degree",
         "field_of_study",
-        "duration_display",
+        "start_date",
+        "end_date",
         "is_current",
     )
     list_filter = ("is_current", "start_date", "end_date")
     search_fields = ("institution", "degree", "field_of_study")
-    prepopulated_fields = {"slug": ("institution", "degree")}
-
-    def duration_display(self, obj):
-        return obj.get_duration()
-
-    duration_display.short_description = "Duration"
+    prepopulated_fields = {"slug": ("institution",)}
 
 
 @admin.register(Experience)
 class ExperienceAdmin(admin.ModelAdmin):
-    list_display = ("company", "position", "duration_display", "is_current")
+    list_display = ("company", "position", "start_date", "end_date", "is_current")
     list_filter = ("is_current", "start_date", "end_date")
     search_fields = ("company", "position", "description", "technologies")
-    prepopulated_fields = {"slug": ("company", "position")}
-
-    def duration_display(self, obj):
-        return obj.get_duration()
-
-    duration_display.short_description = "Duration"
+    prepopulated_fields = {"slug": ("company",)}
 
 
 @admin.register(Contact)
@@ -330,7 +320,13 @@ class ContactAdmin(admin.ModelAdmin):
 
 @admin.register(SocialLink)
 class SocialLinkAdmin(admin.ModelAdmin):
-    list_display = ("name", "platform", "click_count", "is_featured", "last_clicked")
-    list_filter = ("platform", "is_featured")
+    list_display = ("name", "url", "handle", "display_order")
     search_fields = ("name", "handle", "url")
+    list_editable = ("display_order",)
     ordering = ("display_order", "name")
+
+
+# Customize admin site
+admin.site.site_header = "AURA Portfolio Administration"
+admin.site.site_title = "AURA Admin"
+admin.site.index_title = "Portfolio Control Panel"

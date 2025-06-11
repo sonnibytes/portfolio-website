@@ -1,7 +1,5 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.urls import reverse
-from django.utils.safestring import mark_safe
 from .models import (
     SystemModule,
     SystemType,
@@ -141,6 +139,9 @@ class SystemModuleAdmin(admin.ModelAdmin):
         "get_health_status",
         "completion_trend",
     )
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+    inlines = [SystemFeatureInline, SystemImageInline, SystemMetricInline]
 
     fieldsets = (
         (
@@ -245,6 +246,43 @@ class SystemModuleAdmin(admin.ModelAdmin):
         ),
     )
 
+    def status_display(self, obj):
+        colors = {
+            "draft": "#808080",
+            "in_development": "#ffbd2e",
+            "testing": "#00f0ff",
+            "deployed": "#27c93f",
+            "published": "#27c93f",
+            "archived": "#b39ddb",
+        }
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            colors.get(obj.status, "#808080"),
+            obj.get_status_display(),
+        )
+
+    status_display.short_description = "Status"
+
+    def completion_progress(self, obj):
+        percent = obj.get_completion_percentage()
+        if percent >= 90:
+            color = "#27c93f"
+        elif percent >= 50:
+            color = "#ffbd2e"
+        else:
+            color = "#ff8a80"
+
+        return format_html(
+            '<div style="width: 100px; background: #f0f0f0; border-radius: 5px;">'
+            '<div style="width: {}%; background: {}; height: 20px; border-radius: 5px; '
+            'text-align: center; line-height: 20px; color: white; font-size: 12px;">{}</div></div>',
+            percent,
+            color,
+            f"{percent}%",
+        )
+
+    completion_progress.short_description = "Progress"
+
     def health_display(self, obj):
         status = obj.get_health_status()
         colors = {
@@ -286,14 +324,8 @@ class SystemDependencyAdmin(admin.ModelAdmin):
         "critical_status",
         "created_at",
     )
-    list_filter = (
-        "dependency_type",
-        "is_critical",
-        "created_at",
-        "system__system_type",
-    )
+    list_filter = ("dependency_type", "is_critical", "created_at")
     search_fields = ("system__title", "depends_on__title", "description")
-    autocomplete_fields = ("system", "depends_on")
     readonly_fields = ("created_at",)
 
     def critical_status(self, obj):
@@ -308,23 +340,17 @@ class SystemDependencyAdmin(admin.ModelAdmin):
 @admin.register(SystemFeature)
 class SystemFeatureAdmin(admin.ModelAdmin):
     list_display = ("title", "system", "feature_type", "implementation_status", "order")
-    list_filter = ("feature_type", "implementation_status", "system__system_type")
+    list_filter = ("feature_type", "implementation_status")
     search_fields = ("title", "description", "system__title")
     ordering = ("system", "order")
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related("system")
 
 
 @admin.register(SystemImage)
 class SystemImageAdmin(admin.ModelAdmin):
     list_display = ("system", "image_type", "caption", "order")
-    list_filter = ("image_type", "system__system_type")
+    list_filter = ("image_type",)
     search_fields = ("caption", "alt_text", "system__title")
     ordering = ("system", "order")
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related("system")
 
 
 @admin.register(SystemMetric)
@@ -338,16 +364,13 @@ class SystemMetricAdmin(admin.ModelAdmin):
         "is_current",
         "created_at",
     )
-    list_filter = ("metric_type", "is_current", "created_at", "system__system_type")
-    search_fields = ("metric_name", "system__title", "system__system_id")
+    list_filter = ("metric_type", "is_current", "created_at")
+    search_fields = ("metric_name", "system__title")
     readonly_fields = ("created_at",)
     ordering = ("-created_at",)
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related("system")
 
-
-# Customize admin site header
-admin.site.site_header = "ML DEVLOG System Administration"
-admin.site.site_title = "ML DEVLOG Admin"
-admin.site.index_title = "System Control Panel"
+# Customize admin site
+admin.site.site_header = "AURA Portfolio Administration"
+admin.site.site_title = "AURA Admin"
+admin.site.index_title = "Systems Control Panel"
