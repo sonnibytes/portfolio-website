@@ -25,8 +25,15 @@ class Technology(models.Model):
         ('other', 'Other'),
     )
 
+    # Base info
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, max_length=100)
+    description = models.TextField(blank=True)
+    category = models.CharField(
+        max_length=50, choices=CATEGORY_CHOICES, default="other"
+    )
+
+    # Visual Properties
     icon = models.CharField(
         max_length=50,
         blank=True,
@@ -37,12 +44,7 @@ class Technology(models.Model):
         default="#00f0ff",
         help_text="Hex color code for HUD display(e.g., #00f0ff)"
     )
-    description = models.TextField(blank=True)
-    category = models.CharField(
-        max_length=50,
-        choices=CATEGORY_CHOICES,
-        default='other'
-    )
+    
 
     class Meta:
         verbose_name_plural = "technologies"
