@@ -525,21 +525,6 @@ def nav_link(context, url_name, label, icon="", css_class=""):
 
 # ========== CARD COMPONENTS ==========
 
-
-# @register.inclusion_tag("components/glass_card.html")
-# def glass_card(title="", content="", footer="", css_class="", with_header=True):
-#     """
-#     Render a glass-morphism card component.
-#     Usage: {% glass_card title="System Status" content="..." css_class="dashboard-card" %}
-#     """
-#     return {
-#         "title": title,
-#         "content": content,
-#         "footer": footer,
-#         "css_class": css_class,
-#         "with_header": with_header,
-#     }
-
 # Better Glass Card Handling
 @register.simple_block_tag(takes_context=True)
 def glass_card(

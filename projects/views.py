@@ -11,8 +11,8 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy, reverse
 
-from django.db.models import Count, Avg, Q, Sum, Max, Min, F, Extract
-from django.db.models.functions import TruncMonth
+from django.db.models import Count, Avg, Q, Sum, Max, Min, F
+from django.db.models.functions import TruncMonth, Extract
 from django.http import JsonResponse
 from django.utils import timezone
 from django.core.cache import cache
@@ -161,7 +161,7 @@ class EnhancedSystemsDashboard(TemplateView):
                 avg=Avg('complexity')
             )['avg'] or 0,
         }
-    
+
     def get_technology_insights(self):
         """Technology usage analytics and trends."""
 
@@ -198,6 +198,7 @@ class EnhancedSystemsDashboard(TemplateView):
             'recent_tech_trends': recent_tech_trends,
             'total_tech_categories': len(tech_by_category),
         }
+
     def get_development_metrics(self):
         """Development and progress metrics."""
 
@@ -262,7 +263,7 @@ class EnhancedSystemsDashboard(TemplateView):
                 Q(live_url='') | Q(live_url__isnull=True)
             ).count(),
         }
-    
+
     def get_recent_activity(self):
         """Recent activity across systems and logs"""
 
@@ -284,7 +285,7 @@ class EnhancedSystemsDashboard(TemplateView):
             'recent_logs': recent_logs,
             'recent_features': recent_features,
         }
-    
+
     def get_performance_data(self):
         """System performance and uptime data"""
 
@@ -310,7 +311,7 @@ class EnhancedSystemsDashboard(TemplateView):
             'systems_with_issues': systems_with_issues,
             'high_performing_systems': high_performing_systems,
         }
-    
+
     def get_chart_data(self):
         """Data formatted for charts and visualizations"""
 

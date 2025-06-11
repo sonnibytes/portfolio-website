@@ -1,26 +1,25 @@
 <!----
- * AURA Portfolio - Projects/Systems App Base Template
+ * AURA Portfolio - Enhanced Systems Base Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.1.2 - Optimized for Component Architecture, w Enhanced Global Tags/Filters, Updated Nav/Sub-Nav
+ * Version: 3.0.0 - Optimized for Component Architecture, w Enhanced Global Tags/Filters, Updated Nav/Sub-Nav
 ---->
-
 {% extends "base.html" %}
 {% load static %}
 {% load aura_filters %}
 {% load aura_components %}
 
-{% block title %}{% block systems_title %}Systems Overview{% endblock %} | AURA Systems{% endblock %}
+{% block title %}{% block systems_title %}Systems{% endblock %} | AURA Portfolio{% endblock %}
 
 {% block extra_css %}
-{% comment %} <link rel="stylesheet" href="{% static 'css/components/navigation.css' %}"> {% endcomment %}
+<!-- Systems Specific CSS -->
 <link rel="stylesheet" href="{% static 'projects/css/systems.css' %}">
 {% block systems_css %}{% endblock %}
 {% endblock %}
 
-{% block body_class %}systems-interface{% endblock %}
+{% block body_class %}systems-interface {% block systems_body_class %}{% endblock %}{% endblock %}
 
 {% block subnav %}
-<!-- Systems Sub-Navigation -->
+<!-- Systems Sub-Navigation using existing navigation.css structure -->
 <nav class="app-subnav systems-subnav" id="systemsSubnav">
     <div class="container subnav-container">
         
@@ -31,539 +30,427 @@
                 <span>Systems Command</span>
             </div>
             
-            <!-- Systems Navigation Links -->
+            <!-- Systems Navigation Links using existing .subnav-link class -->
             <div class="subnav-links">
-                <a href="{% url 'projects:system_list' %}" class="subnav-action-btn {% active_nav 'projects:system_list' %}">
+                <a href="{% url 'projects:system_list' %}" 
+                   class="subnav-link {% if 'system_list' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-th-large subnav-icon"></i>
                     <span>All Systems</span>
                 </a>
-                <a href="{% url 'projects:unified_dashboard' %}" class="subnav-action-btn {% active_nav 'projects:unified_dashboard' %}">
+                
+                <a href="{% url 'projects:enhanced_dashboard' %}" 
+                   class="subnav-link {% if 'dashboard' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-tachometer-alt subnav-icon"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="{% url 'projects:featured_systems' %}" class="subnav-action-btn {% active_nav 'projects:featured_systems' %}">
+                
+                <a href="{% url 'projects:featured_systems' %}" 
+                   class="subnav-link {% if 'featured' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-star subnav-icon"></i>
                     <span>Featured</span>
                 </a>
-                <a href="{% url 'projects:system_timeline' %}" class="subnav-action-btn {% active_nav 'projects:system_timeline' %}">
+                
+                <a href="{% url 'projects:system_timeline' %}" 
+                   class="subnav-link {% if 'timeline' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-history subnav-icon"></i>
                     <span>Timeline</span>
                 </a>
-                {% comment %} <a href="#" class="subnav-action-btn" id="metricsLink">
-                    <i class="fas fa-chart-line subnav-icon"></i>
-                    <span>Metrics</span>
-                </a> {% endcomment %}
+                
+                <a href="#" 
+                   class="subnav-link {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-chart-bar subnav-icon"></i>
+                    <span>Analytics</span>
+                </a>
             </div>
         </div>
         
         <div class="subnav-right">
-            <!-- Real-time System Metrics -->
+            <!-- Quick Stats using existing .subnav-stats structure -->
             <div class="subnav-stats">
                 <div class="stat-item">
                     <i class="fas fa-server"></i>
-                    <span class="stat-value">{{ total_systems|default:"12" }}</span>
+                    <span class="stat-value" id="total-systems-nav">{{ total_systems|default:"--" }}</span>
                     <span class="stat-label">Systems</span>
                 </div>
                 <span class="stat-separator">|</span>
                 <div class="stat-item">
-                    <i class="fas fa-code"></i>
-                    <span class="stat-value">{{ active_systems|default:"8" }}</span>
+                    <i class="fas fa-check-circle"></i>
+                    <span class="stat-value" id="active-systems-nav">{{ active_systems|default:"--" }}</span>
                     <span class="stat-label">Active</span>
                 </div>
                 <span class="stat-separator">|</span>
                 <div class="stat-item">
-                    <i class="fas fa-chart-line"></i>
-                    <span class="stat-value">{{ avg_completion|default:"87" }}%</span>
-                    <span class="stat-label">Complete</span>
-                </div>
-                <span class="stat-separator">|</span>
-                <div class="stat-item">
-                    <i class="fas fa-clock"></i>
-                    <span class="stat-value" data-metric="response_time">142ms</span>
-                    <span class="stat-label">Response</span>
+                    <i class="fas fa-cogs"></i>
+                    <span class="stat-value" id="technologies-nav">{{ total_technologies|default:"--" }}</span>
+                    <span class="stat-label">Tech</span>
                 </div>
             </div>
             
-            <!-- Quick Actions -->
+            <!-- Systems Actions using existing .subnav-actions structure -->
             <div class="subnav-actions">
-                {% if user.is_authenticated %}
                 <a href="{% url 'projects:system_create' %}" class="subnav-action-btn">
                     <i class="fas fa-plus"></i>
                     <span>New System</span>
                 </a>
-                {% endif %}
-                <button class="subnav-action-btn" id="systemsFilterToggle">
-                    <i class="fas fa-filter"></i>
-                    <span>Filters</span>
-                </button>
-                {% comment %} <button class="subnav-action-btn" id="systemsViewToggle">
-                    <i class="fas fa-th-large"></i>
-                    <span>View</span>
-                </button> {% endcomment %}
-                <button class="subnav-action-btn" id="systemsExportToggle">
-                    <i class="fas fa-download"></i>
-                    <span>Export</span>
+                
+                <button class="subnav-action-btn" id="systems-search-toggle">
+                    <i class="fas fa-search"></i>
                 </button>
             </div>
         </div>
-        
     </div>
     
-    <!-- Systems Status Scanning Line -->
+    <!-- Enhanced Search Panel (hidden by default) -->
+    <div class="systems-search-panel" id="systems-search-panel" style="display: none;">
+        <div class="container">
+            {% glass_card css_class="search-panel-card" %}
+                <div class="search-panel-content">
+                    <div class="search-input-group">
+                        <input type="text" 
+                               id="systems-search-input" 
+                               placeholder="Search systems, technologies, features..." 
+                               class="search-input">
+                        <button class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="search-suggestions" id="search-suggestions">
+                        <!-- Search suggestions will be populated here -->
+                    </div>
+                    
+                    <div class="search-filters">
+                        <div class="filter-group">
+                            <label>Status:</label>
+                            <select id="status-filter" class="filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="deployed">Deployed</option>
+                                <option value="in_development">In Development</option>
+                                <option value="testing">Testing</option>
+                                <option value="draft">Draft</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Type:</label>
+                            <select id="type-filter" class="filter-select">
+                                <option value="">All Types</option>
+                                {% for system_type in system_types %}
+                                <option value="{{ system_type.slug }}">{{ system_type.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Technology:</label>
+                            <select id="tech-filter" class="filter-select">
+                                <option value="">All Technologies</option>
+                                {% for tech in popular_technologies %}
+                                <option value="{{ tech.slug }}">{{ tech.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            {% endglass_card %}
+        </div>
+    </div>
+    
+    <!-- Optional: HUD scanning line animation -->
     <div class="subnav-scanning-line"></div>
 </nav>
 {% endblock %}
 
-{% block breadcrumbs %}
-{% if show_breadcrumbs %}
-<div class="container">
-    <nav class="systems-breadcrumbs">
-        <div class="breadcrumb-container">
-            <a href="{% url 'core:home' %}" class="breadcrumb-item">
-                <i class="fas fa-home"></i>
-                <span>AURA</span>
-            </a>
-            <i class="fas fa-chevron-right breadcrumb-separator"></i>
-            <a href="{% url 'projects:system_list' %}" class="breadcrumb-item">
-                <i class="fas fa-project-diagram"></i>
-                <span>Systems</span>
-            </a>
-            {% block systems_breadcrumbs %}{% endblock %}
+{% block content %}
+<!-- =================== SYSTEMS CONTENT =================== -->
+<main class="systems-main-content">
+    {% block systems_content %}
+    <!-- Systems page content goes here -->
+    {% endblock %}
+</main>
+
+<!-- =================== SYSTEMS SIDEBAR (Optional) =================== -->
+{% block systems_sidebar %}
+{% if show_systems_sidebar %}
+<aside class="systems-sidebar">
+    <div class="sidebar-content">
+        
+        <!-- System Status Summary -->
+        <div class="sidebar-section">
+            {% glass_card title="System Status" css_class="sidebar-card" %}
+                <div class="status-summary">
+                    {% for status_key, status_count in systems_by_status.items %}
+                    <div class="status-item">
+                        {% status_indicator status_key size="sm" with_text=True %}
+                        <span class="status-count">{{ status_count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endglass_card %}
         </div>
         
-        <!-- Optional System Status Indicators -->
-        {% if current_system %}
-        <div class="breadcrumb-status">
-            <div class="status-indicator {{ current_system.status|default:'operational' }}"></div>
-            <span class="status-text">{{ current_system.get_status_display|upper|default:"OPERATIONAL" }}</span>
-            {% if current_system.system_id %}
-            <span class="system-id">{{ current_system.system_id }}</span>
-            {% endif %}
+        <!-- Technology Stack -->
+        <div class="sidebar-section">
+            {% glass_card title="Technology Stack" css_class="sidebar-card" %}
+                <div class="tech-stack">
+                    {% for tech in featured_technologies %}
+                    <div class="tech-item">
+                        {% tech_badge tech.name color=tech.color %}
+                        <span class="tech-usage">{{ tech.systems_count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endglass_card %}
         </div>
-        {% elif current_system_type %}
-        <div class="breadcrumb-status">
-            <div class="type-indicator" style="color: {{ current_system_type.color }};">
-                <span class="type-code">{{ current_system_type.code }}</span>
-            </div>
-            <span class="status-text">{{ current_system_type.name|upper }}</span>
+        
+        <!-- Quick Actions -->
+        <div class="sidebar-section">
+            {% glass_card title="Quick Actions" css_class="sidebar-card" %}
+                <div class="quick-actions">
+                    <a href="{% url 'projects:system_create' %}" class="quick-action">
+                        <i class="fas fa-plus"></i>
+                        <span>New System</span>
+                    </a>
+                    
+                    <a href="{% url 'blog:post_create' %}" class="quick-action">
+                        <i class="fas fa-edit"></i>
+                        <span>New DataLog</span>
+                    </a>
+                    
+                    <a href="{% url 'projects:analytics' %}" class="quick-action">
+                        <i class="fas fa-chart-line"></i>
+                        <span>View Analytics</span>
+                    </a>
+                </div>
+            {% endglass_card %}
+        </div>
+        
+        <!-- Recent Activity -->
+        {% if recent_systems %}
+        <div class="sidebar-section">
+            {% glass_card title="Recent Updates" css_class="sidebar-card" %}
+                <div class="recent-activity">
+                    {% for system in recent_systems|slice:":5" %}
+                    <div class="activity-item">
+                        <a href="{{ system.get_absolute_url }}" class="activity-link">
+                            <div class="activity-icon">
+                                {% status_indicator system.status size="xs" %}
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">{{ system.title|truncatechars:25 }}</div>
+                                <div class="activity-time">{{ system.updated|time_since_published }}</div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endglass_card %}
         </div>
         {% endif %}
-    </nav>
-</div>
+    </div>
+</aside>
 {% endif %}
 {% endblock %}
-
-{% block content %}
-<!-- Systems Interface Container -->
-<div class="systems-interface-container">
-    
-    <!-- Systems Filter Panel (Collapsible) -->
-    {% if show_filters %}
-    <div class="systems-filter-panel" id="systemsFilterPanel" style="display: none;">
-        <div class="filter-panel-header">
-            <h3 class="filter-title">
-                <i class="fas fa-sliders-h"></i>
-                System Filters
-            </h3>
-            <button class="filter-close" id="closeFilters">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="filter-panel-content">
-            <form method="get" class="filter-form" id="systemsFilterForm">
-                
-                <!-- System Status Filter -->
-                <div class="filter-group">
-                    <label class="filter-label">Status</label>
-                    <div class="filter-options status-filters">
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="status" value="deployed" {% if 'deployed' in request.GET.status %}checked{% endif %}>
-                            <span class="status-indicator deployed"></span>
-                            <span>Deployed</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="status" value="in_development" {% if 'in_development' in request.GET.status %}checked{% endif %}>
-                            <span class="status-indicator in_development"></span>
-                            <span>Development</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="status" value="testing" {% if 'testing' in request.GET.status %}checked{% endif %}>
-                            <span class="status-indicator testing"></span>
-                            <span>Testing</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="status" value="published" {% if 'published' in request.GET.status %}checked{% endif %}>
-                            <span class="status-indicator published"></span>
-                            <span>Published</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- System Type Filter -->
-                <div class="filter-group">
-                    <label class="filter-label">System Types</label>
-                    <div class="filter-options">
-                        {% for system_type in system_types %}
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="type" value="{{ system_type.slug }}" {% if system_type.slug in request.GET.type %}checked{% endif %}>
-                            <span class="type-badge" style="--type-color: {{ system_type.color }};">{{ system_type.code }}</span>
-                            <span>{{ system_type.name }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Technology Filter -->
-                <div class="filter-group">
-                    <label class="filter-label">Technologies</label>
-                    <div class="filter-search">
-                        <input type="text" class="tech-search" placeholder="Search technologies..." id="techSearch">
-                    </div>
-                    <div class="filter-options tech-filters" id="techFilters">
-                        {% for tech in technologies %}
-                        <label class="filter-checkbox tech-option" data-tech="{{ tech.name|lower }}">
-                            <input type="checkbox" name="tech" value="{{ tech.slug }}" {% if tech.slug in request.GET.tech %}checked{% endif %}>
-                            <span class="tech-badge" style="--tech-color: {{ tech.color }};">
-                                {% if tech.icon %}<i class="{{ tech.icon }}"></i>{% endif %}
-                                {{ tech.name }}
-                            </span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Complexity Filter -->
-                <div class="filter-group">
-                    <label class="filter-label">Complexity Range</label>
-                    <div class="filter-range">
-                        <input type="range" name="complexity_min" min="1" max="5" value="{{ request.GET.complexity_min|default:'1' }}" class="complexity-range" id="complexityMin">
-                        <input type="range" name="complexity_max" min="1" max="5" value="{{ request.GET.complexity_max|default:'5' }}" class="complexity-range" id="complexityMax">
-                        <div class="range-display">
-                            <span id="complexityDisplay">1 - 5</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Completion Filter -->
-                <div class="filter-group">
-                    <label class="filter-label">Completion Status</label>
-                    <div class="filter-range">
-                        <input type="range" name="completion_min" min="0" max="100" value="{{ request.GET.completion_min|default:'0' }}" class="completion-range" id="completionMin">
-                        <input type="range" name="completion_max" min="0" max="100" value="{{ request.GET.completion_max|default:'100' }}" class="completion-range" id="completionMax">
-                        <div class="range-display">
-                            <span id="completionDisplay">0% - 100%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i>
-                        Apply Filters
-                    </button>
-                    <button type="button" class="btn btn-outline" id="clearFilters">
-                        <i class="fas fa-times"></i>
-                        Clear All
-                    </button>
-                </div>
-                
-            </form>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Main Systems Content Area -->
-    <div class="systems-content-area">
-        <div class="container">
-            
-            <!-- Page Header Section -->
-            {% block systems_header %}
-            {% if page_title %}
-            {% section_header title=page_title subtitle=page_subtitle icon=page_icon %}
-            {% endif %}
-            {% endblock %}
-            
-            <!-- Alert/Notification Bar -->
-            {% if messages %}
-            <div class="systems-alerts">
-                {% for message in messages %}
-                {% alert_box message message.tags dismissible=True %}
-                {% endfor %}
-            </div>
-            {% endif %}
-            
-            <!-- Main Content Block -->
-            <div class="systems-main-content">
-                {% block systems_content %}
-                <!-- Individual system pages will override this -->
-                {% endblock %}
-            </div>
-            
-        </div>
-    </div>
-    
-</div>
-
-<!-- Systems Real-time Data Overlay -->
-<div class="systems-data-overlay" id="systemsDataOverlay">
-    <div class="data-stream" id="systemsDataStream">
-        <!-- Real-time system metrics will be populated here -->
-    </div>
-</div>
 
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'projects/js/systems.js' %}"></script>
-{% block systems_js %}{% endblock %}
-
-<!-- Initialize Systems Interface -->
+<!-- Systems Base JavaScript using your existing navigation.js -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize systems interface
-    if (typeof initSystemsInterface === 'function') {
-        initSystemsInterface();
-    }
     
-    // Filter toggle functionality
-    const filterToggle = document.getElementById('systemsFilterToggle');
-    const filterPanel = document.getElementById('systemsFilterPanel');
-    const closeFilters = document.getElementById('closeFilters');
+    // =================== SEARCH FUNCTIONALITY ===================
     
-    if (filterToggle && filterPanel) {
-        filterToggle.addEventListener('click', function() {
-            const isVisible = filterPanel.style.display !== 'none';
-            filterPanel.style.display = isVisible ? 'none' : 'block';
-            this.classList.toggle('active', !isVisible);
+    const searchToggle = document.getElementById('systems-search-toggle');
+    const searchPanel = document.getElementById('systems-search-panel');
+    const searchInput = document.getElementById('systems-search-input');
+    const searchSuggestions = document.getElementById('search-suggestions');
+    
+    // Toggle search panel
+    if (searchToggle && searchPanel) {
+        searchToggle.addEventListener('click', function() {
+            const isActive = searchPanel.style.display !== 'none';
+            
+            if (isActive) {
+                searchPanel.style.display = 'none';
+            } else {
+                searchPanel.style.display = 'block';
+                setTimeout(() => searchInput.focus(), 100);
+            }
         });
     }
     
-    if (closeFilters && filterPanel) {
-        closeFilters.addEventListener('click', function() {
-            filterPanel.style.display = 'none';
-            filterToggle?.classList.remove('active');
+    // Search input handling
+    if (searchInput) {
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    performSearch(query);
+                }, 300);
+            } else {
+                clearSearchSuggestions();
+            }
         });
-    }
-    
-    // View toggle functionality
-    const viewToggle = document.getElementById('systemsViewToggle');
-    if (viewToggle) {
-        viewToggle.addEventListener('click', function() {
-            const contentArea = document.querySelector('.systems-main-content');
-            if (contentArea) {
-                contentArea.classList.toggle('grid-view');
-                contentArea.classList.toggle('list-view');
-                
-                const icon = this.querySelector('i');
-                if (contentArea.classList.contains('grid-view')) {
-                    icon.className = 'fas fa-list';
-                } else {
-                    icon.className = 'fas fa-th-large';
+        
+        // Handle Enter key
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                if (query) {
+                    redirectToSearchResults(query);
                 }
             }
         });
     }
     
-    // Tech search functionality
-    const techSearch = document.getElementById('techSearch');
-    const techOptions = document.querySelectorAll('.tech-option');
-    
-    if (techSearch && techOptions.length > 0) {
-        techSearch.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            techOptions.forEach(option => {
-                const techName = option.dataset.tech;
-                if (techName.includes(searchTerm)) {
-                    option.style.display = 'flex';
-                } else {
-                    option.style.display = 'none';
-                }
+    function performSearch(query) {
+        // Perform AJAX search for suggestions
+        fetch(`/projects/api/search/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                displaySearchSuggestions(data.suggestions);
+            })
+            .catch(error => {
+                console.error('Search error:', error);
             });
-        });
     }
     
-    // Range slider functionality
-    const complexityMin = document.getElementById('complexityMin');
-    const complexityMax = document.getElementById('complexityMax');
-    const complexityDisplay = document.getElementById('complexityDisplay');
-    
-    function updateComplexityDisplay() {
-        if (complexityMin && complexityMax && complexityDisplay) {
-            const min = parseInt(complexityMin.value);
-            const max = parseInt(complexityMax.value);
-            
-            // Ensure min doesn't exceed max
-            if (min > max) {
-                if (this === complexityMin) {
-                    complexityMax.value = min;
-                } else {
-                    complexityMin.value = max;
-                }
-            }
-            
-            complexityDisplay.textContent = `${complexityMin.value} - ${complexityMax.value}`;
+    function displaySearchSuggestions(suggestions) {
+        if (!searchSuggestions) return;
+        
+        searchSuggestions.innerHTML = '';
+        
+        if (suggestions.length === 0) {
+            searchSuggestions.innerHTML = '<div class="no-suggestions">No suggestions found</div>';
+            return;
         }
-    }
-    
-    complexityMin?.addEventListener('input', updateComplexityDisplay);
-    complexityMax?.addEventListener('input', updateComplexityDisplay);
-    
-    // Completion range functionality
-    const completionMin = document.getElementById('completionMin');
-    const completionMax = document.getElementById('completionMax');
-    const completionDisplay = document.getElementById('completionDisplay');
-    
-    function updateCompletionDisplay() {
-        if (completionMin && completionMax && completionDisplay) {
-            const min = parseInt(completionMin.value);
-            const max = parseInt(completionMax.value);
-            
-            // Ensure min doesn't exceed max
-            if (min > max) {
-                if (this === completionMin) {
-                    completionMax.value = min;
-                } else {
-                    completionMin.value = max;
-                }
-            }
-            
-            completionDisplay.textContent = `${completionMin.value}% - ${completionMax.value}%`;
-        }
-    }
-    
-    completionMin?.addEventListener('input', updateCompletionDisplay);
-    completionMax?.addEventListener('input', updateCompletionDisplay);
-    
-    // Export functionality
-    const exportToggle = document.getElementById('systemsExportToggle');
-    if (exportToggle) {
-        exportToggle.addEventListener('click', function() {
-            // Create export options menu
-            const exportMenu = document.createElement('div');
-            exportMenu.className = 'export-menu';
-            exportMenu.innerHTML = `
-                <div class="export-option" data-format="json">
-                    <i class="fas fa-code"></i>
-                    <span>Export as JSON</span>
+        
+        suggestions.forEach(suggestion => {
+            const suggestionElement = document.createElement('div');
+            suggestionElement.className = 'search-suggestion';
+            suggestionElement.innerHTML = `
+                <div class="suggestion-icon">
+                    <i class="${suggestion.icon}"></i>
                 </div>
-                <div class="export-option" data-format="csv">
-                    <i class="fas fa-table"></i>
-                    <span>Export as CSV</span>
-                </div>
-                <div class="export-option" data-format="pdf">
-                    <i class="fas fa-file-pdf"></i>
-                    <span>Export as PDF</span>
+                <div class="suggestion-content">
+                    <div class="suggestion-title">${suggestion.title}</div>
+                    <div class="suggestion-type">${suggestion.type}</div>
                 </div>
             `;
             
-            // Position and show menu
-            const rect = this.getBoundingClientRect();
-            exportMenu.style.position = 'absolute';
-            exportMenu.style.top = rect.bottom + 'px';
-            exportMenu.style.right = (window.innerWidth - rect.right) + 'px';
-            exportMenu.style.zIndex = '1000';
-            
-            document.body.appendChild(exportMenu);
-            
-            // Handle export options
-            exportMenu.addEventListener('click', function(e) {
-                const option = e.target.closest('.export-option');
-                if (option) {
-                    const format = option.dataset.format;
-                    handleExport(format);
-                }
-                document.body.removeChild(exportMenu);
+            suggestionElement.addEventListener('click', function() {
+                window.location.href = suggestion.url;
             });
             
-            // Close menu when clicking outside
-            setTimeout(() => {
-                document.addEventListener('click', function closeExportMenu(e) {
-                    if (!exportMenu.contains(e.target)) {
-                        if (document.body.contains(exportMenu)) {
-                            document.body.removeChild(exportMenu);
-                        }
-                        document.removeEventListener('click', closeExportMenu);
-                    }
-                });
-            }, 100);
+            searchSuggestions.appendChild(suggestionElement);
         });
     }
     
-    // Metrics link functionality
-    const metricsLink = document.getElementById('metricsLink');
-    if (metricsLink) {
-        metricsLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Toggle metrics overlay or open metrics dashboard
-            toggleMetricsOverlay();
-        });
-    }
-    
-    // Clear filters functionality
-    const clearFilters = document.getElementById('clearFilters');
-    if (clearFilters) {
-        clearFilters.addEventListener('click', function() {
-            const form = document.getElementById('systemsFilterForm');
-            if (form) {
-                form.reset();
-                // Reset range displays
-                updateComplexityDisplay();
-                updateCompletionDisplay();
-                // Redirect to clean URL
-                window.location.href = window.location.pathname;
-            }
-        });
-    }
-    
-    // Initialize displays
-    updateComplexityDisplay();
-    updateCompletionDisplay();
-    
-    // Systems-specific initialization
-    {% block systems_inline_js %}{% endblock %}
-});
-
-// Export functionality
-function handleExport(format) {
-    const currentUrl = new URL(window.location);
-    currentUrl.searchParams.set('export', format);
-    window.location.href = currentUrl.toString();
-}
-
-// Metrics overlay toggle
-function toggleMetricsOverlay() {
-    const overlay = document.getElementById('systemsDataOverlay');
-    if (overlay) {
-        overlay.classList.toggle('active');
-        
-        if (overlay.classList.contains('active')) {
-            // Load real-time metrics
-            loadSystemMetrics();
+    function clearSearchSuggestions() {
+        if (searchSuggestions) {
+            searchSuggestions.innerHTML = '';
         }
     }
-}
-
-// Load system metrics
-function loadSystemMetrics() {
-    const dataStream = document.getElementById('systemsDataStream');
-    if (dataStream) {
-        // Simulate real-time data
-        const metrics = [
-            { label: 'CPU Usage', value: Math.floor(Math.random() * 40) + 20 + '%' },
-            { label: 'Memory', value: Math.floor(Math.random() * 30) + 50 + '%' },
-            { label: 'Active Connections', value: Math.floor(Math.random() * 100) + 200 },
-            { label: 'Response Time', value: Math.floor(Math.random() * 50) + 100 + 'ms' },
-            { label: 'Uptime', value: '99.' + Math.floor(Math.random() * 9) + '%' }
-        ];
-        
-        dataStream.innerHTML = metrics.map(metric => 
-            `<div class="metric-stream-item">
-                <span class="metric-label">${metric.label}:</span>
-                <span class="metric-value">${metric.value}</span>
-            </div>`
-        ).join('');
+    
+    function redirectToSearchResults(query) {
+        window.location.href = `/projects/search/?q=${encodeURIComponent(query)}`;
     }
-}
+    
+    // =================== FILTER FUNCTIONALITY ===================
+    
+    const statusFilter = document.getElementById('status-filter');
+    const typeFilter = document.getElementById('type-filter');
+    const techFilter = document.getElementById('tech-filter');
+    
+    // Apply filters when changed
+    [statusFilter, typeFilter, techFilter].forEach(filter => {
+        if (filter) {
+            filter.addEventListener('change', function() {
+                applyFilters();
+            });
+        }
+    });
+    
+    function applyFilters() {
+        const params = new URLSearchParams();
+        
+        if (statusFilter && statusFilter.value) {
+            params.set('status', statusFilter.value);
+        }
+        
+        if (typeFilter && typeFilter.value) {
+            params.set('type', typeFilter.value);
+        }
+        
+        if (techFilter && techFilter.value) {
+            params.set('tech', techFilter.value);
+        }
+        
+        // Add search query if present
+        if (searchInput && searchInput.value.trim()) {
+            params.set('search', searchInput.value.trim());
+        }
+        
+        // Redirect to filtered results
+        const currentPath = window.location.pathname;
+        const newUrl = `${currentPath}?${params.toString()}`;
+        window.location.href = newUrl;
+    }
+    
+    // =================== QUICK STATS UPDATES ===================
+    
+    // Update quick stats periodically using your existing navigation pattern
+    updateQuickStats();
+    setInterval(updateQuickStats, 60000); // Update every minute
+    
+    function updateQuickStats() {
+        fetch('/projects/api/quick-stats/')
+            .then(response => response.json())
+            .then(data => {
+                updateStatValue('total-systems-nav', data.total_systems);
+                updateStatValue('active-systems-nav', data.active_systems);
+                updateStatValue('technologies-nav', data.total_technologies);
+            })
+            .catch(error => {
+                console.error('Error updating quick stats:', error);
+            });
+    }
+    
+    function updateStatValue(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element && element.textContent !== value.toString()) {
+            element.textContent = value;
+            element.classList.add('stat-updated');
+            setTimeout(() => element.classList.remove('stat-updated'), 1000);
+        }
+    }
+    
+    // =================== KEYBOARD SHORTCUTS ===================
+    
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K to open search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (searchToggle) {
+                searchToggle.click();
+            }
+        }
+        
+        // Escape to close search panel
+        if (e.key === 'Escape') {
+            if (searchPanel && searchPanel.style.display !== 'none') {
+                searchPanel.style.display = 'none';
+            }
+        }
+    });
+});
 </script>
+
+<!-- Page-specific JavaScript -->
+{% block systems_js %}{% endblock %}
 {% endblock %}
