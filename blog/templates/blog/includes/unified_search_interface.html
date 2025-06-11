@@ -1,0 +1,749 @@
+<!----
+ * AURA DataLogs - Unified Search Interface (COMPLETE SOLUTION)
+ * File: blog/templates/blog/includes/unified_search_interface.html
+ * Combines search bar + suggestions + filters in one cohesive component
+ * Usage: {--% unified_search_interface query=query style="full" %--}
+---->
+
+{% load aura_filters %}
+{% load aura_components %}
+{% load datalog_tags %}
+
+<div class="unified-search-interface search-style-{{ style|default:'full' }}">
+    
+    {% if style == 'full' %}
+    <!-- FULL UNIFIED SEARCH - Search bar + suggestions + quick filters -->
+    <div class="search-container-unified glass-effect">
+        
+        <!-- Main Search Form -->
+        <form method="get" action="{% url 'blog:search' %}" class="unified-search-form" id="unifiedSearchForm">
+            <div class="search-input-wrapper">
+                <div class="search-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <input type="text" 
+                       name="q" 
+                       class="search-input-unified" 
+                       placeholder={{ placeholder|default:"Search DataLog entries, code snippets, and technical insights..." }}
+                       value="{{ query|default:'' }}"
+                       autocomplete="off"
+                       id="unifiedSearchInput">
+                <button type="submit" class="search-submit-btn">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="button" class="search-clear-btn" id="searchClearBtn" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Search Suggestions Dropdown (hidden by default) -->
+            <div class="search-suggestions-dropdown" id="searchSuggestionsDropdown" style="display: none;">
+                <div class="suggestions-header">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Search Suggestions</span>
+                    <span class="suggestions-query" id="suggestionsQuery"></span>
+                </div>
+                <div class="suggestions-content" id="suggestionsContent">
+                    <!-- Populated by JavaScript -->
+                </div>
+                <div class="suggestions-footer">
+                    <div class="suggestion-hint">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Press <kbd>↑</kbd><kbd>↓</kbd> to navigate, <kbd>Enter</kbd> to select</span>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Quick Filter Tags (Optional) -->
+        {% if show_quick_filters %}
+        <div class="quick-filters-section">
+            <span class="filter-label">Quick Filters:</span>
+            <div class="filter-tags-list">
+                <!-- Featured Filter -->
+                <a href="{% if request.GET.featured %}{% url 'blog:post_list' %}{% else %}?featured=true{% endif %}" 
+                class="filter-tag {% if request.GET.featured %}active{% endif %}" 
+                data-filter="featured">
+                    <i class="fas fa-star"></i>
+                    <span>Featured</span>
+                </a>
+                
+                <!-- Code Examples Filter -->
+                <a href="{% if request.GET.has_code %}{% url 'blog:post_list' %}{% else %}?has_code=true{% endif %}" 
+                class="filter-tag {% if request.GET.has_code %}active{% endif %}" 
+                data-filter="has_code">
+                    <i class="fas fa-code"></i>
+                    <span>Code Examples</span>
+                </a>
+                
+                <!-- Reading Time Filters -->
+                <a href="{% if 'quick' in request.GET.reading_time %}{% url 'blog:post_list' %}{% else %}?reading_time=quick{% endif %}" 
+                class="filter-tag {% if 'quick' in request.GET.reading_time %}active{% endif %}" 
+                data-filter="reading_time_quick">
+                    <i class="fas fa-clock"></i>
+                    <span>Quick Read</span>
+                </a>
+                
+                <!-- Category Filters (from your existing categories) -->
+                <a href="{% if 'ml' in request.GET.category %}{% url 'blog:post_list' %}{% else %}?category=ml{% endif %}" 
+                class="filter-tag {% if 'ml' in request.GET.category %}active{% endif %}" 
+                data-filter="category_ml">
+                    <i class="fas fa-brain"></i>
+                    <span>ML</span>
+                </a>
+                
+                <a href="{% if 'dev' in request.GET.category %}{% url 'blog:post_list' %}{% else %}?category=dev{% endif %}" 
+                class="filter-tag {% if 'dev' in request.GET.category %}active{% endif %}" 
+                data-filter="category_dev">
+                    <i class="fas fa-code-branch"></i>
+                    <span>Dev</span>
+                </a>
+                
+                <!-- Clear All Filters (only show if any filters are active) -->
+                {% if request.GET.featured or request.GET.has_code or request.GET.reading_time or request.GET.category %}
+                <a href="{% url 'blog:post_list' %}" 
+                class="filter-tag clear-filters" 
+                data-filter="clear">
+                    <i class="fas fa-times"></i>
+                    <span>Clear All</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Search Stats (when there's a query) -->
+        {% if query %}
+        <div class="search-stats-section">
+            <div class="search-stats">
+                <div class="stat-item">
+                    <i class="fas fa-search"></i>
+                    <span class="stat-label">Query:</span>
+                    <span class="stat-value">{{ query }}</span>
+                </div>
+                {% if search_results_count %}
+                <div class="stat-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="stat-label">Results:</span>
+                    <span class="stat-value">{{ search_results_count|format_number }}</span>
+                </div>
+                {% endif %}
+            </div>
+            <a href="{% url 'blog:post_list' %}" class="clear-search-btn">
+                <i class="fas fa-times"></i>
+                <span>Clear Search</span>
+            </a>
+        </div>
+        {% endif %}
+        
+    </div>
+    
+    {% elif style == 'compact' %}
+    <!-- COMPACT SEARCH - For sidebars -->
+    <div class="search-container-compact">
+        <form method="get" action="{% url 'blog:search' %}" class="compact-search-form">
+            <div class="search-input-wrapper compact">
+                <div class="search-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <input type="text" 
+                       name="q" 
+                       class="search-input-compact" 
+                       placeholder="Search entries..."
+                       value="{{ query|default:'' }}"
+                       autocomplete="off">
+                <button type="submit" class="search-submit-btn compact">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- MINIMAL SEARCH - For navigation bars -->
+    <div class="search-container-minimal">
+        <form method="get" action="{% url 'blog:search' %}" class="minimal-search-form">
+            <div class="search-input-wrapper minimal">
+                <input type="text" 
+                       name="q" 
+                       class="search-input-minimal" 
+                       placeholder="Search..."
+                       value="{{ query|default:'' }}"
+                       autocomplete="off">
+                <button type="submit" class="search-submit-btn minimal">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    {% else %}
+    <!-- Default to full style -->
+    {% include 'blog/includes/unified_search_interface.html' with style='full' query=query %}
+    {% endif %}
+    
+</div>
+
+<style>
+/* ========== UNIFIED SEARCH INTERFACE STYLES ========== */
+
+.unified-search-interface {
+    font-family: var(--font-body);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Main search container */
+.search-container-unified {
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-xl);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.search-container-unified::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-lavender), var(--color-teal));
+    opacity: 0.8;
+    border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+}
+
+/* Search form */
+.unified-search-form {
+    position: relative;
+    margin-bottom: var(--spacing-lg);
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: 
+        var(--gradient-glass),
+        rgba(7, 7, 18, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-xl);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: all var(--transition-fast);
+    padding: var(--spacing-sm);
+}
+
+.search-input-wrapper:focus-within {
+    border-color: var(--color-lavender);
+    box-shadow: 0 0 0 2px rgba(179, 157, 219, 0.2), 0 4px 20px rgba(0, 0, 0, 0.3);
+    background: 
+        var(--gradient-glass),
+        rgba(7, 7, 18, 0.8);
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--spacing-lg);
+    color: var(--color-lavender);
+    font-size: 1.2rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.search-input-unified {
+    width: 100%;
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) 3.5rem;
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    outline: none;
+}
+
+.search-input-unified::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.search-submit-btn {
+    position: absolute;
+    right: 60px;
+    width: 40px;
+    height: 40px;
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: 50%;
+    color: var(--color-lavender);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.search-submit-btn:hover {
+    background: rgba(179, 157, 219, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(179, 157, 219, 0.4);
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: var(--spacing-sm);
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 138, 128, 0.1);
+    border: 1px solid rgba(255, 138, 128, 0.3);
+    border-radius: 50%;
+    color: var(--color-coral);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.search-clear-btn:hover {
+    background: rgba(255, 138, 128, 0.2);
+    transform: scale(1.05);
+}
+
+/* ========== SEARCH SUGGESTIONS DROPDOWN ========== */
+.search-suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: 
+        var(--gradient-glass),
+        rgba(7, 7, 18, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-lg);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    margin-top: var(--spacing-xs);
+    max-height: 400px;
+    overflow-y: auto;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all var(--transition-fast);
+}
+
+.search-suggestions-dropdown.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.suggestions-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.suggestions-query {
+    margin-left: auto;
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-lavender);
+    background: rgba(179, 157, 219, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+}
+
+.suggestions-content {
+    padding: var(--spacing-sm);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+    margin-bottom: var(--spacing-xs);
+    cursor: pointer;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: rgba(179, 157, 219, 0.3);
+    color: var(--color-text);
+    transform: translateX(5px);
+}
+
+.suggestion-icon {
+    width: 20px;
+    display: flex;
+    justify-content: center;
+    color: var(--color-lavender);
+    flex-shrink: 0;
+}
+
+.suggestion-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.suggestion-text {
+    font-weight: 500;
+    color: var(--color-text);
+    line-height: 1.3;
+}
+
+.suggestion-type {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-tertiary);
+    margin-top: 0.2rem;
+}
+
+.suggestion-arrow {
+    color: var(--color-lavender);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: all var(--transition-fast);
+}
+
+.suggestion-item:hover .suggestion-arrow {
+    opacity: 1;
+    transform: translateX(3px);
+}
+
+.suggestions-footer {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    text-align: center;
+}
+
+.suggestion-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    color: var(--color-text-tertiary);
+    font-size: 0.75rem;
+}
+
+.suggestion-hint kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 0.2rem 0.4rem;
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+}
+
+/* ========== QUICK FILTERS ========== */
+.quick-filters-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-md);
+}
+
+.filter-label {
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.filter-tags-list {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.filter-tag {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(179, 157, 219, 0.08);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+}
+
+.filter-tag:hover {
+    background: rgba(179, 157, 219, 0.15);
+    color: var(--color-lavender);
+    transform: translateY(-2px);
+}
+
+.filter-tag.active {
+    background: rgba(179, 157, 219, 0.2);
+    color: var(--color-lavender);
+    border-color: rgba(179, 157, 219, 0.4);
+}
+
+.filter-tag i {
+    font-size: 0.75rem;
+}
+
+/* ========== SEARCH STATS ========== */
+.search-stats-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+}
+
+.search-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.85rem;
+}
+
+.stat-label {
+    color: var(--color-text-secondary);
+}
+
+.stat-value {
+    color: var(--color-text);
+    font-weight: 600;
+    font-family: var(--font-code);
+}
+
+.clear-search-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 138, 128, 0.1);
+    border: 1px solid rgba(255, 138, 128, 0.3);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-coral);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+}
+
+.clear-search-btn:hover {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+    transform: translateY(-1px);
+}
+
+/* ========== COMPACT & MINIMAL STYLES ========== */
+.search-container-compact {
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+}
+
+.search-input-wrapper.compact {
+    padding: var(--spacing-sm);
+}
+
+.search-input-compact {
+    padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 2.5rem;
+    font-size: 0.9rem;
+}
+
+.search-submit-btn.compact {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+    right: var(--spacing-sm);
+}
+
+.search-container-minimal {
+    display: flex;
+    align-items: center;
+}
+
+.search-input-wrapper.minimal {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 0;
+}
+
+.search-input-minimal {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    font-size: 0.9rem;
+    outline: none;
+    min-width: 200px;
+}
+
+.search-submit-btn.minimal {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: var(--color-lavender);
+    position: static;
+}
+
+/* ========== LOADING STATES ========== */
+.search-loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.search-loading .search-icon::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(179, 157, 219, 0.3);
+    border-top: 2px solid var(--color-lavender);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 991px) {
+    .search-container-unified {
+        padding: var(--spacing-lg);
+    }
+    
+    .quick-filters-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .search-stats-section {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        text-align: center;
+    }
+}
+
+@media (max-width: 767px) {
+    .search-input-unified {
+        padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 3rem;
+        font-size: 1rem;
+    }
+    
+    .search-icon {
+        left: var(--spacing-md);
+        font-size: 1rem;
+    }
+    
+    .filter-tags-list {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+    
+    .filter-tag {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .search-input-minimal {
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 576px) {
+    .search-submit-btn {
+        right: 40px;
+        width: 36px;
+        height: 36px;
+    }
+    
+    .search-clear-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .suggestion-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+}
+
+/* ========== ACCESSIBILITY ========== */
+.search-input-unified:focus,
+.search-input-compact:focus,
+.search-input-minimal:focus {
+    box-shadow: 0 0 0 2px rgba(179, 157, 219, 0.3);
+}
+
+.suggestion-item:focus {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+}
+
+/* ========== HIGH CONTRAST MODE ========== */
+@media (prefers-contrast: high) {
+    .search-container-unified,
+    .search-suggestions-dropdown {
+        border-width: 2px;
+        backdrop-filter: none;
+        background: rgba(7, 7, 18, 0.95);
+    }
+}
+
+/* ========== REDUCED MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+    .suggestion-item:hover {
+        transform: none;
+    }
+    
+    .search-loading .search-icon::after {
+        animation: none;
+    }
+}
+</style>
+
+<!-- All JavaScript handled by datalogs-consolidated.js -->
+<!-- The consolidated JS will automatically handle:
+     - Real-time search suggestions
+     - Keyboard navigation
+     - AJAX requests
+     - Loading states
+     - Clear button functionality
+     - All interactions and animations
+-->

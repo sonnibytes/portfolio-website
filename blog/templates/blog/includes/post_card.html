@@ -1,53 +1,334 @@
-<div class="holographic-container bracket-corners">
-  <div class="bracket-bl"></div>
-  <div class="bracket-br"></div>
-  
-  <!-- Image Section -->
-  <div class="post-image-container">
-    <div class="post-image-pattern">
-      {% if post.thumbnail %}
-        <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" class="img-fluid">
-      {% else %}
-        <div class="image-placeholder">
-          <span class="image-icon">[ NO VISUAL DATA ]</span>
+<!----
+ * AURA DataLogs - Post Card Component (STREAMLINED)
+ * Reusable component with minimal CSS/JS - relies on consolidated files
+ * Usage: {--% render_post_card post show_excerpt=True card_type="default" %--}
+ * Card Types: default, search, category, featured, compact
+---->
+{% load static %}
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<article class="datalog-card datalog-card-{{ card_type|default:'default' }}" data-category="{{ post.category.slug|default:'general' }}">
+    
+    <!-- Card Header -->
+    <div class="datalog-card-header">
+        <div class="card-id">{{ post.id|datalog_id }}</div>
+        <div class="card-status">
+            <div class="status-indicator published"></div>
+            <span class="status-text">ACTIVE</span>
         </div>
-      {% endif %}
     </div>
     
-    <!-- Overlaid Category Hexagon -->
-    <div class="category-hex-overlay">
-      <a href="{% url 'blog:category' slug=post.category.slug %}">
-        <div class="category-hex" style="--category-color: {{ post.category.color|default:'var(--color-cyan)' }}">
-          {{ post.category.code }}
+    <!-- Featured Image (if available) -->
+    {% if post.thumbnail %}
+    <div class="datalog-image">
+        <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" loading="lazy">
+        <div class="image-overlay">
+            {% if post.featured %}
+            <span class="featured-badge">
+                <i class="fas fa-star"></i>
+                <span>Featured</span>
+            </span>
+            {% endif %}
         </div>
-      </a>
     </div>
-  </div>
-  
-  <!-- Dashed Divider Line -->
-  <div class="post-divider-dashed"></div>
-  
-  <!-- Content Section -->
-  <div class="post-content">
-    <h3 class="card-title h5 mb-3">{{ post.title }}</h3>
-    <p class="card-text text-secondary small mb-3">{{ post.excerpt }}</p>
+    {% endif %}
     
-    <!-- Tags -->
-    <div class="d-flex flex-wrap gap-2 mb-3">
-      {% for tag in post.tags.all|slice:":3" %}
-        <a href="{% url 'blog:tag' slug=tag.slug %}" class="tag-pill text-decoration-none">{{ tag.name }}</a>
-      {% endfor %}
+    <!-- Card Content -->
+    <div class="datalog-card-content">
+        <!-- Post Meta -->
+        <div class="post-meta-top">
+            {% if post.category %}
+            <div class="category-badge" style="--category-color: {{ post.category.color }};">
+                {% if post.category.icon %}
+                <i class="{{ post.category.icon }}"></i>
+                {% endif %}
+                <span>{{ post.category.code|default:"LOG" }}</span>
+            </div>
+            {% endif %}
+            
+            {% if card_type == 'search' and query %}
+            <div class="search-match-badge">
+                <i class="fas fa-search"></i>
+                <span>Match</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Post Title -->
+        <h3 class="datalog-card-title">
+            <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
+        </h3>
+        
+        <!-- Post Excerpt -->
+        {% if show_excerpt and post.excerpt %}
+        <p class="datalog-card-excerpt">{{ post.excerpt|truncate_smart:120 }}</p>
+        {% elif show_excerpt %}
+        <p class="datalog-card-excerpt">{{ post.content|truncate_smart:120 }}</p>
+        {% endif %}
+        
+        <!-- Post Metrics (using our reusable component) -->
+        <div class="card-metrics">
+            {% include 'blog/includes/post_metrics_display.html' with post=post style='compact' %}
+        </div>
+        
+        <!-- System Connections (if any) -->
+        {% if post|has_system_connection %}
+        <div class="card-connections">
+            {% include 'blog/includes/system_connections.html' with post=post style='minimal' %}
+        </div>
+        {% endif %}
+        
+        <!-- Featured Code Preview (for featured cards) -->
+        {% if card_type == 'featured' and post.featured_code %}
+        <div class="card-code-preview">
+            <div class="code-preview-header">
+                <i class="fas fa-code"></i>
+                <span>{{ post.featured_code_format|upper }}</span>
+                <span class="code-lines">{{ post.featured_code|linecount }} lines</span>
+            </div>
+            <div class="code-preview-content">
+                {{ post.featured_code|slice:":120" }}{% if post.featured_code|length > 120 %}...{% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
     
-    <!-- Date -->
-    <p class="post-date mb-3">{{ post.published_date|date:"M d, Y" }} // SID: {{ post.id|stringformat:"04d" }}</p>
+    <!-- Card Footer -->
+    <div class="datalog-card-footer">
+        <div class="footer-stats">
+            <span class="stat-item">
+                <i class="fas fa-eye"></i>
+                <span>{{ post.views.count|default:"0"|format_number }}</span>
+            </span>
+            {% if post.tags.exists %}
+            <span class="stat-item">
+                <i class="fas fa-tags"></i>
+                <span>{{ post.tags.count }}</span>
+            </span>
+            {% endif %}
+        </div>
+        
+        <a href="{{ post.get_absolute_url }}" class="read-more-btn">
+            <span>Access Entry</span>
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
     
-    <!-- Divider -->
-    <div class="post-divider mb-3"></div>
+</article>
+
+<style>
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
+
+/* Only styles that are NOT in the consolidated CSS or need component-specific adjustments */
+
+/* Search match badge (specific to search card type) */
+.search-match-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.2rem 0.6rem;
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    border-radius: var(--border-radius-sm);
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-teal);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: searchGlow 2s ease-in-out infinite;
+}
+
+@keyframes searchGlow {
+    0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(38, 198, 218, 0.4); 
+    }
+    50% { 
+        box-shadow: 0 0 0 6px rgba(38, 198, 218, 0); 
+    }
+}
+
+/* Featured code preview (specific to featured card type) */
+.card-code-preview {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    font-family: var(--font-code);
+    margin-top: var(--spacing-md);
+}
+
+.code-preview-header {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--spacing-sm) var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.8rem;
+    color: var(--color-lavender);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.code-lines {
+    margin-left: auto;
+    color: var(--color-text-tertiary);
+}
+
+.code-preview-content {
+    padding: var(--spacing-md);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow: hidden;
+    max-height: 120px;
+}
+
+/* Card type variations - enhance consolidated CSS */
+.datalog-card-compact {
+    max-height: 350px;
+}
+
+.datalog-card-compact .datalog-image {
+    height: 120px;
+}
+
+.datalog-card-compact .datalog-card-content {
+    padding: var(--spacing-md);
+}
+
+.datalog-card-search {
+    /* Search results get subtle highlight */
+    border-color: rgba(38, 198, 218, 0.2);
+}
+
+.datalog-card-featured {
+    /* Featured posts get special border */
+    border: 2px solid rgba(255, 245, 157, 0.3);
+}
+
+.datalog-card-featured::before {
+    background: linear-gradient(90deg, var(--color-yellow), var(--color-coral), var(--color-lavender));
+}
+
+/* Category-specific card enhancements */
+.datalog-card[data-category="ml"] {
+    border-color: rgba(156, 39, 176, 0.2);
+}
+
+.datalog-card[data-category="dev"] {
+    border-color: rgba(76, 175, 80, 0.2);
+}
+
+.datalog-card[data-category="data"] {
+    border-color: rgba(255, 152, 0, 0.2);
+}
+
+/* Footer stats - specific styling not in consolidated CSS */
+.footer-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.stat-item i {
+    font-size: 0.75rem;
+    color: var(--color-lavender);
+}
+
+/* Component-specific responsive adjustments */
+@media (max-width: 767px) {
+    .datalog-card-footer {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: stretch;
+    }
     
-    <!-- Access Link -->
-    <a href="{{ post.get_absolute_url }}" class="post-link">
-      ACCESS TRANSMISSION <span class="arrow">→</span>
-    </a>
-  </div>
-</div>
+    .footer-stats {
+        justify-content: center;
+    }
+    
+    .read-more-btn {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .datalog-card-header {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        text-align: center;
+    }
+    
+    .post-meta-top {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .code-preview-header {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        text-align: center;
+    }
+    
+    .code-lines {
+        margin-left: 0;
+    }
+}
+
+/* Accessibility enhancements */
+.datalog-card:focus {
+    outline: 2px solid var(--color-lavender);
+    outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .datalog-card {
+        border-width: 2px;
+        backdrop-filter: none;
+        background: rgba(13, 13, 31, 0.9);
+    }
+    
+    .search-match-badge,
+    .featured-badge {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .search-match-badge {
+        animation: none;
+    }
+    
+    .datalog-card:hover {
+        transform: none;
+    }
+}
+</style>
+
+<!-- 
+REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Card hover effects and animations via initializeCardInteractions()
+- Click handling with ripple effects via createCardRipple()
+- Entrance animations via observeCardEntrance()
+- Touch interactions and responsive behavior
+- All event handlers and state management
+
+Card functionality is fully managed by:
+- DatalogInterface.initializeDatalogCards()
+- DatalogInterface.animateCardHover()
+- DatalogInterface.createCardRipple()
+- DatalogInterface.observeCardEntrance()
+-->

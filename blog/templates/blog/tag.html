@@ -1,80 +1,617 @@
+<!----
+ * AURA Portfolio - DataLogs Tag Template - UNIFIED & ADAPTIVE
+ * File: blog/templates/blog/tag.html
+ * Handles both TagOverviewView (all tags) and TagView (specific tag)
+ * Uses unified containers and consolidated styles
+ * Version: 3.0.0 - Updated with unified container system
+---->
+
 {% extends "blog/datalogs_base.html" %}
 {% load static %}
-
 {% load aura_filters %}
 {% load aura_components %}
-{% comment %} {% load system_tags %} {% endcomment %}
-{% load blog_tags %}
+{% load datalog_tags %}
 
-{% block blog_content %}
-<!-- Tag List Header -->
-<div class="list-page-header">
-  <!-- HUD corner accents -->
-  <div class="hud-corner hud-corner-tl"></div>
-  <div class="hud-corner hud-corner-tr"></div>
-  <div class="hud-corner hud-corner-bl"></div>
-  <div class="hud-corner hud-corner-br"></div>
-  
-  <!-- Tag Visualization -->
-  <div class="tag-display mb-4">
-    <span class="tag-pill" style="font-size: 1.2rem; padding: 0.5rem 1.5rem; margin-right: 1rem;">{{ tag.name }}</span>
-  </div>
-
-  <!-- Tag title with digital counter -->
-  <h1 class="list-page-title">
-    Tagged Logs: 
-    <span class="digital-counter">{{ posts.count }} LOG{{ posts.count|pluralize|upper }} FOUND</span>
-  </h1>
-  
-  <!-- Related tags -->
-  <div class="related-tags mt-4 mb-2">
-    <span class="filter-label">RELATED TAGS:</span>
-    {% for related_tag in related_tags %}
-      <a href="{% url 'blog:tag' slug=related_tag.slug %}" class="filter-pill">{{ related_tag.name }}</a>
-    {% empty %}
-      <span class="text-muted">No related tags found</span>
-    {% endfor %}
-  </div>
-  
-  <!-- List filters -->
-  <div class="list-filter-bar">
-    <span class="filter-label">FILTER:</span>
-    <a href="?sort=latest" class="filter-pill {% if current_sort == 'latest' %}active{% endif %}">Latest</a>
-    <a href="?sort=popular" class="filter-pill {% if current_sort == 'popular' %}active{% endif %}">Popular</a>
-    <a href="?sort=oldest" class="filter-pill {% if current_sort == 'oldest' %}active{% endif %}">Oldest</a>
-    
-    <!-- Sort dropdown -->
-    <div class="sort-container">
-      <select class="sort-dropdown" onchange="location = this.value;">
-        <option value="" disabled selected>SORT BY</option>
-        <option value="?sort=latest" {% if current_sort == 'latest' %}selected{% endif %}>Newest First</option>
-        <option value="?sort=oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
-        <option value="?sort=popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
-      </select>
-    </div>
-  </div>
-</div>
-
-<!-- Posts Grid -->
-<div class="row g-4">
-  {% for post in posts %}
-    <div class="col-lg-4 col-md-6 mb-4">
-      {% include "blog/includes/post_card.html" with post=post %}
-    </div>
-  {% empty %}
-    <div class="col-12">
-      <div class="no-results">
-        <div class="no-results-icon"><i class="fas fa-tag"></i></div>
-        <h3 class="no-results-title">No logs found</h3>
-        <p class="no-results-message">No logs entries found tagged with "{{ tag.name }}".</p>
-        <a href="{% url 'blog:post_list' %}" class="btn btn-outline-cyan">Back to DEVLOGs</a>
-      </div>
-    </div>
-  {% endfor %}
-</div>
-
-<!-- Pagination -->
-{% if is_paginated %}
-  {% include "blog/includes/pagination.html" %}
+{% block meta_description %}
+{% if tag %}
+DataLog entries tagged with {{ tag.name }} - comprehensive technical insights and documentation.
+{% else %}
+Explore all DataLog tags - comprehensive technical documentation organized by topic and technology.
 {% endif %}
+{% endblock %}
+
+{% block datalogs_title %}
+{% if tag %}[ TAG: {{ tag.name|upper }} ]{% else %}[ TAGS OVERVIEW ]{% endif %}
+{% endblock %}
+
+{% block datalogs_css %}
+<link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
+{% endblock %}
+
+{% block datalogs_body_class %}
+{% if tag %}tag-view focused{% else %}tags-overview{% endif %}
+{% endblock %}
+
+{% block datalogs_breadcrumbs %}
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+{% if tag %}
+<a href="{% url 'blog:tag_list' %}" class="breadcrumb-item">Tags</a>
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+<span class="breadcrumb-item active">{{ tag.name }}</span>
+{% else %}
+<span class="breadcrumb-item active">Tags Overview</span>
+{% endif %}
+{% endblock %}
+
+{% block datalogs_content %}
+
+{% if tag %}
+<!-- ========== FOCUSED TAG VIEW ========== -->
+
+<!-- Unified Featured Container for Tag -->
+<section class="tag-unified-section">
+    <div class="container">
+        <div class="datalog-unified-container tag-featured {% if tag.featured %}featured{% endif %}" 
+             data-tag="{{ tag.slug }}"
+             style="--container-category-rgb: 38, 198, 218;">
+            
+            <!-- Container Header -->
+            <div class="unified-container-header">
+                {% if tag.featured %}
+                <div class="unified-featured-badge">
+                    <i class="fas fa-star"></i>
+                    <span>Featured Tag</span>
+                </div>
+                {% endif %}
+                
+                <h1 class="unified-container-title"><i class="fas fa-tag"></i> {{ tag.name }}</h1>
+                
+                <!-- Tag Status -->
+                <div class="unified-container-status">
+                    <span class="unified-post-id">{{ tag.name|slice:":3"|upper }}-TAG</span>
+                    
+                    <span class="unified-category-badge" style="border-color: rgba(38, 198, 218, 0.4); background: rgba(38, 198, 218, 0.15); color: var(--color-teal);">
+                        <i class="fas fa-pencil"></i>
+                        {{ tag_post_count }} entries
+                    </span>
+                    
+                    {% if tag_difficulty %}
+                    <span class="unified-difficulty-badge" data-difficulty="{{ tag_difficulty }}">
+                        <i class="fas fa-signal"></i>
+                        {{ tag_difficulty|title }} Content
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Main Content Grid -->
+            <div class="unified-content-grid">
+                
+                <!-- LEFT SIDE: Tag Information -->
+                <div class="unified-content-info">
+                    
+                    <!-- Tag Description -->
+                    {% if tag.description %}
+                    <div class="unified-excerpt">
+                        <p>{{ tag.description }}</p>
+                    </div>
+                    {% else %}
+                    <div class="unified-excerpt">
+                        <p>Technical insights and documentation related to {{ tag.name }}. Explore comprehensive entries covering implementation details, best practices, and advanced concepts.</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Tag Stats Section -->
+                    <div class="tag-stats-section">
+                        <div class="stats-header unified-section-header" style="color:var(--color-text);">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Tag Statistics</span>
+                        </div>
+                        <div class="unified-stats-grid">
+                            <div class="unified-stat-item">
+                                <i class="fas fa-file-alt"></i>
+                                <span>{{ tag_post_count }} entries</span>
+                            </div>
+                            {% if tag_avg_reading_time %}
+                            <div class="unified-stat-item">
+                                <i class="fas fa-clock"></i>
+                                <span>{{ tag_avg_reading_time|format_duration }} avg reading</span>
+                            </div>
+                            {% endif %}
+                            {% if posts %}
+                            <div class="unified-stat-item">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ posts|total_views|format_number }} total views</span>
+                            </div>
+                            <div class="unified-stat-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Last updated {{ posts.0.published_date|time_since_published }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Related Categories for Tag -->
+                    {% if tag_categories %}
+                    <div class="related-categories-section">
+                        <div class="related-header unified-section-header" style="color:var(--color-text);">
+                            <i class="fas fa-sitemap"></i>
+                            <span>Related Categories</span>
+                        </div>
+                        <div class="related-categories-grid">
+                            {% for category in tag_categories %}
+                            <span class="unified-category-badge">
+                              {% if category.icon %}
+                              <i class="fas {{ category.icon }}"></i>
+                              {% endif %}
+                            <a href="{% url 'blog:category' slug=category.slug %}" class="related-category-item">
+                                {% comment %} {% category_hexagon_single category size="sm" show_label=False %} {% endcomment %}
+                                <span class="related-cat-name">{{ category.name }}</span>
+                                <span class="related-cat-count"> | {{ category.post_count }}</span>
+                            </a>
+                          </span>
+                          <br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Related Tags -->
+                    {% if related_tags %}
+                    <div class="unified-tags-section">
+                        <div class="unified-section-header">
+                            <i class="fas fa-tags"></i>
+                            <span>Related Tags</span>
+                        </div>
+                        <div class="unified-tags-list">
+                            {% for related_tag in related_tags %}
+                            <a href="{% url 'blog:tag' slug=related_tag.slug %}" class="unified-tag">
+                                {{ related_tag.name }}
+                                <span class="tag-count">({{ related_tag.post_count }})</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Actions Section -->
+                    <div class="unified-actions-section">
+                        <a href="{% url 'blog:tag_list' %}" class="unified-action-btn">
+                            <i class="fas fa-tags"></i>
+                            All Tags
+                        </a>
+                        <button class="unified-action-btn" onclick="subscribeToTag('{{ tag.slug }}')">
+                            <i class="fas fa-bell"></i>
+                            Subscribe
+                        </button>
+                    </div>
+                    
+                </div>
+                
+                <!-- RIGHT SIDE: Tag Preview Posts -->
+                <div class="unified-content-media">
+                    {% if posts|slice:":3" %}
+                    <div class="tag-preview-posts">
+                        <div class="preview-header">
+                            <i class="fas fa-eye"></i>
+                            <span>Recent Entries</span>
+                        </div>
+                        <div class="preview-posts-list">
+                            {% for preview_post in posts|slice:":3" %}
+                            <div class="preview-post-item">
+                                <div class="preview-post-header">
+                                    <h4 class="preview-post-title">
+                                        <a href="{{ preview_post.get_absolute_url }}">{{ preview_post.title|truncate_smart:50 }}</a>
+                                    </h4>
+                                    <span class="preview-post-id">{{ preview_post.id|datalog_id }}</span>
+                                </div>
+                                <div class="preview-post-meta">
+                                    <span class="preview-meta-item">
+                                        <i class="fas fa-clock"></i>
+                                        {{ preview_post.reading_time|format_duration }}
+                                    </span>
+                                    <span class="preview-meta-item">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        {{ preview_post.published_date|time_since_published }}
+                                    </span>
+                                </div>
+                                {% if preview_post.excerpt %}
+                                <p class="preview-post-excerpt">{{ preview_post.excerpt|truncate_smart:80 }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="preview-footer">
+                            <a href="#tag-posts" class="preview-see-all">
+                                <i class="fas fa-arrow-down"></i>
+                                See all {{ tag_post_count }} entr{{ tag_post_count|pluralize:"y,ies" }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+            </div>
+            
+            <!-- Unified Container Footer -->
+            <div class="unified-container-footer">
+                <div class="unified-footer-stats">
+                    <div class="unified-stat-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Last updated {{ posts.0.published_date|time_since_published }}</span>
+                    </div>
+                    <div class="unified-stat-item">
+                        <i class="fas fa-fire"></i>
+                        <span>{{ tag.usage_count|default:tag_post_count }} total uses</span>
+                    </div>
+                </div>
+                
+                <div class="unified-footer-actions">
+                    <button class="unified-footer-action-btn" title="Subscribe to Tag">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="unified-footer-action-btn" title="RSS Feed">
+                        <i class="fas fa-rss"></i>
+                    </button>
+                    <button class="unified-footer-action-btn" title="Share Tag">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</section>
+
+<!-- Search & Filters for Tag -->
+<section class="tag-search-section">
+    <div class="container">
+        {% unified_search_interface query=query style='compact' show_quick_filters=True %}
+    </div>
+</section>
+
+<!-- Tag Posts Grid -->
+<section class="tag-posts-section" id="tag-posts">
+    <div class="container">
+        {% if posts %}
+        
+        <!-- Grid Header -->
+        <div class="tag-grid-header">
+            <div class="grid-info">
+                <h3 class="grid-title">
+                    <i class="fas fa-tag"></i>
+                    {{ tag.name }} DataLog Entries
+                </h3>
+                <div class="grid-stats">
+                    <span class="grid-count">{{ posts|length }} {% if tag_post_count > posts|length %}of {{ tag_post_count }}{% endif %} entries</span>
+                    {% if posts %}
+                    <span class="grid-separator">•</span>
+                    <span class="grid-reading">{{ posts|total_reading_time|format_duration }} total reading time</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="grid-actions">
+                <button class="sort-btn" data-sort="date">
+                    <i class="fas fa-calendar-alt"></i>
+                    Date
+                </button>
+                <button class="sort-btn active" data-sort="relevance">
+                    <i class="fas fa-fire"></i>
+                    Relevance
+                </button>
+                <button class="sort-btn" data-sort="reading">
+                    <i class="fas fa-clock"></i>
+                    Reading Time
+                </button>
+            </div>
+        </div>
+        
+        <!-- Posts Grid -->
+        <div class="posts-grid">
+            {% for post in posts %}
+            {% render_post_card post show_excerpt=True card_type='tag' %}
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination-wrapper">
+            {% include 'core/includes/pagination.html' %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            {% alert_box alert_type="info" message="No Entries Found: No DataLog entries are currently tagged with this topic. Check back later for updates." %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{% else %}
+<!-- ========== TAGS OVERVIEW ========== -->
+
+<!-- Search Interface for Tags -->
+<section class="tags-search-section">
+    <div class="container">
+        {% unified_search_interface query=query style='compact' show_quick_filters=False enable_ajax=True placeholder="Search tags and topics..." %}
+    </div>
+</section>
+
+<!-- Main Tags Overview -->
+<section class="tags-overview-main">
+    <div class="container">
+        
+        <!-- Overview Header -->
+        <div class="overview-header">
+            <div class="overview-title-section">
+                <h1 class="overview-title">DataLog Tags</h1>
+                <p class="overview-subtitle">Explore comprehensive technical documentation organized by technology, concept, and implementation approach</p>
+            </div>
+            
+            <!-- Overview Stats -->
+            <div class="overview-stats">
+                <div class="stat-item">
+                    <i class="fas fa-tags"></i>
+                    <span class="stat-label">{{ tags.count }}</span>
+                    <span class="stat-text">Total Tags</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="stat-label">{{ total_tagged_posts|format_number }}</span>
+                    <span class="stat-text">Tagged Entries</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-fire"></i>
+                    <span class="stat-label">{{ popular_tags_count }}</span>
+                    <span class="stat-text">Popular Tags</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Popular Tags Cloud -->
+        {% if popular_tags %}
+        <div class="popular-tags-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-fire"></i>
+                    Popular Tags
+                </h3>
+            </div>
+            
+            <div class="tags-cloud">
+                {% for tag in popular_tags %}
+                <a href="{% url 'blog:tag' slug=tag.slug %}" 
+                   class="tag-cloud-item" 
+                   data-weight="{{ tag.post_count }}"
+                   style="font-size: {{ tag.post_count|scale_tag_size }}rem;">
+                   <i class="fas fa-tag"></i> {{ tag.name }}
+                    <span class="tag-count">({{ tag.post_count }})</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- All Tags by Category -->
+        <div class="all-tags-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="fas fa-th-large"></i>
+                    All Tags
+                </h3>
+                <div class="section-actions">
+                    <button class="view-toggle-btn active" data-view="grid">
+                        <i class="fas fa-th-large"></i>
+                        Grid
+                    </button>
+                    <button class="view-toggle-btn" data-view="cloud">
+                        <i class="fas fa-cloud"></i>
+                        Cloud
+                    </button>
+                    <button class="view-toggle-btn" data-view="list">
+                        <i class="fas fa-list"></i>
+                        List
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tags by Category Groups -->
+            {% if tags_by_category %}
+            <div class="tags-by-category" id="tagsGrid">
+                {% for category, category_tags in tags_by_category.items %}
+                <div class="tag-category-group">
+                    <div class="category-group-header">
+                        <h4 class="category-group-title">
+                            {% if category.icon %}
+                            <i class="fas {{ category.icon }}"></i>
+                            {% else %}
+                            <i class="fas fa-folder"></i>
+                            {% endif %}
+                            {{ category.name|default:"General" }}
+                        </h4>
+                        <span class="category-tag-count">{{ category_tags|length }} tags</span>
+                    </div>
+                    
+                    <div class="category-tags-grid">
+                        {% for tag in category_tags %}
+                        <div class="datalog-unified-container compact tag-card"
+                             data-tag="{{ tag.slug }}"
+                             style="{% smart_unified_container_vars tag=tag %}">
+                            
+                            <!-- Compact Tag Header -->
+                            <div class="unified-container-header">
+                                <h5 class="unified-container-title"><i class="fas fa-tag"></i> {{ tag.name }}</h5>
+                                
+                                <div class="unified-container-status">
+                                    <span class="unified-post-id">{{ tag.name|slice:":3"|upper }}</span>
+                                    <span class="unified-category-badge" style="border-color: rgba(38, 198, 218, 0.4); background: rgba(38, 198, 218, 0.15); color: var(--color-teal);">
+                                        <i class="fas fa-tag"></i>
+                                        {{ tag.post_count }} posts
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Compact Content -->
+                            <div class="unified-content-grid compact">
+                                <div class="unified-content-info">
+                                    {% if tag.description %}
+                                    <div class="unified-excerpt">
+                                        <p>{{ tag.description|truncate_smart:60 }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Recent Posts for Tag -->
+                                    {% if tag.recent_posts %}
+                                    <div class="unified-meta-section compact">
+                                        <div class="recent-posts-preview">
+                                            <span class="recent-label">Recent:</span>
+                                            {% for recent_post in tag.recent_posts|slice:":2" %}
+                                            <a href="{{ recent_post.get_absolute_url }}" class="recent-post-link">
+                                                {{ recent_post.title|truncate_smart:25 }}
+                                            </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Compact Footer -->
+                            <div class="unified-container-footer compact">
+                                <div class="unified-footer-stats">
+                                    <div class="unified-stat-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>{{ tag.avg_reading_time|format_duration|default:"—" }}</span>
+                                    </div>
+                                    {% if tag.latest_post %}
+                                    <div class="unified-stat-item">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span>{{ tag.latest_post.published_date|time_since_published }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="unified-footer-actions">
+                                    <a href="{% url 'blog:tag' slug=tag.slug %}" class="unified-action-btn primary">
+                                        <i class="fas fa-arrow-right"></i>
+                                        Explore
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% else %}
+            <!-- Simple Tags Grid if no categories -->
+            <div class="simple-tags-grid" id="tagsGrid">
+                {% for tag in tags %}
+                <div class="datalog-unified-container compact tag-card"
+                     data-tag="{{ tag.slug }}"
+                     style="--container-category-rgb: 38, 198, 218;">
+                    
+                    <!-- Compact Tag Header -->
+                    <div class="unified-container-header">
+                        <h5 class="unified-container-title">{{ tag.name }}</h5>
+                        
+                        <div class="unified-container-status">
+                            <span class="unified-post-id">{{ tag.name|slice:":3"|upper }}</span>
+                            <span class="unified-category-badge" style="border-color: rgba(38, 198, 218, 0.4); background: rgba(38, 198, 218, 0.15); color: var(--color-teal);">
+                                <i class="fas fa-tag"></i>
+                                {{ tag.post_count }} posts
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Compact Footer -->
+                    <div class="unified-container-footer compact">
+                        <div class="unified-footer-stats">
+                            {% if tag.latest_post %}
+                            <div class="unified-stat-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>{{ tag.latest_post.published_date|time_since_published }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="unified-footer-actions">
+                            <a href="{% url 'blog:tag' slug=tag.slug %}" class="unified-action-btn primary">
+                                <i class="fas fa-arrow-right"></i>
+                                Explore
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        
+    </div>
+</section>
+
+{% endif %}
+
+{% endblock %}
+
+{% block datalogs_js %}
+<script>
+// Tag-specific JavaScript functionality
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // View toggle functionality for tags overview
+    const viewToggleButtons = document.querySelectorAll('.view-toggle-btn');
+    const tagsGrid = document.getElementById('tagsGrid');
+    
+    viewToggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            viewToggleButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get view type
+            const viewType = this.dataset.view;
+            
+            // Update grid class
+            if (tagsGrid) {
+                tagsGrid.className = tagsGrid.className.replace(/\b\w+-view\b/g, '');
+                tagsGrid.classList.add(viewType + '-view');
+            }
+        });
+    });
+    
+    // Tag subscription functionality
+    window.subscribeToTag = function(tagSlug) {
+        // Implementation for tag subscription
+        console.log('Subscribing to tag:', tagSlug);
+        // You can implement AJAX call here for actual subscription
+    };
+    
+    // Sort functionality for tag posts
+    const sortButtons = document.querySelectorAll('.sort-btn');
+    sortButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all sort buttons
+            sortButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get sort type
+            const sortType = this.dataset.sort;
+            
+            // Implement sorting logic here
+            console.log('Sorting by:', sortType);
+        });
+    });
+});
+</script>
 {% endblock %}

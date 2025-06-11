@@ -1,0 +1,1107 @@
+<!----
+ * AURA DataLogs - Archive Timeline Template (COMPLETE)
+ * File: blog/templates/blog/includes/archive_timeline.html
+ * Uses existing AURA components for maximum reuse
+---->
+
+{% load aura_filters %}
+{% load aura_components %}
+{% load datalog_tags %}
+
+<div class="{{ css_classes }}">
+
+    {% if style == 'full' %}
+    <!-- Full archive timeline with all features -->
+    {% glass_card title="DataLogs Archive Timeline" icon="fas fa-archive" show_metrics=True metric_1_value=timeline_statistics.total_posts metric_1_label="Total Posts" metric_1_icon="fas fa-database" metric_2_value=timeline_statistics.total_periods metric_2_label="Time Periods" metric_2_icon="fas fa-calendar" metric_3_value=timeline_statistics.avg_posts_per_period metric_3_label="Avg per Period" metric_3_icon="fas fa-chart-line" %}
+        
+        <!-- Timeline Navigation using existing nav patterns -->
+        {% if show_navigation and timeline_nav %}
+        <div class="timeline-section">
+            {% section_header title="Navigate Timeline" icon="fas fa-compass" %}
+            
+            <div class="timeline-navigation-grid">
+                <!-- Year Navigation -->
+                <div class="nav-year-selector subnav-stats">
+                    {% for year_data in timeline_nav.years %}
+                    <a href="{% archive_period_url year_data 'year' %}" 
+                       class="breadcrumb-item year-nav-item {% if year_data.is_current %}active{% endif %}">
+                        <span class="nav-year">{{ year_data.year }}</span>
+                        <span class="nav-count">{{ year_data.total_posts }} posts</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                
+                <!-- Month Navigation for Current Year -->
+                {% if current_year and timeline_nav.years %}
+                {% with current_year_data=timeline_nav.years|first %}
+                {% if current_year_data.months %}
+                <div class="nav-month-selector subnav-stats">
+                    {% for month_data in current_year_data.months %}
+                    <a href="{% archive_period_url month_data 'month' %}" 
+                       class="breadcrumb-item month-nav-item {% if month_data.is_current %}active{% endif %}">
+                        <span class="nav-month">{{ month_data.short_name }}</span>
+                        <span class="nav-count">{{ month_data.count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Timeline Content -->
+        <div class="timeline-section">
+            {% section_header title='Timeline Entries' subtitle='Chronological Archive' icon="{{ group_by|archive_group_icon }}" %}
+            
+            <div class="archive-timeline-content">
+                {% for group in grouped_posts %}
+                {% glass_card title="{{ group|archive_period_disp_filter:group_by }}" icon="{{ group_by|archive_group_icon }}" variant="info" show_metrics=True metric_1_value=group.count metric_1_label="Post{{ group.count|pluralize }}" metric_1_icon="fas fa-database" %}
+                    
+                    <div class="timeline-posts-grid">
+                        {% for post in group.posts %}
+                        {% render_post_card post show_excerpt=False card_type="timeline" %}
+                        {% endfor %}
+                    </div>
+                    
+                    {% if group.has_more %}
+                    <div class="timeline-group-footer">
+                        <a href="{% archive_period_url group group_by %}" class="btn btn-outline">
+                            <i class="fas fa-plus"></i>
+                            View {{ group.remaining_count }} More Post{{ group.remaining_count|pluralize }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                {% endglass_card %}
+                {% endfor %}
+            </div>
+        </div>
+        
+    {% endglass_card %}
+    
+    {% elif style == 'compact' %}
+    <!-- Compact archive timeline -->
+    {% glass_card title="Archive" icon="fas fa-archive" size="sm" %}
+        
+        {% if show_stats %}
+        <div class="compact-stats subnav-stats">
+            <div class="stat-item">
+                <span class="stat-value">{{ timeline_statistics.total_posts|default:"0" }}</span>
+                <span class="stat-label">Total Posts</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ grouped_posts|length }}</span>
+                <span class="stat-label">Period{{ grouped_posts|length|pluralize }}</span>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="compact-timeline-content">
+            {% for group in grouped_posts %}
+            <div class="compact-timeline-group">
+                <div class="compact-group-header breadcrumb-item">
+                    <a href="{% archive_period_url group group_by %}" class="group-period-link">
+                        <span class="period-name">{% archive_period_display group group_by %}</span>
+                        <span class="period-count">{{ group.count }} post{{ group.count|pluralize }}</span>
+                        <span class="activity-indicator {{ group.count|archive_activity_level }}"></span>
+                    </a>
+                </div>
+                
+                <div class="compact-posts-list">
+                    {% for post in group.posts|slice:":3" %}
+                    <div class="compact-post-item">
+                        {% datalog_meta_display post style='minimal' show_category=False show_reading_time=False %}
+                        <a href="{{ post.get_absolute_url }}" class="compact-post-title">
+                            {{ post.title|meta_truncate_title:"compact" }}
+                        </a>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if group.count > 3 %}
+                    <div class="compact-post-more">
+                        <a href="{% archive_period_url group group_by %}">
+                            +{{ group.count|add:"-3" }} more post{{ group.count|add:"-3"|pluralize }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+    {% endglass_card %}
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal archive timeline -->
+    <div class="minimal-archive-timeline">
+        <div class="minimal-timeline-header subnav-stats">
+            <div class="stat-item">
+                <i class="fas fa-archive"></i>
+                <span class="stat-label">Archive</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ timeline_statistics.total_posts|default:"0" }}</span>
+                <span class="stat-label">Posts</span>
+            </div>
+        </div>
+        
+        <div class="minimal-timeline-list">
+            {% for group in grouped_posts %}
+            <div class="minimal-timeline-item breadcrumb-item">
+                <a href="{% archive_period_url group group_by %}" class="minimal-period-link">
+                    <span class="period-display">{% archive_period_display group group_by %}</span>
+                    <span class="period-count">({{ group.count }})</span>
+                    <span class="activity-indicator {{ group.count|archive_activity_level }}"></span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% elif style == 'yearly' %}
+    <!-- Yearly overview timeline -->
+    {% glass_card title="Yearly Archive" icon="fas fa-calendar" variant="warning" %}
+        
+        <div class="yearly-timeline-content">
+            {% for group in grouped_posts %}
+            {% glass_card title=group.year icon="fas fa-calendar" variant="warning" size="sm" show_metrics=True metric_1_value=group.count metric_1_label="Posts" metric_1_icon="fas fa-database" metric_2_value=group.months|length|default:"0" metric_2_label="Active Months" metric_2_icon="fas fa-calendar-alt" %}
+                
+                {% if group.months %}
+                <div class="yearly-months-grid">
+                    {% for month in group.months %}
+                    <a href="{% archive_period_url month 'month' %}" 
+                       class="yearly-month-item breadcrumb-item">
+                        <span class="month-name">{{ month.short_name }}</span>
+                        <span class="month-count">{{ month.count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Show featured posts from the year -->
+                {% if group.posts %}
+                <div class="yearly-featured-posts">
+                    {% for post in group.posts|slice:":2" %}
+                    {% render_post_card post show_excerpt=True card_type="yearly" %}
+                    {% endfor %}
+                    
+                    {% if group.count > 2 %}
+                    <div class="yearly-view-all">
+                        <a href="{% archive_period_url group 'year' %}" class="btn btn-outline">
+                            <i class="fas fa-calendar-alt"></i>
+                            View All {{ group.count }} Posts from {{ group.year }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+            {% endglass_card %}
+            {% endfor %}
+        </div>
+        
+    {% endglass_card %}
+    
+    {% elif style == 'cards' %}
+    <!-- Card-based archive timeline -->
+    <div class="cards-archive-timeline">
+        {% if show_stats %}
+        <div class="cards-timeline-header">
+            {% section_header title="Archive Cards" subtitle="Browse by time period" icon="fas fa-th" show_metrics=True metric_1_value=timeline_statistics.total_posts metric_1_label="Posts" metric_1_icon="fas fa-database" metric_2_value=grouped_posts|length metric_2_label="Periods" metric_2_icon="fas fa-calendar" %}
+        </div>
+        {% endif %}
+        
+        <div class="cards-timeline-grid">
+            {% for group in grouped_posts %}
+            {% glass_card title="{{ group|archive_period_disp_filter:group_by }}" subtitle="{{ group.count }} post{{ group.count|pluralize }}" icon="{{ group_by|archive_group_icon }}" variant="info" size="md" %}
+                
+                {% if group.posts %}
+                <div class="card-posts-preview">
+                    {% for post in group.posts|slice:":3" %}
+                    <div class="card-post-item">
+                        {% datalog_meta_display post style='card' show_category=True show_tags=False show_reading_time=False max_tags=2 %}
+                        <h4 class="card-post-title">
+                            <a href="{{ post.get_absolute_url }}">
+                                {{ post.title|meta_truncate_title:"card" }}
+                            </a>
+                        </h4>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="card-footer-actions">
+                    <a href="{% archive_period_url group group_by %}" class="btn btn-outline">
+                        <span>View All Posts</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    
+                    {% if group.has_more %}
+                    <span class="card-has-more">
+                        +{{ group.remaining_count }} more
+                    </span>
+                    {% endif %}
+                </div>
+                
+            {% endglass_card %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Default: fall back to compact style -->
+    {% include 'blog/includes/archive_timeline.html' with style='compact' %}
+    {% endif %}
+    
+    <!-- Empty State -->
+    {% if not grouped_posts %}
+    {% glass_card title="No Archive Entries Found" icon="fas fa-archive" variant="warning" %}
+        
+        <div class="archive-empty-content">
+            <div class="empty-icon">
+                <i class="fas fa-archive"></i>
+            </div>
+            <h3 class="empty-title">No Archive Entries Found</h3>
+            <p class="empty-message">
+                {% if current_year or current_month %}
+                No posts found for the selected time period. Try adjusting your filter criteria.
+                {% else %}
+                There are no published posts to display in the archive.
+                {% endif %}
+            </p>
+            {% if current_year or current_month %}
+            <a href="{% url 'blog:post_list' %}" class="btn btn-primary">
+                <i class="fas fa-calendar"></i>
+                View All Posts
+            </a>
+            {% endif %}
+        </div>
+        
+    {% endglass_card %}
+    {% endif %}
+
+</div>
+
+<style>
+/* ========== ARCHIVE TIMELINE COMPONENT STYLES ========== */
+
+/* Base archive timeline styling */
+.archive-timeline {
+    font-family: var(--font-body);
+    color: var(--color-text-secondary);
+    margin: var(--spacing-lg) 0;
+}
+
+/* Timeline positioning and layout */
+.timeline-style-full .archive-timeline-card {
+    background: var(--gradient-glass), rgba(179, 157, 219, 0.02);
+    border-color: rgba(179, 157, 219, 0.1);
+}
+
+.timeline-style-compact .archive-compact-card {
+    background: var(--gradient-glass), rgba(38, 198, 218, 0.02);
+    border-color: rgba(38, 198, 218, 0.1);
+}
+
+.timeline-style-yearly .yearly-archive-card {
+    background: var(--gradient-glass), rgba(255, 138, 128, 0.02);
+    border-color: rgba(255, 138, 128, 0.1);
+}
+
+/* ========== TIMELINE SECTIONS ========== */
+.timeline-section {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.timeline-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* ========== TIMELINE NAVIGATION ========== */
+.timeline-navigation-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.nav-year-selector,
+.nav-month-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    justify-content: center;
+}
+
+.year-nav-item,
+.month-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+    min-width: 80px;
+    text-align: center;
+}
+
+.year-nav-item:hover,
+.month-nav-item:hover {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: rgba(179, 157, 219, 0.3);
+    color: var(--color-text);
+    transform: translateY(-2px);
+}
+
+.year-nav-item.active,
+.month-nav-item.active {
+    background: rgba(179, 157, 219, 0.2);
+    border-color: rgba(179, 157, 219, 0.4);
+    color: var(--color-lavender);
+    box-shadow: var(--shadow-glow-lavender);
+}
+
+.nav-year,
+.nav-month {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.nav-count {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+/* ========== TIMELINE GROUPS ========== */
+.archive-timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.timeline-group {
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-normal);
+}
+
+.timeline-group:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(179, 157, 219, 0.15);
+}
+
+.timeline-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.group-period-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    flex: 1;
+}
+
+.group-period-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--color-text);
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.group-period-title i {
+    color: var(--color-lavender);
+}
+
+.group-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.activity-level .activity-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.activity-indicator.high-activity {
+    background: var(--color-mint);
+    box-shadow: 0 0 8px var(--color-mint);
+}
+
+.activity-indicator.normal-activity {
+    background: var(--color-teal);
+    box-shadow: 0 0 8px var(--color-teal);
+}
+
+.activity-indicator.low-activity {
+    background: var(--color-coral);
+    box-shadow: 0 0 8px var(--color-coral);
+}
+
+.activity-indicator.no-activity {
+    background: var(--color-gunmetal);
+    opacity: 0.5;
+}
+
+.group-expanded-indicator {
+    color: var(--color-lavender);
+    font-size: 1.2rem;
+    animation: pulse 2s infinite;
+}
+
+/* ========== TIMELINE POSTS GRID ========== */
+.timeline-posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+}
+
+.timeline-group-footer {
+    text-align: center;
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ========== COMPACT TIMELINE STYLES ========== */
+.compact-stats {
+    justify-content: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.compact-timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.compact-timeline-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.compact-group-header {
+    margin-bottom: var(--spacing-sm);
+}
+
+.group-period-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.group-period-link:hover {
+    background: rgba(179, 157, 219, 0.1);
+    color: var(--color-text);
+    transform: translateX(5px);
+}
+
+.period-name {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.period-count {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+}
+
+.compact-posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-left: var(--spacing-lg);
+    padding-left: var(--spacing-md);
+    border-left: 2px solid rgba(179, 157, 219, 0.3);
+}
+
+.compact-post-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.compact-post-item:hover {
+    background: rgba(179, 157, 219, 0.05);
+    transform: translateX(3px);
+}
+
+.compact-post-title {
+    color: var(--color-text);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    transition: color var(--transition-fast);
+}
+
+.compact-post-title:hover {
+    color: var(--color-lavender);
+}
+
+.compact-post-more {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    text-align: center;
+}
+
+.compact-post-more a {
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-style: italic;
+    transition: color var(--transition-fast);
+}
+
+.compact-post-more a:hover {
+    color: var(--color-lavender);
+}
+
+/* ========== MINIMAL TIMELINE STYLES ========== */
+.minimal-archive-timeline {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.minimal-timeline-header {
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.minimal-timeline-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.minimal-timeline-item {
+    flex-shrink: 0;
+}
+
+.minimal-period-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.minimal-period-link:hover {
+    background: rgba(179, 157, 219, 0.1);
+    color: var(--color-text);
+    transform: translateY(-1px);
+}
+
+.period-count {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+}
+
+/* ========== YEARLY TIMELINE STYLES ========== */
+.yearly-timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.yearly-timeline-group {
+    border-left: 4px solid var(--color-coral);
+    transition: all var(--transition-normal);
+}
+
+.yearly-timeline-group:hover {
+    border-left-color: var(--color-lavender);
+    transform: translateX(5px);
+}
+
+.yearly-group-header {
+    background: rgba(255, 138, 128, 0.05);
+    border-bottom: 1px solid rgba(255, 138, 128, 0.2);
+}
+
+.yearly-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--color-text);
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.yearly-title i {
+    color: var(--color-coral);
+}
+
+.yearly-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.yearly-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.yearly-months-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.yearly-month-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: rgba(255, 138, 128, 0.1);
+    border: 1px solid rgba(255, 138, 128, 0.3);
+    border-radius: var(--border-radius-md);
+    color: var(--color-coral);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    text-align: center;
+}
+
+.yearly-month-item:hover {
+    background: rgba(255, 138, 128, 0.2);
+    transform: translateY(-2px);
+    color: var(--color-coral);
+}
+
+.month-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.month-count {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.yearly-featured-posts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.yearly-view-all {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ========== CARDS TIMELINE STYLES ========== */
+.cards-archive-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.cards-timeline-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.cards-timeline-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.timeline-card {
+    transition: all var(--transition-normal);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.timeline-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(179, 157, 219, 0.2);
+}
+
+.timeline-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.timeline-card-header .card-title {
+    color: var(--color-text);
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.post-count {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.timeline-card-content {
+    flex: 1;
+    padding: var(--spacing-lg);
+}
+
+.card-posts-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.card-post-item {
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.card-post-item:hover {
+    background: rgba(179, 157, 219, 0.05);
+    border-color: rgba(179, 157, 219, 0.2);
+    transform: translateY(-1px);
+}
+
+.card-post-title {
+    margin: var(--spacing-xs) 0 0 0;
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+
+.card-post-title a {
+    color: var(--color-text);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.card-post-title a:hover {
+    color: var(--color-lavender);
+}
+
+.timeline-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.card-view-all {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--color-lavender);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.card-view-all:hover {
+    color: var(--color-lavender);
+    transform: translateX(3px);
+}
+
+.card-has-more {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+}
+
+/* ========== EMPTY STATE ========== */
+.archive-empty-state {
+    text-align: center;
+    padding: var(--spacing-xxl);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--color-lavender);
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.6;
+}
+
+.empty-title {
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md);
+    font-size: 1.5rem;
+}
+
+.empty-message {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.6;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 1200px) {
+    .timeline-posts-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--spacing-md);
+    }
+    
+    .cards-timeline-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    
+    .yearly-months-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
+}
+
+@media (max-width: 991px) {
+    .timeline-navigation-grid {
+        gap: var(--spacing-md);
+    }
+    
+    .nav-year-selector,
+    .nav-month-selector {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding: var(--spacing-sm) 0;
+    }
+    
+    .year-nav-item,
+    .month-nav-item {
+        flex-shrink: 0;
+        min-width: 70px;
+    }
+    
+    .group-period-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+    
+    .group-stats {
+        align-self: stretch;
+        justify-content: space-between;
+    }
+    
+    .timeline-posts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .cards-timeline-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+    
+    .yearly-featured-posts {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 767px) {
+    .timeline-group-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+    
+    .compact-posts-list {
+        margin-left: 0;
+        border-left: none;
+        border-top: 2px solid rgba(179, 157, 219, 0.3);
+        padding-left: 0;
+        padding-top: var(--spacing-md);
+    }
+    
+    .minimal-timeline-list {
+        flex-direction: column;
+    }
+    
+    .yearly-months-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-xs);
+    }
+    
+    .cards-timeline-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline-card-footer {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        text-align: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .nav-year-selector,
+    .nav-month-selector {
+        gap: var(--spacing-xs);
+    }
+    
+    .year-nav-item,
+    .month-nav-item {
+        min-width: 60px;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+    
+    .group-period-title {
+        font-size: 1rem;
+    }
+    
+    .yearly-title {
+        font-size: 1.2rem;
+    }
+    
+    .yearly-months-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ========== ACCESSIBILITY ========== */
+.year-nav-item:focus,
+.month-nav-item:focus,
+.group-period-link:focus,
+.minimal-period-link:focus,
+.yearly-month-item:focus,
+.card-view-all:focus {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+}
+
+/* ========== HIGH CONTRAST MODE ========== */
+@media (prefers-contrast: high) {
+    .timeline-group,
+    .timeline-card,
+    .minimal-archive-timeline {
+        border-width: 2px;
+        backdrop-filter: none;
+        background: rgba(13, 13, 31, 0.9);
+    }
+    
+    .activity-indicator {
+        border: 2px solid currentColor;
+    }
+}
+
+/* ========== REDUCED MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+    .timeline-group,
+    .timeline-card,
+    .year-nav-item,
+    .month-nav-item,
+    .compact-post-item {
+        transition: none;
+    }
+    
+    .timeline-group:hover,
+    .timeline-card:hover,
+    .year-nav-item:hover,
+    .month-nav-item:hover {
+        transform: none;
+    }
+    
+    .group-expanded-indicator {
+        animation: none;
+    }
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+    .archive-timeline {
+        background: white !important;
+        color: black !important;
+        border: 1px solid #333 !important;
+    }
+    
+    .timeline-group,
+    .timeline-card {
+        background: white !important;
+        color: black !important;
+        border: 1px solid #ccc !important;
+        break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+    
+    .timeline-navigation-grid,
+    .cards-timeline-header {
+        display: none !important;
+    }
+    
+    .activity-indicator {
+        background: #333 !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+
+<!-- 
+REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Timeline animations and interactions via initializeTimelineComponents()
+- Period navigation and filtering
+- Auto-expansion functionality
+- Responsive behavior and touch interactions
+- All event handlers and state management
+
+Archive timeline functionality is fully managed by:
+- DatalogInterface.initializeTimelineComponents()
+- DatalogInterface.initializeTimelineMarkers()
+- DatalogInterface.initializeTimelineNavigation()
+- DatalogInterface.initializeTimelineAnimations()
+-->

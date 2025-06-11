@@ -526,18 +526,438 @@ def nav_link(context, url_name, label, icon="", css_class=""):
 # ========== CARD COMPONENTS ==========
 
 
-@register.inclusion_tag("components/glass_card.html")
-def glass_card(title="", content="", footer="", css_class="", with_header=True):
+# @register.inclusion_tag("components/glass_card.html")
+# def glass_card(title="", content="", footer="", css_class="", with_header=True):
+#     """
+#     Render a glass-morphism card component.
+#     Usage: {% glass_card title="System Status" content="..." css_class="dashboard-card" %}
+#     """
+#     return {
+#         "title": title,
+#         "content": content,
+#         "footer": footer,
+#         "css_class": css_class,
+#         "with_header": with_header,
+#     }
+
+# Better Glass Card Handling
+@register.simple_block_tag(takes_context=True)
+def glass_card(
+    context,
+    content,  # This is the block content between {% glass_card %} and {% endglass_card %}
+    title="",
+    subtitle="",
+    icon="",
+    css_class="",
+    with_header=True,
+    header_style="default",
+    footer="",
+    with_footer=False,
+    size="md",
+    variant="default",
+    with_border=True,
+    with_glow=False,
+    collapsible=False,
+    expanded=True,
+    card_id="",
+    data_attributes="",
+    show_metrics=False,
+    metric_1_value="",
+    metric_1_label="",
+    metric_1_icon="fas fa-chart-line",
+    metric_2_value="",
+    metric_2_label="",
+    metric_2_icon="fas fa-check-circle",
+    metric_3_value="",
+    metric_3_label="",
+    metric_3_icon="fas fa-clock",
+    metric_4_value="",
+    metric_4_label="",
+    metric_4_icon="fas fa-star",
+):
     """
-    Render a glass-morphism card component.
-    Usage: {% glass_card title="System Status" content="..." css_class="dashboard-card" %}
+    BLOCK TAG version of glass card - supports {% glass_card %}...{% endglass_card %} syntax.
     """
+
+    # Generate unique ID if not provided
+    if not card_id:
+        import uuid
+
+        generated_id = f"glass-card-{uuid.uuid4().hex[:8]}"
+    else:
+        generated_id = card_id
+
+    # Build CSS classes
+    css_classes = ["glass-card"]
+
+    # Size classes
+    size_classes = {
+        "xs": "glass-card-xs",
+        "sm": "glass-card-sm",
+        "md": "glass-card-md",
+        "lg": "glass-card-lg",
+        "xl": "glass-card-xl",
+    }
+    if size in size_classes:
+        css_classes.append(size_classes[size])
+
+    # Variant classes
+    variant_classes = {
+        "default": "",
+        "featured": "glass-card-featured",
+        "warning": "glass-card-warning",
+        "success": "glass-card-success",
+        "error": "glass-card-error",
+        "info": "glass-card-info",
+    }
+    if variant in variant_classes and variant_classes[variant]:
+        css_classes.append(variant_classes[variant])
+
+    # Header style classes
+    header_classes = {
+        "default": "card-header",
+        "compact": "card-header card-header-compact",
+        "minimal": "card-header card-header-minimal",
+    }
+    header_class = header_classes.get(header_style, "card-header")
+
+    # Additional classes
+    if with_border:
+        css_classes.append("glass-card-bordered")
+    if with_glow:
+        css_classes.append("glass-card-glow")
+    if collapsible:
+        css_classes.append("glass-card-collapsible")
+        if not expanded:
+            css_classes.append("glass-card-collapsed")
+    if css_class:
+        css_classes.append(css_class)
+
+    # Parse data attributes
+    data_attrs = ""
+    if data_attributes:
+        # Convert string like "key1:value1,key2:value2" to data attributes
+        try:
+            pairs = data_attributes.split(",")
+            for pair in pairs:
+                key, value = pair.split(":")
+                data_attrs += f' data-{key.strip()}="{value.strip()}"'
+        except:
+            pass
+
+    # Build the card HTML
+    card_html = f'<div class="{" ".join(css_classes)}" id="{generated_id}"{data_attrs}>'
+
+    # Header
+    if with_header and (title or subtitle or icon):
+        card_html += f'<header class="glass-card-header">'
+
+        # Main header content (similar to section_header)
+        card_html += '<div class="card-header-main">'
+        card_html += '<div class="card-header-left">'
+
+        # Simple icon (not holographic like section_header)
+        if icon:
+            card_html += (
+                f'<div class="card-icon-simple"><i class="fas {icon}"></i></div>'
+            )
+
+        # Title and subtitle section
+        if title or subtitle:
+            card_html += '<div class="card-text-section">'
+            if title:
+                # Style title like section_header
+                card_html += f'<h3 class="card-main-title">{title}</h3>'
+            if subtitle:
+                # Smaller subtitle
+                card_html += f'<p class="card-subtitle-text">{subtitle}</p>'
+            card_html += "</div>"
+
+        # End card-header-left
+        card_html += "</div>"
+
+        # Right side (collapse button if needed)
+        card_html += '<div class="card-header-right">'
+        if collapsible:
+            card_html += f'<button class="card-collapse-btn" data-target="#{generated_id}"><i class="fas fa-chevron-down"></i></button>'
+        card_html += "</div>"
+
+        card_html += "</div>"  # End card-header-main
+
+        # Metrics grid (like section_header)
+        if show_metrics and any(
+            [metric_1_value, metric_2_value, metric_3_value, metric_4_value]
+        ):
+            card_html += '<div class="card-metrics-bar">'
+            card_html += '<div class="card-metrics-grid">'
+
+            # Add metrics that have values
+            for i, (value, label, icon_class) in enumerate(
+                [
+                    (metric_1_value, metric_1_label, metric_1_icon),
+                    (metric_2_value, metric_2_label, metric_2_icon),
+                    (metric_3_value, metric_3_label, metric_3_icon),
+                    (metric_4_value, metric_4_label, metric_4_icon),
+                ]
+            ):
+                if value:
+                    card_html += f'''
+                    <div class="card-metric-item">
+                        <div class="metric-icon">
+                            <i class="{icon_class}"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value">{value}</div>
+                            <div class="metric-label">{label}</div>
+                        </div>
+                    </div>
+                    '''
+
+            card_html += "</div>"  # End card-metrics-grid
+            card_html += "</div>"  # End card-metrics-bar
+
+        card_html += "</header>"
+
+    # Content
+    content_class = "card-content"
+    if collapsible:
+        content_class += " card-collapsible-content"
+        if not expanded:
+            content_class += " card-content-collapsed"
+
+    card_html += f'<div class="{content_class}">{content}</div>'
+
+    # Footer
+    if with_footer and footer:
+        card_html += f'<div class="card-footer">{footer}</div>'
+
+    card_html += "</div>"
+
+    # ✅ FIXED: Return the HTML directly, not a function!
+    return mark_safe(card_html)
+
+
+@register.inclusion_tag("components/glass_card.html", takes_context=True)
+def glass_card_include(
+    context,
+    title="",
+    subtitle="",
+    content="",
+    footer="",
+    css_class="",
+    with_header=True,
+    header_style="default",
+    with_footer=False,
+    size="md",
+    variant="default",
+    icon="",
+    with_border=True,
+    with_glow=False,
+    collapsible=False,
+    expanded=True,
+    card_id="",
+    show_metrics=False,
+    metric_1_value="",
+    metric_1_label="",
+    metric_1_icon="fas fa-chart-line",
+    metric_2_value="",
+    metric_2_label="",
+    metric_2_icon="fas fa-check-circle",
+    metric_3_value="",
+    metric_3_label="",
+    metric_3_icon="fas fa-clock",
+    metric_4_value="",
+    metric_4_label="",
+    metric_4_icon="fas fa-star",
+):
+    """
+    INCLUSION TAG version of glass card - for simple content passing.
+
+    Usage Examples:
+    {% glass_card_include title="Simple Card" content="<p>Hello World</p>" %}
+    {% glass_card_include title="Status" content=status_html icon="fas fa-check" variant="success" %}
+
+    This version uses a template file for rendering.
+    Use the block tag version (glass_card) for complex content.
+    """
+    # Generate unique ID if not provided
+    if not card_id:
+        import uuid
+
+        card_id = f"glass-card-{uuid.uuid4().hex[:8]}"
+
     return {
         "title": title,
+        "subtitle": subtitle,
         "content": content,
         "footer": footer,
         "css_class": css_class,
         "with_header": with_header,
+        "header_style": header_style,
+        "with_footer": with_footer,
+        "size": size,
+        "variant": variant,
+        "icon": icon,
+        "with_border": with_border,
+        "with_glow": with_glow,
+        "collapsible": collapsible,
+        "expanded": expanded,
+        "card_id": card_id,
+        "show_metrics": show_metrics,
+        "metric_1_value": metric_1_value,
+        "metric_1_label": metric_1_label,
+        "metric_1_icon": metric_1_icon,
+        "metric_2_value": metric_2_value,
+        "metric_2_label": metric_2_label,
+        "metric_2_icon": metric_2_icon,
+        "metric_3_value": metric_3_value,
+        "metric_3_label": metric_3_label,
+        "metric_3_icon": metric_3_icon,
+        "metric_4_value": metric_4_value,
+        "metric_4_label": metric_4_label,
+        "metric_4_icon": metric_4_icon,
+        "request": context.get("request"),
+    }
+
+
+# Additional helper tags for glass cards
+
+
+@register.simple_tag
+def glass_card_opener(
+    title="",
+    subtitle="",
+    icon="",
+    css_class="",
+    with_header=True,
+    header_style="default",
+    size="md",
+    variant="default",
+    with_border=True,
+    with_glow=False,
+    collapsible=False,
+    expanded=True,
+    card_id="",
+    data_attributes="",
+):
+    """
+    Generate just the opening tag for a glass card (for manual control).
+    Usage: {% glass_card_opener title="My Card" %}...your content...{% glass_card_closer %}
+    """
+    # Generate unique ID if not provided
+    if not card_id:
+        import uuid
+
+        card_id = f"glass-card-{uuid.uuid4().hex[:8]}"
+
+    # Build CSS classes (same logic as block tag)
+    css_classes = ["glass-card"]
+
+    size_classes = {
+        "xs": "glass-card-xs",
+        "sm": "glass-card-sm",
+        "md": "glass-card-md",
+        "lg": "glass-card-lg",
+        "xl": "glass-card-xl",
+    }
+    if size in size_classes:
+        css_classes.append(size_classes[size])
+
+    variant_classes = {
+        "featured": "glass-card-featured",
+        "warning": "glass-card-warning",
+        "success": "glass-card-success",
+        "error": "glass-card-error",
+        "info": "glass-card-info",
+    }
+    if variant in variant_classes:
+        css_classes.append(variant_classes[variant])
+
+    if with_border:
+        css_classes.append("glass-card-bordered")
+    if with_glow:
+        css_classes.append("glass-card-glow")
+    if collapsible:
+        css_classes.append("glass-card-collapsible")
+        if not expanded:
+            css_classes.append("glass-card-collapsed")
+    if css_class:
+        css_classes.append(css_class)
+
+    # Parse data attributes
+    data_attrs = ""
+    if data_attributes:
+        try:
+            pairs = data_attributes.split(",")
+            for pair in pairs:
+                key, value = pair.split(":")
+                data_attrs += f' data-{key.strip()}="{value.strip()}"'
+        except:
+            pass
+
+    # Build header
+    header_html = ""
+    if with_header and (title or subtitle or icon):
+        header_classes = {
+            "default": "card-header",
+            "compact": "card-header card-header-compact",
+            "minimal": "card-header card-header-minimal",
+        }
+        header_class = header_classes.get(header_style, "card-header")
+
+        header_html = f'<div class="{header_class}"><div class="card-header-content">'
+        if icon:
+            header_html += f'<div class="card-icon"><i class="{icon}"></i></div>'
+        if title or subtitle:
+            header_html += '<div class="card-text">'
+            if title:
+                title_tag = "h4" if header_style == "compact" else "h3"
+                header_html += f'<{title_tag} class="card-title">{title}</{title_tag}>'
+            if subtitle:
+                header_html += f'<p class="card-subtitle">{subtitle}</p>'
+            header_html += "</div>"
+        if collapsible:
+            header_html += f'<button class="card-collapse-btn" data-target="#{card_id}"><i class="fas fa-chevron-down"></i></button>'
+        header_html += "</div></div>"
+
+    # Content div opener
+    content_class = "card-content"
+    if collapsible:
+        content_class += " card-collapsible-content"
+        if not expanded:
+            content_class += " card-content-collapsed"
+
+    html = f'<div class="{" ".join(css_classes)}" id="{card_id}"{data_attrs}>{header_html}<div class="{content_class}">'
+
+    return mark_safe(html)
+
+
+@register.simple_tag
+def glass_card_closer(footer="", with_footer=False):
+    """
+    Generate the closing tags for a glass card.
+    Usage: {% glass_card_opener %}...content...{% glass_card_closer %}
+    """
+    html = "</div>"  # Close content div
+
+    if with_footer and footer:
+        html += f'<div class="card-footer">{footer}</div>'
+
+    html += "</div>"  # Close card div
+
+    return mark_safe(html)
+
+
+@register.simple_tag
+def glass_card_variants():
+    """
+    Return available glass card variants for dynamic usage.
+    Usage: {% glass_card_variants as variants %}
+    """
+    return {
+        "sizes": ["xs", "sm", "md", "lg", "xl"],
+        "variants": ["default", "featured", "warning", "success", "error", "info"],
+        "header_styles": ["default", "compact", "minimal"],
     }
 
 

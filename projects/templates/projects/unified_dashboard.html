@@ -1,0 +1,471 @@
+<!----
+ * AURA Portfolio - Systems Unified Dashboard Template
+ * Advanced User Repository & Archive - Complete Foundation
+ * Version: 1.0.1 - Unified Dashboard
+---->
+
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+
+{% block systems_title %}AURA Command Center{% endblock %}
+
+{% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+{% endblock %}
+
+{% block systems_header %}
+{% section_header title="AURA Command Center" subtitle="Real-time System Monitoring & Analytics" icon="fas fa-tachometer-alt" show_metrics=True metric_1_value=dashboard_stats.total_systems metric_1_label="Total Systems" metric_1_icon="fas fa-server" metric_2_value=dashboard_stats.systems_in_development metric_2_label="In Development" metric_2_icon="fas fa-code" metric_3_value=dashboard_stats.avg_completion|floatformat:1 metric_3_label="Avg Complete %" metric_3_icon="fas fa-chart-line" metric_4_value=dashboard_stats.total_technologies metric_4_label="Technologies" metric_4_icon="fas fa-cogs" status="operational" status_text="ALL SYSTEMS ONLINE" animated=True %}
+{% endblock %}
+
+{% block systems_content %}
+<div class="unified-dashboard">
+    
+    <!-- Primary Metrics Grid -->
+    <div class="metrics-grid primary-metrics">
+        <div class="metric-card metric-teal">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="metric-info">
+                    <div class="metric-value">{{ dashboard_stats.total_systems }}</div>
+                    <div class="metric-label">Active Systems</div>
+                </div>
+            </div>
+            <div class="metric-chart">
+                {% sparkline system_activity_data color="teal" height="40px" %}
+            </div>
+        </div>
+        
+        <div class="metric-card metric-lavender">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="metric-info">
+                    <div class="metric-value">{{ total_logs|default:"24" }}</div>
+                    <div class="metric-label">DataLog Entries</div>
+                </div>
+            </div>
+            <div class="metric-chart">
+                {% sparkline datalog_activity_data color="lavender" height="40px" %}
+            </div>
+        </div>
+        
+        <div class="metric-card metric-coral">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="metric-info">
+                    <div class="metric-value">{{ lines_of_code|format_number|default:"50K" }}</div>
+                    <div class="metric-label">Lines of Code</div>
+                </div>
+            </div>
+            <div class="metric-chart">
+                {% sparkline code_activity_data color="coral" height="40px" %}
+            </div>
+        </div>
+        
+        <div class="metric-card metric-mint">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="metric-info">
+                    <div class="metric-value">{{ total_dev_hours|format_duration|default:"2400h" }}</div>
+                    <div class="metric-label">Development Time</div>
+                </div>
+            </div>
+            <div class="metric-chart">
+                {% sparkline dev_time_data color="mint" height="40px" %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Status Overview -->
+    <div class="dashboard-section">
+        <h3 class="section-title">
+            <i class="fas fa-heartbeat"></i>
+            System Status Overview
+        </h3>
+        
+        <div class="status-grid">
+            {% for status, count in systems_by_status.items %}
+            <div class="status-card status-{{ status }}">
+                <div class="status-header">
+                    <div class="status-indicator {{ status }}"></div>
+                    <span class="status-name">{{ status|title }}</span>
+                </div>
+                <div class="status-count">{{ count }}</div>
+                <div class="status-label">Systems</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Technology Usage Analytics -->
+    <div class="dashboard-section">
+        <h3 class="section-title">
+            <i class="fas fa-cogs"></i>
+            Technology Stack Analytics
+        </h3>
+        
+        <div class="tech-analytics-grid">
+            <div class="tech-chart-container glass-card">
+                <div class="chart-header">
+                    <h4>Technology Usage Distribution</h4>
+                    <div class="chart-controls">
+                        <button class="chart-btn active" data-chart="donut">Donut</button>
+                        <button class="chart-btn" data-chart="bar">Bar</button>
+                    </div>
+                </div>
+                <div class="chart-area">
+                    {% chart_container "tech-usage-chart" "doughnut" height="300px" %}
+                </div>
+            </div>
+            
+            <div class="tech-list-container glass-card">
+                <div class="tech-list-header">
+                    <h4>Most Used Technologies</h4>
+                    <span class="update-indicator">
+                        <i class="fas fa-sync-alt"></i>
+                        Live
+                    </span>
+                </div>
+                <div class="tech-usage-list">
+                    {% for tech in tech_usage_stats %}
+                    <div class="tech-usage-item">
+                        <div class="tech-info">
+                            {% tech_badge tech.name icon=tech.icon color=tech.color %}
+                            <span class="usage-count">{{ tech.usage_count }} projects</span>
+                        </div>
+                        <div class="usage-bar">
+                            {% progress_bar tech.usage_count tech_usage_stats.0.usage_count show_text=False color="teal" %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Development Progress Tracking -->
+    <div class="dashboard-section">
+        <h3 class="section-title">
+            <i class="fas fa-tasks"></i>
+            Development Progress Tracking
+        </h3>
+        
+        <div class="progress-tracking-grid">
+            <div class="progress-overview glass-card">
+                <h4>Overall Project Completion</h4>
+                <div class="overall-progress">
+                    {% circular_progress dashboard_stats.avg_completion 100 size="120px" color="teal" %}
+                    <div class="progress-details">
+                        <div class="progress-stat">
+                            <span class="stat-value">{{ dashboard_stats.systems_in_development }}</span>
+                            <span class="stat-label">In Development</span>
+                        </div>
+                        <div class="progress-stat">
+                            <span class="stat-value">{{ dashboard_stats.systems_testing }}</span>
+                            <span class="stat-label">Testing</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="system-progress-list glass-card">
+                <h4>Individual System Progress</h4>
+                <div class="system-progress-items">
+                    {% for system in recent_systems %}
+                    <div class="system-progress-item">
+                        <div class="system-header">
+                            <div class="system-id-badge">{{ system.system_id }}</div>
+                            <div class="system-name">{{ system.title }}</div>
+                            <div class="system-status {{ system.status }}">{{ system.get_status_display }}</div>
+                        </div>
+                        {% progress_bar_with_icon system.completion_percent 100 icon="fas fa-microchip" label=system.title color=system.get_status_color %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity Feed -->
+    <div class="dashboard-section">
+        <h3 class="section-title">
+            <i class="fas fa-stream"></i>
+            Recent Activity Stream
+        </h3>
+        
+        <div class="activity-feed-grid">
+            <div class="recent-logs glass-card">
+                <div class="activity-header">
+                    <h4>Latest DataLog Entries</h4>
+                    <a href="{% url 'blog:post_list' %}" class="view-all-btn">
+                        <i class="fas fa-external-link-alt"></i>
+                        View All
+                    </a>
+                </div>
+                <div class="activity-list">
+                    {% for log in recent_logs %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">{{ log.post.title }}</div>
+                            <div class="activity-meta">
+                                <span class="activity-system">{{ log.system.system_id }}</span>
+                                <span class="activity-time">{{ log.logged_at|time_since_published }}</span>
+                                {% priority_tag log.priority %}
+                            </div>
+                        </div>
+                        <div class="activity-status">
+                            {% status_indicator log.log_status size="sm" %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="system-alerts glass-card">
+                <div class="activity-header">
+                    <h4>System Alerts & Notifications</h4>
+                    <div class="alert-controls">
+                        <button class="alert-btn" data-filter="all">All</button>
+                        <button class="alert-btn active" data-filter="critical">Critical</button>
+                        <button class="alert-btn" data-filter="warnings">Warnings</button>
+                    </div>
+                </div>
+                <div class="alerts-list">
+                    <div class="alert-item critical">
+                        <div class="alert-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">Database Migration Required</div>
+                            <div class="alert-description">SYS-003 needs schema update for new features</div>
+                            <div class="alert-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert-item warning">
+                        <div class="alert-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">Performance Degradation</div>
+                            <div class="alert-description">API response times increased by 15%</div>
+                            <div class="alert-time">4 hours ago</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert-item info">
+                        <div class="alert-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">Deployment Successful</div>
+                            <div class="alert-description">SYS-007 v2.1.0 deployed to production</div>
+                            <div class="alert-time">6 hours ago</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions Panel -->
+    <div class="dashboard-section">
+        <h3 class="section-title">
+            <i class="fas fa-bolt"></i>
+            Quick Actions
+        </h3>
+        
+        <div class="quick-actions-grid">
+            <a href="{% url 'projects:system_create' %}" class="action-card glass-card">
+                <div class="action-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="action-content">
+                    <div class="action-title">New System</div>
+                    <div class="action-description">Initialize new project system</div>
+                </div>
+            </a>
+            
+            <a href="{% url 'blog:post_create' %}" class="action-card glass-card">
+                <div class="action-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="action-content">
+                    <div class="action-title">New DataLog</div>
+                    <div class="action-description">Create development log entry</div>
+                </div>
+            </a>
+            
+            <a href="{% url 'projects:systems_dashboard' %}" class="action-card glass-card">
+                <div class="action-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="action-content">
+                    <div class="action-title">Analytics</div>
+                    <div class="action-description">View detailed system metrics</div>
+                </div>
+            </a>
+            
+            <a href="#" class="action-card glass-card" onclick="exportDashboardData()">
+                <div class="action-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="action-content">
+                    <div class="action-title">Export Data</div>
+                    <div class="action-description">Download system reports</div>
+                </div>
+            </a>
+        </div>
+    </div>
+    
+</div>
+{% endblock %}
+
+{% block systems_js %}
+<script src="{% static 'js/components/charts.js' %}"></script>
+<script>
+// Dashboard-specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    initDashboardCharts();
+    initActivityFeed();
+    initAlertFiltering();
+});
+
+function initDashboardCharts() {
+    // Technology usage chart
+    const techChartData = {
+        labels: [
+            {% for tech in tech_usage_stats|slice:":8" %}
+            '{{ tech.name }}'{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for tech in tech_usage_stats|slice:":8" %}
+                {{ tech.usage_count }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#26c6da', '#b39ddb', '#ff8a80', '#a5d6a7', 
+                '#fff59d', '#546e7a', '#ec407a', '#66bb6a'
+            ]
+        }]
+    };
+    
+    if (typeof Chart !== 'undefined') {
+        const ctx = document.getElementById('tech-usage-chart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: techChartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#e8eaf6',
+                                font: {
+                                    family: 'Rajdhani'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+}
+
+function initActivityFeed() {
+    // Auto-refresh activity feed every 30 seconds
+    setInterval(function() {
+        // In a real app, you'd fetch new data here
+        updateActivityTimestamps();
+    }, 30000);
+}
+
+function updateActivityTimestamps() {
+    const timeElements = document.querySelectorAll('.activity-time');
+    timeElements.forEach(element => {
+        // Update relative timestamps
+        const timestamp = element.dataset.timestamp;
+        if (timestamp) {
+            element.textContent = formatRelativeTime(timestamp);
+        }
+    });
+}
+
+function formatRelativeTime(timestamp) {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diff = Math.floor((now - time) / 1000);
+    
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+}
+
+function initAlertFiltering() {
+    const alertBtns = document.querySelectorAll('.alert-btn');
+    const alertItems = document.querySelectorAll('.alert-item');
+    
+    alertBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Update active button
+            alertBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter alerts
+            alertItems.forEach(item => {
+                if (filter === 'all' || item.classList.contains(filter.slice(0, -1))) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+}
+
+function exportDashboardData() {
+    // Simulate data export
+    const data = {
+        systems: {{ dashboard_stats.total_systems }},
+        logs: {{ total_logs|default:"0" }},
+        completion: {{ dashboard_stats.avg_completion|default:"0" }},
+        technologies: {{ dashboard_stats.total_technologies }},
+        exported_at: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json'
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'aura-dashboard-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

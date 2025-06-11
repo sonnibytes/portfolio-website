@@ -1,0 +1,452 @@
+<!----
+ * AURA DataLogs - Timeline Section Component (STREAMLINED)
+ * Reusable component with minimal CSS/JS - relies on consolidated files
+ * Usage: {--% include 'blog/includes/timeline_section.html' with posts=month_posts style="timeline" %--}
+ * Styles: timeline, compact, minimal, vertical
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="timeline-section timeline-{{ style|default:'timeline' }}">
+    
+    {% if style == 'timeline' %}
+    <!-- Full Timeline View (Archive Page Style) -->
+    {% regroup posts by published_date.month as monthly_posts %}
+    
+    {% for month_group in monthly_posts %}
+    <div class="timeline-month-section" data-month="{{ month_group.grouper }}">
+        <!-- Month Header -->
+        <div class="timeline-month-header">
+            <div class="month-marker">
+                <div class="marker-line"></div>
+                <div class="marker-dot"></div>
+            </div>
+            <h3 class="month-title">
+                {{ month_group.grouper|date:"F Y" }}
+                <span class="month-count">({{ month_group.list|length }} entries)</span>
+            </h3>
+            <div class="month-stats">
+                {% calculate "add" 0 0 as total_reading_time %}
+                {% for post in month_group.list %}
+                    {% calculate "add" total_reading_time post.reading_time as total_reading_time %}
+                {% endfor %}
+                <span class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    {{ total_reading_time|format_duration }} total reading
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-file-alt"></i>
+                    {{ month_group.list|length }} entries
+                </span>
+            </div>
+        </div>
+        
+        <!-- Timeline Posts -->
+        <div class="timeline-posts">
+            {% for post in month_group.list %}
+            <article class="timeline-post-card glass-card">
+                <div class="timeline-post-marker">
+                    <div class="post-date-marker">
+                        <div class="date-day">{{ post.published_date|date:"d" }}</div>
+                        <div class="date-month">{{ post.published_date|date:"M" }}</div>
+                    </div>
+                    <div class="timeline-connector"></div>
+                </div>
+                
+                <div class="timeline-post-content">
+                    <!-- Post Header -->
+                    <div class="post-header">
+                        <div class="post-meta-top">
+                            <div class="post-id">{{ post.id|datalog_id }}</div>
+                            {% if post.category %}
+                            <div class="post-category" data-category-color="{{ post.category.color }}">
+                                {% if post.category.icon %}
+                                <i class="{{ post.category.icon }}"></i>
+                                {% endif %}
+                                <span>{{ post.category.code|default:"LOG" }}</span>
+                            </div>
+                            {% endif %}
+                            {% if post.featured %}
+                            <div class="post-featured">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="post-timestamp">
+                            <i class="fas fa-clock"></i>
+                            <span>{{ post.published_date|date:"H:i" }} UTC</span>
+                            <span class="time-ago">({{ post.published_date|time_since_published }})</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Post Content -->
+                    <div class="post-main-content">
+                        <h3 class="post-title">
+                            <a href="{% url 'blog:post_detail' slug=post.slug %}">
+                                {{ post.title }}
+                            </a>
+                        </h3>
+                        
+                        <p class="post-excerpt">
+                            {{ post.excerpt|default:post.content|truncate_smart:120 }}
+                        </p>
+                        
+                        <!-- Use our metrics component -->
+                        {% include 'blog/includes/post_metrics_display.html' with post=post style='minimal' %}
+                        
+                        <!-- System connections if any -->
+                        {% include 'blog/includes/system_connections.html' with post=post style='minimal' %}
+                    </div>
+                    
+                    <!-- Post Actions -->
+                    <div class="post-actions">
+                        <a href="{% url 'blog:post_detail' slug=post.slug %}" class="read-more-btn">
+                            <span>Access Entry</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        
+                        <!-- Quick Stats -->
+                        <div class="post-quick-stats">
+                            <div class="stat-badge">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ post.views.count|default:0|format_number }}</span>
+                            </div>
+                            {% if post.category %}
+                            <div class="stat-badge category" data-category-color="{{ post.category.color }}">
+                                <span>{{ post.category.code }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% elif style == 'compact' %}
+    <!-- Compact Timeline (for sidebars or smaller spaces) -->
+    <div class="timeline-compact">
+        {% for post in posts|slice:":5" %}
+        <div class="timeline-compact-item">
+            <div class="compact-marker">
+                <div class="marker-dot"></div>
+                <div class="marker-date">{{ post.published_date|date:"M d" }}</div>
+            </div>
+            <div class="compact-content">
+                <h4 class="compact-title">
+                    <a href="{% url 'blog:post_detail' slug=post.slug %}">{{ post.title|truncate_smart:40 }}</a>
+                </h4>
+                {% if post.category %}
+                <span class="compact-category" data-category-color="{{ post.category.color }}">
+                    {{ post.category.code }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if posts|length > 5 %}
+        <div class="timeline-more">
+            <a href="{% url 'blog:archive' %}" class="more-link">
+                <i class="fas fa-plus"></i>
+                <span>{{ posts|length|add:"-5" }} more entries</span>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal Timeline (for quick previews) -->
+    <div class="timeline-minimal">
+        {% for post in posts|slice:":3" %}
+        <div class="minimal-item">
+            <div class="minimal-date">{{ post.published_date|date:"M d" }}</div>
+            <div class="minimal-title">
+                <a href="{% url 'blog:post_detail' slug=post.slug %}">{{ post.title|truncate_smart:50 }}</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% elif style == 'vertical' %}
+    <!-- Vertical Timeline (alternative layout) -->
+    <div class="timeline-vertical">
+        {% regroup posts by published_date.date as daily_posts %}
+        
+        {% for day_group in daily_posts %}
+        <div class="timeline-day-section">
+            <div class="day-header">
+                <div class="day-marker"></div>
+                <h4 class="day-title">{{ day_group.grouper|date:"F d, Y" }}</h4>
+            </div>
+            
+            <div class="day-posts">
+                {% for post in day_group.list %}
+                <div class="vertical-post-item">
+                    <div class="vertical-time">{{ post.published_date|date:"H:i" }}</div>
+                    <div class="vertical-content">
+                        <h5 class="vertical-title">
+                            <a href="{% url 'blog:post_detail' slug=post.slug %}">{{ post.title }}</a>
+                        </h5>
+                        <div class="vertical-meta">
+                            {% if post.category %}
+                            <span class="vertical-category">{{ post.category.name }}</span>
+                            {% endif %}
+                            <span class="vertical-reading">{{ post.reading_time|format_duration }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- Default: use timeline style -->
+    {% include 'blog/includes/timeline_section.html' with posts=posts style='timeline' %}
+    {% endif %}
+    
+</div>
+
+<style>
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
+
+/* Only styles that are NOT in the consolidated CSS or need component-specific adjustments */
+
+/* Timeline More Link (not in consolidated CSS) */
+.timeline-more {
+    padding: var(--spacing-md);
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: var(--spacing-sm);
+}
+
+.more-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--color-lavender);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color var(--transition-fast);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: var(--border-radius-md);
+    background: rgba(179, 157, 219, 0.05);
+}
+
+.more-link:hover {
+    color: var(--color-text);
+    background: rgba(179, 157, 219, 0.1);
+    border-color: rgba(179, 157, 219, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Vertical Timeline Specific Styles (not in consolidated CSS) */
+.timeline-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.timeline-day-section {
+    position: relative;
+    padding-left: var(--spacing-lg);
+}
+
+.day-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.day-marker {
+    width: 12px;
+    height: 12px;
+    background: var(--color-teal);
+    border-radius: 50%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    box-shadow: 0 0 8px var(--color-teal);
+}
+
+.day-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    color: var(--color-lavender);
+    margin: 0;
+}
+
+.day-posts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    position: relative;
+}
+
+.day-posts::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--spacing-lg) * -1 + 6px);
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(179, 157, 219, 0.3);
+}
+
+.vertical-post-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.vertical-post-item:hover {
+    background: rgba(179, 157, 219, 0.05);
+    transform: translateX(5px);
+}
+
+.vertical-time {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    min-width: 60px;
+    flex-shrink: 0;
+}
+
+.vertical-content {
+    flex: 1;
+}
+
+.vertical-title {
+    font-size: 1rem;
+    color: var(--color-text);
+    margin: 0 0 var(--spacing-xs) 0;
+    line-height: 1.3;
+}
+
+.vertical-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.vertical-title a:hover {
+    color: var(--color-lavender);
+}
+
+.vertical-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.vertical-category {
+    color: var(--color-lavender);
+}
+
+/* Component-specific responsive adjustments */
+@media (max-width: 767px) {
+    .timeline-day-section {
+        padding-left: var(--spacing-md);
+    }
+    
+    .day-marker {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .day-posts::before {
+        left: calc(var(--spacing-md) * -1 + 5px);
+    }
+    
+    .vertical-post-item {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .vertical-time {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .day-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .day-title {
+        font-size: 1rem;
+    }
+    
+    .more-link {
+        font-size: 0.8rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+    
+    .vertical-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+}
+
+/* Accessibility improvements specific to timeline */
+.timeline-compact-item:focus-within,
+.vertical-post-item:focus-within {
+    outline: 2px solid var(--color-lavender);
+    outline-offset: 2px;
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+    .day-marker,
+    .marker-dot {
+        border: 2px solid var(--color-teal);
+        background: var(--color-teal);
+    }
+    
+    .timeline-more,
+    .vertical-post-item {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+}
+
+/* Reduced motion adjustments */
+@media (prefers-reduced-motion: reduce) {
+    .more-link:hover,
+    .vertical-post-item:hover {
+        transform: none;
+    }
+}
+</style>
+
+<!-- 
+REMOVED: All JavaScript functions - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Timeline animations and entrance effects via initializeTimelineComponents()
+- Intersection observers for marker activation via initializeTimelineMarkers()
+- Smooth scrolling navigation via initializeTimelineNavigation()
+- Card hover enhancements and interactions
+- Touch/mobile interactions and responsive behavior
+- All event handlers and state management
+
+Timeline functionality is fully managed by:
+- DatalogInterface.initializeTimelineComponents()
+- DatalogInterface.initializeTimelineMarkers()
+- DatalogInterface.initializeTimelineNavigation()
+- DatalogInterface.initializeTimelineAnimations()
+-->

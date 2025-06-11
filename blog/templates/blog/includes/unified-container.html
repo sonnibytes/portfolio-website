@@ -1,0 +1,130 @@
+ <!-- UNIFIED POST CONTAINER -->
+ <div class="datalog-unified-container" style="glass-effect glass-card-error">
+
+    <!-- Container Header -->
+    <div class="unified-container-header">
+        <div class="no-results-icon">
+            <i class="fas fa-search"></i>
+        </div>
+        <h3 class="unified-container-title">No Results Found</h1>
+            <i class="fas fa-search"></i>
+    </div>
+   
+    
+</div>
+
+<!-- Main Content Grid -->
+<div class="unified-content-grid">
+    
+    <!-- LEFT SIDE: Content Information -->
+    <div class="unified-content-info">
+        <div class="no-results-icon">
+            <i class="fas fa-search"></i>
+        </div>
+        <h3 class="no-results-title">No DataLogs matching query: "{{ query|upper }}"</h3>
+        <p class="no-results-message">
+            Adjusting search parameters or browse topics below.
+        </p>
+
+        <!-- Tags Section -->
+        <div class="featured-tags-section">
+            <div class="tags-header">
+                <i class="fas fa-tags"></i>
+                <span>Try searching for:</span>
+            </div>
+            <div class="unified-tags-list">
+                {% for tag in popular_tags|slice:":8" %}
+                    <a href="{% url 'blog:search' %}?q={{ tag.name }}" class="unified-tag">
+                        <i class="fas fa-tag"></i>
+                        <span>{{ tag.name }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+
+       
+        {% comment %} <!-- Actions Section -->
+        <div class="unified-actions-section">
+            {% if post.category %}
+            <a href="{% url 'blog:category' slug=post.category.slug %}" class="unified-action-btn">
+                <i class="fas {{ post.category.icon|default:'fas fa-folder' }}"></i>
+                More {{ post.category.name }}
+            </a>
+            {% endif %}
+        </div> {% endcomment %}
+        
+    </div>
+    
+    {% comment %} <!-- RIGHT SIDE: Terminal Display (if available) -->
+    {% if post.featured_code %}
+    <div class="unified-content-media">
+        {% terminal_display post=post style="enhanced" %}
+    </div>
+    {% endif %} {% endcomment %}
+    
+</div>
+
+<!-- Container Footer -->
+<div class="unified-container-footer">
+    <div class="unified-footer-stats">
+        <div class="unified-stat-item">
+            <i class="fas fa-eye"></i>
+            <span>{{ post.views.count|default:0|format_number }} views</span>
+        </div>
+        <div class="unified-stat-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>{{ post.published_date|time_since_published }}</span>
+        </div>
+        {% if post.tags.exists %}
+        <div class="unified-stat-item">
+            <i class="fas fa-tags"></i>
+            <span>{{ post.tags.count }} tag{{ post.tags.count|pluralize }}</span>
+        </div>
+        {% endif %}
+        {% if post.content|count_words %}
+        <div class="unified-stat-item">
+            <i class="fas fa-file-word"></i>
+            <span>{{ post.content|count_words|format_number }} words</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="unified-footer-actions">
+        <button class="unified-footer-action-btn" title="Bookmark">
+            <i class="fas fa-bookmark"></i>
+        </button>
+        <button class="unified-footer-action-btn" title="Share">
+            <i class="fas fa-share-alt"></i>
+        </button>
+        {% if post.featured_code %}
+        <button class="unified-footer-action-btn" title="Copy Code">
+            <i class="fas fa-code"></i>
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+</div>
+
+<!-- Main Content Body -->
+<div class="post-content-body">
+<div class="content-wrapper" id="postContent">
+    {{ post.content|markdownify }}
+</div>
+</div>
+
+<!-- System Connections (Enhanced) -->
+{% if post|has_system_connection %}
+<div class="system-connections-section">
+{% include 'blog/includes/system_connections.html' with post=post style='detailed' %}
+</div>
+{% endif %}
+
+<!-- Social Share Section -->
+<div class="social-share-section glass-effect">
+{% include 'blog/includes/social_share.html' with post=post %}
+</div>
+
+</div>
+</div>

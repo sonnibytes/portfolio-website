@@ -1,0 +1,323 @@
+<!----
+ * AURA DataLogs - Terminal Code Display Component (STREAMLINED)
+ * Reusable component with minimal CSS - relies on master stylesheet
+ * Usage: {--% include 'blog/includes/terminal_code_display.html' with code=post.featured_code language=post.featured_code_format filename=post.get_code_filename %--}
+ * Styles: default, compact, minimal, fullscreen
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="terminal-code-display terminal-{{ style|default:'default' }}">
+    
+    {% if style == 'compact' %}
+    <!-- Compact terminal for cards and previews -->
+    <div class="terminal-window compact">
+        <div class="terminal-header compact">
+            <div class="terminal-controls">
+                <span class="terminal-button red"></span>
+                <span class="terminal-button yellow"></span>
+                <span class="terminal-button green"></span>
+            </div>
+            <div class="terminal-title">{{ filename|default:"code.txt" }}</div>
+        </div>
+        <div class="terminal-content compact">
+            <div class="code-display">
+                {% if code %}
+                {{ code|highlight_code:language }}
+                {% else %}
+                <pre><code class="language-{{ language|default:'text' }}">// Code example not available</code></pre>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal code display without terminal chrome -->
+    <div class="code-minimal-display">
+        <div class="minimal-header">
+            <span class="code-language">{{ language|upper|default:"TEXT" }}</span>
+            {% if filename %}
+            <span class="code-filename">{{ filename }}</span>
+            {% endif %}
+        </div>
+        <div class="minimal-code-content">
+            {% if code %}
+            {{ code|highlight_code:language }}
+            {% else %}
+            <pre><code>Code not available</code></pre>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% elif style == 'fullscreen' %}
+    <!-- Fullscreen terminal with all features -->
+    <div class="terminal-window fullscreen">
+        <div class="terminal-header fullscreen">
+            <div class="terminal-controls">
+                <span class="terminal-button red" title="Close"></span>
+                <span class="terminal-button yellow" title="Minimize"></span>
+                <span class="terminal-button green" title="Maximize"></span>
+            </div>
+            <div class="terminal-title-bar">
+                <div class="terminal-title">{{ filename|default:"terminal" }}</div>
+                <div class="terminal-subtitle">{{ language|upper|default:"TEXT" }}</div>
+            </div>
+            <div class="terminal-actions">
+                <button class="terminal-action-btn" data-copy-text="{{ code }}" title="Copy Code">
+                    <i class="fas fa-copy"></i>
+                </button>
+                <button class="terminal-action-btn fullscreen-toggle" title="Toggle Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+        <div class="terminal-content fullscreen">
+            <div class="code-display">
+                {% if code %}
+                {{ code|highlight_code:language }}
+                {% else %}
+                <pre><code class="language-{{ language|default:'text' }}">// No code available</code></pre>
+                {% endif %}
+            </div>
+        </div>
+        <div class="terminal-footer">
+            <div class="terminal-stats">
+                <span class="stat-item">
+                    <i class="fas fa-code"></i>
+                    <span>{{ code|linecount|default:"0" }} lines</span>
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-file"></i>
+                    <span>{{ code|length|default:"0" }} chars</span>
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-cog"></i>
+                    <span>{{ language|upper|default:"TEXT" }}</span>
+                </span>
+                {% if code %}
+                <span class="stat-item">
+                    <i class="fas fa-layer-group"></i>
+                    <span>{{ code|code_complexity }}</span>
+                </span>
+                {% endif %}
+            </div>
+            <div class="terminal-timestamp">
+                <i class="fas fa-clock"></i>
+                <span>Last modified: {{ "now"|date:"M d, Y H:i" }}</span>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Default terminal with standard features -->
+    <div class="terminal-window default">
+        <div class="terminal-header default">
+            <div class="terminal-controls">
+                <span class="terminal-button red"></span>
+                <span class="terminal-button yellow"></span>
+                <span class="terminal-button green"></span>
+            </div>
+            <div class="terminal-title-section">
+                <div class="terminal-title">{{ filename|default:"code.py" }}</div>
+                {% comment %} {% if language %}
+                <div class="terminal-language">{{ language|upper }}</div>
+                {% endif %} {% endcomment %}
+            </div>
+            <div class="terminal-status">
+                <div class="status-indicator operational"></div>
+                <span class="status-text">READY</span>
+            </div>
+        </div>
+        <div class="terminal-content default">
+            <div class="code-display">
+                {% if code %}
+                {{ code|highlight_code:language }}
+                {% else %}
+                <pre><code class="language-{{ language|default:'text' }}">// Code example will be displayed here</code></pre>
+                {% endif %}
+            </div>
+        </div>
+        <div class="terminal-footer">
+            <div class="terminal-info">
+                {% if code %}
+                <span class="line-count">{{ code|linecount }} lines</span>
+                <span class="lang-indicator">{{ language|upper|default:"TEXT" }}</span>
+                <span class="file-size">{{ code|length }} chars</span>
+                <span class="complexity-badge">{{ code|code_complexity }}</span>
+                {% endif %}
+            </div>
+            {% if code %}
+            <button class="copy-code-btn" data-copy-text="{{ code }}" title="Copy Code">
+                <i class="fas fa-copy"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+
+<style>
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
+
+/* Only styles that are NOT in the master CSS or need component-specific adjustments */
+
+/* Minimal code display (not in master CSS) */
+.code-minimal-display {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    margin: var(--spacing-lg) 0;
+}
+
+.minimal-header {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--spacing-xs) var(--spacing-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.code-language {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-teal);
+    background: rgba(38, 198, 218, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--border-radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.code-filename {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+}
+
+.minimal-code-content {
+    padding: var(--spacing-md);
+    font-family: var(--font-code);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.minimal-code-content pre {
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* Terminal title bar (for fullscreen) */
+.terminal-title-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex: 1;
+}
+
+.terminal-subtitle {
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+}
+
+/* Terminal actions */
+.terminal-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.terminal-action-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.terminal-action-btn:hover {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+    transform: scale(1.05);
+}
+
+/* Fullscreen toggle state */
+.terminal-window.fullscreen.maximized {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    border-radius: 0;
+    margin: 0;
+}
+
+.fullscreen-toggle.expanded i {
+    transform: rotate(45deg);
+}
+
+/* Terminal timestamp (specific to fullscreen) */
+.terminal-timestamp {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+}
+
+.terminal-timestamp i {
+    color: var(--color-teal);
+}
+
+/* Component-specific responsive adjustments */
+@media (max-width: 767px) {
+    .terminal-title-bar {
+        flex-direction: row;
+        gap: var(--spacing-sm);
+    }
+    
+    .terminal-actions {
+        margin-top: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 576px) {
+    .copy-code-btn span {
+        display: none;
+    }
+    
+    .terminal-action-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+}
+</style>
+
+<!-- 
+REMOVED: All JavaScript functions - now handled by datalogInterface.enhanceTerminalUnified()
+The master JavaScript will automatically:
+- Handle copy functionality via data-copy-text attributes
+- Manage terminal animations and entrance effects
+- Handle fullscreen toggle via fullscreen-toggle class
+- Apply intersection observers for activation
+- Manage button interactions and state
+-->

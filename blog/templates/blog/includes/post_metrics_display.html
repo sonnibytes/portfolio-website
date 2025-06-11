@@ -1,0 +1,394 @@
+<!----
+ * AURA DataLogs - Post Metrics Display Component (CLEANED & STREAMLINED)
+ * Reusable component with minimal CSS - relies on consolidated stylesheet
+ * Usage: {--% include 'blog/includes/post_metrics_display.html' with post=post style="full" %--}
+ * Styles: full, compact, minimal, inline
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="post-metrics-display post-metrics-{{ style|default:'compact' }}">
+    
+    {% if style == 'full' %}
+    <!-- Full metrics grid for detail pages -->
+    <div class="metrics-grid">
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post.published_date|time_since_published }}</div>
+                <div class="metric-label">Published</div>
+            </div>
+        </div>
+        
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post.reading_time|format_duration }}</div>
+                <div class="metric-label">Reading Time</div>
+            </div>
+        </div>
+        
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-eye"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post.views.count|default:"0"|format_number }}</div>
+                <div class="metric-label">Views</div>
+            </div>
+        </div>
+        
+        {% if post.category %}
+        <div class="metric-item">
+            <div class="metric-icon" style="--category-color: {{ post.category.color }};">
+                {% if post.category.icon %}
+                <i class="{{ post.category.icon }}"></i>
+                {% else %}
+                <i class="fas fa-folder"></i>
+                {% endif %}
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post.category.name }}</div>
+                <div class="metric-label">Category</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if post.author %}
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post.author.get_full_name|default:post.author.username }}</div>
+                <div class="metric-label">Author</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if post.featured %}
+        <div class="metric-item featured">
+            <div class="metric-icon">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">Featured</div>
+                <div class="metric-label">Entry</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Enhanced metrics for full view -->
+        {% if post.tags.exists %}
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-tags"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post.tags.count }}</div>
+                <div class="metric-label">Tag{{ post.tags.count|pluralize }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if post|datalog_difficulty %}
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value">{{ post|datalog_difficulty }}</div>
+                <div class="metric-label">Difficulty</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'compact' %}
+    <!-- Compact metrics for cards and lists -->
+    <div class="metrics-compact">
+        {% if post.category %}
+        <span class="metric-badge category-badge" style="--category-color: {{ post.category.color }};">
+            {{ post.category.code|default:"LOG" }}
+        </span>
+        {% endif %}
+        
+        <span class="metric-item">
+            <i class="fas fa-calendar-alt"></i>
+            {{ post.published_date|time_since_published }}
+        </span>
+        
+        <span class="metric-item">
+            <i class="fas fa-clock"></i>
+            {{ post.reading_time|format_duration }}
+        </span>
+        
+        {% if post.views.count %}
+        <span class="metric-item">
+            <i class="fas fa-eye"></i>
+            {{ post.views.count|format_number }}
+        </span>
+        {% endif %}
+        
+        {% if post.featured %}
+        <span class="metric-badge featured-badge">
+            <i class="fas fa-star"></i>
+            Featured
+        </span>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal metrics for tight spaces -->
+    <div class="metrics-minimal">
+        <span class="metric-date">{{ post.published_date|time_since_published }}</span>
+        <span class="metric-separator">•</span>
+        <span class="metric-time">{{ post.reading_time|format_duration }}</span>
+        {% if post.category %}
+        <span class="metric-separator">•</span>
+        <span class="metric-category">{{ post.category.name }}</span>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'inline' %}
+    <!-- Inline metrics for navigation and breadcrumbs -->
+    <div class="metrics-inline">
+        <span class="stat-item">
+            <span class="stat-label">Published:</span>
+            <span class="stat-value">{{ post.published_date|time_since_published }}</span>
+        </span>
+        <span class="stat-separator">|</span>
+        <span class="stat-item">
+            <span class="stat-value">{{ post.reading_time|format_duration }}</span>
+            <span class="stat-label">Read Time</span>
+        </span>
+        {% if post.category %}
+        <span class="stat-separator">|</span>
+        <span class="stat-item">
+            <span class="stat-value">{{ post.category.name }}</span>
+            <span class="stat-label">Category</span>
+        </span>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'detailed' %}
+    <!-- Detailed metrics with extra information -->
+    <div class="metrics-detailed">
+        <div class="metrics-row primary-metrics">
+            <div class="metric-group">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="metric-label">Published</span>
+                <span class="metric-value">{{ post.published_date|date:"M d, Y" }}</span>
+                <span class="metric-time-ago">({{ post.published_date|time_since_published }})</span>
+            </div>
+            
+            {% if post.updated != post.published_date %}
+            <div class="metric-group">
+                <i class="fas fa-edit"></i>
+                <span class="metric-label">Updated</span>
+                <span class="metric-value">{{ post.updated|date:"M d, Y" }}</span>
+                <span class="metric-time-ago">({{ post.updated|time_since_published }})</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="metrics-row secondary-metrics">
+            <div class="metric-group">
+                <i class="fas fa-clock"></i>
+                <span class="metric-value">{{ post.reading_time|format_duration }}</span>
+                <span class="metric-label">read</span>
+            </div>
+            
+            <div class="metric-group">
+                <i class="fas fa-eye"></i>
+                <span class="metric-value">{{ post.views.count|default:"0"|format_number }}</span>
+                <span class="metric-label">views</span>
+            </div>
+            
+            {% if post.tags.exists %}
+            <div class="metric-group">
+                <i class="fas fa-tags"></i>
+                <span class="metric-value">{{ post.tags.count }}</span>
+                <span class="metric-label">tag{{ post.tags.count|pluralize }}</span>
+            </div>
+            {% endif %}
+            
+            {% if post|has_system_connection %}
+            <div class="metric-group">
+                <i class="fas fa-link"></i>
+                <span class="metric-value">{{ post.get_system_connections.count }}</span>
+                <span class="metric-label">system{{ post.get_system_connections.count|pluralize }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Default: compact style -->
+    {% include 'blog/includes/post_metrics_display.html' with post=post style='compact' %}
+    {% endif %}
+    
+</div>
+
+<style>
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
+
+/* Only styles that are NOT in consolidated CSS or need specific adjustments */
+
+/* Detailed metrics layout (new style not in consolidated CSS) */
+.metrics-detailed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    font-family: var(--font-body);
+}
+
+.metrics-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.primary-metrics {
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.secondary-metrics {
+    font-size: 0.9rem;
+}
+
+.metric-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.metric-group i {
+    color: var(--color-lavender);
+    font-size: 0.8rem;
+    width: 14px;
+    text-align: center;
+}
+
+.metric-label {
+    color: var(--color-text-secondary);
+    font-weight: 400;
+}
+
+.metric-value {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.metric-time-ago {
+    color: var(--color-text-tertiary);
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+/* Component-specific responsive adjustments (override consolidated where needed) */
+@media (max-width: 767px) {
+    .metrics-detailed .metrics-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .metric-group {
+        justify-content: space-between;
+        width: 100%;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: var(--border-radius-sm);
+    }
+}
+
+@media (max-width: 576px) {
+    .metrics-compact {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .metrics-inline .stat-item {
+        flex-direction: column;
+        gap: 0;
+        text-align: center;
+    }
+    
+    .metric-badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+    }
+}
+
+/* Enhanced category color integration (specific to this component) */
+.metric-icon[style*="--category-color"] {
+    background: rgba(var(--category-color), 0.1) !important;
+    color: var(--category-color) !important;
+    border: 1px solid rgba(var(--category-color), 0.3);
+}
+
+.metric-badge[style*="--category-color"] {
+    background: rgba(var(--category-color), 0.1) !important;
+    border-color: rgba(var(--category-color), 0.3) !important;
+    color: var(--category-color) !important;
+}
+
+/* Accessibility enhancements specific to metrics */
+.post-metrics-display[aria-label]:before {
+    content: attr(aria-label);
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* Focus indicators for interactive metric items */
+.metric-item:focus,
+.metric-badge:focus {
+    outline: 2px solid var(--color-lavender);
+    outline-offset: 2px;
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+    .metric-item,
+    .metric-badge {
+        border-width: 2px;
+    }
+    
+    .metrics-detailed .primary-metrics {
+        border-bottom-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .metric-item:hover {
+        transform: none;
+    }
+}
+</style>
+
+<!-- 
+REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Metric item hover effects via initializeCardInteractions()
+- Intersection observers for entrance animations
+- Click handlers for interactive metrics
+- Touch interactions and responsive behavior
+- All state management and accessibility
+
+Metrics functionality is fully managed by DatalogInterface.initializeMetricCards()
+-->

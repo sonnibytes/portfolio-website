@@ -6,7 +6,6 @@ from django.utils import timezone
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 import re
-from datetime import timedelta
 from bs4 import BeautifulSoup
 
 
@@ -113,10 +112,10 @@ class Post(models.Model):
     # Relationship Fields
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="posts"
-        )
+    )
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, null=True, related_name="posts"
-        )
+    )
     tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
     # Connection to Systems/Projects
     related_systems = models.ManyToManyField(
@@ -480,7 +479,7 @@ class SystemLogEntry(models.Model):
             return '#27c93f'  # Green
         elif self.log_status == 'archived':
             return '#666666'  # Gray
-        
+
         # Priority-based colors for active logs
         colors = {
             1: "#5edfff",  # Low - Light Blue
@@ -489,7 +488,7 @@ class SystemLogEntry(models.Model):
             4: "#ff6b8b",  # Critical - Coral
         }
         return colors.get(self.priority, "#00f0ff")
-    
+
     def get_connection_icon(self):
         """Return appropriate icon for connection type."""
         icons = {

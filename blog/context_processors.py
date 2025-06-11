@@ -1,7 +1,6 @@
-# blog/context_processors.py
-
-from blog.models import Post, Category
+from blog.models import Post, Category, Tag
 from django.urls import reverse
+from django.utils import timezone
 
 
 def blog_context(request):
@@ -32,7 +31,15 @@ def blog_context(request):
             },
             {
                 "label": "Tags",
-                "href": reverse("blog:tags")
+                "href": reverse("blog:tag_list")
             },
-        ]
+        ],
+        "datalogs_stats": {
+            'total_entries': total_logs,
+            'total_categories': Category.objects.count(),
+            'total_tags': Tag.objects.count(),
+            'latest_entry': Post.objects.filter(status='published').first(),
+            'system_status': 'operational',
+            'last_updated': timezone.now(),
+        },
     }

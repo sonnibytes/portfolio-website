@@ -161,7 +161,7 @@ def format_number(value):
 def file_size(bytes_value):
     """
     Converts bytes to human-readable file size.
-    Usage: {{ 1,024,000|file_size }} -> "1.0 MB"
+    Usage: {{ 1024000|file_size }} -> "1.0 MB"
     """
     try:
         bytes_value = float(bytes_value)
@@ -346,6 +346,24 @@ def highlight_search(text, query):
     return mark_safe(escaped_text)
 
 
+@register.filter
+def linecount(value):
+    """
+    Count the number of lines in a text string.
+    Usage: {{ code_text|linecount }}
+    """
+    if not value:
+        return 0
+
+    try:
+        lines = value.strip().split("\n")
+        # Filter out empty lines at the beginning and end
+        non_empty_lines = [line for line in lines if line.strip()]
+        return len(non_empty_lines)
+    except (AttributeError, TypeError):
+        return 0
+
+
 #  ==============  TIME UTILITIES  ============== #
 # This is best way, suggested throws errors w naive and aware
 @register.filter
@@ -423,36 +441,36 @@ def days_until(value):
 def system_id_format(value):
     """
     Format system ID with zero padding.
-    Usage: {{ system.id|system_id_format }} -> "SYS-001"
+    Usage: {{ system.id|system_id_format }} -> "SID: // SYS-001"
     """
     try:
-        return f"SYS-{int(value):03d}"
+        return f"SID: // SYS-{int(value):03d}"
     except (ValueError, TypeError):
-        return "SYS-000"
+        return "SID: // SYS-000"
 
 
 @register.filter
 def datalog_id(value):
     """
     Format datalog ID with zero padding.
-    Usage: {{ post.id|datalog_id }} -> "LOG-001"
+    Usage: {{ post.id|datalog_id }} -> "SID: // LOG-001"
     """
     try:
-        return f"LOG-{int(value):03d}"
+        return f"SID: // LOG-{int(value):03d}"
     except (ValueError, TypeError):
-        return "LOG-000"
+        return "SID: // LOG-000"
 
 
 @register.filter
 def series_id(value):
     """
     Format series ID with zero padding.
-    Usage: {{ series.id|series_id }} -> "SER-001"
+    Usage: {{ series.id|series_id }} -> "SID: // SER-001"
     """
     try:
-        return f"SER-{int(value):03d}"
+        return f"SID: // SER-{int(value):03d}"
     except (ValueError, TypeError):
-        return "SER-000"
+        return "SID: // SER-000"
 
 
 @register.filter
@@ -592,7 +610,6 @@ def tech_icon_fallback(tech_name):
 #         "request": request,
 #     }
 
-# # moved back to blog_tags
 @register.simple_tag(takes_context=True)
 def active_nav(context, url_name):
     """
@@ -601,6 +618,18 @@ def active_nav(context, url_name):
     """
     request = context["request"]
     if request.resolver_match and request.resolver_match.url_name == url_name:
+        return "active"
+    return ""
+
+
+@register.simple_tag(takes_context=True)
+def active_category_class(context, category):
+    """
+    Return 'active' class if category matches current category
+    Usage: {% active_category_class category %}
+    """
+    current_category = context.get("current_category")
+    if current_category and current_category.slug == category.slug:
         return "active"
     return ""
 
@@ -662,6 +691,7 @@ def count_words(content):
     return len(words)
 
 
+# Duplicated in datalog_tags?
 @register.filter
 def reading_time(content, wpm=200):
     """
@@ -770,41 +800,6 @@ def percentage_of(value, total):
         return "0%"
 
 
-# moved to aura_components
-# @register.simple_tag
-# def progress_bar(value, total, css_class="", show_text=True):
-#     """Generate progress bar HTML"""
-#     try:
-#         percentage = min(100, max(0, (float(value) / float(total)) * 100))
-
-#         html = f"""
-#         <div class="progress-container {css_class}">
-#             <div class="progress-bar" style="width: {percentage}%;"></div>
-#             {f'<span class="progress-text">{percentage:.1f}%</span>'
-#              if show_text else ""}
-#         </div>
-#         """
-#         return mark_safe(html)
-#     except (ValueError, TypeError):
-#         return mark_safe(
-#             '<div class="progress-container"><div class="progress-bar" ' \
-#             'style="width: 0%;"></div></div>'
-#         )
-
-# moved to aura_components
-# @register.simple_tag
-# def system_status_indicator(status, size="md"):
-#     """Generate status indicator HTML"""
-#     sizes = {
-#         "sm": "status-indicator-sm", "md": "", "lg": "status-indicator-lg"}
-
-#     size_class = sizes.get(size, "")
-
-#     html = f'''
-#     <div class="status-indicator {status} {size_class}"
-#     title="{status.replace("_", " ").title()}"></div>
-#     '''
-#     return mark_safe(html)
 
 #  ==============  DEBUGGING FILTERS  ============== #
 
@@ -833,20 +828,3 @@ def debug_context(context_var):
     Usage: {% debug_context variable_name %}
     """
     return mark_safe(f"<pre>{repr(context_var)}</pre>")
-
-
-
-# @register.simple_tag
-# def system_progress_bar(system):
-#     """Render a progress bar for system development."""
-#     progress = system.get_development_progress()
-
-#     html = f"""
-#     <div class="system-progress-container">
-#         <div class="progress-bar-bg">
-#             <div class="progress-bar-fill" style="width: {progress}%"></div>
-#         </div>
-#         <span class="progress-text">{progress}%</span>
-#     </div>
-#     """
-#     return mark_safe(html)

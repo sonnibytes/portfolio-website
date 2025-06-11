@@ -26,9 +26,9 @@ urlpatterns = [
     # Core app URLs (homepage, about, contact)
     path("", include("core.urls")),
     # Projects app URLs
-    path("projects/", include("projects.urls")),
+    path("systems/", include("projects.urls")),
     # Blog app URLs
-    path("blog/", include("blog.urls", namespace="blog")),
+    path("datalogs/", include("blog.urls", namespace="blog")),
     path("markdownx/", include("markdownx.urls")),
     # Test new AURA global filters/templatetags
     path("test-aura/", TemplateView.as_view(template_name="test_aura.html"), name="test_aura")

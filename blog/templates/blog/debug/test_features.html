@@ -1,0 +1,427 @@
+<!--
+DataLog Feature Test Template
+Access via: /blog/test-features/
+-->
+
+{% extends "blog/datalogs_base.html" %}
+
+{% load static %}
+{% load datalog_tags %}
+{% load aura_components %}
+{% load aura_filters %}
+
+{% block title %}DataLog Features Test{% endblock %}
+
+{% block datalogs_content %}
+<div class="container">
+    <div class="test-sections">
+        
+        <!-- Header -->
+        <div class="test-header">
+            <h1>🧪 DataLog Features Test</h1>
+            <p>Testing all enhanced DataLog functionality</p>
+        </div>
+        
+        <!-- Template Tags Test -->
+        <section class="test-section">
+            <h2>📊 DataLog Statistics</h2>
+            {% datalog_stats as stats %}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-value">{{ stats.total_posts }}</span>
+                    <span class="stat-label">Total Posts</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">{{ stats.total_categories }}</span>
+                    <span class="stat-label">Categories</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">{{ stats.total_tags }}</span>
+                    <span class="stat-label">Tags</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">{{ stats.posts_with_code }}</span>
+                    <span class="stat-label">With Code</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Recent Activity Test -->
+        <section class="test-section">
+            <h2>📅 Recent Activity</h2>
+            {% recent_datalog_activity 30 as activity %}
+            <p>Found {{ activity.count }} posts in the last {{ activity.days }} days</p>
+            {% for post in activity.posts %}
+            <div class="activity-item">
+                <strong>{{ post.title }}</strong> - {{ post.published_date|date:"M d, Y" }}
+                <span class="difficulty-badge">{{ post|datalog_difficulty }}</span>
+                <span class="reading-level">{{ post|datalog_reading_level }}</span>
+            </div>
+            {% endfor %}
+        </section>
+        
+        <!-- Popular Categories Test -->
+        <section class="test-section">
+            <h2>🏷️ Popular Categories</h2>
+            {% get_datalog_categories True as categories %}
+            <div class="category-test-grid">
+                {% for category in categories %}
+                {% category_color_scheme category as colors %}
+                <div class="category-test-card" style="border-color: {{ colors.primary }};">
+                    <div class="category-hex" style="background: {{ colors.primary }};">
+                        {{ category.code }}
+                    </div>
+                    <div class="category-info">
+                        <h4>{{ category.name }}</h4>
+                        <span>{{ category.post_count }} posts</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        
+        <!-- Search Suggestions Test -->
+        <section class="test-section">
+            <h2>🔍 Search Suggestions</h2>
+            <div class="search-test">
+                <h4>Default suggestions:</h4>
+                {% datalog_search_suggestions as suggestions %}
+                <ul>
+                    {% for suggestion in suggestions %}
+                    <li>
+                        <i class="{{ suggestion.icon }}"></i>
+                        {{ suggestion.text }} ({{ suggestion.type }})
+                    </li>
+                    {% endfor %}
+                </ul>
+                
+                <h4>Suggestions for "python":</h4>
+                {% datalog_search_suggestions "python" as python_suggestions %}
+                <ul>
+                    {% for suggestion in python_suggestions %}
+                    <li>
+                        <i class="{{ suggestion.icon }}"></i>
+                        {{ suggestion.text }} ({{ suggestion.type }})
+                        {% if suggestion.url %} - <a href="{{ suggestion.url }}">{{ suggestion.url }}</a>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+        
+        <!-- Code Analysis Test -->
+        {% if featured_post and featured_post.featured_code %}
+        <section class="test-section">
+            <h2>💻 Code Analysis Test</h2>
+            {% datalog_terminal_info featured_post as terminal_info %}
+            {% if terminal_info %}
+            <div class="terminal-test">
+                <h4>Terminal Info for: {{ featured_post.title }}</h4>
+                <ul>
+                    <li><strong>Filename:</strong> {{ terminal_info.filename }}</li>
+                    <li><strong>Language:</strong> {{ terminal_info.language }}</li>
+                    <li><strong>Lines:</strong> {{ terminal_info.line_count }}</li>
+                    <li><strong>Characters:</strong> {{ terminal_info.char_count }}</li>
+                    <li><strong>Complexity:</strong> {{ terminal_info.complexity }}</li>
+                    <li><strong>Size:</strong> {{ terminal_info.size }}</li>
+                </ul>
+                
+                <h4>Additional Analysis:</h4>
+                <ul>
+                    <li><strong>Line Count Filter:</strong> {{ featured_post.featured_code|code_line_count }}</li>
+                    <li><strong>Complexity Filter:</strong> {{ featured_post.featured_code|code_complexity }}</li>
+                    <li><strong>Post Difficulty:</strong> {{ featured_post|datalog_difficulty }}</li>
+                    <li><strong>Reading Level:</strong> {{ featured_post|datalog_reading_level }}</li>
+                    <li><strong>Has System Connection:</strong> {{ featured_post|has_system_connection }}</li>
+                </ul>
+            </div>
+            {% endif %}
+        </section>
+        {% endif %}
+        
+        <!-- Breadcrumb Test -->
+        <section class="test-section">
+            <h2>🍞 Breadcrumb Test</h2>
+            {% datalog_breadcrumb current_page="test" %}
+        </section>
+        
+        <!-- Utility Functions Test -->
+        <section class="test-section">
+            <h2>🔧 Utility Functions Test</h2>
+            <div class="utility-tests">
+                <h4>Reading Progress Colors:</h4>
+                <div class="color-samples">
+                    <div class="color-sample" style="background: {% get_reading_progress_color 3 %};">3 min read</div>
+                    <div class="color-sample" style="background: {% get_reading_progress_color 10 %};">10 min read</div>
+                    <div class="color-sample" style="background: {% get_reading_progress_color 20 %};">20 min read</div>
+                </div>
+                
+                <h4>File Size Formatting:</h4>
+                <ul>
+                    <li>1024 bytes = {{ 1024|file_size }}</li>
+                    <li>1048576 bytes = {{ 1048576|file_size }}</li>
+                    <li>1073741824 bytes = {{ 1073741824|file_size }}</li>
+                </ul>
+                
+                <h4>String Splitting:</h4>
+                <p>Tags: {% for tag in "python,django,web-development"|split_string %}#{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+            </div>
+        </section>
+        
+        <!-- Performance Test -->
+        <section class="test-section">
+            <h2>⚡ Performance Test</h2>
+            <div class="performance-info">
+                <p><strong>Template Rendering:</strong> ✅ All template tags loaded successfully</p>
+                <p><strong>JavaScript Integration:</strong> <span id="js-test">❌ JavaScript not loaded</span></p>
+                <p><strong>CSS Integration:</strong> <span class="css-test">✅ CSS loaded successfully</span></p>
+            </div>
+        </section>
+        
+    </div>
+</div>
+
+<style>
+.test-sections {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) 0;
+}
+
+.test-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xxl);
+    padding: var(--spacing-xl);
+    background: var(--gradient-glass), rgba(13, 13, 31, 0.3);
+    border-radius: var(--border-radius-xl);
+    backdrop-filter: blur(20px);
+}
+
+.test-section {
+    margin-bottom: var(--spacing-xxl);
+    padding: var(--spacing-xl);
+    background: var(--gradient-glass), rgba(13, 13, 31, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-xl);
+    backdrop-filter: blur(15px);
+}
+
+.test-section h2 {
+    color: var(--color-lavender);
+    margin-bottom: var(--spacing-lg);
+    font-family: var(--font-heading);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+}
+
+.stat-card {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+}
+
+.stat-value {
+    display: block;
+    font-family: var(--font-code);
+    font-size: 2rem;
+    color: var(--color-teal);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    margin: var(--spacing-sm) 0;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-md);
+    flex-wrap: wrap;
+}
+
+.difficulty-badge {
+    padding: 0.2rem 0.6rem;
+    background: rgba(179, 157, 219, 0.2);
+    color: var(--color-lavender);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.reading-level {
+    padding: 0.2rem 0.6rem;
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.category-test-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+}
+
+.category-test-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid;
+    border-radius: var(--border-radius-lg);
+}
+
+.category-hex {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.8rem;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.category-info h4 {
+    margin: 0 0 0.2rem 0;
+    color: var(--color-text);
+}
+
+.category-info span {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.search-test ul {
+    list-style: none;
+    padding: 0;
+}
+
+.search-test li {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    margin: var(--spacing-xs) 0;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-sm);
+}
+
+.search-test i {
+    color: var(--color-teal);
+    width: 16px;
+}
+
+.terminal-test ul {
+    list-style: none;
+    padding: 0;
+}
+
+.terminal-test li {
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.color-samples {
+    display: flex;
+    gap: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+}
+
+.color-sample {
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: white;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.utility-tests ul {
+    list-style: disc;
+    padding-left: var(--spacing-lg);
+}
+
+.utility-tests li {
+    margin: var(--spacing-xs) 0;
+    color: var(--color-text-secondary);
+}
+
+.performance-info p {
+    margin: var(--spacing-sm) 0;
+    font-family: var(--font-code);
+}
+
+.css-test {
+    color: var(--color-mint);
+}
+
+#js-test {
+    color: var(--color-coral);
+}
+
+.js-loaded #js-test {
+    color: var(--color-mint);
+}
+
+@media (max-width: 767px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .category-test-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .color-samples {
+        flex-direction: column;
+    }
+    
+    .activity-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Test JavaScript integration
+    const jsTest = document.getElementById('js-test');
+    if (jsTest) {
+        jsTest.textContent = '✅ JavaScript loaded successfully';
+        jsTest.style.color = 'var(--color-mint)';
+    }
+    
+    // Add class to body to indicate JS is loaded
+    document.body.classList.add('js-loaded');
+    
+    console.log('🧪 DataLog Features Test: JavaScript initialized');
+});
+</script>
+
+{% endblock %}
+
+{% block datalogs_js %}
+<script>
+console.log('🧪 DataLog Features Test: Template JavaScript block loaded');
+</script>
+{% endblock %}

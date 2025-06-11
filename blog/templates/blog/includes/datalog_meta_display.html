@@ -1,0 +1,914 @@
+<!----
+ * AURA DataLogs - Meta Display Template
+ * File: blog/templates/blog/includes/datalog_meta_display.html
+ * Handles all meta display styles with AURA theming
+---->
+{% load static %}
+{% load aura_components %}
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="{{ css_classes }}" style="--meta-primary: {{ primary_color }}; --meta-secondary: {{ secondary_color }};">
+
+    {% if style == 'full' %}
+    <!-- Full meta display with all information -->
+    <div class="meta-full-container">
+        <div class="meta-primary-row">
+            <!-- Category -->
+            {% if show_category and post.category %}
+            <div class="meta-item meta-category-item">
+                {% if show_icons %}<i class="fas fa-folder"></i>{% endif %}
+                {% meta_category_display post.category style='full' %}
+            </div>
+            {% endif %}
+            
+            <!-- Date -->
+            {% if show_date and formatted_date %}
+            <div class="meta-item meta-date-item">
+                {% if show_icons %}<i class="fas fa-calendar"></i>{% endif %}
+                <span class="meta-date">{{ formatted_date }}</span>
+            </div>
+            {% endif %}
+            
+            <!-- Reading Time -->
+            {% if show_reading_time and reading_time_display %}
+            <div class="meta-item meta-reading-time-item">
+                {% if show_icons %}<i class="fas fa-clock"></i>{% endif %}
+                <span class="meta-reading-time">{{ reading_time_display }}</span>
+            </div>
+            {% endif %}
+            
+            <!-- Author -->
+            {% if show_author and author_info %}
+            <div class="meta-item meta-author-item">
+                {% if show_icons %}<i class="fas fa-user"></i>{% endif %}
+                <span class="meta-author">{{ author_info.name }}</span>
+            </div>
+            {% endif %}
+            
+            <!-- Status -->
+            {% if show_status and status_info %}
+            <div class="meta-item meta-status-item">
+                <span class="meta-status" style="--status-color: {{ status_info.color }};">
+                    {% if show_icons %}<i class="fas fa-circle"></i>{% endif %}
+                    {{ status_info.display }}
+                </span>
+            </div>
+            {% endif %}
+            
+            <!-- Featured -->
+            {% if is_featured %}
+            <div class="meta-item meta-featured-item">
+                <span class="meta-featured">
+                    <i class="fas fa-star"></i>
+                    <span>Featured</span>
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Tags Row -->
+        {% if show_tags and post_tags %}
+        <div class="meta-secondary-row">
+            <div class="meta-tags-section">
+                {% if show_icons %}<i class="fas fa-tags meta-tags-icon"></i>{% endif %}
+                <div class="meta-tags-list">
+                    {% for tag in post_tags %}
+                    <a href="{% url 'blog:tag' slug=tag.slug %}" class="meta-tag">
+                        #{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                    {% if remaining_tags > 0 %}
+                    <span class="meta-tags-more">+{{ remaining_tags }} more</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Systems Row -->
+        {% if show_systems and related_systems %}
+        <div class="meta-tertiary-row">
+            <div class="meta-systems-section">
+                <i class="fas fa-project-diagram meta-systems-icon"></i>
+                <div class="meta-systems-list">
+                    {% for system in related_systems %}
+                    <a href="{{ system.get_absolute_url }}" class="meta-system">
+                        <span class="system-id">{{ system.system_id|default:system.id|system_id_format }}</span>
+                        <span class="system-name">{{ system.title|truncate_smart:20 }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'compact' %}
+    <!-- Compact meta display - single row -->
+    <div class="meta-compact-container">
+        {% if show_category and post.category %}
+        {% meta_category_display post.category style='compact' show_name=False %}
+        {% meta_separator %}
+        {% endif %}
+        
+        {% if show_date and formatted_date %}
+        <span class="meta-item">
+            {% if show_icons %}<i class="fas fa-calendar"></i>{% endif %}
+            {{ formatted_date }}
+        </span>
+        {% meta_separator %}
+        {% endif %}
+        
+        {% if show_reading_time and reading_time_display %}
+        <span class="meta-item">
+            {% if show_icons %}<i class="fas fa-clock"></i>{% endif %}
+            {{ reading_time_display }}
+        </span>
+        {% endif %}
+        
+        {% if show_tags and post_tags %}
+        {% meta_separator %}
+        <span class="meta-item">
+            {% if show_icons %}<i class="fas fa-tags"></i>{% endif %}
+            {{ post_tags|length }} tag{{ post_tags|length|pluralize }}
+        </span>
+        {% endif %}
+        
+        {% if is_featured %}
+        {% meta_separator %}
+        <span class="meta-featured-compact">
+            <i class="fas fa-star"></i>
+        </span>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal meta display - essential info only -->
+    <div class="meta-minimal-container">
+        {% if show_date and formatted_date %}
+        <span class="meta-date-minimal">{{ formatted_date }}</span>
+        {% endif %}
+        
+        {% if show_reading_time and reading_time_display %}
+        {% if show_date and formatted_date %}{% meta_separator style='dot' %}{% endif %}
+        <span class="meta-reading-minimal">{{ reading_time_display }}</span>
+        {% endif %}
+        
+        {% if show_category and post.category %}
+        {% if show_date or show_reading_time %}{% meta_separator style='dot' %}{% endif %}
+        {% meta_category_display post.category style='minimal' show_icon=False show_name=False %}
+        {% endif %}
+    </div>
+    
+    {% elif style == 'inline' %}
+    <!-- Inline meta display - for flowing text -->
+    <span class="meta-inline-container">
+        {% if show_date and formatted_date %}
+        <span class="meta-inline-item">{{ formatted_date }}</span>
+        {% endif %}
+        
+        {% if show_reading_time and reading_time_display %}
+        {% if show_date %}{% meta_separator style='bullet' %}{% endif %}
+        <span class="meta-inline-item">{{ reading_time_display }} read</span>
+        {% endif %}
+        
+        {% if show_category and post.category %}
+        {% if show_date or show_reading_time %}{% meta_separator style='bullet' %}{% endif %}
+        <span class="meta-inline-item">{{ post.category.name }}</span>
+        {% endif %}
+    </span>
+    
+    {% elif style == 'detailed' %}
+    <!-- Detailed meta display with all available information -->
+    <div class="meta-detailed-container">
+        <div class="meta-detailed-primary">
+            <!-- Post ID -->
+            <div class="meta-item meta-id-item">
+                <i class="fas fa-hashtag"></i>
+                <span class="meta-id">{{ post.id|datalog_id }}</span>
+            </div>
+            
+            <!-- Category with full info -->
+            {% if show_category and post.category %}
+            <div class="meta-item meta-category-detailed">
+                {% meta_category_display post.category style='detailed' %}
+            </div>
+            {% endif %}
+            
+            <!-- Publication info -->
+            {% if show_date and formatted_date %}
+            <div class="meta-item meta-published-item">
+                <i class="fas fa-calendar-plus"></i>
+                <span class="meta-published">Published {{ formatted_date }}</span>
+            </div>
+            {% endif %}
+            
+            <!-- Reading metrics -->
+            {% if show_reading_time and reading_time_display %}
+            <div class="meta-item meta-reading-detailed">
+                <i class="fas fa-book-reader"></i>
+                <span class="meta-reading-full">{{ reading_time_display }} estimated read</span>
+                <span class="meta-difficulty">{{ post|meta_reading_difficulty }}</span>
+            </div>
+            {% endif %}
+            
+            <!-- Author with role -->
+            {% if show_author and author_info %}
+            <div class="meta-item meta-author-detailed">
+                <i class="fas fa-user-edit"></i>
+                <span class="meta-author-name">{{ author_info.name }}</span>
+                <span class="meta-author-role">Author</span>
+            </div>
+            {% endif %}
+            
+            <!-- Status indicator -->
+            {% if show_status and status_info %}
+            <div class="meta-item meta-status-detailed">
+                <span class="meta-status-indicator" style="--status-color: {{ status_info.color }};">
+                    <i class="fas fa-circle"></i>
+                    {{ status_info.display }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Tags with full display -->
+        {% if show_tags and post_tags %}
+        <div class="meta-detailed-tags">
+            <div class="meta-tags-header">
+                <i class="fas fa-tags"></i>
+                <span class="meta-tags-label">Topics</span>
+            </div>
+            <div class="meta-tags-detailed">
+                {% for tag in post_tags %}
+                <a href="{% url 'blog:tag' slug=tag.slug %}" class="meta-tag-detailed">
+                    <i class="fas fa-tag"></i>
+                    {{ tag.name }}
+                </a>
+                {% endfor %}
+                {% if remaining_tags > 0 %}
+                <span class="meta-tags-remaining">
+                    <i class="fas fa-ellipsis-h"></i>
+                    {{ remaining_tags }} more
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Related systems -->
+        {% if show_systems and related_systems %}
+        <div class="meta-detailed-systems">
+            <div class="meta-systems-header">
+                <i class="fas fa-project-diagram"></i>
+                <span class="meta-systems-label">Related Systems</span>
+            </div>
+            <div class="meta-systems-detailed">
+                {% for system in related_systems %}
+                <a href="{{ system.get_absolute_url }}" class="meta-system-detailed">
+                    <span class="system-id">{{ system.system_id|default:system.id|system_id_format }}</span>
+                    <span class="system-title">{{ system.title }}</span>
+                    <span class="system-status">{{ system.status|default:"active" }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'card' %}
+    <!-- Card meta display - optimized for cards -->
+    <div class="meta-card-container">
+        <div class="meta-card-top">
+            {% if show_category and post.category %}
+            <div class="meta-card-category">
+                {% meta_category_display post.category style='card' show_name=False %}
+            </div>
+            {% endif %}
+            
+            {% if is_featured %}
+            <div class="meta-card-featured">
+                <i class="fas fa-star"></i>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="meta-card-bottom">
+            {% if show_date and formatted_date %}
+            <span class="meta-card-date">{{ formatted_date }}</span>
+            {% endif %}
+            
+            {% if show_reading_time and reading_time_display %}
+            {% if show_date %}{% meta_separator style='dot' %}{% endif %}
+            <span class="meta-card-reading">{{ reading_time_display }}</span>
+            {% endif %}
+            
+            {% if show_tags and post_tags %}
+            <div class="meta-card-tags">
+                {% for tag in post_tags|slice:":3" %}
+                <span class="meta-card-tag">#{{ tag.name|truncate_smart:12 }}</span>
+                {% endfor %}
+                {% if remaining_tags > 0 %}
+                <span class="meta-card-tag-more">+{{ remaining_tags }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% elif style == 'breadcrumb' %}
+    <!-- Breadcrumb meta display - for navigation contexts -->
+    <div class="meta-breadcrumb-container">
+        <span class="meta-breadcrumb-id">{{ post.id|datalog_id }}</span>
+        
+        {% if show_category and post.category %}
+        {% meta_separator style='chevron' %}
+        {% meta_category_display post.category style='breadcrumb' show_icon=False %}
+        {% endif %}
+        
+        {% if show_date and formatted_date %}
+        {% meta_separator style='chevron' %}
+        <span class="meta-breadcrumb-date">{{ formatted_date }}</span>
+        {% endif %}
+        
+        {% if is_featured %}
+        <span class="meta-breadcrumb-featured">
+            <i class="fas fa-star"></i>
+        </span>
+        {% endif %}
+    </div>
+    
+    {% else %}
+    <!-- Default: fall back to compact style -->
+    {% include 'blog/includes/datalog_meta_display.html' with style='compact' %}
+    {% endif %}
+    
+</div>
+
+<style>
+/* ========== META DISPLAY COMPONENT STYLES ========== */
+
+/* Base meta display styling */
+.datalog-meta-display {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+/* Size variants */
+.meta-size-xs { font-size: 0.75rem; }
+.meta-size-sm { font-size: 0.85rem; }
+.meta-size-md { font-size: 0.9rem; }
+.meta-size-lg { font-size: 1rem; }
+.meta-size-xl { font-size: 1.1rem; }
+
+/* Alignment variants */
+.meta-align-left { text-align: left; }
+.meta-align-center { text-align: center; }
+.meta-align-right { text-align: right; }
+
+/* ========== FULL STYLE ========== */
+.meta-full-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.meta-primary-row,
+.meta-secondary-row,
+.meta-tertiary-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    white-space: nowrap;
+}
+
+.meta-item i {
+    color: var(--meta-primary, var(--color-lavender));
+    font-size: 0.8rem;
+    width: 12px;
+    text-align: center;
+}
+
+/* ========== COMPACT STYLE ========== */
+.meta-compact-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.meta-featured-compact {
+    color: var(--color-yellow);
+    font-size: 0.9rem;
+}
+
+/* ========== MINIMAL STYLE ========== */
+.meta-minimal-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.8rem;
+}
+
+/* ========== INLINE STYLE ========== */
+.meta-inline-container {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.85rem;
+}
+
+.meta-inline-item {
+    color: var(--color-text-tertiary);
+}
+
+/* ========== DETAILED STYLE ========== */
+.meta-detailed-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--meta-secondary, rgba(179, 157, 219, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-lg);
+}
+
+.meta-detailed-primary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.meta-id-item .meta-id {
+    font-family: var(--font-code);
+    color: var(--meta-primary, var(--color-lavender));
+    font-weight: 600;
+    background: var(--meta-secondary, rgba(179, 157, 219, 0.1));
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+}
+
+.meta-reading-detailed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.meta-difficulty {
+    font-size: 0.75rem;
+}
+
+.meta-author-detailed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.meta-author-role {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.meta-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(var(--status-color), 0.1);
+    border: 1px solid rgba(var(--status-color), 0.3);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.meta-detailed-tags,
+.meta-detailed-systems {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.meta-tags-header,
+.meta-systems-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 0.9rem;
+}
+
+.meta-tags-detailed,
+.meta-systems-detailed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.meta-tag-detailed {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--meta-secondary, rgba(179, 157, 219, 0.1));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+}
+
+.meta-tag-detailed:hover {
+    background: var(--meta-secondary, rgba(179, 157, 219, 0.2));
+    color: var(--color-text);
+    transform: translateY(-1px);
+}
+
+.meta-system-detailed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: rgba(38, 198, 218, 0.05);
+    border: 1px solid rgba(38, 198, 218, 0.2);
+    border-radius: var(--border-radius-md);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+    min-width: 150px;
+}
+
+.meta-system-detailed:hover {
+    background: rgba(38, 198, 218, 0.1);
+    color: var(--color-text);
+    transform: translateY(-2px);
+}
+
+.meta-system-detailed .system-id {
+    font-family: var(--font-code);
+    color: var(--color-teal);
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.meta-system-detailed .system-title {
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.meta-system-detailed .system-status {
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ========== CARD STYLE ========== */
+.meta-card-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.meta-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.meta-card-featured {
+    color: var(--color-yellow);
+    font-size: 1rem;
+}
+
+.meta-card-bottom {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.8rem;
+}
+
+.meta-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-left: auto;
+}
+
+.meta-card-tag {
+    background: var(--meta-secondary, rgba(179, 157, 219, 0.1));
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.7rem;
+    color: var(--meta-primary, var(--color-lavender));
+}
+
+.meta-card-tag-more {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+}
+
+/* ========== BREADCRUMB STYLE ========== */
+.meta-breadcrumb-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.85rem;
+}
+
+.meta-breadcrumb-id {
+    font-family: var(--font-code);
+    color: var(--meta-primary, var(--color-lavender));
+    font-weight: 600;
+    background: var(--meta-secondary, rgba(179, 157, 219, 0.1));
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+}
+
+.meta-breadcrumb-featured {
+    color: var(--color-yellow);
+    margin-left: var(--spacing-sm);
+}
+
+/* ========== CATEGORY DISPLAY ========== */
+.meta-category {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.2rem 0.6rem;
+    background: rgba(var(--category-color), 0.1);
+    border: 1px solid rgba(var(--category-color), 0.3);
+    border-radius: var(--border-radius-sm);
+    color: var(--category-color, var(--color-lavender));
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.meta-category:hover {
+    background: rgba(var(--category-color), 0.2);
+    color: var(--category-color, var(--color-lavender));
+    transform: translateY(-1px);
+}
+
+.meta-category .category-code {
+    font-family: var(--font-code);
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.meta-category .category-name {
+    font-weight: 500;
+}
+
+/* Category style variants */
+.meta-category-compact {
+    padding: 0.1rem 0.4rem;
+    font-size: 0.75rem;
+}
+
+.meta-category-minimal {
+    padding: 0.1rem 0.3rem;
+    font-size: 0.7rem;
+}
+
+.meta-category-detailed {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9rem;
+    flex-direction: column;
+    text-align: center;
+    min-width: 80px;
+}
+
+/* ========== SEPARATORS ========== */
+.meta-separator {
+    color: var(--color-text-tertiary);
+    opacity: 0.7;
+    font-size: 0.8rem;
+    user-select: none;
+}
+
+.meta-separator-auto {
+    color: var(--meta-primary, var(--color-lavender));
+}
+
+.meta-separator-teal { color: var(--color-teal); }
+.meta-separator-lavender { color: var(--color-lavender); }
+.meta-separator-coral { color: var(--color-coral); }
+
+/* ========== TAGS SECTION ========== */
+.meta-tags-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.meta-tags-list {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+.meta-tag {
+    color: var(--meta-primary, var(--color-lavender));
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: var(--border-radius-sm);
+    background: var(--meta-secondary, rgba(179, 157, 219, 0.1));
+    transition: all var(--transition-fast);
+}
+
+.meta-tag:hover {
+    background: var(--meta-secondary, rgba(179, 157, 219, 0.2));
+    color: var(--meta-primary, var(--color-lavender));
+    transform: translateY(-1px);
+}
+
+.meta-tags-more {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    font-style: italic;
+}
+
+/* ========== SYSTEMS SECTION ========== */
+.meta-systems-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.meta-systems-list {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.meta-system {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-teal);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+}
+
+.meta-system:hover {
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+    transform: translateY(-1px);
+}
+
+.meta-system .system-id {
+    font-family: var(--font-code);
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+/* ========== FEATURED STYLING ========== */
+.meta-featured {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--color-yellow);
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.datalog-meta-display.meta-featured {
+    background: rgba(255, 245, 157, 0.05);
+    border: 1px solid rgba(255, 245, 157, 0.2);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-sm);
+}
+
+/* ========== DIFFICULTY INDICATORS ========== */
+.meta-difficulty {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.difficulty-beginner {
+    background: rgba(165, 214, 167, 0.2);
+    color: var(--color-mint);
+    border: 1px solid rgba(165, 214, 167, 0.4);
+}
+
+.difficulty-intermediate {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+    border: 1px solid rgba(255, 138, 128, 0.4);
+}
+
+.difficulty-advanced {
+    background: rgba(255, 245, 157, 0.2);
+    color: var(--color-yellow);
+    border: 1px solid rgba(255, 245, 157, 0.4);
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 767px) {
+    .meta-primary-row,
+    .meta-secondary-row,
+    .meta-tertiary-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .meta-detailed-primary {
+        grid-template-columns: 1fr;
+    }
+    
+    .meta-tags-list,
+    .meta-systems-list {
+        width: 100%;
+    }
+    
+    .meta-card-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .meta-card-tags {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .meta-compact-container,
+    .meta-breadcrumb-container {
+        flex-wrap: wrap;
+    }
+    
+    .meta-item {
+        flex-shrink: 0;
+    }
+    
+    .meta-detailed-container {
+        padding: var(--spacing-md);
+    }
+}
+
+/* ========== ACCESSIBILITY ========== */
+.meta-category:focus,
+.meta-tag:focus,
+.meta-system:focus {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+    .datalog-meta-display {
+        background: white !important;
+        color: black !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    .meta-category,
+    .meta-tag,
+    .meta-system {
+        background: #f0f0f0 !important;
+        color: #333 !important;
+        border: 1px solid #ccc !important;
+    }
+}
+</style>

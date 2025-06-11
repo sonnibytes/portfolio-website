@@ -1,25 +1,150 @@
-<!---
+<!----
  * AURA Glass Card Component Template
- * Reusable glass-morphism card with header, content, and footer sections
- * Version 1.0.1: Added w global tags and filters
- -->
+ * File: templates/components/glass_card.html
+ * Used by the glass_card_include inclusion tag
+ * Styled to match section_header aesthetic
+---->
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
 
-<div class="glass-card {{ css_class }}">
-    {% if with_header and title %}
-    <div class="glass-card-header">
-        <h3 class="card-title">{{ title }}</h3>
-    </div>
+
+{# Build CSS classes #}
+{% with css_classes="glass-card" %}
+  {% if size == 'xs' %}{% with css_classes=css_classes|add:" glass-card-xs" %}{% endwith %}{% endif %}
+  {% if size == 'sm' %}{% with css_classes=css_classes|add:" glass-card-sm" %}{% endwith %}{% endif %}
+  {% if size == 'lg' %}{% with css_classes=css_classes|add:" glass-card-lg" %}{% endwith %}{% endif %}
+  {% if size == 'xl' %}{% with css_classes=css_classes|add:" glass-card-xl" %}{% endwith %}{% endif %}
+  
+  {% if variant == 'featured' %}{% with css_classes=css_classes|add:" glass-card-featured" %}{% endwith %}{% endif %}
+  {% if variant == 'warning' %}{% with css_classes=css_classes|add:" glass-card-warning" %}{% endwith %}{% endif %}
+  {% if variant == 'success' %}{% with css_classes=css_classes|add:" glass-card-success" %}{% endwith %}{% endif %}
+  {% if variant == 'error' %}{% with css_classes=css_classes|add:" glass-card-error" %}{% endwith %}{% endif %}
+  {% if variant == 'info' %}{% with css_classes=css_classes|add:" glass-card-info" %}{% endwith %}{% endif %}
+  
+  {% if with_border %}{% with css_classes=css_classes|add:" glass-card-bordered" %}{% endwith %}{% endif %}
+  {% if with_glow %}{% with css_classes=css_classes|add:" glass-card-glow" %}{% endwith %}{% endif %}
+  {% if collapsible %}{% with css_classes=css_classes|add:" glass-card-collapsible" %}{% endwith %}{% endif %}
+  {% if collapsible and not expanded %}{% with css_classes=css_classes|add:" glass-card-collapsed" %}{% endwith %}{% endif %}
+  {% if css_class %}{% with css_classes=css_classes|add:" "|add:css_class %}{% endwith %}{% endif %}
+
+  {# Render the card with section_header-inspired styling #}
+  <div class="{{ css_classes }}" id="{{ card_id }}">
+    
+    {# Header with section_header styling #}
+    {% if with_header and title or subtitle or icon %}
+    <header class="glass-card-header">
+      {# Main header content #}
+      <div class="card-header-main">
+        <div class="card-header-left">
+          {# Simple icon (not holographic) #}
+          {% if icon %}
+          <div class="card-icon-simple">
+            <i class="{{ icon }}"></i>
+          </div>
+          {% endif %}
+          
+          {# Title and subtitle section #}
+          {% if title or subtitle %}
+          <div class="card-text-section">
+            {% if title %}
+            {# Title styled like section_header subtitle #}
+            <h3 class="card-main-title">{{ title }}</h3>
+            {% endif %}
+            {% if subtitle %}
+            {# Smaller subtitle #}
+            <p class="card-subtitle-text">{{ subtitle }}</p>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="card-header-right">
+          {% if collapsible %}
+          <button class="card-collapse-btn" data-target="#{{ card_id }}">
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      
+      {# Metrics bar (like section_header) #}
+      {% if show_metrics %}
+      {% with metrics_list="" %}
+        {% if metric_1_value %}{% with metrics_list=metrics_list|add:"1" %}{% endwith %}{% endif %}
+        {% if metric_2_value %}{% with metrics_list=metrics_list|add:"2" %}{% endwith %}{% endif %}
+        {% if metric_3_value %}{% with metrics_list=metrics_list|add:"3" %}{% endwith %}{% endif %}
+        {% if metric_4_value %}{% with metrics_list=metrics_list|add:"4" %}{% endwith %}{% endif %}
+        
+        {% if metrics_list %}
+        <div class="card-metrics-bar">
+          <div class="card-metrics-grid">
+            {% if metric_1_value %}
+            <div class="card-metric-item">
+              <div class="metric-icon">
+                <i class="{{ metric_1_icon }}"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ metric_1_value|format_number }}</div>
+                <div class="metric-label">{{ metric_1_label|default:"Metric 1" }}</div>
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if metric_2_value %}
+            <div class="card-metric-item">
+              <div class="metric-icon">
+                <i class="{{ metric_2_icon }}"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ metric_2_value|format_number }}</div>
+                <div class="metric-label">{{ metric_2_label|default:"Metric 2" }}</div>
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if metric_3_value %}
+            <div class="card-metric-item">
+              <div class="metric-icon">
+                <i class="{{ metric_3_icon }}"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ metric_3_value|format_duration }}</div>
+                <div class="metric-label">{{ metric_3_label|default:"Metric 3" }}</div>
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if metric_4_value %}
+            <div class="card-metric-item">
+              <div class="metric-icon">
+                <i class="{{ metric_4_icon }}"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ metric_4_value|format_number }}</div>
+                <div class="metric-label">{{ metric_4_label|default:"Metric 4" }}</div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      {% endwith %}
+      {% endif %}
+    </header>
     {% endif %}
     
-    {% if content %}
-    <div class="glass-card-content">
-        {{ content|safe }}
+    {# Content #}
+    <div class="glass-card-content{% if collapsible %} card-collapsible-content{% if not expanded %} card-content-collapsed{% endif %}{% endif %}">
+      {{ content|safe }}
     </div>
-    {% endif %}
     
-    {% if footer %}
+    {# Footer #}
+    {% if with_footer and footer %}
     <div class="glass-card-footer">
-        {{ footer|safe }}
+      {{ footer|safe }}
     </div>
     {% endif %}
-</div>
+    
+  </div>
+{% endwith %}

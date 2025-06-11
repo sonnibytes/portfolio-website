@@ -1,7 +1,9 @@
 from django.views.generic import ListView, DetailView, DeleteView, CreateView, UpdateView
 from django.views.generic.detail import SingleObjectMixin
 # from django.views.generic.edit import CreateView, UpdateView
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -10,39 +12,136 @@ from django.contrib import messages
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
-from django.db.models import Count
+from django.utils.html import escape
+from django.db.models import Count, Q, Avg, Sum, Case, When, IntegerField, Value
+from django.db.models.functions import Extract, Length
 from markdownx.utils import markdownify
+from django.core.paginator import Paginator
 
-from datetime import datetime
+from datetime import datetime, timedelta, date
 import calendar
 import os
 import re
 from uuid import uuid4
 import pprint
+from collections import defaultdict, OrderedDict
 
-from .models import Post, Category, Tag, Series, SeriesPost
+from .models import Post, Category, Tag, Series, SeriesPost, PostView
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
+from .templatetags.datalog_tags import datalog_search_suggestions
 
 
 class PostListView(ListView):
-    """View for the blog homepage showing latest posts."""
+    """Enhanced post list view with search integration."""
     model = Post
     template_name = "blog/post_list.html"
     context_object_name = "posts"
     paginate_by = 6  # 6 posts per page (2 rows of 3)
 
     def get_queryset(self):
-        return Post.objects.filter(
-            status="published").order_by("-published_date")
+        """Get posts, potentially filtered by search or category."""
+        queryset = Post.objects.filter(
+            status="published").select_related('category', 'author').prefetch_related('tags').order_by('-published_date')
+
+        # Handle search from unified search interface
+        query = self.request.GET.get('q', '').strip()
+        if query:
+            queryset = queryset.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(excerpt__icontains=query)
+            )
+
+        # Apply filters
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category__slug=category)
+
+        featured = self.request.GET.get('featured')
+        if featured == 'true':
+            queryset = queryset.filter(featured=True)
+
+        has_code = self.request.GET.get('has_code')
+        if has_code == 'true':
+            queryset = queryset.exclude(featured_code__exact='')
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # # Helper function for search context
+        # context.update(get_search_context(self.request))
+
+        # Existing context
         context['categories'] = Category.objects.all()
         context['tags'] = Tag.objects.all()
         context['featured_post'] = Post.objects.filter(
             status='published',
             featured=True
-            ).first()
+        ).select_related('category').prefetch_related('tags', 'related_systems').first()
+
+        # Add search context
+        query = self.request.GET.get('q', '').strip()
+
+        # Enhanced context for new template
+        context.update({
+            # Page configuration
+            # 'page_title': 'DataLogs Archive',
+            # 'page_subtitle': 'Technical Insights and Development Journey',
+            'page_icon': 'fas fa-database',
+            'show_breadcrumbs': False,
+            'show_filters': True,
+            'show_stats': False,
+            'show_header_metrics': True,
+
+            # Statistics for the interface
+            'total_posts': Post.objects.filter(status='published').count(),
+            'total_words': sum(post.content.split().__len__() for post in Post.objects.filter(status='published')),
+            'avg_reading_time': Post.objects.filter(
+                status='published').aggregate(
+                avg_time=Avg('reading_time')
+            )['avg_time'] or 8,
+            'total_views': PostView.objects.count() if hasattr(Post, 'views') else 0,
+            'total_categories': Category.objects.count(),
+            'total_tags': Tag.objects.count(),
+
+            # Current context for breadcrumbs/navigation
+            'current_category': None,  # Will be set in CategoryView
+            'current_post': None,      # Will be set in PostDetailView
+
+            # Enhanced categories with post counts
+            'categories_with_counts': Category.objects.annotate(
+                post_count=Count('posts', filter=Q(posts__status='published'))
+            ).filter(post_count__gt=0).order_by('name'),
+
+            # Popular tags for quick filters
+            'popular_tags': Tag.objects.annotate(
+                post_count=Count('posts', filter=Q(posts__status='published'))
+            ).filter(post_count__gt=0).order_by('-post_count')[:10],
+
+            # Recent activity for analytics
+            'recent_posts_count': Post.objects.filter(
+                status='published',
+                published_date__gte=timezone.now() - timedelta(days=30)
+            ).count(),
+
+            # Featured post enhanced data
+            'featured_post_data': None,
+        })
+
+        # Enhanced featured post data
+        if context['featured_post']:
+            featured = context['featured_post']
+            context['featured_post_data'] = {
+                'has_code': bool(featured.featured_code),
+                'code_language': featured.featured_code_format,
+                'code_lines': len(featured.featured_code.split('\n')) if featured.featured_code else 0,
+                'estimated_complexity': 'Beginner' if featured.reading_time < 5 else 'Intermediate' if featured.reading_time < 15 else 'Advanced',
+                'related_systems': featured.related_systems.filter(status__in=['deployed', 'published'])[:2],
+                'primary_system': featured.get_primary_system() if hasattr(featured, 'get_primary_system') else None,
+            }
+
         return context
 
 
@@ -109,6 +208,16 @@ class PostDetailView(DetailView):
         headings = self.extract_headings(post.content)
         context['headings'] = headings
 
+        # Additional enhanced context
+        context.update({
+            'current_post': post,
+            'show_breadcrumbs': True,
+            'show_terminal_code': bool(post.featured_code),
+            'code_complexity': self.get_code_complexity(post),
+            'estimated_difficulty': self.get_difficulty_level(post),
+            'social_share_data': self.get_social_share_data(post),
+        })
+
         return context
 
     def extract_headings(self, markdown_content):
@@ -132,15 +241,140 @@ class PostDetailView(DetailView):
                 })
         return headings
 
+    def get_code_complexity(self, post):
+        """Analyze code complexity for display (Can enhance later)."""
+        if not post.featured_code:
+            return None
+
+        code = post.featured_code
+        lines = len(code.split('\n'))
+
+        if lines < 10:
+            return 'Simple'
+        elif lines < 50:
+            return 'Moderate'
+        else:
+            return 'Complex'
+
+    def get_difficulty_level(self, post):
+        """Determine content difficulty (can enhance later, maybe even add a vote..?)"""
+        if post.reading_time < 5:
+            return 'Beginner'
+        elif post.reading_time < 15:
+            return 'Intermediate'
+        else:
+            return 'Advanced'
+
+    def get_social_share_data(self, post):
+        """Prepare data for social sharing."""
+        return {
+            'title': post.title,
+            'description': post.excerpt or f"Technical insights on {post.title}",
+            'image': post.thumbnail.url if post.thumbnail else None,
+            'url': self.request.build_absolute_uri(post.get_absolute_url()),
+            'tags': [tag.name for tag in post.tags.all()[:5]]
+        }
+
+
+class CategoriesOverviewView(ListView):
+    """
+    View for categories overview page - shows all categories w stats.
+    URL: /datalogs/categories/
+    """
+    model = Category
+    template_name = "blog/category.html"  # Same template as CategoryView, different context
+    context_object_name = "categories"
+    
+    # TODO: Add tags, maybe recent posts to category cards
+    def get_queryset(self):
+        # Get categories post counts if gt 0
+        return Category.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        ).filter(post_count__gt=0).order_by('-post_count', 'name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Calculate overview stats
+        categories = context['categories']
+        total_posts = Post.objects.filter(status="published").count()
+        total_categories = categories.count()
+
+        # Get most popular category
+        most_popular = categories.first() if categories else None
+
+        # Get newest category (by first post)
+        newest_category = None
+        if categories:
+            for cat in categories:
+                if cat.posts.filter(status="published").exists():
+                    newest_category = cat
+                    break
+
+        # Calculate avg posts per category
+        avg_posts_per_category = round(total_posts / total_categories, 1) if total_categories > 0 else 0
+
+        # Add recent posts to each category
+        for category in categories:
+            category.recent_posts = category.posts.filter(
+                status="published"
+            ).order_by('-published_date')[:3]
+
+            # Calculate avg reading time for category
+            category.avg_reading_time = category.posts.filter(
+                status="published"
+            ).aggregate(avg_time=Avg("reading_time"))["avg_time"] or 0
+
+        # Categories w recent activity (posts in last 30 days)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        categories_with_recent_posts = Category.objects.filter(
+            posts__published_date__gte=thirty_days_ago,
+            posts__status="published"
+        ).distinct().count()
+
+        # Calculate total reading time across all categoriess
+        total_reading_time = Post.objects.filter(
+            status="published"
+        ).aggregate(total=Sum("reading_time"))["total"] or 0
+
+        context.update({
+            # Clear category to indicate overview mode
+            "category": None,
+
+            # Overview page metadata
+            "page_title": "Categories Overview",
+            "page_subtitle": "Explore technical insights by expertise area",
+            "page_icon": "fas fa-th-large",
+
+            # Overview Stats
+            "total_categories": total_categories,
+            "total_posts": total_posts,
+            "avg_posts_per_category": avg_posts_per_category,
+            "most_popular_category": most_popular,
+            "newest_category": newest_category,
+            "categories_with_recent_posts": categories_with_recent_posts,
+            "total_reading_time": total_reading_time,
+
+            # Template control flags
+            "show_breadcrumbs": True,
+            # "show_stats": True,
+        })
+
+        return context
+
 
 class CategoryView(ListView):
-    """View for posts filtered by category."""
+    """
+    View for posts filtered by category.
+    URL: /datalogs/category/<slug>/
+    """
     model = Post
-    template_name = "blog/category.html"
+    template_name = "blog/category.html"  # Same temp as overview, diff context
     context_object_name = "posts"
     paginate_by = 6
 
     def get_queryset(self):
+        # Get specific category
         self.category = get_object_or_404(Category, slug=self.kwargs['slug'])
         return Post.objects.filter(
             category=self.category,
@@ -148,201 +382,846 @@ class CategoryView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['category'] = self.category
-        # Add this line to track active category
-        context['category_slug'] = self.kwargs['slug']
-        return context
 
+        # Category-specific stats
+        category_posts = self.get_queryset()
+        category_post_count = category_posts.count()
+        category_avg_reading_time = category_posts.aggregate(
+            avg_time=Avg("reading_time")
+        )["avg_time"] or 0
 
-class TagListView(ListView):
-    model = Tag
-    template_name = 'blog/tags.html'
-    context_object_name = 'tags'
+        # Related Categories (excluding current, only those w posts)
+        related_categories = Category.objects.exclude(
+            id=self.category.id
+        ).annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        ).filter(post_count__gt=0).order_by("-post_count")[:4]
 
-
-class TagView(ListView):
-    """View for posts filtered by tag."""
-    model = Post
-    template_name = "blog/tag.html"
-    context_object_name = "posts"
-    paginate_by = 6
-
-    def get_queryset(self):
-        self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
-        return Post.objects.filter(
-            tags=self.tag, status="published").order_by('-published_date')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['tag'] = self.tag
-
-        # Get related tags that appear together with this tag
-        tag_posts = Post.objects.filter(tags=self.tag)
-        related_tags = Tag.objects.filter(
-            posts__in=tag_posts
-        ).exclude(id=self.tag.id).annotate(
-            posts_count=Count('posts')
-        ).order_by('-posts_count')[:3]
-
-        context['related_tags'] = related_tags
-        return context
-
-
-class ArchiveView(ListView):
-    """View for archive page showing posts by year/month."""
-    template_name = "blog/archive.html"
-    context_object_name = 'posts'
-    paginate_by = 6
-
-    # Define the start date for timeline (April 2025)
-    start_year = 2024
-    start_month = 11
-
-    def get_queryset(self):
-        year = self.kwargs.get('year')
-        month = self.kwargs.get('month')
-
-        # If no year provided, show all posts
-        if not year:
-            return Post.objects.filter(
-                status='published').order_by('-published_date')
-
-        # If month provided, filter by year and month
-        if month:
-            return Post.objects.filter(
-                published_date__year=year,
-                published_date__month=month,
-                status='published'
-            ).order_by('-published_date')
-
-        # If only year provided, filter by year
-        return Post.objects.filter(
-            published_date__year=year,
-            status='published'
-        ).order_by('-published_date')
-
-    def get(self, request, *args, **kwargs):
-        # Current Date
-        current_date = datetime.now()
-        current_year = current_date.year
-        current_month = current_date.month
-
-        # Get year and month from kwargs
-        year = self.kwargs.get('year')
-        month = self.kwargs.get('month')
-
-        # Validate year and month
-        if year and (int(year) < self.start_year or int(year) > current_year):
-            return redirect('blog:archive')
-
-        if month and year and (
-            (int(year) == self.start_year and int(month) > self.start_month) or
-            (int(year) == current_year and int(month) > current_month) or
-            int(month) < 1 or int(month) > 12
-        ):
-            return redirect('blog:archive_year', year=year)
-
-        return super().get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Get current date info
-        current_date = datetime.now()
-        current_year = current_date.year
-        current_month = current_date.month
-
-        # Get year and month from kwargs
-        year = self.kwargs.get('year')
-        month = self.kwargs.get('month')
-
-        # Convert to integers if present
-        if year:
-            year = int(year)
-        if month:
-            month = int(month)
-            month_name = calendar.month_name[month]
-        else:
-            month_name = None
-
-        # Generate all years from start date to current date
-        years = list(range(self.start_year, current_year + 1))
-
-        # Generate all months for selected year
-        if year:
-            # For start year, only include months from start_month onward
-            if year == self.start_year:
-                month_range = range(self.start_month, 13)
-            # For the current year, only include months up to current_month
-            elif year == current_year:
-                month_range = range(1, current_month + 1)
-            # For other years, include all months
-            else:
-                month_range = range(1, 13)
-
-            months = [(m, calendar.month_name[m]) for m in month_range]
-        else:
-            months = []
-
-        # Get post counts for each year/month if desired
-        year_counts = {}
-        for yr in years:
-            year_counts[yr] = Post.objects.filter(
-                status='published',
-                published_date__year=yr
-            ).count()
-
-        month_counts = {}
-        if year:
-            for m, _ in months:
-                month_counts[m] = Post.objects.filter(
-                    status='published',
-                    published_date__year=year,
-                    published_date__month=m
-                ).count()
-
-        # Add all context data
         context.update({
-            'years': years,
-            'year': year,
-            'months': months,
-            'month': month,
-            'month_name': month_name,
-            'start_year': self.start_year,
-            'start_month': self.start_month,
-            'current_year': current_year,
-            'current_month': current_month,
-            'year_counts': year_counts,
-            'month_counts': month_counts,
+            # Category-specific data
+            "category": self.category,
+            "category_slug": self.kwargs['slug'],
+
+            # Page metadata
+            "page_title": f"{self.category.name} DataLogs",
+            "page_subtitle": f"Technical logs RE: {self.category.name}",
+            "page_icon": self.category.icon or "fas fa-folder",
+
+            # Category stats
+            "category_post_count": category_post_count,
+            "category_avg_reading_time": category_avg_reading_time,
+            "related_categories": related_categories,
+
+            # Template control flags
+            "show_breadcrumbs": True,
+            "show_filters": True,
+            "show_stats": False,
         })
 
         return context
 
 
-class SearchView(ListView):
-    """View for search results."""
-    template_name = 'blog/search.html'
-    context_object_name = 'posts'
-    paginate_by = 6
+class TagListView(ListView):
+    """
+    Tags overview page - shows all tags w stats.
+    URL: /datalogs/tags/
+    """
+    model = Tag
+    template_name = 'blog/tag.html'  # Same temp as TagView, diff context
+    context_object_name = 'tags'
 
     def get_queryset(self):
-        query = self.request.GET.get('q')
-        if query:
-            return Post.objects.filter(
-                title__icontains=query
-            ) | Post.objects.filter(
-                content__icontains=query
-            ) | Post.objects.filter(
-                tags__name__icontains=query
-            ).distinct().filter(
-                status='published'
-            ).order_by('-published_date')
-        return Post.objects.none()
+        return Tag.objects.annotate(
+            post_count=Count("posts", filter=Q(posts__status="published"))
+        ).filter(post_count__gt=0).order_by('-post_count', 'name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['query'] = self.request.GET.get('q', '')
+
+        tags = context['tags']
+
+        # Tag stats
+        total_tagged_posts = Post.objects.filter(
+            tags__isnull=False, status="published"
+        ).distinct().count()
+        popular_tags_count = tags.filter(post_count__gte=3).count()
+
+        # Popular tags for cloud (top 20)
+        popular_tags = tags[:20]
+
+        # Group tags by category (if tags have category relationship)
+        tags_by_category = defaultdict(list)
+        for tag in tags:
+            # Get the most common category for this tag
+            common_category = Category.objects.filter(
+                posts__tags=tag,
+                posts__status="published"
+            ).annotate(
+                tag_usage=Count('posts')
+            ).order_by('-tag_usage').first()
+
+            # Add metadata to tag
+            tag.recent_posts = Post.objects.filter(
+                tags=tag, status="published"
+            ).order_by('-published_date')[:2]
+
+            tag.latest_post = tag.recent_posts.first() if tag.recent_posts else None
+            tag.avg_reading_time = Post.objects.filter(
+                tags=tag, status="published"
+            ).aggregate(avg_time=Avg("reading_time"))["avg_time"] or 0
+
+            if common_category:
+                tags_by_category[common_category].append(tag)
+            else:
+                tags_by_category[None].append(tag)
+
+        query = self.request.GET.get('q', '').strip()
+
+        context.update({
+            'tag': None,  # signals overview in template
+            'popular_tags': popular_tags,
+            'tags_by_category': dict(tags_by_category),
+            'total_tagged_posts': total_tagged_posts,
+            'popular_tags_count': popular_tags_count,
+            'query': query,
+            'page_title': 'Tags Overview',
+            'page_subtitle': 'Explore DataLog tags',
+            'show_breadcrumbs': True,
+        })
+
         return context
+
+
+class TagView(ListView):
+    """
+    Individual tag view - shows posts with specific tag
+    URL: /datalogs/tag/<slug>/
+    """
+    model = Post
+    template_name = "blog/tag.html"  # Same temp as TagListView, diff context
+    context_object_name = "posts"
+    paginate_by = 6
+
+    def get_queryset(self):
+        self.tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
+        queryset = Post.objects.filter(
+            tags=self.tag,
+            status="published"
+        ).select_related("category", "author").prefetch_related("tags").order_by('-published_date')
+
+        # Apply search within tag
+        query = self.request.GET.get('q', '').strip()
+        if query:
+            queryset = queryset.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(excerpt__icontains=query)
+            )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        posts = context['posts']
+
+        # Tag stats
+        tag_post_count = self.get_queryset().count()
+        tag_avg_reading_time = self.get_queryset().aggregate(
+            avg_time=Avg("reading_time")
+        )["avg_time"] or 0
+
+        # Get related tags that appear together with this tag
+        related_tags = Tag.objects.filter(
+            posts__tags=self.tag,
+            posts__status="published"
+        ).exclude(id=self.tag.id).annotate(
+            posts_count=Count('posts')
+        ).order_by('-posts_count')[:6]
+
+        # Categories that use this tag
+        tag_categories = Category.objects.filter(
+            posts__tags=self.tag,
+            posts__status="published"
+        ).annotate(
+            post_count=Count("posts")
+        ).order_by('-post_count')[:5]
+
+        # Tag difficulty based on content
+        tag_difficulty = 'beginner'  # Default
+        if tag_avg_reading_time > 15:
+            tag_difficulty = 'advanced'
+        elif tag_avg_reading_time > 8:
+            tag_difficulty = 'intermediate'
+
+        query = self.request.GET.get('q', '').strip()
+
+        context.update({
+            'tag': self.tag,
+            'tag_post_count': tag_post_count,
+            'tag_avg_reading_time': tag_avg_reading_time,
+            'tag_difficulty': tag_difficulty,
+            'related_tags': related_tags,
+            'tag_categories': tag_categories,
+            'query': query,
+            'page_title': f"{self.tag.name} Tag",
+            'page_subtitle': f"Posts tagged w {self.tag.name}",
+            'show_breadcrumbs': True,
+            'show_filters': True,
+        })
+
+        return context
+
+
+# Updated with archive_timeline enhancements
+class ArchiveIndexView(ListView):
+    """
+    Main archive view - shows timeline of all posts grouped by date.
+    URL: /blog/archive/
+    """
+    template_name = "blog/archive.html"
+    context_object_name = 'all_posts'
+    # Show all posts for timeline
+    paginate_by = None
+
+    def get_queryset(self):
+        queryset = Post.objects.filter(status='published').select_related('category', 'author').prefetch_related('tags').order_by('-published_date')
+
+        # Apply filters from GET params
+        year = self.request.GET.get('year')
+        category_slug = self.request.GET.get('category')
+
+        if year:
+            try:
+                queryset = queryset.filter(published_date__year=int(year))
+            except ValueError:
+                pass
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        all_posts = self.get_queryset()
+
+        # Group posts by year and month (Python grouping)
+        posts_by_year = {}
+
+        for post in all_posts:
+            year = post.published_date.year
+            month_key = post.published_date.strftime('%Y-%m')
+
+            # Initialize year if not exists
+            if year not in posts_by_year:
+                posts_by_year[year] = {
+                    'year': year,
+                    'months': {},
+                    'posts': []
+                }
+
+            # Initialize month if not exists
+            if month_key not in posts_by_year[year]['months']:
+                posts_by_year[year]['months'][month_key] = {
+                    'month': post.published_date.replace(day=1),
+                    'posts': []
+                }
+
+            # Add post month and year
+            posts_by_year[year]['months'][month_key]['posts'].append(post)
+            posts_by_year[year]['posts'].append(post)
+
+        # Convert to list format for template
+        formatted_years = []
+        for year in sorted(posts_by_year.keys(), reverse=True):
+            year_data = posts_by_year[year]
+
+            # Convert monthly dicts to sorted list
+            months_list = []
+            for month_key in sorted(year_data['months'].keys(), reverse=True):
+                months_list.append(year_data['months'][month_key])
+
+            formatted_years.append({
+                'year': year,
+                'months': months_list,
+                'posts': year_data['posts']
+            })
+
+        # Archive years for navigation using modern Django
+        archive_years = Post.objects.filter(
+            status="published"
+        ).annotate(
+            year=Extract('published_date', 'year')
+        ).values('year').annotate(
+            count=Count('id')
+        ).order_by('-year')
+
+        # Archive Stats
+        total_posts = all_posts.count()
+        current_year = datetime.now().year
+        posts_this_year = all_posts.filter(published_date__year=current_year).count()
+
+        # Date ranges
+        if all_posts.exists():
+            first_post = all_posts.order_by('published_date').first()
+            latest_post = all_posts.order_by('-published_date').first()
+            total_reading_time = all_posts.aggregate(
+                total=Sum('reading_time')
+            )['total'] or 0
+        else:
+            first_post = None
+            latest_post = None
+            total_reading_time = 0
+
+        # Categories for filtering
+        categories = Category.objects.filter(
+            posts__status="published"
+        ).annotate(
+            post_count=Count('posts')
+        ).order_by('name')
+
+        context.update({
+            'posts_by_year': formatted_years,
+            'archive_years': list(archive_years),
+            'total_posts': total_posts,
+            'current_year': current_year,
+            'posts_this_year': posts_this_year,
+            'total_reading_time': total_reading_time,
+            'first_post_date': first_post.published_date if first_post else None,
+            'latest_post_date': latest_post.published_date if latest_post else None,
+            'years_active': len(set(post.published_date.year for post in all_posts)),
+            'categories': categories,
+            'recent_posts': all_posts[:5],
+            'query': self.request.GET.get('q', '').strip(),
+            'page_title': 'Archive',
+            'page_subtitle': 'Chronological timeline of all entries',
+            'show_breadcrumbs': True,
+        })
+
+        return context
+
+
+# # ======================== ENHANCED SEARCH VIEW ===========================
+
+
+# @require_http_methods(["GET"])
+# @cache_page(60 * 5)  # Cache for 5 minutes
+# def search_ajax_endpoint(request):
+#     """
+#     AJAX endpoint for unified search suggestions.
+#     Returns JSON w suggestions for real-time search.
+#     """
+#     query = request.GET.get('q', '').strip()
+#     max_suggestions = int(request.GET.get('max', 6))
+
+#     try:
+#         if len(query) < 2:
+#             # Return popular terms when query is too short
+#             suggestions = [
+#                 {
+#                     "text": "Machine Learning",
+#                     "type": "topic",
+#                     "icon": "fas fa-brain",
+#                     "url": "/datalogs/search/?q=machine+learning",
+#                     "description": "AI and ML concepts",
+#                 },
+#                 {
+#                     "text": "Python Development",
+#                     "type": "topic",
+#                     "icon": "fab fa-python",
+#                     "url": "/datalogs/search/?q=python",
+#                     "description": "Programming and development",
+#                 },
+#                 {
+#                     "text": "API Design",
+#                     "type": "topic",
+#                     "icon": "fas fa-plug",
+#                     "url": "/datalogs/search/?q=api",
+#                     "description": "API design and development",
+#                 },
+#                 {
+#                     "text": "Database",
+#                     "type": "topic",
+#                     "icon": "fas fa-database",
+#                     "url": "/datalogs/search/?q=database",
+#                     "description": "Database design and optimization",
+#                 },
+#                 {
+#                     "text": "Neural Networks",
+#                     "type": "topic",
+#                     "icon": "fas fa-project-diagram",
+#                     "url": "/datalogs/search/?q=neural+networks",
+#                     "description": "Deep learning and neural networks",
+#                 },
+#             ]
+#         else:
+#             suggestions = []
+#             query_lower = query.lower()
+
+#             # Search in posts
+#             matching_posts = (
+#                 Post.objects.filter(
+#                     Q(title__icontains=query) | Q(content__icontains=query),
+#                     status="published",
+#                 )
+#                 .select_related("category")
+#                 .order_by("-published_date")[:3]
+#             )
+
+#             for post in matching_posts:
+#                 suggestions.append(
+#                     {
+#                         "text": post.title,
+#                         "type": "post",
+#                         "icon": "fas fa-file-alt",
+#                         "url": post.get_absolute_url(),
+#                         "description": f"Published {post.published_date.strftime('%b %d, %Y')}"
+#                         if post.published_date
+#                         else "",
+#                     }
+#                 )
+
+#             # Search in categories
+#             matching_categories = (
+#                 Category.objects.filter(name__icontains=query)
+#                 .annotate(
+#                     post_count=Count("posts", filter=Q(posts__status="published"))
+#                 )
+#                 .filter(post_count__gt=0)[:2]
+#             )
+
+#             for category in matching_categories:
+#                 suggestions.append(
+#                     {
+#                         "text": f"{category.name} Category",
+#                         "type": "category",
+#                         "icon": getattr(category, "icon", "fas fa-folder"),
+#                         "url": category.get_absolute_url() if hasattr(category, 'get_absolute_url') else f"/datalogs/category/{category.slug}/",
+#                         "description": f"{category.post_count} post{'s' if category.post_count != 1 else ''}",
+#                     }
+#                 )
+
+#             # Search in tags
+#             matching_tags = (
+#                 Tag.objects.filter(name__icontains=query)
+#                 .annotate(
+#                     post_count=Count("posts", filter=Q(posts__status="published"))
+#                 )
+#                 .filter(post_count__gt=0)[:2]
+#             )
+
+#             for tag in matching_tags:
+#                 suggestions.append(
+#                     {
+#                         "text": f"#{tag.name}",
+#                         "type": "tag",
+#                         "icon": "fas fa-tag",
+#                         "url": tag.get_absolute_url() if hasattr(tag, 'get_absolute_url') else f"/datalogs/tag/{tag.slug}/",
+#                         "description": f"{tag.post_count} post{'s' if tag.post_count != 1 else ''}",
+#                     }
+#                 )
+
+#             # Add contextual topic suggestions
+#             if "python" in query_lower and not any(
+#                 s["text"] == "Python Development" for s in suggestions
+#             ):
+#                 suggestions.append(
+#                     {
+#                         "text": "Python Development",
+#                         "type": "topic",
+#                         "icon": "fab fa-python",
+#                         "url": f"/datalogs/search/?q=python",
+#                         "description": "Programming and development",
+#                     }
+#                 )
+
+#             if any(
+#                 term in query_lower for term in ["ml", "machine", "learning", "ai"]
+#             ) and not any("Machine Learning" in s["text"] for s in suggestions):
+#                 suggestions.append(
+#                     {
+#                         "text": "Machine Learning",
+#                         "type": "topic",
+#                         "icon": "fas fa-brain",
+#                         "url": f"/datalogs/search/?q=machine+learning",
+#                         "description": "AI and ML concepts",
+#                     }
+#                 )
+
+#             if any(
+#                 term in query_lower for term in ["api", "rest", "endpoint"]
+#             ) and not any("API" in s["text"] for s in suggestions):
+#                 suggestions.append(
+#                     {
+#                         "text": "API Development",
+#                         "type": "topic",
+#                         "icon": "fas fa-plug",
+#                         "url": f"/datalogs/search/?q=api",
+#                         "description": "API design and development",
+#                     }
+#                 )
+
+#         # Limit to max suggestions
+#         suggestions = suggestions[:max_suggestions]
+
+#         return JsonResponse(
+#             {
+#                 "suggestions": suggestions,
+#                 "query": query,
+#                 "count": len(suggestions),
+#                 "status": "success",
+#                 # "cached": False,
+#             }
+#         )
+
+#     except Exception as e:
+#         return JsonResponse(
+#             {
+#                 "suggestions": [],
+#                 "query": query,
+#                 "count": 0,
+#                 "status": "error",
+#                 "error": "Search temporarily unavailable",
+#             },
+#             status=500,
+#         )
+
+
+# @require_http_methods(["GET"])
+# def search_autocomplete(request):
+#     """
+#     Faster autocomplete endpoint that just returns text suggestions.
+#     For basic autocomplete functionality without full suggestion objects.
+#     """
+#     query = request.GET.get("q", "").strip()
+#     limit = int(request.GET.get("limit", 5))
+
+#     if len(query) < 2:
+#         return JsonResponse({"suggestions": []})
+
+#     try:
+#         # Get post titles that match
+#         post_titles = Post.objects.filter(
+#             title__icontains=query, status="published"
+#         ).values_list("title", flat=True)[:limit // 2]
+
+#         # Get category names that match
+#         category_names = Category.objects.filter(name__icontains=query).values_list(
+#             "name", flat=True
+#         )[:limit // 2]
+
+#         # Combine and limit
+#         suggestions = list(post_titles) + [f"{name} Category" for name in category_names]
+#         suggestions = suggestions[:limit]
+
+#         return JsonResponse(
+#             {"suggestions": suggestions, "query": query, "count": len(suggestions)}
+#         )
+
+#     except Exception:
+#         return JsonResponse({"suggestions": [], "error": "Autocomplete unavailable"})
+
+
+# def get_search_context(request, query=None):
+#     """
+#     Get all search-related context data.
+#     Use this in your main SearchView and PostListView to keep them clean.
+#     """
+#     if query is None:
+#         query = request.GET.get('q', '').strip()
+
+#     context = {'query': query}
+
+#     if query:
+#         # Get search results
+#         results = Post.objects.filter(
+#             Q(title__icontains=query) |
+#             Q(content__icontains=query) |
+#             Q(excerpt__icontains=query),
+#             status='published'
+#         ).select_related('category', 'author').prefetch_related('tags')
+
+#         context.update({
+#             'search_results': results,
+#             'search_results_count': results.count(),
+#             'has_results': results.exists(),
+#         })
+
+#     return context
+
+
+# # Helper function for other views that might need search context
+# def add_search_context(context, request):
+#     """
+#     Add search-related context to any view.
+#     Usage: context.update(add_search_context(context, request))
+#     """
+#     query = request.GET.get('q', '').strip()
+
+#     search_context = {
+#         'query': query,
+#         'has_search_query': bool(query),
+#         'search_enabled': True,
+#     }
+
+#     if query:
+#         # Add search results count for display
+#         search_context['search_results_count'] = Post.objects.filter(
+#             Q(title__icontains=query) | Q(content__icontains=query),
+#             status='published'
+#         ).count()
+
+#     return search_context
+
+# ================ SIMPLIFIED SEARCH VIEW REWORK ================
+
+
+class SearchView(ListView):
+    """
+    Enhanced search view with landing page and results.
+    URL: /datalogs/search/
+    """
+    model = Post
+    template_name = "blog/search.html"
+    context_object_name = "posts"
+    paginate_by = 12
+
+    def get_queryset(self):
+        query = self.request.GET.get('q', '').strip()
+
+        if not query:
+            return Post.objects.none()
+
+        queryset = Post.objects.filter(
+            status="published").select_related("category", "author").prefetch_related("tags")
+
+        # Build search query with relevance
+        search_filter = (
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(excerpt__icontains=query) |
+            Q(tags__name__icontains=query) |
+            Q(category__name__icontains=query)
+        )
+
+        queryset = queryset.filter(search_filter)
+
+        # Apply additional filters
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category__slug=category)
+
+        featured = self.request.GET.get('featured')
+        if featured == 'true':
+            queryset = queryset.filter(featured=True)
+
+        # Sort by relevance (title matches first, then content)
+        sort_by = self.request.GET.get('sort', 'relevance')
+        if sort_by == 'date':
+            queryset = queryset.order_by('-published_date')
+        elif sort_by == 'reading':
+            queryset = queryset.order_by('reading_time')
+        else:
+            # Simple relevance: title matches first
+            queryset = self._apply_relevance_sorting(queryset, query)
+
+        return queryset.distinct()
+
+    def _apply_relevance_sorting(self, queryset, query):
+        """
+        Apply relevance-based sorting using modern Django ORM methods.
+        No .extra() method - uses Case/When for conditional logic.
+        """
+        # Create relevance score using Case/When (modern alt to .extra())
+        relevance_score = Case(
+            # Title exact match gets highest score (100)
+            When(title__iexact=query, then=Value(100)),
+            # Title contains gets high score (80)
+            When(title__icontains=query, then=Value(80)),
+            # Excerpt contains gets medium score (60)
+            When(excerpt__icontains=query, then=Value(60)),
+            # Content contains gets lower score (40)
+            When(content__icontains=query, then=Value(40)),
+            # Category/tag match gets base score (20)
+            When(
+                Q(category__name__icontains=query) | Q(tags__name__icontains=query),
+                then=Value(20)
+            ),
+            # Default score (10)
+            default=Value(10),
+            output_field=IntegerField()
+        )
+
+        # Apply relevance scoring and sort
+        return queryset.annotate(
+            relevance=relevance_score
+        ).order_by('-relevance', '-published_date')
+
+    def get_context_data(self, **kwargs):
+        """Add search-specific context."""
+        context = super().get_context_data(**kwargs)
+
+        query = self.request.GET.get("q", "").strip()
+        posts = context['posts'] if query else []
+
+        if not query:
+            # Search landing page context
+            context.update(self._get_landing_page_context())
+        else:
+            # Search results page context
+            context.update(self._get_results_page_context(posts, query))
+
+        context.update({
+            'query': query,
+            'page_title': f'Search Parameters: {query}' if query else 'Search',
+            'page_subtitle': f'Results for {query}' if query else 'Search DataLog entries',
+            'show_breadcrumbs': True,
+        })
+
+        return context
+
+    def _get_landing_page_context(self):
+        """Get context for search landing if no query"""
+        # Search stats
+        total_searchable_posts = Post.objects.filter(status="published").count()
+        total_searchable_tags = Tag.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).filter(post_count__gt=0).count()
+        total_categories = Category.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).filter(post_count__gt=0).count()
+        code_entries_count = Post.objects.filter(
+            status="published"
+        ).exclude(featured_code__exact='').count()
+
+        # Popular searches (can implment analytics for this later)
+        # TODO: For now, using static data - replace w real analytics later
+        popular_searches = [
+            {'term': 'python', 'count': 15},
+            {'term': 'django', 'count': 12},
+            {'term': 'javascript', 'count': 10},
+            {'term': 'react', 'count': 8},
+            {'term': 'data science', 'count': 6},
+        ]
+
+        # Recent posts
+        recent_posts = Post.objects.filter(
+            status="published"
+        ).order_by('-published_date')[:6]
+
+        # Featured categories for quick access
+        featured_categories = Category.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).filter(post_count__gt=0).order_by('-post_count')[:6]
+
+        return {
+            'total_searchable_posts': total_searchable_posts,
+            'total_searchable_tags': total_searchable_tags,
+            'total_categories': total_categories,
+            'coded_entries_count': code_entries_count,
+            'popular_searches': popular_searches,
+            'recent_posts': recent_posts,
+            'featured_categories': featured_categories,
+        }
+
+    def _get_results_page_context(self, posts, query):
+        """Get context for search results page."""
+        # Count results (handle both QuerySet and list)
+        if hasattr(posts, 'count'):
+            results_count = posts.count()
+        else:
+            results_count = len(posts)
+
+        # Calculate estimated reading time for results
+        estimated_total_time = 0
+        if posts and hasattr(posts, 'aggregate'):
+            estimated_total_time = posts.aggregate(
+                total_time=Sum("reading_time")
+            )["total_time"] or 0
+        elif posts:
+            # Fallback for list of posts
+            estimated_total_time = sum(
+                getattr(post, 'reading_time', 0) for post in posts
+            )
+
+        # Search performance timing (optional)
+        # TODO: Can add timing logic here later
+        search_time = None
+
+        # Related content for no results case
+        related_posts = []
+        if results_count == 0:
+            # Get some recent posts as suggestions
+            related_posts = Post.objects.filter(
+                status="published"
+            ).order_by('-published_date')[:3]
+
+        return {
+            'results_count': results_count,
+            'estimated_total_time': estimated_total_time,
+            'search_time': search_time,
+            'related_posts': related_posts,
+        }
+
+
+# ===================== SIMPLIFIED AJAX VIEWS FOR ENHANCED FEATURES =====================
+
+def search_suggestions(request):
+    """
+    AJAX endpoint for search suggestions.
+    URL: /datalogs/search/suggestions/
+    """
+    query = request.GET.get('q', '').strip()
+    limit = int(request.GET.get("limit", 6))
+
+    if len(query) < 2:
+        return JsonResponse({"suggestions": []})
+
+    try:
+        suggestions = []
+
+        # Get post titles that match
+        post_titles = Post.objects.filter(
+            title__icontains=query, status="published"
+        ).values_list("title", flat=True)[:limit // 2]
+
+        for title in post_titles:
+            suggestions.append({
+                'type': 'post',
+                'text': title,
+                'url': title.get_absolute_url(),  # TODO: Build URL
+            })
+
+        # Get category names that match
+        categories = Category.object.filter(
+            name__icontains=query
+        ).values('name', 'slug')[:limit // 3]
+
+        for cat in categories:
+            suggestions.append({
+                'type': 'category',
+                'text': cat['name'],
+                'url': f'/datalogs/category/{cat["slug"]}/',
+            })
+
+        # Get tag names that match
+        tags = Tag.objects.filter(
+            name__icontains=query
+        ).values('name', 'slug')[:limit // 3]
+
+        for tag in tags:
+            suggestions.append({
+                'type': 'tag',
+                'text': tag['name'],
+                'url': f'/datalogs/tag/{tag["slug"]}/'
+            })
+
+        return JsonResponse({
+            "suggestions": suggestions[:limit],
+            "query": query
+        })
+
+    except Exception as e:
+        return JsonResponse({"suggestions": [], "error": str(e)})
+
 
 # ===================== ADMIN VIEWS FOR POST MANAGEMENT =====================
 
@@ -359,13 +1238,13 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         # DEBUG: Print form data and POST Data
-        print("=" * 50)
-        print("FORM SUBMITTED")
-        print("POST Data:")
+        # print("=" * 50)
+        # print("FORM SUBMITTED")
+        # print("POST Data:")
         pprint.pprint(dict(self.request.POST))
-        print("Cleaned Data:")
+        # print("Cleaned Data:")
         pprint.pprint(form.cleaned_data)
-        print("=" * 50)
+        # print("=" * 50)
 
         # Set the author to current user
         form.instance.author = self.request.user
@@ -479,7 +1358,6 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     #             })
     #     return headings
 
-
     # def dispatch(self, request, *args, **kwargs):
     #     # Check if user is the author and has permission
     #     self.object = self.get_object()
@@ -487,8 +1365,6 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     #         messages.error(request, "You don't have permission to edit this post.")
     #         return redirect("blog:post_detail", slug=self.object.slug)
     #     return super().dispatch(request, *args, **kwargs)
-
-    
 
     # def get_form(self, form_class=None):
     #     form = super().get_form(form_class)

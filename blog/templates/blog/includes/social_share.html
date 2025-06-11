@@ -1,0 +1,151 @@
+<!----
+ * AURA DataLogs - Social Share Component
+ * Simple social sharing buttons with AURA styling
+ * Usage: {--% social_share post %--}
+---->
+
+{% load aura_filters %}
+
+<div class="social-share-component">
+    <div class="share-header">
+        <i class="fas fa-share-alt"></i>
+        <span class="share-label">Share Entry</span>
+    </div>
+    
+    <div class="share-buttons">
+        <!-- Twitter Share -->
+        <a href="https://twitter.com/intent/tweet?text={{ post.title|urlencode }}&url={{ post_url|urlencode }}&via={{ site_name|default:'AURA'|urlencode }}" 
+           target="_blank" 
+           class="share-btn twitter-btn"
+           title="Share on Twitter">
+            <i class="fab fa-twitter"></i>
+            <span>Twitter</span>
+        </a>
+        
+        <!-- LinkedIn Share -->
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ post_url|urlencode }}" 
+           target="_blank" 
+           class="share-btn linkedin-btn"
+           title="Share on LinkedIn">
+            <i class="fab fa-linkedin-in"></i>
+            <span>LinkedIn</span>
+        </a>
+        
+        <!-- Reddit Share -->
+        <a href="https://reddit.com/submit?url={{ post_url|urlencode }}&title={{ post.title|urlencode }}" 
+           target="_blank" 
+           class="share-btn reddit-btn"
+           title="Share on Reddit">
+            <i class="fab fa-reddit-alien"></i>
+            <span>Reddit</span>
+        </a>
+        
+        <!-- Copy Link -->
+        <button class="share-btn copy-btn" 
+                onclick="copyToClipboard('{{ post_url }}')"
+                title="Copy Link">
+            <i class="fas fa-link"></i>
+            <span>Copy Link</span>
+        </button>
+    </div>
+</div>
+
+<style>
+/* Social Share Component Styles */
+.social-share-component {
+    background: rgba(179, 157, 219, 0.05);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-xl) 0;
+}
+
+.share-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    font-family: var(--font-heading);
+    color: var(--color-lavender);
+    font-weight: 600;
+}
+
+.share-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.share-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.twitter-btn:hover {
+    background: rgba(29, 161, 242, 0.2);
+    border-color: rgba(29, 161, 242, 0.4);
+    color: #1da1f2;
+}
+
+.linkedin-btn:hover {
+    background: rgba(0, 119, 181, 0.2);
+    border-color: rgba(0, 119, 181, 0.4);
+    color: #0077b5;
+}
+
+.reddit-btn:hover {
+    background: rgba(255, 69, 0, 0.2);
+    border-color: rgba(255, 69, 0, 0.4);
+    color: #ff4500;
+}
+
+.copy-btn:hover {
+    background: rgba(179, 157, 219, 0.2);
+    border-color: rgba(179, 157, 219, 0.4);
+    color: var(--color-lavender);
+}
+
+@media (max-width: 576px) {
+    .share-buttons {
+        flex-direction: column;
+    }
+    
+    .share-btn {
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show feedback
+        const btn = event.target.closest('.copy-btn');
+        const originalText = btn.querySelector('span').textContent;
+        btn.querySelector('span').textContent = 'Copied!';
+        btn.style.background = 'rgba(179, 157, 219, 0.2)';
+        btn.style.color = 'var(--color-lavender)';
+        
+        setTimeout(() => {
+            btn.querySelector('span').textContent = originalText;
+            btn.style.background = '';
+            btn.style.color = '';
+        }, 2000);
+    });
+}
+</script>

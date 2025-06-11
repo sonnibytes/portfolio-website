@@ -1,0 +1,453 @@
+<!----
+ * AURA DataLogs - Reading Progress Indicator Template (SIMPLIFIED)
+ * File: blog/templates/blog/includes/reading_progress_indicator.html  
+ * SIMPLIFIED: Focus on working progress tracking without complex configurations
+---->
+
+{% load aura_filters %}
+{% load aura_components %}
+
+<div class="reading-progress-indicator reading-progress-{{ style|default:'bar' }}" 
+     id="readingProgressIndicator">
+
+    {% if style == 'bar' %}
+    <!-- Bar progress indicator -->
+    <div class="progress-bar-container">
+        {% if position == 'top' or position == 'bottom' %}
+        <!-- Fixed position progress bar -->
+        <div class="fixed-progress-wrapper">
+            {% progress_bar 0 100 css_class="reading-progress-bar" show_text=show_percentage|default:True color="lavender" size="sm" %}
+            
+            {% if show_time %}
+            <div class="progress-time-info">
+                <span class="time-elapsed">0min</span>
+                {% if total_reading_time %}
+                <span class="time-separator"> / </span>
+                <span class="time-total">{{ total_reading_time|format_duration }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        {% else %}
+        <!-- Sidebar progress bar -->
+        <div class="sidebar-progress-wrapper">
+            {% if total_reading_time %}
+            <div class="progress-header">
+                <span class="progress-label">Reading Progress</span>
+                <span class="progress-estimate">{{ total_reading_time|format_duration }} read</span>
+            </div>
+            {% endif %}
+            
+            {% progress_bar 0 100 css_class="reading-progress-bar" show_text=show_percentage|default:True color="lavender" size="md" %}
+            
+            {% if show_time %}
+            <div class="progress-details">
+                <div class="time-stat">
+                    <span class="stat-label">Elapsed</span>
+                    <span class="stat-value time-elapsed">0min</span>
+                </div>
+                {% if total_reading_time %}
+                <div class="time-stat">
+                    <span class="stat-label">Remaining</span>
+                    <span class="stat-value time-remaining">{{ total_reading_time|format_duration }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'circle' %}
+    <!-- Circular progress indicator -->
+    <div class="circle-progress-container">
+        <div class="circle-progress-wrapper">
+            {% circular_progress 0 100 size="60px" color="lavender" %}
+            
+            <div class="circle-progress-overlay">
+                {% if show_percentage %}
+                <div class="circle-percentage">0%</div>
+                {% endif %}
+                
+                {% if show_time %}
+                <div class="circle-time">
+                    <div class="time-elapsed">0min</div>
+                    {% if total_reading_time %}
+                    <div class="time-remaining">{{ total_reading_time|format_duration }} left</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal progress indicator -->
+    <div class="minimal-progress-container">
+        {% if show_percentage %}
+        <span class="minimal-percentage">0%</span>
+        {% endif %}
+        
+        {% progress_bar 0 100 css_class="minimal-progress-bar" show_text=False color="lavender" size="xs" %}
+        
+        {% if show_time and total_reading_time %}
+        <span class="minimal-time">
+            <span class="time-elapsed">0min</span>
+            /<span class="time-total">{{ total_reading_time|format_duration }}</span>
+        </span>
+        {% endif %}
+    </div>
+    
+    {% else %}
+    <!-- Default: bar style -->
+    {% include 'blog/includes/reading_progress_indicator.html' with style='bar' %}
+    {% endif %}
+
+</div>
+
+<style>
+/* ========== SIMPLIFIED READING PROGRESS STYLES ========== */
+
+.reading-progress-indicator {
+    font-family: var(--font-body);
+    color: var(--color-text-secondary);
+}
+
+/* ========== POSITION VARIANTS ========== */
+
+.reading-progress-top {
+    position: fixed;
+    top: 140px; /* Below navs */
+    left: 0;
+    right: 0;
+    z-index: 999;
+}
+
+.reading-progress-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+}
+
+.reading-progress-sidebar {
+    margin: var(--spacing-lg) 0;
+}
+
+/* ========== BAR STYLE ========== */
+
+.fixed-progress-wrapper {
+    background: 
+        var(--gradient-glass),
+        rgba(7, 7, 18, 0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: var(--spacing-sm);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.reading-progress-bottom .fixed-progress-wrapper {
+    border-bottom: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.progress-time-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-code);
+}
+
+.sidebar-progress-wrapper {
+    padding: var(--spacing-md);
+    background: 
+        var(--gradient-glass),
+        rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-lg);
+    backdrop-filter: blur(10px);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.progress-label {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 0.9rem;
+}
+
+.progress-estimate {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--spacing-sm);
+    gap: var(--spacing-md);
+}
+
+.time-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.stat-label {
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    color: var(--color-text);
+    font-weight: 600;
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+}
+
+/* ========== CIRCLE STYLE ========== */
+
+.circle-progress-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.circle-progress-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.circle-progress-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.circle-percentage {
+    font-family: var(--font-code);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-lavender);
+    line-height: 1;
+}
+
+.circle-time {
+    margin-top: var(--spacing-xs);
+}
+
+.time-elapsed {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-text);
+    font-weight: 600;
+    display: block;
+}
+
+.time-remaining {
+    font-family: var(--font-code);
+    font-size: 0.6rem;
+    color: var(--color-text-secondary);
+    margin-top: 0.1rem;
+    display: block;
+}
+
+/* ========== MINIMAL STYLE ========== */
+
+.minimal-progress-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-md);
+    font-size: 0.8rem;
+}
+
+.minimal-percentage {
+    font-family: var(--font-code);
+    font-weight: 600;
+    color: var(--color-lavender);
+    min-width: 35px;
+}
+
+.minimal-time {
+    font-family: var(--font-code);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    font-size: 0.75rem;
+}
+
+.minimal-progress-bar {
+    flex: 1;
+    min-width: 100px;
+}
+
+/* ========== TIME DISPLAYS ========== */
+
+.time-elapsed,
+.time-remaining,
+.time-total {
+    font-family: var(--font-code);
+    font-weight: 600;
+}
+
+.time-elapsed {
+    color: var(--color-teal);
+}
+
+.time-remaining {
+    color: var(--color-text-secondary);
+}
+
+.time-separator {
+    color: var(--color-text-tertiary);
+    opacity: 0.7;
+    margin: 0 var(--spacing-xs);
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+
+@media (max-width: 991px) {
+    .reading-progress-top {
+        top: 120px; /* Adjust for mobile nav */
+    }
+    
+    .progress-details {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        align-items: center;
+    }
+    
+    .progress-time-info {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+}
+
+@media (max-width: 767px) {
+    .fixed-progress-wrapper {
+        padding: var(--spacing-xs);
+    }
+    
+    .sidebar-progress-wrapper {
+        padding: var(--spacing-sm);
+    }
+    
+    .minimal-progress-container {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: stretch;
+        text-align: center;
+    }
+    
+    .minimal-percentage {
+        min-width: auto;
+    }
+    
+    .progress-header {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        text-align: center;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Hide time displays on very small screens */
+    .time-remaining,
+    .time-total,
+    .time-separator {
+        display: none;
+    }
+    
+    .circle-time {
+        display: none;
+    }
+    
+    .progress-time-info {
+        display: none;
+    }
+}
+
+/* ========== ACCESSIBILITY ========== */
+
+.reading-progress-indicator:focus {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .fixed-progress-wrapper,
+    .sidebar-progress-wrapper {
+        border-width: 2px;
+        backdrop-filter: none;
+        background: rgba(7, 7, 18, 0.95);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .reading-progress-bar .aura-progress-bar {
+        transition: none !important;
+    }
+}
+
+/* ========== PRINT STYLES ========== */
+
+@media print {
+    .reading-progress-indicator {
+        display: none !important;
+    }
+}
+
+/* ========== ANIMATION STATES ========== */
+
+.reading-progress-indicator.progress-hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.reading-progress-indicator.progress-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.reading-progress-indicator.reading-active .circle-percentage {
+    animation: progressPulse 2s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+</style>
+
+<!-- REMOVED: All JavaScript functionality moved to datalogs-consolidated.js -->
+<!-- The consolidated JavaScript handles all functionality including:
+     - Progress calculation and updates
+     - Time tracking and display updates
+     - Smooth progress bar animations
+     - Responsive behavior
+     - All event handlers and state management
+     - SEE ARCHIVE FOR PREVIOUS VERSION
+-->

@@ -1,0 +1,456 @@
+<!----
+ * AURA DataLogs - System Connections Component (STREAMLINED)
+ * Reusable component with minimal CSS - relies on consolidated stylesheet
+ * Usage: {--% include 'blog/includes/system_connections.html' with post=post style="full" %--}
+ * Styles: full, compact, minimal, badge
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+{% if post|has_system_connection %}
+<div class="system-connections-display system-connections-{{ style|default:'compact' }}">
+    
+    {% if style == 'full' %}
+    <!-- Full system connections for detail pages -->
+    <div class="glass-card connections-container">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-link"></i>
+                Connected Systems
+            </h3>
+            <div class="connections-meta">
+                <span class="connections-count">{{ post.get_system_connections.count }} connection{{ post.get_system_connections.count|pluralize }}</span>
+            </div>
+        </div>
+        
+        <div class="card-content">
+            <div class="connections-grid">
+                {% for connection in post.get_system_connections %}
+                <a href="{{ connection.system.get_absolute_url }}" class="connection-card">
+                    <div class="connection-header">
+                        <div class="connection-icon">
+                            <i class="{{ connection.get_connection_icon|default:'fas fa-project-diagram' }}"></i>
+                        </div>
+                        <div class="connection-status">
+                            <div class="status-indicator {{ connection.system.status|default:'operational' }}"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="connection-content">
+                        <div class="connection-id">{{ connection.system.system_id|default:"SYS-001" }}</div>
+                        <div class="connection-title">{{ connection.system.title }}</div>
+                        <div class="connection-type">{{ connection.get_connection_type_display|default:"Development" }}</div>
+                        
+                        {% if connection.system.completion_percent %}
+                        <div class="connection-progress">
+                            {% progress_bar connection.system.completion_percent 100 show_text=True color="coral" css_class="connection-progress-bar" %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="connection-footer">
+                        <div class="connection-priority priority-{{ connection.priority|default:'2' }}">
+                            <i class="fas fa-flag"></i>
+                            <span>{{ connection.get_priority_display|default:"Medium" }}</span>
+                        </div>
+                        <div class="connection-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Scanning line effect (handled by consolidated CSS) -->
+                    <div class="connection-scanning-line"></div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    {% elif style == 'compact' %}
+    <!-- Compact connections for cards and lists -->
+    <div class="connections-compact">
+        <div class="connections-label">
+            <i class="fas fa-link"></i>
+            <span>Systems ({{ post.get_system_connections.count }})</span>
+        </div>
+        
+        <div class="connections-list">
+            {% for connection in post.get_system_connections|slice:":3" %}
+            <a href="{{ connection.system.get_absolute_url }}" class="connection-chip">
+                <div class="chip-status">
+                    <div class="status-indicator {{ connection.system.status|default:'operational' }}"></div>
+                </div>
+                <div class="chip-content">
+                    <span class="chip-id">{{ connection.system.system_id|default:"SYS-001" }}</span>
+                    <span class="chip-title">{{ connection.system.title|truncate_smart:20 }}</span>
+                </div>
+                <div class="chip-type">{{ connection.connection_type|slice:":3"|upper|default:"DEV" }}</div>
+            </a>
+            {% endfor %}
+            
+            {% if post.get_system_connections.count > 3 %}
+            <div class="connection-overflow">
+                +{{ post.get_system_connections.count|add:"-3" }} more
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- Minimal connections for tight spaces -->
+    <div class="connections-minimal">
+        <span class="connections-icon">
+            <i class="fas fa-link"></i>
+        </span>
+        <span class="connections-text">
+            {{ post.get_system_connections.count }} system{{ post.get_system_connections.count|pluralize }}
+        </span>
+        {% if post.get_primary_system %}
+        <span class="primary-system">
+            ({{ post.get_primary_system.system_id|default:"SYS-001" }})
+        </span>
+        {% endif %}
+    </div>
+    
+    {% elif style == 'badge' %}
+    <!-- Badge style for navigation and breadcrumbs -->
+    <div class="connections-badge">
+        <div class="badge-icon">
+            <i class="fas fa-project-diagram"></i>
+        </div>
+        <div class="badge-content">
+            <span class="badge-count">{{ post.get_system_connections.count }}</span>
+            <span class="badge-label">System{{ post.get_system_connections.count|pluralize }}</span>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Default: compact style -->
+    {% include 'blog/includes/system_connections.html' with post=post style='compact' %}
+    {% endif %}
+    
+</div>
+{% endif %}
+
+<style>
+/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
+
+/* Only styles that are NOT in consolidated CSS or need component-specific adjustments */
+
+/* Connections container - enhance glass card specifically for systems */
+.connections-container {
+    background: 
+        var(--gradient-glass),
+        rgba(255, 138, 128, 0.02);
+    border-color: rgba(255, 138, 128, 0.1);
+}
+
+.connections-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-coral), var(--color-lavender), var(--color-teal));
+    opacity: 0.8;
+}
+
+/* Connections meta info */
+.connections-meta {
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+
+/* Connection cards grid - inherits from consolidated CSS but needs system-specific theming */
+.connections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.connection-card {
+    background: 
+        var(--gradient-glass),
+        rgba(255, 138, 128, 0.05);
+    border: 1px solid rgba(255, 138, 128, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(15px);
+}
+
+.connection-card:hover {
+    background: 
+        var(--gradient-glass),
+        rgba(255, 138, 128, 0.1);
+    border-color: rgba(255, 138, 128, 0.4);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: var(--shadow-glow-coral);
+    color: var(--color-text);
+}
+
+/* Connection ID styling (specific to systems) */
+.connection-id {
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    color: var(--color-coral);
+    background: rgba(255, 138, 128, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    display: inline-block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Priority indicators with coral theme */
+.connection-priority.priority-1 {
+    background: rgba(94, 223, 255, 0.2);
+    color: #5edfff;
+}
+
+.connection-priority.priority-2 {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+}
+
+.connection-priority.priority-3 {
+    background: rgba(255, 189, 46, 0.2);
+    color: #ffbd2e;
+}
+
+.connection-priority.priority-4 {
+    background: rgba(255, 107, 139, 0.2);
+    color: #ff6b8b;
+}
+
+/* Connection scanning line (inherits base from consolidated CSS) */
+.connection-scanning-line {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 138, 128, 0.1) 50%, 
+        transparent 100%);
+    transition: left var(--transition-slow);
+    pointer-events: none;
+}
+
+.connection-card:hover .connection-scanning-line {
+    left: 100%;
+}
+
+/* Compact connections styling (specific enhancements) */
+.connections-compact {
+    background: rgba(255, 138, 128, 0.05);
+    border: 1px solid rgba(255, 138, 128, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-md);
+}
+
+.connections-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+    color: var(--color-coral);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Connection chips - system-specific styling */
+.connection-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.connection-chip:hover {
+    background: rgba(255, 138, 128, 0.1);
+    border-color: rgba(255, 138, 128, 0.3);
+    color: var(--color-text);
+    transform: translateY(-2px);
+}
+
+.chip-id {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-coral);
+    font-weight: 600;
+}
+
+.chip-type {
+    font-family: var(--font-code);
+    font-size: 0.65rem;
+    color: var(--color-text-tertiary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.1rem 0.3rem;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+}
+
+/* Minimal connections - simple styling */
+.connections-minimal {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+}
+
+.connections-icon {
+    color: var(--color-coral);
+}
+
+.primary-system {
+    font-family: var(--font-code);
+    color: var(--color-coral);
+    font-weight: 600;
+}
+
+/* Badge connections */
+.connections-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 138, 128, 0.1);
+    border: 1px solid rgba(255, 138, 128, 0.3);
+    border-radius: var(--border-radius-md);
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+}
+
+.badge-icon {
+    color: var(--color-coral);
+}
+
+.badge-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.badge-count {
+    color: var(--color-text);
+    font-weight: 600;
+    line-height: 1;
+}
+
+.badge-label {
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+/* Component-specific responsive adjustments */
+@media (max-width: 991px) {
+    .connections-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--spacing-md);
+    }
+}
+
+@media (max-width: 767px) {
+    .connections-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .connections-list {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .connection-chip {
+        justify-content: space-between;
+    }
+    
+    .connections-minimal {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+}
+
+@media (max-width: 576px) {
+    .connections-compact {
+        padding: var(--spacing-sm);
+    }
+    
+    .connection-card {
+        padding: var(--spacing-md);
+    }
+}
+
+/* Accessibility enhancements */
+.connection-card:focus,
+.connection-chip:focus {
+    outline: 2px solid var(--color-coral);
+    outline-offset: 2px;
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+    .connection-card,
+    .connections-compact,
+    .connections-badge {
+        border-width: 2px;
+        backdrop-filter: none;
+        background: rgba(13, 13, 31, 0.9);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .connection-card:hover,
+    .connection-chip:hover {
+        transform: none;
+    }
+    
+    .connection-scanning-line {
+        display: none;
+    }
+}
+</style>
+
+<!-- 
+REMOVED: All JavaScript functionality - now handled by datalogs-consolidated.js
+The consolidated JavaScript automatically handles:
+- Connection card hover effects via initializeCardInteractions()
+- Click handling with ripple effects
+- System connection animations and entrance effects
+- Touch interactions and responsive behavior
+- All event handlers and state management
+
+System connections functionality is fully managed by:
+- DatalogInterface.initializeCardInteractions()
+- DatalogInterface.animateCardHover()
+- DatalogInterface.createCardRipple()
+- DatalogInterface.observeCardEntrance()
+-->

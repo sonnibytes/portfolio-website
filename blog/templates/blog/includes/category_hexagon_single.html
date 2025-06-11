@@ -1,0 +1,326 @@
+<!----
+ * ENHANCED: blog/templates/blog/includes/category_hexagon_single.html  
+ * Updated to use unified styling - works with existing template tag
+ * Your existing {--% category_hexagon_single %--} will use this automatically
+---->
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="single-hexagon-wrapper size-{{ size|default:'md' }} {% if show_label %}with-label{% endif %}">
+    
+    <div class="hexagon-container">
+        <div class="category-hexagon unified-hex {{ size|default:'md' }}" 
+             {% if category %}
+             data-category="{{ category.slug }}"
+             style="--hex-color: {{ category|category_hex_color }}; --hex-color-rgb: {{ category|category_hex_color:'rgb' }};"
+             {% elif special_type == 'all' %}
+             data-category="all"
+             style="--hex-color: var(--color-lavender); --hex-color-rgb: 179, 157, 219;"
+             {% endif %}>
+            
+            <div class="hex-content">
+                {% if special_type == 'all' %}
+                    <i class="fas fa-th-large hex-icon"></i>
+                {% elif category.icon %}
+                    <i class="fas {{ category.icon }} hex-icon"></i>
+                {% elif category %}
+                    <span class="hex-text">{{ category|category_hex_code }}</span>
+                {% else %}
+                    <i class="fas fa-folder hex-icon"></i>
+                {% endif %}
+            </div>
+            
+        </div>
+    </div>
+    
+    {% if show_label %}
+    <div class="hex-label-container">
+        {% if special_type == 'all' %}
+            <span class="hex-label">All Categories</span>
+        {% elif category %}
+            <span class="hex-label">{{ category.name }}</span>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+</div>
+
+<style>
+/* ========== ENHANCED SINGLE HEXAGON STYLES ========== */
+
+.single-hexagon-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    position: relative;
+}
+
+.hexagon-container {
+    position: relative;
+}
+
+.category-hexagon.unified-hex {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.15) 0%,
+        rgba(255, 255, 255, 0.05) 50%, 
+        rgba(255, 255, 255, 0.1) 100%),
+        rgba(13, 13, 31, 0.6);
+    backdrop-filter: blur(15px);
+    border: 2px solid rgba(var(--hex-color-rgb, 179, 157, 219), 0.3);
+    transition: all var(--transition-normal);
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(var(--hex-color-rgb, 179, 157, 219), 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.category-hexagon.unified-hex::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    background: var(--hex-color, var(--color-lavender));
+    clip-path: inherit;
+    z-index: -1;
+    opacity: 0.4;
+    filter: blur(2px);
+    transition: all var(--transition-fast);
+}
+
+.category-hexagon.unified-hex::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    background: var(--hex-color, var(--color-lavender));
+    clip-path: inherit;
+    z-index: -2;
+    opacity: 0.2;
+    filter: blur(6px);
+    transition: all var(--transition-fast);
+}
+
+/* Size Variants */
+.category-hexagon.unified-hex.xs {
+    width: 28px;
+    height: 28px;
+}
+
+.category-hexagon.unified-hex.sm {
+    width: 36px;
+    height: 36px;
+}
+
+.category-hexagon.unified-hex.md {
+    width: 48px;
+    height: 48px;
+}
+
+.category-hexagon.unified-hex.lg {
+    width: 60px;
+    height: 60px;
+}
+
+.category-hexagon.unified-hex.xl {
+    width: 72px;
+    height: 72px;
+}
+
+/* Content Styles */
+.hex-content {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--color-text);
+}
+
+.hex-icon {
+    transition: all var(--transition-fast);
+    filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.3));
+}
+
+.hex-text {
+    font-family: var(--font-code);
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1;
+    text-align: center;
+    transition: all var(--transition-fast);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Size-specific content sizing */
+.unified-hex.xs .hex-icon { font-size: 0.7rem; }
+.unified-hex.xs .hex-text { font-size: 0.5rem; }
+
+.unified-hex.sm .hex-icon { font-size: 0.9rem; }
+.unified-hex.sm .hex-text { font-size: 0.6rem; }
+
+.unified-hex.md .hex-icon { font-size: 1.1rem; }
+.unified-hex.md .hex-text { font-size: 0.7rem; }
+
+.unified-hex.lg .hex-icon { font-size: 1.4rem; }
+.unified-hex.lg .hex-text { font-size: 0.85rem; }
+
+.unified-hex.xl .hex-icon { font-size: 1.7rem; }
+.unified-hex.xl .hex-text { font-size: 1rem; }
+
+/* Label Styles */
+.hex-label-container {
+    text-align: center;
+    z-index: 2;
+}
+
+.hex-label {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    transition: color var(--transition-fast);
+    display: block;
+    margin: 0;
+}
+
+/* Size-specific label sizing */
+.single-hexagon-wrapper.size-xs .hex-label { font-size: 0.6rem; }
+.single-hexagon-wrapper.size-sm .hex-label { font-size: 0.7rem; }
+.single-hexagon-wrapper.size-md .hex-label { font-size: 0.8rem; }
+.single-hexagon-wrapper.size-lg .hex-label { font-size: 0.9rem; }
+.single-hexagon-wrapper.size-xl .hex-label { font-size: 1rem; }
+
+/* Hover Effects */
+.single-hexagon-wrapper:hover .category-hexagon.unified-hex {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.1) 50%, 
+        rgba(255, 255, 255, 0.2) 100%),
+        rgba(13, 13, 31, 0.7);
+    transform: scale(1.05);
+    border-color: rgba(var(--hex-color-rgb, 179, 157, 219), 0.6);
+    box-shadow: 
+        0 6px 25px rgba(0, 0, 0, 0.3),
+        0 0 0 2px rgba(var(--hex-color-rgb, 179, 157, 219), 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.single-hexagon-wrapper:hover .category-hexagon.unified-hex::before {
+    opacity: 0.7;
+    filter: blur(3px);
+}
+
+.single-hexagon-wrapper:hover .category-hexagon.unified-hex::after {
+    opacity: 0.4;
+    filter: blur(8px);
+    transform: scale(1.1);
+}
+
+.single-hexagon-wrapper:hover .hex-icon,
+.single-hexagon-wrapper:hover .hex-text {
+    color: var(--color-text);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    transform: scale(1.05);
+}
+
+.single-hexagon-wrapper:hover .hex-label {
+    color: var(--color-text);
+}
+
+/* Active State */
+.hex-category-item.active .single-hexagon-wrapper .category-hexagon.unified-hex {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0.15) 50%, 
+        rgba(255, 255, 255, 0.25) 100%),
+        rgba(13, 13, 31, 0.8);
+    transform: scale(1.1);
+    border-color: rgba(var(--hex-color-rgb, 179, 157, 219), 0.8);
+    box-shadow: 
+        0 8px 30px rgba(0, 0, 0, 0.4),
+        0 0 0 3px rgba(var(--hex-color-rgb, 179, 157, 219), 0.4),
+        inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.hex-category-item.active .single-hexagon-wrapper .category-hexagon.unified-hex::before {
+    opacity: 0.9;
+    filter: blur(4px);
+}
+
+.hex-category-item.active .single-hexagon-wrapper .category-hexagon.unified-hex::after {
+    opacity: 0.6;
+    filter: blur(10px);
+    transform: scale(1.2);
+}
+
+.hex-category-item.active .single-hexagon-wrapper .hex-icon,
+.hex-category-item.active .single-hexagon-wrapper .hex-text {
+    color: var(--color-text);
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+    transform: scale(1.1);
+    font-weight: 800;
+}
+
+.hex-category-item.active .single-hexagon-wrapper .hex-label {
+    color: var(--color-text);
+    font-weight: 700;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767px) {
+    .category-hexagon.unified-hex.lg {
+        width: 52px;
+        height: 52px;
+    }
+    
+    .category-hexagon.unified-hex.xl {
+        width: 64px;
+        height: 64px;
+    }
+}
+
+@media (max-width: 576px) {
+    .category-hexagon.unified-hex.md {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .category-hexagon.unified-hex.lg {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+/* Accessibility */
+.single-hexagon-wrapper:focus-within {
+    outline: 2px solid var(--hex-color, var(--color-lavender));
+    outline-offset: 4px;
+    border-radius: var(--border-radius-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .category-hexagon.unified-hex,
+    .hex-icon,
+    .hex-text,
+    .hex-label {
+        transition: none;
+    }
+    
+    .single-hexagon-wrapper:hover .category-hexagon.unified-hex {
+        transform: none;
+    }
+}
+</style>

@@ -6,15 +6,21 @@ from django.views.generic import (
     DeleteView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy, reverse
-from django.contrib import messages
+
 from django.db.models import Count, Avg, Q
 from django.http import JsonResponse
 from django.utils import timezone
 
+import re
+from datetime import timedelta
+import random
+
 from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric
-from blog.models import Post, SystemLogEntry
+from blog.models import Post, SystemLogEntry, Category
+from core.models import Skill, Experience
 
 
 class SystemModuleListView(ListView):
@@ -97,11 +103,14 @@ class SystemModuleListView(ListView):
         context["current_sort"] = self.request.GET.get("sort", "latest")
         context["search_search"] = self.request.GET.get("search", "")
 
+        # Add show_filters tag for template
+        context['show_filters'] = True
+
         return context
 
 
 class SystemModuleDetailView(DetailView):
-    """Detailed system view with specs, logs, and metrics."""
+    """Enhanced system detail view with better metrics integration."""
 
     model = SystemModule
     template_name = 'projects/system_detail.html'
@@ -164,6 +173,10 @@ class SystemModuleDetailView(DetailView):
             ).order_by('created').first()
         except SystemModule.DoesNotExist:
             context['next_system'] = None
+
+        # Add breadcrumb data
+        context['show_breadcrumbs'] = True
+        context['current_system'] = system
 
         return context
 
@@ -234,10 +247,13 @@ class TechnologyDetailView(DetailView):
 
 
 class SystemsDashboardView(ListView):
-    """HUD-style dashboard overview of all systems."""
+    """
+    Traditional Systems Dashboard (can redirect to unified dashboard or serve as systems-focused view)
+    Sending to Unified Temp for now can tweak later.
+    """
 
     model = SystemModule
-    template_name = "projects/systems_dashboard.html"
+    template_name = "projects/unified_dashboard.html"
     context_object_name = "recent_systems"
 
     def get_queryset(self):
@@ -277,7 +293,7 @@ class SystemsDashboardView(ListView):
 
         # Recent system logs
         context['recent_logs'] = SystemLogEntry.objects.select_related(
-            'post', 'systems'
+            'post', 'system'
         ).order_by('-logged_at')[:5]
 
         # Systems by status for HUD-display
@@ -458,6 +474,157 @@ class TechnologyUsageAPIView(ListView):
             'total_technologies': len(tech_stats)
         })
 
+
+# =============  Separated for now, may combine w SystemMetricsAPIView
+class DashboardMetricsAPIView(ListView):
+    """
+    API Enpoint for real-time dashboard metrics.
+    """
+
+    model = SystemModule
+
+    def get(self, request, *args, **kwargs):
+        """Return JSON data for dashboard charts and metrics."""
+
+        # Calculate metrics
+        total_systems = SystemModule.objects.filter(
+            status__in=['deployed', 'published']
+        ).count()
+
+        systems_in_dev = SystemModule.objects.filter(
+            status='in_development'
+        ).count()
+
+        avg_completion = SystemModule.objects.aggregate(
+            avg_completion=Avg('completion_percent')
+        )['avg_completion'] or 0
+
+        total_logs = Post.objects.filter(status='published').count()
+
+        # Tech usage data
+        tech_usage = []
+        for tech in Technology.objects.annotate(
+            usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+        ).filter(usage_count__gt=0).order_by('-usage_count')[:8]:
+            tech_usage.append({
+                'name': tech.name,
+                'usage_count': tech.usage_count,
+                'color': tech.color,
+                'icon': tech.icon,
+            })
+
+        # System status distribution
+        status_distribution = {}
+        for status_choice in SystemModule.STATUS_CHOICES:
+            status_key = status_choice[0]
+            status_distribution[status_key] = SystemModule.objects.filter(
+                status=status_key
+            ).count()
+
+        # Recent activity
+        recent_activity = []
+        for log in SystemLogEntry.objects.select_related(
+            'post', 'system'
+        ).order_by('-logged_at')[:10]:
+            recent_activity.append({
+                'id': log.log_entry_id,
+                'title': log.post.title,
+                'system_id': log.system.system_id,
+                'system_title': log.system.title,
+                'connection_type': log.connection_type,
+                'priority': log.priority,
+                'logged_at': log.logged_at.isoformat(),
+                'status': log.log_status
+            })
+
+        # TODO: Add more useful performance metrics, these for testing
+        data = {
+            'timestamp': timezone.now().isoformat(),
+            'metrics': {
+                'total_systems': total_systems,
+                'systems_in_development': systems_in_dev,
+                'avg_completion': round(avg_completion, 1),
+                'total_logs': total_logs,
+            },
+            'technology_usage': tech_usage,
+            'status_distribution': status_distribution,
+            'recent_activity': recent_activity,
+            'performance': {
+                'uptime': '99.7%',
+                'response_time': '142ms',
+                'memory_usage': '67%',
+                'cpu_usage': '23%',
+            }
+        }
+
+        return JsonResponse(data)
+
+
+class SystemTimeSeriesAPIView(ListView):
+    """
+    API Endpoint for time-series data (charts)
+    """
+
+    model = SystemModule
+
+    def get(self, request, *args, **kwargs):
+        """Return time-series data for charts."""
+
+        # Get date range (default to last 30 days)
+        days = int(request.GET.get('days', 30))
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=days)
+
+        # Generate date range
+        date_range = []
+        current_date = start_date
+        while current_date <= end_date:
+            date_range.append(current_date.isoformat())
+            current_date += timedelta(days=1)
+        
+
+        # TODO: In real app, query actual data
+        # For now, generate sample data that shows realistic trends
+        def generate_trend_data(base_value, volatility=0.1, trend=0.02):
+            """Generate realistic trending data."""
+            data = []
+            current = base_value
+            for i in range(len(date_range)):
+                # Add trend and random variation
+                current *= (1 + trend + random.uniform(-volatility, volatility))
+                data.append(round(current, 2))
+            return data
+
+        # System Development progress over time
+        system_progress = generate_trend_data(65, 0.05, 0.01)
+
+        # DataLog entries over time
+        datalog_activity = generate_trend_data(45, 0.08, 0.015)
+
+        # Code contributions (lines added/modified)
+        code_activity = generate_trend_data(1200, 0.15, 0.02)
+
+        # Development hours logged
+        dev_hours = generate_trend_data(8, 0.2, 0.005)
+
+        data = {
+            'date_range': date_range,
+            'metrics': {
+                'system_progress': system_progress,
+                'datalog_activity': datalog_activity,
+                'code_activity': code_activity,
+                'dev_hours': dev_hours,
+            },
+            'meta': {
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat(),
+                'days': days
+            }
+        }
+
+        return JsonResponse(data)
+
+
 # ===================== SEARCH AND FILTER VIEWS =====================
 
 
@@ -617,3 +784,224 @@ class SystemTimelineView(ListView):
         context["systems_by_year"] = dict(sorted(systems_by_year.items(), reverse=True))
 
         return context
+
+
+# ===================== AURA STYLING - UPDATING VIEWS =====================
+
+class UnifiedDashboardView(ListView):
+    """
+    AURA Unified Dashboard - Contral command center aggregating metrics from all apps
+    """
+
+    model = SystemModule
+    template_name = "projects/unified_dashboard.html"
+    context_object_name = "recent_systems"
+
+    def get_queryset(self):
+        return SystemModule.objects.filter(
+            status__in=['deployed', 'published']
+        ).order_by('-created')[:6]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # ===================
+        # CORE DASHBOARD STATS
+        # ===================
+        context["dashboard_stats"] = self.get_dashboard_stats()
+
+        # ===================
+        # SYSTEMS DATA
+        # ===================
+        context.update(self.get_systems_data())
+
+        # ===================
+        # DATALOGS DATA
+        # ===================
+        context.update(self.get_datalogs_data())
+
+        # ===================
+        # TECHNOLOGY DATA
+        # ===================
+        context.update(self.get_technology_data())
+
+        # ===================
+        # ACTIVITY DATA
+        # ===================
+        context.update(self.get_activity_data())
+
+        # ===================
+        # CHART DATA
+        # ===================
+        context.update(self.get_chart_data())
+
+        return context
+
+    def get_dashboard_stats(self):
+        """Core dashboard Stats."""
+
+        return {
+            'total_systems': SystemModule.objects.filter(
+                status__in=['deployed', 'published']
+            ).count(),
+            'systems_in_development': SystemModule.objects.filter(
+                status='in_development'
+            ).count(),
+            'systems_testing': SystemModule.objects.filter(
+                status='testing'
+            ).count(),
+            'total_technologies': Technology.objects.annotate(
+                usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+            ).filter(usage_count__gt=0).count(),
+            'avg_completion': SystemModule.objects.aggregate(
+                avg_completion=Avg('completion_percent')
+            )['avg_completion'] or 0,
+        }
+
+    def get_systems_data(self):
+        """Systems-specific data."""
+
+        systems_by_status = {}
+        for status_choice in SystemModule.STATUS_CHOICES:
+            status_key = status_choice[0]
+            systems_by_status[status_key] = SystemModule.objects.filter(
+                status=status_key
+            ).count()
+
+        return {
+            'systems_by_status': systems_by_status,
+            'system_type_stats': SystemType.objects.annotate(
+                systems_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+            ).filter(systems_count__gt=0).order_by('-systems_count')
+        }
+
+    def get_datalogs_data(self):
+        """DataLogs data."""
+
+        recent_logs = SystemLogEntry.objects.select_related(
+            'post', 'system'
+        ).order_by('-logged_at')[:5]
+
+        total_logs = Post.objects.filter(status='published').count()
+
+        # Calculate development hours (est based on reading time/complexity)
+        total_dev_hours = 0
+        for system in SystemModule.objects.all():
+            # Est based on complexity/completion
+            # 100 hours per complexity point
+            base_hours = system.complexity * 100
+            completion_factor = (system.completion_percent or 0) / 100
+            total_dev_hours += base_hours * completion_factor
+
+        return {
+            'recent_logs': recent_logs,
+            'total_logs': total_logs,
+            'total_dev_hours': int(total_dev_hours),
+        }
+
+    def get_technology_data(self):
+        """Technology usage stats."""
+
+        tech_usage_stats = Technology.objects.annotate(
+            usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+        ).filter(usage_count__gt=0).order_by('-usage_count')[:10]
+
+        return {
+            'tech_usage_stats': tech_usage_stats,
+        }
+
+    def get_activity_data(self):
+        """Recent activity and metrics."""
+
+        # Get recent system logs
+        recent_logs = SystemLogEntry.objects.select_related(
+            'post', 'system'
+        ).order_by('-logged_at')[:8]
+
+        return {
+            'recent_activity_logs': recent_logs,
+        }
+
+    def get_chart_data(self):
+        """Data for charts and visualizations."""
+
+        # System activity over time (last 30 days)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        # Generate sample data for charts
+        # TODO: Calculate actual metrics, pull in GitHub data via API
+        system_activity_data = "65,70,68,72,75,73,78,82,79,85,88,85,90,87,92,89,95,92,89,94,91,88,93,96,94,98,95,92,97,99"
+        datalog_activity_data = "45,48,52,49,55,58,54,61,59,63,66,62,68,65,71,74,69,73,76,72,78,81,77,84,80,83,87,85,89,91"
+        code_activity_data = "1200,1250,1180,1320,1400,1350,1480,1520,1490,1560,1580,1540,1620,1600,1680,1720,1690,1750,1780,1740,1810,1850,1820,1890,1860,1920,1950,1930,1980,2010"
+        dev_time_data = "8,10,6,12,14,11,16,18,15,20,22,19,24,21,26,25,23,28,30,27,32,35,31,38,34,36,40,37,42,45"
+
+        return {
+            'system_activity_data': system_activity_data,
+            'datalog_activity_data': datalog_activity_data,
+            'code_activity_data': code_activity_data,
+            'dev_time_data': dev_time_data,
+            'lines_of_code': 52000,
+        }
+
+# ===================== AURA STYLING - UTILITY FUNCTIONS =====================
+
+
+def get_system_health_score(system):
+    """Calculate overall health score for a system."""
+
+    score = 0
+
+    # Completion percentage (40% weight)
+    completion_weight = (system.completion_percent or 0) * 0.4
+    score += completion_weight
+
+    # Recent activity (30% weight)
+    recent_logs = system.get_related_logs()[:5]
+    # Max 30 points
+    activity_score = min(len(recent_logs) * 6, 30)
+    score += activity_score
+
+    # Performance metrics (20% weight)
+    if system.performance_score:
+        score += (system.performance_score * 0.2)
+    else:
+        # Default moderate score
+        score += 15
+
+    # Uptime (10% weight)
+    if system.uptime_percentage:
+        score += (system.uptime_percentage * 0.1)
+    else:
+        # Default good uptime
+        score += 9
+
+    return min(100, max(0, score))
+
+
+def get_technology_trend_score(tech):
+    """Calculate trend score for tech usage."""
+
+    current_usage = tech.systems.filter(
+        status__in=['deployed', 'published']
+    ).count()
+
+    # TODO: In real app, compare w historical data
+    # For now, return current usage as trend indicator
+    return current_usage
+
+
+def calculate_development_velocity(system):
+    """Calculate development velocity for a system."""
+
+    logs = system.get_related_logs()
+
+    if not logs:
+        return 0
+
+    # Calculate based on log frequency and completion progress
+    recent_logs = logs.filter(
+        logged_at__gte=timezone.now() - timedelta(days=30)
+    ).count()
+
+    velocity = recent_logs * (system.completion_percent or 0) / 100
+    return round(velocity, 2)
