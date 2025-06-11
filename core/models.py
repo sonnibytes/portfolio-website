@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django.urls import reverse
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 
@@ -8,7 +9,7 @@ class CorePage(models.Model):
     """Model for static pages like privacy policy, etc."""
 
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=200)
     content = MarkdownxField()
     meta_description = models.CharField(
         max_length=160,
@@ -22,6 +23,9 @@ class CorePage(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        return reverse("core:page", args=[self.slug])
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -45,6 +49,7 @@ class Skill(models.Model):
     )
 
     name = models.CharField(max_length=50)
+    slug = models.SlugField(unique=True, max_length=100)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     description = models.TextField(blank=True)
     proficiency = models.IntegerField(
@@ -61,11 +66,20 @@ class Skill(models.Model):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        return reverse("core:skill", args=[self.slug])
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
 
 class Education(models.Model):
     """Educational background."""
 
     institution = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True, max_length=200)
     degree = models.CharField(max_length=100)
     field_of_study = models.CharField(max_length=100)
     start_date = models.DateField()
@@ -80,11 +94,20 @@ class Education(models.Model):
     def __str__(self):
         return f"{self.degree} from {self.institution}"
 
+    def get_absolute_url(self):
+        return reverse("core:education", args=[self.slug])
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
 
 class Experience(models.Model):
     """Work experience."""
 
     company = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True, max_length=200)
     position = models.CharField(max_length=100)
     description = models.TextField()
     start_date = models.DateField()
@@ -98,11 +121,19 @@ class Experience(models.Model):
     def __str__(self):
         return f"{self.position} at {self.company}"
 
+    def get_absolute_url(self):
+        return reverse("core:experience", args=[self.slug])
+
     def get_technologies_list(self):
         """Return technologies as a list."""
         if self.technologies:
             return [tech.strip() for tech in self.technologies.split(",")]
         return []
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 
 class Contact(models.Model):
@@ -121,6 +152,9 @@ class Contact(models.Model):
     def __str__(self):
         return f"Message from {self.name} - {self.created_at.strftime('%Y-%m-%d')}"
 
+    def get_absolute_url(self):
+        return reverse("core:contact_detail", args=[self.pk])
+
 
 class SocialLink(models.Model):
     """Model for social media and external profile links."""
@@ -138,3 +172,6 @@ class SocialLink(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return self.url  # External URL, so just return the actual URL
