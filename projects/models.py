@@ -596,3 +596,36 @@ class SystemMetric(models.Model):
 
     def get_absolute_url(self):
         return f"{self.system.get_absolute_url()}#metric-{self.pk}"
+
+
+class SystemDependency(models.Model):
+    """Track dependencies between systems"""
+
+    DEPENDENCY_TYPES = [
+        ("api", "API Dependency"),
+        ("database", "Database Dependency"),
+        ("service", "Service Dependency"),
+        ("library", "Library Dependency"),
+        ("integration", "Integration Dependency"),
+        ("data_flow", "Data Flow"),
+        ("authentication", "Authentication Dependency"),
+        ("infrastructure", "Infrastructure Dependency"),
+    ]
+
+    system = models.ForeignKey(SystemModule, on_delete=models.CASCADE, related_name='dependencies')
+    depends_on = models.ForeignKey(SystemModule, on_delete=models.CASCADE, related_name='dependents')
+    dependency_type = models.CharField(max_length=20, choices=DEPENDENCY_TYPES, default='integration')
+    is_critical = models.BooleanField(default=False, help_text="System cannot function without this dependency")
+    description = models.TextField(blank=True, help_text="Description of dependency relationship")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('system', 'depends_on')
+        verbose_name_plural = "System Dependencies"
+
+    def __str__(self):
+        return f"{self.system.system_id} depends on {self.depends_on.system_id}"
+
+    def get_absolute_url(self):
+        return f"{self.system.get_absolute_url()}#dependency-{self.pk}"
+
