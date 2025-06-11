@@ -1579,21 +1579,29 @@ def timeline_date_range(posts):
 
 @register.inclusion_tag("blog/includes/category_hexagon_nav.html", takes_context=True)
 def category_hexagon_nav(
-        context, style="full", current_category=None, show_all=True, limit=None):
+        context,
+        style="full",
+        current_category=None,
+        show_all=True,
+        limit=None,
+        enable_scroll=True,
+        show_stats=True):
     """
-    Render category hexagon navigation with different styles.
+    Enhanced category hexagon navigation with unified styling.
 
     Usage:
     {% category_hexagon_nav style="full" current_category=category %}
     {% category_hexagon_nav style="compact" limit=6 %}
     {% category_hexagon_nav style="minimal" show_all=False %}
-    {% category_hexagon_nav style="filter" %}
+    {% category_hexagon_nav style="filter" enable_scroll=False %}
 
     Args:
         style (str): Navigation style - 'full', 'compact', 'minimal', 'filter'
         current_category (Category): Currently selected category
         show_all (bool): Whether to show "All Categories" option
-        limit (int): Limit number of categories shown (for compact/minimal)
+        limit (int): Limit number of categories shown
+        enable_scroll (bool): Enable horizontal scrolling
+        show_stats (bool): Show statistics in full mode
     """
     # Get categories w post counts
     categories = (
@@ -1620,55 +1628,127 @@ def category_hexagon_nav(
         "categories": categories,
         "show_all": show_all,
         "total_posts": total_posts,
+        "enable_scroll": enable_scroll,
+        "show_stats": show_stats,
         "request": request,
     }
 
+# REMOVE IN CAT_HEX_NAV CLEANUP
+# @register.simple_tag
+# def category_hexagon_styles():
+#     """
+#     Include category hexagon CSS styles.
+#     Usage: {% category_hexagon_styles %}
+#     """
+#     return mark_safe("""
+#     <style>
+#     /* Category hexagon component styles are included in the component template */
+#     .category-hexagon-navigation {
+#         /* Component styles are self-contained */
+#     }
+#     </style>
+#     """)
 
-@register.simple_tag
-def category_hexagon_styles():
-    """
-    Include category hexagon CSS styles.
-    Usage: {% category_hexagon_styles %}
-    """
-    return mark_safe("""
-    <style>
-    /* Category hexagon component styles are included in the component template */
-    .category-hexagon-navigation {
-        /* Component styles are self-contained */
-    }
-    </style>
-    """)
-
-
-@register.simple_tag
-def category_scroll_controls(container_id="categoriesGrid"):
-    """
-    Generate scroll control buttons for category navigation.
-    Usage: {% category_scroll_controls 'myContainerId' %}
-    """
-    return mark_safe(f"""
-    <button class="category-scroll-btn category-scroll-left" 
-            data-target="#{container_id}" 
-            aria-label="Scroll categories left">
-        <i class="fas fa-chevron-left"></i>
-    </button>
-    <button class="category-scroll-btn category-scroll-right" 
-            data-target="#{container_id}" 
-            aria-label="Scroll categories right">
-        <i class="fas fa-chevron-right"></i>
-    </button>
-    """)
+# REMOVE IN CAT_HEX_NAV CLEANUP
+# @register.simple_tag
+# def category_scroll_controls(container_id="categoriesGrid"):
+#     """
+#     Generate scroll control buttons for category navigation.
+#     Usage: {% category_scroll_controls 'myContainerId' %}
+#     """
+#     return mark_safe(f"""
+#     <button class="category-scroll-btn category-scroll-left" 
+#             data-target="#{container_id}" 
+#             aria-label="Scroll categories left">
+#         <i class="fas fa-chevron-left"></i>
+#     </button>
+#     <button class="category-scroll-btn category-scroll-right" 
+#             data-target="#{container_id}" 
+#             aria-label="Scroll categories right">
+#         <i class="fas fa-chevron-right"></i>
+#     </button>
+#     """)
 
 
 @register.filter
-def category_hex_color(category, fallback="#26c6da"):
+def category_hex_color(category, format="color"):
     """
-    Get category color for hexagon styling.
-    Usage: {{ category|category_hex_color }}
+    Enhanced category color with multiple format support.
+    Replaces the existing category_hex_color filter.
+
+    Usage:
+    {{ category|category_hex_color }}           # Returns color
+    {{ category|category_hex_color:'rgb' }}     # Returns RGB values
+    {{ category|category_hex_color:'css' }}     # Returns CSS custom property
     """
+    # Define smart color mapping for common categories
+    color_schemes = {
+        "python": {"color": "#3776ab", "rgb": "55, 118, 171"},
+        "javascript": {"color": "#f7df1e", "rgb": "247, 223, 30"},
+        "react": {"color": "#61dafb", "rgb": "97, 218, 251"},
+        "vue": {"color": "#4fc08d", "rgb": "79, 192, 141"},
+        "angular": {"color": "#dd0031", "rgb": "221, 0, 49"},
+        "django": {"color": "#092e20", "rgb": "9, 46, 32"},
+        "flask": {"color": "#000000", "rgb": "0, 0, 0"},
+        "fastapi": {"color": "#009688", "rgb": "0, 150, 136"},
+        "node": {"color": "#339933", "rgb": "51, 153, 51"},
+        "data-science": {"color": "#ff6b6b", "rgb": "255, 107, 107"},
+        "machine-learning": {"color": "#4ecdc4", "rgb": "78, 205, 196"},
+        "ai": {"color": "#9b59b6", "rgb": "155, 89, 182"},
+        "web-development": {"color": "#45b7d1", "rgb": "69, 183, 209"},
+        "backend": {"color": "#96ceb4", "rgb": "150, 206, 180"},
+        "frontend": {"color": "#ffeaa7", "rgb": "255, 234, 167"},
+        "devops": {"color": "#dda0dd", "rgb": "221, 160, 221"},
+        "database": {"color": "#ff7675", "rgb": "255, 118, 117"},
+        "api": {"color": "#74b9ff", "rgb": "116, 185, 255"},
+        "docker": {"color": "#2496ed", "rgb": "36, 150, 237"},
+        "kubernetes": {"color": "#326ce5", "rgb": "50, 108, 229"},
+        "aws": {"color": "#ff9900", "rgb": "255, 153, 0"},
+        "azure": {"color": "#0078d4", "rgb": "0, 120, 212"},
+        "gcp": {"color": "#4285f4", "rgb": "66, 133, 244"},
+    }
+
+    # Handle special "all categories" case
+    if category is None:
+        default_color = {"color": "var(--color-lavender)", "rgb": "179, 157, 219"}
+        return default_color.get(format, default_color["color"])
+
+    # Get category identifier (slug or name)
+    if hasattr(category, "slug"):
+        category_key = category.slug.lower()
+    elif hasattr(category, "name"):
+        category_key = category.name.lower().replace(" ", "-")
+    else:
+        category_key = str(category).lower()
+
+    # Check if category has custom color field
     if hasattr(category, "color") and category.color:
-        return category.color
-    return fallback
+        custom_color = category.color
+        if format == "color":
+            return custom_color
+        elif format == "rgb":
+            # Convert hex to RGB
+            hex_color = custom_color.lstrip("#")
+            if len(hex_color) == 6:
+                try:
+                    r = int(hex_color[0:2], 16)
+                    g = int(hex_color[2:4], 16)
+                    b = int(hex_color[4:6], 16)
+                    return f"{r}, {g}, {b}"
+                except ValueError:
+                    pass
+        elif format == "css":
+            return f"--hex-color: {custom_color}; --hex-color-rgb: {category_hex_color(category, 'rgb')}"
+
+    # Use predefined scheme or fall back to default
+    scheme = color_schemes.get(
+        category_key, {"color": "var(--color-lavender)", "rgb": "179, 157, 219"}
+    )
+
+    if format == "css":
+        return f"--hex-color: {scheme['color']}; --hex-color-rgb: {scheme['rgb']}"
+
+    return scheme.get(format, scheme["color"])
 
 
 @register.filter
@@ -1680,6 +1760,56 @@ def category_hex_code(category, fallback="LOG"):
     if hasattr(category, "code") and category.code:
         return category.code.upper()[:3]  # Ensure max 3 characters
     return fallback
+
+
+@register.filter
+def category_color_scheme(category, component="color"):
+    """
+    Get category color scheme with enhanced options.
+
+    Usage:
+    {{ category|category_color_scheme:'color' }}
+    {{ category|category_color_scheme:'rgb' }}
+    {{ category|category_color_scheme:'hsl' }}
+    """
+    # Define color mapping for categories
+    color_schemes = {
+        "python": {"color": "#3776ab", "rgb": "55, 118, 171"},
+        "javascript": {"color": "#f7df1e", "rgb": "247, 223, 30"},
+        "react": {"color": "#61dafb", "rgb": "97, 218, 251"},
+        "django": {"color": "#092e20", "rgb": "9, 46, 32"},
+        "data-science": {"color": "#ff6b6b", "rgb": "255, 107, 107"},
+        "machine-learning": {"color": "#4ecdc4", "rgb": "78, 205, 196"},
+        "web-development": {"color": "#45b7d1", "rgb": "69, 183, 209"},
+        "backend": {"color": "#96ceb4", "rgb": "150, 206, 180"},
+        "frontend": {"color": "#ffeaa7", "rgb": "255, 234, 167"},
+        "devops": {"color": "#dda0dd", "rgb": "221, 160, 221"},
+        "database": {"color": "#ff7675", "rgb": "255, 118, 117"},
+        "api": {"color": "#74b9ff", "rgb": "116, 185, 255"},
+    }
+
+    # Get category slug or name
+    category_key = getattr(category, "slug", str(category).lower())
+
+    # Check if category has custom color
+    if hasattr(category, "color") and category.color:
+        if component == "color":
+            return category.color
+        elif component == "rgb":
+            # Convert hex to RGB (basic implementation)
+            hex_color = category.color.lstrip("#")
+            if len(hex_color) == 6:
+                r = int(hex_color[0:2], 16)
+                g = int(hex_color[2:4], 16)
+                b = int(hex_color[4:6], 16)
+                return f"{r}, {g}, {b}"
+
+    # Use predefined scheme or default
+    scheme = color_schemes.get(
+        category_key, {"color": "var(--color-lavender)", "rgb": "179, 157, 219"}
+    )
+
+    return scheme.get(component, scheme["color"])
 
 
 @register.simple_tag(takes_context=True)
@@ -1697,151 +1827,163 @@ def is_category_active(context, category):
 
     return False
 
+# # REMOVE IN CAT_HEX_NAV CLEANUP
+# @register.simple_tag
+# def category_nav_analytics(categories, style="full"):
+#     """
+#     Generate analytics data for category navigation.
+#     Usage: {% category_nav_analytics categories 'compact' as analytics %}
+#     """
+#     if not categories:
+#         return {}
 
-@register.simple_tag
-def category_nav_analytics(categories, style="full"):
-    """
-    Generate analytics data for category navigation.
-    Usage: {% category_nav_analytics categories 'compact' as analytics %}
-    """
-    if not categories:
-        return {}
+#     total_categories = len(categories)
+#     total_posts = sum(getattr(cat, "post_count", 0) for cat in categories)
+#     most_popular = (
+#         max(categories, key=lambda c: getattr(c, "post_count", 0))
+#         if categories
+#         else None
+#     )
 
-    total_categories = len(categories)
-    total_posts = sum(getattr(cat, "post_count", 0) for cat in categories)
-    most_popular = (
-        max(categories, key=lambda c: getattr(c, "post_count", 0))
-        if categories
-        else None
-    )
+#     analytics = {
+#         "total_categories": total_categories,
+#         "total_posts": total_posts,
+#         "most_popular_category": most_popular,
+#         "average_posts_per_category": round(total_posts / total_categories, 1)
+#         if total_categories > 0
+#         else 0,
+#         "style": style,
+#     }
 
-    analytics = {
-        "total_categories": total_categories,
-        "total_posts": total_posts,
-        "most_popular_category": most_popular,
-        "average_posts_per_category": round(total_posts / total_categories, 1)
-        if total_categories > 0
-        else 0,
-        "style": style,
-    }
+#     # Add style-specific analytics
+#     if style == "compact":
+#         analytics["display_limit"] = min(6, total_categories)
+#         analytics["hidden_categories"] = max(0, total_categories - 6)
+#     elif style == "minimal":
+#         analytics["display_limit"] = min(4, total_categories)
+#         analytics["hidden_categories"] = max(0, total_categories - 4)
 
-    # Add style-specific analytics
-    if style == "compact":
-        analytics["display_limit"] = min(6, total_categories)
-        analytics["hidden_categories"] = max(0, total_categories - 6)
-    elif style == "minimal":
-        analytics["display_limit"] = min(4, total_categories)
-        analytics["hidden_categories"] = max(0, total_categories - 4)
+#     return analytics
 
-    return analytics
+
+# ========== SINGLE HEXAGON TEMPLATE TAG ==========
 
 
 @register.inclusion_tag("blog/includes/category_hexagon_single.html")
-def category_hexagon_single(category, size="md", show_label=True, link=True):
+def category_hexagon_single(
+    category,
+    size="md",
+    show_label=True,
+    show_count=False,
+    interactive=False,
+    variant=None,
+    special_type=None,
+    css_class="",
+):
     """
-    Render a single category hexagon.
+    Render a single category hexagon with unified styling.
 
     Usage:
-    {% category_hexagon_single category size="lg" %}
-    {% category_hexagon_single category show_label=False %}
+    {% category_hexagon_single category size="lg" show_label=True %}
+    {% category_hexagon_single category size="sm" show_count=True %}
+    {% category_hexagon_single category size="xl" variant="pulsing" %}
+    {% category_hexagon_single category size="md" interactive=True %}
 
     Args:
-        category: Category object
-        size (str): Hexagon size - 'sm', 'md', 'lg', 'xl'
+        category (Category): Category object to display
+        size (str): Size variant - 'xs', 'sm', 'md', 'lg', 'xl', 'xxl'
         show_label (bool): Whether to show category name label
-        link (bool): Whether to make hexagon clickable
+        show_count (bool): Whether to show post count
+        interactive (bool): Whether hexagon should be clickable/hoverable
+        variant (str): Special variant - 'pulsing', 'glowing', 'rotating'
+        css_class (str): Additional CSS classes
     """
-    size_map = {
-        "xs": "24px",
-        "sm": "32px",
-        "md": "40px",
-        "lg": "48px",
-        "xl": "60px",
-    }
-
     return {
         "category": category,
-        "hex_size": size_map.get(size, "40px"),
+        "size": size,
         "show_label": show_label,
-        "link": link,
-        "size_class": f"hex-{size}",
+        "show_count": show_count,
+        "interactive": interactive,
+        "variant": variant,
+        "css_class": css_class,
+        "special_type": special_type,
     }
 
+# # REMOVE IN CAT_HEX_NAV CLEANUP
+# @register.simple_tag
+# def category_distribution_data(categories, format="json"):
+#     """
+#     Generate category distribution data for charts.
+#     Usage: {% category_distribution_data categories 'json' %}
+#     """
+#     if not categories:
+#         return "[]" if format == "json" else []
 
-@register.simple_tag
-def category_distribution_data(categories, format="json"):
-    """
-    Generate category distribution data for charts.
-    Usage: {% category_distribution_data categories 'json' %}
-    """
-    if not categories:
-        return "[]" if format == "json" else []
+#     data = []
+#     for category in categories:
+#         post_count = getattr(category, "post_count", 0)
+#         if post_count > 0:
+#             data.append(
+#                 {
+#                     "name": category.name,
+#                     "code": getattr(category, "code", category.name[:3].upper()),
+#                     "color": getattr(category, "color", "#26c6da"),
+#                     "count": post_count,
+#                     "url": category.get_absolute_url()
+#                     if hasattr(category, "get_absolute_url")
+#                     else "#",
+#                 }
+#             )
 
-    data = []
-    for category in categories:
-        post_count = getattr(category, "post_count", 0)
-        if post_count > 0:
-            data.append(
-                {
-                    "name": category.name,
-                    "code": getattr(category, "code", category.name[:3].upper()),
-                    "color": getattr(category, "color", "#26c6da"),
-                    "count": post_count,
-                    "url": category.get_absolute_url()
-                    if hasattr(category, "get_absolute_url")
-                    else "#",
-                }
-            )
+#     if format == "json":
+#         return mark_safe(json.dumps(data))
 
-    if format == "json":
-        return mark_safe(json.dumps(data))
+#     return data
 
-    return data
+# # REMOVE IN CAT_HEX_NAV CLEANUP
+# @register.simple_tag
+# def category_quick_stats(categories):
+#     """
+#     Generate quick statistics for category navigation.
+#     Usage: {% category_quick_stats categories as stats %}
+#     """
+#     if not categories:
+#         return {
+#             "total_categories": 0,
+#             "total_posts": 0,
+#             "avg_posts": 0,
+#             "most_active": None,
+#             "least_active": None,
+#         }
 
+#     post_counts = [
+#         getattr(cat, "post_count", 0)
+#         for cat in categories
+#         if getattr(cat, "post_count", 0) > 0
+#     ]
 
-@register.simple_tag
-def category_quick_stats(categories):
-    """
-    Generate quick statistics for category navigation.
-    Usage: {% category_quick_stats categories as stats %}
-    """
-    if not categories:
-        return {
-            "total_categories": 0,
-            "total_posts": 0,
-            "avg_posts": 0,
-            "most_active": None,
-            "least_active": None,
-        }
+#     if not post_counts:
+#         return {
+#             "total_categories": len(categories),
+#             "total_posts": 0,
+#             "avg_posts": 0,
+#             "most_active": None,
+#             "least_active": None,
+#         }
 
-    post_counts = [
-        getattr(cat, "post_count", 0)
-        for cat in categories
-        if getattr(cat, "post_count", 0) > 0
-    ]
+#     total_posts = sum(post_counts)
+#     most_active = max(categories, key=lambda c: getattr(c, "post_count", 0))
+#     least_active = min(categories, key=lambda c: getattr(c, "post_count", 0))
 
-    if not post_counts:
-        return {
-            "total_categories": len(categories),
-            "total_posts": 0,
-            "avg_posts": 0,
-            "most_active": None,
-            "least_active": None,
-        }
-
-    total_posts = sum(post_counts)
-    most_active = max(categories, key=lambda c: getattr(c, "post_count", 0))
-    least_active = min(categories, key=lambda c: getattr(c, "post_count", 0))
-
-    return {
-        "total_categories": len(categories),
-        "total_posts": total_posts,
-        "avg_posts": round(total_posts / len(categories), 1),
-        "most_active": most_active,
-        "least_active": least_active,
-        "max_posts": getattr(most_active, "post_count", 0),
-        "min_posts": getattr(least_active, "post_count", 0),
-    }
+#     return {
+#         "total_categories": len(categories),
+#         "total_posts": total_posts,
+#         "avg_posts": round(total_posts / len(categories), 1),
+#         "most_active": most_active,
+#         "least_active": least_active,
+#         "max_posts": getattr(most_active, "post_count", 0),
+#         "min_posts": getattr(least_active, "post_count", 0),
+#     }
 
 # =========== POST DETAIL PAGE TAGS/FILTERS =============#
 

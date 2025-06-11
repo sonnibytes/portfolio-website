@@ -1,411 +1,334 @@
 <!----
- * AURA DataLogs - Category Hexagon Navigation Component (STREAMLINED)
- * Reusable component with minimal CSS/JS - relies on consolidated files
- * Usage: {--% include 'blog/includes/category_hexagon_nav.html' with style="full" current_category=category %--}
- * Styles: full, compact, minimal, filter
+ * ENHANCED: blog/templates/blog/includes/category_hexagon_nav.html
+ * Updated to use unified styling - NO NEW TEMPLATE TAGS NEEDED
+ * Works with your existing {--% category_hexagon_nav %--} template tag
 ---->
 
 {% load aura_filters %}
 {% load datalog_tags %}
 
-<div class="category-hexagon-navigation category-nav-{{ style|default:'full' }}">
+<div class="category-hexagon-navigation {{ style|default:'full' }}-style">
     
     {% if style == 'full' %}
-    <!-- Full Navigation (post_list style) -->
-    <div class="categories-glass-panel">
-        <div class="categories-scroll-container">
-            <!-- Scroll Controls -->
-            <button class="category-scroll-btn category-scroll-left" 
-                    id="categoryScrollLeft" 
-                    aria-label="Scroll categories left">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            
-            <!-- Categories Grid -->
-            <div class="categories-grid" id="categoriesGrid">
-                <!-- All Categories Option -->
-                <a href="{% url 'blog:post_list' %}" 
-                   class="category-nav-item {% if not current_category %}active{% endif %}"
-                   data-category="all">
-                    <div class="category-hexagon-container">
-                        <div class="category-hexagon glass-hex" 
-                             style="--hex-color: #26c6da;">
-                            <span class="hex-text">ALL</span>
-                        </div>
-                    </div>
-                    <div class="category-info">
-                        <h3 class="category-name">All DataLogs</h3>
-                        <span class="category-count">{{ total_posts|default:"24" }} entries</span>
-                    </div>
-                </a>
-                
-                <!-- Individual Categories -->
-                {% get_datalog_categories as categories %}
-                {% for category in categories %}
-                <a href="{% url 'blog:category' slug=category.slug %}" 
-                   class="category-nav-item {% if category.slug == current_category.slug %}active{% endif %}"
-                   data-category="{{ category.slug }}">
-                    <div class="category-hexagon-container">
-                        <div class="category-hexagon glass-hex" 
-                             style="--hex-color: {{ category.color }};">
-                            <span class="hex-text">{{ category.code }}</span>
-                        </div>
-                    </div>
-                    <div class="category-info">
-                        <h3 class="category-name">{{ category.name }}</h3>
-                        <span class="category-count">{{ category.post_count }} entries</span>
-                    </div>
-                </a>
-                {% endfor %}
+    <!-- FULL STYLE - Your existing functionality with new styling -->
+    <div class="hex-nav-container unified-glass">
+        
+        <!-- Header with scroll controls (moved from template tag) -->
+        <div class="hex-nav-header">
+            <div class="hex-nav-title">
+                <i class="fas fa-th-large"></i>
+                <span>Categories</span>
             </div>
-            
-            <!-- Scroll Controls -->
-            <button class="category-scroll-btn category-scroll-right" 
-                    id="categoryScrollRight" 
-                    aria-label="Scroll categories right">
-                <i class="fas fa-chevron-right"></i>
-            </button>
+            <div class="hex-scroll-controls">
+                <button class="hex-scroll-btn hex-scroll-left" id="categoryScrollLeft">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="hex-scroll-btn hex-scroll-right" id="categoryScrollRight">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
         </div>
+        
+        <!-- Categories grid -->
+        <div class="hex-categories-grid" id="categoriesGrid">
+            
+            <!-- All categories option -->
+            {% if show_all %}
+            <div class="hex-category-item {% if not current_category %}active{% endif %}">
+                <a href="{% url 'blog:post_list' %}" class="hex-link">
+                    {% category_hexagon_single category=None size="md" show_label=True special_type="all" %}
+                    <span class="hex-count">{{ total_posts|format_number }}</span>
+                </a>
+            </div>
+            {% endif %}
+            
+            <!-- Category items using your existing single hexagon -->
+            {% for category in categories %}
+            <div class="hex-category-item {% if current_category.slug == category.slug %}active{% endif %}">
+                <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
+                    {% category_hexagon_single category=category size="md" show_label=True %}
+                    <span class="hex-count">{{ category.post_count|format_number }}</span>
+                </a>
+            </div>
+            {% endfor %}
+            
+        </div>
+        
     </div>
     
     {% elif style == 'compact' %}
-    <!-- Compact Navigation (sidebar style) -->
-    <div class="glass-card sidebar-panel">
-        <div class="card-header">
-            <h3 class="card-title">
-                <i class="fas fa-folder"></i>
-                Categories
-            </h3>
-        </div>
-        
-        <div class="card-content">
-            <div class="categories-compact-grid">
-                <!-- All Option -->
-                <a href="{% url 'blog:post_list' %}" 
-                   class="category-compact-item {% if not current_category %}active{% endif %}"
-                   title="All DataLogs">
-                    <div class="category-hexagon glass-hex compact" 
-                         style="--hex-color: #26c6da;">
-                        <span class="hex-text">ALL</span>
-                    </div>
-                    <span class="compact-label">All</span>
+    <!-- COMPACT STYLE -->
+    <div class="hex-nav-container unified-glass compact">
+        <div class="hex-categories-grid compact">
+            {% if show_all %}
+            <div class="hex-category-item compact {% if not current_category %}active{% endif %}">
+                <a href="{% url 'blog:post_list' %}" class="hex-link">
+                    {% category_hexagon_single category=None size="sm" show_label=False special_type="all" %}
                 </a>
-                
-                <!-- Categories -->
-                {% get_datalog_categories as categories %}
-                {% for category in categories|slice:":6" %}
-                <a href="{% url 'blog:category' slug=category.slug %}" 
-                   class="category-compact-item {% if category.slug == current_category.slug %}active{% endif %}"
-                   title="{{ category.name }}">
-                    <div class="category-hexagon glass-hex compact" 
-                         style="--hex-color: {{ category.color }};">
-                        <span class="hex-text">{{ category.code }}</span>
-                    </div>
-                    <span class="compact-label">{{ category.name|truncate_smart:8 }}</span>
-                </a>
-                {% endfor %}
-                
-                {% if categories|length > 6 %}
-                <a href="{% url 'blog:post_list' %}" class="category-compact-item more-categories">
-                    <div class="category-hexagon glass-hex compact" 
-                         style="--hex-color: #666666;">
-                        <span class="hex-text">+{{ categories|length|add:"-6" }}</span>
-                    </div>
-                    <span class="compact-label">More</span>
-                </a>
-                {% endif %}
             </div>
-        </div>
-    </div>
-    
-    {% elif style == 'minimal' %}
-    <!-- Minimal Navigation (quick filters) -->
-    <div class="categories-minimal-panel">
-        <div class="minimal-categories">
-            <!-- All Option -->
-            <a href="{% url 'blog:post_list' %}" 
-               class="category-minimal-item {% if not current_category %}active{% endif %}">
-                <div class="category-hexagon glass-hex minimal" 
-                     style="--hex-color: #26c6da;">
-                    <span class="hex-text">ALL</span>
-                </div>
-            </a>
+            {% endif %}
             
-            <!-- Top Categories Only -->
-            {% get_datalog_categories popular_only=True as popular_categories %}
-            {% for category in popular_categories|slice:":4" %}
-            <a href="{% url 'blog:category' slug=category.slug %}" 
-               class="category-minimal-item {% if category.slug == current_category.slug %}active{% endif %}"
-               title="{{ category.name }}">
-                <div class="category-hexagon glass-hex minimal" 
-                     style="--hex-color: {{ category.color }};">
-                    <span class="hex-text">{{ category.code }}</span>
-                </div>
-            </a>
+            {% for category in categories %}
+            <div class="hex-category-item compact {% if current_category.slug == category.slug %}active{% endif %}">
+                <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
+                    {% category_hexagon_single category=category size="sm" show_label=False %}
+                </a>
+            </div>
             {% endfor %}
         </div>
     </div>
     
-    {% elif style == 'filter' %}
-    <!-- Filter Style (for search/archive pages) -->
-    <div class="glass-card filters-panel">
-        <div class="card-header">
-            <h3 class="card-title">
-                <i class="fas fa-filter"></i>
-                Filter by Category
-            </h3>
-        </div>
-        
-        <div class="card-content">
-            <form method="get" class="category-filter-form">
-                <div class="categories-filter-grid">
-                    <!-- All Option -->
-                    <label class="category-filter-item">
-                        <input type="checkbox" name="category" value="" 
-                               {% if not request.GET.category %}checked{% endif %}>
-                        <div class="category-hexagon glass-hex filter" 
-                             style="--hex-color: #26c6da;">
-                            <span class="hex-text">ALL</span>
-                        </div>
-                        <span class="filter-count">{{ total_posts|default:"24" }}</span>
-                    </label>
-                    
-                    <!-- Categories as Checkboxes -->
-                    {% get_datalog_categories as categories %}
-                    {% for category in categories %}
-                    <label class="category-filter-item">
-                        <input type="checkbox" name="category" value="{{ category.slug }}"
-                               {% if category.slug in request.GET.category %}checked{% endif %}>
-                        <div class="category-hexagon glass-hex filter" 
-                             style="--hex-color: {{ category.color }};">
-                            <span class="hex-text">{{ category.code }}</span>
-                        </div>
-                        <span class="filter-count">{{ category.post_count }}</span>
-                    </label>
-                    {% endfor %}
-                </div>
-                
-                <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check"></i>
-                        Apply Filters
-                    </button>
-                    <button type="reset" class="btn btn-outline">
-                        <i class="fas fa-times"></i>
-                        Clear
-                    </button>
-                </div>
-            </form>
+    {% elif style == 'minimal' %}
+    <!-- MINIMAL STYLE -->
+    <div class="hex-nav-container minimal">
+        <div class="hex-categories-grid minimal">
+            {% if show_all %}
+            <div class="hex-category-item minimal {% if not current_category %}active{% endif %}">
+                <a href="{% url 'blog:post_list' %}" class="hex-link">
+                    {% category_hexagon_single category=None size="xs" show_label=False special_type="all" %}
+                </a>
+            </div>
+            {% endif %}
+            
+            {% for category in categories %}
+            <div class="hex-category-item minimal {% if current_category.slug == category.slug %}active{% endif %}">
+                <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
+                    {% category_hexagon_single category=category size="xs" show_label=False %}
+                </a>
+            </div>
+            {% endfor %}
         </div>
     </div>
     
     {% else %}
-    <!-- Default: use full style -->
-    {% include 'blog/includes/category_hexagon_nav.html' with style='full' current_category=current_category %}
+    <!-- DEFAULT/FILTER STYLE -->
+    <div class="hex-nav-container filter">
+        <div class="hex-categories-grid filter">
+            {% for category in categories %}
+            <div class="hex-category-item filter {% if current_category.slug == category.slug %}active{% endif %}">
+                <button class="hex-filter-btn" data-category="{{ category.slug }}">
+                    {% category_hexagon_single category=category size="sm" show_label=True %}
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
     {% endif %}
     
 </div>
 
 <style>
-/* ========== COMPONENT-SPECIFIC STYLES (Minimal Overrides) ========== */
-
-/* Only styles that are NOT in the consolidated CSS or need component-specific adjustments */
-
-/* Compact grid layout specific to this component */
-.categories-compact-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-    gap: var(--spacing-md);
+/* ========== UNIFIED HEXAGON NAVIGATION STYLES ========== */
+.category-hexagon-navigation {
+    width: 100%;
+    margin: var(--spacing-lg) 0;
 }
 
-.category-compact-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm);
-    text-decoration: none;
-    color: var(--color-text-secondary);
-    transition: all var(--transition-fast);
-    border-radius: var(--border-radius-md);
+.hex-nav-container.unified-glass {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(10px);
 }
 
-.category-compact-item:hover {
-    background: rgba(179, 157, 219, 0.05);
-    border-color: rgba(179, 157, 219, 0.2);
-    transform: translateY(-3px);
-    color: var(--color-text);
+.hex-nav-container.compact {
+    padding: var(--spacing-md);
+    background: rgba(179, 157, 219, 0.03);
+    border-color: rgba(179, 157, 219, 0.1);
 }
 
-.category-compact-item.active {
-    background: rgba(179, 157, 219, 0.1);
-    border-color: rgba(179, 157, 219, 0.3);
-    color: var(--color-lavender);
+.hex-nav-container.minimal {
+    padding: var(--spacing-sm);
+    background: none;
+    border: none;
 }
 
-.compact-label {
-    font-family: var(--font-code);
-    font-size: 0.7rem;
-    text-align: center;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.hex-nav-container.filter {
+    padding: var(--spacing-md);
+    background: rgba(38, 198, 218, 0.03);
+    border-color: rgba(38, 198, 218, 0.1);
 }
 
-.more-categories {
-    opacity: 0.7;
-}
-
-.more-categories:hover {
-    opacity: 1;
-}
-
-/* Minimal navigation specific styling */
-.categories-minimal-panel {
-    padding: var(--spacing-md) 0;
-}
-
-.minimal-categories {
+.hex-nav-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--spacing-md);
-    justify-content: center;
-}
-
-.category-minimal-item {
-    text-decoration: none;
-    transition: all var(--transition-fast);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-xs);
-}
-
-.category-minimal-item:hover {
-    transform: translateY(-2px);
-}
-
-/* Filter form specific styling */
-.categories-filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
 }
 
-.category-filter-item {
+.hex-nav-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-lavender);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hex-scroll-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.hex-scroll-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: 50%;
+    color: var(--color-lavender);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hex-scroll-btn:hover:not(:disabled) {
+    background: rgba(179, 157, 219, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(179, 157, 219, 0.3);
+}
+
+.hex-scroll-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.hex-categories-grid {
+    display: flex;
+    gap: var(--spacing-lg);
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    padding: var(--spacing-sm) 0;
+}
+
+.hex-categories-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.hex-categories-grid.compact {
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.hex-categories-grid.minimal {
+    gap: var(--spacing-sm);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.hex-categories-grid.filter {
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.hex-category-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-sm);
-    padding: var(--spacing-sm);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    border-radius: var(--border-radius-md);
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    position: relative;
+    flex-shrink: 0;
+    transition: all var(--transition-normal);
 }
 
-.category-filter-item input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+.hex-category-item.compact {
+    gap: var(--spacing-xs);
 }
 
-.category-filter-item:hover {
-    background: rgba(179, 157, 219, 0.05);
-    border-color: rgba(179, 157, 219, 0.2);
-    transform: translateY(-2px);
+.hex-category-item.minimal {
+    gap: 0;
 }
 
-.category-filter-item input:checked + .category-hexagon.glass-hex {
-    transform: scale(1.1);
-}
-
-.filter-count {
-    font-family: var(--font-code);
-    font-size: 0.75rem;
-    color: var(--color-text-tertiary);
-}
-
-.filter-actions {
+.hex-link,
+.hex-filter-btn {
     display: flex;
-    justify-content: center;
-    gap: var(--spacing-md);
+    flex-direction: column;
+    align-items: center;
+    gap: inherit;
+    text-decoration: none;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
 }
 
-/* Component-specific responsive adjustments */
-@media (max-width: 991px) {
-    .categories-compact-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    
-    .minimal-categories {
-        flex-wrap: wrap;
-        gap: var(--spacing-sm);
-    }
-    
-    .categories-filter-grid {
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-    }
-}
-
-@media (max-width: 767px) {
-    .categories-compact-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .filter-actions {
-        flex-direction: column;
-    }
-}
-
-@media (max-width: 576px) {
-    .minimal-categories {
-        justify-content: center;
-    }
-    
-    .categories-filter-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* Enhanced accessibility for this component */
-.category-filter-item.selected {
-    background: rgba(179, 157, 219, 0.1);
-    border-color: rgba(179, 157, 219, 0.3);
+.hex-link:hover,
+.hex-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.03);
     transform: translateY(-2px);
 }
 
-.category-filter-item.selected .filter-count {
-    color: var(--color-lavender);
+.hex-count {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    margin-top: 0.2rem;
+}
+
+.hex-category-item.active .hex-count {
+    color: var(--color-text-secondary);
     font-weight: 600;
 }
 
-/* Focus indicators */
-.category-compact-item:focus,
-.category-minimal-item:focus,
-.category-filter-item:focus {
-    outline: 2px solid var(--color-lavender);
-    outline-offset: 2px;
+/* Responsive Design */
+@media (max-width: 767px) {
+    .hex-nav-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .hex-categories-grid {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
 }
 </style>
 
-<!-- 
-REMOVED: All JavaScript functions - now handled by datalogs-consolidated.js
-The consolidated JavaScript automatically handles:
-- Scroll functionality via initializeHexagonNavigation()
-- Touch gestures and mobile interactions
-- Hover effects and ripple animations
-- Keyboard navigation and accessibility
-- Category filter form handling
-- All event handlers and state management
-
-All hexagon navigation functionality is managed by:
-- DatalogInterface.initializeHexagonNavigation()
-- DatalogInterface.scrollCategories()
-- DatalogInterface.updateScrollButtons()
-- DatalogInterface.initializeHexagonInteractions()
--->
+<script>
+// Enhanced navigation with scroll controls
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollContainer = document.getElementById('categoriesGrid');
+    const leftBtn = document.getElementById('categoryScrollLeft');
+    const rightBtn = document.getElementById('categoryScrollRight');
+    
+    if (scrollContainer && leftBtn && rightBtn) {
+        leftBtn.addEventListener('click', () => {
+            scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+        });
+        
+        rightBtn.addEventListener('click', () => {
+            scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+        });
+        
+        function updateButtons() {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+            leftBtn.disabled = scrollLeft <= 0;
+            rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 1;
+        }
+        
+        scrollContainer.addEventListener('scroll', updateButtons);
+        window.addEventListener('resize', updateButtons);
+        setTimeout(updateButtons, 100);
+    }
+    
+    // Filter button functionality
+    document.querySelectorAll('.hex-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const category = this.dataset.category;
+            // Add your filter logic here
+            console.log('Filter by category:', category);
+        });
+    });
+});
+</script>
