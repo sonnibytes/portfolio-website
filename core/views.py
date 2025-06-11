@@ -42,7 +42,7 @@ class HomeView(TemplateView):
             featured=True,
             status__in=['deployed', 'published']
         ).select_related('system_type').prefetch_related(
-            'technologies').order_by('-created')[:3]
+            'technologies').order_by('-created_at')[:3]
 
         # Latest DataLogs (limit 3 for homepage)
         context['latest_posts'] = Post.objects.filter(
@@ -160,7 +160,7 @@ class DeveloperProfileView(TemplateView):
         # Recent Activity for timeline
         context['recent_systems'] = SystemModule.objects.filter(
             status__in=['deployed', 'published']
-        ).order_by('-created')[:3]
+        ).order_by('-created_at')[:3]
 
         context['recent_posts'] = Post.objects.filter(
             status='published'
@@ -424,7 +424,7 @@ class CorePageView(DetailView):
 
         # Add page metrics for AURA display
         context["page_metrics"] = {
-            "last_updated": self.object.updated,
+            "last_updated": self.object.updated_at,
             "word_count": len(self.object.content.split()),
             "reading_time": max(1, len(self.object.content.split()) // 200),
             "page_id": f"PAGE-{self.object.id:03d}",

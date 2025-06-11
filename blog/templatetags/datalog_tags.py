@@ -916,7 +916,7 @@ def json_ld_datalog(post):
         "datePublished": post.published_date.isoformat()
         if hasattr(post, "published_date") and post.published_date
         else "",
-        "dateModified": post.updated.isoformat() if hasattr(post, "updated") else "",
+        "dateModified": post.updated_at.isoformat() if hasattr(post, "updated_at") else "",
         "author": {
             "@type": "Person",
             "name": post.author.get_full_name()

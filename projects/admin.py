@@ -106,7 +106,7 @@ class SystemMetricInline(admin.TabularInline):
     model = SystemMetric
     extra = 0
     fields = ("metric_name", "metric_value", "metric_unit", "metric_type", "is_current")
-    readonly_fields = ("timestamp",)
+    readonly_fields = ("created_at",)
 
 
 @admin.register(SystemModule)
@@ -119,7 +119,7 @@ class SystemModuleAdmin(admin.ModelAdmin):
         "completion_progress",
         "complexity_display",
         "featured",
-        "created",
+        "created_at",
         "author",
     )
     list_filter = (
@@ -127,16 +127,16 @@ class SystemModuleAdmin(admin.ModelAdmin):
         "system_type",
         "complexity",
         "featured",
-        "created",
+        "created_at",
         "technologies",
         "priority",
     )
     search_fields = ("title", "system_id", "description", "technical_details")
     prepopulated_fields = {"slug": ("title",)}
     filter_horizontal = ("technologies", "related_systems")
-    readonly_fields = ("system_id", "created", "updated")
-    date_hierarchy = "created"
-    ordering = ("-created",)
+    readonly_fields = ("system_id", "created_at", "updated_at")
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
 
     fieldsets = (
         (
@@ -206,8 +206,8 @@ class SystemModuleAdmin(admin.ModelAdmin):
                     "start_date",
                     "end_date",
                     "deployment_date",
-                    "created",
-                    "updated",
+                    "created_at",
+                    "updated_at",
                 )
             },
         ),
@@ -289,12 +289,12 @@ class SystemMetricAdmin(admin.ModelAdmin):
         "metric_unit",
         "metric_type",
         "is_current",
-        "timestamp",
+        "created_at",
     )
-    list_filter = ("metric_type", "is_current", "timestamp", "system__system_type")
+    list_filter = ("metric_type", "is_current", "created_at", "system__system_type")
     search_fields = ("metric_name", "system__title", "system__system_id")
-    readonly_fields = ("timestamp",)
-    ordering = ("-timestamp",)
+    readonly_fields = ("created_at",)
+    ordering = ("-created_at",)
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("system")

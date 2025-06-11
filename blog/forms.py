@@ -141,7 +141,7 @@ class PostForm(forms.ModelForm):
         # Create new tags
         for name in tag_names:
             slug = slugify(name)
-            tag, created = Tag.objects.get_or_create(
+            tag, created_at = Tag.objects.get_or_create(
                 slug=slug,
                 defaults={'name': name}
             )
@@ -158,7 +158,7 @@ class PostForm(forms.ModelForm):
 
         # Create new series
         slug = slugify(new_series)
-        series, created = Series.objects.get_or_create(
+        series, created_at = Series.objects.get_or_create(
             slug=slug,
             defaults={'title': new_series}
         )

@@ -101,8 +101,8 @@ class Post(models.Model):
         default=True, help_text="Show table of contents on post page")
     status = models.CharField(
         max_length=10, choices=STATUS_CHOICES, default='draft')
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     published_date = models.DateTimeField(blank=True, null=True)
     reading_time = models.PositiveIntegerField(
         default=0, editable=False,
@@ -291,14 +291,17 @@ class Comment(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField()
     content = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['created']
+        ordering = ['created_at']
 
     def __str__(self):
         return f"Comment by {self.name} on {self.post}"
+
+    def get_absolute_url(self):
+        return reverse("blog:comment", args=[self.pk])
 
 
 class PostView(models.Model):
@@ -314,6 +317,9 @@ class PostView(models.Model):
 
     def __str__(self):
         return f"View on {self.post} from {self.ip_address}"
+
+    def get_absolute_url(self):
+        return f"{self.post.get_absolute_url()}#view-{self.pk}"
 
 
 class Series(models.Model):
@@ -352,6 +358,9 @@ class SeriesPost(models.Model):
 
     def __str__(self):
         return f"{self.post} in {self.series} (#{self.order})"
+
+    def get_absolute_url(self):
+        return f"{self.series.get_absolute_url()}#post-{self.pk}"
 
 
 # Connection to Systems/Projects
@@ -414,7 +423,7 @@ class SystemLogEntry(models.Model):
     )
 
     # Timestamps for the HUD feel
-    logged_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(
         null=True,
@@ -453,7 +462,7 @@ class SystemLogEntry(models.Model):
     )
 
     class Meta:
-        ordering = ["-logged_at"]
+        ordering = ["-created_at"]
         unique_together = ["post", "system"]
         verbose_name = "System Log Entry"
         verbose_name_plural = "System Log Entries"
@@ -510,7 +519,7 @@ class SystemLogEntry(models.Model):
     def get_affected_components_list(self):
         """Return affected components as a list."""
         now = timezone.now()
-        diff = now - self.logged_at
+        diff = now - self.created_at
 
         if diff.days > 0:
             return f"{diff.days} days ago"
@@ -522,3 +531,6 @@ class SystemLogEntry(models.Model):
             return f"{minutes} minutes ago"
         else:
             return "Just now"
+
+    def get_absolute_url(self):
+        return f"{self.post.get_absolute_url()}#log-{self.pk}"

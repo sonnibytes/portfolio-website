@@ -25,8 +25,15 @@ class Technology(models.Model):
         ('other', 'Other'),
     )
 
+    # Base info
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, max_length=100)
+    description = models.TextField(blank=True)
+    category = models.CharField(
+        max_length=50, choices=CATEGORY_CHOICES, default="other"
+    )
+
+    # Visual Properties
     icon = models.CharField(
         max_length=50,
         blank=True,
@@ -36,12 +43,6 @@ class Technology(models.Model):
         max_length=7,
         default="#00f0ff",
         help_text="Hex color code for HUD display(e.g., #00f0ff)"
-    )
-    description = models.TextField(blank=True)
-    category = models.CharField(
-        max_length=50,
-        choices=CATEGORY_CHOICES,
-        default='other'
     )
 
     class Meta:
@@ -55,6 +56,9 @@ class Technology(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("projects:technology", args=[self.slug])
 
 
 class SystemType(models.Model):
@@ -243,18 +247,18 @@ class SystemModule(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='draft'
     )
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     start_date = models.DateField(
         blank=True,
         null=True,
         help_text="Development start date"
-        )
+    )
     end_date = models.DateField(
         blank=True,
         null=True,
         help_text="Development completion date"
-        )
+    )
     deployment_date = models.DateField(
         blank=True,
         null=True,
@@ -262,7 +266,7 @@ class SystemModule(models.Model):
     )
 
     class Meta:
-        ordering = ['-created']
+        ordering = ['-created_at']
         verbose_name = "System Module"
         verbose_name_plural = "System Modules"
 
@@ -281,7 +285,7 @@ class SystemModule(models.Model):
         if not self.system_id:
             # Get count of existing system and increment
             count = SystemModule.objects.count()
-            self.system_id = f"SYS-{count+1:03d}"
+            self.system_id = f"SYS-{count + 1:03d}"
 
         # Generate excerpt from content if not provided
         if not self.excerpt and self.description:
@@ -350,7 +354,7 @@ class SystemModule(models.Model):
         return (
             self.log_entries.all()
             .select_related("post")
-            .order_by("-priority", "-logged_at")
+            .order_by("-priority", "-created_at")
         )
 
     def get_latest_log_entry(self):
@@ -410,6 +414,9 @@ class SystemImage(models.Model):
     def __str__(self):
         return f"{self.image_type.title()} for {self.system.title}"
 
+    def get_absolute_url(self):
+        return f"{self.system.get_absolute_url()}#image-{self.pk}"
+
 
 class SystemFeature(models.Model):
     """Key features for a system with HUD-style display."""
@@ -467,6 +474,9 @@ class SystemFeature(models.Model):
         }
         return colors.get(self.implementation_status, "#00f0ff")
 
+    def get_absolute_url(self):
+        return f"{self.system.get_absolute_url()}#feature-{self.pk}"
+
 
 class SystemMetric(models.Model):
     """Performance and operational metrics for HUD dashboard display."""
@@ -498,14 +508,14 @@ class SystemMetric(models.Model):
         choices=METRIC_TYPES,
         default='performance'
     )
-    timestamp = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     is_current = models.BooleanField(
         default=True,
         help_text="Whether this is current/latest metric value"
     )
 
     class Meta:
-        ordering = ['-timestamp']
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.system.system_id} - {self.metric_name}: {self.metric_value}{self.metric_unit}"
@@ -518,3 +528,6 @@ class SystemMetric(models.Model):
                 metric_name=self.metric_name
             ).update(is_current=False)
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return f"{self.system.get_absolute_url()}#metric-{self.pk}"

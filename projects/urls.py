@@ -7,7 +7,8 @@ urlpatterns = [
     # ================= MAIN VIEWS =================
     # Main dashboard and systems views
     path("", views.UnifiedDashboardView.as_view(), name="unified_dashboard"),
-    path("dashboard/", views.UnifiedDashboardView.as_view(), name="dashboard"),
+    # AURA Enhanced dashboard
+    path("dashboard/", views.EnhancedSystemsDashboard.as_view(), name="enhanced_dashboard"),
     path("systems/", views.SystemModuleListView.as_view(), name="system_list"),
     path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
 
@@ -28,8 +29,12 @@ urlpatterns = [
     path("search/", views.SystemSearchView.as_view(), name="system_search"),
 
     # ================= API ENDPOINTS =================
-    path("api/dashboard/metrics/", views.DashboardMetricsAPIView.as_view(), name="dashboard_metrics_api"),
-    path("api/dashboard/timeseries/", views.SystemTimeSeriesAPIView.as_view(), name="dashboard_timeseries_api"),
-    path("api/systems/<slug:slug>/metrics/", views.SystemMetricsAPIView.as_view(), name="system_metrics_api"),
-    path("api/technologies/usage/", views.TechnologyUsageAPIView.as_view(), name="technology_usage_api"),
+    # path("api/dashboard/metrics/", views.DashboardMetricsAPIView.as_view(), name="dashboard_metrics_api"),
+    # path("api/dashboard/timeseries/", views.SystemTimeSeriesAPIView.as_view(), name="dashboard_timeseries_api"),
+    # path("api/systems/<slug:slug>/metrics/", views.SystemMetricsAPIView.as_view(), name="system_metrics_api"),
+    # path("api/technologies/usage/", views.TechnologyUsageAPIView.as_view(), name="technology_usage_api"),
+    
+    # Rework - Simplified API Endpoints
+    path("api/dashboard/", views.dashboard_api, name="dashboard_api"),
+    # path("api/quick-stats/", ),
 ]

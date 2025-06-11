@@ -19,9 +19,9 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'slug', 'author', 'status', 'created',
+    list_display = ('title', 'slug', 'author', 'status', 'created_at',
                     'published_date', 'featured')
-    list_filter = ('status', 'created', 'published_date', 'author',
+    list_filter = ('status', 'created_at', 'published_date', 'author',
                    'category', 'featured')
     search_fields = ('title', 'content', 'excerpt')
     prepopulated_fields = {'slug': ('title',)}
@@ -58,8 +58,8 @@ class PostAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'post', 'created', 'approved')
-    list_filter = ('approved', 'created')
+    list_display = ('name', 'post', 'created_at', 'approved')
+    list_filter = ('approved', 'created_at')
     search_fields = ('name', 'email', 'content')
     actions = ['approve_comment']
 

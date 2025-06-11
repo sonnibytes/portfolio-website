@@ -1540,7 +1540,7 @@ class DashboardView(LoginRequiredMixin, ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return Post.objects.all().order_by('-created')[:10]
+        return Post.objects.all().order_by('-created_at')[:10]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

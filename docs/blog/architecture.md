@@ -32,7 +32,7 @@ Django framework allows for modular development, so scaling/adding/etc much more
 - thumbnail (img) - for cards
 - banner_image (img) for banner
 - status (char/select['draft' or 'published'])
-- created (datetime) - created date
+- created_at (datetime) - created date
 - updated (datetime) - updated date
 - published_date (datetime) - published date
 - slug (slug)
@@ -60,7 +60,7 @@ Django framework allows for modular development, so scaling/adding/etc much more
 - name (char)
 - email (email)
 - content (text)
-- created (datetime)
+- created_at (datetime)
 - approved (bool)
 
 #### PostView model (track views)
