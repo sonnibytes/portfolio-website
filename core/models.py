@@ -3,6 +3,7 @@ from django.utils.text import slugify
 from django.urls import reverse
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
+from django.utils import timezone
 
 from datetime import date
 
@@ -189,6 +190,41 @@ class Contact(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
+    # Tracking Metadata
+    referrer_page = models.CharField(max_length=200, blank=True, help_text="Page the visitor came from")
+    user_agent = models.TextField(blank=True, help_text="Browser/device info")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, help_text="Visitor IP address")
+
+    # Response Tracking
+    response_sent = models.BooleanField(default=False, help_text="Has response been sent")
+    response_date = models.DateTimeField(null=True, blank=True, help_text="When response was sent")
+
+    # Categorization
+    inquiry_category = models.CharField(
+        max_length=50,
+        choices=[
+            ('project', 'Project Inquiry'),
+            ('hiring', 'Job/Hiring'),
+            ('collaboration', 'Collaboration'),
+            ('question', 'General Question'),
+            ('feedback', 'Feedback'),
+            ('other', 'Other'),
+        ],
+        default='other'
+    )
+
+    # Priority level
+    priority = models.CharField(
+        max_length=20,
+        choices=[
+            ('low', 'Low Priority'),
+            ('normal', 'Normal Priority'),
+            ('high', 'High Priority'),
+            ('urgent', 'Urgent'),
+        ],
+        default='normal'
+    )
+
     class Meta:
         ordering = ['-created_at']
 
@@ -197,6 +233,19 @@ class Contact(models.Model):
 
     def get_absolute_url(self):
         return reverse("core:contact_detail", args=[self.pk])
+
+    def response_time_hours(self):
+        """Calculate hours between submission and response"""
+        if self.response_date and self.created_at:
+            delta = self.response_date = self.created_at
+            return delta.total_seconds() / 3600
+        return None
+
+    def mark_as_responded(self):
+        """Mark contact as responded to"""
+        self.response_sent = True
+        self.response_date = timezone.now()
+        self.save()
 
 
 class SocialLink(models.Model):
