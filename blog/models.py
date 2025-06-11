@@ -300,6 +300,9 @@ class Comment(models.Model):
     def __str__(self):
         return f"Comment by {self.name} on {self.post}"
 
+    def get_absolute_url(self):
+        return reverse("blog:comment", args=[self.pk])
+
 
 class PostView(models.Model):
     """Model to track post views for popularity metrics."""
@@ -314,6 +317,9 @@ class PostView(models.Model):
 
     def __str__(self):
         return f"View on {self.post} from {self.ip_address}"
+
+    def get_absolute_url(self):
+        return f"{self.post.get_absolute_url()}#view-{self.pk}"
 
 
 class Series(models.Model):
@@ -352,6 +358,9 @@ class SeriesPost(models.Model):
 
     def __str__(self):
         return f"{self.post} in {self.series} (#{self.order})"
+
+    def get_absolute_url(self):
+        return f"{self.series.get_absolute_url()}#post-{self.pk}"
 
 
 # Connection to Systems/Projects
@@ -522,3 +531,6 @@ class SystemLogEntry(models.Model):
             return f"{minutes} minutes ago"
         else:
             return "Just now"
+
+    def get_absolute_url(self):
+        return f"{self.post.get_absolute_url()}#log-{self.pk}"
