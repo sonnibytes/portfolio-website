@@ -5,7 +5,7 @@ from .models import CorePage, Skill, Education, Experience, Contact, SocialLink
 
 @admin.register(CorePage)
 class CorePageAdmin(admin.ModelAdmin):
-    list_display = ("title", "slug", "is_published", "updated")
+    list_display = ("title", "slug", "is_published", "updated_at")
     prepopulated_fields = {"slug": ("title",)}
     search_fields = ("title", "content")
     list_filter = ("is_published",)

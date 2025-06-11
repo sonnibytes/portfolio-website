@@ -101,8 +101,8 @@ class Post(models.Model):
         default=True, help_text="Show table of contents on post page")
     status = models.CharField(
         max_length=10, choices=STATUS_CHOICES, default='draft')
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     published_date = models.DateTimeField(blank=True, null=True)
     reading_time = models.PositiveIntegerField(
         default=0, editable=False,
@@ -291,11 +291,11 @@ class Comment(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField()
     content = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['created']
+        ordering = ['created_at']
 
     def __str__(self):
         return f"Comment by {self.name} on {self.post}"
@@ -414,7 +414,7 @@ class SystemLogEntry(models.Model):
     )
 
     # Timestamps for the HUD feel
-    logged_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(
         null=True,
@@ -453,7 +453,7 @@ class SystemLogEntry(models.Model):
     )
 
     class Meta:
-        ordering = ["-logged_at"]
+        ordering = ["-created_at"]
         unique_together = ["post", "system"]
         verbose_name = "System Log Entry"
         verbose_name_plural = "System Log Entries"

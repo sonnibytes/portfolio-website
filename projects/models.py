@@ -44,7 +44,6 @@ class Technology(models.Model):
         default="#00f0ff",
         help_text="Hex color code for HUD display(e.g., #00f0ff)"
     )
-    
 
     class Meta:
         verbose_name_plural = "technologies"
@@ -245,18 +244,18 @@ class SystemModule(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='draft'
     )
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     start_date = models.DateField(
         blank=True,
         null=True,
         help_text="Development start date"
-        )
+    )
     end_date = models.DateField(
         blank=True,
         null=True,
         help_text="Development completion date"
-        )
+    )
     deployment_date = models.DateField(
         blank=True,
         null=True,
@@ -264,7 +263,7 @@ class SystemModule(models.Model):
     )
 
     class Meta:
-        ordering = ['-created']
+        ordering = ['-created_at']
         verbose_name = "System Module"
         verbose_name_plural = "System Modules"
 
@@ -283,7 +282,7 @@ class SystemModule(models.Model):
         if not self.system_id:
             # Get count of existing system and increment
             count = SystemModule.objects.count()
-            self.system_id = f"SYS-{count+1:03d}"
+            self.system_id = f"SYS-{count + 1:03d}"
 
         # Generate excerpt from content if not provided
         if not self.excerpt and self.description:
@@ -352,7 +351,7 @@ class SystemModule(models.Model):
         return (
             self.log_entries.all()
             .select_related("post")
-            .order_by("-priority", "-logged_at")
+            .order_by("-priority", "-created_at")
         )
 
     def get_latest_log_entry(self):
@@ -500,14 +499,14 @@ class SystemMetric(models.Model):
         choices=METRIC_TYPES,
         default='performance'
     )
-    timestamp = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     is_current = models.BooleanField(
         default=True,
         help_text="Whether this is current/latest metric value"
     )
 
     class Meta:
-        ordering = ['-timestamp']
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.system.system_id} - {self.metric_name}: {self.metric_value}{self.metric_unit}"

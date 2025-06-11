@@ -130,7 +130,7 @@ for i in range(10):
 
         try:
             # Get or create a user
-            user, created = User.objects.get_or_create(
+            user, created_at = User.objects.get_or_create(
                 username="testuser",
                 defaults={
                     "email": "test@example.com",
@@ -150,7 +150,7 @@ for i in range(10):
 
             categories = []
             for cat_data in categories_data:
-                category, created = Category.objects.get_or_create(
+                category, created_at = Category.objects.get_or_create(
                     name=cat_data["name"],
                     defaults={
                         "code": cat_data["code"],
@@ -159,7 +159,7 @@ for i in range(10):
                     },
                 )
                 categories.append(category)
-                if created:
+                if created_at:
                     self.stdout.write(f"  ✓ Created category: {category.name}")
 
             # Create sample tags
@@ -182,11 +182,11 @@ for i in range(10):
 
             tags = []
             for tag_name in tag_names:
-                tag, created = Tag.objects.get_or_create(
+                tag, created_at = Tag.objects.get_or_create(
                     name=tag_name, defaults={"slug": tag_name}
                 )
                 tags.append(tag)
-                if created:
+                if created_at:
                     self.stdout.write(f"  ✓ Created tag: {tag.name}")
 
             # Create sample posts

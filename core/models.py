@@ -14,14 +14,14 @@ class CorePage(models.Model):
         max_length=160,
         help_text="SEO meta description")
     is_published = models.BooleanField(default=True)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['title']
 
     def __str__(self):
-        self.title
+        return self.title
 
     def save(self, *args, **kwargs):
         if not self.slug:

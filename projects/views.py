@@ -149,7 +149,7 @@ class EnhancedSystemsDashboard(TemplateView):
         # Recent systems (last 30 days)
         thirty_days_ago = timezone.now() - timedelta(days=30)
         recent_systems_count = SystemModule.objects.filter(
-            created__gte=thirty_days_ago
+            created_at__gte=thirty_days_ago
         ).count()
 
         return {
@@ -187,9 +187,9 @@ class EnhancedSystemsDashboard(TemplateView):
         # Most used technologies in recent systems (last 6 mo)
         six_months_ago = timezone.now() - timedelta(days=180)
         recent_tech_trends = Technology.objects.filter(
-            systems__created__gte=six_months_ago
+            systems__created_at__gte=six_months_ago
         ).annotate(
-            recent_usage=Count('systems', filter=Q(systems__created__gte=six_months_ago))
+            recent_usage=Count('systems', filter=Q(systems__created_at__gte=six_months_ago))
         ).filter(recent_usage__gt=0).order_by('-recent_usage')[:10]
 
         return {
@@ -211,13 +211,13 @@ class EnhancedSystemsDashboard(TemplateView):
             month_end = month_start + timedelta(days=30)
 
             systems_created = SystemModule.objects.filter(
-                created__gte=month_start,
-                created__lt=month_end
+                created_at__gte=month_start,
+                created_at__lt=month_end
             ).count()
 
             systems_completed = SystemModule.objects.filter(
-                updated__gte=month_start,
-                updated__lt=month_end,
+                updated_at__gte=month_start,
+                updated_at__lt=month_end,
                 status__in=['deployed', 'published']
             ).count()
 
@@ -268,12 +268,12 @@ class EnhancedSystemsDashboard(TemplateView):
         """Recent activity across systems and logs"""
 
         # Recent system updates
-        recent_systems = SystemModule.objects.order_by('-updated')[:8]
+        recent_systems = SystemModule.objects.order_by('-updated_at')[:8]
 
         # Recent log entries
         recent_logs = SystemLogEntry.objects.select_related(
             'post', 'system'
-        ).order_by('-logged_at')[:8]
+        ).order_by('-created_at')[:8]
 
         # Recent feature additions
         recent_features = SystemFeature.objects.select_related(
@@ -317,9 +317,9 @@ class EnhancedSystemsDashboard(TemplateView):
 
         # System completion over time (for line charts)
         systems_timeline = SystemModule.objects.filter(
-            created__gte=timezone.now() - timedelta(days=365)
+            created_at__gte=timezone.now() - timedelta(days=365)
         ).annotate(
-            month=TruncMonth('created')
+            month=TruncMonth('created_at')
         ).values('month').annotate(
             count=Count('id'),
             avg_completion=Avg('completion_percent')
@@ -393,24 +393,24 @@ def dashboard_api(request):
             recent_activity = []
 
             # Recent systems
-            for system in SystemModule.objects.order_by("-updated")[:5]:
+            for system in SystemModule.objects.order_by("-updated_at")[:5]:
                 recent_activity.append(
                     {
                         "type": "system_update",
                         "title": system.title,
-                        "timestamp": system.updated.isoformat(),
+                        "timestamp": system.updated_at.isoformat(),
                         "url": system.get_absolute_url(),
                     }
                 )
 
             # Recent logs
-            for log in SystemLogEntry.objects.order_by("-logged_at")[:5]:
+            for log in SystemLogEntry.objects.order_by("-created_at")[:5]:
                 recent_activity.append(
                     {
                         "type": "log_entry",
                         "title": log.post.title,
                         "system": log.system.title,
-                        "timestamp": log.logged_at.isoformat(),
+                        "timestamp": log.created_at.isoformat(),
                         "url": log.post.get_absolute_url(),
                     }
                 )
@@ -456,12 +456,12 @@ class SystemModuleListView(ListView):
             ).distinct()
 
         # Sort functionality
-        sort_by = self.request.GET.get('sort', '-created')
-        valid_sorts = ['-created', 'title', '-completion_percent', 'complexity']
+        sort_by = self.request.GET.get('sort', '-created_at')
+        valid_sorts = ['-created_at', 'title', '-completion_percent', 'complexity']
         if sort_by in valid_sorts:
             queryset = queryset.order_by(sort_by)
         else:
-            queryset = queryset.order_by('-created')
+            queryset = queryset.order_by('-created_at')
 
         return queryset
 
@@ -560,17 +560,17 @@ class SystemModuleDetailView(DetailView):
         # Previous/Next system navigation
         try:
             context['previous_system'] = SystemModule.objects.filter(
-                created__lt=system.created,
+                created_at__lt=system.created_at,
                 status__in=['deployed', 'published']
-            ).order_by('-created').first()
+            ).order_by('-created_at').first()
         except SystemModule.DoesNotExist:
             context['previous_system'] = None
 
         try:
             context['next_system'] = SystemModule.objects.filter(
-                created__gt=system.created,
+                created_at__gt=system.created_at,
                 status__in=['deployed', 'published']
-            ).order_by('created').first()
+            ).order_by('created_at').first()
         except SystemModule.DoesNotExist:
             context['next_system'] = None
 
@@ -596,7 +596,7 @@ class SystemTypeDetailView(DetailView):
         context['systems'] = SystemModule.objects.filter(
             system_type=system_type,
             status__in=['deployed', 'published']
-        ).order_by('-created')
+        ).order_by('-created_at')
 
         # Stats for this system type
         context['total_systems'] = context['systems'].count()
@@ -630,7 +630,7 @@ class TechnologyDetailView(DetailView):
         context['systems'] = SystemModule.objects.filter(
             technologies=technology,
             status__in=['deployed', 'published']
-        ).order_by('-created')
+        ).order_by('-created_at')
 
         # Stats
         context['total_systems'] = context['systems'].count()
@@ -659,7 +659,7 @@ class SystemsDashboardView(ListView):
     def get_queryset(self):
         return SystemModule.objects.filter(
             status__in=['deployed', 'published']
-        ).order_by('-created')[:6]
+        ).order_by('-created_at')[:6]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -694,7 +694,7 @@ class SystemsDashboardView(ListView):
         # Recent system logs
         context['recent_logs'] = SystemLogEntry.objects.select_related(
             'post', 'system'
-        ).order_by('-logged_at')[:5]
+        ).order_by('-created_at')[:5]
 
         # Systems by status for HUD-display
         context['systems_by_status'] = {}
@@ -925,7 +925,7 @@ class DashboardMetricsAPIView(ListView):
         recent_activity = []
         for log in SystemLogEntry.objects.select_related(
             'post', 'system'
-        ).order_by('-logged_at')[:10]:
+        ).order_by('-created_at')[:10]:
             recent_activity.append({
                 'id': log.log_entry_id,
                 'title': log.post.title,
@@ -933,7 +933,7 @@ class DashboardMetricsAPIView(ListView):
                 'system_title': log.system.title,
                 'connection_type': log.connection_type,
                 'priority': log.priority,
-                'logged_at': log.logged_at.isoformat(),
+                'created_at': log.created_at.isoformat(),
                 'status': log.log_status
             })
 
@@ -1070,8 +1070,8 @@ class SystemSearchView(ListView):
             queryset = queryset.filter(status=status_filter)
 
         # Sorting
-        sort_by = self.request.GET.get('sort', '-created')
-        valid_sorts = ['-created', 'title', '-completion_percent', 'complexity', '-updated']
+        sort_by = self.request.GET.get('sort', '-created_at')
+        valid_sorts = ['-created_at', 'title', '-completion_percent', 'complexity', '-updated_at']
         if sort_by in valid_sorts:
             queryset = queryset.order_by(sort_by)
 
@@ -1095,7 +1095,7 @@ class SystemSearchView(ListView):
             'technology': self.request.GET.get('technology', ''),
             'complexity': self.request.GET.get('complexity', ''),
             'status': self.request.GET.get('status', ''),
-            'sort': self.request.GET.get('sort', '-created'),
+            'sort': self.request.GET.get('sort', '-created_at'),
         }
 
         return context
@@ -1117,7 +1117,7 @@ class FeaturedSystemsView(ListView):
             )
             .select_related("system_type")
             .prefetch_related("technologies")
-            .order_by("-created")
+            .order_by("-created_at")
         )
 
     def get_context_data(self, **kwargs):
@@ -1167,7 +1167,7 @@ class SystemTimelineView(ListView):
         return (
             SystemModule.objects.filter(status__in=["deployed", "published"])
             .select_related("system_type")
-            .order_by("-start_date", "-created")
+            .order_by("-start_date", "-created_at")
         )
 
     def get_context_data(self, **kwargs):
@@ -1176,7 +1176,7 @@ class SystemTimelineView(ListView):
         # Group systems by year for timeline display
         systems_by_year = {}
         for system in context["systems"]:
-            year = system.start_date.year if system.start_date else system.created.year
+            year = system.start_date.year if system.start_date else system.created_at.year
             if year not in systems_by_year:
                 systems_by_year[year] = []
             systems_by_year[year].append(system)
@@ -1200,7 +1200,7 @@ class UnifiedDashboardView(ListView):
     def get_queryset(self):
         return SystemModule.objects.filter(
             status__in=['deployed', 'published']
-        ).order_by('-created')[:6]
+        ).order_by('-created_at')[:6]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1280,7 +1280,7 @@ class UnifiedDashboardView(ListView):
 
         recent_logs = SystemLogEntry.objects.select_related(
             'post', 'system'
-        ).order_by('-logged_at')[:5]
+        ).order_by('-created_at')[:5]
 
         total_logs = Post.objects.filter(status='published').count()
 
@@ -1316,7 +1316,7 @@ class UnifiedDashboardView(ListView):
         # Get recent system logs
         recent_logs = SystemLogEntry.objects.select_related(
             'post', 'system'
-        ).order_by('-logged_at')[:8]
+        ).order_by('-created_at')[:8]
 
         return {
             'recent_activity_logs': recent_logs,
@@ -1400,7 +1400,7 @@ def calculate_development_velocity(system):
 
     # Calculate based on log frequency and completion progress
     recent_logs = logs.filter(
-        logged_at__gte=timezone.now() - timedelta(days=30)
+        created_at__gte=timezone.now() - timedelta(days=30)
     ).count()
 
     velocity = recent_logs * (system.completion_percent or 0) / 100
