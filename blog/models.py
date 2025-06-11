@@ -328,6 +328,35 @@ class Series(models.Model):
     slug = models.SlugField(max_length=200, unique=True)
     description = models.TextField(blank=True)
 
+    # Visual Enhancement
+    thumbnail = models.ImageField(upload_to="blog/series/", null=True, blank=True, help_text="Series thumbnail image (400x300px recommended)")
+
+    # Auto-calculated metrics
+    post_count = models.IntegerField(default=0, help_text="Number of posts in series (auto-calculated)")
+    total_reading_time = models.IntegerField(default=0, help_text="Total reading time for all posts in series (auto-calculated)")
+
+    # Series Metadata
+    difficulty_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('beginner', 'Beginner'),
+            ('intermediate', 'Intermediate'),
+            ('advanced', 'Advanced'),
+            ('expert', 'Expert'),
+        ],
+        default='intermediate'
+    )
+
+    # Status Tracking
+    is_complete = models.BooleanField(default=False, help_text="Is this series complete or ongoing?")
+
+    # Visibility
+    is_featured = models.BooleanField(default=False, help_text="Feature this series prominently")
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         verbose_name_plural = "Series"
         ordering = ['title']
@@ -342,6 +371,42 @@ class Series(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super(Series, self).save(*args, **kwargs)
+
+    def update_metrics(self):
+        """Update post_count and total_reading_time"""
+        posts = self.posts.all()
+        self.post_count = posts.count()
+        self.total_reading_time = sum(post.post.reading_time for post in posts)
+        self.save()
+
+    def get_progress_percentage(self):
+        """Get completion percentage if series has target post count"""
+        # This oculd be enhanced w a target_posts field
+        if hasattr(self, 'target_posts') and self.target_posts:
+            return min(100, (self.post_count / self.target_posts) * 100)
+        return 100 if self.is_complete else 0
+
+    def get_next_post(self, current_post):
+        """Get next post in series after current_post"""
+        try:
+            current_series_post = self.posts.get(post=current_post)
+            next_series_post = self.posts.filter(
+                order__gt=current_series_post.order
+            ).first()
+            return next_series_post.post if next_series_post else None
+        except:
+            return None
+
+    def get_previous_post(self, current_post):
+        """Get previous post in series before current_post"""
+        try:
+            current_series_post = self.posts.get(post=current_post)
+            prev_series_post = self.posts.filter(
+                order__lt=current_series_post.order
+            ).last()
+            return prev_series_post.post if prev_series_post else None
+        except:
+            return None
 
 
 class SeriesPost(models.Model):
@@ -435,6 +500,23 @@ class SystemLogEntry(models.Model):
     system_version = models.CharField(
         max_length=20, blank=True, help_text="System version this log relates to (e.g. v1.2.3)"
     )
+
+    # Impact assessment
+    impact_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('low', 'Low Impact'),
+            ('medium', 'Medium Impact'),
+            ('high', 'High Impact'),
+            ('critical', 'Critical Impact'),
+        ],
+        default='medium'
+    )
+
+    # Time tracking
+    estimated_hours = models.IntegerField(null=True, blank=True, help_text="Estimated hours to complete this work")
+    actual_hours = models.IntegerField(null=True, blank=True, help_text="Actual hours spent on this work")
+
     completion_impact = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -448,6 +530,9 @@ class SystemLogEntry(models.Model):
         blank=True,
         help_text="Comma-separated list of affected system components"
     )
+
+    # Resolution Tracking
+    resolution_notes = models.TextField(blank=True, help_text="Notes on how this issue was resolved")
 
     # For HUD dashboard display
     performance_impact = models.CharField(
@@ -517,20 +602,26 @@ class SystemLogEntry(models.Model):
         return icons.get(self.connection_type, "fa-file-alt")
 
     def get_affected_components_list(self):
-        """Return affected components as a list."""
-        now = timezone.now()
-        diff = now - self.created_at
+        """Return affected components as a list"""
+        if self.affected_components:
+            return [comp.strip() for comp in self.affected_components.split(",")]
+        return []
 
-        if diff.days > 0:
-            return f"{diff.days} days ago"
-        elif diff.seconds > 3600:
-            hours = diff.seconds // 3600
-            return f"{hours} hours ago"
-        elif diff.seconds > 60:
-            minutes = diff.seconds // 60
-            return f"{minutes} minutes ago"
-        else:
-            return "Just now"
+    def hours_variance(self):
+        """Calculate difference between estimated and actual hours"""
+        if self.estimated_hours and self.actual_hours:
+            return self.actual_hours - self.estimated_hours
+        return None
+
+    def get_impact_color(self):
+        """Return color for impact level display"""
+        colors = {
+            "low": "#27c93f",
+            "medium": "#ffbd2e",
+            "high": "#ff8a80",
+            "critical": "#f44336",
+        }
+        return colors.get(self.impact_level, "#00f0ff")
 
     def get_absolute_url(self):
         return f"{self.post.get_absolute_url()}#log-{self.pk}"

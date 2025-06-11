@@ -6,6 +6,7 @@ from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 import re
 from bs4 import BeautifulSoup
+from datetime import date
 
 """
 ENHANCED SYSTEM ARCHITECTURE MODELS
@@ -169,7 +170,7 @@ class SystemModule(models.Model):
                                help_text="Interactive demo URL")
     documentation_url = models.URLField(blank=True)
 
-    # System metrics
+    # ================= SYSTEM METRICS =================
     completion_percent = models.IntegerField(
         default=100,
         help_text="Development completion percentage (0-100)"
@@ -185,7 +186,7 @@ class SystemModule(models.Model):
         help_text="Development priority"
     )
 
-    # Performance metrics (for HUD display)
+    # ================= PERFORMANCE METRICS (HUD DISPLAY) =================
     performance_score = models.DecimalField(
         max_digits=4,
         decimal_places=1,
@@ -200,6 +201,24 @@ class SystemModule(models.Model):
         blank=True,
         help_text="System uptime percentage"
     )
+
+    response_time_ms = models.IntegerField(default=0, help_text="Average response time in milliseconds")
+    daily_users = models.IntegerField(default=0, help_text="Average daily active users")
+
+    # ================= DEVELOPMENT TRACKING METRICS =================
+    code_lines = models.PositiveIntegerField(default=0, help_text="Total lines of code")
+    commit_count = models.PositiveIntegerField(default=0, help_text="Total Git commits")
+    last_commit_date = models.DateTimeField(null=True, blank=True, help_text="Date of last Git commit")
+
+    # PROJECT TIIMELINE
+    estimated_completion_date = models.DateField(null=True, blank=True, help_text="Estimated project completion")
+
+    # RESOURCE TRACKING
+    estimated_dev_hours = models.IntegerField(null=True, blank=True, help_text="Estimated development hours")
+    actual_dev_hours = models.IntegerField(null=True, blank=True, help_text="Actual development hours spent")
+
+    # COLLABORATION
+    team_size = models.IntegerField(default=1, help_text="Number of team members")
 
     # ================= RELATIONSHIP FIELDS =================
     author = models.ForeignKey(
@@ -377,6 +396,52 @@ class SystemModule(models.Model):
         }
         return status_progress.get(self.status, 0)
 
+    def get_health_status(self):
+        """Return system health based on metrics"""
+        if not self.uptime_percentage:
+            return "unknown"
+
+        uptime = float(self.uptime_percentage)
+        if uptime >= 99.9:
+            return "excellent"
+        elif uptime >= 99.0:
+            return "good"
+        elif uptime >= 95.0:
+            return "fair"
+        else:
+            return "poor"
+
+    def get_response_status(self):
+        """Return response time status"""
+        if self.response_time_ms <= 100:
+            return "excellent"
+        elif self.response_time_ms <= 300:
+            return "good"
+        elif self.response_time_ms <= 1000:
+            return "fair"
+        else:
+            return "poor"
+
+    def hours_variance(self):
+        """Calculate hours over/under estimate"""
+        if self.estimated_dev_hours and self.actual_dev_hours:
+            return self.actual_dev_hours - self.estimated_dev_hours
+        return None
+
+    def completion_trend(self):
+        """Predict completion based on current progress"""
+        if self.estimated_completion_date and self.completion_percent:
+            days_remaining = (self.estimated_completion_date - date.today()).days
+            if self.completion_percent >= 90:
+                return "on_track"
+            elif days_remaining < 0:
+                return "overdue"
+            elif self.completion_percent < 50 and days_remaining < 30:
+                return "at_risk"
+            else:
+                return "on_track"
+        return "unknown"
+
 
 class SystemImage(models.Model):
     """Additional images for a system (gallery, screenshots, etc)."""
@@ -531,3 +596,35 @@ class SystemMetric(models.Model):
 
     def get_absolute_url(self):
         return f"{self.system.get_absolute_url()}#metric-{self.pk}"
+
+
+class SystemDependency(models.Model):
+    """Track dependencies between systems"""
+
+    DEPENDENCY_TYPES = [
+        ("api", "API Dependency"),
+        ("database", "Database Dependency"),
+        ("service", "Service Dependency"),
+        ("library", "Library Dependency"),
+        ("integration", "Integration Dependency"),
+        ("data_flow", "Data Flow"),
+        ("authentication", "Authentication Dependency"),
+        ("infrastructure", "Infrastructure Dependency"),
+    ]
+
+    system = models.ForeignKey(SystemModule, on_delete=models.CASCADE, related_name='dependencies')
+    depends_on = models.ForeignKey(SystemModule, on_delete=models.CASCADE, related_name='dependents')
+    dependency_type = models.CharField(max_length=20, choices=DEPENDENCY_TYPES, default='integration')
+    is_critical = models.BooleanField(default=False, help_text="System cannot function without this dependency")
+    description = models.TextField(blank=True, help_text="Description of dependency relationship")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('system', 'depends_on')
+        verbose_name_plural = "System Dependencies"
+
+    def __str__(self):
+        return f"{self.system.system_id} depends on {self.depends_on.system_id}"
+
+    def get_absolute_url(self):
+        return f"{self.system.get_absolute_url()}#dependency-{self.pk}"
