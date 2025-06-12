@@ -1,807 +1,1111 @@
-{% extends "projects/systems_base.html" %}
-
-{% block systems_title %}Systems Dashboard{% endblock %}
-{% block systems_body_class %}systems-dashboard enhanced-dashboard{% endblock %}
-
-{% block systems_css %}
-<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
-<style>
-/* Enhanced HUD-Style Dashboard Layout with Original Styling */
-.dashboard-hero {
-background: 
-var(--gradient-glass),
-rgba(0, 240, 255, 0.08);
-border: 1px solid rgba(0, 240, 255, 0.25);
-border-radius: var(--border-radius-xl);
-padding: 2.5rem;
-margin-bottom: 2.5rem;
-backdrop-filter: blur(20px);
-box-shadow: 
-0 8px 32px rgba(0, 0, 0, 0.3),
-0 0 20px rgba(0, 240, 255, 0.1);
-position: relative;
-overflow: hidden;
-transition: all 0.3s ease;
-}
-
-.dashboard-hero::before {
-content: '';
-position: absolute;
-top: 0;
-left: 0;
-right: 0;
-height: 3px;
-background: linear-gradient(90deg, var(--color-teal), var(--color-coral), var(--color-lavender));
-opacity: 0.8;
-}
-
-.dashboard-hero:hover {
-transform: translateY(-3px);
-box-shadow: 
-0 12px 40px rgba(0, 0, 0, 0.4),
-0 0 30px rgba(0, 240, 255, 0.15);
-}
-
-/* Unified Dashboard Grid System */
-.dashboard-main-grid {
-display: grid;
-grid-template-columns: 2fr 1fr;
-gap: var(--spacing-xl);
-margin-bottom: var(--spacing-xl);
-}
-
-.dashboard-left-column {
-display: flex;
-flex-direction: column;
-gap: var(--spacing-xl);
-}
-
-.dashboard-right-column {
-display: flex;
-flex-direction: column;
-gap: var(--spacing-xl);
-}
-
-/* Metrics Grid - Equal Height Cards using Original Styling */
-.metrics-overview {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-gap: var(--spacing-lg);
-margin-bottom: var(--spacing-xl);
-}
-
-.metric-card {
-background: 
-var(--gradient-glass),
-rgba(13, 13, 31, 0.4);
-border: 1px solid rgba(255, 255, 255, 0.08);
-border-radius: var(--border-radius-xl);
-padding: var(--spacing-lg);
-backdrop-filter: blur(20px);
-transition: all var(--transition-normal);
-position: relative;
-overflow: hidden;
-box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-display: flex;
-flex-direction: column;
-justify-content: space-between;
-min-height: 140px; /* Force equal heights */
-}
-
-.metric-card::before {
-content: '';
-position: absolute;
-top: 0;
-left: 0;
-right: 0;
-height: 3px;
-background: var(--color-teal);
-opacity: 0.8;
-border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
-}
-
-.metric-card.metric-development::before { background: var(--color-yellow); }
-.metric-card.metric-testing::before { background: var(--color-coral); }
-.metric-card.metric-completion::before { background: var(--color-lavender); }
-
-.metric-card:hover {
-transform: translateY(-8px);
-box-shadow: 
-0 15px 40px rgba(0, 0, 0, 0.4),
-var(--shadow-glow-teal);
-}
-
-.metric-card.metric-development:hover { 
-box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 193, 7, 0.3); 
-}
-
-.metric-card.metric-testing:hover { 
-box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), var(--shadow-glow-coral); 
-}
-
-.metric-card.metric-completion:hover { 
-box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), var(--shadow-glow-lavender); 
-}
-
-.metric-header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: var(--spacing-md);
-}
-
-.metric-icon {
-width: 40px;
-height: 40px;
-background: rgba(255, 255, 255, 0.1);
-border-radius: 50%;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 1.2rem;
-color: var(--color-teal);
-box-shadow: 0 0 15px rgba(38, 198, 218, 0.3);
-}
-
-.metric-value {
-font-family: var(--font-heading);
-font-size: 2.2rem;
-font-weight: 600;
-color: var(--color-text);
-line-height: 1;
-margin-bottom: 0.5rem;
-}
-
-.metric-label {
-font-size: 0.75rem;
-text-transform: uppercase;
-letter-spacing: 1px;
-color: var(--color-text-secondary);
-font-weight: 500;
-}
-
-/* Unified Panel System using Original Container Styling */
-.dashboard-panel {
-background: 
-var(--gradient-glass),
-rgba(var(--system-category-rgb, 0, 240, 255), 0.08);
-border: 1px solid rgba(var(--system-category-rgb, 0, 240, 255), 0.25);
-border-radius: var(--border-radius-xl);
-backdrop-filter: blur(20px);
-box-shadow: 
-0 8px 32px rgba(0, 0, 0, 0.3),
-0 0 20px rgba(var(--system-category-rgb, 0, 240, 255), 0.1);
-overflow: hidden;
-position: relative;
-transition: all 0.3s ease;
-display: flex;
-flex-direction: column;
-height: 100%; /* Key for equal heights */
-}
-
-.dashboard-panel::before {
-content: '';
-position: absolute;
-top: 0;
-left: 0;
-right: 0;
-height: 3px;
-background: linear-gradient(90deg, 
-var(--system-category-color, var(--color-teal)), 
-var(--color-coral), 
-var(--color-lavender)
-);
-opacity: 0.8;
-}
-
-.dashboard-panel:hover {
-transform: translateY(-3px);
-box-shadow: 
-0 12px 40px rgba(0, 0, 0, 0.4),
-0 0 30px rgba(var(--system-category-rgb, 0, 240, 255), 0.15);
-}
-
-/* Panel variants */
-.dashboard-panel.panel-metrics {
---system-category-rgb: 179, 157, 219;
---system-category-color: var(--color-lavender);
-}
-
-.dashboard-panel.panel-technology {
---system-category-rgb: 255, 138, 128;
---system-category-color: var(--color-coral);
-}
-
-.dashboard-panel.panel-activity {
---system-category-rgb: 76, 175, 80;
---system-category-color: var(--color-success);
-}
-
-.panel-header {
-padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
-text-align: center;
-position: relative;
-z-index: 1;
-
-/* Enhanced header background with opacity gradient */
-background: 
-linear-gradient(180deg, 
-rgba(var(--system-category-rgb, 0, 240, 255), 0.04) 0%,
-rgba(var(--system-category-rgb, 0, 240, 255), 0.02) 50%,
-transparent 100%);
-border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.panel-title {
-font-family: var(--font-heading);
-font-size: 1rem;
-font-weight: 600;
-text-transform: uppercase;
-letter-spacing: 1px;
-color: var(--system-category-color, var(--color-teal));
-margin: 0;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 0.5rem;
-}
-
-.panel-content {
-padding: var(--spacing-lg);
-flex: 1; /* Fill remaining space */
-display: flex;
-flex-direction: column;
-position: relative;
-z-index: 1;
-}
-
-/* System Health with Balanced Layout */
-.health-grid {
-display: grid;
-grid-template-columns: repeat(2, 1fr);
-gap: var(--spacing-md);
-flex: 1;
-}
-
-.health-item {
-text-align: center;
-padding: var(--spacing-lg);
-border-radius: var(--border-radius-lg);
-background: rgba(255, 255, 255, 0.03);
-border: 1px solid rgba(255, 255, 255, 0.08);
-display: flex;
-flex-direction: column;
-justify-content: center;
-transition: all var(--transition-fast);
-}
-
-.health-item:hover {
-background: rgba(255, 255, 255, 0.08);
-transform: translateY(-2px);
-}
-
-.health-value {
-font-family: var(--font-heading);
-font-size: 1.8rem;
-font-weight: 600;
-margin-bottom: 0.25rem;
-line-height: 1;
-}
-
-.health-label {
-font-size: 0.7rem;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-color: var(--color-text-secondary);
-}
-
-/* Technology Usage - Clean List */
-.tech-list {
-display: flex;
-flex-direction: column;
-gap: var(--spacing-sm);
-flex: 1;
-}
-
-.tech-item {
-display: flex;
-align-items: center;
-justify-content: space-between;
-padding: var(--spacing-md);
-border-radius: var(--border-radius-md);
-background: rgba(255, 255, 255, 0.03);
-border-left: 3px solid var(--color-coral);
-transition: all var(--transition-fast);
-}
-
-.tech-item:hover {
-background: rgba(255, 138, 128, 0.08);
-transform: translateX(4px);
-border-left-color: var(--color-coral);
-}
-
-.tech-name {
-font-weight: 500;
-color: var(--color-text);
-}
-
-.tech-count {
-font-family: var(--font-code);
-font-size: 0.9rem;
-color: var(--color-coral);
-font-weight: 600;
-}
-
-/* Recent Systems - Card List */
-.recent-systems-list {
-display: flex;
-flex-direction: column;
-gap: var(--spacing-md);
-flex: 1;
-}
-
-.recent-system-item {
-display: flex;
-align-items: center;
-gap: var(--spacing-md);
-padding: var(--spacing-md);
-border-radius: var(--border-radius-lg);
-background: rgba(255, 255, 255, 0.03);
-border: 1px solid rgba(255, 255, 255, 0.08);
-transition: all var(--transition-fast);
-}
-
-.recent-system-item:hover {
-background: rgba(0, 240, 255, 0.08);
-transform: translateY(-2px);
-box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.system-thumbnail {
-width: 40px;
-height: 40px;
-border-radius: var(--border-radius-md);
-overflow: hidden;
-flex-shrink: 0;
-background: rgba(255, 255, 255, 0.1);
-display: flex;
-align-items: center;
-justify-content: center;
-color: var(--color-teal);
-}
-
-.system-thumbnail img {
-width: 100%;
-height: 100%;
-object-fit: cover;
-}
-
-.system-info {
-flex: 1;
-min-width: 0;
-}
-
-.system-title {
-font-weight: 500;
-color: var(--color-text);
-margin-bottom: 0.25rem;
-font-size: 0.9rem;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-}
-
-.system-meta {
-font-size: 0.75rem;
-color: var(--color-text-secondary);
-}
-
-.system-status {
-width: 8px;
-height: 8px;
-border-radius: 50%;
-background: var(--color-success);
-flex-shrink: 0;
-position: relative;
-}
-
-.system-status.in-development { background: var(--color-warning); }
-.system-status.testing { background: var(--color-coral); }
-.system-status.draft { background: var(--color-muted); }
-
-.system-status.deployed::after {
-content: '';
-position: absolute;
-top: -2px;
-left: -2px;
-right: -2px;
-bottom: -2px;
-border-radius: 50%;
-border: 2px solid var(--color-success);
-animation: pulse 2s infinite;
-}
-
-/* Activity Timeline */
-.activity-timeline {
-max-height: 280px;
-overflow-y: auto;
-flex: 1;
-}
-
-.activity-item {
-display: flex;
-align-items: center;
-gap: var(--spacing-md);
-padding: var(--spacing-sm) 0;
-border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-transition: all var(--transition-fast);
-}
-
-.activity-item:hover {
-background: rgba(76, 175, 80, 0.05);
-margin: 0 calc(-1 * var(--spacing-lg));
-padding-left: var(--spacing-lg);
-padding-right: var(--spacing-lg);
-border-radius: var(--border-radius-md);
-}
-
-.activity-icon {
-width: 32px;
-height: 32px;
-border-radius: 50%;
-background: rgba(255, 255, 255, 0.1);
-display: flex;
-align-items: center;
-justify-content: center;
-color: var(--color-success);
-font-size: 0.9rem;
-flex-shrink: 0;
-}
-
-.activity-content {
-flex: 1;
-min-width: 0;
-}
-
-.activity-title {
-font-size: 0.85rem;
-color: var(--color-text);
-margin-bottom: 0.25rem;
-line-height: 1.3;
-}
-
-.activity-time {
-font-size: 0.7rem;
-color: var(--color-text-secondary);
-}
-
-/* Responsive Grid Adjustments */
-@media (max-width: 1200px) {
-.dashboard-main-grid {
-grid-template-columns: 1fr;
-gap: var(--spacing-lg);
-}
-
-.metrics-overview {
-grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-gap: var(--spacing-md);
-}
-}
-
-@media (max-width: 768px) {
-.dashboard-hero {
-padding: var(--spacing-xl);
-margin-bottom: var(--spacing-xl);
-}
-
-.metrics-overview {
-grid-template-columns: repeat(2, 1fr);
-}
-
-.health-grid {
-grid-template-columns: 1fr;
-}
-
-.panel-header {
-padding: var(--spacing-lg);
-}
-
-.panel-content {
-padding: var(--spacing-md);
-}
-}
-</style>
-{% endblock %}
-
-{% block systems_content %}
-<!-- Dashboard Header -->
-<section class="dashboard-header-section">
-<div class="container">
-<div class="dashboard-hero">
-<div class="dashboard-header">
-<div class="header-info">
-    <h1 class="dashboard-title">
-        SYSTEMS<span class="text-purple">DASHBOARD</span>
-        <span class="dashboard-subtitle">Real-time System Monitoring</span>
-    </h1>
-    <div class="dashboard-timestamp">
-        <i class="fas fa-clock"></i>
-        <span id="current-time">{% now "Y-m-d H:i:s" %}</span>
-        <span class="timezone">UTC</span>
-    </div>
-</div>
-
-<div class="dashboard-status">
-    <div class="status-indicator operational">
-        <div class="status-pulse"></div>
-    </div>
-    <div class="status-text">
-        <div class="status-label">SYSTEM STATUS</div>
-        <div class="status-value">OPERATIONAL</div>
-    </div>
-</div>
-</div>
-
-<!-- Overview Metrics -->
-<div class="metrics-overview">
-<div class="metric-card">
-    <div class="metric-header">
-        <div class="metric-icon">
-            <i class="fas fa-server"></i>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Original AURA Systems Architecturep1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0d0d1f 100%);
+            color: #ffffff;
+            padding: 2rem;
+            line-height: 1.4;
+        }
+        
+        .diagram-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #ff8a80;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            color: #b0bec5;
+        }
+        
+        .version-badge {
+            display: inline-block;
+            background: rgba(255, 138, 128, 0.2);
+            border: 1px solid rgba(255, 138, 128, 0.4);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            color: #ff8a80;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        
+        .template-section {
+            margin-bottom: 4rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .template-title {
+            font-size: 1.8rem;
+            color: #ff8a80;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .template-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 138, 128, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .structure-tree {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+        
+        .tree-node {
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .tree-indent {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .tree-element {
+            color: #ff8a80;
+            font-weight: bold;
+        }
+        
+        .tree-selector {
+            background: rgba(255, 138, 128, 0.2);
+            color: #ff8a80;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .tree-description {
+            color: #b0bec5;
+            font-style: italic;
+            margin-left: auto;
+        }
+        
+        .original-grid-visual {
+            display: grid;
+            gap: 1rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .original-dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .original-list {
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+        
+        .original-grid-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .original-grid-item:hover {
+            background: rgba(255, 138, 128, 0.1);
+            border-color: rgba(255, 138, 128, 0.3);
+        }
+        
+        .original-grid-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .original-grid-item.unified-container {
+            background: linear-gradient(135deg, rgba(255, 138, 128, 0.15), rgba(179, 157, 219, 0.15));
+        }
+        
+        .original-grid-item.unified-container::before {
+            background: linear-gradient(90deg, #ff8a80, #b39ddb, #00f0ff);
+        }
+        
+        .original-grid-item.dashboard-variant {
+            background: rgba(0, 240, 255, 0.1);
+        }
+        
+        .original-grid-item.dashboard-variant::before {
+            background: #00f0ff;
+        }
+        
+        .original-grid-item.metrics-variant {
+            background: rgba(179, 157, 219, 0.1);
+        }
+        
+        .original-grid-item.metrics-variant::before {
+            background: #b39ddb;
+        }
+        
+        .original-grid-item.performance-variant {
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .original-grid-item.performance-variant::before {
+            background: #4caf50;
+        }
+        
+        .original-grid-item.technology-variant {
+            background: rgba(255, 138, 128, 0.1);
+        }
+        
+        .original-grid-item.technology-variant::before {
+            background: #ff8a80;
+        }
+        
+        .styling-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .style-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .style-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .style-card h4 {
+            color: #ff8a80;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .style-properties {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .style-properties li {
+            margin: 0.5rem 0;
+            padding: 0.3rem 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #e0e0e0;
+        }
+        
+        .hierarchy-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .legend-base { background: rgba(255, 138, 128, 0.3); }
+        .legend-subnav { background: rgba(0, 240, 255, 0.3); }
+        .legend-unified { background: rgba(179, 157, 219, 0.3); }
+        .legend-content { background: rgba(76, 175, 80, 0.3); }
+        
+        .comparison-note {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .comparison-note h4 {
+            color: #ffc107;
+            margin-bottom: 1rem;
+        }
+        
+        .file-tree {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .file-node {
+            margin: 0.3rem 0;
+            color: #e0e0e0;
+        }
+        
+        .file-icon {
+            color: #ff8a80;
+            margin-right: 0.5rem;
+        }
+        
+        .file-name {
+            color: #00f0ff;
+        }
+        
+        .file-status {
+            color: #ffc107;
+            font-style: italic;
+            margin-left: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .original-grid-visual.original-dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .hierarchy-legend {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .styling-breakdown {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <div class="header">
+            <h1>Original AURA Systems Architecture</h1>
+            <p>Current structure using systems-unified-container component approach</p>
+            <div class="version-badge">CURRENT VERSION - To be replaced</div>
         </div>
-    </div>
-    <div class="metric-value" data-target="{{ dashboard_stats.total_systems }}">{{ dashboard_stats.total_systems|default:8 }}</div>
-    <div class="metric-label">Total Systems</div>
-</div>
-
-<div class="metric-card metric-development">
-    <div class="metric-header">
-        <div class="metric-icon" style="color: var(--color-yellow);">
-            <i class="fas fa-cogs"></i>
-        </div>
-    </div>
-    <div class="metric-value" data-target="{{ dashboard_stats.systems_in_development }}">{{ dashboard_stats.systems_in_development|default:3 }}</div>
-    <div class="metric-label">In Development</div>
-</div>
-
-<div class="metric-card metric-testing">
-    <div class="metric-header">
-        <div class="metric-icon" style="color: var(--color-coral);">
-            <i class="fas fa-vial"></i>
-        </div>
-    </div>
-    <div class="metric-value" data-target="{{ dashboard_stats.systems_testing }}">{{ dashboard_stats.systems_testing|default:2 }}</div>
-    <div class="metric-label">Testing Phase</div>
-</div>
-
-<div class="metric-card metric-completion">
-    <div class="metric-header">
-        <div class="metric-icon" style="color: var(--color-purple);">
-            <i class="fas fa-chart-line"></i>
-        </div>
-    </div>
-    <div class="metric-value" data-target="{{ dashboard_stats.avg_completion|floatformat:0 }}">{{ dashboard_stats.avg_completion|default:76 }}%</div>
-    <div class="metric-label">Avg Completion</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-
-<!-- Main Dashboard Content -->
-<section class="dashboard-content-section">
-<div class="container">
-<div class="dashboard-main-grid">
-
-<!-- Left Column -->
-<div class="dashboard-left-column">
-
-<!-- System Health Overview -->
-<div class="dashboard-panel">
-    <div class="panel-header">
-        <h2 class="panel-title">
-            <i class="fas fa-heartbeat"></i>
-            System Health
-        </h2>
-    </div>
-    <div class="panel-content">
-        <div class="health-grid">
-            <div class="health-item">
-                <div class="health-value" style="color: var(--color-success);">{{ dashboard_stats.systems_operational|default:5 }}</div>
-                <div class="health-label">Operational</div>
+        
+        <!-- Hierarchy Legend -->
+        <div class="hierarchy-legend">
+            <div class="legend-item">
+                <div class="legend-color legend-base"></div>
+                <span>Base Structure (current systems_base.html)</span>
             </div>
-            <div class="health-item">
-                <div class="health-value" style="color: var(--color-warning);">{{ dashboard_stats.systems_warning|default:2 }}</div>
-                <div class="health-label">Warning</div>
+            <div class="legend-item">
+                <div class="legend-color legend-subnav"></div>
+                <span>Sub-navigation</span>
             </div>
-            <div class="health-item">
-                <div class="health-value" style="color: var(--color-danger);">{{ dashboard_stats.systems_critical|default:1 }}</div>
-                <div class="health-label">Critical</div>
+            <div class="legend-item">
+                <div class="legend-color legend-unified"></div>
+                <span>Unified Container Components</span>
             </div>
-            <div class="health-item">
-                <div class="health-value" style="color: var(--color-muted);">{{ dashboard_stats.systems_offline|default:0 }}</div>
-                <div class="health-label">Offline</div>
+            <div class="legend-item">
+                <div class="legend-color legend-content"></div>
+                <span>Content Grids</span>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Technology Usage -->
-<div class="dashboard-panel">
-    <div class="panel-header">
-        <h2 class="panel-title">
-            <i class="fas fa-layer-group"></i>
-            Technology Stack
-        </h2>
-    </div>
-    <div class="panel-content">
-        <div class="tech-list">
-            {% for tech in tech_usage_stats|default:"Django,Python,JavaScript,PostgreSQL,Redis,Docker"|split:"," %}
-            <div class="tech-item">
-                <span class="tech-name">{{ tech }}</span>
-                <span class="tech-count">{{ forloop.counter|add:2 }}</span>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-
-</div>
-
-<!-- Right Column -->
-<div class="dashboard-right-column">
-
-<!-- Recent Systems -->
-<div class="dashboard-panel">
-    <div class="panel-header">
-        <h2 class="panel-title">
-            <i class="fas fa-clock"></i>
-            Recent Systems
-        </h2>
-    </div>
-    <div class="panel-content">
-        <div class="recent-systems-list">
-            {% for system in recent_systems|default_if_none:"" %}
-            <div class="recent-system-item">
-                <div class="system-thumbnail">
-                    {% if system.thumbnail %}
-                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
-                    {% else %}
-                    <i class="fas fa-microchip"></i>
-                    {% endif %}
+        
+        <!-- Original Systems Base Structure -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🌐</div>
+                Original Systems Base Structure
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">🌐</span>
+                    <span class="tree-element">base.html</span>
+                    <span class="tree-selector">Root template</span>
+                    <span class="tree-description">// Global AURA structure</span>
                 </div>
-                <div class="system-info">
-                    <div class="system-title">{{ system.title|default:"ML Training Pipeline" }}</div>
-                    <div class="system-meta">{{ system.created_at|default:"2024-06-10"|date:"M d" }} • {{ system.get_status_display|default:"Deployed" }}</div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 🏗️</span>
+                    <span class="tree-element">current systems_base.html</span>
+                    <span class="tree-selector">.systems-interface</span>
+                    <span class="tree-description">// Systems base template</span>
                 </div>
-                <div class="system-status {{ system.status|default:'deployed' }}"></div>
-            </div>
-            {% empty %}
-            <!-- Sample Recent Systems -->
-            <div class="recent-system-item">
-                <div class="system-thumbnail"><i class="fas fa-robot"></i></div>
-                <div class="system-info">
-                    <div class="system-title">ML Training Pipeline</div>
-                    <div class="system-meta">Jun 10 • Deployed</div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 📋</span>
+                    <span class="tree-element">systems-subnav</span>
+                    <span class="tree-selector">.app-subnav.systems-subnav</span>
+                    <span class="tree-description">// Sub-navigation with stats</span>
                 </div>
-                <div class="system-status deployed"></div>
-            </div>
-            <div class="recent-system-item">
-                <div class="system-thumbnail"><i class="fas fa-chart-bar"></i></div>
-                <div class="system-info">
-                    <div class="system-title">Analytics Dashboard</div>
-                    <div class="system-meta">Jun 08 • Testing</div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   ├── 🎯</span>
+                    <span class="tree-element">subnav-left</span>
+                    <span class="tree-selector">.subnav-left</span>
+                    <span class="tree-description">// Brand + navigation links</span>
                 </div>
-                <div class="system-status testing"></div>
-            </div>
-            <div class="recent-system-item">
-                <div class="system-thumbnail"><i class="fas fa-database"></i></div>
-                <div class="system-info">
-                    <div class="system-title">Data Processor</div>
-                    <div class="system-meta">Jun 05 • In Development</div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   │   ├── 🏷️</span>
+                    <span class="tree-element">subnav-title</span>
+                    <span class="tree-selector">.subnav-title</span>
+                    <span class="tree-description">// "Systems Command"</span>
                 </div>
-                <div class="system-status in-development"></div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-
-<!-- Activity Timeline -->
-<div class="dashboard-panel">
-    <div class="panel-header">
-        <h2 class="panel-title">
-            <i class="fas fa-history"></i>
-            Recent Activity
-        </h2>
-    </div>
-    <div class="panel-content">
-        <div class="activity-timeline">
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas fa-plus"></i>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   │   └── 🔗</span>
+                    <span class="tree-element">subnav-links</span>
+                    <span class="tree-selector">.subnav-links</span>
+                    <span class="tree-description">// Navigation buttons as .subnav-action-btn</span>
                 </div>
-                <div class="activity-content">
-                    <div class="activity-title">System "Neural Network Trainer" created</div>
-                    <div class="activity-time">2 hours ago</div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   └── 📊</span>
+                    <span class="tree-element">subnav-right</span>
+                    <span class="tree-selector">.subnav-right</span>
+                    <span class="tree-description">// Stats + actions</span>
                 </div>
-            </div>
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas fa-check"></i>
+                <div class="tree-node">
+                    <span class="tree-indent">    │       ├── 📈</span>
+                    <span class="tree-element">subnav-stats</span>
+                    <span class="tree-selector">.subnav-stats</span>
+                    <span class="tree-description">// Live stats (7 Systems | 4 Active | 27 Tech)</span>
                 </div>
-                <div class="activity-content">
-                    <div class="activity-title">ML Pipeline deployment successful</div>
-                    <div class="activity-time">4 hours ago</div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │       └── ⚡</span>
+                    <span class="tree-element">subnav-actions</span>
+                    <span class="tree-selector">.subnav-actions</span>
+                    <span class="tree-description">// New System button + search</span>
                 </div>
-            </div>
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas fa-edit"></i>
+                <div class="tree-node">
+                    <span class="tree-indent">    └── 📦</span>
+                    <span class="tree-element">systems-main-content</span>
+                    <span class="tree-selector">.systems-main-content</span>
+                    <span class="tree-description">// Content block for child templates</span>
                 </div>
-                <div class="activity-content">
-                    <div class="activity-title">Analytics Dashboard updated</div>
-                    <div class="activity-time">6 hours ago</div>
-                </div>
-            </div>
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas fa-vial"></i>
-                </div>
-                <div class="activity-content">
-                    <div class="activity-title">Data Processor entered testing phase</div>
-                    <div class="activity-time">1 day ago</div>
-                </div>
-            </div>
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas fa-code"></i>
-                </div>
-                <div class="activity-content">
-                    <div class="activity-title">API Gateway configuration updated</div>
-                    <div class="activity-time">2 days ago</div>
+                <div class="tree-node">
+                    <span class="tree-indent">        └── 🎛️</span>
+                    <span class="tree-element">Optional sidebar</span>
+                    <span class="tree-selector">.systems-sidebar</span>
+                    <span class="tree-description">// System status + tech stack</span>
                 </div>
             </div>
         </div>
+        
+        <!-- Original Dashboard Structure -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">📊</div>
+                Original Dashboard Structure
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">📊</span>
+                    <span class="tree-element">current systems_dashboard.html</span>
+                    <span class="tree-selector">{% extends "projects/systems_base.html" %}</span>
+                    <span class="tree-description">// Dashboard template</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📦</span>
+                    <span class="tree-element">systems_content block</span>
+                    <span class="tree-selector">.container</span>
+                    <span class="tree-description">// Main dashboard content</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🎯</span>
+                    <span class="tree-element">Hero Container</span>
+                    <span class="tree-selector">.systems-unified-container.dashboard</span>
+                    <span class="tree-description">// Main dashboard hero with metrics</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   ├── 📊</span>
+                    <span class="tree-element">systems-metrics-grid</span>
+                    <span class="tree-selector">.systems-metrics-grid</span>
+                    <span class="tree-description">// 4-column metrics display</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   └── 📈</span>
+                    <span class="tree-element">systems-chart-container</span>
+                    <span class="tree-selector">.systems-chart-container</span>
+                    <span class="tree-description">// Chart placeholder</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    └── 🗂️</span>
+                    <span class="tree-element">dashboard-content-grid</span>
+                    <span class="tree-selector">.dashboard-content-grid</span>
+                    <span class="tree-description">// Bootstrap row/col layout</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        ├── 📊</span>
+                    <span class="tree-element">Performance Container</span>
+                    <span class="tree-selector">.systems-unified-container.performance</span>
+                    <span class="tree-description">// System completion progress</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        ├── 🏥</span>
+                    <span class="tree-element">Health Container</span>
+                    <span class="tree-selector">.systems-unified-container.performance</span>
+                    <span class="tree-description">// System health overview</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        ├── ⚙️</span>
+                    <span class="tree-element">Technology Container</span>
+                    <span class="tree-selector">.systems-unified-container.technology</span>
+                    <span class="tree-description">// Technology usage stats</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        └── 📝</span>
+                    <span class="tree-element">Types Container</span>
+                    <span class="tree-selector">.systems-unified-container.metrics</span>
+                    <span class="tree-description">// System types overview</span>
+                </div>
+            </div>
+            
+            <h4 style="color: #ff8a80; margin: 2rem 0 1rem;">Original Dashboard Layout (Bootstrap-based)</h4>
+            <div class="original-grid-visual original-dashboard">
+                <div class="original-grid-item unified-container">
+                    Dashboard Hero<br>
+                    <code>.systems-unified-container.dashboard</code><br>
+                    <small>Full-width container with metrics grid</small>
+                </div>
+                <div class="original-grid-item performance-variant">
+                    System Completion<br>
+                    <code>.systems-unified-container.performance</code><br>
+                    <small>Bootstrap .col - flex layout</small>
+                </div>
+                <div class="original-grid-item performance-variant">
+                    System Health<br>
+                    <code>.systems-unified-container.performance</code><br>
+                    <small>Bootstrap .col - flex layout</small>
+                </div>
+                <div class="original-grid-item technology-variant">
+                    Technology Usage<br>
+                    <code>.systems-unified-container.technology</code><br>
+                    <small>Bootstrap .col - flex layout</small>
+                </div>
+                <div class="original-grid-item metrics-variant">
+                    System Types<br>
+                    <code>.systems-unified-container.metrics</code><br>
+                    <small>Bootstrap .col - flex layout</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Original List Structure -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">📋</div>
+                Original System List Structure
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">📋</span>
+                    <span class="tree-element">current systems_list.html</span>
+                    <span class="tree-selector">{% extends "projects/systems_base.html" %}</span>
+                    <span class="tree-description">// List template</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📦</span>
+                    <span class="tree-element">systems-list-page</span>
+                    <span class="tree-selector">.systems-list-page</span>
+                    <span class="tree-description">// Main list container</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🎯</span>
+                    <span class="tree-element">Header Container</span>
+                    <span class="tree-selector">.systems-unified-container.dashboard</span>
+                    <span class="tree-description">// List header with description</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🔧</span>
+                    <span class="tree-element">Filter Controls</span>
+                    <span class="tree-selector">.systems-unified-container.metrics</span>
+                    <span class="tree-description">// Search and filter controls</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    └── 🗂️</span>
+                    <span class="tree-element">systems-grid</span>
+                    <span class="tree-selector">.systems-grid</span>
+                    <span class="tree-description">// System cards grid</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        └── 🔳</span>
+                    <span class="tree-element">system-card-compact</span>
+                    <span class="tree-selector">.system-card-compact</span>
+                    <span class="tree-description">// Individual system cards</span>
+                </div>
+            </div>
+            
+            <h4 style="color: #ff8a80; margin: 2rem 0 1rem;">Original List Grid Layout</h4>
+            <div class="original-grid-visual original-list">
+                <div class="original-grid-item unified-container">
+                    System Card 1<br>
+                    <code>.system-card-compact</code>
+                </div>
+                <div class="original-grid-item unified-container">
+                    System Card 2<br>
+                    <code>.system-card-compact</code>
+                </div>
+                <div class="original-grid-item unified-container">
+                    System Card 3<br>
+                    <code>.system-card-compact</code>
+                </div>
+                <div class="original-grid-item unified-container">
+                    System Card 4<br>
+                    <code>.system-card-compact</code>
+                </div>
+                <div class="original-grid-item unified-container">
+                    System Card 5<br>
+                    <code>.system-card-compact</code>
+                </div>
+                <div class="original-grid-item unified-container">
+                    System Card 6<br>
+                    <code>.system-card-compact</code>
+                </div>
+            </div>
+            <p style="text-align: center; color: #b0bec5; margin-top: 1rem;">
+                Grid Layout: <code>repeat(auto-fill, minmax(300px, 1fr))</code><br>
+                View Toggle: Grid/List/Compact modes with JavaScript
+            </p>
+        </div>
+        
+        <!-- Unified Container Component -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🧩</div>
+                Systems Unified Container Component
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">🧩</span>
+                    <span class="tree-element">systems_unified_container.html</span>
+                    <span class="tree-selector">{% include 'projects/components/...' %}</span>
+                    <span class="tree-description">// Reusable component template</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📦</span>
+                    <span class="tree-element">systems-unified-container</span>
+                    <span class="tree-selector">.systems-unified-container</span>
+                    <span class="tree-description">// Main container with variant classes</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🏷️</span>
+                    <span class="tree-element">systems-container-header</span>
+                    <span class="tree-selector">.systems-container-header</span>
+                    <span class="tree-description">// Title, badge, status</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   ├── 🎖️</span>
+                    <span class="tree-element">featured-badge</span>
+                    <span class="tree-selector">.systems-featured-badge</span>
+                    <span class="tree-description">// Optional feature badge</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   ├── 📝</span>
+                    <span class="tree-element">container-title</span>
+                    <span class="tree-selector">.systems-container-title</span>
+                    <span class="tree-description">// Main heading</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   └── 🏷️</span>
+                    <span class="tree-element">container-status</span>
+                    <span class="tree-selector">.systems-container-status</span>
+                    <span class="tree-description">// Status badges and IDs</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🗂️</span>
+                    <span class="tree-element">systems-content-grid</span>
+                    <span class="tree-selector">.systems-content-grid</span>
+                    <span class="tree-description">// CSS Grid for content layout</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   ├── 📄</span>
+                    <span class="tree-element">content-info</span>
+                    <span class="tree-selector">.systems-content-info</span>
+                    <span class="tree-description">// Text content area</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   └── 📊</span>
+                    <span class="tree-element">content-media</span>
+                    <span class="tree-selector">.systems-content-media</span>
+                    <span class="tree-description">// Charts, images, media</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    └── 🦶</span>
+                    <span class="tree-element">container-footer</span>
+                    <span class="tree-selector">.systems-container-footer</span>
+                    <span class="tree-description">// Stats and action buttons</span>
+                </div>
+            </div>
+            
+            <div class="styling-breakdown">
+                <div class="style-card">
+                    <h4>Container Variants</h4>
+                    <ul class="style-properties">
+                        <li>.dashboard → --system-category-rgb: 0,240,255</li>
+                        <li>.dashboard → --system-category-rgb: 0,240,255</li>
+                        <li>.metrics → --system-category-rgb: 179,157,219</li>
+                        <li>.performance → --system-category-rgb: 76,175,80</li>
+                        <li>.alerts → --system-category-rgb: 255,152,0</li>
+                        <li>.technology → --system-category-rgb: 255,138,128</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Component Parameters</h4>
+                    <ul class="style-properties">
+                        <li>variant="dashboard|metrics|performance"</li>
+                        <li>title="Container Title"</li>
+                        <li>badge_text="Custom Badge"</li>
+                        <li>badge_icon="fas fa-icon"</li>
+                        <li>compact=True/False</li>
+                        <li>show_footer=True/False</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Glass-morphism Styling</h4>
+                    <ul class="style-properties">
+                        <li>background: var(--gradient-glass)</li>
+                        <li>backdrop-filter: blur(20px)</li>
+                        <li>border: 1px solid rgba(RGB, 0.25)</li>
+                        <li>box-shadow: 0 8px 32px + glow</li>
+                        <li>gradient top border (3px height)</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Content Grid System</h4>
+                    <ul class="style-properties">
+                        <li>.systems-content-grid → CSS Grid</li>
+                        <li>.systems-content-info → Text areas</li>
+                        <li>.systems-content-media → Charts/media</li>
+                        <li>.systems-metrics-grid → Metrics display</li>
+                        <li>grid-column: 1 / -1 → full width</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Original CSS Architecture -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🎨</div>
+                Original CSS File Structure
+            </h2>
+            
+            <div class="file-tree">
+                <div class="file-node">
+                    <span class="file-icon">📁</span>
+                    <span class="file-name">projects/static/projects/css/</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">├── 🎨</span>
+                    <span class="file-name">systems.css</span>
+                    <span class="file-status">// Base systems styling</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">├── ✨</span>
+                    <span class="file-name">systems-unified.css</span>
+                    <span class="file-status">// Unified container component styles</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">├── 📊</span>
+                    <span class="file-name">dashboard.css</span>
+                    <span class="file-status">// Dashboard-specific styles (optional)</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">├── 📋</span>
+                    <span class="file-name">system_list.css</span>
+                    <span class="file-status">// List view styles (optional)</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">└── 📄</span>
+                    <span class="file-name">system_detail.css</span>
+                    <span class="file-status">// Detail view styles (optional)</span>
+                </div>
+            </div>
+            
+            <div class="styling-breakdown">
+                <div class="style-card">
+                    <h4>CSS Loading Order (Original)</h4>
+                    <ul class="style-properties">
+                        <li>base.html → Global AURA styles</li>
+                        <li>systems-unified.css → Container components</li>
+                        <li>systems.css → Base systems styling</li>
+                        <li>Template-specific CSS → dashboard.css, etc.</li>
+                        <li>Inline styles → Template overrides</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Key Original Selectors</h4>
+                    <ul class="style-properties">
+                        <li>.systems-unified-container → Main component</li>
+                        <li>.systems-container-header → Component header</li>
+                        <li>.systems-content-grid → Content layout</li>
+                        <li>.systems-metrics-grid → Metrics display</li>
+                        <li>.dashboard-content-grid → Bootstrap layout</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Navigation Structure</h4>
+                    <ul class="style-properties">
+                        <li>.systems-subnav → Sub-navigation</li>
+                        <li>.subnav-action-btn → Nav buttons (not .subnav-link)</li>
+                        <li>.subnav-stats → Live statistics</li>
+                        <li>.subnav-actions → Action buttons</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Migration Path -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🔄</div>
+                Migration Path: Original → New
+            </h2>
+            
+            <div class="comparison-note">
+                <h4>🎯 Key Differences to Address</h4>
+                <div class="styling-breakdown">
+                    <div class="style-card">
+                        <h4>Layout System</h4>
+                        <ul class="style-properties">
+                            <li>OLD: Bootstrap .row/.col + unified containers</li>
+                            <li>NEW: CSS Grid 2fr 1fr + glass panels</li>
+                            <li>CHANGE: Replace Bootstrap with CSS Grid</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="style-card">
+                        <h4>Component Architecture</h4>
+                        <ul class="style-properties">
+                            <li>OLD: {% include 'systems_unified_container.html' %}</li>
+                            <li>NEW: Direct HTML with .dashboard-panel classes</li>
+                            <li>CHANGE: Replace includes with inline panels</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="style-card">
+                        <h4>Navigation Structure</h4>
+                        <ul class="style-properties">
+                            <li>OLD: .subnav-action-btn for nav links</li>
+                            <li>NEW: .subnav-link for nav links</li>
+                            <li>CHANGE: Update navigation classes</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="style-card">
+                        <h4>Container Naming</h4>
+                        <ul class="style-properties">
+                            <li>OLD: .systems-unified-container variants</li>
+                            <li>NEW: .dashboard-panel variants</li>
+                            <li>CHANGE: Update container class names</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step-by-Step Replacement Guide -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">📋</div>
+                Step-by-Step Replacement Guide
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">1️⃣</span>
+                    <span class="tree-element">Replace systems_base.html</span>
+                    <span class="tree-description">// Update navigation and structure</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">   └── 🔄</span>
+                    <span class="tree-element">Change .subnav-action-btn → .subnav-link</span>
+                    <span class="tree-description">// Update nav link classes</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">   └── ➕</span>
+                    <span class="tree-element">Add search panel functionality</span>
+                    <span class="tree-description">// Enhanced search features</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">2️⃣</span>
+                    <span class="tree-element">Replace systems_dashboard.html</span>
+                    <span class="tree-description">// Convert to CSS Grid layout</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">   └── 🗂️</span>
+                    <span class="tree-element">Replace Bootstrap grid → CSS Grid</span>
+                    <span class="tree-description">// .dashboard-main-grid (2fr 1fr)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">   └── 🧩</span>
+                    <span class="tree-element">Replace unified containers → panels</span>
+                    <span class="tree-description">// .dashboard-panel with variants</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">3️⃣</span>
+                    <span class="tree-element">Replace system_list.html</span>
+                    <span class="tree-description">// Update card system and grid</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">   └── 🔳</span>
+                    <span class="tree-element">Replace .system-card-compact → .system-card</span>
+                    <span class="tree-description">// New card design with glass styling</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">4️⃣</span>
+                    <span class="tree-element">Add system_detail.html</span>
+                    <span class="tree-description">// New detailed view template</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">5️⃣</span>
+                    <span class="tree-element">Update CSS files</span>
+                    <span class="tree-description">// Replace/update styling</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">   └── ✨</span>
+                    <span class="tree-element">Keep systems-unified.css for reference</span>
+                    <span class="tree-description">// Preserve original glass-morphism</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">   └── 🆕</span>
+                    <span class="tree-element">Add systems_components.css</span>
+                    <span class="tree-description">// New unified component system</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Template Mapping -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🗺️</div>
+                Template Element Mapping
+            </h2>
+            
+            <div class="styling-breakdown">
+                <div class="style-card">
+                    <h4>Dashboard Components</h4>
+                    <ul class="style-properties">
+                        <li>OLD: .systems-unified-container.dashboard</li>
+                        <li>NEW: .dashboard-hero</li>
+                        <li>---</li>
+                        <li>OLD: .systems-unified-container.performance</li>
+                        <li>NEW: .dashboard-panel.panel-metrics</li>
+                        <li>---</li>
+                        <li>OLD: .systems-unified-container.technology</li>
+                        <li>NEW: .dashboard-panel.panel-technology</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Content Structure</h4>
+                    <ul class="style-properties">
+                        <li>OLD: .systems-content-grid</li>
+                        <li>NEW: .panel-content</li>
+                        <li>---</li>
+                        <li>OLD: .systems-metrics-grid</li>
+                        <li>NEW: .metrics-overview</li>
+                        <li>---</li>
+                        <li>OLD: .dashboard-content-grid (Bootstrap)</li>
+                        <li>NEW: .dashboard-main-grid (CSS Grid)</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Navigation Elements</h4>
+                    <ul class="style-properties">
+                        <li>OLD: .subnav-action-btn</li>
+                        <li>NEW: .subnav-link</li>
+                        <li>---</li>
+                        <li>OLD: Glass card filter</li>
+                        <li>NEW: .systems-search-panel</li>
+                        <li>---</li>
+                        <li>OLD: Basic subnav</li>
+                        <li>NEW: Enhanced with search/filter</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Card Systems</h4>
+                    <ul class="style-properties">
+                        <li>OLD: .system-card-compact</li>
+                        <li>NEW: .system-card</li>
+                        <li>---</li>
+                        <li>OLD: Unified container approach</li>
+                        <li>NEW: Direct card styling</li>
+                        <li>---</li>
+                        <li>OLD: View modes via JS classes</li>
+                        <li>NEW: CSS Grid responsive modes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preservation Notes -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">💎</div>
+                What to Preserve from Original
+            </h2>
+            
+            <div class="comparison-note">
+                <h4>🎨 Keep These Beautiful Elements</h4>
+                <div class="styling-breakdown">
+                    <div class="style-card">
+                        <h4>Glass-morphism Effects</h4>
+                        <ul class="style-properties">
+                            <li>backdrop-filter: blur(20px)</li>
+                            <li>Multi-layer backgrounds</li>
+                            <li>RGB color variables system</li>
+                            <li>Gradient top borders</li>
+                            <li>Hover transform effects</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="style-card">
+                        <h4>Container Variants</h4>
+                        <ul class="style-properties">
+                            <li>--system-category-rgb approach</li>
+                            <li>Color-coded panel variants</li>
+                            <li>Gradient combinations</li>
+                            <li>Shadow and glow effects</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="style-card">
+                        <h4>Interactive Elements</h4>
+                        <ul class="style-properties">
+                            <li>Hover translateY(-3px) effects</li>
+                            <li>Enhanced shadow on hover</li>
+                            <li>Smooth transitions</li>
+                            <li>Touch-friendly interactions</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="style-card">
+                        <h4>Component Architecture</h4>
+                        <ul class="style-properties">
+                            <li>Header/Content/Footer structure</li>
+                            <li>Badge and status systems</li>
+                            <li>Metrics display patterns</li>
+                            <li>Chart placeholder styling</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Final Migration Summary -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🎯</div>
+                Migration Summary
+            </h2>
+            
+            <div class="file-tree">
+                <div class="file-node">
+                    <span class="file-icon">🔄</span>
+                    <span class="file-name">REPLACE: current systems_base.html</span>
+                    <span class="file-status">→ Enhanced systems_base.html</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">🔄</span>
+                    <span class="file-name">REPLACE: current systems_dashboard.html</span>
+                    <span class="file-status">→ Enhanced systems_dashboard.html</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">🔄</span>
+                    <span class="file-name">REPLACE: current systems_list.html</span>
+                    <span class="file-status">→ Enhanced system_list.html</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">➕</span>
+                    <span class="file-name">ADD: system_detail.html</span>
+                    <span class="file-status">→ New detailed view template</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">💎</span>
+                    <span class="file-name">PRESERVE: systems-unified.css</span>
+                    <span class="file-status">→ Keep beautiful glass-morphism</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">➕</span>
+                    <span class="file-name">ADD: systems_components.css</span>
+                    <span class="file-status">→ New unified architecture</span>
+                </div>
+                <div class="file-node">
+                    <span class="file-icon">🧩</span>
+                    <span class="file-name">REMOVE: systems_unified_container.html</span>
+                    <span class="file-status">→ Replace with inline panels</span>
+                </div>
+            </div>
+            
+            <div class="comparison-note">
+                <h4>🎉 Final Result</h4>
+                <p>You'll have the beautiful glass-morphism styling from your original design combined with the improved grid layout, enhanced navigation, and better responsive behavior from the new architecture. The best of both worlds!</p>
+            </div>
+        </div>
     </div>
-</div>
-
-</div>
-</div>
-</div>
-</section>
-
-<script>
-// Real-time clock update
-function updateClock() {
-const now = new Date();
-const timeString = now.toISOString().slice(0, 19).replace('T', ' ');
-document.getElementById('current-time').textContent = timeString;
-}
-
-// Update clock every second
-setInterval(updateClock, 1000);
-
-// Animate counter values
-document.addEventListener('DOMContentLoaded', function() {
-const counters = document.querySelectorAll('.metric-value[data-target]');
-
-counters.forEach(counter => {
-const target = parseInt(counter.getAttribute('data-target'));
-const increment = target / 50;
-let current = 0;
-
-const timer = setInterval(() => {
-current += increment;
-if (current >= target) {
-counter.textContent = target;
-clearInterval(timer);
-} else {
-counter.textContent = Math.floor(current);
-}
-}, 40);
-});
-});
-</script>
-{% endblock %}
+</body>
+</html>
