@@ -1,833 +1,807 @@
-<!----
- * AURA Portfolio - Enhanced System Detail Template
- * Advanced User Repository & Archive - Complete Foundation
- * Version: 3.0.0 - System Interface Dashboard within AURA Framework
----->
-
 {% extends "projects/systems_base.html" %}
-{% load static %}
-{% load aura_filters %}
-{% load aura_components %}
 
-{% block systems_title %}{{ system.title }} Interface{% endblock %}
-{% block meta_description %}Interactive system dashboard for {{ system.title }} - Complete system overview with metrics, technologies, and development insights{% endblock %}
+{% block systems_title %}Systems Dashboard{% endblock %}
+{% block systems_body_class %}systems-dashboard enhanced-dashboard{% endblock %}
 
 {% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <style>
-    /* System Interface Dashboard Styles */
-    .system-interface-wrapper {
-        padding: var(--spacing-lg, 1.5rem) 0;
-    }
-    
-    /* System Interface Container - Program Window Style */
-    .system-interface {
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.05) 0%, rgba(0, 255, 136, 0.03) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--border-radius-lg, 12px);
-        backdrop-filter: blur(20px);
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        margin-bottom: var(--spacing-xl, 2rem);
-    }
-    
-    /* System Title Bar - Window Controls */
-    .system-title-bar {
-        background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%);
-        padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        position: relative;
-    }
-    
-    .system-window-controls {
-        display: flex;
-        gap: var(--spacing-xs, 0.5rem);
-        z-index: 10;
-    }
-    
-    .window-control {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-    }
-    
-    .window-control::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .window-control:hover::after {
-        opacity: 1;
-    }
-    
-    .window-control.close { 
-        background: #ff5f56; 
-    }
-    .window-control.close::after { 
-        background: #d5302f; 
-    }
-    
-    .window-control.minimize { 
-        background: #ffbd2e; 
-    }
-    .window-control.minimize::after { 
-        background: #df9a00; 
-    }
-    
-    .window-control.maximize { 
-        background: #27ca3f; 
-    }
-    .window-control.maximize::after { 
-        background: #1ea830; 
-    }
-    
-    .system-interface-title {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm, 0.75rem);
-        font-family: var(--font-code, 'JetBrains Mono', monospace);
-        font-size: 0.9rem;
-        color: var(--color-teal);
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    
-    .system-status-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--color-success);
-        animation: pulse 2s infinite;
-    }
-    
-    .system-status-info {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm, 0.75rem);
-        font-size: 0.8rem;
-        color: var(--color-text-secondary);
-    }
-    
-    @keyframes pulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.6; transform: scale(0.9); }
-    }
-    
-    /* Interface Navigation Tabs */
-    .interface-nav-tabs {
-        display: flex;
-        background: rgba(0, 0, 0, 0.2);
-        padding: 0;
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-    
-    .interface-nav-tabs::-webkit-scrollbar {
-        display: none;
-    }
-    
-    .interface-tab {
-        background: transparent;
-        border: none;
-        color: var(--color-text-secondary);
-        padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xs, 0.5rem);
-        font-size: 0.9rem;
-        font-weight: 500;
-        white-space: nowrap;
-        border-bottom: 3px solid transparent;
-        position: relative;
-        font-family: var(--font-body, 'Rajdhani', sans-serif);
-    }
-    
-    .interface-tab::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 255, 136, 0.05) 100%);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .interface-tab:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--color-text);
-    }
-    
-    .interface-tab:hover::before {
-        opacity: 1;
-    }
-    
-    .interface-tab.active {
-        background: rgba(0, 212, 255, 0.1);
-        color: var(--color-teal);
-        border-bottom-color: var(--color-teal);
-        position: relative;
-    }
-    
-    .interface-tab.active::before {
-        opacity: 1;
-    }
-    
-    /* Interface Content Area */
-    .interface-content {
-        padding: var(--spacing-xl, 2rem);
-        min-height: 600px;
-    }
-    
-    .interface-panel {
-        display: none;
-        animation: fadeInUp 0.5s ease;
-    }
-    
-    .interface-panel.active {
-        display: block;
-    }
-    
-    @keyframes fadeInUp {
-        from { 
-            opacity: 0; 
-            transform: translateY(20px); 
-        }
-        to { 
-            opacity: 1; 
-            transform: translateY(0); 
-        }
-    }
-    
-    /* Section Headers */
-    .interface-section {
-        margin-bottom: var(--spacing-xl, 2rem);
-    }
-    
-    .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--spacing-lg, 1.5rem);
-        padding-bottom: var(--spacing-sm, 0.75rem);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .section-title {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm, 0.75rem);
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: var(--color-teal);
-        font-family: var(--font-heading, 'Orbitron', sans-serif);
-    }
-    
-    .section-actions {
-        display: flex;
-        gap: var(--spacing-sm, 0.75rem);
-    }
-    
-    .section-action-btn {
-        background: rgba(0, 212, 255, 0.1);
-        border: 1px solid rgba(0, 212, 255, 0.3);
-        color: var(--color-teal);
-        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-        border-radius: var(--border-radius, 8px);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xs, 0.5rem);
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-    
-    .section-action-btn:hover {
-        background: rgba(0, 212, 255, 0.2);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
-    }
-    
-    /* System Metrics Grid */
-    .system-metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: var(--spacing-lg, 1.5rem);
-        margin-bottom: var(--spacing-xl, 2rem);
-    }
-    
-    .metric-display {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--border-radius-lg, 12px);
-        padding: var(--spacing-lg, 1.5rem);
-        text-align: center;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .metric-display::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--color-teal), var(--color-success));
-    }
-    
-    .metric-display:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
-        border-color: var(--color-teal);
-    }
-    
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: var(--color-teal);
-        margin-bottom: var(--spacing-xs, 0.5rem);
-        font-family: var(--font-heading, 'Orbitron', sans-serif);
-    }
-    
-    .metric-label {
-        color: var(--color-text-secondary);
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .metric-trend {
-        margin-top: var(--spacing-xs, 0.5rem);
-        font-size: 0.8rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--spacing-xs, 0.5rem);
-        font-weight: 500;
-    }
-    
-    .trend-up { color: var(--color-success); }
-    .trend-down { color: var(--color-danger); }
-    .trend-neutral { color: var(--color-warning); }
-    
-    /* Interactive Grid */
-    .interactive-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: var(--spacing-lg, 1.5rem);
-    }
-    
-    .interactive-card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--border-radius-lg, 12px);
-        padding: var(--spacing-lg, 1.5rem);
-        transition: all 0.3s ease;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .interactive-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .interactive-card:hover::before {
-        opacity: 1;
-    }
-    
-    .interactive-card:hover {
-        transform: translateY(-4px);
-        border-color: var(--color-teal);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    }
-    
-    .card-header {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-md, 1rem);
-        margin-bottom: var(--spacing-md, 1rem);
-    }
-    
-    .card-icon {
-        width: 40px;
-        height: 40px;
-        background: rgba(0, 212, 255, 0.2);
-        border-radius: var(--border-radius, 8px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-teal);
-        font-size: 1.2rem;
-        flex-shrink: 0;
-    }
-    
-    .card-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--color-text);
-        margin-bottom: var(--spacing-xs, 0.5rem);
-        font-family: var(--font-heading, 'Orbitron', sans-serif);
-    }
-    
-    .card-subtitle {
-        font-size: 0.85rem;
-        color: var(--color-text-secondary);
-    }
-    
-    .card-actions {
-        position: absolute;
-        top: var(--spacing-md, 1rem);
-        right: var(--spacing-md, 1rem);
-        display: flex;
-        gap: var(--spacing-xs, 0.5rem);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .interactive-card:hover .card-actions {
-        opacity: 1;
-    }
-    
-    .card-action {
-        width: 28px;
-        height: 28px;
-        background: rgba(0, 212, 255, 0.2);
-        border: none;
-        border-radius: var(--border-radius, 8px);
-        color: var(--color-teal);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8rem;
-    }
-    
-    .card-action:hover {
-        background: rgba(0, 212, 255, 0.3);
-        transform: scale(1.1);
-    }
-    
-    /* Gallery Grid */
-    .gallery-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: var(--spacing-lg, 1.5rem);
-    }
-    
-    .gallery-item {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--border-radius-lg, 12px);
-        overflow: hidden;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    
-    .gallery-item:hover {
-        transform: scale(1.05);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    }
-    
-    .gallery-item img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-        transition: all 0.3s ease;
-    }
-    
-    .gallery-item:hover img {
-        transform: scale(1.1);
-    }
-    
-    .gallery-info {
-        padding: var(--spacing-md, 1rem);
-    }
-    
-    .gallery-title {
-        color: var(--color-text);
-        font-weight: 500;
-        margin-bottom: var(--spacing-xs, 0.5rem);
-    }
-    
-    .gallery-description {
-        color: var(--color-text-secondary);
-        font-size: 0.8rem;
-    }
-    
-    /* Terminal Panel */
-    .terminal-container {
-        background: #000;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--border-radius-lg, 12px);
-        overflow: hidden;
-        font-family: var(--font-code, 'JetBrains Mono', monospace);
-    }
-    
-    .terminal-header {
-        background: rgba(255, 255, 255, 0.1);
-        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm, 0.75rem);
-        font-size: 0.8rem;
-        color: var(--color-text-secondary);
-    }
-    
-    .terminal-body {
-        padding: var(--spacing-md, 1rem);
-        max-height: 400px;
-        overflow-y: auto;
-    }
-    
-    .terminal-line {
-        display: flex;
-        align-items: center;
-        margin-bottom: var(--spacing-xs, 0.5rem);
-        font-size: 0.9rem;
-    }
-    
-    .terminal-prompt {
-        color: var(--color-success);
-        margin-right: var(--spacing-sm, 0.75rem);
-        flex-shrink: 0;
-    }
-    
-    .terminal-command {
-        color: var(--color-teal);
-    }
-    
-    .terminal-output {
-        color: var(--color-text-secondary);
-        margin-left: var(--spacing-lg, 1.5rem);
-    }
-    
-    /* Usage Progress Bars */
-    .usage-bar {
-        background: rgba(255, 255, 255, 0.1);
-        height: 4px;
-        border-radius: 2px;
-        margin-top: var(--spacing-xs, 0.5rem);
-        overflow: hidden;
-    }
-    
-    .usage-progress {
-        height: 100%;
-        border-radius: 2px;
-        transition: width 0.5s ease;
-    }
-    
-    /* Status Indicators */
-    .status-implemented { color: var(--color-success); }
-    .status-development { color: var(--color-warning); }
-    .status-planned { color: var(--color-danger); }
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .system-interface {
-            margin: 0 -var(--spacing-md, 1rem);
-            border-radius: 0;
-        }
-        
-        .system-metrics-grid {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        }
-        
-        .interactive-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .interface-nav-tabs {
-            overflow-x: auto;
-        }
-        
-        .interface-tab {
-            padding: var(--spacing-sm, 0.75rem);
-            font-size: 0.8rem;
-        }
-        
-        .system-title-bar {
-            padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
-        }
-        
-        .interface-content {
-            padding: var(--spacing-md, 1rem);
-        }
-        
-        .system-interface-title {
-            position: static;
-            transform: none;
-            order: 2;
-        }
-        
-        .system-status-info {
-            order: 3;
-            font-size: 0.7rem;
-        }
-    }
-    
-    /* Animation for blink cursor */
-    @keyframes blink {
-        0%, 50% { opacity: 1; }
-        51%, 100% { opacity: 0; }
-    }
-    
-    .cursor-blink {
-        animation: blink 1s infinite;
-    }
+/* Enhanced HUD-Style Dashboard Layout with Original Styling */
+.dashboard-hero {
+background: 
+var(--gradient-glass),
+rgba(0, 240, 255, 0.08);
+border: 1px solid rgba(0, 240, 255, 0.25);
+border-radius: var(--border-radius-xl);
+padding: 2.5rem;
+margin-bottom: 2.5rem;
+backdrop-filter: blur(20px);
+box-shadow: 
+0 8px 32px rgba(0, 0, 0, 0.3),
+0 0 20px rgba(0, 240, 255, 0.1);
+position: relative;
+overflow: hidden;
+transition: all 0.3s ease;
+}
+
+.dashboard-hero::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+height: 3px;
+background: linear-gradient(90deg, var(--color-teal), var(--color-coral), var(--color-lavender));
+opacity: 0.8;
+}
+
+.dashboard-hero:hover {
+transform: translateY(-3px);
+box-shadow: 
+0 12px 40px rgba(0, 0, 0, 0.4),
+0 0 30px rgba(0, 240, 255, 0.15);
+}
+
+/* Unified Dashboard Grid System */
+.dashboard-main-grid {
+display: grid;
+grid-template-columns: 2fr 1fr;
+gap: var(--spacing-xl);
+margin-bottom: var(--spacing-xl);
+}
+
+.dashboard-left-column {
+display: flex;
+flex-direction: column;
+gap: var(--spacing-xl);
+}
+
+.dashboard-right-column {
+display: flex;
+flex-direction: column;
+gap: var(--spacing-xl);
+}
+
+/* Metrics Grid - Equal Height Cards using Original Styling */
+.metrics-overview {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+gap: var(--spacing-lg);
+margin-bottom: var(--spacing-xl);
+}
+
+.metric-card {
+background: 
+var(--gradient-glass),
+rgba(13, 13, 31, 0.4);
+border: 1px solid rgba(255, 255, 255, 0.08);
+border-radius: var(--border-radius-xl);
+padding: var(--spacing-lg);
+backdrop-filter: blur(20px);
+transition: all var(--transition-normal);
+position: relative;
+overflow: hidden;
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+min-height: 140px; /* Force equal heights */
+}
+
+.metric-card::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+height: 3px;
+background: var(--color-teal);
+opacity: 0.8;
+border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+}
+
+.metric-card.metric-development::before { background: var(--color-yellow); }
+.metric-card.metric-testing::before { background: var(--color-coral); }
+.metric-card.metric-completion::before { background: var(--color-lavender); }
+
+.metric-card:hover {
+transform: translateY(-8px);
+box-shadow: 
+0 15px 40px rgba(0, 0, 0, 0.4),
+var(--shadow-glow-teal);
+}
+
+.metric-card.metric-development:hover { 
+box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 193, 7, 0.3); 
+}
+
+.metric-card.metric-testing:hover { 
+box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), var(--shadow-glow-coral); 
+}
+
+.metric-card.metric-completion:hover { 
+box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), var(--shadow-glow-lavender); 
+}
+
+.metric-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: var(--spacing-md);
+}
+
+.metric-icon {
+width: 40px;
+height: 40px;
+background: rgba(255, 255, 255, 0.1);
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 1.2rem;
+color: var(--color-teal);
+box-shadow: 0 0 15px rgba(38, 198, 218, 0.3);
+}
+
+.metric-value {
+font-family: var(--font-heading);
+font-size: 2.2rem;
+font-weight: 600;
+color: var(--color-text);
+line-height: 1;
+margin-bottom: 0.5rem;
+}
+
+.metric-label {
+font-size: 0.75rem;
+text-transform: uppercase;
+letter-spacing: 1px;
+color: var(--color-text-secondary);
+font-weight: 500;
+}
+
+/* Unified Panel System using Original Container Styling */
+.dashboard-panel {
+background: 
+var(--gradient-glass),
+rgba(var(--system-category-rgb, 0, 240, 255), 0.08);
+border: 1px solid rgba(var(--system-category-rgb, 0, 240, 255), 0.25);
+border-radius: var(--border-radius-xl);
+backdrop-filter: blur(20px);
+box-shadow: 
+0 8px 32px rgba(0, 0, 0, 0.3),
+0 0 20px rgba(var(--system-category-rgb, 0, 240, 255), 0.1);
+overflow: hidden;
+position: relative;
+transition: all 0.3s ease;
+display: flex;
+flex-direction: column;
+height: 100%; /* Key for equal heights */
+}
+
+.dashboard-panel::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+height: 3px;
+background: linear-gradient(90deg, 
+var(--system-category-color, var(--color-teal)), 
+var(--color-coral), 
+var(--color-lavender)
+);
+opacity: 0.8;
+}
+
+.dashboard-panel:hover {
+transform: translateY(-3px);
+box-shadow: 
+0 12px 40px rgba(0, 0, 0, 0.4),
+0 0 30px rgba(var(--system-category-rgb, 0, 240, 255), 0.15);
+}
+
+/* Panel variants */
+.dashboard-panel.panel-metrics {
+--system-category-rgb: 179, 157, 219;
+--system-category-color: var(--color-lavender);
+}
+
+.dashboard-panel.panel-technology {
+--system-category-rgb: 255, 138, 128;
+--system-category-color: var(--color-coral);
+}
+
+.dashboard-panel.panel-activity {
+--system-category-rgb: 76, 175, 80;
+--system-category-color: var(--color-success);
+}
+
+.panel-header {
+padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
+text-align: center;
+position: relative;
+z-index: 1;
+
+/* Enhanced header background with opacity gradient */
+background: 
+linear-gradient(180deg, 
+rgba(var(--system-category-rgb, 0, 240, 255), 0.04) 0%,
+rgba(var(--system-category-rgb, 0, 240, 255), 0.02) 50%,
+transparent 100%);
+border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.panel-title {
+font-family: var(--font-heading);
+font-size: 1rem;
+font-weight: 600;
+text-transform: uppercase;
+letter-spacing: 1px;
+color: var(--system-category-color, var(--color-teal));
+margin: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 0.5rem;
+}
+
+.panel-content {
+padding: var(--spacing-lg);
+flex: 1; /* Fill remaining space */
+display: flex;
+flex-direction: column;
+position: relative;
+z-index: 1;
+}
+
+/* System Health with Balanced Layout */
+.health-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: var(--spacing-md);
+flex: 1;
+}
+
+.health-item {
+text-align: center;
+padding: var(--spacing-lg);
+border-radius: var(--border-radius-lg);
+background: rgba(255, 255, 255, 0.03);
+border: 1px solid rgba(255, 255, 255, 0.08);
+display: flex;
+flex-direction: column;
+justify-content: center;
+transition: all var(--transition-fast);
+}
+
+.health-item:hover {
+background: rgba(255, 255, 255, 0.08);
+transform: translateY(-2px);
+}
+
+.health-value {
+font-family: var(--font-heading);
+font-size: 1.8rem;
+font-weight: 600;
+margin-bottom: 0.25rem;
+line-height: 1;
+}
+
+.health-label {
+font-size: 0.7rem;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+color: var(--color-text-secondary);
+}
+
+/* Technology Usage - Clean List */
+.tech-list {
+display: flex;
+flex-direction: column;
+gap: var(--spacing-sm);
+flex: 1;
+}
+
+.tech-item {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: var(--spacing-md);
+border-radius: var(--border-radius-md);
+background: rgba(255, 255, 255, 0.03);
+border-left: 3px solid var(--color-coral);
+transition: all var(--transition-fast);
+}
+
+.tech-item:hover {
+background: rgba(255, 138, 128, 0.08);
+transform: translateX(4px);
+border-left-color: var(--color-coral);
+}
+
+.tech-name {
+font-weight: 500;
+color: var(--color-text);
+}
+
+.tech-count {
+font-family: var(--font-code);
+font-size: 0.9rem;
+color: var(--color-coral);
+font-weight: 600;
+}
+
+/* Recent Systems - Card List */
+.recent-systems-list {
+display: flex;
+flex-direction: column;
+gap: var(--spacing-md);
+flex: 1;
+}
+
+.recent-system-item {
+display: flex;
+align-items: center;
+gap: var(--spacing-md);
+padding: var(--spacing-md);
+border-radius: var(--border-radius-lg);
+background: rgba(255, 255, 255, 0.03);
+border: 1px solid rgba(255, 255, 255, 0.08);
+transition: all var(--transition-fast);
+}
+
+.recent-system-item:hover {
+background: rgba(0, 240, 255, 0.08);
+transform: translateY(-2px);
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.system-thumbnail {
+width: 40px;
+height: 40px;
+border-radius: var(--border-radius-md);
+overflow: hidden;
+flex-shrink: 0;
+background: rgba(255, 255, 255, 0.1);
+display: flex;
+align-items: center;
+justify-content: center;
+color: var(--color-teal);
+}
+
+.system-thumbnail img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.system-info {
+flex: 1;
+min-width: 0;
+}
+
+.system-title {
+font-weight: 500;
+color: var(--color-text);
+margin-bottom: 0.25rem;
+font-size: 0.9rem;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.system-meta {
+font-size: 0.75rem;
+color: var(--color-text-secondary);
+}
+
+.system-status {
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background: var(--color-success);
+flex-shrink: 0;
+position: relative;
+}
+
+.system-status.in-development { background: var(--color-warning); }
+.system-status.testing { background: var(--color-coral); }
+.system-status.draft { background: var(--color-muted); }
+
+.system-status.deployed::after {
+content: '';
+position: absolute;
+top: -2px;
+left: -2px;
+right: -2px;
+bottom: -2px;
+border-radius: 50%;
+border: 2px solid var(--color-success);
+animation: pulse 2s infinite;
+}
+
+/* Activity Timeline */
+.activity-timeline {
+max-height: 280px;
+overflow-y: auto;
+flex: 1;
+}
+
+.activity-item {
+display: flex;
+align-items: center;
+gap: var(--spacing-md);
+padding: var(--spacing-sm) 0;
+border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+transition: all var(--transition-fast);
+}
+
+.activity-item:hover {
+background: rgba(76, 175, 80, 0.05);
+margin: 0 calc(-1 * var(--spacing-lg));
+padding-left: var(--spacing-lg);
+padding-right: var(--spacing-lg);
+border-radius: var(--border-radius-md);
+}
+
+.activity-icon {
+width: 32px;
+height: 32px;
+border-radius: 50%;
+background: rgba(255, 255, 255, 0.1);
+display: flex;
+align-items: center;
+justify-content: center;
+color: var(--color-success);
+font-size: 0.9rem;
+flex-shrink: 0;
+}
+
+.activity-content {
+flex: 1;
+min-width: 0;
+}
+
+.activity-title {
+font-size: 0.85rem;
+color: var(--color-text);
+margin-bottom: 0.25rem;
+line-height: 1.3;
+}
+
+.activity-time {
+font-size: 0.7rem;
+color: var(--color-text-secondary);
+}
+
+/* Responsive Grid Adjustments */
+@media (max-width: 1200px) {
+.dashboard-main-grid {
+grid-template-columns: 1fr;
+gap: var(--spacing-lg);
+}
+
+.metrics-overview {
+grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+gap: var(--spacing-md);
+}
+}
+
+@media (max-width: 768px) {
+.dashboard-hero {
+padding: var(--spacing-xl);
+margin-bottom: var(--spacing-xl);
+}
+
+.metrics-overview {
+grid-template-columns: repeat(2, 1fr);
+}
+
+.health-grid {
+grid-template-columns: 1fr;
+}
+
+.panel-header {
+padding: var(--spacing-lg);
+}
+
+.panel-content {
+padding: var(--spacing-md);
+}
+}
 </style>
 {% endblock %}
 
-{% block systems_breadcrumbs %}
-<a href="{% url 'projects:system_list' %}" class="breadcrumb-item">
-    <i class="fas fa-th-large"></i>
-    Systems
-</a>
-<i class="fas fa-chevron-right breadcrumb-separator"></i>
-<span class="breadcrumb-item active">{{ system.system_id|default:system.slug|upper }}</span>
-{% endblock %}
-
 {% block systems_content %}
-<div class="system-interface-wrapper">
-    <div class="container">
-        
-        <!-- System Interface Dashboard -->
-        <div class="system-interface">
-            
-            <!-- System Title Bar - Window Controls -->
-            <div class="system-title-bar">
-                <div class="system-window-controls">
-                    <div class="window-control close" title="Close Interface"></div>
-                    <div class="window-control minimize" title="Minimize Interface"></div>
-                    <div class="window-control maximize" title="Maximize Interface"></div>
+<!-- Dashboard Header -->
+<section class="dashboard-header-section">
+<div class="container">
+<div class="dashboard-hero">
+<div class="dashboard-header">
+<div class="header-info">
+    <h1 class="dashboard-title">
+        SYSTEMS<span class="text-purple">DASHBOARD</span>
+        <span class="dashboard-subtitle">Real-time System Monitoring</span>
+    </h1>
+    <div class="dashboard-timestamp">
+        <i class="fas fa-clock"></i>
+        <span id="current-time">{% now "Y-m-d H:i:s" %}</span>
+        <span class="timezone">UTC</span>
+    </div>
+</div>
+
+<div class="dashboard-status">
+    <div class="status-indicator operational">
+        <div class="status-pulse"></div>
+    </div>
+    <div class="status-text">
+        <div class="status-label">SYSTEM STATUS</div>
+        <div class="status-value">OPERATIONAL</div>
+    </div>
+</div>
+</div>
+
+<!-- Overview Metrics -->
+<div class="metrics-overview">
+<div class="metric-card">
+    <div class="metric-header">
+        <div class="metric-icon">
+            <i class="fas fa-server"></i>
+        </div>
+    </div>
+    <div class="metric-value" data-target="{{ dashboard_stats.total_systems }}">{{ dashboard_stats.total_systems|default:8 }}</div>
+    <div class="metric-label">Total Systems</div>
+</div>
+
+<div class="metric-card metric-development">
+    <div class="metric-header">
+        <div class="metric-icon" style="color: var(--color-yellow);">
+            <i class="fas fa-cogs"></i>
+        </div>
+    </div>
+    <div class="metric-value" data-target="{{ dashboard_stats.systems_in_development }}">{{ dashboard_stats.systems_in_development|default:3 }}</div>
+    <div class="metric-label">In Development</div>
+</div>
+
+<div class="metric-card metric-testing">
+    <div class="metric-header">
+        <div class="metric-icon" style="color: var(--color-coral);">
+            <i class="fas fa-vial"></i>
+        </div>
+    </div>
+    <div class="metric-value" data-target="{{ dashboard_stats.systems_testing }}">{{ dashboard_stats.systems_testing|default:2 }}</div>
+    <div class="metric-label">Testing Phase</div>
+</div>
+
+<div class="metric-card metric-completion">
+    <div class="metric-header">
+        <div class="metric-icon" style="color: var(--color-purple);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+    </div>
+    <div class="metric-value" data-target="{{ dashboard_stats.avg_completion|floatformat:0 }}">{{ dashboard_stats.avg_completion|default:76 }}%</div>
+    <div class="metric-label">Avg Completion</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Main Dashboard Content -->
+<section class="dashboard-content-section">
+<div class="container">
+<div class="dashboard-main-grid">
+
+<!-- Left Column -->
+<div class="dashboard-left-column">
+
+<!-- System Health Overview -->
+<div class="dashboard-panel">
+    <div class="panel-header">
+        <h2 class="panel-title">
+            <i class="fas fa-heartbeat"></i>
+            System Health
+        </h2>
+    </div>
+    <div class="panel-content">
+        <div class="health-grid">
+            <div class="health-item">
+                <div class="health-value" style="color: var(--color-success);">{{ dashboard_stats.systems_operational|default:5 }}</div>
+                <div class="health-label">Operational</div>
+            </div>
+            <div class="health-item">
+                <div class="health-value" style="color: var(--color-warning);">{{ dashboard_stats.systems_warning|default:2 }}</div>
+                <div class="health-label">Warning</div>
+            </div>
+            <div class="health-item">
+                <div class="health-value" style="color: var(--color-danger);">{{ dashboard_stats.systems_critical|default:1 }}</div>
+                <div class="health-label">Critical</div>
+            </div>
+            <div class="health-item">
+                <div class="health-value" style="color: var(--color-muted);">{{ dashboard_stats.systems_offline|default:0 }}</div>
+                <div class="health-label">Offline</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Technology Usage -->
+<div class="dashboard-panel">
+    <div class="panel-header">
+        <h2 class="panel-title">
+            <i class="fas fa-layer-group"></i>
+            Technology Stack
+        </h2>
+    </div>
+    <div class="panel-content">
+        <div class="tech-list">
+            {% for tech in tech_usage_stats|default:"Django,Python,JavaScript,PostgreSQL,Redis,Docker"|split:"," %}
+            <div class="tech-item">
+                <span class="tech-name">{{ tech }}</span>
+                <span class="tech-count">{{ forloop.counter|add:2 }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- Right Column -->
+<div class="dashboard-right-column">
+
+<!-- Recent Systems -->
+<div class="dashboard-panel">
+    <div class="panel-header">
+        <h2 class="panel-title">
+            <i class="fas fa-clock"></i>
+            Recent Systems
+        </h2>
+    </div>
+    <div class="panel-content">
+        <div class="recent-systems-list">
+            {% for system in recent_systems|default_if_none:"" %}
+            <div class="recent-system-item">
+                <div class="system-thumbnail">
+                    {% if system.thumbnail %}
+                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
+                    {% else %}
+                    <i class="fas fa-microchip"></i>
+                    {% endif %}
                 </div>
-                
-                <div class="system-interface-title">
-                    <div class="system-status-indicator"></div>
-                    <span>{{ system.title }} - System Interface v{{ system.version|default:"1.0" }}</span>
+                <div class="system-info">
+                    <div class="system-title">{{ system.title|default:"ML Training Pipeline" }}</div>
+                    <div class="system-meta">{{ system.created_at|default:"2024-06-10"|date:"M d" }} • {{ system.get_status_display|default:"Deployed" }}</div>
                 </div>
-                
-                <div class="system-status-info">
-                    <span>{{ system.get_status_display|upper }}</span>
-                    <span>•</span>
-                    <span>{{ system.updated_at|timesince }} ago</span>
+                <div class="system-status {{ system.status|default:'deployed' }}"></div>
+            </div>
+            {% empty %}
+            <!-- Sample Recent Systems -->
+            <div class="recent-system-item">
+                <div class="system-thumbnail"><i class="fas fa-robot"></i></div>
+                <div class="system-info">
+                    <div class="system-title">ML Training Pipeline</div>
+                    <div class="system-meta">Jun 10 • Deployed</div>
+                </div>
+                <div class="system-status deployed"></div>
+            </div>
+            <div class="recent-system-item">
+                <div class="system-thumbnail"><i class="fas fa-chart-bar"></i></div>
+                <div class="system-info">
+                    <div class="system-title">Analytics Dashboard</div>
+                    <div class="system-meta">Jun 08 • Testing</div>
+                </div>
+                <div class="system-status testing"></div>
+            </div>
+            <div class="recent-system-item">
+                <div class="system-thumbnail"><i class="fas fa-database"></i></div>
+                <div class="system-info">
+                    <div class="system-title">Data Processor</div>
+                    <div class="system-meta">Jun 05 • In Development</div>
+                </div>
+                <div class="system-status in-development"></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Activity Timeline -->
+<div class="dashboard-panel">
+    <div class="panel-header">
+        <h2 class="panel-title">
+            <i class="fas fa-history"></i>
+            Recent Activity
+        </h2>
+    </div>
+    <div class="panel-content">
+        <div class="activity-timeline">
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">System "Neural Network Trainer" created</div>
+                    <div class="activity-time">2 hours ago</div>
                 </div>
             </div>
-            
-            <!-- Interface Navigation Tabs -->
-            <div class="interface-nav-tabs">
-                <button class="interface-tab active" data-panel="overview">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Overview</span>
-                </button>
-                <button class="interface-tab" data-panel="metrics">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Metrics</span>
-                </button>
-                <button class="interface-tab" data-panel="technologies">
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">ML Pipeline deployment successful</div>
+                    <div class="activity-time">4 hours ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">Analytics Dashboard updated</div>
+                    <div class="activity-time">6 hours ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="fas fa-vial"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">Data Processor entered testing phase</div>
+                    <div class="activity-time">1 day ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon">
                     <i class="fas fa-code"></i>
-                    <span>Tech Stack</span>
-                </button>
-                <button class="interface-tab" data-panel="features">
-                    <i class="fas fa-list-check"></i>
-                    <span>Features</span>
-                </button>
-                {% if system.images.exists %}
-                <button class="interface-tab" data-panel="gallery">
-                    <i class="fas fa-images"></i>
-                    <span>Gallery</span>
-                </button>
-                {% endif %}
-                {% if system.related_datalogs.exists %}
-                <button class="interface-tab" data-panel="datalogs">
-                    <i class="fas fa-file-alt"></i>
-                    <span>DataLogs</span>
-                </button>
-                {% endif %}
-                {% if system.dependencies.exists or system.dependents.exists %}
-                <button class="interface-tab" data-panel="dependencies">
-                    <i class="fas fa-project-diagram"></i>
-                    <span>Dependencies</span>
-                </button>
-                {% endif %}
-                <button class="interface-tab" data-panel="terminal">
-                    <i class="fas fa-terminal"></i>
-                    <span>Console</span>
-                </button>
-            </div>
-            
-            <!-- Interface Content -->
-            <div class="interface-content">
-                
-                <!-- 📊 Overview Panel -->
-                <div class="interface-panel active" id="overview-panel">
-                    
-                    <!-- System Hero Metrics -->
-                    <div class="system-metrics-grid">
-                        {% if system.completion_percent %}
-                        <div class="metric-display">
-                            <div class="metric-value">{{ system.completion_percent }}%</div>
-                            <div class="metric-label">Completion</div>
-                            <div class="metric-trend trend-up">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>Active</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        {% if system.health_status %}
-                        <div class="metric-display">
-                            <div class="metric-value">{{ system.get_health_status_display }}</div>
-                            <div class="metric-label">Health Status</div>
-                            <div class="metric-trend trend-up">
-                                <i class="fas fa-heart"></i>
-                                <span>{{ system.health_last_check|timesince }} ago</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        {% if system.technologies.exists %}
-                        <div class="metric-display">
-                            <div class="metric-value">{{ system.technologies.count }}</div>
-                            <div class="metric-label">Technologies</div>
-                            <div class="metric-trend trend-neutral">
-                                <i class="fas fa-code"></i>
-                                <span>Stack</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        {% if system.dependencies.exists %}
-                        <div class="metric-display">
-                            <div class="metric-value">{{ system.dependencies.count }}</div>
-                            <div class="metric-label">Dependencies</div>
-                            <div class="metric-trend">
-                                <i class="fas fa-link"></i>
-                                <span>Connected</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- System Information -->
-                    <div class="interface-section">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <i class="fas fa-info-circle"></i>
-                                <span>System Information</span>
-                            </div>
-                            <div class="section-actions">
-                                {% if system.live_url %}
-                                <a href="{{ system.live_url }}" target="_blank" class="section-action-btn">
-                                    <i class="fas fa-external-link-alt"></i>
-                                    Launch
-                                </a>
-                                {% endif %}
-                                {% if system.github_url %}
-                                <a href="{{ system.github_url }}" target="_blank" class="section-action-btn">
-                                    <i class="fab fa-github"></i>
-                                    Source
-                                </a>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="systems-unified-container dashboard compact">
-                            <div class="systems-content-grid">
-                                <div class="systems-content-info" style="grid-column: 1 / -1;">
-                                    <div class="system-description-content">
-                                        {{ system.description|markdownify|default:"<p>No description available for this system.</p>" }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
                 </div>
-                
-                <!-- 📈 Metrics Panel -->
-                <div class="interface-panel" id="metrics-panel">
-                    <div class="interface-section">
-                        <div class="section-header">
-                            <div class="section-title">
-                                <i class="fas fa-chart-line"></i>
-                                <span>Performance Metrics</span>
-                            </div>
-                            <div class="section-actions">
-                                <button class="section-action-btn" onclick="refreshMetrics()">
-                                    <i class="fas fa-sync-alt"></i>
-                                    Refresh
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="interactive-grid">
-                            {% if system.metrics.exists %}
-                                {% for metric in system.metrics.all %}
-                                <div class="interactive-card">
-                                    <div class="card-header">
-                                        <div class="card-icon">
-                                            <i class="fas fa-chart-bar"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="card-title">{{ metric.metric_name }}</h3>
-                                            <p class="card-subtitle">{{ metric.get_metric_type_display }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="card-actions">
-                                        <button class="card-action">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="card-action">
-                                            <i class="fas fa-download"></i>
-                                        </button>
-                                    </div>
-                                    <div style="text-align: center; margin-top: var(--spacing-md);">
-                                        <div style="font-size: 2rem; font-weight: 700; color: var(--color-teal);">
-                                            {{ metric.value }}{{ metric.unit|default:"" }}
-                                        </div>
-                                        <div style="color: var(--color-text-secondary);">
-                                            {{ metric.recorded_at|date:"M d, Y" }}
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                            <div class="interactive-card">
-                                <div class="card-header">
-                                    <div class="card-icon">
-                                        <i class="fas fa-chart-line"></i>
-                                    </div>
+                <div class="activity-content">
+                    <div class="activity-title">API Gateway configuration updated</div>
+                    <div class="activity-time">2 days ago</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<script>
+// Real-time clock update
+function updateClock() {
+const now = new Date();
+const timeString = now.toISOString().slice(0, 19).replace('T', ' ');
+document.getElementById('current-time').textContent = timeString;
+}
+
+// Update clock every second
+setInterval(updateClock, 1000);
+
+// Animate counter values
+document.addEventListener('DOMContentLoaded', function() {
+const counters = document.querySelectorAll('.metric-value[data-target]');
+
+counters.forEach(counter => {
+const target = parseInt(counter.getAttribute('data-target'));
+const increment = target / 50;
+let current = 0;
+
+const timer = setInterval(() => {
+current += increment;
+if (current >= target) {
+counter.textContent = target;
+clearInterval(timer);
+} else {
+counter.textContent = Math.floor(current);
+}
+}, 40);
+});
+});
+</script>
+{% endblock %}

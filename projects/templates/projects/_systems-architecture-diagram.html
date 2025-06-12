@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA Systems Architecture Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0d0d1f 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            padding: 2rem;
+            line-height: 1.4;
+        }
+        
+        .diagram-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #00f0ff;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            color: #b0bec5;
+        }
+        
+        .template-section {
+            margin-bottom: 4rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .template-title {
+            font-size: 1.8rem;
+            color: #00f0ff;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .template-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 240, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .structure-tree {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+        
+        .tree-node {
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .tree-indent {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .tree-element {
+            color: #00f0ff;
+            font-weight: bold;
+        }
+        
+        .tree-selector {
+            background: rgba(179, 157, 219, 0.2);
+            color: #b39ddb;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .tree-description {
+            color: #b0bec5;
+            font-style: italic;
+            margin-left: auto;
+        }
+        
+        .css-grid-visual {
+            display: grid;
+            gap: 1rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .grid-dashboard {
+            grid-template-columns: 2fr 1fr;
+        }
+        
+        .grid-list {
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        }
+        
+        .grid-detail {
+            grid-template-columns: 2fr 1fr;
+        }
+        
+        .grid-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .grid-item:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+        
+        .grid-item.hero {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(255, 138, 128, 0.2));
+            grid-column: 1 / -1;
+        }
+        
+        .grid-item.metrics {
+            background: rgba(179, 157, 219, 0.15);
+        }
+        
+        .grid-item.technology {
+            background: rgba(255, 138, 128, 0.15);
+        }
+        
+        .grid-item.activity {
+            background: rgba(76, 175, 80, 0.15);
+        }
+        
+        .styling-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .style-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .style-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .style-card h4 {
+            color: #00f0ff;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .style-properties {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .style-properties li {
+            margin: 0.5rem 0;
+            padding: 0.3rem 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #e0e0e0;
+        }
+        
+        .hierarchy-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .legend-base { background: rgba(0, 240, 255, 0.3); }
+        .legend-container { background: rgba(179, 157, 219, 0.3); }
+        .legend-panel { background: rgba(255, 138, 128, 0.3); }
+        .legend-content { background: rgba(76, 175, 80, 0.3); }
+        
+        .responsive-info {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .responsive-info h4 {
+            color: #ffc107;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .css-grid-visual.grid-dashboard,
+            .css-grid-visual.grid-detail {
+                grid-template-columns: 1fr;
+            }
+            
+            .hierarchy-legend {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .styling-breakdown {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <div class="header">
+            <h1>AURA Systems Architecture</h1>
+            <p>Complete structure hierarchy, CSS selectors, and grid layout visualization</p>
+        </div>
+        
+        <!-- Hierarchy Legend -->
+        <div class="hierarchy-legend">
+            <div class="legend-item">
+                <div class="legend-color legend-base"></div>
+                <span>Base Structure (systems_base.html)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-container"></div>
+                <span>Container Elements</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-panel"></div>
+                <span>Panel Components</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-content"></div>
+                <span>Content Areas</span>
+            </div>
+        </div>
+        
+        <!-- Dashboard Structure -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">📊</div>
+                Systems Dashboard Structure
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">🌐</span>
+                    <span class="tree-element">systems_base.html</span>
+                    <span class="tree-selector">.systems-interface</span>
+                    <span class="tree-description">// Base template with navigation</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 📋</span>
+                    <span class="tree-element">systems-subnav</span>
+                    <span class="tree-selector">.systems-subnav</span>
+                    <span class="tree-description">// Sub-navigation with search</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📦</span>
+                    <span class="tree-element">systems_content block</span>
+                    <span class="tree-selector">.container</span>
+                    <span class="tree-description">// Main content area</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🎯</span>
+                    <span class="tree-element">dashboard-hero</span>
+                    <span class="tree-selector">.dashboard-hero</span>
+                    <span class="tree-description">// Hero section with metrics</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   ├── 📊</span>
+                    <span class="tree-element">metrics-overview</span>
+                    <span class="tree-selector">.metrics-overview</span>
+                    <span class="tree-description">// Grid: repeat(auto-fit, minmax(200px, 1fr))</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   └── 🔢</span>
+                    <span class="tree-element">metric-card</span>
+                    <span class="tree-selector">.metric-card</span>
+                    <span class="tree-description">// Individual metric with glass styling</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    └── 🗂️</span>
+                    <span class="tree-element">dashboard-main-grid</span>
+                    <span class="tree-selector">.dashboard-main-grid</span>
+                    <span class="tree-description">// Grid: 2fr 1fr (responsive to 1fr)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        ├── 📄</span>
+                    <span class="tree-element">dashboard-left-column</span>
+                    <span class="tree-selector">.dashboard-left-column</span>
+                    <span class="tree-description">// Flex column, gap: var(--spacing-xl)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        │   ├── 🏥</span>
+                    <span class="tree-element">panel-metrics (Health)</span>
+                    <span class="tree-selector">.dashboard-panel.panel-metrics</span>
+                    <span class="tree-description">// Glass container with lavender accent</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        │   └── ⚙️</span>
+                    <span class="tree-element">panel-technology</span>
+                    <span class="tree-selector">.dashboard-panel.panel-technology</span>
+                    <span class="tree-description">// Glass container with coral accent</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        └── 📄</span>
+                    <span class="tree-element">dashboard-right-column</span>
+                    <span class="tree-selector">.dashboard-right-column</span>
+                    <span class="tree-description">// Flex column, gap: var(--spacing-xl)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">            ├── ⏰</span>
+                    <span class="tree-element">Recent Systems</span>
+                    <span class="tree-selector">.dashboard-panel</span>
+                    <span class="tree-description">// Default teal accent</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">            └── 📈</span>
+                    <span class="tree-element">panel-activity</span>
+                    <span class="tree-selector">.dashboard-panel.panel-activity</span>
+                    <span class="tree-description">// Glass container with success accent</span>
+                </div>
+            </div>
+            
+            <h4 style="color: #00f0ff; margin: 2rem 0 1rem;">Dashboard Grid Visualization</h4>
+            <div class="css-grid-visual grid-dashboard">
+                <div class="grid-item hero">
+                    Dashboard Hero<br>
+                    <code>.dashboard-hero</code><br>
+                    <small>grid-column: 1 / -1 (spans both columns)</small>
+                </div>
+                <div class="grid-item metrics">
+                    System Health<br>
+                    <code>.panel-metrics</code><br>
+                    <small>Left column item 1</small>
+                </div>
+                <div class="grid-item">
+                    Recent Systems<br>
+                    <code>.dashboard-panel</code><br>
+                    <small>Right column item 1</small>
+                </div>
+                <div class="grid-item technology">
+                    Technology Stack<br>
+                    <code>.panel-technology</code><br>
+                    <small>Left column item 2</small>
+                </div>
+                <div class="grid-item activity">
+                    Recent Activity<br>
+                    <code>.panel-activity</code><br>
+                    <small>Right column item 2</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System List Structure -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">📋</div>
+                System List Structure
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">🌐</span>
+                    <span class="tree-element">systems_base.html</span>
+                    <span class="tree-selector">.systems-interface</span>
+                    <span class="tree-description">// Inherits navigation and base structure</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📦</span>
+                    <span class="tree-element">systems-list-container</span>
+                    <span class="tree-selector">.systems-list-container</span>
+                    <span class="tree-description">// Main container with padding</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🎯</span>
+                    <span class="tree-element">systems-overview</span>
+                    <span class="tree-selector">.systems-overview</span>
+                    <span class="tree-description">// Hero section with overview metrics</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🔧</span>
+                    <span class="tree-element">systems-controls</span>
+                    <span class="tree-selector">.systems-controls</span>
+                    <span class="tree-description">// View controls and sorting</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   ├── 👁️</span>
+                    <span class="tree-element">view-controls</span>
+                    <span class="tree-selector">.view-controls</span>
+                    <span class="tree-description">// Grid/List/Compact buttons</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    │   └── 🔄</span>
+                    <span class="tree-element">sort-controls</span>
+                    <span class="tree-selector">.sort-controls</span>
+                    <span class="tree-description">// Sorting dropdown</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    └── 🗂️</span>
+                    <span class="tree-element">systems-grid</span>
+                    <span class="tree-selector">.systems-grid</span>
+                    <span class="tree-description">// Dynamic grid layout</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        └── 🔳</span>
+                    <span class="tree-element">system-card</span>
+                    <span class="tree-selector">.system-card</span>
+                    <span class="tree-description">// Individual system cards with glass styling</span>
+                </div>
+            </div>
+            
+            <h4 style="color: #00f0ff; margin: 2rem 0 1rem;">System List Grid Modes</h4>
+            <div class="css-grid-visual grid-list">
+                <div class="grid-item">System Card 1<br><code>.system-card</code></div>
+                <div class="grid-item">System Card 2<br><code>.system-card</code></div>
+                <div class="grid-item">System Card 3<br><code>.system-card</code></div>
+                <div class="grid-item">System Card 4<br><code>.system-card</code></div>
+                <div class="grid-item">System Card 5<br><code>.system-card</code></div>
+                <div class="grid-item">System Card 6<br><code>.system-card</code></div>
+            </div>
+            <p style="text-align: center; color: #b0bec5; margin-top: 1rem;">
+                Grid View: <code>repeat(auto-fill, minmax(350px, 1fr))</code><br>
+                List View: <code>1fr</code> | Compact View: <code>repeat(auto-fill, minmax(300px, 1fr))</code>
+            </p>
+        </div>
+        
+        <!-- System Detail Structure -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">📄</div>
+                System Detail Structure
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">🌐</span>
+                    <span class="tree-element">systems_base.html</span>
+                    <span class="tree-selector">.systems-interface</span>
+                    <span class="tree-description">// Base template inheritance</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📦</span>
+                    <span class="tree-element">system-detail-container</span>
+                    <span class="tree-selector">.system-detail-container</span>
+                    <span class="tree-description">// Main detail container</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🔗</span>
+                    <span class="tree-element">breadcrumbs</span>
+                    <span class="tree-selector">.system-breadcrumbs</span>
+                    <span class="tree-description">// Navigation breadcrumbs</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 🎯</span>
+                    <span class="tree-element">system-hero</span>
+                    <span class="tree-selector">.system-hero</span>
+                    <span class="tree-description">// Hero section with system info</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    └── 🗂️</span>
+                    <span class="tree-element">system-content-grid</span>
+                    <span class="tree-selector">.system-content-grid</span>
+                    <span class="tree-description">// Grid: 2fr 1fr</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        ├── 📄</span>
+                    <span class="tree-element">content-main</span>
+                    <span class="tree-selector">.content-main</span>
+                    <span class="tree-description">// Left column - main content</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        │   ├── 🖼️</span>
+                    <span class="tree-element">panel-gallery</span>
+                    <span class="tree-selector">.detail-panel.panel-gallery</span>
+                    <span class="tree-description">// Image gallery with lavender accent</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        │   ├── 📚</span>
+                    <span class="tree-element">panel-documentation</span>
+                    <span class="tree-selector">.detail-panel.panel-documentation</span>
+                    <span class="tree-description">// Documentation with success accent</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        │   └── 📈</span>
+                    <span class="tree-element">panel-performance</span>
+                    <span class="tree-selector">.detail-panel.panel-performance</span>
+                    <span class="tree-description">// Performance charts with coral accent</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">        └── 📄</span>
+                    <span class="tree-element">content-sidebar</span>
+                    <span class="tree-selector">.content-sidebar</span>
+                    <span class="tree-description">// Right column - sidebar</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">            ├── ⚙️</span>
+                    <span class="tree-element">panel-technology</span>
+                    <span class="tree-selector">.detail-panel.panel-technology</span>
+                    <span class="tree-description">// Technology stack with warning accent</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">            ├── 📊</span>
+                    <span class="tree-element">panel-metrics</span>
+                    <span class="tree-selector">.detail-panel.panel-metrics</span>
+                    <span class="tree-description">// System metrics with teal accent</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">            └── 🔗</span>
+                    <span class="tree-element">related-systems</span>
+                    <span class="tree-selector">.detail-panel</span>
+                    <span class="tree-description">// Related systems panel</span>
+                </div>
+            </div>
+            
+            <h4 style="color: #00f0ff; margin: 2rem 0 1rem;">System Detail Grid Layout</h4>
+            <div class="css-grid-visual grid-detail">
+                <div class="grid-item hero" style="grid-column: 1 / -1;">
+                    System Hero Section<br>
+                    <code>.system-hero</code><br>
+                    <small>Full width hero with status and actions</small>
+                </div>
+                <div class="grid-item">
+                    Gallery Panel<br>
+                    <code>.panel-gallery</code><br>
+                    <small>Main content area</small>
+                </div>
+                <div class="grid-item technology">
+                    Technology Stack<br>
+                    <code>.panel-technology</code><br>
+                    <small>Sidebar item 1</small>
+                </div>
+                <div class="grid-item">
+                    Documentation<br>
+                    <code>.panel-documentation</code><br>
+                    <small>Main content area</small>
+                </div>
+                <div class="grid-item metrics">
+                    System Metrics<br>
+                    <code>.panel-metrics</code><br>
+                    <small>Sidebar item 2</small>
+                </div>
+                <div class="grid-item">
+                    Performance Charts<br>
+                    <code>.panel-performance</code><br>
+                    <small>Main content area</small>
+                </div>
+                <div class="grid-item">
+                    Related Systems<br>
+                    <code>.detail-panel</code><br>
+                    <small>Sidebar item 3</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CSS Styling Breakdown -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🎨</div>
+                CSS Styling Components
+            </h2>
+            
+            <div class="styling-breakdown">
+                <div class="style-card">
+                    <h4>Glass-morphism Base</h4>
+                    <ul class="style-properties">
+                        <li>background: var(--gradient-glass)</li>
+                        <li>backdrop-filter: blur(20px)</li>
+                        <li>border: 1px solid rgba(255,255,255,0.08)</li>
+                        <li>border-radius: var(--border-radius-xl)</li>
+                        <li>box-shadow: 0 8px 32px rgba(0,0,0,0.3)</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Panel Variants</h4>
+                    <ul class="style-properties">
+                        <li>.panel-metrics → lavender accent</li>
+                        <li>.panel-technology → coral accent</li>
+                        <li>.panel-activity → success accent</li>
+                        <li>.panel-gallery → lavender accent</li>
+                        <li>.panel-documentation → success accent</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Grid Systems</h4>
+                    <ul class="style-properties">
+                        <li>.dashboard-main-grid: 2fr 1fr</li>
+                        <li>.metrics-overview: repeat(auto-fit, minmax(200px, 1fr))</li>
+                        <li>.systems-grid.grid-view: repeat(auto-fill, minmax(350px, 1fr))</li>
+                        <li>.systems-grid.list-view: 1fr</li>
+                        <li>.system-content-grid: 2fr 1fr</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Hover Effects</h4>
+                    <ul class="style-properties">
+                        <li>transform: translateY(-3px)</li>
+                        <li>box-shadow: enhanced with glow</li>
+                        <li>border-color: accent transparency</li>
+                        <li>background: lighter opacity</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Color Variables</h4>
+                    <ul class="style-properties">
+                        <li>--system-category-rgb: dynamic RGB values</li>
+                        <li>--system-category-color: accent colors</li>
+                        <li>--color-teal: #00f0ff (primary)</li>
+                        <li>--color-lavender: #b39ddb</li>
+                        <li>--color-coral: #ff8a80</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Spacing System</h4>
+                    <ul class="style-properties">
+                        <li>--spacing-sm: 0.5rem</li>
+                        <li>--spacing-md: 1rem</li>
+                        <li>--spacing-lg: 1.5rem</li>
+                        <li>--spacing-xl: 2rem</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key CSS Selectors Reference -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🔍</div>
+                Key CSS Selectors Reference
+            </h2>
+            
+            <div class="styling-breakdown">
+                <div class="style-card">
+                    <h4>Base Structure</h4>
+                    <ul class="style-properties">
+                        <li>.systems-interface → body class</li>
+                        <li>.systems-subnav → navigation</li>
+                        <li>.systems-interface-container → main wrapper</li>
+                        <li>.container → content wrapper</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Dashboard Selectors</h4>
+                    <ul class="style-properties">
+                        <li>.dashboard-hero → hero section</li>
+                        <li>.metrics-overview → metrics grid</li>
+                        <li>.metric-card → individual metrics</li>
+                        <li>.dashboard-main-grid → 2-column layout</li>
+                        <li>.dashboard-panel → glass panels</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>List View Selectors</h4>
+                    <ul class="style-properties">
+                        <li>.systems-overview → hero overview</li>
+                        <li>.systems-controls → view controls</li>
+                        <li>.systems-grid → dynamic grid</li>
+                        <li>.system-card → individual cards</li>
+                        <li>.view-btn.active → active view state</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Detail View Selectors</h4>
+                    <ul class="style-properties">
+                        <li>.system-hero → detail hero</li>
+                        <li>.system-content-grid → 2-column</li>
+                        <li>.detail-panel → glass panels</li>
+                        <li>.content-main → left column</li>
+                        <li>.content-sidebar → right column</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Panel Variants</h4>
+                    <ul class="style-properties">
+                        <li>.panel-metrics → --system-category-rgb: 179,157,219</li>
+                        <li>.panel-technology → --system-category-rgb: 255,138,128</li>
+                        <li>.panel-activity → --system-category-rgb: 76,175,80</li>
+                        <li>.panel-gallery → --system-category-rgb: 179,157,219</li>
+                        <li>.panel-documentation → --system-category-rgb: 76,175,80</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>State Selectors</h4>
+                    <ul class="style-properties">
+                        <li>.system-card:hover → hover effects</li>
+                        <li>.system-status.operational → green status</li>
+                        <li>.system-status.development → yellow status</li>
+                        <li>.system-status.testing → coral status</li>
+                        <li>.filter-option.active → active filters</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- File Structure and Dependencies -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">📁</div>
+                File Structure & Dependencies
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">📁</span>
+                    <span class="tree-element">projects/templates/projects/</span>
+                    <span class="tree-description">// Django templates directory</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 🌐</span>
+                    <span class="tree-element">systems_base.html</span>
+                    <span class="tree-selector">Base Template</span>
+                    <span class="tree-description">// Extends base.html, provides systems structure</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 📊</span>
+                    <span class="tree-element">systems_dashboard.html</span>
+                    <span class="tree-selector">{% extends "projects/systems_base.html" %}</span>
+                    <span class="tree-description">// Dashboard with metrics and panels</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 📋</span>
+                    <span class="tree-element">system_list.html</span>
+                    <span class="tree-selector">{% extends "projects/systems_base.html" %}</span>
+                    <span class="tree-description">// Grid/List view of all systems</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📄</span>
+                    <span class="tree-element">system_detail.html</span>
+                    <span class="tree-selector">{% extends "projects/systems_base.html" %}</span>
+                    <span class="tree-description">// Individual system documentation</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">📁</span>
+                    <span class="tree-element">projects/static/projects/css/</span>
+                    <span class="tree-description">// CSS files directory</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 🎨</span>
+                    <span class="tree-element">systems.css</span>
+                    <span class="tree-description">// Base systems styling</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── ✨</span>
+                    <span class="tree-element">systems-unified.css</span>
+                    <span class="tree-description">// Glass-morphism container styles</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 📊</span>
+                    <span class="tree-element">dashboard.css</span>
+                    <span class="tree-description">// Dashboard-specific styles</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 📋</span>
+                    <span class="tree-element">system_list.css</span>
+                    <span class="tree-description">// List view specific styles</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📄</span>
+                    <span class="tree-element">system_detail.css</span>
+                    <span class="tree-description">// Detail view specific styles</span>
+                </div>
+            </div>
+            
+            <div class="responsive-info">
+                <h4>🔄 CSS Loading Order</h4>
+                <p>Each template loads CSS in this order:</p>
+                <ol style="margin: 1rem 0; padding-left: 2rem;">
+                    <li><strong>Base CSS</strong> - From base.html (global AURA styles)</li>
+                    <li><strong>systems.css</strong> - Base systems styling</li>
+                    <li><strong>systems-unified.css</strong> - Glass container components</li>
+                    <li><strong>Template-specific CSS</strong> - dashboard.css, system_list.css, etc.</li>
+                    <li><strong>Inline styles</strong> - Template-specific overrides</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Layout Decision Tree -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">🌳</div>
+                Layout Decision Tree
+            </h2>
+            
+            <div class="structure-tree">
+                <div class="tree-node">
+                    <span class="tree-indent">🤔</span>
+                    <span class="tree-element">Which layout do I need?</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 📊</span>
+                    <span class="tree-element">Dashboard (metrics + panels)</span>
+                    <span class="tree-selector">→ .dashboard-main-grid (2fr 1fr)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">│   ├── 📈</span>
+                    <span class="tree-element">Hero with metrics</span>
+                    <span class="tree-selector">→ .metrics-overview (auto-fit grid)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">│   └── 🏥</span>
+                    <span class="tree-element">Main content panels</span>
+                    <span class="tree-selector">→ .dashboard-panel variants</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">├── 📋</span>
+                    <span class="tree-element">List (card grid)</span>
+                    <span class="tree-selector">→ .systems-grid (responsive grid)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">│   ├── 🔲</span>
+                    <span class="tree-element">Grid view</span>
+                    <span class="tree-selector">→ repeat(auto-fill, minmax(350px, 1fr))</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">│   ├── 📄</span>
+                    <span class="tree-element">List view</span>
+                    <span class="tree-selector">→ grid-template-columns: 1fr</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">│   └── 🔳</span>
+                    <span class="tree-element">Compact view</span>
+                    <span class="tree-selector">→ repeat(auto-fill, minmax(300px, 1fr))</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">└── 📄</span>
+                    <span class="tree-element">Detail (documentation)</span>
+                    <span class="tree-selector">→ .system-content-grid (2fr 1fr)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    ├── 📖</span>
+                    <span class="tree-element">Main content</span>
+                    <span class="tree-selector">→ .content-main (left column)</span>
+                </div>
+                <div class="tree-node">
+                    <span class="tree-indent">    └── ℹ️</span>
+                    <span class="tree-element">Sidebar info</span>
+                    <span class="tree-selector">→ .content-sidebar (right column)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Responsive Behavior -->
+        <div class="template-section">
+            <h2 class="template-title">
+                <div class="template-icon">📱</div>
+                Responsive Behavior
+            </h2>
+            
+            <div class="styling-breakdown">
+                <div class="style-card">
+                    <h4>Desktop (>1200px)</h4>
+                    <ul class="style-properties">
+                        <li>Dashboard: 2fr 1fr grid</li>
+                        <li>List: auto-fill minmax(350px, 1fr)</li>
+                        <li>Detail: 2fr 1fr grid</li>
+                        <li>All panels maintain full features</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Tablet (768px-1200px)</h4>
+                    <ul class="style-properties">
+                        <li>Dashboard: maintains 2-column</li>
+                        <li>List: fewer columns in grid</li>
+                        <li>Detail: maintains 2-column</li>
+                        <li>Metrics grid adapts to smaller cards</li>
+                    </ul>
+                </div>
+                
+                <div class="style-card">
+                    <h4>Mobile (<768px)</h4>
+                    <ul class="style-properties">
+                        <li>Dashboard: stacks to 1 column</li>
+                        <li>List: single column layout</li>
+                        <li>Detail: stacks to 1 column</li>
+                        <li>Navigation becomes collapsible</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="responsive-info">
+                <h4>📐 Key Responsive Breakpoints</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                        <strong>1200px</strong><br>
+                        <small>Grid becomes single column</small>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                        <strong>768px</strong><br>
+                        <small>Mobile layout activates</small>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                        <strong>350px</strong><br>
+                        <small>Minimum card width</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

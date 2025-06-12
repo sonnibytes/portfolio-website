@@ -846,7 +846,7 @@ class EnhancedSystemModuleDetailView(DetailView):
 
         first_value = recent_metrics.first().metric_value
         last_value = recent_metrics.last().metric_value
-        import decimal
+
         if last_value > float(first_value) * 1.1:
             return "improving"
         elif last_value < float(first_value) * 0.9:
