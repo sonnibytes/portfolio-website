@@ -8,9 +8,9 @@ urlpatterns = [
     # Main dashboard and systems views
     path("", views.UnifiedDashboardView.as_view(), name="unified_dashboard"),
     # AURA Enhanced dashboard
-    path("dashboard/", views.EnhancedSystemsDashboard.as_view(), name="enhanced_dashboard"),
+    path("dashboard/", views.EnhancedSystemsDashboardView.as_view(), name="systems_dashboard"),
     path("systems/", views.SystemModuleListView.as_view(), name="system_list"),
-    path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
+    # path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
 
     # System Detail and management
     path("systems/<slug:slug>/", views.SystemModuleDetailView.as_view(), name="system_detail"),
@@ -35,6 +35,6 @@ urlpatterns = [
     # path("api/technologies/usage/", views.TechnologyUsageAPIView.as_view(), name="technology_usage_api"),
     
     # Rework - Simplified API Endpoints
-    path("api/dashboard/", views.dashboard_api, name="dashboard_api"),
+    path("api/dashboard/", views.DashboardAPIView.as_view(), name="dashboard_api"),
     # path("api/quick-stats/", ),
 ]

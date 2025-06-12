@@ -273,7 +273,7 @@ class EnhancedSystemsDashboardView(TemplateView):
         # Performance categories
         excellent_systems = deployed_systems.filter(performance_score__gte=90)
         good_systems = deployed_systems.filter(
-            performance_score___gte=70,
+            performance_score__gte=70,
             performance_score__lt=90
         )
         fair_systems = deployed_systems.filter(
@@ -405,12 +405,12 @@ class EnhancedSystemsDashboardView(TemplateView):
 
         for system in systems:
             health = system.get_health_status()  # Using enhancecd model method
-            health_categories['health'].append(system)
+            health_categories[health].append(system)
 
         # Convert to counts for easier template usage
         return {
             status: len(systems_list)
-            for status, systems_list in health.categories.items()
+            for status, systems_list in health_categories.items()
         }
 
 
@@ -438,7 +438,7 @@ class DashboardAPIView(TemplateView):
 # Enhanced System List (for system cards)
 class EnhancedSystemListView(ListView):
     """Enhanced system list with new filtering and display capabilities"""
-    
+
     model = SystemModule
     template_name = "projects/system_list.html"
     context_object_name = "systems"

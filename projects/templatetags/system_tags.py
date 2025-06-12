@@ -42,3 +42,17 @@ def system_metrics_json(system):
         "technologies_count": system.technologies.count(),
     }
     return mark_safe(json.dumps(metrics))
+
+
+@register.filter
+def hex_to_rgb(hex_color):
+    """Convert hex color to RGB values for CSS variables"""
+    if not hex_color or not hex_color.startswith("#"):
+        return "0, 240, 255"  # Default teal
+
+    hex_color = hex_color.lstrip("#")
+    try:
+        rgb = tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+        return f"{rgb[0]}, {rgb[1]}, {rgb[2]}"
+    except:
+        return "0, 240, 255"  # Default teal
