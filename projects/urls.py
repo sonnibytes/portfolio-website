@@ -13,7 +13,7 @@ urlpatterns = [
     # path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
 
     # System Detail and management
-    path("systems/<slug:slug>/", views.SystemModuleDetailView.as_view(), name="system_detail"),
+    path("systems/<slug:slug>/", views.EnhancedSystemModuleDetailView.as_view(), name="system_detail"),
     path("systems/create/", views.SystemModuleCreateView.as_view(), name="system_create"),
     path("systems/<slug:slug>/edit/", views.SystemModuleUpdateView.as_view(), name="system_update"),
     path("systems/<slug:slug>/delete/", views.SystemModuleDeleteView.as_view(), name="system_delete"),

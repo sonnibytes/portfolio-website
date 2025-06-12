@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy, reverse
 
-from django.db.models import Count, Avg, Q, Sum, Max, Min, F
+from django.db.models import Count, Avg, Q, Sum, Max, Min, F, Prefetch, OuterRef
 from django.db.models.functions import TruncMonth, Extract
 from django.http import JsonResponse
 from django.utils import timezone
@@ -21,7 +21,7 @@ import re
 from datetime import timedelta, datetime
 import random
 
-from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency
+from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage
 from blog.models import Post, SystemLogEntry
 from core.models import Skill, PortfolioAnalytics
 
@@ -608,74 +608,346 @@ class SystemModuleListView(ListView):
         return context
 
 
-class SystemModuleDetailView(DetailView):
-    """Enhanced system detail view with better metrics integration."""
+class EnhancedSystemModuleDetailView(DetailView):
+    """
+    🚀 Enhanced System Detail View - Complete Command Center
+
+    Comprehensive system detail page showcasing all enhanced model data:
+    - Performance metrics and analytics
+    - System dependencies and relationships
+    - Development timeline and progress
+    - Technology stack with usage insights
+    - Related DataLogs and documentation
+    - Team information and collaboration data
+    - Real-time health status and monitoring
+    """
 
     model = SystemModule
-    template_name = 'projects/system_detail.html'
-    context_object_name = 'system'
+    template_name = "projects/system_detail.html"
+    context_object_name = "system"
+
+    def get_queryset(self):
+        """Optimized queryset with all related data."""
+        return SystemModule.objects.select_related(
+            "system_type", "author"
+        ).prefetch_related(
+            # Technologies with their skill profiles (FIXED - removed .select_related('category'))
+            Prefetch(
+                "technologies",
+                queryset=Technology.objects.select_related("skill_profile").annotate(
+                    systems_count=Count("systems")
+                ),
+            ),
+            # Features ordered by priority and type
+            Prefetch(
+                "features",
+                queryset=SystemFeature.objects.order_by("feature_type", "order"),
+            ),
+            # Images ordered by display order
+            Prefetch("images", queryset=SystemImage.objects.order_by("order")),
+            # Current metrics for real-time display
+            Prefetch(
+                "metrics",
+                queryset=SystemMetric.objects.filter(is_current=True).order_by(
+                    "metric_type"
+                ),
+            ),
+            # System dependencies
+            Prefetch(
+                "dependencies",
+                queryset=SystemDependency.objects.select_related(
+                    "depends_on__system_type"
+                ),
+            ),
+            # Systems that depend on this one
+            Prefetch(
+                "dependents",
+                queryset=SystemDependency.objects.select_related("system__system_type"),
+            ),
+            # Related systems
+            "related_systems__system_type",
+            # Blog post connections
+            Prefetch(
+                "log_entries",
+                queryset=SystemLogEntry.objects.select_related(
+                    "post__category"
+                ).order_by("-post__published_date"),
+            ),
+        )
+
+    def get_context_data(self, **kwargs):
+        """Enhanced context with comprehensive system analytics."""
+        context = super().get_context_data(**kwargs)
+        system = self.object
+
+        # === PERFORMANCE ANALYTICS ===
+        context.update(
+            {
+                # Real-time metrics from SystemMetric model
+                "current_metrics": system.metrics.filter(is_current=True),
+                "metric_history": system.metrics.filter(
+                    created_at__gte=timezone.now() - timedelta(days=30)
+                ).order_by("created_at"),
+                # System health and performance indicators
+                "health_status": {
+                    "overall": system.health_status
+                    if hasattr(system, "health_status")
+                    else "unknown",
+                    "uptime": system.uptime_percentage
+                    if hasattr(system, "uptime_percentage")
+                    else None,
+                    "performance": system.performance_score
+                    if hasattr(system, "performance_score")
+                    else None,
+                    "last_check": system.health_last_check
+                    if hasattr(system, "health_last_check")
+                    else None,
+                },
+                # Development progress insights
+                "development_insights": {
+                    "completion": system.completion_percent,
+                    "estimated_hours": system.estimated_development_hours
+                    if hasattr(system, "estimated_development_hours")
+                    else None,
+                    "actual_hours": system.actual_development_hours
+                    if hasattr(system, "actual_development_hours")
+                    else None,
+                    "team_size": system.team_size
+                    if hasattr(system, "team_size")
+                    else 1,
+                    "last_commit": system.last_commit_date
+                    if hasattr(system, "last_commit_date")
+                    else None,
+                },
+            }
+        )
+
+        # === TECHNOLOGY ANALYSIS ===
+        # Group technologies by category for better display
+        technologies_by_category = {}
+        for tech in system.technologies.all():
+            category = tech.get_category_display()
+            if category not in technologies_by_category:
+                technologies_by_category[category] = []
+            technologies_by_category[category].append(tech)
+
+        context["technologies_by_category"] = technologies_by_category
+
+        # Primary vs supporting technologies
+        context.update(
+            {
+                "primary_technologies": system.technologies.filter(
+                    category__in=["language", "framework"]
+                ),
+                "supporting_technologies": system.technologies.exclude(
+                    category__in=["language", "framework"]
+                ),
+            }
+        )
+
+        # === FEATURES & FUNCTIONALITY ===
+        # Features grouped by type and status
+        features_by_type = {}
+        features_by_status = {"completed": 0, "in_progress": 0, "planned": 0}
+
+        for feature in system.features.all():
+            # Group by type
+            feature_type = (
+                feature.get_feature_type_display()
+                if hasattr(feature, "get_feature_type_display")
+                else "Other"
+            )
+            if feature_type not in features_by_type:
+                features_by_type[feature_type] = []
+            features_by_type[feature_type].append(feature)
+
+            # Count by status
+            status = getattr(feature, "status", "planned")
+            if status in features_by_status:
+                features_by_status[status] += 1
+
+        context.update(
+            {
+                "features_by_type": features_by_type,
+                "features_by_status": features_by_status,
+                "total_features": system.features.count(),
+            }
+        )
+
+        # === SYSTEM RELATIONSHIPS ===
+        context.update(
+            {
+                # Dependencies analysis
+                "critical_dependencies": system.dependencies.filter(is_critical=True),
+                "optional_dependencies": system.dependencies.filter(is_critical=False),
+                "total_dependencies": system.dependencies.count(),
+                # Systems that depend on this one
+                "dependent_systems": getattr(system, "dependent_systems", []),
+                # Related content using our enhanced relationships
+                "related_datalogs": system.log_entries.select_related("post")[:5],
+                # Similar systems based on technology overlap
+                "similar_systems": self._get_similar_systems(system),
+            }
+        )
+
+        # === GALLERY & MEDIA ===
+        context.update(
+            {
+                "gallery_images": system.images.all()[:8],  # Limit for performance
+                "has_architecture_diagram": bool(system.architecture_diagram),
+                "total_images": system.images.count(),
+            }
+        )
+
+        # === ANALYTICS & INSIGHTS ===
+        # Calculate development velocity if we have commit data
+        if hasattr(system, "last_commit_date") and system.last_commit_date:
+            days_since_last_commit = (
+                timezone.now() - system.last_commit_date
+            ).days
+            context["days_since_last_commit"] = days_since_last_commit
+            context["is_actively_developed"] = days_since_last_commit <= 30
+
+        # Performance trends (if we have historical data)
+        if system.metrics.exists():
+            context["has_performance_data"] = True
+            context["performance_trend"] = self._calculate_performance_trend(system)
+
+        return context
+
+    def _get_similar_systems(self, system):
+        """Find systems with similar technology stacks"""
+        system_tech_ids = list(system.technologies.values_list("id", flat=True))
+
+        if not system_tech_ids:
+            return SystemModule.objects.none()
+
+        return (
+            SystemModule.objects.filter(technologies__in=system_tech_ids)
+            .exclude(id=system.id)
+            .annotate(
+                tech_overlap=Count(
+                    "technologies", filter=Q(technologies__in=system_tech_ids)
+                )
+            )
+            .filter(tech_overlap__gt=0)
+            .order_by("-tech_overlap")[:3]
+        )
+
+    def _calculate_performance_trend(self, system):
+        """Calculate performance trend over time"""
+        recent_metrics = system.metrics.filter(
+            metric_type="performance",
+            created_at__gte=timezone.now() - timedelta(days=30),
+        ).order_by("created_at")
+
+        if recent_metrics.count() < 2:
+            return "stable"
+
+        first_value = recent_metrics.first().metric_value
+        last_value = recent_metrics.last().metric_value
+        import decimal
+        if last_value > float(first_value) * 1.1:
+            return "improving"
+        elif last_value < float(first_value) * 0.9:
+            return "declining"
+        else:
+            return "stable"
+
+
+# Alternative simplified view if you want to keep using your existing one
+class SystemModuleDetailView(DetailView):
+    """Simplified system detail view with basic optimizations."""
+
+    model = SystemModule
+    template_name = "projects/system_detail.html"
+    context_object_name = "system"
 
     def get_queryset(self):
         return SystemModule.objects.select_related(
-            'system_type', 'author'
-        ).prefetch_related(
-            'technologies', 'features', 'images', 'related_systems'
-        )
+            "system_type", "author"
+        ).prefetch_related("technologies", "features", "images", "related_systems")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         system = self.object
 
-        # Related system logs (blog posts)
-        context['related_logs'] = system.get_related_logs()[:5]
+        # Related system logs (blog posts) - FIXED
+        if hasattr(system, "log_entries"):
+            context["related_datalogs"] = system.log_entries.select_related("post")[:5]
+        else:
+            context["related_datalogs"] = []
 
         # System features grouped by type
-        features = system.features.all().order_by('order')
-        context['core_features'] = features.filter(feature_type='core')
-        context['advanced_features'] = features.filter(feature_type='advanced')
-        context['other_features'] = features.exclude(feature_type__in=['core', 'advanced'])
+        features = (
+            system.features.all().order_by("order") if system.features.exists() else []
+        )
+        context["core_features"] = [
+            f for f in features if getattr(f, "feature_type", None) == "core"
+        ]
+        context["advanced_features"] = [
+            f for f in features if getattr(f, "feature_type", None) == "advanced"
+        ]
+        context["other_features"] = [
+            f
+            for f in features
+            if getattr(f, "feature_type", None) not in ["core", "advanced"]
+        ]
 
         # System images/gallery
-        context['system_images'] = system.images.all().order_by('order')
+        context["system_images"] = (
+            system.images.all().order_by("order") if system.images.exists() else []
+        )
 
         # Current metrics for HUD display
-        context['current_metrics'] = SystemMetric.objects.filter(
-            system=system,
-            is_current=True
-        ).order_by('metric_type')
+        if hasattr(system, "metrics"):
+            context["current_metrics"] = system.metrics.filter(
+                is_current=True
+            ).order_by("metric_type")
+        else:
+            context["current_metrics"] = []
 
         # Related systems
-        context['related_systems'] = system.related_systems.filter(
-            status__in=['deployed', 'published']
+        context["related_systems"] = system.related_systems.filter(
+            status__in=["deployed", "published"]
         )[:3]
 
         # Technologies breakdown
-        context['technologies_by_category'] = {}
+        context["technologies_by_category"] = {}
         for tech in system.technologies.all():
-            if tech.category not in context['technologies_by_category']:
-                context['technologies_by_category'][tech.category] = []
-            context['technologies_by_category'][tech.category].append(tech)
+            category = tech.get_category_display()
+            if category not in context["technologies_by_category"]:
+                context["technologies_by_category"][category] = []
+            context["technologies_by_category"][category].append(tech)
 
         # Previous/Next system navigation
         try:
-            context['previous_system'] = SystemModule.objects.filter(
-                created_at__lt=system.created_at,
-                status__in=['deployed', 'published']
-            ).order_by('-created_at').first()
+            context["previous_system"] = (
+                SystemModule.objects.filter(
+                    created_at__lt=system.created_at,
+                    status__in=["deployed", "published"],
+                )
+                .order_by("-created_at")
+                .first()
+            )
         except SystemModule.DoesNotExist:
-            context['previous_system'] = None
+            context["previous_system"] = None
 
         try:
-            context['next_system'] = SystemModule.objects.filter(
-                created_at__gt=system.created_at,
-                status__in=['deployed', 'published']
-            ).order_by('created_at').first()
+            context["next_system"] = (
+                SystemModule.objects.filter(
+                    created_at__gt=system.created_at,
+                    status__in=["deployed", "published"],
+                )
+                .order_by("created_at")
+                .first()
+            )
         except SystemModule.DoesNotExist:
-            context['next_system'] = None
+            context["next_system"] = None
 
         # Add breadcrumb data
-        context['show_breadcrumbs'] = True
-        context['current_system'] = system
+        context["show_breadcrumbs"] = True
+        context["current_system"] = system
 
         return context
 
