@@ -131,7 +131,7 @@ class SystemModuleAdmin(admin.ModelAdmin):
     )
     search_fields = ("title", "system_id", "description")
     prepopulated_fields = {"slug": ("title",)}
-    filter_horizontal = ("technologies", "related_systems")
+    filter_horizontal = ("technologies",)
     readonly_fields = (
         "system_id",
         "created_at",
@@ -180,7 +180,6 @@ class SystemModuleAdmin(admin.ModelAdmin):
                     "demo_url",
                     "documentation_url",
                     "technologies",
-                    "related_systems",
                 )
             },
         ),

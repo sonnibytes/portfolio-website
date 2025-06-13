@@ -158,7 +158,7 @@ def do_dashboard_panel(parser, token):
     return DashboardPanelNode(nodelist, **kwargs)
 
 
-class DashboardPanelNode(template.node):
+class DashboardPanelNode(template.Node):
     def __init__(self, nodelist, **kwargs):
         self.nodelist = nodelist
         self.kwargs = kwargs

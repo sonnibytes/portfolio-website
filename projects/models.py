@@ -3,11 +3,12 @@ from django.utils.text import slugify
 from django.urls import reverse
 from django.contrib.auth.models import User
 from markdownx.models import MarkdownxField
-from markdownx.utils import markdownify, timezone
+from markdownx.utils import markdownify
 import re
 from bs4 import BeautifulSoup
 from datetime import date, timedelta
 from django.db.models import Avg, Count
+from django.utils import timezone
 
 
 """
