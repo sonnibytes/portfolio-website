@@ -27,7 +27,7 @@
             <div class="metric-pulse"></div>
         </div>
         {% elif style == 'alert' %}
-        <div class="alert-indicator {{ data_attributes.data-alert-level }}">
+        <div class="alert-indicator {{ data_attributes.data-alert-level|default:'info' }}">
             <span class="material-icons">
                 {% if data_attributes.data-alert-level == 'error' %}error
                 {% elif data_attributes.data-alert-level == 'warning' %}warning
@@ -119,41 +119,43 @@
 </div>
 
 <style>
-/* Panel Base Styles */
+/* Dashboard Panel Styles - Integrated with AURA Theme */
 .dashboard-panel {
     position: relative;
-    background: var(--glass-bg);
+    background: rgba(13, 13, 31, 0.8);
     backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius-lg);
-    padding: var(--spacing-lg);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 12px;
+    padding: var(--spacing-lg, 1.5rem);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .dashboard-panel:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 32px rgba(0, 240, 255, 0.1);
+    border-color: rgba(0, 240, 255, 0.4);
 }
 
 /* Panel Header Styles */
 .panel-header {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
-    padding-bottom: var(--spacing-md);
+    gap: var(--spacing-md, 1rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    padding-bottom: var(--spacing-md, 1rem);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .panel-header.prominent {
-    padding-bottom: var(--spacing-lg);
-    border-bottom: 2px solid var(--color-teal);
+    padding-bottom: var(--spacing-lg, 1.5rem);
+    border-bottom: 2px solid var(--panel-accent, #26c6da);
 }
 
 .panel-header.compact {
-    margin-bottom: var(--spacing-md);
-    padding-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md, 1rem);
+    padding-bottom: var(--spacing-sm, 0.5rem);
 }
 
 .panel-icon {
@@ -162,9 +164,9 @@
     justify-content: center;
     width: 40px;
     height: 40px;
-    background: rgba(var(--color-teal-rgb), 0.2);
-    border-radius: var(--border-radius-md);
-    color: var(--color-teal);
+    background: rgba(var(--panel-accent-rgb, 38, 198, 218), 0.2);
+    border-radius: 8px;
+    color: var(--panel-accent, #26c6da);
 }
 
 .panel-title-group {
@@ -172,93 +174,94 @@
 }
 
 .panel-title {
-    font-size: var(--font-size-lg);
+    font-size: 1.25rem;
     font-weight: 600;
-    color: var(--color-text);
-    margin: 0 0 var(--spacing-xs) 0;
+    color: #ffffff;
+    margin: 0 0 0.25rem 0;
 }
 
 .panel-subtitle {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    color: #e8eaf6;
     margin: 0;
     opacity: 0.8;
 }
 
 /* Accent Colors */
 .accent-teal {
-    --panel-accent: var(--color-teal);
-    --panel-accent-rgb: var(--color-teal-rgb);
+    --panel-accent: #26c6da;
+    --panel-accent-rgb: 38, 198, 218;
 }
 
 .accent-purple {
-    --panel-accent: var(--color-purple);
-    --panel-accent-rgb: var(--color-purple-rgb);
+    --panel-accent: #9c27b0;
+    --panel-accent-rgb: 156, 39, 176;
 }
 
 .accent-coral {
-    --panel-accent: var(--color-coral);
-    --panel-accent-rgb: var(--color-coral-rgb);
+    --panel-accent: #ff8a80;
+    --panel-accent-rgb: 255, 138, 128;
 }
 
 .accent-lavender {
-    --panel-accent: var(--color-lavender);
-    --panel-accent-rgb: var(--color-lavender-rgb);
+    --panel-accent: #b39ddb;
+    --panel-accent-rgb: 179, 157, 219;
 }
 
 .accent-mint {
-    --panel-accent: var(--color-mint);
-    --panel-accent-rgb: var(--color-mint-rgb);
+    --panel-accent: #a5d6a7;
+    --panel-accent-rgb: 165, 214, 167;
 }
 
 .accent-yellow {
-    --panel-accent: var(--color-yellow);
-    --panel-accent-rgb: var(--color-yellow-rgb);
+    --panel-accent: #fff59d;
+    --panel-accent-rgb: 255, 245, 157;
 }
 
 .accent-navy {
-    --panel-accent: var(--color-navy);
-    --panel-accent-rgb: var(--color-navy-rgb);
+    --panel-accent: #1a237e;
+    --panel-accent-rgb: 26, 35, 126;
 }
 
 .accent-gunmetal {
-    --panel-accent: var(--color-gunmetal);
-    --panel-accent-rgb: var(--color-gunmetal-rgb);
+    --panel-accent: #546e7a;
+    --panel-accent-rgb: 84, 110, 122;
 }
 
 /* Apply accent colors */
 .dashboard-panel {
-    border-top: 3px solid var(--panel-accent, var(--color-teal));
+    border-top: 3px solid var(--panel-accent, #26c6da);
 }
 
 .panel-icon {
-    background: rgba(var(--panel-accent-rgb, var(--color-teal-rgb)), 0.2);
-    color: var(--panel-accent, var(--color-teal));
+    background: rgba(var(--panel-accent-rgb, 38, 198, 218), 0.2);
+    color: var(--panel-accent, #26c6da);
 }
 
 /* Content Styles */
 .panel-content {
     position: relative;
     z-index: 1;
+    color: #ffffff;
 }
 
 .grid-layout {
     display: grid;
-    gap: var(--spacing-md);
+    gap: var(--spacing-md, 1rem);
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
 .activity-timeline {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-sm, 0.75rem);
     max-height: 300px;
     overflow-y: auto;
 }
 
 .component-grid {
     display: grid;
-    gap: var(--spacing-md);
+    gap: var(--spacing-md, 1rem);
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 }
 
@@ -269,13 +272,13 @@
 
 .metric-display {
     text-align: center;
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-lg, 1.5rem) 0;
 }
 
 .alert-content {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-md, 1rem);
 }
 
 .status-content {
@@ -294,7 +297,7 @@
 .metric-pulse {
     position: absolute;
     inset: 0;
-    background: var(--panel-accent);
+    background: var(--panel-accent, #26c6da);
     border-radius: 50%;
     animation: pulse 2s infinite;
 }
@@ -302,13 +305,13 @@
 .status-indicator {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-xs, 0.5rem);
 }
 
 .status-dot {
     width: 8px;
     height: 8px;
-    background: var(--color-mint);
+    background: #a5d6a7;
     border-radius: 50%;
     animation: pulse 2s infinite;
 }
@@ -344,19 +347,19 @@
 
 /* Panel Footer */
 .panel-footer {
-    margin-top: var(--spacing-lg);
-    padding-top: var(--spacing-md);
+    margin-top: var(--spacing-lg, 1.5rem);
+    padding-top: var(--spacing-md, 1rem);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    color: #e8eaf6;
 }
 
 .chart-controls {
     display: flex;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-xs, 0.5rem);
 }
 
 .chart-control {
@@ -367,16 +370,16 @@
     height: 32px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius-sm);
-    color: var(--color-text-secondary);
+    border-radius: 6px;
+    color: #e8eaf6;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .chart-control:hover {
-    background: rgba(var(--panel-accent-rgb), 0.2);
-    color: var(--panel-accent);
-    border-color: var(--panel-accent);
+    background: rgba(var(--panel-accent-rgb, 38, 198, 218), 0.2);
+    color: var(--panel-accent, #26c6da);
+    border-color: var(--panel-accent, #26c6da);
 }
 
 /* Loading Overlay */
@@ -389,13 +392,23 @@
     align-items: center;
     justify-content: center;
     z-index: 10;
+    border-radius: inherit;
+}
+
+.hud-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(var(--panel-accent-rgb, 38, 198, 218), 0.3);
+    border-top: 3px solid var(--panel-accent, #26c6da);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 /* Glow Effect */
 .panel-glow-effect {
     position: absolute;
     inset: -2px;
-    background: linear-gradient(45deg, transparent, var(--panel-accent), transparent);
+    background: linear-gradient(45deg, transparent, var(--panel-accent, #26c6da), transparent);
     border-radius: inherit;
     opacity: 0;
     z-index: -1;
@@ -406,22 +419,97 @@
     opacity: 0.3;
 }
 
+/* Activity Counter */
+.activity-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    background: rgba(var(--panel-accent-rgb, 38, 198, 218), 0.2);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--panel-accent, #26c6da);
+    padding: 0 8px;
+}
+
 /* Animations */
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
 
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Entrance animations */
+.animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.8s ease-out;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.6s ease-out;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0; 
+        transform: translateY(30px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes slideInLeft {
+    from { 
+        opacity: 0; 
+        transform: translateX(-30px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateX(0); 
+    }
+}
+
+@keyframes scaleIn {
+    from { 
+        opacity: 0; 
+        transform: scale(0.8); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .dashboard-panel {
-        padding: var(--spacing-md);
+        padding: var(--spacing-md, 1rem);
     }
     
     .panel-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--spacing-sm);
+        gap: var(--spacing-sm, 0.75rem);
     }
     
     .grid-layout {
@@ -430,6 +518,29 @@
     
     .component-grid {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    
+    .panel-footer {
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.75rem);
+        align-items: flex-start;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .dashboard-panel {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        border: 1px solid #333;
+        background: white;
+        color: black;
+    }
+    
+    .panel-glow-effect,
+    .panel-loading-overlay,
+    .chart-controls {
+        display: none;
     }
 }
 </style>

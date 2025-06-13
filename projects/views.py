@@ -1,11 +1,10 @@
-from django.views.generic import (
-    ListView,
-    DetailView,
-    CreateView,
-    UpdateView,
-    DeleteView,
-    TemplateView,
-)
+"""
+Super simplified for new panel and model methods testing.
+NOTE TO FUTURE ME: See archived_system_view.py in scratch or previous commits for all previous views.
+"""
+
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render
@@ -18,7 +17,7 @@ from django.utils import timezone
 from django.core.cache import cache
 
 import re
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 import random
 
 from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage
@@ -30,8 +29,7 @@ class EnhancedSystemsDashboardView(TemplateView):
     """
     🚀 AURA Systems Command Center - The Ultimate Dashboard
 
-    Showcases all enhanced data with real-time metrics, performance analytics,
-    and comprehensive system insights using our enhanced models.
+    Using New Manager Methods
     """
 
     template_name = "projects/systems_dashboard.html"
@@ -42,132 +40,85 @@ class EnhancedSystemsDashboardView(TemplateView):
         # Use cache for expensive queries (5 min)
         cache_timeout = 300
 
-        # Core dashboard stats
-        dashboard_stats = cache.get('dashboard_stats')
+        # Core dashboard stats using new manager
+        dashboard_stats = cache.get('dashboard_stats_v2')
         if not dashboard_stats:
             dashboard_stats = self.get_dashboard_stats()
-            cache.set('dashboard_stats', dashboard_stats, cache_timeout)
+            cache.set('dashboard_stats_v2', dashboard_stats, cache_timeout)
 
         context['dashboard_stats'] = dashboard_stats
 
-        # System analytics
-        system_analytics = cache.get('system_analytics')
-        if not system_analytics:
-            system_analytics = self.get_system_analytics()
-            cache.set('system_analytics', system_analytics, cache_timeout)
+        # Featured systems using new manager methods
+        context["featured_systems"] = SystemModule.objects.featured().deployed()[:6]
 
-        context['system_analytics'] = system_analytics
+        # Recent systems activity using new manager methods
+        context["recent_systems"] = SystemModule.objects.recently_updated(7)[:8]
+        context['systems_in_development'] = SystemModule.objects.in_development()[:5]
 
         # Technology insights
         context['technology_insights'] = self.get_technology_insights()
         context['tech_usage_stats'] = context['technology_insights']['usage_stats']
 
-        # Development metrics
-        context['development_metrics'] = self.get_development_metrics()
-
-        # Recent activity
-        context['recent_activity'] = self.get_recent_activity()
-        context['recent_logs'] = context['recent_activity']['recent_logs']
+        # Recent logs
+        context["recent_logs"] = SystemLogEntry.objects.select_related(
+            'system', 'post'
+        ).order_by('-created_at')[:8]
 
         # Performance data for dashboard panels
         context['performance_data'] = self.get_performance_data()
 
-        # Chart for visualizations
-        context['chart_data'] = self.get_chart_data()
-
-        # Critical alerts for alert panels
-        context['critical_alerts'] = self.get_critical_alerts()
-        context['system_alerts'] = context['critical_alerts']  # Alias for template
-
-        # Featured systems for grid panels
-        context['featured_systems'] = SystemModule.objects.filter(
-            featured=True,
-            status__in=['deployed', 'published', 'in_development']
-        ).select_related('system_type').prefetch_related('technologies')[:6]
+        # System alerts
+        context['system_alerts'] = self.get_system_alerts()
 
         # Systems by status for status panels
         context['systems_by_status'] = self.get_systems_by_status()
 
-        # Additional metrics for panels
-        context.update(self.get_additional_dashboard_context())
+        # Chart for visualizations
+        context['chart_data'] = self.get_chart_data()
 
         return context
 
     def get_dashboard_stats(self):
-        """Core dashboard stats with enhanced fields."""
-        total_systems = SystemModule.objects.count()
-        deployed_systems = SystemModule.objects.filter(status='deployed').count()
-        published_systems = SystemModule.objects.filter(status='published').count()
-        systems_in_development = SystemModule.objects.filter(status='in_development').count()
-        systems_testing = SystemModule.objects.filter(status='testing').count()
+        """Enahnced dashboard stats using new manager methods."""
 
-        # Calculate averages
-        avg_completion = SystemModule.objects.aggregate(
-            avg_completion=Avg('completion_percent')
-        )['avg_completion'] or 0
+        # Use new dashboard_stats() method
+        base_stats = SystemModule.objects.dashboard_stats()
 
-        # Performance metrics for enhanced fields
-        performance_systems = SystemModule.objects.filter(
-            performance_score__isnull=False
-        )
-        avg_performance = performance_systems.aggregate(
-            avg_perf=Avg('performance_score')
-        )['avg_perf']
+        # Add performance-specific stats
+        performance_systems = SystemModule.objects.with_performance_data()
 
-        uptime_systems = SystemModule.objects.filter(
-            uptime_percentage__isnull=False
-        )
+        # Add development metrics
+        all_systems = SystemModule.objects.all()
 
-        avg_uptime = uptime_systems.aggregate(
-            avg_uptime=Avg('uptime_percentage')
-        )['avg_uptime']
+        enhanced_stats = {
+            # Include all base stats from manager
+            **base_stats,
 
-        return {
-            "total_systems": total_systems,
-            "systems_deployed": deployed_systems,
-            "systems_published": published_systems,
-            "systems_in_development": systems_in_development,
-            "systems_testing": systems_testing,
-            "avg_completion": round(avg_completion, 1) if avg_completion else 0,
-            "avg_performance": round(avg_performance, 1) if avg_performance else None,
-            "avg_uptime": round(avg_uptime, 1) if avg_uptime else None,
-            "total_technologies": Technology.objects.count(),
+            # Performance metrics
+            'avg_uptime': performance_systems.aggregate(
+                avg=Avg('uptime_percentage')
+            )['avg'],
+
+            'total_daily_users': performance_systems.aggregate(
+                total=Sum('daily_users')
+            )['total'] or 0,
+
+            # Development metrics
+            'total_code_lines': all_systems.aggregate(
+                total=Sum('code_lines')
+            )['total'] or 0,
+
+            'total_commits': all_systems.aggregate(
+                total=Sum('commit_count')
+            )['total'] or 0,
+
+            # New manager method stats
+            'recently_updated_count': SystemModule.objects.recently_updated(7).count(),
+            'high_priority_count': SystemModule.objects.high_priority().count(),
+
         }
 
-    def get_system_analytics(self):
-        """Detailed system analytics and distributions."""
-        # Systems by health status using model method
-        systems_by_health = self._get_systems_by_health()
-
-        # Complexity distribution
-        complexity_stats = SystemModule.objects.values('complexity').annotate(
-            count=Count('id')
-        ).order_by('complexity')
-
-        # Priority distribution
-        priority_stats = SystemModule.objects.values('priority').annotate(
-            count=Count('id')
-        ).order_by('priority')
-
-        # Status distribution
-        status_stats = []
-        for status_choice in SystemModule.STATUS_CHOICES:
-            status_key = status_choice[0]
-            status_label = status_choice[1]
-            count = SystemModule.objects.filter(status=status_key).count()
-            if count > 0:
-                status_stats.append({
-                    'status': status_key,
-                    'label': status_label,
-                    'count': count
-                })
-
-        return {
-            'systems_by_health': systems_by_health,
-            'complexity_distribution': list(complexity_stats),
-            'priority_distribution': list(priority_stats),
-            'status_distribution': status_stats,
-        }
+        return enhanced_stats
 
     def get_technology_insights(self):
         """Technology usage analytics and trends."""
@@ -190,333 +141,112 @@ class EnhancedSystemsDashboardView(TemplateView):
             'diversity_score': round(diversity_score, 1),
         }
 
-    def get_development_metrics(self):
-        """Development and progress metrics."""
-        completed_systems = SystemModule.objects.filter(
-            status__in=['deployed', 'published'],
-            start_date__isnull=False,
-            end_date__isnull=False
-        )
-
-        avg_development_time = 0
-        if completed_systems.exists():
-            total_days = sum([
-                (system.end_date - system.start_date).days
-                for system in completed_systems
-                if system.end_date and system.start_date
-            ])
-            avg_development_time = total_days // completed_systems.count() if total_days > 0 else 0
-
-        # Hours analysis
-        estimated_hours = SystemModule.objects.filter(
-            estimated_dev_hours__isnull=False
-        ).aggregate(total=Sum('estimated_dev_hours'))['total'] or 0
-
-        actual_hours = SystemModule.objects.filter(
-            actual_dev_hours__isnull=False
-        ).aggregate(total=Sum('actual_dev_hours'))['total'] or 0
-
-        # Deployment success rate
-        total_completed = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).count()
-        total_attempted = SystemModule.objects.exclude(
-            status__in=['draft']
-        ).count()
-
-        development_success_rate = (
-            (total_completed / total_attempted * 100) if total_attempted > 0 else 0
-        )
-
-        return {
-            'avg_development_time': avg_development_time,
-            'total_estimated_hours': estimated_hours,
-            'total_actual_hours': actual_hours,
-            'hours_variance': actual_hours - estimated_hours,
-            'deployment_success_rate': round(development_success_rate, 1),
-            'completed_projects': completed_systems.count(),
-        }
-
-    def get_recent_activity(self):
-        """Enhanced recent activity with multiple sources."""
-
-        # Recent system updates
-        recent_systems = SystemModule.objects.order_by('-updated_at')[:5]
-
-        # Recent log entries
-        recent_logs = SystemLogEntry.objects.select_related(
-            'system', 'post'
-        ).order_by('-created_at')[:8]
-
-        # Recent Commits (if available)
-        # TODO: Integrate w GitHub API later
-        recent_commits = SystemModule.objects.filter(
-            last_commit_date__isnull=False
-        ).order_by('-last_commit_date')[:5]
-
-        # Activity count for this week
-        week_ago = timezone.now() - timedelta(days=7)
-        weekly_activity = SystemModule.objects.filter(
-            updated_al__gte=week_ago
-        ).count()
-
-        return {
-            'recent_systems': recent_systems,
-            'recent_logs': recent_logs,
-            'recent_commits': recent_commits,
-            'weekly_activity_count': weekly_activity,
-        }
-
     def get_performance_data(self):
         """Performance metrics for dashboard panels."""
         # Get systems w performance data
-        performance_systems = SystemModule.objects.filter(
-            performance_score__isnull=False,
-            uptime_percentage__isnull=False
-        )
+        performing_systems = SystemModule.objects.with_performancec_data()
 
-        if not performance_systems.exists():
+        if not performing_systems.exists():
             return {
                 'avg_performance': None,
                 'avg_uptime': None,
-                'performance_trend': [],
                 'health_distribution': {}
             }
 
         # Calculate averages
-        avg_performance = performance_systems.aggregate(
+        avg_performance = performing_systems.aggregate(
             avg=Avg('performance_score')
         )['avg']
 
-        avg_uptime = performance_systems.aggregate(
+        avg_uptime = performing_systems.aggregate(
             avg=Avg('uptime_percentage')
         )['avg']
 
-        # Health distribution
-        health_distribution = {}
-        for system in performance_systems:
-            health = system.get_health_status()
-            health_distribution[health] = health_distribution.get(health, 0) + 1
-
-        # Performance trend (mock data - enhance with SystemMetric)
-        performance_trend = (
-            [
-                {
-                    "date": (timezone.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
-                    "value": avg_performance - 5,
-                },
-                {
-                    "date": (timezone.now() - timedelta(days=20)).strftime("%Y-%m-%d"),
-                    "value": avg_performance - 2,
-                },
-                {
-                    "date": (timezone.now() - timedelta(days=10)).strftime("%Y-%m-%d"),
-                    "value": avg_performance + 1,
-                },
-                {"date": timezone.now().strftime("%Y-%m-%d"), "value": avg_performance},
-            ]
-            if avg_performance
-            else []
-        )
+        # Health distribution using new model method
+        health_distribution = SystemModule.get_health_distribution()
 
         return {
             "avg_performance": round(avg_performance, 1) if avg_performance else None,
             "avg_uptime": round(avg_uptime, 1) if avg_uptime else None,
-            "performance_trend": performance_trend,
             "health_distribution": health_distribution,
+        }
+
+    def get_system_alerts(self):
+        """Generate alerts for alert panels."""
+        alerts = []
+
+        # Use new manager methods for cleaner queries
+        low_performance_systems = SystemModule.objects.with_performance_data().filter(
+            performance_score__lt=70
+        )
+
+        if low_performance_systems.exists():
+            alerts.append(
+                {
+                    "icon": "speed",
+                    "title": "Performance Alert",
+                    "message": f"{low_performance_systems.count()} system{'s' if low_performance_systems.count() > 1 else ''} showing low performance scores.",
+                    "created_at": timezone.now(),
+                    "level": "warning",
+                }
+            )
+
+        # Check for stale development projects using new method, this is really only blanket checkc but can dial in later
+        stale_systems = SystemModule.objects.in_development().recently_updated(30)
+        if not stale_systems.exists():
+            # If no recent updates, that means all dev systems are stale
+            total_dev_systems = SystemModule.objects.in_development().count()
+            if total_dev_systems > 0:
+                alerts.append(
+                    {
+                        "icon": "schedule",
+                        "title": "Stale Development",
+                        "message": f"{total_dev_systems} systems not updated in 30+ days",
+                        "created_at": timezone.now(),
+                        "level": "info",
+                    }
+                )
+
+        return alerts
+
+    # May be able to eliminate as well and get from dashboard_stats() model method
+    def get_systems_by_status(self):
+        """
+        Get systems count using new model methods.
+        """
+        return {
+            'deployed': SystemModule.objects.deployed().count(),
+            'published': SystemModule.objects.published().count(),
+            'in_development': SystemModule.objects.in_development().count(),
+            'featured': SystemModule.objects.featured().count()
         }
 
     def get_chart_data(self):
         """Data formatted for charts and visualizations (simplified)"""
-        # Completion progress over time (simplified)
-        completion_data = []
-        for i in range(6, 0, -1):
-            month_start = timezone.now() - timedelta(days=30*i)
-            systems_at_month = SystemModule.objects.filter(
-                created_at__lte=month_start
-            )
-            avg_completion = systems_at_month.aggregate(
-                avg=Avg('completion_percent')
-            )['avg'] or 0
-
-            completion_data.append({
-                'month': month_start.strftime('%b'),
-                'value': round(avg_completion, 1)
-            })
-
-        # System type distribution
-        type_distribution = SystemModule.objects.annotate(
-            count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(count__gt=0).values('name', 'count')
-
-        return {
-            'completion_trend': completion_data,
-            'type_distribution': list(type_distribution),
-        }
-
-    def get_critical_alerts(self):
-        """Critical system alerts and issues"""
-        alerts = []
-
-        # Systems w low performance scores
-        low_performance_systems = SystemModule.objects.filter(
-            performance_score__lt=70,
-            performance_score__isnull=False,
-            status='deployed'
+        # Simple completion trend
+        all_systems = SystemModule.objects.all()
+        avg_completion = (
+            all_systems.aggregate(avg=Avg("completion_percent"))["avg"] or 0
         )
 
-        if low_performance_systems.exists():
-            alerts.append({
-                'icon': 'speed',
-                'title': 'Performance Alert',
-                'message': f"{low_performance_systems.count()} system{'s' if low_performance_systems.count() > 1 else ''} showing low performance scores.",
-                'created_at': timezone.now(),
-                'level': 'warning',
-                'systems': list(low_performance_systems[:3])
-            })
+        # Mock trend data - you can enhance this with real historical data
+        completion_trend = [
+            {"month": "Jan", "value": max(0, avg_completion - 15)},
+            {"month": "Feb", "value": max(0, avg_completion - 10)},
+            {"month": "Mar", "value": max(0, avg_completion - 5)},
+            {"month": "Apr", "value": avg_completion},
+        ]
 
-        # Systems w low uptime
-        low_uptime_systems = SystemModule.objects.filter(
-            uptime_percentage__lt=95,
-            uptime_percentage__isnull=False,
-            status='deployed'
-        )
-
-        if low_uptime_systems.exists():
-            alerts.append({
-                'icon': 'timeline',
-                'title': 'Uptime Alert',
-                'message': f"{low_uptime_systems.count()} system{'s' if low_uptime_systems.count() > 1 else ''} with uptime below 95%",
-                'created_at': timezone.now(),
-                'level': 'warning',
-                'systems': list(low_uptime_systems[:3])
-            })
-
-        # Stale development alerts
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-        stale_systems = SystemModule.objects.filter(
-            updated_at__lt=thirty_days_ago,
-            status='in_development'
-        )
-
-        if stale_systems.exists():
-            alerts.append({
-                'icon': 'schedule',
-                'title': 'Stale Development',
-                'message': f"{stale_systems.count()} system{'s' if stale_systems.count() > 1 else ''} not updated in 30+ days",
-                'created_at': timezone.now(),
-                'level': 'info',
-                'systems': list(stale_systems[:3])
-            })
-
-        # Critical dependencies
-        critical_deps = SystemDependency.objects.filter(is_critical=True)
-
-        if critical_deps.exists():
-            alerts.append({
-                'icon': 'warning',
-                'title': 'Critical Dependencies',
-                'message': f"{critical_deps.count()} critical system dependencies requiring attention.",
-                'created_at': timezone.now(),
-                'level': 'info',
-            })
-
-        # Sort by severity
-        severity_order = {'critical': 0, 'warning': 1, 'info': 2}
-        alerts.sort(key=lambda x: severity_order.get(x['severity'], 3))
-
-        return alerts[:10]  # Return top 10 alerts
-
-    def _get_systems_by_health(self):
-        """Helper method to categorize systems by health status"""
-        systems = SystemModule.objects.all()
-        health_categories = {
-            'excellent': [],
-            'good': [],
-            'fair': [],
-            'poor': [],
-            'unknown': []
-        }
-
-        for system in systems:
-            health = system.get_health_status()  # Using enhancecd model method
-            health_categories[health].append(system)
-
-        # Convert to counts for easier template usage
         return {
-            status: len(systems_list)
-            for status, systems_list in health_categories.items()
+            "completion_trend": completion_trend,
+            "current_completion": avg_completion,
         }
 
-    def get_systems_by_status(self):
-        """
-        Get systems count by status for status panels.
-        """
-        systems_by_status = {}
-        for status_choice in SystemModule.STATUS_CHOICES:
-            status_key = status_choice[0]
-            count = SystemModule.objects.filter(status=status_key).count()
-            if count > 0:  # Only include statuses w systems
-                systems_by_status[status_key] = count
-        return systems_by_status
-
-    def get_additional_dashboard_context(self):
-        """Additional context for enhanced dashboard panels."""
-        return {
-            # For metric panels
-            'total_features': SystemFeature.objects.count(),
-            'completed_features': SystemFeature.objects.filter(
-                implmentation_status='completed'
-            ).count(),
-
-            # For component panels
-            'system_types': SystemType.objects.annotate(
-                systems_count=Count('systems')
-            ).filter(systems_count__gt=0),
-
-            # For activity panels
-            'reccent_features': SystemFeature.objects.select_related('system').order_by('-id')[:5],
-
-            # Development metrics
-            'development_success_rate': self.calculate_deployment_success_rate(),
-        }
-
-    def calculate_deployment_success_rate(self):
-        """Calculate deployment success rate."""
-        total_completed = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).count()
-        total_attempted = SystemModule.objects.exclude(
-            status__in=['draft', 'idea']  # Add 'idea' status to SystemModule model?
-        ).count()
-
-        return round((total_completed / total_attempted * 100), 1) if total_attempted > 0 else 0
+# ===================== ENHANCED SYSTEM LIST VIEW =====================
 
 
-# API view for Real-time Dashboard Updates
-class DashboardAPIView(TemplateView):
-    """API endpoint for real-time dashboard updates"""
-
-    def get(self, request, *args, **kwargs):
-        dashboard_view = EnhancedSystemsDashboardView()
-
-        # Get fresh data (no caching for API)
-        cache.delete('systems_dashboard_stats')
-        cache.delete('systems_analytics')
-
-        data = {
-            'stats': dashboard_view.get_dashboard_stats(),
-            'performance': dashboard_view.get_performance_data(),
-            'alerts': dashboard_view.get_critical_alerts(),
-            'timestamp': timezone.now().isoformat(),
-        }
-
-        return JsonResponse(data)
-
-
-# Enhanced System List (for system cards)
-class EnhancedSystemListView(ListView):
-    """Enhanced system list with new filtering and display capabilities"""
+class SystemModuleListView(ListView):
+    """Enhanced system list using new manager methods."""
 
     model = SystemModule
     template_name = "projects/system_list.html"
@@ -524,34 +254,62 @@ class EnhancedSystemListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = SystemModule.objects.select_related(
-            'system_type', 'author'
-        ).prefetch_related(
-            'technologies', 'features'
-        ).order_by('-updated_at')
+        """Simplified filtered query using new manager methods."""
+        # Start w all systems
+        queryset = SystemModule.objects.select_related('system_type', 'author')
 
-        # Enhanced filtering w new fields
+        # Apply filters using new clean methods
         status_filter = self.request.GET.get('status')
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
+        if status_filter == "deployed":
+            queryset = queryset.deployed()
+        elif status_filter == "published":
+            queryset = queryset.published()
+        elif status_filter == "in_development":
+            queryset = queryset.in_development()
+        elif status_filter == "featured":
+            queryset = queryset.featured()
+        elif status_filter == "recent":
+            queryset = queryset.recently_updated(30)
+        elif status_filter == "high_priority":
+            queryset = queryset.high_priority()
+        elif status_filter == "with_metrics":
+            queryset = queryset.with_performance_data()
 
-        complexity_filter = self.request.GET.get('complexity')
-        if complexity_filter:
-            queryset = queryset.filter(complexity=complexity_filter)
+        # Trimmed additional filters for testing
 
-        tech_filter = self.request.GET.get('technology')
+        # Technology filter
+        tech_filter = self.request.GET.get("tech")
         if tech_filter:
             queryset = queryset.filter(technologies__slug=tech_filter)
 
-        # Performance filtering using enhanced fields
-        min_performance = self.request.GET.get('min_performance')
-        if min_performance:
-            queryset = queryset.filter(performance_score__gte=min_performance)
+        # Ordering
+        order = self.request.GET.get("order", "recent")
+        if order == "recent":
+            queryset = queryset.order_by("-updated_at")
+        elif order == "name":
+            queryset = queryset.order_by("title")
+        elif order == "completion":
+            queryset = queryset.order_by("-completion_percent")
+        elif order == "performance":
+            queryset = queryset.order_by("-performance_score")
 
-        health_filter = self.request.GET.get('health')
-        if health_filter:
-            # This would require custom filtering logic for health status, can work on later
-            pass
+        # complexity_filter = self.request.GET.get('complexity')
+        # if complexity_filter:
+        #     queryset = queryset.filter(complexity=complexity_filter)
+
+        # tech_filter = self.request.GET.get('technology')
+        # if tech_filter:
+        #     queryset = queryset.filter(technologies__slug=tech_filter)
+
+        # # Performance filtering using enhanced fields
+        # min_performance = self.request.GET.get('min_performance')
+        # if min_performance:
+        #     queryset = queryset.filter(performance_score__gte=min_performance)
+
+        # health_filter = self.request.GET.get('health')
+        # if health_filter:
+        #     # This would require custom filtering logic for health status, can work on later
+        #     pass
 
         # Search across enhanced fields
         search = self.request.GET.get('search')
@@ -568,471 +326,153 @@ class EnhancedSystemListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Add filter stats using clean methods - Trimmed for testing
         context.update(
             {
-                "system_types": SystemType.objects.all().order_by("display_order"),
-                "technologies": Technology.objects.annotate(
-                    system_count=Count("systems")
-                )
-                .filter(system_count__gt=0)
-                .order_by("-system_count"),
-                "complexity_choices": SystemModule.COMPLEXITY_CHOICES,
-                "status_choices": SystemModule.STATUS_CHOICES,
-                "current_filters": {
-                    "status": self.request.GET.get("status", ""),
-                    "complexity": self.request.GET.get("complexity", ""),
-                    "technology": self.request.GET.get("technology", ""),
-                    "search": self.request.GET.get("search", ""),
-                    "min_performance": self.request.GET.get("min_performance", ""),
-                },
-                # Quick stats for the page header
-                "page_stats": {
-                    "total_systems": self.get_queryset().count(),
-                    "deployed_count": self.get_queryset()
-                    .filter(status="deployed")
-                    .count(),
-                    "avg_completion": self.get_queryset().aggregate(
-                        avg=Avg("completion_percent")
-                    )["avg"]
-                    or 0,
-                },
+                "total_count": SystemModule.objects.count(),
+                "deployed_count": SystemModule.objects.deployed().count(),
+                "featured_count": SystemModule.objects.featured().count(),
+                "recent_count": SystemModule.objects.recently_updated(30).count(),
+                "high_priority_count": SystemModule.objects.high_priority().count(),
+                "with_metrics_count": SystemModule.objects.with_performance_data().count(),
             }
         )
-        return context
 
+        # Filter parameters for template
+        context.update(
+            {
+                "current_status": self.request.GET.get("status", ""),
+                "current_tech": self.request.GET.get("tech", ""),
+                "current_order": self.request.GET.get("order", "recent"),
+            }
+        )
 
-class SystemModuleListView(ListView):
-    """Main systems overview page with HUD-style grid display."""
-
-    model = SystemModule
-    template_name = 'projects/system_list.html'
-    context_object_name = 'systems'
-    paginate_by = 9  # 3x3 grid
-
-    def get_queryset(self):
-        queryset = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-            ).select_related('system_type', 'author').prefetch_related('technologies')
-
-        # Filter by system type if provided
-        system_type_slug = self.request.GET.get('type')
-        if system_type_slug:
-            queryset = queryset.filter(system_type__slug=system_type_slug)
-
-        # Filter by technology if provided
-        tech_slug = self.request.GET.get("tech")
-        if tech_slug:
-            queryset = queryset.filter(technologies__slug=tech_slug)
-
-        # Search functionality
-        search_query = self.request.GET.get('search')
-        if search_query:
-            queryset = queryset.filter(
-                Q(title__icontains=search_query) |
-                Q(description__icontains=search_query) |
-                Q(technologies__name__icontains=search_query)
-            ).distinct()
-
-        # Sort functionality
-        sort_by = self.request.GET.get('sort', '-created_at')
-        valid_sorts = ['-created_at', 'title', '-completion_percent', 'complexity']
-        if sort_by in valid_sorts:
-            queryset = queryset.order_by(sort_by)
-        else:
-            queryset = queryset.order_by('-created_at')
-
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # System types for filtering
-        context['system_types'] = SystemType.objects.annotate(
-            system_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(system_count__gt=0)
-
-        # Technologies for filtering
-        context['technologies'] = Technology.objects.annotate(
-            system_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(system_count__gt=0).order_by('category', 'name')
-
-        # Featured systems for hero section
-        context['featured_systems'] = SystemModule.objects.filter(
-            featured=True,
-            status__in=['deployed', 'published']
-        )[:3]
-
-        # Stats for HUD dashboard
-        context['total_systems'] = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).count()
-
-        context['systems_in_development'] = SystemModule.objects.filter(
-            status='in_development'
-        ).count()
-
-        context['avg_completion'] = SystemModule.objects.aggregate(
-            avg_completion=Avg('completion_percent')
-        )['avg_completion'] or 0
-
-        # Get current filters for navigation
-        context['current_type'] = self.request.GET.get('type', '')
-        context["current_tech"] = self.request.GET.get("tech", "")
-        context["current_sort"] = self.request.GET.get("sort", "latest")
-        context["search_search"] = self.request.GET.get("search", "")
-
-        # Add show_filters tag for template
-        context['show_filters'] = True
+        # Technologies for filter dropdown
+        context["technologies"] = (
+            Technology.objects.annotate(usage_count=Count("systems"))
+            .filter(usage_count__gt=0)
+            .order_by("name")
+        )
 
         return context
 
+        # context.update(
+        #     {
+        #         "system_types": SystemType.objects.all().order_by("display_order"),
+        #         "technologies": Technology.objects.annotate(
+        #             system_count=Count("systems")
+        #         )
+        #         .filter(system_count__gt=0)
+        #         .order_by("-system_count"),
+        #         "complexity_choices": SystemModule.COMPLEXITY_CHOICES,
+        #         "status_choices": SystemModule.STATUS_CHOICES,
+        #         "current_filters": {
+        #             "status": self.request.GET.get("status", ""),
+        #             "complexity": self.request.GET.get("complexity", ""),
+        #             "technology": self.request.GET.get("technology", ""),
+        #             "search": self.request.GET.get("search", ""),
+        #             "min_performance": self.request.GET.get("min_performance", ""),
+        #         },
+        #         # Quick stats for the page header
+        #         "page_stats": {
+        #             "total_systems": self.get_queryset().count(),
+        #             "deployed_count": self.get_queryset()
+        #             .filter(status="deployed")
+        #             .count(),
+        #             "avg_completion": self.get_queryset().aggregate(
+        #                 avg=Avg("completion_percent")
+        #             )["avg"]
+        #             or 0,
+        #         },
+        #     }
+        # )
+        # return context
 
-class EnhancedSystemModuleDetailView(DetailView):
-    """
-    🚀 Enhanced System Detail View - Complete Command Center
-
-    Comprehensive system detail page showcasing all enhanced model data:
-    - Performance metrics and analytics
-    - System dependencies and relationships
-    - Development timeline and progress
-    - Technology stack with usage insights
-    - Related DataLogs and documentation
-    - Team information and collaboration data
-    - Real-time health status and monitoring
-    """
-
-    model = SystemModule
-    template_name = "projects/system_detail.html"
-    context_object_name = "system"
-
-    def get_queryset(self):
-        """Optimized queryset with all related data."""
-        return SystemModule.objects.select_related(
-            "system_type", "author"
-        ).prefetch_related(
-            # Technologies with their skill profiles (FIXED - removed .select_related('category'))
-            Prefetch(
-                "technologies",
-                queryset=Technology.objects.select_related("skill_profile").annotate(
-                    systems_count=Count("systems")
-                ),
-            ),
-            # Features ordered by priority and type
-            Prefetch(
-                "features",
-                queryset=SystemFeature.objects.order_by("feature_type", "order"),
-            ),
-            # Images ordered by display order
-            Prefetch("images", queryset=SystemImage.objects.order_by("order")),
-            # Current metrics for real-time display
-            Prefetch(
-                "metrics",
-                queryset=SystemMetric.objects.filter(is_current=True).order_by(
-                    "metric_type"
-                ),
-            ),
-            # System dependencies
-            Prefetch(
-                "dependencies",
-                queryset=SystemDependency.objects.select_related(
-                    "depends_on__system_type"
-                ),
-            ),
-            # Systems that depend on this one
-            Prefetch(
-                "dependents",
-                queryset=SystemDependency.objects.select_related("system__system_type"),
-            ),
-            # Related systems
-            "related_systems__system_type",
-            # Blog post connections
-            Prefetch(
-                "log_entries",
-                queryset=SystemLogEntry.objects.select_related(
-                    "post__category"
-                ).order_by("-post__published_date"),
-            ),
-        )
-
-    def get_context_data(self, **kwargs):
-        """Enhanced context with comprehensive system analytics."""
-        context = super().get_context_data(**kwargs)
-        system = self.object
-
-        # === PERFORMANCE ANALYTICS ===
-        context.update(
-            {
-                # Real-time metrics from SystemMetric model
-                "current_metrics": system.metrics.filter(is_current=True),
-                "metric_history": system.metrics.filter(
-                    created_at__gte=timezone.now() - timedelta(days=30)
-                ).order_by("created_at"),
-                # System health and performance indicators
-                "health_status": {
-                    "overall": system.health_status
-                    if hasattr(system, "health_status")
-                    else "unknown",
-                    "uptime": system.uptime_percentage
-                    if hasattr(system, "uptime_percentage")
-                    else None,
-                    "performance": system.performance_score
-                    if hasattr(system, "performance_score")
-                    else None,
-                    "last_check": system.health_last_check
-                    if hasattr(system, "health_last_check")
-                    else None,
-                },
-                # Development progress insights
-                "development_insights": {
-                    "completion": system.completion_percent,
-                    "estimated_hours": system.estimated_development_hours
-                    if hasattr(system, "estimated_development_hours")
-                    else None,
-                    "actual_hours": system.actual_development_hours
-                    if hasattr(system, "actual_development_hours")
-                    else None,
-                    "team_size": system.team_size
-                    if hasattr(system, "team_size")
-                    else 1,
-                    "last_commit": system.last_commit_date
-                    if hasattr(system, "last_commit_date")
-                    else None,
-                },
-            }
-        )
-
-        # === TECHNOLOGY ANALYSIS ===
-        # Group technologies by category for better display
-        technologies_by_category = {}
-        for tech in system.technologies.all():
-            category = tech.get_category_display()
-            if category not in technologies_by_category:
-                technologies_by_category[category] = []
-            technologies_by_category[category].append(tech)
-
-        context["technologies_by_category"] = technologies_by_category
-
-        # Primary vs supporting technologies
-        context.update(
-            {
-                "primary_technologies": system.technologies.filter(
-                    category__in=["language", "framework"]
-                ),
-                "supporting_technologies": system.technologies.exclude(
-                    category__in=["language", "framework"]
-                ),
-            }
-        )
-
-        # === FEATURES & FUNCTIONALITY ===
-        # Features grouped by type and status
-        features_by_type = {}
-        features_by_status = {"completed": 0, "in_progress": 0, "planned": 0}
-
-        for feature in system.features.all():
-            # Group by type
-            feature_type = (
-                feature.get_feature_type_display()
-                if hasattr(feature, "get_feature_type_display")
-                else "Other"
-            )
-            if feature_type not in features_by_type:
-                features_by_type[feature_type] = []
-            features_by_type[feature_type].append(feature)
-
-            # Count by status
-            status = getattr(feature, "status", "planned")
-            if status in features_by_status:
-                features_by_status[status] += 1
-
-        context.update(
-            {
-                "features_by_type": features_by_type,
-                "features_by_status": features_by_status,
-                "total_features": system.features.count(),
-            }
-        )
-
-        # === SYSTEM RELATIONSHIPS ===
-        context.update(
-            {
-                # Dependencies analysis
-                "critical_dependencies": system.dependencies.filter(is_critical=True),
-                "optional_dependencies": system.dependencies.filter(is_critical=False),
-                "total_dependencies": system.dependencies.count(),
-                # Systems that depend on this one
-                "dependent_systems": getattr(system, "dependent_systems", []),
-                # Related content using our enhanced relationships
-                "related_datalogs": system.log_entries.select_related("post")[:5],
-                # Similar systems based on technology overlap
-                "similar_systems": self._get_similar_systems(system),
-            }
-        )
-
-        # === GALLERY & MEDIA ===
-        context.update(
-            {
-                "gallery_images": system.images.all()[:8],  # Limit for performance
-                "has_architecture_diagram": bool(system.architecture_diagram),
-                "total_images": system.images.count(),
-            }
-        )
-
-        # === ANALYTICS & INSIGHTS ===
-        # Calculate development velocity if we have commit data
-        if hasattr(system, "last_commit_date") and system.last_commit_date:
-            days_since_last_commit = (
-                timezone.now() - system.last_commit_date
-            ).days
-            context["days_since_last_commit"] = days_since_last_commit
-            context["is_actively_developed"] = days_since_last_commit <= 30
-
-        # Performance trends (if we have historical data)
-        if system.metrics.exists():
-            context["has_performance_data"] = True
-            context["performance_trend"] = self._calculate_performance_trend(system)
-
-        return context
-
-    def _get_similar_systems(self, system):
-        """Find systems with similar technology stacks"""
-        system_tech_ids = list(system.technologies.values_list("id", flat=True))
-
-        if not system_tech_ids:
-            return SystemModule.objects.none()
-
-        return (
-            SystemModule.objects.filter(technologies__in=system_tech_ids)
-            .exclude(id=system.id)
-            .annotate(
-                tech_overlap=Count(
-                    "technologies", filter=Q(technologies__in=system_tech_ids)
-                )
-            )
-            .filter(tech_overlap__gt=0)
-            .order_by("-tech_overlap")[:3]
-        )
-
-    def _calculate_performance_trend(self, system):
-        """Calculate performance trend over time"""
-        recent_metrics = system.metrics.filter(
-            metric_type="performance",
-            created_at__gte=timezone.now() - timedelta(days=30),
-        ).order_by("created_at")
-
-        if recent_metrics.count() < 2:
-            return "stable"
-
-        first_value = recent_metrics.first().metric_value
-        last_value = recent_metrics.last().metric_value
-
-        if last_value > float(first_value) * 1.1:
-            return "improving"
-        elif last_value < float(first_value) * 0.9:
-            return "declining"
-        else:
-            return "stable"
+# ===================== ENHANCED SYSTEM DETAIL VIEW =====================
 
 
-# Alternative simplified view if you want to keep using your existing one
 class SystemModuleDetailView(DetailView):
-    """Simplified system detail view with basic optimizations."""
+    """Enhanced system detail view."""
 
     model = SystemModule
     template_name = "projects/system_detail.html"
     context_object_name = "system"
 
     def get_queryset(self):
+        # Optimize the query with related data
         return SystemModule.objects.select_related(
             "system_type", "author"
-        ).prefetch_related("technologies", "features", "images", "related_systems")
+        ).prefetch_related("technologies", "features", "images", "log_entries__post")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         system = self.object
 
-        # Related system logs (blog posts) - FIXED
-        if hasattr(system, "log_entries"):
-            context["related_datalogs"] = system.log_entries.select_related("post")[:5]
-        else:
-            context["related_datalogs"] = []
-
-        # System features grouped by type
-        features = (
-            system.features.all().order_by("order") if system.features.exists() else []
-        )
-        context["core_features"] = [
-            f for f in features if getattr(f, "feature_type", None) == "core"
-        ]
-        context["advanced_features"] = [
-            f for f in features if getattr(f, "feature_type", None) == "advanced"
-        ]
-        context["other_features"] = [
-            f
-            for f in features
-            if getattr(f, "feature_type", None) not in ["core", "advanced"]
-        ]
-
-        # System images/gallery
-        context["system_images"] = (
-            system.images.all().order_by("order") if system.images.exists() else []
+        # Related systems using new manager methods
+        context["related_systems"] = (
+            SystemModule.objects.filter(technologies__in=system.technologies.all())
+            .exclude(id=system.id)
+            .distinct()[:4]
         )
 
-        # Current metrics for HUD display
-        if hasattr(system, "metrics"):
-            context["current_metrics"] = system.metrics.filter(
-                is_current=True
-            ).order_by("metric_type")
+        # Recent logs for this system
+        context["recent_logs"] = system.get_related_logs()[:5]
+
+        # System metrics for dashboard panels
+        context["system_metrics"] = system.get_dashboard_metrics()
+
+        # Similar systems using new manager methods
+        if system.is_live():
+            context["similar_systems"] = (
+                SystemModule.objects.deployed()
+                .filter(system_type=system.system_type)
+                .exclude(id=system.id)[:3]
+            )
         else:
-            context["current_metrics"] = []
-
-        # Related systems
-        context["related_systems"] = system.related_systems.filter(
-            status__in=["deployed", "published"]
-        )[:3]
-
-        # Technologies breakdown
-        context["technologies_by_category"] = {}
-        for tech in system.technologies.all():
-            category = tech.get_category_display()
-            if category not in context["technologies_by_category"]:
-                context["technologies_by_category"][category] = []
-            context["technologies_by_category"][category].append(tech)
-
-        # Previous/Next system navigation
-        try:
-            context["previous_system"] = (
-                SystemModule.objects.filter(
-                    created_at__lt=system.created_at,
-                    status__in=["deployed", "published"],
-                )
-                .order_by("-created_at")
-                .first()
+            context["similar_systems"] = (
+                SystemModule.objects.in_development()
+                .filter(system_type=system.system_type)
+                .exclude(id=system.id)[:3]
             )
-        except SystemModule.DoesNotExist:
-            context["previous_system"] = None
-
-        try:
-            context["next_system"] = (
-                SystemModule.objects.filter(
-                    created_at__gt=system.created_at,
-                    status__in=["deployed", "published"],
-                )
-                .order_by("created_at")
-                .first()
-            )
-        except SystemModule.DoesNotExist:
-            context["next_system"] = None
-
-        # Add breadcrumb data
-        context["show_breadcrumbs"] = True
-        context["current_system"] = system
 
         return context
+
+
+# ===================== ENHANCED FEATURE VIEWS =====================
+
+
+class FeaturedSystemsView(ListView):
+    """Featured systems using new manager methods."""
+
+    template_name = "projects/featured_systems.html"
+    context_object_name = "systems"
+
+    def get_queryset(self):
+        # Use new featured() method
+        return SystemModule.objects.featured().select_related("system_type")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Stats using new manager methods
+        context.update(
+            {
+                "total_featured": SystemModule.objects.featured().count(),
+                "featured_deployed": SystemModule.objects.featured().deployed().count(),
+                "featured_in_dev": SystemModule.objects.featured()
+                .in_development()
+                .count(),
+            }
+        )
+
+        return context
+
+
+# ===================== TECHNOLOGY AND TYPE VIEWS =====================
 
 
 class SystemTypeDetailView(DetailView):
-    """View for displaying all systems of a specific type."""
+    """Enhanced system type view using new manager methods."""
 
     model = SystemType
     template_name = "projects/system_type.html"
@@ -1040,33 +480,32 @@ class SystemTypeDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        system_type = self.object 
+        system_type = self.object
 
-        # Systems in this type
-        context['systems'] = SystemModule.objects.filter(
-            system_type=system_type,
-            status__in=['deployed', 'published']
-        ).order_by('-created_at')
+        # Systems in this type using new manager methods
+        context["systems"] = SystemModule.objects.filter(
+            system_type=system_type
+        ).deployed()  # Use our new deployed() method
 
-        # Stats for this system type
-        context['total_systems'] = context['systems'].count()
-        context['avg_completion'] = context['systems'].aggregate(
-            avg_completion=Avg('completion_percent')
-        )['avg_completion'] or 0
-
-        # Technologies used in this system type
-        context['common_technologies'] = Technology.objects.filter(
-            systems__system_type=system_type,
-            systems__status__in=['deployed', 'published']
-        ).annotate(
-            usage_count=Count('systems')
-        ).order_by('-usage_count')[:10]
+        # Stats using new manager methods
+        type_systems = SystemModule.objects.filter(system_type=system_type)
+        context.update(
+            {
+                "total_systems": type_systems.count(),
+                "deployed_systems": type_systems.deployed().count(),
+                "featured_systems": type_systems.featured().count(),
+                "avg_completion": type_systems.aggregate(avg=Avg("completion_percent"))[
+                    "avg"
+                ]
+                or 0,
+            }
+        )
 
         return context
 
 
 class TechnologyDetailView(DetailView):
-    """View for displaying all systems using a specific technology."""
+    """Enhanced technology view using new manager methods."""
 
     model = Technology
     template_name = "projects/technology_detail.html"
@@ -1074,89 +513,52 @@ class TechnologyDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        technology = self.object 
+        technology = self.object
 
-        # Systems using this tech
-        context['systems'] = SystemModule.objects.filter(
-            technologies=technology,
-            status__in=['deployed', 'published']
-        ).order_by('-created_at')
+        # Systems using this tech - use new manager methods
+        tech_systems = SystemModule.objects.filter(technologies=technology)
+        context["systems"] = tech_systems.deployed()  # Only show deployed
 
-        # Stats
-        context['total_systems'] = context['systems'].count()
-
-        # System types that use this tech
-        context['system_types'] = SystemType.objects.filter(
-            systems__technologies=technology,
-            systems__status__in=['deployed', 'published']
-        ).annotate(
-            systems_count=Count('systems')
-        ).distinct().order_by('-systems_count')
+        # Stats using new manager methods
+        context.update(
+            {
+                "total_systems": tech_systems.count(),
+                "deployed_systems": tech_systems.deployed().count(),
+                "featured_systems": tech_systems.featured().count(),
+                "in_development": tech_systems.in_development().count(),
+            }
+        )
 
         return context
 
 
-class SystemsDashboardView(ListView):
-    """
-    Traditional Systems Dashboard (can redirect to unified dashboard or serve as systems-focused view)
-    Sending to Unified Temp for now can tweak later.
-    """
+# ===================== API ENDPOINTS =====================
 
-    model = SystemModule
-    template_name = "projects/unified_dashboard.html"
-    context_object_name = "recent_systems"
+@require_http_methods(["GET"])
+def dashboard_api(request):
+    """API endpoint for real-time dashboard updates using new manager methods."""
 
-    def get_queryset(self):
-        return SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).order_by('-created_at')[:6]
+    # Get fresh stats using our dashboard_stats() method
+    stats = SystemModule.objects.dashboard_stats()
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    # Add real-time metrics
+    recent_activity = SystemModule.objects.recently_updated(1).count()  # Last 24 hours
+    high_priority_count = SystemModule.objects.high_priority().count()
 
-        # Dashboard Stats
-        context['dashboard_stats'] = {
-            'total_systems': SystemModule.objects.filter(
-                status__in=['deployed', 'published']
-            ).count(),
-            'systems_in_development': SystemModule.objects.filter(
-                status='in_development'
-            ).count(),
-            'systems_testing': SystemModule.objects.filter(
-                status='testing'
-            ).count(),
-            'total_technologies': Technology.objects.count(),
-            'avg_completion': SystemModule.objects.aggregate(
-                avg_completion=Avg('completion_percent')
-            )['avg_completion'] or 0,
+    # Health distribution
+    health_distribution = SystemModule.get_health_distribution()
+
+    return JsonResponse(
+        {
+            "stats": stats,
+            "recent_activity_count": recent_activity,
+            "high_priority_count": high_priority_count,
+            "health_distribution": health_distribution,
+            "timestamp": timezone.now().isoformat(),
         }
+    )
 
-        # System type distribution
-        context['system_type_stats'] = SystemType.objects.annotate(
-            systems_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(systems_count__gt=0).order_by('-systems_count')
-
-        # Tech usuage stats
-        context['tech_usuage_stats'] = Technology.objects.annotate(
-            usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(usage_count__gt=0).order_by('-usage_count')[:10]
-
-        # Recent system logs
-        context['recent_logs'] = SystemLogEntry.objects.select_related(
-            'post', 'system'
-        ).order_by('-created_at')[:5]
-
-        # Systems by status for HUD-display
-        context['systems_by_status'] = {}
-        for status_choice in SystemModule.STATUS_CHOICES:
-            status_key = status_choice[0]
-            context['systems_by_status'][status_key] = SystemModule.objects.filter(
-                status=status_key
-            ).count()
-
-        return context
-
-# ===================== ADMIN/MANAGEMENT VIEWS =====================
+# ===================== ADMIN/MANAGEMENT VIEWS (AS-IS WILL NEED UPDATING WHEN USE) =====================
 
 
 class SystemModuleCreateView(LoginRequiredMixin, CreateView):
@@ -1165,21 +567,37 @@ class SystemModuleCreateView(LoginRequiredMixin, CreateView):
     model = SystemModule
     template_name = "projects/admin/system_form.html"
     fields = [
-        'title', 'subtitle', 'system_type', 'description', 'features_overview',
-        'technical_details', 'complexity', 'priority', 'status', 'featured',
-        'technologies', 'github_url', 'live_url', 'demo_url',
-        'thumbnail', 'banner_image', 'start_date', 'end_date'
+        "title",
+        "subtitle",
+        "system_type",
+        "description",
+        "features_overview",
+        "technical_details",
+        "complexity",
+        "priority",
+        "status",
+        "featured",
+        "technologies",
+        "github_url",
+        "live_url",
+        "demo_url",
+        "thumbnail",
+        "banner_image",
+        "start_date",
+        "end_date",
     ]
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        messages.success(self.request, f"System '{form.instance.title}' created successfully!")
+        messages.success(
+            self.request, f"System '{form.instance.title}' created successfully!"
+        )
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = "Create New System"
-        context['submit_text'] = "Create System"
+        context["title"] = "Create New System"
+        context["submit_text"] = "Create System"
         return context
 
 
@@ -1223,13 +641,15 @@ class SystemModuleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
         return self.request.user == system.author or self.request.user.is_staff
 
     def form_valid(self, form):
-        messages.success(self.request, f"System '{form.instance.title}' updated successfully!")
+        messages.success(
+            self.request, f"System '{form.instance.title}' updated successfully!"
+        )
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = f"Edit System: {self.object.title}"
-        context['submit_text'] = "Update System"
+        context["title"] = f"Edit System: {self.object.title}"
+        context["submit_text"] = "Update System"
         return context
 
 
@@ -1238,7 +658,7 @@ class SystemModuleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView
 
     model = SystemModule
     template_name = "projects/admin/system_confirm_delete.html"
-    success_url = reverse_lazy('projects:system_list')
+    success_url = reverse_lazy("projects:system_list")
 
     def test_func(self):
         system = self.get_object()
@@ -1251,607 +671,11 @@ class SystemModuleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = f"Delete System: {self.object.title}"
+        context["title"] = f"Delete System: {self.object.title}"
 
         # Get related data that will be affected
-        context['related_logs'] = self.object.get_related_logs()
-        context['related_features'] = self.object.features.count()
-        context['related_images'] = self.object.images.count()
+        context["related_logs"] = self.object.get_related_logs()
+        context["related_features"] = self.object.features.count()
+        context["related_images"] = self.object.images.count()
 
         return context
-
-# ===================== API/AJAX VIEWS =====================
-
-
-class SystemMetricsAPIView(DetailView):
-    """API endopint for real-time system metrics (for HUD dashboard)."""
-
-    model = SystemModule
-
-    def get(self, request, *args, **kwargs):
-        system = self.get_object()
-
-        # Get current metrics
-        metrics = {}
-        for metric in system.metrics.filter(is_current=True):
-            metrics[metric.metric_name] = {
-                'value': float(metrics.metric_value),
-                'unit': metric.metric_unit,
-                'type': metrics.metric_type,
-                'timestamp': metric.timestamp.isoformat()
-            }
-
-        # Add computed metrics
-        metrics.update({
-            'completion_progress': system.get_development_progress(),
-            'status': system.status,
-            'status_color': system.get_status_color(),
-            'complexity_visual': system.get_complexity_display(),
-            'related_logs_count': system.get_related_logs.count(),
-        })
-
-        return JsonResponse({
-            'system_id': system.system_id,
-            'title': system.title,
-            'metrics': metrics,
-            'last_updated': timezone.now().isoformat()
-        })
-
-
-class TechnologyUsageAPIView(ListView):
-    """API endpoint for tech usage statistics."""
-
-    model = Technology
-
-    def get(self, request, *args, **kwargs):
-        # Get tech usage stats
-        tech_stats = []
-        for tech in Technology.objects.annotate(
-            usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(usage_count__gt=0).order_by('-usage_count'):
-
-            tech_stats.append({
-                'name': tech.name,
-                'slug': tech.slug,
-                'usage_count': tech.usage_count,
-                'color': tech.color,
-                'icon': tech.icon,
-                'category': tech.category,
-            })
-
-        return JsonResponse({
-            'technologies': tech_stats,
-            'total_technologies': len(tech_stats)
-        })
-
-
-# =============  Separated for now, may combine w SystemMetricsAPIView
-class DashboardMetricsAPIView(ListView):
-    """
-    API Enpoint for real-time dashboard metrics.
-    """
-
-    model = SystemModule
-
-    def get(self, request, *args, **kwargs):
-        """Return JSON data for dashboard charts and metrics."""
-
-        # Calculate metrics
-        total_systems = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).count()
-
-        systems_in_dev = SystemModule.objects.filter(
-            status='in_development'
-        ).count()
-
-        avg_completion = SystemModule.objects.aggregate(
-            avg_completion=Avg('completion_percent')
-        )['avg_completion'] or 0
-
-        total_logs = Post.objects.filter(status='published').count()
-
-        # Tech usage data
-        tech_usage = []
-        for tech in Technology.objects.annotate(
-            usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(usage_count__gt=0).order_by('-usage_count')[:8]:
-            tech_usage.append({
-                'name': tech.name,
-                'usage_count': tech.usage_count,
-                'color': tech.color,
-                'icon': tech.icon,
-            })
-
-        # System status distribution
-        status_distribution = {}
-        for status_choice in SystemModule.STATUS_CHOICES:
-            status_key = status_choice[0]
-            status_distribution[status_key] = SystemModule.objects.filter(
-                status=status_key
-            ).count()
-
-        # Recent activity
-        recent_activity = []
-        for log in SystemLogEntry.objects.select_related(
-            'post', 'system'
-        ).order_by('-created_at')[:10]:
-            recent_activity.append({
-                'id': log.log_entry_id,
-                'title': log.post.title,
-                'system_id': log.system.system_id,
-                'system_title': log.system.title,
-                'connection_type': log.connection_type,
-                'priority': log.priority,
-                'created_at': log.created_at.isoformat(),
-                'status': log.log_status
-            })
-
-        # TODO: Add more useful performance metrics, these for testing
-        data = {
-            'timestamp': timezone.now().isoformat(),
-            'metrics': {
-                'total_systems': total_systems,
-                'systems_in_development': systems_in_dev,
-                'avg_completion': round(avg_completion, 1),
-                'total_logs': total_logs,
-            },
-            'technology_usage': tech_usage,
-            'status_distribution': status_distribution,
-            'recent_activity': recent_activity,
-            'performance': {
-                'uptime': '99.7%',
-                'response_time': '142ms',
-                'memory_usage': '67%',
-                'cpu_usage': '23%',
-            }
-        }
-
-        return JsonResponse(data)
-
-
-class SystemTimeSeriesAPIView(ListView):
-    """
-    API Endpoint for time-series data (charts)
-    """
-
-    model = SystemModule
-
-    def get(self, request, *args, **kwargs):
-        """Return time-series data for charts."""
-
-        # Get date range (default to last 30 days)
-        days = int(request.GET.get('days', 30))
-        end_date = timezone.now().date()
-        start_date = end_date - timedelta(days=days)
-
-        # Generate date range
-        date_range = []
-        current_date = start_date
-        while current_date <= end_date:
-            date_range.append(current_date.isoformat())
-            current_date += timedelta(days=1)
-        
-
-        # TODO: In real app, query actual data
-        # For now, generate sample data that shows realistic trends
-        def generate_trend_data(base_value, volatility=0.1, trend=0.02):
-            """Generate realistic trending data."""
-            data = []
-            current = base_value
-            for i in range(len(date_range)):
-                # Add trend and random variation
-                current *= (1 + trend + random.uniform(-volatility, volatility))
-                data.append(round(current, 2))
-            return data
-
-        # System Development progress over time
-        system_progress = generate_trend_data(65, 0.05, 0.01)
-
-        # DataLog entries over time
-        datalog_activity = generate_trend_data(45, 0.08, 0.015)
-
-        # Code contributions (lines added/modified)
-        code_activity = generate_trend_data(1200, 0.15, 0.02)
-
-        # Development hours logged
-        dev_hours = generate_trend_data(8, 0.2, 0.005)
-
-        data = {
-            'date_range': date_range,
-            'metrics': {
-                'system_progress': system_progress,
-                'datalog_activity': datalog_activity,
-                'code_activity': code_activity,
-                'dev_hours': dev_hours,
-            },
-            'meta': {
-                'start_date': start_date.isoformat(),
-                'end_date': end_date.isoformat(),
-                'days': days
-            }
-        }
-
-        return JsonResponse(data)
-
-
-# ===================== SEARCH AND FILTER VIEWS =====================
-
-
-class SystemSearchView(ListView):
-    """Advanced search functionality for systems."""
-
-    model = SystemModule
-    template_name = "projects/system_search.html"
-    context_object_name = "systems"
-    paginate_by = 12
-
-    def get_queryset(self):
-        queryset = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).select_related('system_type').prefetch_related('technologies')
-
-        # Search query
-        query = self.request.GET.get('q')
-        if query:
-            queryset = queryset.filter(
-                Q(title__icontains=query) |
-                Q(description__icontains=query) |
-                Q(technical_details__icontains=query) |
-                Q(technologies__name__icontains=query) |
-                Q(system_type__name__icontains=query)
-            ).distinct()
-
-        # Advanced filters
-        system_type_filter = self.request.GET.get('system_type')
-        if system_type_filter:
-            queryset = queryset.filter(system_type__slug=system_type_filter)
-
-        technology_filter = self.request.GET.get('technology')
-        if technology_filter:
-            queryset = queryset.filter(technologies__slug=technology_filter)
-
-        complexity_filter = self.request.GET.get('complexity')
-        if complexity_filter:
-            queryset = queryset.filter(complexity=complexity_filter)
-
-        status_filter = self.requst.GET.get('status')
-        if status_filter and status_filter in ['deployed', 'published']:
-            queryset = queryset.filter(status=status_filter)
-
-        # Sorting
-        sort_by = self.request.GET.get('sort', '-created_at')
-        valid_sorts = ['-created_at', 'title', '-completion_percent', 'complexity', '-updated_at']
-        if sort_by in valid_sorts:
-            queryset = queryset.order_by(sort_by)
-
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Search parameters
-        context['query'] = self.request.GET.get('q', '')
-        context['total_results'] = self.get_queryset().count()
-
-        # Filter options
-        context['system_types'] = SystemType.objects.all()
-        context['technologies'] = Technology.objects.all().order_by('category', 'name')
-        context['complexity_choices'] = SystemModule.COMPLEXITY_CHOICES
-
-        # Current filter values
-        context['current_filters'] = {
-            'system_type': self.request.GET.get('system_type', ''),
-            'technology': self.request.GET.get('technology', ''),
-            'complexity': self.request.GET.get('complexity', ''),
-            'status': self.request.GET.get('status', ''),
-            'sort': self.request.GET.get('sort', '-created_at'),
-        }
-
-        return context
-
-# ===================== SHOWCASE VIEWS =====================
-
-
-class FeaturedSystemsView(ListView):
-    """Showcase of featured systems for portfolio."""
-
-    model = SystemModule
-    template_name = "projects/featured_systems.html"
-    context_object_name = "featured_systems"
-
-    def get_queryset(self):
-        return (
-            SystemModule.objects.filter(
-                featured=True, status__in=["deployed", "published"]
-            )
-            .select_related("system_type")
-            .prefetch_related("technologies")
-            .order_by("-created_at")
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Portfolio stats for showcase
-        context["portfolio_stats"] = {
-            "total_systems": SystemModule.objects.filter(
-                status__in=["deployed", "published"]
-            ).count(),
-            "technologies_used": Technology.objects.filter(
-                systems__status__in=["deployed", "published"]
-            )
-            .distinct()
-            .count(),
-            "system_types": SystemType.objects.filter(
-                systems__status__in=["deployed", "published"]
-            )
-            .distinct()
-            .count(),
-            "lines_of_code": 50000,  # You can calculate this or set manually
-            "years_experience": 3,  # Update as needed
-        }
-
-        # Technology highlights
-        context["top_technologies"] = (
-            Technology.objects.annotate(
-                usage_count=Count(
-                    "systems", filter=Q(systems__status__in=["deployed", "published"])
-                )
-            )
-            .filter(usage_count__gt=0)
-            .order_by("-usage_count")[:8]
-        )
-
-        return context
-
-
-class SystemTimelineView(ListView):
-    """Timeline view of system development."""
-
-    model = SystemModule
-    template_name = "projects/system_timeline.html"
-    context_object_name = "systems"
-
-    def get_queryset(self):
-        return (
-            SystemModule.objects.filter(status__in=["deployed", "published"])
-            .select_related("system_type")
-            .order_by("-start_date", "-created_at")
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Group systems by year for timeline display
-        systems_by_year = {}
-        for system in context["systems"]:
-            year = system.start_date.year if system.start_date else system.created_at.year
-            if year not in systems_by_year:
-                systems_by_year[year] = []
-            systems_by_year[year].append(system)
-
-        context["systems_by_year"] = dict(sorted(systems_by_year.items(), reverse=True))
-
-        return context
-
-
-# ===================== AURA STYLING - UPDATING VIEWS =====================
-
-class UnifiedDashboardView(ListView):
-    """
-    AURA Unified Dashboard - Contral command center aggregating metrics from all apps
-    """
-
-    model = SystemModule
-    template_name = "projects/unified_dashboard.html"
-    context_object_name = "recent_systems"
-
-    def get_queryset(self):
-        return SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).order_by('-created_at')[:6]
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # ===================
-        # CORE DASHBOARD STATS
-        # ===================
-        context["dashboard_stats"] = self.get_dashboard_stats()
-
-        # ===================
-        # SYSTEMS DATA
-        # ===================
-        context.update(self.get_systems_data())
-
-        # ===================
-        # DATALOGS DATA
-        # ===================
-        context.update(self.get_datalogs_data())
-
-        # ===================
-        # TECHNOLOGY DATA
-        # ===================
-        context.update(self.get_technology_data())
-
-        # ===================
-        # ACTIVITY DATA
-        # ===================
-        context.update(self.get_activity_data())
-
-        # ===================
-        # CHART DATA
-        # ===================
-        context.update(self.get_chart_data())
-
-        return context
-
-    def get_dashboard_stats(self):
-        """Core dashboard Stats."""
-
-        return {
-            'total_systems': SystemModule.objects.filter(
-                status__in=['deployed', 'published']
-            ).count(),
-            'systems_in_development': SystemModule.objects.filter(
-                status='in_development'
-            ).count(),
-            'systems_testing': SystemModule.objects.filter(
-                status='testing'
-            ).count(),
-            'total_technologies': Technology.objects.annotate(
-                usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-            ).filter(usage_count__gt=0).count(),
-            'avg_completion': SystemModule.objects.aggregate(
-                avg_completion=Avg('completion_percent')
-            )['avg_completion'] or 0,
-        }
-
-    def get_systems_data(self):
-        """Systems-specific data."""
-
-        systems_by_status = {}
-        for status_choice in SystemModule.STATUS_CHOICES:
-            status_key = status_choice[0]
-            systems_by_status[status_key] = SystemModule.objects.filter(
-                status=status_key
-            ).count()
-
-        return {
-            'systems_by_status': systems_by_status,
-            'system_type_stats': SystemType.objects.annotate(
-                systems_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-            ).filter(systems_count__gt=0).order_by('-systems_count')
-        }
-
-    def get_datalogs_data(self):
-        """DataLogs data."""
-
-        recent_logs = SystemLogEntry.objects.select_related(
-            'post', 'system'
-        ).order_by('-created_at')[:5]
-
-        total_logs = Post.objects.filter(status='published').count()
-
-        # Calculate development hours (est based on reading time/complexity)
-        total_dev_hours = 0
-        for system in SystemModule.objects.all():
-            # Est based on complexity/completion
-            # 100 hours per complexity point
-            base_hours = system.complexity * 100
-            completion_factor = (system.completion_percent or 0) / 100
-            total_dev_hours += base_hours * completion_factor
-
-        return {
-            'recent_logs': recent_logs,
-            'total_logs': total_logs,
-            'total_dev_hours': int(total_dev_hours),
-        }
-
-    def get_technology_data(self):
-        """Technology usage stats."""
-
-        tech_usage_stats = Technology.objects.annotate(
-            usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-        ).filter(usage_count__gt=0).order_by('-usage_count')[:10]
-
-        return {
-            'tech_usage_stats': tech_usage_stats,
-        }
-
-    def get_activity_data(self):
-        """Recent activity and metrics."""
-
-        # Get recent system logs
-        recent_logs = SystemLogEntry.objects.select_related(
-            'post', 'system'
-        ).order_by('-created_at')[:8]
-
-        return {
-            'recent_activity_logs': recent_logs,
-        }
-
-    def get_chart_data(self):
-        """Data for charts and visualizations."""
-
-        # System activity over time (last 30 days)
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-
-        # Generate sample data for charts
-        # TODO: Calculate actual metrics, pull in GitHub data via API
-        system_activity_data = "65,70,68,72,75,73,78,82,79,85,88,85,90,87,92,89,95,92,89,94,91,88,93,96,94,98,95,92,97,99"
-        datalog_activity_data = "45,48,52,49,55,58,54,61,59,63,66,62,68,65,71,74,69,73,76,72,78,81,77,84,80,83,87,85,89,91"
-        code_activity_data = "1200,1250,1180,1320,1400,1350,1480,1520,1490,1560,1580,1540,1620,1600,1680,1720,1690,1750,1780,1740,1810,1850,1820,1890,1860,1920,1950,1930,1980,2010"
-        dev_time_data = "8,10,6,12,14,11,16,18,15,20,22,19,24,21,26,25,23,28,30,27,32,35,31,38,34,36,40,37,42,45"
-
-        return {
-            'system_activity_data': system_activity_data,
-            'datalog_activity_data': datalog_activity_data,
-            'code_activity_data': code_activity_data,
-            'dev_time_data': dev_time_data,
-            'lines_of_code': 52000,
-        }
-
-# ===================== AURA STYLING - UTILITY FUNCTIONS =====================
-
-
-def get_system_health_score(system):
-    """Calculate overall health score for a system."""
-
-    score = 0
-
-    # Completion percentage (40% weight)
-    completion_weight = (system.completion_percent or 0) * 0.4
-    score += completion_weight
-
-    # Recent activity (30% weight)
-    recent_logs = system.get_related_logs()[:5]
-    # Max 30 points
-    activity_score = min(len(recent_logs) * 6, 30)
-    score += activity_score
-
-    # Performance metrics (20% weight)
-    if system.performance_score:
-        score += (system.performance_score * 0.2)
-    else:
-        # Default moderate score
-        score += 15
-
-    # Uptime (10% weight)
-    if system.uptime_percentage:
-        score += (system.uptime_percentage * 0.1)
-    else:
-        # Default good uptime
-        score += 9
-
-    return min(100, max(0, score))
-
-
-def get_technology_trend_score(tech):
-    """Calculate trend score for tech usage."""
-
-    current_usage = tech.systems.filter(
-        status__in=['deployed', 'published']
-    ).count()
-
-    # TODO: In real app, compare w historical data
-    # For now, return current usage as trend indicator
-    return current_usage
-
-
-def calculate_development_velocity(system):
-    """Calculate development velocity for a system."""
-
-    logs = system.get_related_logs()
-
-    if not logs:
-        return 0
-
-    # Calculate based on log frequency and completion progress
-    recent_logs = logs.filter(
-        created_at__gte=timezone.now() - timedelta(days=30)
-    ).count()
-
-    velocity = recent_logs * (system.completion_percent or 0) / 100
-    return round(velocity, 2)
