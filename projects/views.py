@@ -39,301 +39,319 @@ class EnhancedSystemsDashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Use cache for expensive queries (5 min)
+        cache_timeout = 300
+
         # Core dashboard stats
-        context.update(
-            {
-                "dashboard_stats": self.get_dashboard_stats(),
-                "system_analytics": self.get_system_analytics(),
-                "technology_insights": self.get_technology_insights(),
-                "development_metrics": self.get_development_metrics(),
-                "recent_activity": self.get_recent_activity(),
-                "performance_data": self.get_performance_data(),
-                "chart_data": self.get_chart_data(),
-                "critical_alerts": self.get_critical_alerts(),
-            }
-        )
+        dashboard_stats = cache.get('dashboard_stats')
+        if not dashboard_stats:
+            dashboard_stats = self.get_dashboard_stats()
+            cache.set('dashboard_stats', dashboard_stats, cache_timeout)
+
+        context['dashboard_stats'] = dashboard_stats
+
+        # System analytics
+        system_analytics = cache.get('system_analytics')
+        if not system_analytics:
+            system_analytics = self.get_system_analytics()
+            cache.set('system_analytics', system_analytics, cache_timeout)
+
+        context['system_analytics'] = system_analytics
+
+        # Technology insights
+        context['technology_insights'] = self.get_technology_insights()
+        context['tech_usage_stats'] = context['technology_insights']['usage_stats']
+
+        # Development metrics
+        context['development_metrics'] = self.get_development_metrics()
+
+        # Recent activity
+        context['recent_activity'] = self.get_recent_activity()
+        context['recent_logs'] = context['recent_activity']['recent_logs']
+
+        # Performance data for dashboard panels
+        context['performance_data'] = self.get_performance_data()
+
+        # Chart for visualizations
+        context['chart_data'] = self.get_chart_data()
+
+        # Critical alerts for alert panels
+        context['critical_alerts'] = self.get_critical_alerts()
+        context['system_alerts'] = context['critical_alerts']  # Alias for template
+
+        # Featured systems for grid panels
+        context['featured_systems'] = SystemModule.objects.filter(
+            featured=True,
+            status__in=['deployed', 'published', 'in_development']
+        ).select_related('system_type').prefetch_related('technologies')[:6]
+
+        # Systems by status for status panels
+        context['systems_by_status'] = self.get_systems_by_status()
+
+        # Additional metrics for panels
+        context.update(self.get_additional_dashboard_context())
 
         return context
 
     def get_dashboard_stats(self):
         """Core dashboard stats with enhanced fields."""
-        cache_key = 'systems_dashboard_stats'
-        stats = cache.get(cache_key)
+        total_systems = SystemModule.objects.count()
+        deployed_systems = SystemModule.objects.filter(status='deployed').count()
+        published_systems = SystemModule.objects.filter(status='published').count()
+        systems_in_development = SystemModule.objects.filter(status='in_development').count()
+        systems_testing = SystemModule.objects.filter(status='testing').count()
 
-        if not stats:
-            all_systems = SystemModule.objects.all()
-            deployed_systems = all_systems.filter(status='deployed')
+        # Calculate averages
+        avg_completion = SystemModule.objects.aggregate(
+            avg_completion=Avg('completion_percent')
+        )['avg_completion'] or 0
 
-            stats = {
-                # System counts
-                'total_systems': all_systems.count(),
-                'deployed_systems': deployed_systems.count(),
-                'systems_in_development': all_systems.filter(status='in_development').count(),
-                'systems_testing': all_systems.filter(status='testing').count(),
+        # Performance metrics for enhanced fields
+        performance_systems = SystemModule.objects.filter(
+            performance_score__isnull=False
+        )
+        avg_performance = performance_systems.aggregate(
+            avg_perf=Avg('performance_score')
+        )['avg_perf']
 
-                # Performance avg using enhanced fields
-                'avg_completion': all_systems.aggregate(
-                    avg=Avg('completion_percent')
-                )['avg'] or 0,
+        uptime_systems = SystemModule.objects.filter(
+            uptime_percentage__isnull=False
+        )
 
-                'avg_performance': deployed_systems.aggregate(
-                    avg=Avg('performance_score')
-                )['avg'] or 0,
+        avg_uptime = uptime_systems.aggregate(
+            avg_uptime=Avg('uptime_percentage')
+        )['avg_uptime']
 
-                'avg_uptime': deployed_systems.aggregate(
-                    avg=Avg('uptime_percentage')
-                )['avg'] or 0,
-
-                'total_daily_users': deployed_systems.aggregate(
-                    total=Sum('daily_users')
-                )['total'] or 0,
-
-                # Development metrics using enhanced fields
-                'total_code_lines': all_systems.aggregate(
-                    total=Sum('code_lines')
-                )['total'] or 0,
-
-                'total_commits': all_systems.aggregate(
-                    total=Sum('commit_count')
-                )['total'] or 0,
-
-                'total_dev_hours': all_systems.aggregate(
-                    actual=Sum('actual_dev_hours'),
-                    estimated=Sum('estimated_dev_hours')
-                ),
-
-                # Team insights
-                'avg_team_size': all_systems.aggregate(
-                    avg=Avg('team_size')
-                )['avg'] or 1,
-
-                'largest_team': all_systems.aggregate(
-                    max=Max('team_size')
-                )['max'] or 1,
-            }
-
-            # Cache for 5 minutes
-            cache.set(cache_key, stats, 300)
-
-        return stats
+        return {
+            "total_systems": total_systems,
+            "systems_deployed": deployed_systems,
+            "systems_published": published_systems,
+            "systems_in_development": systems_in_development,
+            "systems_testing": systems_testing,
+            "avg_completion": round(avg_completion, 1) if avg_completion else 0,
+            "avg_performance": round(avg_performance, 1) if avg_performance else None,
+            "avg_uptime": round(avg_uptime, 1) if avg_uptime else None,
+            "total_technologies": Technology.objects.count(),
+        }
 
     def get_system_analytics(self):
         """Detailed system analytics and distributions."""
-        cache_key = 'systems_analytics'
-        analytics = cache.get(cache_key)
+        # Systems by health status using model method
+        systems_by_health = self._get_systems_by_health()
 
-        if not analytics:
-            systems = SystemModule.objects.select_related('system_type')
+        # Complexity distribution
+        complexity_stats = SystemModule.objects.values('complexity').annotate(
+            count=Count('id')
+        ).order_by('complexity')
 
-            analytics = {
-                # Status breakdown
-                'systems_by_status': dict(
-                    systems.values('status').annotate(
-                        count=Count('id')
-                    ).values_list('status', 'count')
-                ),
+        # Priority distribution
+        priority_stats = SystemModule.objects.values('priority').annotate(
+            count=Count('id')
+        ).order_by('priority')
 
-                # System type breakdown
-                'systems_by_type': list(
-                    systems.values(
-                        'system_type__name',
-                        'system_type__color',
-                        'system_type__icon'
-                    ).annotate(
-                        count=Count('id')
-                    ).order_by('-count')
-                ),
+        # Status distribution
+        status_stats = []
+        for status_choice in SystemModule.STATUS_CHOICES:
+            status_key = status_choice[0]
+            status_label = status_choice[1]
+            count = SystemModule.objects.filter(status=status_key).count()
+            if count > 0:
+                status_stats.append({
+                    'status': status_key,
+                    'label': status_label,
+                    'count': count
+                })
 
-                # Complexity breakdown
-                'systems_by_complexity': dict(
-                    systems.values('complexity').annotate(
-                        count=Count('id')
-                    ).values_list('complexity', 'count')
-                ),
-
-                # Health status breakdown using enhanced method
-                'systems_by_health': self._get_systems_by_health(),
-
-                # Featured v non-featured
-                'featured_systems_count': systems.filter(featured=True).count(),
-            }
-
-            cache.set(cache_key, analytics, 300)  # 5 min
-
-        return analytics
+        return {
+            'systems_by_health': systems_by_health,
+            'complexity_distribution': list(complexity_stats),
+            'priority_distribution': list(priority_stats),
+            'status_distribution': status_stats,
+        }
 
     def get_technology_insights(self):
         """Technology usage analytics and trends."""
-        cache_key = 'technology_insights'
-        insights = cache.get(cache_key)
+        # Top technologies by usage
+        usage_stats = Technology.objects.annotate(
+            usage_count=Count('systems', filter=Q(systems_status__in=['deployed', 'published']))
+        ).filter(usage_count__gt=0).order_by('-usage_count')[:8]
 
-        if not insights:
-            # Technology usage w system counts
-            tech_usage = Technology.objects.annotate(
-                usage_count=Count('systems'),
-                deployed_usage=Count('systems', filter=Q(systems__status='deployed'))
-            ).filter(usage_count__gt=0).order_by('-usage_count')[:12]
+        # Technology diversity score
+        total_systems = SystemModule.objects.filter(status__in=['deployed', 'published']).count()
+        unique_technologies = Technology.objects.filter(
+            systems__status__in=['deployed', 'published']
+        ).distinct().count()
 
-            # Tech categories breakdown
-            tech_categories = Technology.objects.values('category').annotate(
-                count=Count('id'),
-                usage=Count('systems')
-            ).order_by('-usage')
+        diversity_score = (unique_technologies / total_systems * 100) if total_systems > 0 else 0
 
-            insights = {
-                'top_technologies': [
-                    {
-                        'name': tech.name,
-                        'usage_count': tech.usage_count,
-                        'deployed_usage': tech.deployed_usage,
-                        'color': tech.color,
-                        'icon': tech.icon,
-                        'category': tech.category
-                    }
-                    for tech in tech_usage
-                ],
-                'tech_categories': list(tech_categories),
-                'total_technologies': Technology.objects.count(),
-            }
-
-            cache.set(cache_key, insights, 600)  # 10 minutes
-        return insights
+        return {
+            'usage_stats': usage_stats,
+            'total_unique_technologies': unique_technologies,
+            'diversity_score': round(diversity_score, 1),
+        }
 
     def get_development_metrics(self):
         """Development and progress metrics."""
-        systems = SystemModule.objects.all()
-
-        # Calc hours variance for systems w both est and actual hours
-        systems_with_hours = systems.filter(
-            estimated_dev_hours__isnull=False,
-            actual_dev_hours__isnull=False
+        completed_systems = SystemModule.objects.filter(
+            status__in=['deployed', 'published'],
+            start_date__isnull=False,
+            end_date__isnull=False
         )
 
-        hours_variance_data = []
-        total_variance = 0
-        for system in systems_with_hours:
-            variance = system.actual_dev_hours - system.estimated_dev_hours
-            hours_variance_data.append({
-                'system': system.title,
-                'variance': variance,
-                'percentage': (variance / system.estimated_dev_hours * 100) if system.estimated_dev_hours > 0 else 0
-            })
-            total_variance += variance
+        avg_development_time = 0
+        if completed_systems.exists():
+            total_days = sum([
+                (system.end_date - system.start_date).days
+                for system in completed_systems
+                if system.end_date and system.start_date
+            ])
+            avg_development_time = total_days // completed_systems.count() if total_days > 0 else 0
+
+        # Hours analysis
+        estimated_hours = SystemModule.objects.filter(
+            estimated_dev_hours__isnull=False
+        ).aggregate(total=Sum('estimated_dev_hours'))['total'] or 0
+
+        actual_hours = SystemModule.objects.filter(
+            actual_dev_hours__isnull=False
+        ).aggregate(total=Sum('actual_dev_hours'))['total'] or 0
+
+        # Deployment success rate
+        total_completed = SystemModule.objects.filter(
+            status__in=['deployed', 'published']
+        ).count()
+        total_attempted = SystemModule.objects.exclude(
+            status__in=['draft']
+        ).count()
+
+        development_success_rate = (
+            (total_completed / total_attempted * 100) if total_attempted > 0 else 0
+        )
 
         return {
-            'hours_variance_data': hours_variance_data,
-            'avg_hours_variance': total_variance / len(hours_variance_data) if hours_variance_data else 0,
-            'systems_on_time': len([v for v in hours_variance_data if v['variance'] <= 0]),
-            'systems_over_time': len([v for v in hours_variance_data if v['variance'] > 0]),
-
-            # Recent commit activity
-            'recent_commits': systems.filter(
-                last_commit_date__isnull=False
-            ).order_by('-last_commit_date')[:8],
-
-            # Team size dist
-            'team_size_distribution': dict(
-                systems.values('team_size').annotate(
-                    count=Count('id')
-                ).values_list('team_size', 'count')
-            ),
+            'avg_development_time': avg_development_time,
+            'total_estimated_hours': estimated_hours,
+            'total_actual_hours': actual_hours,
+            'hours_variance': actual_hours - estimated_hours,
+            'deployment_success_rate': round(development_success_rate, 1),
+            'completed_projects': completed_systems.count(),
         }
 
     def get_recent_activity(self):
-        """Recent activity and updates across systems and logs"""
+        """Enhanced recent activity with multiple sources."""
 
         # Recent system updates
-        recent_systems = SystemModule.objects.order_by('-updated_at')[:8]
+        recent_systems = SystemModule.objects.order_by('-updated_at')[:5]
 
         # Recent log entries
         recent_logs = SystemLogEntry.objects.select_related(
             'system', 'post'
         ).order_by('-created_at')[:8]
 
-        # Recent metrics (from SystemMetric model)
-        recent_metrics = SystemMetric.objects.select_related(
-            'system', 'post'
-        ).order_by('-created_at')[:8]
+        # Recent Commits (if available)
+        # TODO: Integrate w GitHub API later
+        recent_commits = SystemModule.objects.filter(
+            last_commit_date__isnull=False
+        ).order_by('-last_commit_date')[:5]
+
+        # Activity count for this week
+        week_ago = timezone.now() - timedelta(days=7)
+        weekly_activity = SystemModule.objects.filter(
+            updated_al__gte=week_ago
+        ).count()
 
         return {
             'recent_systems': recent_systems,
             'recent_logs': recent_logs,
-            'recent_metrics': recent_metrics,
-            'last_updated': timezone.now(),
+            'recent_commits': recent_commits,
+            'weekly_activity_count': weekly_activity,
         }
 
     def get_performance_data(self):
-        """System performance data and trends"""
-        # Current performance snapshot
-        deployed_systems = SystemModule.objects.filter(
-            status='deployed',
-            performance_score__isnull=False
-        ).order_by('-performance_score')
+        """Performance metrics for dashboard panels."""
+        # Get systems w performance data
+        performance_systems = SystemModule.objects.filter(
+            performance_score__isnull=False,
+            uptime_percentage__isnull=False
+        )
 
-        # Performance categories
-        excellent_systems = deployed_systems.filter(performance_score__gte=90)
-        good_systems = deployed_systems.filter(
-            performance_score__gte=70,
-            performance_score__lt=90
+        if not performance_systems.exists():
+            return {
+                'avg_performance': None,
+                'avg_uptime': None,
+                'performance_trend': [],
+                'health_distribution': {}
+            }
+
+        # Calculate averages
+        avg_performance = performance_systems.aggregate(
+            avg=Avg('performance_score')
+        )['avg']
+
+        avg_uptime = performance_systems.aggregate(
+            avg=Avg('uptime_percentage')
+        )['avg']
+
+        # Health distribution
+        health_distribution = {}
+        for system in performance_systems:
+            health = system.get_health_status()
+            health_distribution[health] = health_distribution.get(health, 0) + 1
+
+        # Performance trend (mock data - enhance with SystemMetric)
+        performance_trend = (
+            [
+                {
+                    "date": (timezone.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
+                    "value": avg_performance - 5,
+                },
+                {
+                    "date": (timezone.now() - timedelta(days=20)).strftime("%Y-%m-%d"),
+                    "value": avg_performance - 2,
+                },
+                {
+                    "date": (timezone.now() - timedelta(days=10)).strftime("%Y-%m-%d"),
+                    "value": avg_performance + 1,
+                },
+                {"date": timezone.now().strftime("%Y-%m-%d"), "value": avg_performance},
+            ]
+            if avg_performance
+            else []
         )
-        fair_systems = deployed_systems.filter(
-            performance_score__gte=50,
-            performance_score__lt=70
-        )
-        poor_systems = deployed_systems.filter(performance_score__lt=50)
 
         return {
-            'top_performing_systems': deployed_systems[:6],
-            'performance_breakdown': {
-                'excellent': excellent_systems.count(),
-                'good': good_systems.count(),
-                'fair': fair_systems.count(),
-                'poor': poor_systems.count(),
-            },
-            'avg_response_time': deployed_systems.aggregate(
-                avg=Avg('response_time_ms')
-            )['avg'] or 0,
+            "avg_performance": round(avg_performance, 1) if avg_performance else None,
+            "avg_uptime": round(avg_uptime, 1) if avg_uptime else None,
+            "performance_trend": performance_trend,
+            "health_distribution": health_distribution,
         }
 
     def get_chart_data(self):
-        """Data formatted for charts and visualizations"""
-        systems = SystemModule.objects.all()
+        """Data formatted for charts and visualizations (simplified)"""
+        # Completion progress over time (simplified)
+        completion_data = []
+        for i in range(6, 0, -1):
+            month_start = timezone.now() - timedelta(days=30*i)
+            systems_at_month = SystemModule.objects.filter(
+                created_at__lte=month_start
+            )
+            avg_completion = systems_at_month.aggregate(
+                avg=Avg('completion_percent')
+            )['avg'] or 0
 
-        # Completion progress data for chart
-        completion_data = list(
-            systems.values('title', 'completion_percent', 'status').order_by('-completion_percent')
-        )
+            completion_data.append({
+                'month': month_start.strftime('%b'),
+                'value': round(avg_completion, 1)
+            })
 
-        # Performance trend data (last 30 days from SystemMetric)
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-        performance_metrics = SystemMetric.objects.filter(
-            metric_type='performance',
-            created_at__gte=thirty_days_ago
-        ).values(
-            'created_at__date'
-        ).annotate(
-            avg_performance=Avg('metric_value')
-        ).order_by('created_at__date')
-
-        # System creation timeline
-        creation_timeline = systems.annotate(
-            month=TruncMonth('created_at')
-        ).values('month').annotate(
-            count=Count('id')
-        ).order_by('month')
+        # System type distribution
+        type_distribution = SystemModule.objects.annotate(
+            count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+        ).filter(count__gt=0).values('name', 'count')
 
         return {
-            "completion_progress": completion_data,
-            "performance_trend": list(performance_metrics),
-            "creation_timeline": list(creation_timeline),
-            "technology_usage": [
-                {
-                    "name": tech['name'],
-                    "count": tech['usage_count'],
-                    "color": tech['color'],
-                }
-                for tech in self.get_technology_insights()['top_technologies'][:8]
-            ]
+            'completion_trend': completion_data,
+            'type_distribution': list(type_distribution),
         }
 
     def get_critical_alerts(self):
@@ -341,49 +359,66 @@ class EnhancedSystemsDashboardView(TemplateView):
         alerts = []
 
         # Systems w low performance scores
-        low_performance = SystemModule.objects.filter(
+        low_performance_systems = SystemModule.objects.filter(
             performance_score__lt=70,
             performance_score__isnull=False,
             status='deployed'
         )
 
-        for system in low_performance:
+        if low_performance_systems.exists():
             alerts.append({
-                'type': 'performance',
-                'severity': 'warning' if system.performance_score >= 50 else 'critical',
-                'message': f"{system.title} performance score is {system.performance_score}/100",
-                'system': system,
-                'action_url': system.get_absolute_url()
+                'icon': 'speed',
+                'title': 'Performance Alert',
+                'message': f"{low_performance_systems.count()} system{'s' if low_performance_systems.count() > 1 else ''} showing low performance scores.",
+                'created_at': timezone.now(),
+                'level': 'warning',
+                'systems': list(low_performance_systems[:3])
             })
 
         # Systems w low uptime
-        low_uptime = SystemModule.objects.filter(
+        low_uptime_systems = SystemModule.objects.filter(
             uptime_percentage__lt=95,
             uptime_percentage__isnull=False,
             status='deployed'
         )
 
-        for system in low_uptime:
+        if low_uptime_systems.exists():
             alerts.append({
-                'type': 'uptime',
-                'severity': 'critical' if system.uptime_percentage < 90 else 'warning',
-                'message': f"{system.title} uptime is {system.uptime_percentage}%",
-                'system': system,
-                'action_url': system.get_absolute_url()
+                'icon': 'timeline',
+                'title': 'Uptime Alert',
+                'message': f"{low_uptime_systems.count()} system{'s' if low_uptime_systems.count() > 1 else ''} with uptime below 95%",
+                'created_at': timezone.now(),
+                'level': 'warning',
+                'systems': list(low_uptime_systems[:3])
+            })
+
+        # Stale development alerts
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        stale_systems = SystemModule.objects.filter(
+            updated_at__lt=thirty_days_ago,
+            status='in_development'
+        )
+
+        if stale_systems.exists():
+            alerts.append({
+                'icon': 'schedule',
+                'title': 'Stale Development',
+                'message': f"{stale_systems.count()} system{'s' if stale_systems.count() > 1 else ''} not updated in 30+ days",
+                'created_at': timezone.now(),
+                'level': 'info',
+                'systems': list(stale_systems[:3])
             })
 
         # Critical dependencies
-        critical_deps = SystemDependency.objects.filter(
-            is_critical=True
-        ).select_related('system', 'depends_on')
+        critical_deps = SystemDependency.objects.filter(is_critical=True)
 
-        for dep in critical_deps:
+        if critical_deps.exists():
             alerts.append({
-                'type': 'dependency',
-                'severity': 'info',
-                'message': f"{dep.system.title} has critical dependency on {dep.depends_on.title}",
-                'system': dep.system,
-                'action_url': dep.system.get_absolute_url()
+                'icon': 'warning',
+                'title': 'Critical Dependencies',
+                'message': f"{critical_deps.count()} critical system dependencies requiring attention.",
+                'created_at': timezone.now(),
+                'level': 'info',
             })
 
         # Sort by severity
@@ -412,6 +447,50 @@ class EnhancedSystemsDashboardView(TemplateView):
             status: len(systems_list)
             for status, systems_list in health_categories.items()
         }
+
+    def get_systems_by_status(self):
+        """
+        Get systems count by status for status panels.
+        """
+        systems_by_status = {}
+        for status_choice in SystemModule.STATUS_CHOICES:
+            status_key = status_choice[0]
+            count = SystemModule.objects.filter(status=status_key).count()
+            if count > 0:  # Only include statuses w systems
+                systems_by_status[status_key] = count
+        return systems_by_status
+
+    def get_additional_dashboard_context(self):
+        """Additional context for enhanced dashboard panels."""
+        return {
+            # For metric panels
+            'total_features': SystemFeature.objects.count(),
+            'completed_features': SystemFeature.objects.filter(
+                implmentation_status='completed'
+            ).count(),
+
+            # For component panels
+            'system_types': SystemType.objects.annotate(
+                systems_count=Count('systems')
+            ).filter(systems_count__gt=0),
+
+            # For activity panels
+            'reccent_features': SystemFeature.objects.select_related('system').order_by('-id')[:5],
+
+            # Development metrics
+            'development_success_rate': self.calculate_deployment_success_rate(),
+        }
+
+    def calculate_deployment_success_rate(self):
+        """Calculate deployment success rate."""
+        total_completed = SystemModule.objects.filter(
+            status__in=['deployed', 'published']
+        ).count()
+        total_attempted = SystemModule.objects.exclude(
+            status__in=['draft', 'idea']  # Add 'idea' status to SystemModule model?
+        ).count()
+
+        return round((total_completed / total_attempted * 100), 1) if total_attempted > 0 else 0
 
 
 # API view for Real-time Dashboard Updates

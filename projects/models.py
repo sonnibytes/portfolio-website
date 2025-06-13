@@ -103,6 +103,7 @@ class SystemModule(models.Model):
     """System Module model (Project model)."""
 
     STATUS_CHOICES = (
+        #('idea', 'Idea'),
         ('draft', 'Draft'),
         ('in_development', 'In Development'),
         ('testing', 'Testing Phase'),
