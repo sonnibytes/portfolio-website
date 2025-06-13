@@ -14,6 +14,15 @@ System Type > System Module > System Features/Images
 Connected to Blog via SystemLogEntry
 """
 
+class SystemModuleQuerySet(models.QuerySet):
+    """Custom queryset for SystemModule w useful filters."""
+
+    def deployed(self):
+        return self.filter(status='deployed')
+    
+    def published(self):
+        return self.filter(status='published')
+
 
 class Technology(models.Model):
     """Technology/Stack model for categorizing project technologies."""
