@@ -31,7 +31,7 @@ class SystemModuleQuerySet(models.QuerySet):
         return self.filter(status='in_development')
 
     def featured(self):
-        return self.filtered(featured=True)
+        return self.filter(featured=True)
 
     def with_performance_data(self):
         return self.filter(
