@@ -513,7 +513,7 @@ class SystemModule(models.Model):
 
     # ================= NEW ENHANCED METHODS FOR DASHBOARD =================
     def get_status_badge_color(self):
-        """Get color cclass based on system status for badges."""
+        """Get color class based on system status for badges."""
         status_colors = {
             'deployed': 'success',
             'published': 'success',

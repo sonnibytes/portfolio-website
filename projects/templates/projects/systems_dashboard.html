@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - Phase 3 Enhanced Systems Dashboard
- * Complete Professional Dashboard Using Dashboard Panel System
- * Version: 3.3.0 - Full Panel-Based Layout
+ * AURA Portfolio - Phase 3 Enhanced Systems Dashboard 
+ * CLEANED VERSION - Using Unified Container Pattern
+ * Version: 3.4.0 - Consolidated Styling Approach
 ---->
 
 {% extends "projects/systems_base.html" %}
@@ -11,113 +11,983 @@
 {% load system_tags %}
 
 {% block systems_title %}Systems Command Center{% endblock %}
-{% block systems_body_class %}systems-dashboard enhanced-dashboard phase-3{% endblock %}
+{% block systems_body_class %}systems-dashboard enhanced-dashboard phase-3-cleaned{% endblock %}
 
 {% block systems_css %}
 <link rel="stylesheet" href="{% static 'projects/css/enhanced_dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
 <style>
-/* Phase 3 Dashboard Layout */
-.phase-3-dashboard {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--spacing-xl, 2rem);
+/* ========== UNIFIED CONTAINER FOUNDATION ========== */
+/* Based on blog/css/datalogs-detail.css unified container pattern */
+
+.unified-dashboard-container {
+    background: 
+        var(--gradient-glass),
+        rgba(var(--container-category-rgb, 38, 198, 218), 0.08);
+    border: 1px solid rgba(var(--container-category-rgb, 38, 198, 218), 0.25);
+    border-radius: var(--border-radius-xl, 16px);
     padding: var(--spacing-xl, 2rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
+.unified-dashboard-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, 
+        var(--container-category-color, var(--color-teal)), 
+        var(--color-coral), 
+        var(--color-lavender)
+    );
+    opacity: 0.8;
+}
+
+.unified-dashboard-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 
+                0 0 30px rgba(var(--container-category-rgb, 38, 198, 218), 0.15);
+}
+
+/* ========== CONTAINER VARIANTS ========== */
+.unified-dashboard-container.teal {
+    --container-category-rgb: 38, 198, 218;
+    --container-category-color: var(--color-teal);
+}
+
+.unified-dashboard-container.lavender {
+    --container-category-rgb: 179, 157, 219;
+    --container-category-color: var(--color-lavender);
+}
+
+.unified-dashboard-container.coral {
+    --container-category-rgb: 255, 138, 128;
+    --container-category-color: var(--color-coral);
+}
+
+.unified-dashboard-container.mint {
+    --container-category-rgb: 165, 214, 167;
+    --container-category-color: var(--color-mint);
+}
+
+.unified-dashboard-container.yellow {
+    --container-category-rgb: 255, 245, 157;
+    --container-category-color: var(--color-yellow);
+}
+
+.unified-dashboard-container.navy {
+    --container-category-rgb: 26, 35, 126;
+    --container-category-color: var(--color-navy);
+}
+
+.unified-dashboard-container.gunmetal {
+    --container-category-rgb: 84, 110, 122;
+    --container-category-color: var(--color-gunmetal);
+}
+
+/* ========== UNIFIED CONTAINER HEADER ========== */
+.unified-container-header {
+    margin-bottom: var(--spacing-xl, 2rem);
+    text-align: center;
+}
+
+.unified-featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);
+    background: rgba(var(--container-category-rgb, 38, 198, 218), 0.2);
+    border: 1px solid rgba(var(--container-category-rgb, 38, 198, 218), 0.4);
+    border-radius: var(--border-radius-md, 8px);
+    color: var(--container-category-color, var(--color-teal));
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.unified-container-title {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md, 1rem);
+    line-height: 1.2;
+    background: linear-gradient(135deg, 
+        var(--color-text), 
+        var(--container-category-color, var(--color-teal))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.unified-container-subtitle {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+/* ========== LAYOUT GRIDS ========== */
 .dashboard-grid {
     display: grid;
+    gap: var(--spacing-xl, 2rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.grid-2-1 {
+    grid-template-columns: 2fr 1fr;
+}
+
+.grid-4-col {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.grid-3-col {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-2-col {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-1-col {
+    grid-template-columns: 1fr;
+}
+
+/* ========== METRIC DISPLAYS ========== */
+.metric-content {
+    text-align: center;
+    padding: var(--spacing-lg, 1.5rem) 0;
+}
+
+.metric-value {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--container-category-color, var(--color-teal));
+    display: block;
+    margin-bottom: var(--spacing-sm, 0.75rem);
+    font-family: var(--font-heading);
+}
+
+.metric-label {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-md, 1rem);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.metric-trend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs, 0.5rem);
+    color: var(--color-mint);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.metric-trend .material-icons {
+    font-size: 1rem;
+}
+
+/* ========== HERO SECTION ========== */
+.hero-content {
+    text-align: center;
+    padding: var(--spacing-lg, 1.5rem) 0;
+}
+
+.hero-badges {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md, 1rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);
+    background: rgba(var(--container-category-rgb, 38, 198, 218), 0.15);
+    border: 1px solid rgba(var(--container-category-rgb, 38, 198, 218), 0.3);
+    border-radius: var(--border-radius-full, 50px);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--container-category-color, var(--color-teal));
+}
+
+.status-badge.live {
+    --container-category-rgb: 76, 175, 80;
+    --container-category-color: var(--color-mint);
+}
+
+.hero-quick-stats {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-xl, 2rem);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-lg, 1.5rem);
+}
+
+.quick-stat {
+    text-align: center;
+}
+
+.quick-stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--container-category-color, var(--color-teal));
+    font-family: var(--font-heading);
+}
+
+.quick-stat-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: var(--spacing-xs, 0.5rem);
+}
+
+/* ========== HEALTH STATUS ========== */
+.health-overview {
+    display: flex;
+    flex-direction: column;
     gap: var(--spacing-lg, 1.5rem);
 }
 
-.dashboard-header-grid {
-    grid-template-columns: 2fr 1fr;
-    align-items: start;
+.health-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem);
+    background: rgba(var(--container-category-rgb, 76, 175, 80), 0.05);
+    border-radius: var(--border-radius-lg, 12px);
+    border-left: 4px solid var(--container-category-color, var(--color-mint));
 }
 
-.dashboard-metrics-grid {
+.health-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(var(--container-category-rgb, 76, 175, 80), 0.2);
+    color: var(--container-category-color, var(--color-mint));
+}
+
+.health-details {
+    flex: 1;
+}
+
+.health-status {
+    font-weight: 600;
+    color: var(--container-category-color, var(--color-mint));
+    margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
+.health-timestamp {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.health-metrics {
+    display: flex;
+    gap: var(--spacing-lg, 1.5rem);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-md, 1rem);
+}
+
+.health-metric {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    font-size: 0.9rem;
+}
+
+.health-metric-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--container-category-color, var(--color-mint));
+}
+
+/* ========== FEATURED SYSTEMS GRID ========== */
+.featured-systems-grid {
+    display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg, 1.5rem);
 }
 
-.dashboard-main-grid {
-    grid-template-columns: 2fr 1fr;
+.featured-system-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(var(--container-category-rgb, 38, 198, 218), 0.1);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: var(--spacing-lg, 1.5rem);
+    transition: all 0.3s ease;
 }
 
-.dashboard-feature-grid {
-    grid-template-columns: 1fr 1fr;
+.featured-system-card:hover {
+    background: rgba(var(--container-category-rgb, 38, 198, 218), 0.08);
+    border-color: rgba(var(--container-category-rgb, 38, 198, 218), 0.3);
+    transform: translateY(-2px);
 }
 
-.dashboard-footer-grid {
-    grid-template-columns: 1fr 1fr 1fr;
+.system-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    margin-bottom: var(--spacing-md, 1rem);
 }
 
+.system-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(var(--container-category-rgb, 38, 198, 218), 0.2);
+    border-radius: var(--border-radius-md, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--container-category-color, var(--color-teal));
+}
+
+.system-info {
+    flex: 1;
+}
+
+.system-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    color: var(--color-text);
+}
+
+.system-status {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.system-progress {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--container-category-color, var(--color-teal)) 0% var(--progress, 75%),
+        rgba(255,255,255,0.1) var(--progress, 75%) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    position: relative;
+}
+
+.system-progress::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    background: var(--color-bg-secondary);
+    border-radius: 50%;
+}
+
+.system-progress span {
+    position: relative;
+    z-index: 1;
+}
+
+.system-technologies {
+    display: flex;
+    gap: var(--spacing-xs, 0.5rem);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-md, 1rem);
+}
+
+.tech-badge {
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.2);
+    color: var(--color-lavender);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+    border-radius: var(--border-radius-sm, 4px);
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.3);
+}
+
+/* ========== ACTIVITY FEED ========== */
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md, 1rem);
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-md, 8px);
+    border-left: 3px solid var(--container-category-color, var(--color-mint));
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: rgba(var(--container-category-rgb, 165, 214, 167), 0.05);
+}
+
+.activity-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(var(--container-category-rgb, 165, 214, 167), 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--container-category-color, var(--color-mint));
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-title {
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    font-size: 0.9rem;
+}
+
+.activity-details {
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    line-height: 1.4;
+}
+
+.activity-time {
+    color: var(--color-text-tertiary);
+    font-size: 0.7rem;
+    margin: 0;
+}
+
+/* ========== TECHNOLOGY STACK ========== */
+.tech-stack-overview {
+    padding: var(--spacing-md, 1rem) 0;
+}
+
+.tech-categories {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.tech-category {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm, 0.75rem);
+}
+
+.tech-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md, 1rem);
+}
+
+.tech-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.75rem);
+}
+
+.tech-icon {
+    font-size: 1.2rem;
+}
+
+.tech-count {
+    background: rgba(var(--container-category-rgb, 255, 245, 157), 0.2);
+    color: var(--container-category-color, var(--color-yellow));
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+    border-radius: var(--border-radius-full, 50px);
+    font-size: 0.7rem;
+    font-weight: 600;
+    min-width: 24px;
+    text-align: center;
+    border: 1px solid rgba(var(--container-category-rgb, 255, 245, 157), 0.3);
+}
+
+.tech-usage-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.usage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, 
+        var(--container-category-color, var(--color-yellow)), 
+        rgba(var(--container-category-rgb, 255, 245, 157), 0.8)
+    );
+    border-radius: 2px;
+    transition: width 1s ease;
+}
+
+/* ========== SYSTEM ALERTS ========== */
+.alerts-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md, 1rem);
+}
+
+.alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem);
+    border-radius: var(--border-radius-md, 8px);
+    border-left: 4px solid;
+}
+
+.alert-item.success {
+    background: rgba(76, 175, 80, 0.1);
+    border-left-color: var(--color-mint);
+}
+
+.alert-item.warning {
+    background: rgba(255, 193, 7, 0.1);
+    border-left-color: var(--color-yellow);
+}
+
+.alert-item.error {
+    background: rgba(244, 67, 54, 0.1);
+    border-left-color: #f44336;
+}
+
+.alert-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.alert-item.success .alert-icon {
+    background: rgba(76, 175, 80, 0.2);
+    color: var(--color-mint);
+}
+
+.alert-item.warning .alert-icon {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--color-yellow);
+}
+
+.alert-item.error .alert-icon {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    font-size: 0.9rem;
+}
+
+.alert-message {
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    line-height: 1.4;
+}
+
+.alert-time {
+    color: var(--color-text-tertiary);
+    font-size: 0.7rem;
+    margin: 0;
+}
+
+/* ========== CHART CONTAINER ========== */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.chart-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-lg, 12px);
+    border: 2px dashed rgba(var(--container-category-rgb, 84, 110, 122), 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+.chart-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-md, 1rem);
+    color: var(--container-category-color, var(--color-gunmetal));
+}
+
+.chart-note {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-sm, 0.75rem);
+}
+
+.chart-metrics {
+    display: flex;
+    justify-content: space-around;
+    gap: var(--spacing-md, 1rem);
+    flex-wrap: wrap;
+}
+
+.chart-metric {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    font-size: 0.8rem;
+}
+
+.metric-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.metric-dot.green { background: var(--color-mint); }
+.metric-dot.blue { background: var(--color-teal); }
+.metric-dot.purple { background: var(--color-lavender); }
+
+/* ========== FOOTER SECTIONS ========== */
+.unified-container-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--spacing-lg, 1.5rem);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: var(--spacing-lg, 1.5rem);
+}
+
+.action-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    color: var(--container-category-color, var(--color-teal));
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.action-link:hover {
+    color: var(--container-category-color, var(--color-teal));
+    transform: translateX(4px);
+}
+
+/* ========== QUICK ACTIONS GRID ========== */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md, 1rem);
+}
+
+.quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm, 0.75rem);
+    padding: var(--spacing-lg, 1.5rem);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg, 12px);
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.1);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all 0.3s ease;
+}
+
+.quick-action:hover {
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.1);
+    color: var(--container-category-color, var(--color-lavender));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--container-category-rgb, 179, 157, 219), 0.2);
+}
+
+.quick-action .material-icons {
+    font-size: 1.5rem;
+    color: var(--container-category-color, var(--color-lavender));
+}
+
+.quick-action span {
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
 @media (max-width: 1200px) {
-    .dashboard-header-grid,
-    .dashboard-main-grid,
-    .dashboard-feature-grid {
+    .grid-2-1,
+    .grid-4-col {
         grid-template-columns: 1fr;
+    }
+    
+    .grid-3-col {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .unified-container-title {
+        font-size: 2rem;
     }
 }
 
 @media (max-width: 768px) {
-    .dashboard-metrics-grid,
-    .dashboard-footer-grid {
+    .grid-3-col,
+    .grid-2-col {
         grid-template-columns: 1fr;
     }
-    .phase-3-dashboard {
+    
+    .unified-dashboard-container {
         padding: var(--spacing-lg, 1.5rem);
+    }
+    
+    .unified-container-title {
+        font-size: 1.8rem;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+    }
+    
+    .featured-systems-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .hero-quick-stats {
         gap: var(--spacing-lg, 1.5rem);
+    }
+    
+    .chart-metrics {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-badges {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+    
+    .health-metrics {
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+    
+    .system-header {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm, 0.75rem);
     }
 }
 </style>
 {% endblock %}
 
 {% block systems_content %}
-<div class="phase-3-dashboard">
+<div class="dashboard-main-content">
 
-    <!-- 🚀 DASHBOARD HEADER SECTION -->
-    <section class="dashboard-grid dashboard-header-grid">
-        
-        <!-- Main Dashboard Welcome -->
-        {% dashboard_panel style="dashboard" color="teal" %}
-            <div class="dashboard-hero-content">
-                <div class="hero-badges">
-                    <span class="status-badge featured">
-                        <i class="material-icons">dashboard</i>
-                        Command Center
-                    </span>
-                    <span class="status-badge live">
-                        <i class="material-icons">fiber_manual_record</i>
-                        LIVE
-                    </span>
+    <!-- 🚀 HERO SECTION -->
+    <div class="unified-dashboard-container teal">
+        <div class="unified-container-header">
+            <div class="hero-badges">
+                <div class="unified-featured-badge">
+                    <i class="material-icons">dashboard</i>
+                    <span>Command Center</span>
                 </div>
-                <h1 class="hero-title">AURA Systems Dashboard</h1>
-                <p class="hero-subtitle">Real-time monitoring and analytics for {{ dashboard_stats.total|default:8 }} active systems</p>
-                
-                <div class="hero-quick-stats">
-                    <div class="quick-stat">
-                        <span class="stat-value">{{ dashboard_stats.deployed|default:5 }}</span>
-                        <span class="stat-label">Deployed</span>
-                    </div>
-                    <div class="quick-stat">
-                        <span class="stat-value">{{ performance_data.avg_uptime|default:98.5|floatformat:1 }}%</span>
-                        <span class="stat-label">Uptime</span>
-                    </div>
-                    <div class="quick-stat">
-                        <span class="stat-value">{{ dashboard_stats.in_development|default:3 }}</span>
-                        <span class="stat-label">In Dev</span>
-                    </div>
+                <div class="status-badge live">
+                    <i class="material-icons">fiber_manual_record</i>
+                    <span>Live</span>
                 </div>
             </div>
-        {% enddashboard_panel %}
+            
+            <h1 class="unified-container-title">AURA Systems Dashboard</h1>
+            <p class="unified-container-subtitle">Real-time monitoring and analytics for {{ dashboard_stats.total|default:8 }} active systems</p>
+            
+            <div class="hero-quick-stats">
+                <div class="quick-stat">
+                    <span class="quick-stat-value">{{ dashboard_stats.deployed|default:5 }}</span>
+                    <span class="quick-stat-label">Deployed</span>
+                </div>
+                <div class="quick-stat">
+                    <span class="quick-stat-value">{{ performance_data.avg_uptime|default:98.5|floatformat:1 }}%</span>
+                    <span class="quick-stat-label">Uptime</span>
+                </div>
+                <div class="quick-stat">
+                    <span class="quick-stat-value">{{ dashboard_stats.in_development|default:3 }}</span>
+                    <span class="quick-stat-label">In Dev</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📊 METRICS SECTION -->
+    <div class="dashboard-grid grid-4-col">
         
-        <!-- System Status Overview -->
-        {% dashboard_panel style="status" color="mint" %}
-            <h3>System Health</h3>
+        <!-- Total Systems -->
+        <div class="unified-dashboard-container teal">
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ dashboard_stats.total|default:8 }}">0</div>
+                <div class="metric-label">Total Systems</div>
+                <div class="metric-trend">
+                    <i class="material-icons">trending_up</i>
+                    <span>+2 this month</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Score -->
+        <div class="unified-dashboard-container lavender">
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ performance_data.avg_performance|default:94.8|floatformat:1 }}">0</div>
+                <div class="metric-label">Avg Performance</div>
+                <div class="metric-trend">
+                    <i class="material-icons">trending_up</i>
+                    <span>+3.2% vs last week</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Development Progress -->
+        <div class="unified-dashboard-container coral">
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ dashboard_stats.avg_completion|default:78.5|floatformat:0 }}">0</div>
+                <div class="metric-label">Avg Completion %</div>
+                <div class="metric-trend">
+                    <i class="material-icons">trending_up</i>
+                    <span>+12% this sprint</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Users -->
+        <div class="unified-dashboard-container mint">
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ performance_data.total_daily_users|default:1247 }}">0</div>
+                <div class="metric-label">Daily Users</div>
+                <div class="metric-trend">
+                    <i class="material-icons">trending_up</i>
+                    <span>+18% vs yesterday</span>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- 🎯 MAIN CONTENT SECTION -->
+    <div class="dashboard-grid grid-2-1">
+        
+        <!-- Featured Systems -->
+        <div class="unified-dashboard-container navy">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Featured Systems</h3>
+            </div>
+            
+            <div class="featured-systems-grid">
+                {% for system in featured_systems|slice:":6" %}
+                <div class="featured-system-card">
+                    <div class="system-header">
+                        <div class="system-icon">
+                            <i class="material-icons">{{ system.get_type_icon|default:'apps' }}</i>
+                        </div>
+                        <div class="system-info">
+                            <h4 class="system-title">{{ system.title|truncatechars:25 }}</h4>
+                            <p class="system-status">{{ system.get_status_display }}</p>
+                        </div>
+                        <div class="system-progress" style="--progress: {{ system.completion_percent|default:75 }}%">
+                            <span>{{ system.completion_percent|default:75 }}%</span>
+                        </div>
+                    </div>
+                    <div class="system-technologies">
+                        {% for tech in system.technologies.all|slice:":3" %}
+                        <span class="tech-badge">{{ tech.name }}</span>
+                        {% endfor %}
+                        {% if system.technologies.count > 3 %}
+                        <span class="tech-badge" style="opacity: 0.7;">+{{ system.technologies.count|add:"-3" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="featured-system-card">
+                    <div class="system-header">
+                        <div class="system-icon">
+                            <i class="material-icons">star_border</i>
+                        </div>
+                        <div class="system-info">
+                            <h4 class="system-title">No featured systems</h4>
+                            <p class="system-status">Add some featured systems</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="unified-container-footer">
+                <a href="{% url 'projects:featured_systems' %}" class="action-link">
+                    <span>View All Featured</span>
+                    <i class="material-icons">arrow_forward</i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- System Health Status -->
+        <div class="unified-dashboard-container mint">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">System Health</h3>
+            </div>
+            
             <div class="health-overview">
                 <div class="health-indicator">
-                    <div class="health-icon operational">
+                    <div class="health-icon">
                         <i class="material-icons">check_circle</i>
                     </div>
                     <div class="health-details">
@@ -128,126 +998,32 @@
                 
                 <div class="health-metrics">
                     <div class="health-metric">
-                        <span class="metric-icon">🟢</span>
+                        <div class="health-metric-dot" style="background: var(--color-mint);"></div>
                         <span>{{ dashboard_stats.deployed|default:5 }} Active</span>
                     </div>
                     <div class="health-metric">
-                        <span class="metric-icon">🟡</span>
+                        <div class="health-metric-dot" style="background: var(--color-yellow);"></div>
                         <span>{{ dashboard_stats.in_development|default:3 }} In Dev</span>
                     </div>
                     <div class="health-metric">
-                        <span class="metric-icon">🔵</span>
+                        <div class="health-metric-dot" style="background: var(--color-teal);"></div>
                         <span>{{ dashboard_stats.featured|default:4 }} Featured</span>
                     </div>
                 </div>
             </div>
-        {% enddashboard_panel %}
+        </div>
         
-    </section>
+    </div>
 
-    <!-- 📊 METRICS SECTION -->
-    <section class="dashboard-grid dashboard-metrics-grid">
+    <!-- 🔧 FEATURES SECTION -->
+    <div class="dashboard-grid grid-2-col">
         
-        <!-- Total Systems Metric -->
-        {% dashboard_panel style="metric" color="teal" %}
-            <div class="metric-content">
-                <div class="metric-value" data-target="{{ dashboard_stats.total|default:8 }}">0</div>
-                <div class="metric-label">Total Systems</div>
-                <div class="metric-trend">
-                    <i class="material-icons trend-up">trending_up</i>
-                    <span>+2 this month</span>
-                </div>
+        <!-- Recent Activity -->
+        <div class="unified-dashboard-container mint">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Recent Activity</h3>
             </div>
-        {% enddashboard_panel %}
-        
-        <!-- Performance Score -->
-        {% dashboard_panel style="metric" color="purple" %}
-            <div class="metric-content">
-                <div class="metric-value" data-target="{{ performance_data.avg_performance|default:94.8|floatformat:1 }}">0</div>
-                <div class="metric-label">Avg Performance</div>
-                <div class="metric-trend">
-                    <i class="material-icons trend-up">trending_up</i>
-                    <span>+3.2% vs last week</span>
-                </div>
-            </div>
-        {% enddashboard_panel %}
-        
-        <!-- Development Progress -->
-        {% dashboard_panel style="metric" color="coral" %}
-            <div class="metric-content">
-                <div class="metric-value" data-target="{{ dashboard_stats.avg_completion|default:78.5|floatformat:0 }}">0</div>
-                <div class="metric-label">Avg Completion %</div>
-                <div class="metric-trend">
-                    <i class="material-icons trend-up">trending_up</i>
-                    <span>+12% this sprint</span>
-                </div>
-            </div>
-        {% enddashboard_panel %}
-        
-        <!-- Active Users -->
-        {% dashboard_panel style="metric" color="lavender" %}
-            <div class="metric-content">
-                <div class="metric-value" data-target="{{ performance_data.total_daily_users|default:1247 }}">0</div>
-                <div class="metric-label">Daily Users</div>
-                <div class="metric-trend">
-                    <i class="material-icons trend-up">trending_up</i>
-                    <span>+18% vs yesterday</span>
-                </div>
-            </div>
-        {% enddashboard_panel %}
-        
-    </section>
-
-    <!-- 🎯 MAIN DASHBOARD CONTENT -->
-    <section class="dashboard-grid dashboard-main-grid">
-        
-        <!-- Featured Systems Grid -->
-        {% dashboard_panel style="component" color="navy" %}
-            <h3>Featured Systems</h3>
-            <div class="featured-systems-grid">
-                {% for system in featured_systems|slice:":6" %}
-                <div class="featured-system-card">
-                    <div class="system-header">
-                        <div class="system-icon">
-                            <i class="material-icons">{{ system.get_type_icon|default:'apps' }}</i>
-                        </div>
-                        <div class="system-info">
-                            <h4 class="system-title">{{ system.title|truncatechars:20 }}</h4>
-                            <p class="system-status">{{ system.get_status_display }}</p>
-                        </div>
-                        <div class="system-progress">
-                            <div class="progress-circle" data-progress="{{ system.completion_percent|default:75 }}">
-                                <span>{{ system.completion_percent|default:75 }}%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="system-technologies">
-                        {% for tech in system.technologies.all|slice:":3" %}
-                        <span class="tech-badge">{{ tech.name }}</span>
-                        {% endfor %}
-                        {% if system.technologies.count > 3 %}
-                        <span class="tech-more">+{{ system.technologies.count|add:"-3" }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="material-icons">star_border</i>
-                    <p>No featured systems yet</p>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="panel-actions">
-                <a href="{% url 'projects:featured_systems' %}" class="action-link">
-                    <span>View All Featured</span>
-                    <i class="material-icons">arrow_forward</i>
-                </a>
-            </div>
-        {% enddashboard_panel %}
-        
-        <!-- Recent Activity Feed -->
-        {% dashboard_panel style="activity" color="mint" %}
-            <h3>Recent Activity</h3>
+            
             <div class="activity-feed">
                 {% for system in recent_systems|slice:":8" %}
                 <div class="activity-item">
@@ -258,9 +1034,6 @@
                         <p class="activity-title">{{ system.title }} updated</p>
                         <p class="activity-details">{{ system.get_latest_change|default:"System configuration updated" }}</p>
                         <p class="activity-time">{{ system.updated_at|timesince }} ago</p>
-                    </div>
-                    <div class="activity-status">
-                        <span class="status-dot {{ system.status }}"></span>
                     </div>
                 </div>
                 {% empty %}
@@ -276,40 +1049,43 @@
                 </div>
                 {% endfor %}
             </div>
-            <div class="activity-footer">
-                <a href="{% url 'projects:system_list' %}" class="view-all-link">
-                    View All Systems
+            
+            <div class="unified-container-footer">
+                <a href="{% url 'projects:system_list' %}" class="action-link">
+                    <span>View All Systems</span>
                     <i class="material-icons">arrow_forward</i>
                 </a>
             </div>
-        {% enddashboard_panel %}
+        </div>
         
-    </section>
-
-    <!-- 🔧 FEATURES & TOOLS SECTION -->
-    <section class="dashboard-grid dashboard-feature-grid">
-        
-        <!-- Technology Stack Overview -->
-        {% dashboard_panel style="component" color="yellow" %}
-            <h3>Technology Stack</h3>
+        <!-- Technology Stack -->
+        <div class="unified-dashboard-container yellow">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Technology Stack</h3>
+            </div>
+            
             <div class="tech-stack-overview">
                 <div class="tech-categories">
-                    {% for tech in tech_usage_stats|slice:":6" %}
+                    {% for category in tech_usage_stats|slice:":6" %}
                     <div class="tech-category">
                         <div class="tech-category-header">
-                            <span class="tech-icon">{{ tech.icon|default:'code' }}</span>
-                            <span class="tech-name">{{ tech.name|default:'Python' }}</span>
-                            <span class="tech-count">{{ tech.usage_count|default:4 }}</span>
+                            <span class="tech-name">
+                                <span class="tech-icon">{{ category.icon|default:'🐍' }}</span>
+                                {{ category.name|default:'Python' }}
+                            </span>
+                            <span class="tech-count">{{ category.usage_count|default:4 }}</span>
                         </div>
                         <div class="tech-usage-bar">
-                            <div class="usage-fill" style="width: {{ tech.usage_count|default:4 }}0%"></div>
+                            <div class="usage-fill" style="width: {{ category.usage_count|default:4 }}0%"></div>
                         </div>
                     </div>
                     {% empty %}
                     <div class="tech-category">
                         <div class="tech-category-header">
-                            <span class="tech-icon">🐍</span>
-                            <span class="tech-name">Python</span>
+                            <span class="tech-name">
+                                <span class="tech-icon">🐍</span>
+                                Python
+                            </span>
                             <span class="tech-count">8</span>
                         </div>
                         <div class="tech-usage-bar">
@@ -318,8 +1094,10 @@
                     </div>
                     <div class="tech-category">
                         <div class="tech-category-header">
-                            <span class="tech-icon">🌐</span>
-                            <span class="tech-name">Django</span>
+                            <span class="tech-name">
+                                <span class="tech-icon">🌐</span>
+                                Django
+                            </span>
                             <span class="tech-count">6</span>
                         </div>
                         <div class="tech-usage-bar">
@@ -328,8 +1106,10 @@
                     </div>
                     <div class="tech-category">
                         <div class="tech-category-header">
-                            <span class="tech-icon">⚛️</span>
-                            <span class="tech-name">React</span>
+                            <span class="tech-name">
+                                <span class="tech-icon">⚛️</span>
+                                React
+                            </span>
                             <span class="tech-count">4</span>
                         </div>
                         <div class="tech-usage-bar">
@@ -339,11 +1119,76 @@
                     {% endfor %}
                 </div>
             </div>
-        {% enddashboard_panel %}
+        </div>
+        
+    </div>
+
+    <!-- 📈 PERFORMANCE CHART -->
+    <div class="unified-dashboard-container gunmetal">
+        <div class="unified-container-header">
+            <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">System Performance Trends</h3>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-placeholder">
+                <div class="chart-icon">
+                    <i class="material-icons">analytics</i>
+                </div>
+                <p>Performance analytics visualization</p>
+                <p class="chart-note">Chart.js integration ready</p>
+            </div>
+            <div class="chart-metrics">
+                <div class="chart-metric">
+                    <span class="metric-dot green"></span>
+                    <span>Performance: {{ performance_data.avg_performance|default:94.8|floatformat:1 }}%</span>
+                </div>
+                <div class="chart-metric">
+                    <span class="metric-dot blue"></span>
+                    <span>Uptime: {{ performance_data.avg_uptime|default:98.5|floatformat:1 }}%</span>
+                </div>
+                <div class="chart-metric">
+                    <span class="metric-dot purple"></span>
+                    <span>Response Time: 245ms avg</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚀 FOOTER ACTIONS -->
+    <div class="dashboard-grid grid-3-col">
+        
+        <!-- Quick Actions -->
+        <div class="unified-dashboard-container lavender">
+            <div class="unified-container-header">
+                <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Quick Actions</h4>
+            </div>
+            
+            <div class="quick-actions-grid">
+                <a href="{% url 'projects:system_create' %}" class="quick-action">
+                    <i class="material-icons">add_circle</i>
+                    <span>New System</span>
+                </a>
+                <a href="{% url 'projects:system_list' %}?status=in_development" class="quick-action">
+                    <i class="material-icons">construction</i>
+                    <span>Dev Systems</span>
+                </a>
+                <a href="#" class="quick-action">
+                    <i class="material-icons">analytics</i>
+                    <span>Analytics</span>
+                </a>
+                <a href="{% url 'blog:post_list' %}" class="quick-action">
+                    <i class="material-icons">article</i>
+                    <span>DataLogs</span>
+                </a>
+            </div>
+        </div>
         
         <!-- System Alerts -->
-        {% dashboard_panel style="alert" color="coral" %}
-            <h3>System Alerts</h3>
+        <div class="unified-dashboard-container coral">
+            <div class="unified-container-header">
+                <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">System Alerts</h4>
+            </div>
+            
             <div class="alerts-container">
                 {% for alert in system_alerts|slice:":3" %}
                 <div class="alert-item {{ alert.level }}">
@@ -369,92 +1214,14 @@
                 </div>
                 {% endfor %}
             </div>
-        {% enddashboard_panel %}
+        </div>
         
-    </section>
-
-    <!-- 📈 PERFORMANCE CHART SECTION -->
-    <section class="dashboard-grid">
-        
-        {% dashboard_panel style="chart" color="gunmetal" %}
-            <h3>System Performance Trends</h3>
-            <div class="chart-container">
-                <div class="chart-placeholder">
-                    <div class="chart-icon">
-                        <i class="material-icons">analytics</i>
-                    </div>
-                    <p>Performance analytics visualization</p>
-                    <p class="chart-note">Chart.js integration ready</p>
-                </div>
-                <div class="chart-metrics">
-                    <div class="chart-metric">
-                        <span class="metric-dot green"></span>
-                        <span>Performance: {{ performance_data.avg_performance|default:94.8|floatformat:1 }}%</span>
-                    </div>
-                    <div class="chart-metric">
-                        <span class="metric-dot blue"></span>
-                        <span>Uptime: {{ performance_data.avg_uptime|default:98.5|floatformat:1 }}%</span>
-                    </div>
-                    <div class="chart-metric">
-                        <span class="metric-dot purple"></span>
-                        <span>Response Time: 245ms avg</span>
-                    </div>
-                </div>
+        <!-- Development Status -->
+        <div class="unified-dashboard-container teal">
+            <div class="unified-container-header">
+                <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Development Status</h4>
             </div>
-        {% enddashboard_panel %}
-        
-    </section>
-
-    <!-- 🔗 QUICK ACTIONS FOOTER -->
-    <section class="dashboard-grid dashboard-footer-grid">
-        
-        {% dashboard_panel style="grid" color="lavender" %}
-            <h4>Quick Actions</h4>
-            <div class="quick-actions-grid">
-                <a href="{% url 'projects:system_create' %}" class="quick-action">
-                    <i class="material-icons">add_circle</i>
-                    <span>New System</span>
-                </a>
-                <a href="{% url 'projects:system_list' %}?status=in_development" class="quick-action">
-                    <i class="material-icons">construction</i>
-                    <span>Dev Systems</span>
-                </a>
-                <a href="#" class="quick-action">
-                    <i class="material-icons">analytics</i>
-                    <span>Analytics</span>
-                </a>
-                <a href="{% url 'blog:post_list' %}" class="quick-action">
-                    <i class="material-icons">article</i>
-                    <span>DataLogs</span>
-                </a>
-            </div>
-        {% enddashboard_panel %}
-        
-        {% dashboard_panel style="grid" color="purple" %}
-            <h4>Recent DataLogs</h4>
-            <div class="recent-logs">
-                {% for log in recent_logs|slice:":4" %}
-                <div class="log-item">
-                    <div class="log-indicator"></div>
-                    <div class="log-content">
-                        <p class="log-title">{{ log.post.title|truncatechars:30 }}</p>
-                        <p class="log-system">{{ log.system.title }}</p>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="log-item">
-                    <div class="log-indicator"></div>
-                    <div class="log-content">
-                        <p class="log-title">Latest Development Notes</p>
-                        <p class="log-system">Dashboard Enhancement</p>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% enddashboard_panel %}
-        
-        {% dashboard_panel style="status" color="mint" %}
-            <h4>Development Status</h4>
+            
             <div class="dev-status-overview">
                 <div class="status-item">
                     <span class="status-label">Active Sprints</span>
@@ -475,708 +1242,48 @@
                     <span class="progress-text">{{ dashboard_stats.avg_completion|default:78 }}% Complete</span>
                 </div>
             </div>
-        {% enddashboard_panel %}
+        </div>
         
-    </section>
+    </div>
 
 </div>
 
-<!-- Custom Styles for Enhanced Components -->
+<!-- Additional helper styles for development status -->
 <style>
-/* Hero Section Styles */
-.dashboard-hero-content {
-    text-align: center;
-    padding: 2rem 0;
-}
-
-.hero-badges {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.status-badge.featured {
-    background: rgba(38, 198, 218, 0.2);
-    color: #26c6da;
-}
-
-.status-badge.live {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4caf50;
-}
-
-.hero-title {
-    font-size: 3.5rem;
-    font-weight: 700;
-    margin: 1rem 0;
-    background: linear-gradient(135deg, #26c6da, #4caf50, #b39ddb);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.hero-subtitle {
-    font-size: 1.2rem;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 2rem;
-}
-
-.hero-quick-stats {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-}
-
-.quick-stat {
-    text-align: center;
-}
-
-.stat-value {
-    display: block;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #26c6da;
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Health Overview Styles */
-.health-overview {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.health-indicator {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.health-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-}
-
-.health-icon.operational {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4caf50;
-}
-
-.health-details {
-    flex: 1;
-}
-
-.health-status {
-    font-weight: 600;
-    color: #4caf50;
-}
-
-.health-timestamp {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.health-metrics {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.health-metric {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-}
-
-/* Metric Panel Enhancements */
-.metric-content {
-    text-align: center;
-    padding: 1rem 0;
-}
-
-.metric-value {
-    font-size: 3.5rem;
-    font-weight: 700;
-    color: #26c6da;
-    display: block;
-    margin-bottom: 0.5rem;
-}
-
-.metric-label {
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.metric-trend {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    color: #4caf50;
-    font-size: 0.8rem;
-}
-
-.trend-up {
-    font-size: 1rem;
-}
-
-/* Featured Systems Grid */
-.featured-systems-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.featured-system-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-}
-
-.featured-system-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-2px);
-}
-
-.system-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.8rem;
-}
-
-.system-icon {
-    width: 32px;
-    height: 32px;
-    background: rgba(38, 198, 218, 0.2);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #26c6da;
-}
-
-.system-info {
-    flex: 1;
-}
-
-.system-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin: 0 0 0.2rem 0;
-}
-
-.system-status {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin: 0;
-    text-transform: uppercase;
-}
-
-.progress-circle {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: conic-gradient(#26c6da 0% var(--progress, 75%), rgba(255,255,255,0.1) var(--progress, 75%) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    font-weight: 600;
-    position: relative;
-}
-
-.progress-circle::before {
-    content: '';
-    position: absolute;
-    inset: 4px;
-    background: rgba(0, 0, 0, 0.8);
-    border-radius: 50%;
-}
-
-.progress-circle span {
-    position: relative;
-    z-index: 1;
-}
-
-.system-technologies {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.tech-badge {
-    background: rgba(179, 157, 219, 0.2);
-    color: #b39ddb;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 500;
-}
-
-.tech-more {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.7rem;
-}
-
-/* Activity Feed */
-.activity-feed {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    max-height: 300px;
-    overflow-y: auto;
-    margin-bottom: 1rem;
-}
-
-.activity-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 0.8rem;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    border-left: 3px solid #4caf50;
-}
-
-.activity-icon {
-    width: 28px;
-    height: 28px;
-    background: rgba(76, 175, 80, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #4caf50;
-    font-size: 0.8rem;
-}
-
-.activity-content {
-    flex: 1;
-}
-
-.activity-title {
-    font-weight: 600;
-    margin: 0 0 0.3rem 0;
-    font-size: 0.9rem;
-}
-
-.activity-details {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.8rem;
-    margin: 0 0 0.3rem 0;
-}
-
-.activity-time {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.7rem;
-    margin: 0;
-}
-
-.activity-status {
-    display: flex;
-    align-items: center;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #4caf50;
-}
-
-.status-dot.deployed {
-    background: #4caf50;
-}
-
-.status-dot.in_development {
-    background: #ffc107;
-}
-
-.status-dot.testing {
-    background: #ff9800;
-}
-
-.activity-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 1rem;
-}
-
-.view-all-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #4caf50;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-}
-
-.view-all-link:hover {
-    color: #66bb6a;
-    transform: translateX(4px);
-}
-
-/* Technology Stack */
-.tech-stack-overview {
-    padding: 0.5rem 0;
-}
-
-.tech-categories {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.tech-category {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.tech-category-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.tech-icon {
-    font-size: 1.2rem;
-}
-
-.tech-name {
-    flex: 1;
-    font-weight: 500;
-}
-
-.tech-count {
-    background: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-    padding: 0.2rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    min-width: 20px;
-    text-align: center;
-}
-
-.tech-usage-bar {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.usage-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #ffc107, #ffeb3b);
-    border-radius: 2px;
-    transition: width 1s ease;
-}
-
-/* Alert Styles */
-.alerts-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.alert-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
-    border-radius: 8px;
-    border-left: 4px solid;
-}
-
-.alert-item.success {
-    background: rgba(76, 175, 80, 0.1);
-    border-left-color: #4caf50;
-}
-
-.alert-item.warning {
-    background: rgba(255, 193, 7, 0.1);
-    border-left-color: #ffc107;
-}
-
-.alert-item.error {
-    background: rgba(244, 67, 54, 0.1);
-    border-left-color: #f44336;
-}
-
-.alert-item.info {
-    background: rgba(33, 150, 243, 0.1);
-    border-left-color: #2196f3;
-}
-
-.alert-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-}
-
-.alert-item.success .alert-icon {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4caf50;
-}
-
-.alert-item.warning .alert-icon {
-    background: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-}
-
-.alert-item.error .alert-icon {
-    background: rgba(244, 67, 54, 0.2);
-    color: #f44336;
-}
-
-.alert-item.info .alert-icon {
-    background: rgba(33, 150, 243, 0.2);
-    color: #2196f3;
-}
-
-.alert-content {
-    flex: 1;
-}
-
-.alert-title {
-    font-weight: 600;
-    margin: 0 0 0.3rem 0;
-    font-size: 0.9rem;
-}
-
-.alert-message {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.8rem;
-    margin: 0 0 0.3rem 0;
-    line-height: 1.4;
-}
-
-.alert-time {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.7rem;
-    margin: 0;
-}
-
-/* Chart Container */
-.chart-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.chart-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 200px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    border: 2px dashed rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
-    text-align: center;
-}
-
-.chart-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: #90a4ae;
-}
-
-.chart-note {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.4);
-    margin-top: 0.5rem;
-}
-
-.chart-metrics {
-    display: flex;
-    justify-content: space-around;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.chart-metric {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-}
-
-.metric-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.metric-dot.green {
-    background: #4caf50;
-}
-
-.metric-dot.blue {
-    background: #2196f3;
-}
-
-.metric-dot.purple {
-    background: #9c27b0;
-}
-
-/* Quick Actions */
-.quick-actions-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-}
-
-.quick-action {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    text-decoration: none;
-    color: rgba(255, 255, 255, 0.8);
-    transition: all 0.3s ease;
-}
-
-.quick-action:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #b39ddb;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(179, 157, 219, 0.2);
-}
-
-.quick-action .material-icons {
-    font-size: 1.5rem;
-    color: #b39ddb;
-}
-
-.quick-action span {
-    font-size: 0.8rem;
-    font-weight: 500;
-    text-align: center;
-}
-
-/* Recent Logs */
-.recent-logs {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-}
-
-.log-item {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    padding: 0.6rem;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 6px;
-    transition: all 0.3s ease;
-}
-
-.log-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.log-indicator {
-    width: 6px;
-    height: 6px;
-    background: #9c27b0;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.log-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.log-title {
-    font-weight: 500;
-    font-size: 0.8rem;
-    margin: 0 0 0.2rem 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.log-system {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin: 0;
-}
-
-/* Development Status */
 .dev-status-overview {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--spacing-md, 1rem);
 }
 
 .status-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0;
+    padding: var(--spacing-sm, 0.75rem) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.status-item:last-child {
+    border-bottom: none;
 }
 
 .status-label {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-secondary);
+    font-weight: 500;
 }
 
 .status-value {
     font-weight: 600;
-    color: #4caf50;
+    color: var(--container-category-color, var(--color-teal));
     font-size: 0.9rem;
+    font-family: var(--font-code);
 }
 
 .dev-progress {
-    margin-top: 0.5rem;
-    padding-top: 1rem;
+    margin-top: var(--spacing-sm, 0.75rem);
+    padding-top: var(--spacing-md, 1rem);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -1185,119 +1292,24 @@
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
     overflow: hidden;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-sm, 0.75rem);
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #4caf50, #66bb6a);
+    background: linear-gradient(90deg, 
+        var(--container-category-color, var(--color-teal)), 
+        rgba(var(--container-category-rgb, 38, 198, 218), 0.8)
+    );
     border-radius: 3px;
     transition: width 1s ease;
 }
 
 .progress-text {
     font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-/* Panel Action Links */
-.panel-actions {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.action-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    color: #1976d2;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-}
-
-.action-link:hover {
-    color: #42a5f5;
-    transform: translateX(4px);
-}
-
-/* Empty States */
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary);
     text-align: center;
-}
-
-.empty-state .material-icons {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    opacity: 0.5;
-}
-
-.empty-state p {
-    margin: 0;
-    font-size: 0.9rem;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .hero-title {
-        font-size: 2.5rem;
-    }
-    
-    .hero-subtitle {
-        font-size: 1rem;
-    }
-    
-    .hero-quick-stats {
-        gap: 1rem;
-    }
-    
-    .featured-systems-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .quick-actions-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .chart-metrics {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .tech-categories {
-        gap: 0.8rem;
-    }
-    
-    .system-header {
-        flex-wrap: wrap;
-        gap: 0.8rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .hero-badges {
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .health-metrics {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .chart-metrics {
-        gap: 0.5rem;
-    }
+    display: block;
 }
 </style>
 {% endblock %}
@@ -1308,10 +1320,13 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize progress circles with animation
-    const progressCircles = document.querySelectorAll('.progress-circle');
+    const progressCircles = document.querySelectorAll('.system-progress');
     progressCircles.forEach(circle => {
-        const progress = circle.dataset.progress || 75;
-        circle.style.setProperty('--progress', `${progress}%`);
+        const progress = circle.style.getPropertyValue('--progress');
+        circle.style.setProperty('--progress', '0%');
+        setTimeout(() => {
+            circle.style.setProperty('--progress', progress);
+        }, 500);
     });
     
     // Animate usage bars
@@ -1324,7 +1339,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fill.style.width = width;
             }, 100);
         });
-    }, 500);
+    }, 800);
     
     // Animate progress bars
     setTimeout(() => {
@@ -1336,9 +1351,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 fill.style.width = width;
             }, 100);
         });
-    }, 700);
+    }, 1000);
     
-    console.log('🚀 AURA Dashboard Phase 3 - Fully Loaded!');
+    console.log('🚀 AURA Dashboard Phase 3 - Cleaned & Loaded!');
 });
 </script>
 {% endblock %}
