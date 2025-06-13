@@ -40,9 +40,9 @@ class SystemModuleQuerySet(models.QuerySet):
         )
 
     def high_priority(self):
-        return self.filter(priority__in=[3,4])  # High and Critical
+        return self.filter(priority__in=[3, 4])  # High and Critical
 
-    def reccently_updated(self, days=7):
+    def recently_updated(self, days=7):
         return self.filter(
             updated_at__gte=timezone.now() - timedelta(days=days)
         )
@@ -70,7 +70,10 @@ class SystemModuleManager(models.Manager):
         return self.get_queryset().with_performance_data()
 
     def recently_updated(self, days=7):
-        return self.get_queryset().reccently_updated(days)
+        return self.get_queryset().recently_updated(days)
+
+    def high_priority(self):
+        return self.get_queryset().high_priority()
 
     def dashboard_stats(self):
         """Get key dashboard statistics."""

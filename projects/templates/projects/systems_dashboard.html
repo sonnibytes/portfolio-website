@@ -22,6 +22,66 @@
 {% block systems_content %}
 <!-- Dashboard Header -->
 <section class="dashboard-header-section">
+    
+            <!-- Add this test section anywhere in your template -->
+<div style="margin: 2rem 0; padding: 2rem; background: rgba(0,0,0,0.3); border-radius: 8px;">
+    <h2 style="color: #26c6da; margin-bottom: 1rem;">🚀 Testing Dashboard Panels</h2>
+    
+    <!-- Test basic panel -->
+    {% dashboard_panel style="dashboard" color="teal" %}
+        <h3>✅ Basic Panel Test</h3>
+        <p>This panel is working! Your dashboard panel system is active.</p>
+        <div>Manager method test: <strong>{{ dashboard_stats.total }}</strong> total systems</div>
+        <div>Featured systems: <strong>{{ dashboard_stats.featured }}</strong></div>
+    {% enddashboard_panel %}
+    
+    <!-- Test metric panel with animation -->
+    {% dashboard_panel style="metric" color="mint" %}
+        <div style="text-align: center;">
+            <div class="metric-number" style="font-size: 3rem; font-weight: bold; color: #a5d6a7;" data-target="{{ dashboard_stats.total|default:8 }}">0</div>
+            <div style="font-size: 1.2rem; margin-top: 0.5rem;">Total Systems</div>
+            <div style="font-size: 0.875rem; opacity: 0.8; margin-top: 0.25rem;">
+                Should animate from 0 to {{ dashboard_stats.total|default:8 }}
+            </div>
+            
+            <!-- Debug info -->
+            <div style="font-size: 0.75rem; margin-top: 1rem; opacity: 0.6;">
+                Debug: dashboard_stats.total = {{ dashboard_stats.total }}
+            </div>
+        </div>
+    {% enddashboard_panel %}
+    
+    <!-- Test component panel -->
+    {% dashboard_panel style="component" color="coral" %}
+        <h4>🛠️ Tech Stack Preview</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem;">
+            {% for tech in tech_usage_stats|slice:":4" %}
+            <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                <div style="font-weight: 600;">{{ tech.name }}</div>
+                <div style="font-size: 0.875rem; opacity: 0.8;">{{ tech.usage_count }} systems</div>
+            </div>
+            {% endfor %}
+        </div>
+    {% enddashboard_panel %}
+    
+    <!-- Test activity panel -->
+    {% dashboard_panel style="activity" color="lavender" %}
+        <h4>📈 Recent Activity</h4>
+        {% for log in recent_logs|slice:":3" %}
+        <div style="margin-bottom: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid #b39ddb;">
+            <div style="font-size: 0.875rem; color: #b39ddb;">{{ log.created_at|timesince }} ago</div>
+            <div style="font-weight: 600;">{{ log.post.title }}</div>
+            <div style="font-size: 0.875rem; opacity: 0.8;">System: {{ log.system.title }}</div>
+        </div>
+        {% empty %}
+        <div style="padding: 1rem; text-align: center; opacity: 0.7;">
+            <div>No recent activity yet</div>
+            <div style="font-size: 0.875rem; margin-top: 0.5rem;">Activity will appear here as you add DataLog entries</div>
+        </div>
+        {% endfor %}
+    {% enddashboard_panel %}
+</div>
+            
 <div class="container">
         <div class="dashboard-hero">
             <div class="dashboard-header">
@@ -88,7 +148,7 @@
 <section class="dashboard-content-section">
     <div class="container">
         <div class="dashboard-main-grid">
-            
+
             <!-- Left Column -->
             <div class="dashboard-left-column">
                 
@@ -266,7 +326,9 @@
         </div>
     </div>
 </section>
+{% endblock %}
 
+{% block systems_js %}
 <script>
 {% comment %} // Real-time clock update
 function updateClock() {
@@ -298,5 +360,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 40);
     });
 });
+</script>
+{% endblock %}
+{% block extra_js %}
+{{ block.super }}
+<script src="{% static 'projects/js/dashboard_panel.js' %}"></script>
+<script>
+console.log('Dashboard panels script loaded');
+console.log('Dashboard stats:', {{ dashboard_stats|safe }});
 </script>
 {% endblock %}

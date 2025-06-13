@@ -62,7 +62,7 @@ def hex_to_rgb(hex_color):
         return f"{rgb[0]}, {rgb[1]}, {rgb[2]}"
     except:
         return "0, 240, 255"  # Default teal
-   
+ 
 # =========== Markdown (Markdownx - bs4) Filter  =========== #
 
 
@@ -93,54 +93,59 @@ def markdownify(text):
 # =========== Dashboard Panel Component  =========== #
 
 
-@register.inclusion_tag('projects/components/dashboard_panel.html', takes_context=True)
-def dashboard_panel(context, style='dashboard', color='teal', title=None, subtitle=None, icon=None, **kwargs):
-    """
-    Flexible dashboard panel wrapper for systems app content.
+# @register.inclusion_tag('projects/components/dashboard_panel.html', takes_context=True)
+# def dashboard_panel(context, style='dashboard', color='teal', title=None, subtitle=None, icon=None, **kwargs):
+#     """
+#     Flexible dashboard panel wrapper for systems app content.
 
-    Usage:
-    {% dashboard_panel style="dashboard" color="purple" %}
-        <h3>System Health</h3>
-        <p>All systems operational</p>
-    {% enddashboard_panel %}
+#     Usage:
+#     {% dashboard_panel style="dashboard" color="purple" %}
+#         <h3>System Health</h3>
+#         <p>All systems operational</p>
+#     {% enddashboard_panel %}
 
-    Parameters:
-    - style: dashboard, grid, activity, component, chart, alert, metric, status
-    - color: teal, purple, coral, lavender, mint, yellow, navy, gunmetal
-    - title: Override auto-detected title
-    - subtitle: Optional subtitle
-    - icon: Optional icon class
-    """
+#     Parameters:
+#     - style: dashboard, grid, activity, component, chart, alert, metric, status
+#     - color: teal, purple, coral, lavender, mint, yellow, navy, gunmetal
+#     - title: Override auto-detected title
+#     - subtitle: Optional subtitle
+#     - icon: Optional icon class
+#     """
 
-    # Get nodelist content
-    nodelist = kwargs.get('nodelist', '')
+#     # Get nodelist content
+#     nodelist = kwargs.get('nodelist', '')
 
-    # Auto-detect title and content if not provided
-    if not title and nodelist:
-        title = _extract_title_from_content(nodelist)
+#     # Auto-detect title and content if not provided
+#     if not title and nodelist:
+#         title = _extract_title_from_content(nodelist)
 
-    # Determine panel config based on style
-    panel_config = _get_panel_config(style, color)
+#     # Determine panel config based on style
+#     panel_config = _get_panel_config(style, color)
 
-    return {
-        'content': nodelist,
-        'title': title,
-        'subtitle': subtitle,
-        'icon': icon,
-        'style': style,
-        'color': color,
-        'panel_config': panel_config,
-        'css_classes': _build_css_classes(style, color),
-        'data_attributes': _build_data_attributes(style, **kwargs),
-    }
+#     return {
+#         'content': nodelist,
+#         'title': title,
+#         'subtitle': subtitle,
+#         'icon': icon,
+#         'style': style,
+#         'color': color,
+#         'panel_config': panel_config,
+#         'css_classes': _build_css_classes(style, color),
+#         'data_attributes': _build_data_attributes(style, **kwargs),
+#     }
 
 
 @register.tag('dashboard_panel')
 def do_dashboard_panel(parser, token):
     """
-    Parse the dashboard_panel template_tag.
+    Parse the dashboard_panel template tag.
+
+    Usage:
+    {% dashboard_panel style="dashboard" color="teal" %}
+        <h3>Content</h3>
+    {% enddashboard_panel %}
     """
-    bits = token.split_content()
+    bits = token.split_contents()
     tag_name = bits[0]
 
     # Parse arguments
@@ -151,6 +156,7 @@ def do_dashboard_panel(parser, token):
             # Remove quotes from value
             value = value.strip('"\'')
             kwargs[key] = value
+
     # Parse until end tag
     nodelist = parser.parse(('enddashboard_panel'))
     parser.delete_first_token()
@@ -167,29 +173,31 @@ class DashboardPanelNode(template.Node):
         # Render the content inside the tag
         content = self.nodelist.render(context)
 
-        # Update kwargs w rendered context
-        self.kwargs['nodelist'] = content
+        # Get the parameters w defaults
+        style = self.kwargs.get('style', 'dashboard')
+        color = self.kwargs.get('color', 'teal')
+        title = self.kwargs.get('title')
+        subtitle = self.kwargs.get('subtitle')
+        icon = self.kwargs.get('icon')
 
-        # Use the inclusion tag to render the final output
+        # Auto-detect title if not provided
+        if not title:
+            title = _extract_title_from_content(content)
+
+        # Create a clean kwargs dict without style and color to avoid conflicts
+        clean_kwargs = {k: v for k, v in self.kwargs.items() if k not in ['style', 'color']}
+
+        # Use the template to render the final output
         return render_to_string('projects/components/dashboard_panel.html', {
             'content': content,
-            'title': self.kwargs.get('title'),
-            'subtitle': self.kwargs.get('subtitle'),
-            'icon': self.kwargs.get('icon'),
-            'style': self.kwargs.get('style', 'dashboard'),
-            'color': self.kwargs.get('color', 'teal'),
-            'panel_config': _get_panel_config(
-                self.kwargs.get('style', 'dashboard'),
-                self.kwargs.get('color', 'teal')
-            ),
-            'css_classes': _build_css_classes(
-                self.kwargs.get('style', 'dashboard'),
-                self.kwargs.get('color', 'teal')
-            ),
-            'data_attributes': _build_data_attributes(
-                self.kwargs.get('style', 'dashboard'),
-                **self.kwargs
-            ),
+            'title': title,
+            'subtitle': subtitle,
+            'icon': icon,
+            'style': style,
+            'color': color,
+            'panel_config': _get_panel_config(style, color),
+            'css_classes': _build_css_classes(style, color),
+            'data_attributes': _build_data_attributes(style, color, **clean_kwargs),
         }, context.request)
 
 
@@ -199,7 +207,7 @@ def _extract_title_from_content(content):
     """
 
     # Look for heading tags
-    heading_match = re.sesarch(r"<h[1-6][^>]*>(.*?)</h[1-6]>", content, re.IGNORECASE | re.DOTALL)
+    heading_match = re.search(r"<h[1-6][^>]*>(.*?)</h[1-6]>", content, re.IGNORECASE | re.DOTALL)
     if heading_match:
         # Strip HTML tags from heading content
         title = re.sub(r'<[^>]+>', '', heading_match.group(1))
@@ -316,13 +324,14 @@ def _build_css_classes(style, color):
     return ' '.join(all_classes)
 
 
-def _build_data_attributes(style, **kwargs):
+def _build_data_attributes(style, color, **kwargs):
     """
     Build data attributes for Javascript interaction.
+    Fixed to use _ for parsing
     """
     data_attrs = {
         'data-panel-style': style,
-        'data-panel-color': kwargs.get('color', 'teal'),
+        'data-panel-color': color,
     }
 
     # Add style-specific data attributes
@@ -341,6 +350,9 @@ def _build_data_attributes(style, **kwargs):
     elif style == 'alert':
         data_attrs['data-alert-level'] = kwargs.get('level', 'info')
         data_attrs['data-alert-dismissible'] = kwargs.get('dismissible', 'false')
+        # Template-friendly versions w underscores
+        data_attrs['alert_level'] = kwargs.get('level', 'info')
+        data_attrs['alert_dismissible'] = kwargs.get('dismissible', 'false')
 
     return data_attrs
 

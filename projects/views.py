@@ -124,7 +124,7 @@ class EnhancedSystemsDashboardView(TemplateView):
         """Technology usage analytics and trends."""
         # Top technologies by usage
         usage_stats = Technology.objects.annotate(
-            usage_count=Count('systems', filter=Q(systems_status__in=['deployed', 'published']))
+            usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
         ).filter(usage_count__gt=0).order_by('-usage_count')[:8]
 
         # Technology diversity score
@@ -144,7 +144,7 @@ class EnhancedSystemsDashboardView(TemplateView):
     def get_performance_data(self):
         """Performance metrics for dashboard panels."""
         # Get systems w performance data
-        performing_systems = SystemModule.objects.with_performancec_data()
+        performing_systems = SystemModule.objects.with_performance_data()
 
         if not performing_systems.exists():
             return {
