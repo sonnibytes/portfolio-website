@@ -582,7 +582,7 @@ class SystemModule(models.Model):
                 'priority_color': self.get_priority_color(),
             },
             'progress': {
-                'completion_perccent': self.completion_percent,
+                'completion_percent': self.completion_percent,
                 'progress_color': self.get_priority_color(),
                 'development_progress': self.get_development_progress(),
             },
@@ -655,6 +655,16 @@ class SystemModule(models.Model):
             'percentage': round(readiness_percent, 1),
             'status': status,
         }
+
+    def get_status_icon(self):
+        """Return Font Awesome icon for status"""
+        icons = {
+            'deployed': 'rocket',
+            'in_development': 'code',
+            'testing': 'vial',
+            'updated': 'sync-alt',
+        }
+        return icons.get(self.status, 'sync-alt')
 
     # ================= TEMPLATE PROPERTIES =================
     @property
