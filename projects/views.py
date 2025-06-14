@@ -405,7 +405,7 @@ class EnhancedSystemListView(ListView):
             'excellent': systems.filter(performance_score__gte=90).count(),
             'good': systems.filter(performance_score__range=[70, 89]).count(),
             'fair': systems.filter(performance_score__range=[50, 69]).count(),
-            'poor': systems.filter(performance_score_lt=50).count(),
+            'poor': systems.filter(performance_score__lt=50).count(),
         }
 
         return distribution
