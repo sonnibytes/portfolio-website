@@ -14,11 +14,41 @@
 {% block systems_body_class %}systems-list enhanced-list{% endblock %}
 
 {% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/systems_list.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'projects/css/enhanced_dashboard.css' %}">
+{% comment %} <link rel="stylesheet" href="{% static 'projects/css/enhanced_dashboard.css' %}"> {% endcomment %}
 <link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
 <style>
+    .system-card-metrics {
+        display: contents;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-lg, 1.5rem);
+        padding: var(--spacing-md, 1rem);
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: var(--border-radius-md, 8px);
+    }
+    
+    .metric-item {
+        text-align: center;
+    }
+    
+    .metric-value {
+        display: block;
+        font-family: var(--font-code);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--card-category-color, var(--color-teal));
+        margin-bottom: var(--spacing-xs, 0.5rem);
+    }
+    
+    .metric-label {
+        font-size: 0.7rem;
+        color: var(--color-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 {% comment %} /* Enhanced System List Specific Styles */
 .systems-list-layout {
     display: grid;
@@ -684,19 +714,19 @@
                             <div style="display: flex; gap: var(--spacing-sm, 0.75rem); flex-wrap: wrap;">
                                 <a href="?order=recent{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
                                    class="filter-option {% if request.GET.order == 'recent' or not request.GET.order %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
-                                    <i class="fas fa-clock"></i> Recent
+                                   <span><i class="fas fa-clock"></i> Recent</span>
                                 </a>
                                 <a href="?order=name{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
                                    class="filter-option {% if request.GET.order == 'name' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
-                                    <i class="fas fa-sort-alpha-down"></i> Name
+                                   <span><i class="fas fa-sort-alpha-down"></i> Name</span>
                                 </a>
                                 <a href="?order=completion{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
                                    class="filter-option {% if request.GET.order == 'completion' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
-                                    <i class="fas fa-percentage"></i> Completion
+                                   <span><i class="fas fa-percentage"></i> Completion</span>
                                 </a>
                                 <a href="?order=performance{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
                                    class="filter-option {% if request.GET.order == 'performance' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
-                                    <i class="fas fa-tachometer-alt"></i> Performance
+                                   <span><i class="fas fa-tachometer-alt"></i> Performance</span>
                                 </a>
                             </div>
                         </div>
@@ -716,7 +746,7 @@
                     <!-- Card Header -->
                     <header class="system-card-header">
                         <div class="system-card-badges">
-                            <span class="system-id-badge">{{ system.system_id|default:"SYS-"|add:system.id|stringformat:"03d" }}</span>
+                            <span class="system-id-badge">{{ system.system_id }}</span>
                             <div class="system-status-badge">
                                 <span class="status-dot"></span>
                                 {{ system.get_status_display }}
@@ -725,7 +755,7 @@
                         
                         <h3 class="system-card-title">{{ system.title }}</h3>
                         {% if system.system_type %}
-                        <p class="system-card-subtitle">{{ system.system_type.name }}</p>
+                        <p class="system-card-subtitle"><i class="fas fa-{{ system.system_type.icon|default:'apps' }}"></i> {{ system.system_type.name }}</p>
                         {% endif %}
                     </header>
 
@@ -742,8 +772,10 @@
                                 <span class="metric-label">Complete</span>
                             </div>
                             <div class="metric-item">
-                                <span class="metric-value">{{ system.get_complexity_display }}</span>
+                                {% with system.get_complexity_display as complexity %}
+                                <span class="metric-value">{{ complexity.stars }}</span>
                                 <span class="metric-label">Complexity</span>
+                                {% endwith %}
                             </div>
                             <div class="metric-item">
                                 {% if system.performance_score %}
@@ -773,7 +805,7 @@
                     <footer class="system-card-footer">
                         <div class="progress-section">
                             <div class="progress-header">
-                                <span class="progress-label">Progress</span>
+                                <span class="metric-label">Progress</span>
                                 <span class="progress-percentage">{{ system.completion_percent|default:0 }}%</span>
                             </div>
                             <div class="progress-bar">
