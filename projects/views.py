@@ -183,7 +183,7 @@ class EnhancedSystemsDashboardView(TemplateView):
         if low_performance_systems.exists():
             alerts.append(
                 {
-                    "icon": "fa-gauge",
+                    "icon": "tachometer-alt",
                     "title": "Performance Alert",
                     "message": f"{low_performance_systems.count()} system{'s' if low_performance_systems.count() > 1 else ''} showing low performance scores.",
                     "created_at": timezone.now(),
