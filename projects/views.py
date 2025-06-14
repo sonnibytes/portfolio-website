@@ -450,51 +450,384 @@ class EnhancedSystemListView(ListView):
 # ===================== ENHANCED SYSTEM DETAIL VIEW =====================
 
 
-class SystemModuleDetailView(DetailView):
-    """Enhanced system detail view."""
+class SystemControlInterfaceView(DetailView):
+    """
+    System Control Interface - Nested System Command Center
+
+    Like logging into a specific system's control panel with nested interfaces:
+    - Main system overview dashboard
+    - DataLogs control panel (nested view of related logs)
+    - Technology stack analyzer
+    - Performance monitoring console
+    - Feature management interface
+    - Development timeline viewer
+    - Dependencies analyzer
+    """
 
     model = SystemModule
-    template_name = "projects/system_detail.html"
+    template_name = "projects/system_control_interface.html"
     context_object_name = "system"
 
     def get_queryset(self):
-        # Optimize the query with related data
+        """Optimized queryset for system control interface"""
         return SystemModule.objects.select_related(
             "system_type", "author"
-        ).prefetch_related("technologies", "features", "images", "log_entries__post")
+        ).prefetch_related(
+            "technologies",
+            "features",
+            "images",
+            "metrics",
+            "dependencies",
+            "dependents",
+            "log_entries__post",
+            "log_entries__post__category",
+            "log_entries__post__tags")
 
     def get_context_data(self, **kwargs):
+        """Enhanced context for system control interface"""
         context = super().get_context_data(**kwargs)
         system = self.object
 
-        # Related systems using new manager methods
-        context["related_systems"] = (
-            SystemModule.objects.filter(technologies__in=system.technologies.all())
+        # Get active control panel from URL parameter
+        active_panel = self.request.GET.get('panel', 'overview')
+        context['active_panel'] = active_panel
+
+        # System metrics and dashboard data
+        context.update({
+            # Enhanced system metrics using model methods
+            'system_metrics': system.get_dashboard_metrics(),
+            'deployment_readiness': system.get_deployment_readiness(),
+            'health_status': system.get_health_status(),
+
+            # Performance analytics
+            'performance_data': self.get_performance_analytics(system),
+
+            # Related systems using enhanced manager methods
+            'related_systems': SystemModule.objects.filter(technologies__in=system.technologies.all())
             .exclude(id=system.id)
-            .distinct()[:4]
-        )
+            .distinct()[:6],
 
-        # Recent logs for this system
-        context["recent_logs"] = system.get_related_logs()[:5]
+            # Similar systems by type and status
+            'similar_systems': self.get_similar_systems(system),
 
-        # System metrics for dashboard panels
-        context["system_metrics"] = system.get_dashboard_metrics()
+            # Panel-specific context data
+            'panel_data': self.get_panel_data(system, active_panel),
 
-        # Similar systems using new manager methods
-        if system.is_live():
-            context["similar_systems"] = (
-                SystemModule.objects.deployed()
-                .filter(system_type=system.system_type)
-                .exclude(id=system.id)[:3]
-            )
-        else:
-            context["similar_systems"] = (
-                SystemModule.objects.in_development()
-                .filter(system_type=system.system_type)
-                .exclude(id=system.id)[:3]
-            )
+            # Navigation data for control interface
+            'control_panels': self.get_control_panels(system),
+
+            # Quick access data
+            'quick_stats': self.get_quick_stats(system),
+        })
 
         return context
+
+    def get_performance_analytics(self, system):
+        """Get detailed performance analytics for the system"""
+        analytics = {
+            'completion_score': system.completion_percent or 0,
+            'complexity_rating': system.get_complexity_display(),
+            'status_color': system.get_status_badge_color(),
+            'progress_color': system.get_progress_color(),
+        }
+
+        # Add performance metrics if available
+        if hasattr(system, 'performance_score') and system.performance_score:
+            analytics.update({
+                'performance_score': system.performance_score,
+                'uptime_percentage': getattr(system, 'uptime_percecntage', None),
+                'daily_users': getattr(system, 'daily_users', None),
+                'response_time': getattr(system, 'response_time_ms', None),
+            })
+
+        return analytics
+
+    def get_similar_systems(self, system):
+        """Get similar systems using enhanced manager methods."""
+        if system.status == 'deployed':
+            return SystemModule.objectcs.deployed().filter(
+                system_type=system.system_type
+            ).exclude(id=system.id)[:4]
+        elif system.status in ['in_development', 'testing']:
+            return SystemModule.objects.in_development().filter(
+                system_type=system.system_type
+            ).exclude(id=system.id)[:4]
+        else:
+            return SystemModule.objects.filter(
+                system_type=system.system_type
+            ).exclude(id=system.id)[:4]
+
+    def get_control_panels(self, system):
+        """Define available control panels w dynamic counts."""
+        panels = [
+            {
+                "id": "overview",
+                "name": "System Overview",
+                "icon": "tachometer-alt",
+                "description": "Main system dashboard and metrics",
+                "count": None,
+                "color": "teal",
+            },
+            {
+                "id": "datalogs",
+                "name": "DataLogs",
+                "icon": "file-alt",
+                "description": "Related development logs and documentation",
+                "count": system.log_entries.count(),
+                "color": "lavender",
+            },
+            {
+                "id": "technologies",
+                "name": "Tech Stack",
+                "icon": "code",
+                "description": "Technology analysis and dependencies",
+                "count": system.technologies.count(),
+                "color": "coral",
+            },
+            {
+                "id": "features",
+                "name": "Features",
+                "icon": "puzzle-piece",
+                "description": "System features and capabilities",
+                "count": system.features.count() if hasattr(system, 'features') else 0,
+                "color": "mint",
+            },
+            {
+                "id": "performance",
+                "name": "Performance",
+                "icon": "chart-line",
+                "description": "Performance metrics and monitoring",
+                "count": None,
+                "color": "yellow",
+            },
+            {
+                "id": "dependencies",
+                "name": "Dependencies",
+                "icon": "project-diagram",
+                "description": "System dependencies and relationships",
+                "count": system.dependencies.count() if hasattr(system, 'dependencies') else 0,
+                "color": "navy",
+            },
+            {
+                "id": "timeline",
+                "name": "Timeline",
+                "icon": "history",
+                "description": "Development timeline and milestones",
+                "count": None,
+                "color": "gunmetal",
+            },
+        ]
+
+        return panels
+
+    def get_panel_data(self, system, panel):
+        """Get data specific to the active control panel."""
+        if panel == 'datalogs':
+            return self.get_datalogs_panel_data(system)
+        elif panel == 'technologies':
+            return self.get_technologies_panel_data(system)
+        elif panel == 'features':
+            return self.get_features_panel_data(system)
+        elif panel == 'performance':
+            return self.get_performance_panel_data(system)
+        elif panel == 'dependencies':
+            return self.get_timeline_panel_data(system)
+        else:
+            # Overview
+            return self.get_overview_panel_data(system)
+
+    def get_over_panel_data(self, system):
+        """Main overview panel data."""
+        return {
+            'recent_activity': system.log_entries.select_related('post').order_by('-created_at')[:5],
+            'key_technologies': system.technologies.all()[:6],
+            'completion_breakdown': {
+                'completed': system.completion_percent or 0,
+                'remaining': 100 - (system.completion_percent or 0)
+            },
+            'status_info': {
+                'current_status': system.get_status_display(),
+                'status_color': system.get_status_badge_color(),
+                'last_updated': system.updated_at,
+            }
+        }
+
+    def get_datalogs_panel_data(self, system):
+        """DataLogs control panel - nested interface for system logs."""
+        # Get all related logs w full details
+        log_entries = system.log_entries.select_related(
+            'post', 'post__category', 'post__author'
+        ).prefetch_related(
+            'post__tags'
+        ).order_by('-created_at')
+
+        # Group logs by category
+        logs_by_category = {}
+        for entry in log_entries:
+            category = entry.post.category.name if entry.post.category else 'Uncategorized'
+            if category not in logs_by_category:
+                logs_by_category[category] = []
+            logs_by_category[category].append(entry)
+
+        # Get log stats
+        log_stats = {
+            'total_logs': log_entries.count(),
+            'categories_count': len(logs_by_category),
+            'recent_logs': log_entries[:8],
+            'logs_by_priority': {
+                'high': log_entries.filter(priority__gte=3).count(),
+                'medium': log_entries.filter(priority=2).count(),
+                'low': log_entries.filter(priority=1).count(),
+            }
+        }
+
+        return {
+            'logs_by_category': logs_by_category,
+            'log_stats': log_stats,
+            'all_log_entries': log_entries,
+            'connection_types': SystemLogEntry.objects.filter(
+                system=system
+            ).values_list('connection_type', flat=True).distinct()
+        }
+
+    def get_technologies_panel_data(self, system):
+        """Technology stack analyzer panel."""
+        technologies = system.technologies.all()
+
+        # Analyze technology usage across similar systems
+        tech_analysis = {}
+        for tech in technologies:
+            similar_systems = SystemModule.objects.filter(
+                technologies=tech,
+                system_type=system.system_type
+            ).exclude(id=system.id)
+
+            tech_analysis[tech.name] = {
+                'technology': tech,
+                'usage_in_similar': similar_systems.count(),
+                'similar_systems': similar_systems[:3],
+                'category': getattr(tech, 'category', 'Unknown'),
+            }
+
+        return {
+            'technologies': technologies,
+            'tech_analysis': tech_analysis,
+            'tech_stats': {
+                'total_technologies': technologies.count(),
+                'categories': technologies.values_list('category', flat=True).distinct(),
+                'primary_stack': technologies.filter(is_primary=True) if hasattr(technologies.first(), 'is_primary') else technologies[:3],
+            }
+        }
+
+    def get_features_panel_data(self, system):
+        """Features management interface."""
+        if not hasattr(system, 'features'):
+            return {'features': [], 'feature_stats': {}}
+
+        features = system.features.all()
+
+        feature_stats = {
+            'total_features': features.count(),
+            'completed_features': features.filter(status='completed').count() if features else 0,
+            'in_progress_features': features.filter(status='in_progress').count() if features else 0,
+            'planned_features': features.filter(status='planned').count() if features else 0,
+        }
+
+        return {
+            'features': features,
+            'feature_stats': feature_stats,
+            'features_by_status': {
+                'completed': features.filter(status='completed'),
+                'in_progress': features.filter(status='in_progress'),
+                'planned': features.filter(status='planned'),
+            } if features else {}
+        }
+
+    def get_performance_panel_data(self, system):
+        """Performance monitoring controls."""
+        performance_data = {
+            'has_performance_data': hasattr(system, 'performance_score') and system.performance_score,
+            'current_metrics': {},
+            'performance_history': [],
+            'benchmarks': {}
+        }
+
+        if performance_data['has_performance_data']:
+            performance_data['current_metrics'] = {
+                'performance_score': system.performance_score,
+                'uptime': getattr(system, 'uptime_percentage', None),
+                'daily_users': getattr(system, 'daily_users', None),
+                'response_time': getattr(system, 'response_time_ms', None),
+            }
+
+            # Mock performance history
+            # TODO: Replace w real data
+            performance_data['performance_history'] = [
+                {'date': '2024-01-01', 'performance': 85, 'uptime': 99.2},
+                {'date': '2024-01-02', 'performance': 88, 'uptime': 99.5},
+                {'date': '2024-01-03', 'performance': 92, 'uptime': 99.8},
+            ]
+
+        return performance_data
+
+    def get_dependencies_panel_data(self, system):
+        """Dependencies and relationship analyzer."""
+        dependencies_data = {
+            'dependencies': [],
+            'dependents': [],
+            'dependency_graph': {},
+            'risk_analysis': {}
+        }
+
+        if hasattr(system, 'dependencies'):
+            dependencies_data['dependencies'] = system.dependencies.select_related('depends_on').all()
+
+        if hasattr(system, 'dependents'):
+            dependencies_data['dependents'] = system.dependents.select_related('system').all()
+
+        return dependencies_data
+
+    def get_timeline_panel_data(self, system):
+        """Development timeline and milestones."""
+        timeline_events = []
+
+        # Add system creation
+        timeline_events.append({
+            'date': system.created_at,
+            'event': 'System Created',
+            'type': 'milestone',
+            'description': f'System {system.title} was created'
+        })
+
+        # Add related log entries as timeline events
+        for log_entry in system.log_entries.select_related('post').order_by('created_at'):
+            timeline_events.append({
+                'date': log_entry.created_at,
+                'event': log_entry.post.title,
+                'type': 'log',
+                'description': log_entry.post.excerpt or 'Development log entry',
+                'url': log_entry.post.get_absolute_url()
+            })
+
+        # Sort timeline by date
+        timeline_events.sort(key=lambda x: x['date'], reverse=True)
+
+        return {
+            'timeline_events': timeline_events[:20],  # Limit to recent events
+            'milestones': [event for event in timeline_events if event['type'] == 'milestone'],
+            'development_logs': [event for event in timeline_events if event['type'] == 'log'],
+        }
+
+    def get_quick_stats(self, system):
+        """Quick access stats for the system interface."""
+        return {
+            'completion_percent': system.completion_percent or 0,
+            'technologies_count': system.technologies.count(),
+            'logs_count': system.log_entries.count(),
+            'days_since_update': (timezone.now().date() - system.updated_at.date()).days,
+            'status_display': system.get_status_display(),
+            'complexity_level': system.get_complexity_display(),
+        }
 
 
 # ===================== ENHANCED FEATURE VIEWS =====================
