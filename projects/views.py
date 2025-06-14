@@ -245,8 +245,11 @@ class EnhancedSystemsDashboardView(TemplateView):
 # ===================== ENHANCED SYSTEM LIST VIEW =====================
 
 
-class SystemModuleListView(ListView):
-    """Enhanced system list using new manager methods."""
+class EnhancedSystemListView(ListView):
+    """
+    Enhanced System List using all new manager methods and model enhancements
+    Features: Advanced filtering, search, performance analytics, unified container styling
+    """
 
     model = SystemModule
     template_name = "projects/system_list.html"
@@ -254,11 +257,11 @@ class SystemModuleListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        """Simplified filtered query using new manager methods."""
-        # Start w all systems
-        queryset = SystemModule.objects.select_related('system_type', 'author')
+        """Enhanced filtered query using new manager methods w optimized queries."""
+        # Start w optimized base query
+        queryset = SystemModule.objects.select_related('system_type', 'author').prefetch_related('technologies', 'features')
 
-        # Apply filters using new clean methods
+        # Apply enhanced filters using new manager methods
         status_filter = self.request.GET.get('status')
         if status_filter == "deployed":
             queryset = queryset.deployed()
@@ -275,41 +278,30 @@ class SystemModuleListView(ListView):
         elif status_filter == "with_metrics":
             queryset = queryset.with_performance_data()
 
-        # Trimmed additional filters for testing
-
         # Technology filter
         tech_filter = self.request.GET.get("tech")
         if tech_filter:
             queryset = queryset.filter(technologies__slug=tech_filter)
 
-        # Ordering
-        order = self.request.GET.get("order", "recent")
-        if order == "recent":
-            queryset = queryset.order_by("-updated_at")
-        elif order == "name":
-            queryset = queryset.order_by("title")
-        elif order == "completion":
-            queryset = queryset.order_by("-completion_percent")
-        elif order == "performance":
-            queryset = queryset.order_by("-performance_score")
+        # System Type Filter
+        type_filter = self.request.GET.get("type")
+        if type_filter:
+            queryset = queryset.filter(system_type__slug=type_filter)
 
-        # complexity_filter = self.request.GET.get('complexity')
-        # if complexity_filter:
-        #     queryset = queryset.filter(complexity=complexity_filter)
+        # Complexity filter
+        complexity_filter = self.request.GET.get('complexity')
+        if complexity_filter:
+            queryset = queryset.filter(complexity=complexity_filter)
 
-        # tech_filter = self.request.GET.get('technology')
-        # if tech_filter:
-        #     queryset = queryset.filter(technologies__slug=tech_filter)
+        # Performance filtering using enhanced fields
+        min_performance = self.request.GET.get('min_performance')
+        if min_performance:
+            queryset = queryset.filter(performance_score__gte=min_performance)
 
-        # # Performance filtering using enhanced fields
-        # min_performance = self.request.GET.get('min_performance')
-        # if min_performance:
-        #     queryset = queryset.filter(performance_score__gte=min_performance)
-
-        # health_filter = self.request.GET.get('health')
-        # if health_filter:
-        #     # This would require custom filtering logic for health status, can work on later
-        #     pass
+        health_filter = self.request.GET.get('health')
+        if health_filter:
+            # This would require custom filtering logic for health status, can work on later
+            pass
 
         # Search across enhanced fields
         search = self.request.GET.get('search')
@@ -322,71 +314,138 @@ class SystemModuleListView(ListView):
                 Q(features__title__icontains=search)
             ).distinct()
 
+        # Enhanced Ordering
+        order = self.request.GET.get("order", "recent")
+        if order == "recent":
+            queryset = queryset.order_by("-updated_at")
+        elif order == "name":
+            queryset = queryset.order_by("title")
+        elif order == "completion":
+            queryset = queryset.order_by("-completion_percent")
+        elif order == "performance":
+            queryset = queryset.order_by("-performance_score")
+        elif order == "priority":
+            queryset = queryset.order_by("-priority", "-updated_at")
+        elif order == "complexity":
+            queryset = queryset.order_by("-complexity")
+        elif order == "status":
+            queryset = queryset.order_by("status", "-updated_at")
+
         return queryset
 
     def get_context_data(self, **kwargs):
+        """Enhanced context using new manager methods and dashboard stats."""
         context = super().get_context_data(**kwargs)
-        # Add filter stats using clean methods - Trimmed for testing
-        context.update(
-            {
-                "total_count": SystemModule.objects.count(),
-                "deployed_count": SystemModule.objects.deployed().count(),
+
+        # Use new dashboard_stats() method
+        context['dashboard_stats'] = SystemModule.objects.dashboard_stats()
+
+        # Enhanced filter data
+        context.update({
+            # Tecchnology stats using new methods
+            'technologies': Technology.objects.annotate(
+                usage_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+            ).filter(usage_count__gt=0).order_by('-usage_count')[:10],
+
+            # System types w counts
+            'system_types': SystemType.objects.annotate(
+                usage_count=Count('systems')
+            ).filter(usage_count__gt=0).order_by('-usage_count'),
+
+            # Quick stats using new manager methods
+            'quick_stats': {
                 "featured_count": SystemModule.objects.featured().count(),
-                "recent_count": SystemModule.objects.recently_updated(30).count(),
+                "deployed_count": SystemModule.objects.deployed().count(),
+                "in_development_count": SystemModule.objects.in_development().count(),
                 "high_priority_count": SystemModule.objects.high_priority().count(),
-                "with_metrics_count": SystemModule.objects.with_performance_data().count(),
-            }
-        )
+                "with_performance_count": SystemModule.objects.with_performance_data().count(),
+                "recently_updated_count": SystemModule.objects.recently_updated(7).count(),
+            },
 
-        # Filter parameters for template
-        context.update(
-            {
-                "current_status": self.request.GET.get("status", ""),
-                "current_tech": self.request.GET.get("tech", ""),
-                "current_order": self.request.GET.get("order", "recent"),
-            }
-        )
+            # Performance analytics
+            'performance_analytics': self.get_performance_analytics(),
 
-        # Technologies for filter dropdown
-        context["technologies"] = (
-            Technology.objects.annotate(usage_count=Count("systems"))
-            .filter(usage_count__gt=0)
-            .order_by("name")
-        )
+            # Active filters for display
+            'active_filters': self.get_active_filters(),
+
+            # Pagination info
+            'total_systems': self.get_queryset().count(),
+
+            # Featured Systems for sidebar
+            'featured_systems': SystemModule.objects.featured().deployed()[:4],
+        })
 
         return context
 
-        # context.update(
-        #     {
-        #         "system_types": SystemType.objects.all().order_by("display_order"),
-        #         "technologies": Technology.objects.annotate(
-        #             system_count=Count("systems")
-        #         )
-        #         .filter(system_count__gt=0)
-        #         .order_by("-system_count"),
-        #         "complexity_choices": SystemModule.COMPLEXITY_CHOICES,
-        #         "status_choices": SystemModule.STATUS_CHOICES,
-        #         "current_filters": {
-        #             "status": self.request.GET.get("status", ""),
-        #             "complexity": self.request.GET.get("complexity", ""),
-        #             "technology": self.request.GET.get("technology", ""),
-        #             "search": self.request.GET.get("search", ""),
-        #             "min_performance": self.request.GET.get("min_performance", ""),
-        #         },
-        #         # Quick stats for the page header
-        #         "page_stats": {
-        #             "total_systems": self.get_queryset().count(),
-        #             "deployed_count": self.get_queryset()
-        #             .filter(status="deployed")
-        #             .count(),
-        #             "avg_completion": self.get_queryset().aggregate(
-        #                 avg=Avg("completion_percent")
-        #             )["avg"]
-        #             or 0,
-        #         },
-        #     }
-        # )
-        # return context
+    def get_performance_analytics(self):
+        """Get performance analytics using enhanced model methods."""
+        systems_with_performance = SystemModule.objects.with_performance_data()
+
+        if not systems_with_performance.exists():
+            return None
+
+        return {
+            'avg_performance': systems_with_performance.aggregate(
+                avg=Avg('performance_score')
+            )['avg'],
+            'avg_uptime': systems_with_performance.aggregate(
+                avg=Avg('uptime_percentage')
+            )['avg'],
+            'total_daily_users': systems_with_performance.aggregate(
+                total=Sum('daily_users')
+            )['total'] or 0,
+            'performance_distribution': self.get_performance_distribution(),
+        }
+
+    def get_performance_distribution(self):
+        """Get distribution of systems by performance score."""
+        systems = SystemModule.objects.with_performance_data()
+
+        distribution = {
+            'excellent': systems.filter(performance_score__gte=90).count(),
+            'good': systems.filter(performance_score__range=[70, 89]).count(),
+            'fair': systems.filter(performance_score__range=[50, 69]).count(),
+            'poor': systems.filter(performance_score_lt=50).count(),
+        }
+
+        return distribution
+
+    def get_active_filters(self):
+        """Get currently active filters for display."""
+        filters = {}
+
+        if self.request.GET.get('status'):
+            filters['Status'] = self.request.GET.get('status').replace('_', '').title()
+
+        if self.request.GET.get('tech'):
+            try:
+                tech = Technology.objects.get(slug=self.request.GET.get('tech'))
+                filters['Technology'] = tech.name
+            except:
+                pass
+
+        if self.request.GET.get('type'):
+            try:
+                sys_type = SystemType.objects.get(slug=self.request.GET.get('type'))
+                filters['Type'] = sys_type.name
+            except:
+                pass
+
+        if self.request.GET.get('complexity'):
+            complexity_map = {
+                1: 'Basic',
+                2: 'Intermediate',
+                3: 'Advanced',
+                4: 'Complex',
+                5: 'Enterprise'
+            }
+            complexity = int(self.request.GET.get('complexity'))
+            filters['Complexity'] = complexity_map.get(complexity, 'Unknown')
+
+        if self.request.GET.get('search'):
+            filters['Search'] = self.request.GET.get('search')
+
+        return filters
 
 # ===================== ENHANCED SYSTEM DETAIL VIEW =====================
 
