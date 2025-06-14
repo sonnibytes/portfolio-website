@@ -636,7 +636,7 @@ class SystemControlInterfaceView(DetailView):
             # Overview
             return self.get_overview_panel_data(system)
 
-    def get_over_panel_data(self, system):
+    def get_overview_panel_data(self, system):
         """Main overview panel data."""
         return {
             'recent_activity': system.log_entries.select_related('post').order_by('-created_at')[:5],
