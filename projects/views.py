@@ -19,6 +19,7 @@ from django.core.cache import cache
 import re
 from datetime import timedelta, datetime, date
 import random
+from collections import Counter
 
 from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage
 from blog.models import Post, SystemLogEntry
@@ -703,11 +704,6 @@ class SystemControlInterfaceView(DetailView):
                 'current_status': system.get_status_display(),
                 'status_color': system.get_status_badge_color(),
                 'last_updated': system.updated_at,
-            },
-            'system_info': {
-                'description': system.rendered_content(),
-                'technical_details': system.render_technical_details(),
-                'challenges': system.rendered_challenges(),
             }
         }
 
@@ -884,6 +880,27 @@ class SystemControlInterfaceView(DetailView):
             return f"## Enhancement Roadmap\n\n### **Continuous Improvement**\n\nThis system is actively maintained with regular updates and enhancements.\n\n### 🎯 **Areas of Focus**\n\n- Performance monitoring and optimization\n- Feature enhancement based on usage analytics\n- Security updates and improvements\n- Integration with new technologies\n\n*Enhancement requests are evaluated based on user feedback and technical feasibility.*"
 
         return None
+
+    def extract_keywords_from_markdown(self, markdown_content):
+        """Extract key terms from markdown content for finding related logs."""
+        if not markdown_content:
+            return []
+
+        # Remove additional formatting
+        text = re.sub(r"[#*`\[\]()_-]", " ", markdown_content)
+
+        # Split into words and filter for meaningful terms
+        words = text.lower().split()
+
+        # Filter out common words and keep technical terms
+        stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'was', 'are', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'}
+
+        keywords = [word for word in words if len(word) > 3 and word not in stopwords]
+
+        # Count frequency and return top keywords
+        word_counts = Counter(keywords)
+
+        return [word for word, count in word_counts.most_common(10)]
 
     def get_performance_panel_data(self, system):
         """Performance monitoring controls."""
