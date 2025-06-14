@@ -9,7 +9,7 @@ urlpatterns = [
     # path("", views.UnifiedDashboardView.as_view(), name="unified_dashboard"),
     # AURA Enhanced dashboard
     path("dashboard/", views.EnhancedSystemsDashboardView.as_view(), name="systems_dashboard"),
-    path("systems/", views.SystemModuleListView.as_view(), name="system_list"),
+    path("systems/", views.EnhancedSystemListView.as_view(), name="system_list"),
     # path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
 
     # System Detail and management

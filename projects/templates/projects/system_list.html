@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - Enhanced Systems List Template
- * Advanced User Repository & Archive - Complete Foundation
- * Version: 3.1.0 - Beautiful system cards with unified container styling
+ * AURA Portfolio - Enhanced System List Template
+ * Using Unified Container Styling & Enhanced Model Methods
+ * Version: 3.4.0 - Complete System Showcase
 ---->
 
 {% extends "projects/systems_base.html" %}
@@ -11,173 +11,55 @@
 {% load system_tags %}
 
 {% block systems_title %}All Systems{% endblock %}
-{% block systems_body_class %}systems-list{% endblock %}
+{% block systems_body_class %}systems-list enhanced-list{% endblock %}
 
 {% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/enhanced_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
 <style>
-/* Enhanced System List Cohesive Styling */
-.systems-list-container {
-    padding: 2rem 0;
+/* Enhanced System List Specific Styles */
+.systems-list-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: var(--spacing-xl, 2rem);
+    align-items: flex-start;
 }
 
-.systems-header {
-    margin-bottom: 2.5rem;
-    }
-    
-.systems-overview {
-    background: var(--gradient-glass);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    backdrop-filter: blur(20px);
-    position: relative;
-    }
-    
-.systems-overview::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--color-teal), var(--color-coral));
-    border-radius: 16px 16px 0 0;
+.systems-sidebar {
+    position: sticky;
+    top: var(--spacing-xl, 2rem);
+    max-height: calc(100vh - var(--spacing-xxl, 4rem));
+    overflow-y: auto;
 }
 
-.overview-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 2rem;
+.systems-main-content {
+    min-width: 0;
 }
 
-.overview-text h1 {
-    font-family: var(--font-heading);
-    font-size: 2.2rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+.systems-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: var(--spacing-xl, 2rem);
+    margin-bottom: var(--spacing-xl, 2rem);
 }
 
-.overview-text p {
-    color: var(--color-text-secondary);
-    font-size: 1.1rem;
-    margin: 0;
-    }
-    
-.overview-metrics {
-    display: flex;
-    gap: 2rem;
-}
-
-.overview-metric {
-    text-align: center;
-    padding: 1rem;
-    border-radius: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    min-width: 100px;
-    }
-    
-.metric-value {
-    font-family: var(--font-heading);
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: var(--color-teal);
-    margin-bottom: 0.25rem;
-}
-
-.metric-label {
-    font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    color: var(--color-text-secondary);
-    }
-    
-/* View Controls */
-.systems-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    gap: 1rem;
-    flex-wrap: wrap;
-    }
-    
-.view-controls {
-        display: flex;
-    gap: 0.5rem;
-}
-
-.view-btn {
-    padding: 0.75rem 1rem;
-        background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-        color: var(--color-text-secondary);
-        cursor: pointer;
-    transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-    gap: 0.5rem;
-        font-size: 0.9rem;
-    }
-    
-.view-btn:hover,
-.view-btn.active {
-    background: rgba(0, 240, 255, 0.1);
-    border-color: rgba(0, 240, 255, 0.3);
-    color: var(--color-teal);
-    }
-    
-.sort-controls select {
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: var(--color-text);
-    font-size: 0.9rem;
-    }
-    
-/* Systems Grid */
-    .systems-grid {
-        display: grid;
-    gap: 1.5rem;
-        transition: all 0.3s ease;
-    }
-
-.systems-grid.grid-view {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-}
-    
-    .systems-grid.list-view {
-        grid-template-columns: 1fr;
-    }
-    
-    .systems-grid.compact-view {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-}
-
-/* System Card */
 .system-card {
-    background: var(--gradient-glass);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    background: 
+        var(--gradient-glass),
+        rgba(var(--card-category-rgb, 38, 198, 218), 0.08);
+    border: 1px solid rgba(var(--card-category-rgb, 38, 198, 218), 0.25);
+    border-radius: var(--border-radius-xl, 16px);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
     overflow: hidden;
     transition: all 0.3s ease;
-    position: relative;
-    backdrop-filter: blur(20px);
     display: flex;
     flex-direction: column;
-    height: 100%; /* Ensure equal heights */
-    }
-    
+    min-height: 400px;
+}
+
 .system-card::before {
     content: '';
     position: absolute;
@@ -185,777 +67,847 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: var(--color-teal);
+    background: linear-gradient(90deg, 
+        var(--card-category-color, var(--color-teal)), 
+        var(--color-coral), 
+        var(--color-lavender)
+    );
+    opacity: 0.8;
 }
 
-.system-card.status-deployed::before { background: var(--color-success); }
-.system-card.status-development::before { background: var(--color-warning); }
-.system-card.status-testing::before { background: var(--color-coral); }
-.system-card.status-draft::before { background: var(--color-muted); }
-    
 .system-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 20px rgba(38, 198, 218, 0.2);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 
+                0 0 30px rgba(var(--card-category-rgb, 38, 198, 218), 0.2);
 }
 
+/* System Card Variants */
+.system-card.deployed {
+    --card-category-rgb: 76, 175, 80;
+    --card-category-color: var(--color-mint);
+}
+
+.system-card.in_development {
+    --card-category-rgb: 255, 193, 7;
+    --card-category-color: var(--color-yellow);
+}
+
+.system-card.testing {
+    --card-category-rgb: 255, 138, 128;
+    --card-category-color: var(--color-coral);
+}
+
+.system-card.featured {
+    --card-category-rgb: 179, 157, 219;
+    --card-category-color: var(--color-lavender);
+}
+
+/* System Card Content */
 .system-card-header {
-    padding: 1.5rem 1.5rem 1rem;
-        display: flex;
+    padding: var(--spacing-lg, 1.5rem);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.system-card-badges {
+    display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+    margin-bottom: var(--spacing-md, 1rem);
 }
 
-.system-id {
+.system-id-badge {
     font-family: var(--font-code);
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
-    background: rgba(38, 198, 218, 0.15);
-    border: 1px solid rgba(38, 198, 218, 0.4);
-    border-radius: 4px;
-    color: var(--color-teal);
-    font-weight: 600;
+    font-size: 0.7rem;
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+    background: rgba(var(--card-category-rgb, 38, 198, 218), 0.2);
+    border: 1px solid rgba(var(--card-category-rgb, 38, 198, 218), 0.4);
+    border-radius: var(--border-radius-full, 50px);
+    color: var(--card-category-color, var(--color-teal));
     text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
 }
 
-.system-status {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--color-success);
-    position: relative;
+.system-status-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    font-size: 0.8rem;
+    color: var(--card-category-color, var(--color-teal));
+    font-weight: 500;
 }
 
-.system-status.development { background: var(--color-warning); }
-.system-status.testing { background: var(--color-coral); }
-.system-status.draft { background: var(--color-muted); }
-
-.system-status.operational::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
+.status-dot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    border: 2px solid var(--color-success);
+    background: var(--card-category-color, var(--color-teal));
     animation: pulse 2s infinite;
 }
 
-.system-image {
-    margin: 0 1.5rem 1rem;
-    height: 180px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.05);
-    display: flex;
-        align-items: center;
-    justify-content: center;
-    position: relative;
+.system-card-title {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    color: var(--color-text);
+    margin: 0 0 var(--spacing-sm, 0.75rem) 0;
+    line-height: 1.2;
 }
 
-.system-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-    }
-    
-.system-card:hover .system-image img {
-    transform: scale(1.05);
-    }
-    
-.system-image-placeholder {
-        color: var(--color-text-secondary);
-    font-size: 2rem;
-    }
-    
-.system-content {
-    padding: 0 1.5rem 1.5rem;
+.system-card-subtitle {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.system-card-body {
+    padding: var(--spacing-lg, 1.5rem);
     flex: 1;
-        display: flex;
+    display: flex;
     flex-direction: column;
 }
 
-.system-title {
-    font-family: var(--font-heading);
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 0.5rem;
-    line-height: 1.3;
-    }
-    
-.system-description {
+.system-card-excerpt {
     color: var(--color-text-secondary);
-    font-size: 0.9rem;
     line-height: 1.5;
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-lg, 1.5rem);
     flex: 1;
 }
 
-.system-tech-stack {
-        display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    }
-    
-.tech-tag {
+.system-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md, 1rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    padding: var(--spacing-md, 1rem);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-md, 8px);
+}
+
+.metric-item {
+    text-align: center;
+}
+
+.metric-value {
+    display: block;
+    font-family: var(--font-code);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--card-category-color, var(--color-teal));
+    margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
+.metric-label {
     font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-        color: var(--color-text-secondary);
+    color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.system-footer {
+.system-technologies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs, 0.5rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.tech-badge {
+    background: rgba(var(--card-category-rgb, 179, 157, 219), 0.15);
+    color: var(--color-lavender);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+    border-radius: var(--border-radius-sm, 4px);
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid rgba(var(--card-category-rgb, 179, 157, 219), 0.3);
+    transition: all 0.3s ease;
+}
+
+.tech-badge:hover {
+    background: rgba(var(--card-category-rgb, 179, 157, 219), 0.25);
+    transform: translateY(-1px);
+}
+
+.system-card-footer {
+    padding: var(--spacing-lg, 1.5rem);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.system-meta {
+.progress-section {
+    flex: 1;
+    margin-right: var(--spacing-md, 1rem);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
+.progress-label {
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.progress-percentage {
+    font-family: var(--font-code);
     font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    }
-    
+    color: var(--card-category-color, var(--color-teal));
+    font-weight: 600;
+}
+
+.progress-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, 
+        var(--card-category-color, var(--color-teal)), 
+        rgba(var(--card-category-rgb, 38, 198, 218), 0.8)
+    );
+    border-radius: 2px;
+    transition: width 1.5s ease;
+}
+
 .system-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--spacing-sm, 0.75rem);
 }
 
 .action-btn {
-    padding: 0.5rem;
-        background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
+    gap: var(--spacing-xs, 0.5rem);
+    padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+    background: rgba(var(--card-category-rgb, 38, 198, 218), 0.1);
+    border: 1px solid rgba(var(--card-category-rgb, 38, 198, 218), 0.3);
+    border-radius: var(--border-radius-md, 8px);
+    color: var(--card-category-color, var(--color-teal));
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 .action-btn:hover {
-    background: rgba(0, 240, 255, 0.2);
-    border-color: rgba(0, 240, 255, 0.4);
+    background: rgba(var(--card-category-rgb, 38, 198, 218), 0.2);
+    color: var(--card-category-color, var(--color-teal));
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: var(--card-category-color, var(--color-teal));
+    color: var(--color-bg-primary);
+}
+
+.action-btn.primary:hover {
+    background: var(--card-category-color, var(--color-teal));
+    color: var(--color-bg-primary);
+    box-shadow: 0 4px 12px rgba(var(--card-category-rgb, 38, 198, 218), 0.4);
+}
+
+/* Filter Section */
+.filter-section {
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.filter-group {
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.filter-title {
+    font-size: 0.9rem;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-sm, 0.75rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs, 0.5rem);
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm, 0.75rem);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-md, 8px);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+}
+
+.filter-option:hover,
+.filter-option.active {
+    background: rgba(38, 198, 218, 0.1);
+    color: var(--color-teal);
+    transform: translateX(4px);
+}
+
+.filter-count {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    padding: var(--spacing-xs, 0.5rem);
+    background: rgba(38, 198, 218, 0.2);
+    border-radius: var(--border-radius-sm, 4px);
     color: var(--color-teal);
 }
 
-/* List View Specific Styles */
-.systems-grid.list-view .system-card {
-    flex-direction: row;
-    min-height: 120px;
+/* Search and Controls */
+.search-controls {
+    margin-bottom: var(--spacing-lg, 1.5rem);
 }
 
-.systems-grid.list-view .system-image {
-    width: 120px;
-    height: 80px;
-    margin: 1rem 0 1rem 1.5rem;
-    flex-shrink: 0;
+.search-input {
+    width: 100%;
+    padding: var(--spacing-md, 1rem);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-lg, 12px);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
 }
 
-.systems-grid.list-view .system-content {
-    padding: 1rem 1.5rem;
+.search-input:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
 }
 
-.systems-grid.list-view .system-title {
-    font-size: 1.1rem;
+.search-input::placeholder {
+    color: var(--color-text-tertiary);
 }
 
-.systems-grid.list-view .system-description {
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+/* Active Filters */
+.active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs, 0.5rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
 }
 
-/* Compact View Styles */
-.systems-grid.compact-view .system-card {
-    min-height: 200px;
+.active-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+    border-radius: var(--border-radius-full, 50px);
+    font-size: 0.7rem;
+    font-weight: 500;
 }
 
-.systems-grid.compact-view .system-image {
-    height: 120px;
-    margin-bottom: 0.75rem;
+.filter-remove {
+    cursor: pointer;
+    opacity: 0.7;
 }
 
-.systems-grid.compact-view .system-content {
-    padding: 0 1rem 1rem;
+.filter-remove:hover {
+    opacity: 1;
 }
 
-.systems-grid.compact-view .system-title {
-    font-size: 1rem;
-    }
-    
-.systems-grid.compact-view .system-description {
-    font-size: 0.8rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xxl, 4rem);
+    color: var(--color-text-secondary);
 }
 
-/* Loading State */
-.systems-loading {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1.5rem;
-}
-
-.system-card-skeleton {
-    background: var(--gradient-glass);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 1.5rem;
-    height: 400px;
-    position: relative;
-    overflow: hidden;
-}
-
-.skeleton-loader {
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+.empty-state .fas {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    opacity: 0.3;
 }
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .systems-grid.grid-view {
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        }
-        
-    .overview-content {
-        flex-direction: column;
-        text-align: center;
-        }
+    .systems-list-layout {
+        grid-template-columns: 280px 1fr;
+        gap: var(--spacing-lg, 1.5rem);
     }
     
-@media (max-width: 768px) {
-    .systems-grid.grid-view {
-            grid-template-columns: 1fr;
-        }
-        
-    .systems-controls {
-            flex-direction: column;
-        align-items: stretch;
+    .systems-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+@media (max-width: 991px) {
+    .systems-list-layout {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md, 1rem);
     }
     
-    .overview-metrics {
-        flex-direction: column;
-        gap: 1rem;
-        }
-        
-    .systems-grid.list-view .system-card {
-        flex-direction: column;
+    .systems-sidebar {
+        position: static;
+        order: 2;
+        max-height: none;
     }
     
-    .systems-grid.list-view .system-image {
-        width: 100%;
-        height: 150px;
-        margin: 1rem 1.5rem 0;
-        }
+    .systems-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
     }
+}
+
+@media (max-width: 767px) {
+    .systems-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .system-card-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .system-actions {
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+}
 </style>
 {% endblock %}
 
 {% block systems_content %}
-<div class="container">
-    <div class="systems-list-container">
-        
-        <!-- Systems Overview Header -->
-        <div class="systems-header">
-            <div class="systems-overview">
-                <div class="overview-content">
-                    <div class="overview-text">
-                        <h1>Systems Portfolio</h1>
-                        <p>Complete repository of development projects and technical implementations</p>
-                    </div>
-                    <div class="overview-metrics">
-                        <div class="overview-metric">
-                            <div class="metric-value">{{ systems.count|default:8 }}</div>
-                            <div class="metric-label">Total Systems</div>
-                    </div>
-                        <div class="overview-metric">
-                            <div class="metric-value">{{ operational_count|default:5 }}</div>
-                            <div class="metric-label">Operational</div>
-                </div>
-                        <div class="overview-metric">
-                            <div class="metric-value">{{ tech_count|default:12 }}</div>
-                            <div class="metric-label">Technologies</div>
-                        </div>
-                                </div>
-                                </div>
-                        </div>
-                    </div>
-                    
-        <!-- View Controls -->
-        <div class="systems-controls">
-            <div class="view-controls">
-                <button class="view-btn active" data-view="grid">
-                                <i class="fas fa-th"></i>
-                                <span>Grid</span>
-                            </button>
-                <button class="view-btn" data-view="list">
-                                <i class="fas fa-list"></i>
-                                <span>List</span>
-                            </button>
-                <button class="view-btn" data-view="compact">
-                                <i class="fas fa-th-large"></i>
-                                <span>Compact</span>
-                            </button>
+<div class="systems-list-container">
+
+    <!-- Header Section -->
+    <div class="unified-dashboard-container teal" style="margin-bottom: var(--spacing-xl, 2rem);">
+        <div class="unified-container-header">
+            <div class="unified-featured-badge">
+                <i class="fas fa-th-large"></i>
+                <span>Systems Overview</span>
+            </div>
+            
+            <h1 class="unified-container-title" style="margin-bottom: var(--spacing-sm, 0.75rem);">All Systems</h1>
+            <p class="unified-container-subtitle">{{ total_systems }} systems across {{ system_types|length }} categories</p>
         </div>
+
+        <!-- Quick Stats -->
+        <div class="dashboard-grid grid-4-col" style="margin: 0;">
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ quick_stats.deployed_count }}">{{ quick_stats.deployed_count }}</div>
+                <div class="metric-label">Deployed</div>
+            </div>
+            
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ quick_stats.featured_count }}">{{ quick_stats.featured_count }}</div>
+                <div class="metric-label">Featured</div>
+            </div>
+            
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ quick_stats.in_development_count }}">{{ quick_stats.in_development_count }}</div>
+                <div class="metric-label">In Development</div>
+            </div>
+            
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ dashboard_stats.avg_completion|floatformat:0 }}">{{ dashboard_stats.avg_completion|floatformat:0 }}</div>
+                <div class="metric-label">Avg Completion %</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="systems-list-layout">
         
-            <div class="sort-controls">
-                <select id="systems-sort">
-                    <option value="recent">Recently Updated</option>
-                    <option value="name">Name A-Z</option>
-                    <option value="status">Status</option>
-                    <option value="created">Date Created</option>
-                </select>
-                    </div>
+        <!-- Sidebar -->
+        <aside class="systems-sidebar">
+            
+            <!-- Search -->
+            <div class="unified-dashboard-container lavender">
+                <div class="unified-container-header">
+                    <h3 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Search & Filter</h3>
                 </div>
                 
-        <!-- Systems Grid -->
-        <div class="systems-grid grid-view" id="systemsGrid">
-            {% for system in systems %}
-            <div class="system-card status-{{ system.status|default:'deployed' }}" data-status="{{ system.status|default:'deployed' }}" data-type="{{ system.system_type.slug|default:'web' }}">
-                <div class="system-card-header">
-                    <div class="system-id">{{ system.system_id|default:'SYS-001' }}</div>
-                    <div class="system-status {{ system.status|default:'operational' }}"></div>
+                <div class="search-controls">
+                    <form method="get" id="searchForm">
+                        <input type="text" 
+                               name="search" 
+                               value="{{ request.GET.search }}" 
+                               placeholder="Search systems..." 
+                               class="search-input">
+                        <input type="hidden" name="status" value="{{ request.GET.status }}">
+                        <input type="hidden" name="tech" value="{{ request.GET.tech }}">
+                        <input type="hidden" name="type" value="{{ request.GET.type }}">
+                        <input type="hidden" name="order" value="{{ request.GET.order }}">
+                    </form>
+                </div>
+
+                <!-- Active Filters -->
+                {% if active_filters %}
+                <div class="active-filters">
+                    {% for filter_type, filter_value in active_filters.items %}
+                    <span class="active-filter">
+                        {{ filter_type }}: {{ filter_value }}
+                        <i class="fas fa-times filter-remove" 
+                           data-filter="{{ filter_type|lower }}" 
+                           title="Remove filter"></i>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Status Filter -->
+            <div class="unified-dashboard-container mint">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">By Status</h4>
+                </div>
+                
+                <div class="filter-options">
+                    <a href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.tech %}tech={{ request.GET.tech }}&{% endif %}{% if request.GET.order %}order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if not request.GET.status %}active{% endif %}">
+                        <span>All Systems</span>
+                        <span class="filter-count">{{ total_systems }}</span>
+                    </a>
+                    <a href="?status=deployed{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.status == 'deployed' %}active{% endif %}">
+                        <span>Deployed</span>
+                        <span class="filter-count">{{ quick_stats.deployed_count }}</span>
+                    </a>
+                    <a href="?status=featured{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.status == 'featured' %}active{% endif %}">
+                        <span>Featured</span>
+                        <span class="filter-count">{{ quick_stats.featured_count }}</span>
+                    </a>
+                    <a href="?status=in_development{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.status == 'in_development' %}active{% endif %}">
+                        <span>In Development</span>
+                        <span class="filter-count">{{ quick_stats.in_development_count }}</span>
+                    </a>
+                    <a href="?status=high_priority{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.status == 'high_priority' %}active{% endif %}">
+                        <span>High Priority</span>
+                        <span class="filter-count">{{ quick_stats.high_priority_count }}</span>
+                    </a>
+                    <a href="?status=with_metrics{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.status == 'with_metrics' %}active{% endif %}">
+                        <span>With Performance Data</span>
+                        <span class="filter-count">{{ quick_stats.with_performance_count }}</span>
+                    </a>
+                    <a href="?status=recent{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.status == 'recent' %}active{% endif %}">
+                        <span>Recently Updated</span>
+                        <span class="filter-count">{{ quick_stats.recently_updated_count }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Technology Filter -->
+            {% if technologies %}
+            <div class="unified-dashboard-container yellow">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">By Technology</h4>
+                </div>
+                
+                <div class="filter-options">
+                    {% for tech in technologies|slice:":8" %}
+                    <a href="?tech={{ tech.slug }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.tech == tech.slug %}active{% endif %}">
+                        <span>{{ tech.name }}</span>
+                        <span class="filter-count">{{ tech.usage_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- System Types Filter -->
+            {% if system_types %}
+            <div class="unified-dashboard-container coral">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">By Type</h4>
+                </div>
+                
+                <div class="filter-options">
+                    {% for type in system_types %}
+                    <a href="?type={{ type.slug }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.type == type.slug %}active{% endif %}">
+                        <span>{{ type.name }}</span>
+                        <span class="filter-count">{{ type.usage_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Performance Analytics -->
+            {% if performance_analytics %}
+            <div class="unified-dashboard-container gunmetal">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Performance</h4>
+                </div>
+                
+                <div class="metric-content">
+                    <div class="metric-value">{{ performance_analytics.avg_performance|floatformat:1 }}</div>
+                    <div class="metric-label">Avg Performance</div>
+                </div>
+                
+                <div class="metric-content">
+                    <div class="metric-value">{{ performance_analytics.avg_uptime|floatformat:1 }}%</div>
+                    <div class="metric-label">Avg Uptime</div>
+                </div>
+                
+                <div class="metric-content">
+                    <div class="metric-value">{{ performance_analytics.total_daily_users|default:0 }}</div>
+                    <div class="metric-label">Total Daily Users</div>
+                </div>
+            </div>
+            {% endif %}
+
+        </aside>
+
+        <!-- Main Content -->
+        <main class="systems-main-content">
+            
+            <!-- Sort Controls -->
+            <div class="unified-dashboard-container navy" style="margin-bottom: var(--spacing-lg, 1.5rem);">
+                <div class="search-controls">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-md, 1rem);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md, 1rem);">
+                            <span style="color: var(--color-text-secondary); font-size: 0.9rem;">Sort by:</span>
+                            <div style="display: flex; gap: var(--spacing-sm, 0.75rem); flex-wrap: wrap;">
+                                <a href="?order=recent{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'recent' or not request.GET.order %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                    <i class="fas fa-clock"></i> Recent
+                                </a>
+                                <a href="?order=name{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'name' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                    <i class="fas fa-sort-alpha-down"></i> Name
+                                </a>
+                                <a href="?order=completion{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'completion' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                    <i class="fas fa-percentage"></i> Completion
+                                </a>
+                                <a href="?order=performance{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'performance' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                    <i class="fas fa-tachometer-alt"></i> Performance
+                                </a>
                             </div>
-                            
-                <div class="system-image">
-                    {% if system.thumbnail %}
-                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
-                    {% else %}
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-microchip"></i>
-                            </div>
-                    {% endif %}
-                            </div>
-                            
-                <div class="system-content">
-                    <h3 class="system-title">{{ system.title|default:'Neural Network Trainer' }}</h3>
-                    <p class="system-description">{{ system.excerpt|default:'Advanced machine learning training pipeline with automated hyperparameter optimization and distributed computing capabilities.' }}</p>
+                        </div>
+                        <div style="color: var(--color-text-secondary); font-size: 0.9rem;">
+                            Showing {{ systems|length }} of {{ total_systems }} systems
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Systems Grid -->
+            {% if systems %}
+            <div class="systems-grid">
+                {% for system in systems %}
+                <article class="system-card {{ system.status }}{% if system.featured %} featured{% endif %}">
                     
-                    <div class="system-tech-stack">
-                        {% for tech in system.technologies.all|slice:":4" %}
-                        <span class="tech-tag">{{ tech.name }}</span>
-                        {% empty %}
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">TensorFlow</span>
-                        <span class="tech-tag">Docker</span>
-                        <span class="tech-tag">PostgreSQL</span>
-                                    {% endfor %}
+                    <!-- Card Header -->
+                    <header class="system-card-header">
+                        <div class="system-card-badges">
+                            <span class="system-id-badge">{{ system.system_id|default:"SYS-"|add:system.id|stringformat:"03d" }}</span>
+                            <div class="system-status-badge">
+                                <span class="status-dot"></span>
+                                {{ system.get_status_display }}
                             </div>
-                            
-                    <div class="system-footer">
-                        <div class="system-meta">
-                            Updated {{ system.updated_at|default:"2024-06-10"|date:"M d" }}
+                        </div>
+                        
+                        <h3 class="system-card-title">{{ system.title }}</h3>
+                        {% if system.system_type %}
+                        <p class="system-card-subtitle">{{ system.system_type.name }}</p>
+                        {% endif %}
+                    </header>
+
+                    <!-- Card Body -->
+                    <div class="system-card-body">
+                        {% if system.excerpt %}
+                        <p class="system-card-excerpt">{{ system.excerpt|truncatewords:25 }}</p>
+                        {% endif %}
+
+                        <!-- Enhanced Metrics -->
+                        <div class="system-card-metrics">
+                            <div class="metric-item">
+                                <span class="metric-value">{{ system.completion_percent|default:0 }}%</span>
+                                <span class="metric-label">Complete</span>
                             </div>
+                            <div class="metric-item">
+                                <span class="metric-value">{{ system.get_complexity_display }}</span>
+                                <span class="metric-label">Complexity</span>
+                            </div>
+                            <div class="metric-item">
+                                {% if system.performance_score %}
+                                <span class="metric-value">{{ system.performance_score }}</span>
+                                <span class="metric-label">Performance</span>
+                                {% else %}
+                                <span class="metric-value">{{ system.technologies.count }}</span>
+                                <span class="metric-label">Technologies</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Technologies -->
+                        {% if system.technologies.exists %}
+                        <div class="system-technologies">
+                            {% for tech in system.technologies.all|slice:":4" %}
+                            <span class="tech-badge">{{ tech.name }}</span>
+                            {% endfor %}
+                            {% if system.technologies.count > 4 %}
+                            <span class="tech-badge" style="opacity: 0.7;">+{{ system.technologies.count|add:"-4" }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Card Footer -->
+                    <footer class="system-card-footer">
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-label">Progress</span>
+                                <span class="progress-percentage">{{ system.completion_percent|default:0 }}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ system.completion_percent|default:0 }}%"></div>
+                            </div>
+                        </div>
+                        
                         <div class="system-actions">
-                            <a href="{% url 'projects:system_detail' system.slug %}" class="action-btn" title="View Details">
+                            <a href="{{ system.get_absolute_url }}" class="action-btn primary">
                                 <i class="fas fa-eye"></i>
+                                <span>View</span>
                             </a>
+                            {% if system.github_url %}
+                            <a href="{{ system.github_url }}" target="_blank" class="action-btn">
+                                <i class="fab fa-github"></i>
+                            </a>
+                            {% endif %}
                             {% if system.live_url %}
-                            <a href="{{ system.live_url }}" class="action-btn" title="View Live" target="_blank">
+                            <a href="{{ system.live_url }}" target="_blank" class="action-btn">
                                 <i class="fas fa-external-link-alt"></i>
                             </a>
                             {% endif %}
-                    </div>
-                </div>
+                        </div>
+                    </footer>
+                </article>
+                {% endfor %}
             </div>
-        </div>
-            {% empty %}
-            <!-- Sample Systems for Demo -->
-            <div class="system-card status-deployed" data-status="deployed" data-type="ml">
-                <div class="system-card-header">
-                    <div class="system-id">SYS-001</div>
-                    <div class="system-status operational"></div>
-                                </div>
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-robot"></i>
-                                </div>
-                            </div>
-                <div class="system-content">
-                    <h3 class="system-title">Neural Network Trainer</h3>
-                    <p class="system-description">Advanced machine learning training pipeline with automated hyperparameter optimization and distributed computing capabilities.</p>
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">TensorFlow</span>
-                        <span class="tech-tag">Docker</span>
-                        <span class="tech-tag">Kubernetes</span>
-                                    </div>
-                    <div class="system-footer">
-                        <div class="system-meta">Updated Jun 10</div>
-                        <div class="system-actions">
-                            <button class="action-btn" title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="action-btn" title="Quick Preview">
-                                <i class="fas fa-external-link-alt"></i>
-                            </button>
-                                            </div>
-                                            </div>
-                                            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <h3>No systems found</h3>
+                <p>Try adjusting your search criteria or filters.</p>
+                <a href="{% url 'projects:system_list' %}" class="action-btn primary" style="margin-top: var(--spacing-lg, 1.5rem);">
+                    <i class="fas fa-refresh"></i>
+                    Clear Filters
+                </a>
             </div>
-                                            
-            <div class="system-card status-testing" data-status="testing" data-type="web">
-                <div class="system-card-header">
-                    <div class="system-id">SYS-002</div>
-                    <div class="system-status testing"></div>
-                                            </div>
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-chart-bar"></i>
-                                        </div>
-                                    </div>
-                <div class="system-content">
-                    <h3 class="system-title">Analytics Dashboard</h3>
-                    <p class="system-description">Real-time data visualization platform with interactive charts and customizable reporting features.</p>
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">React</span>
-                        <span class="tech-tag">D3.js</span>
-                        <span class="tech-tag">Node.js</span>
-                        <span class="tech-tag">MongoDB</span>
-                                        </div>
-                    <div class="system-footer">
-                        <div class="system-meta">Updated Jun 08</div>
-                        <div class="system-actions">
-                            <button class="action-btn" title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="action-btn" title="Quick Preview">
-                                <i class="fas fa-external-link-alt"></i>
-                            </button>
-                                        </div>
-                                    </div>
-                </div>
-            </div>
-                                    
-            <div class="system-card status-development" data-status="development" data-type="api">
-                <div class="system-card-header">
-                    <div class="system-id">SYS-003</div>
-                    <div class="system-status development"></div>
-                                </div>
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-database"></i>
-                    </div>
-                </div>
-                <div class="system-content">
-                    <h3 class="system-title">Data Processing Engine</h3>
-                    <p class="system-description">High-performance data ingestion and transformation pipeline for large-scale analytics workloads.</p>
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">Apache Kafka</span>
-                        <span class="tech-tag">Spark</span>
-                        <span class="tech-tag">Scala</span>
-                        <span class="tech-tag">Cassandra</span>
-                    </div>
-                    <div class="system-footer">
-                        <div class="system-meta">Updated Jun 05</div>
-                        <div class="system-actions">
-                            <button class="action-btn" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="action-btn" title="Quick Preview">
-                                            <i class="fas fa-external-link-alt"></i>
-                            </button>
-                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-            <div class="system-card status-deployed" data-status="deployed" data-type="tool">
-                <div class="system-card-header">
-                    <div class="system-id">SYS-004</div>
-                    <div class="system-status operational"></div>
-                                    </div>
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-cogs"></i>
-                                    </div>
-                                    </div>
-                <div class="system-content">
-                    <h3 class="system-title">DevOps Automation Suite</h3>
-                    <p class="system-description">Comprehensive CI/CD pipeline management with automated testing and deployment workflows.</p>
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">Jenkins</span>
-                        <span class="tech-tag">Terraform</span>
-                        <span class="tech-tag">AWS</span>
-                        <span class="tech-tag">Ansible</span>
-                                </div>
-                    <div class="system-footer">
-                        <div class="system-meta">Updated Jun 03</div>
-                        <div class="system-actions">
-                            <button class="action-btn" title="View Details">
-                                <i class="fas fa-eye"></i>
-                                    </button>
-                            <button class="action-btn" title="Quick Preview">
-                                <i class="fas fa-external-link-alt"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                </div>
-                
-            <div class="system-card status-testing" data-status="testing" data-type="ml">
-                <div class="system-card-header">
-                    <div class="system-id">SYS-005</div>
-                    <div class="system-status testing"></div>
-                    </div>
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-brain"></i>
-                </div>
-                </div>
-                <div class="system-content">
-                    <h3 class="system-title">AI Recommendation Engine</h3>
-                    <p class="system-description">Machine learning-powered recommendation system with collaborative filtering and content-based algorithms.</p>
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">PyTorch</span>
-                        <span class="tech-tag">FastAPI</span>
-                        <span class="tech-tag">Redis</span>
-                        <span class="tech-tag">Elasticsearch</span>
-                    </div>
-                    <div class="system-footer">
-                        <div class="system-meta">Updated May 28</div>
-                        <div class="system-actions">
-                            <button class="action-btn" title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="action-btn" title="Quick Preview">
-                                <i class="fas fa-external-link-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                        </div>
-                    </div>
+            {% endif %}
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="unified-dashboard-container teal">
+                <div style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-md, 1rem);">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="action-btn">
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </a>
+                    {% endif %}
                     
-            <div class="system-card status-deployed" data-status="deployed" data-type="web">
-                <div class="system-card-header">
-                    <div class="system-id">SYS-006</div>
-                    <div class="system-status operational"></div>
-                            </div>
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-globe"></i>
-                        </div>
-                    </div>
-                <div class="system-content">
-                    <h3 class="system-title">Portfolio Platform</h3>
-                    <p class="system-description">Dynamic portfolio website with content management system and integrated analytics tracking.</p>
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">Django</span>
-                        <span class="tech-tag">PostgreSQL</span>
-                        <span class="tech-tag">Celery</span>
-                        <span class="tech-tag">Nginx</span>
-                </div>
-                    <div class="system-footer">
-                        <div class="system-meta">Updated May 25</div>
-                        <div class="system-actions">
-                            <button class="action-btn" title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="action-btn" title="Quick Preview">
-                                <i class="fas fa-external-link-alt"></i>
-                            </button>
-                        </div>
-                    </div>
+                    <span style="color: var(--color-text-secondary); font-size: 0.9rem;">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="action-btn">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        
+            {% endif %}
+
+        </main>
     </div>
 </div>
 {% endblock %}
 
-{% block systems_js %}
+{% block extra_js %}
+{{ block.super }}
+<script src="{% static 'projects/js/dashboard_panel.js' %}"></script>
 <script>
-// Systems List Specific JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    initSystemsList();
-});
+    // Initialize progress bars animation
+    setTimeout(() => {
+        const progressFills = document.querySelectorAll('.progress-fill');
+        progressFills.forEach((fill, index) => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.transition = 'width 1.5s ease';
+                fill.style.width = width;
+            }, index * 100);
+        });
+    }, 500);
 
-function initSystemsList() {
-    // View Toggle Functionality
-    const viewButtons = document.querySelectorAll('.view-btn');
-    const systemsGrid = document.getElementById('systemsGrid');
+    // Search form auto-submit
+    const searchInput = document.querySelector('.search-input');
+    let searchTimeout;
     
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            // Remove active from all buttons
-            viewButtons.forEach(b => b.classList.remove('active'));
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            document.getElementById('searchForm').submit();
+        }, 800);
+    });
+
+    // Filter removal
+    document.querySelectorAll('.filter-remove').forEach(remove => {
+        remove.addEventListener('click', function() {
+            const filterType = this.dataset.filter;
+            const url = new URL(window.location);
             
-            // Add active to clicked button
-            this.classList.add('active');
+            // Remove the specific filter parameter
+            const paramMap = {
+                'status': 'status',
+                'technology': 'tech',
+                'type': 'type',
+                'complexity': 'complexity',
+                'search': 'search'
+            };
             
-            // Update grid view
-            const viewType = this.getAttribute('data-view');
-            systemsGrid.className = `systems-grid ${viewType}-view`;
+            if (paramMap[filterType]) {
+                url.searchParams.delete(paramMap[filterType]);
+            }
+            
+            window.location.href = url.toString();
         });
     });
-    
-    // Sort Functionality
-    const sortSelect = document.getElementById('systems-sort');
-    if (sortSelect) {
-        sortSelect.addEventListener('change', function() {
-            sortSystems(this.value);
+
+    // Card hover effects
+    document.querySelectorAll('.system-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
         });
-    }
-    
-    // Filter Event Listeners
-    document.addEventListener('systemsFilterChange', function(e) {
-        const { category, filter } = e.detail;
-        applyFilter(category, filter);
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-6px)';
+        });
     });
-    
-    document.addEventListener('systemsSearchChange', function(e) {
-        const { query } = e.detail;
-        searchSystems(query);
-    });
-    
-    // Initialize animations
-    animateSystemCards();
-}
 
-function sortSystems(sortBy) {
-    const grid = document.getElementById('systemsGrid');
-    const cards = Array.from(grid.querySelectorAll('.system-card'));
-    
-    cards.sort((a, b) => {
-        switch(sortBy) {
-            case 'name':
-                return a.querySelector('.system-title').textContent.localeCompare(
-                    b.querySelector('.system-title').textContent
-                );
-            case 'status':
-                return a.getAttribute('data-status').localeCompare(
-                    b.getAttribute('data-status')
-                );
-            case 'created':
-                // Would need actual date data for proper sorting
-                return 0;
-            case 'recent':
-            default:
-                return 0; // Keep current order for recent
-        }
-    });
-    
-    // Remove all cards and re-append in sorted order
-    cards.forEach(card => card.remove());
-    cards.forEach(card => grid.appendChild(card));
-    
-    // Re-animate
-    animateSystemCards();
-}
-
-function applyFilter(category, filter) {
-    const cards = document.querySelectorAll('.system-card');
-    
-    cards.forEach(card => {
-        let show = true;
-        
-        if (category === 'status' && filter !== 'all') {
-            show = card.getAttribute('data-status') === filter;
-        }
-        
-        if (category === 'type' && filter !== 'all') {
-            show = card.getAttribute('data-type') === filter;
-        }
-        
-        if (show) {
-            card.style.display = 'flex';
-            card.classList.remove('filtered-out');
-        } else {
-            card.style.display = 'none';
-            card.classList.add('filtered-out');
-        }
-    });
-    
-    // Update visible count
-    const visibleCards = document.querySelectorAll('.system-card:not(.filtered-out)');
-    console.log(`Showing ${visibleCards.length} systems`);
-}
-
-function searchSystems(query) {
-    const cards = document.querySelectorAll('.system-card');
-    const searchTerm = query.toLowerCase();
-    
-    cards.forEach(card => {
-        const title = card.querySelector('.system-title').textContent.toLowerCase();
-        const description = card.querySelector('.system-description').textContent.toLowerCase();
-        const techTags = Array.from(card.querySelectorAll('.tech-tag'))
-            .map(tag => tag.textContent.toLowerCase())
-            .join(' ');
-        
-        const searchableText = `${title} ${description} ${techTags}`;
-        const matches = searchableText.includes(searchTerm);
-        
-        if (matches || query === '') {
-            card.style.display = 'flex';
-            card.classList.remove('search-hidden');
-        } else {
-            card.style.display = 'none';
-            card.classList.add('search-hidden');
-        }
-    });
-}
-
-function animateSystemCards() {
-    const cards = document.querySelectorAll('.system-card');
-    
-    // Reset animations
-    cards.forEach(card => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-            });
-            
-    // Animate in sequence
-    cards.forEach((card, index) => {
-                setTimeout(() => {
-            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 100);
-            });
-}
-
-// System Card Interactions
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.action-btn')) {
-        const btn = e.target.closest('.action-btn');
-        const card = btn.closest('.system-card');
-        const systemId = card.querySelector('.system-id').textContent;
-        
-        if (btn.title === 'Quick Preview') {
-            showSystemPreview(systemId);
-        }
-    }
+    console.log('🚀 Enhanced System List loaded successfully!');
 });
-
-function showSystemPreview(systemId) {
-    // Quick preview modal functionality
-    console.log(`Showing preview for ${systemId}`);
-    // Implementation for preview modal would go here
-}
 </script>
 {% endblock %}
