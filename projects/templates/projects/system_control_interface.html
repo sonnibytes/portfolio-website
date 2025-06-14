@@ -886,6 +886,99 @@
                 </div>
             </div>
 
+            {% elif active_panel == 'detail' %}
+                <!-- Detail Panel -->
+                <div class="panel-content-grid">
+
+                    <!-- System Description -->
+                    <div class="unified-dashboard-container lavender">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">System Description</h3>
+                        </div>
+                        
+                        <div class="content-wrapper">
+                            {{ system.description|markdownify }}
+                        </div>
+                    </div>
+                    <!-- Features Overview -->
+                    <div class="unified-dashboard-container mint">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Features Overview</h3>
+                        </div>
+                        
+                        <div class="content-wrapper">
+                            {{ system.features_overview|markdownify }}
+                        </div>
+                    </div>
+                    <!-- Technical Details -->
+                    <div class="unified-dashboard-container coral">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Tecchnical Details</h3>
+                        </div>
+                        
+                        <div class="content-wrapper">
+                            {{ system.technical_details }}
+                        </div>
+                    </div>
+
+
+                <!-- Recent Activity -->
+                <div class="unified-dashboard-container mint">
+                    <div class="unified-container-header">
+                        <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Recent Activity
+                        </h3>
+                    </div>
+
+                    <div class="activity-feed">
+                        {% for entry in panel_data.recent_activity %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p class="activity-title">{{ entry.post.title|truncatechars:40 }}</p>
+                                <p class="activity-details">DataLog entry updated</p>
+                                <p class="activity-time">{{ entry.created_at|timesince }} ago</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p class="activity-title">No recent activity</p>
+                                <p class="activity-details">System is stable</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Technologies -->
+            <div class="unified-dashboard-container coral">
+                <div class="unified-container-header">
+                    <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Key Technologies
+                    </h3>
+                </div>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--spacing-md, 1rem);">
+                    {% for tech in panel_data.key_technologies %}
+                    <div
+                        style="text-align: center; padding: var(--spacing-md, 1rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                        <div style="tech-icon"><i class="fas {{ tech.icon|default:'code' }}"></i></div>
+                        <div
+                            style="color: var(--color-coral); font-weight: 600; margin-bottom: var(--spacing-xs, 0.5rem);">
+                            {{ tech.name }}</div>
+                        <div style="font-size: 0.7rem; color: var(--color-text-tertiary);">
+                            {{ tech.category|default:"Technology" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
             {% elif active_panel == 'datalogs' %}
             <!-- DataLogs Panel -->
             <div class="panel-content-grid grid-1-col">
@@ -1017,6 +1110,7 @@
                             <h4 class="tech-name">{{ tech_name }}</h4>
                             <span class="tech-usage-count">{{ analysis.usage_in_similar }}</span>
                         </div>
+                        <div class="tech-icon" style="display: inline; font-size: 1.5rem; color: var(--color-coral);"><i class="fas {{ analysis.technology.icon|default:'cogs' }}"></i></div>
 
                         <div style="margin-bottom: var(--spacing-md, 1rem);">
                             <div
@@ -1107,6 +1201,7 @@
                     <div class="unified-container-header">
                         <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Development
                             Timeline</h3>
+                            <span>{{ panel_data.timeline_events|length }} events</span>
                     </div>
 
                     <div class="timeline-container">
@@ -1148,7 +1243,10 @@
                         </div>
                         {% for feature in panel_data.features_by_status.completed|slice:":5" %}
                         <div class="feature-item completed">
-                            <div style="font-weight: 600; margin-bottom: var(--spacing-xs, 0.5rem);">{{ feature.name }}
+                            {% comment %} <div class="feature-icon" style="display: inline-flex;">
+                                <i class="fas {{ feature.icon }}"></i>
+                            </div> {% endcomment %}
+                            <div style="font-weight: 600; margin-bottom: var(--spacing-xs, 0.5rem);">{{ feature.title }}
                             </div>
                             <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
                                 {{ feature.description|truncatechars:60 }}</div>
@@ -1164,7 +1262,7 @@
                         </div>
                         {% for feature in panel_data.features_by_status.in_progress|slice:":5" %}
                         <div class="feature-item in-progress">
-                            <div style="font-weight: 600; margin-bottom: var(--spacing-xs, 0.5rem);">{{ feature.name }}
+                            <div style="font-weight: 600; margin-bottom: var(--spacing-xs, 0.5rem);">{{ feature.title }}
                             </div>
                             <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
                                 {{ feature.description|truncatechars:60 }}</div>
@@ -1180,7 +1278,7 @@
                         </div>
                         {% for feature in panel_data.features_by_status.planned|slice:":5" %}
                         <div class="feature-item planned">
-                            <div style="font-weight: 600; margin-bottom: var(--spacing-xs, 0.5rem);">{{ feature.name }}
+                            <div style="font-weight: 600; margin-bottom: var(--spacing-xs, 0.5rem);">{{ feature.title }}
                             </div>
                             <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
                                 {{ feature.description|truncatechars:60 }}</div>

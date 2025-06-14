@@ -518,6 +518,9 @@ class SystemControlInterfaceView(DetailView):
 
             # Quick access data
             'quick_stats': self.get_quick_stats(system),
+
+            # For System Info
+            'system': system,
         })
 
         return context
@@ -569,6 +572,14 @@ class SystemControlInterfaceView(DetailView):
                 "color": "teal",
             },
             {
+                "id": "detail",
+                "name": "System Details",
+                "icon": "cogs",
+                "description": "System content details",
+                "count": None,
+                "color": "yellow",
+            },
+            {
                 "id": "datalogs",
                 "name": "DataLogs",
                 "icon": "file-alt",
@@ -589,7 +600,7 @@ class SystemControlInterfaceView(DetailView):
                 "name": "Features",
                 "icon": "puzzle-piece",
                 "description": "System features and capabilities",
-                "count": system.features.count() if hasattr(system, 'features') else 0,
+                "count": system.features.count() if hasattr(system, "features") else 0,
                 "color": "mint",
             },
             {
@@ -605,7 +616,9 @@ class SystemControlInterfaceView(DetailView):
                 "name": "Dependencies",
                 "icon": "project-diagram",
                 "description": "System dependencies and relationships",
-                "count": system.dependencies.count() if hasattr(system, 'dependencies') else 0,
+                "count": system.dependencies.count()
+                if hasattr(system, "dependencies")
+                else 0,
                 "color": "navy",
             },
             {
@@ -631,6 +644,8 @@ class SystemControlInterfaceView(DetailView):
         elif panel == 'performance':
             return self.get_performance_panel_data(system)
         elif panel == 'dependencies':
+            return self.get_dependencies_panel_data(system)
+        elif panel == "timeline":
             return self.get_timeline_panel_data(system)
         else:
             # Overview
@@ -649,6 +664,11 @@ class SystemControlInterfaceView(DetailView):
                 'current_status': system.get_status_display(),
                 'status_color': system.get_status_badge_color(),
                 'last_updated': system.updated_at,
+            },
+            'system_info': {
+                'description': system.rendered_content(),
+                'technical_details': system.render_technical_details(),
+                'challenges': system.rendered_challenges(),
             }
         }
 
@@ -728,19 +748,21 @@ class SystemControlInterfaceView(DetailView):
 
         feature_stats = {
             'total_features': features.count(),
-            'completed_features': features.filter(status='completed').count() if features else 0,
-            'in_progress_features': features.filter(status='in_progress').count() if features else 0,
-            'planned_features': features.filter(status='planned').count() if features else 0,
+            'completed_features': features.filter(implementation_status='completed').count() if features else 0,
+            'in_progress_features': features.filter(implementation_status='in_progress').count() if features else 0,
+            'planned_features': features.filter(implementation_status='planned').count() if features else 0,
         }
 
         return {
-            'features': features,
-            'feature_stats': feature_stats,
-            'features_by_status': {
-                'completed': features.filter(status='completed'),
-                'in_progress': features.filter(status='in_progress'),
-                'planned': features.filter(status='planned'),
-            } if features else {}
+            "features": features,
+            "feature_stats": feature_stats,
+            "features_by_status": {
+                "completed": features.filter(implementation_status="completed"),
+                "in_progress": features.filter(implementation_status="in_progress"),
+                "planned": features.filter(implementation_status="planned"),
+            }
+            if features
+            else {},
         }
 
     def get_performance_panel_data(self, system):
