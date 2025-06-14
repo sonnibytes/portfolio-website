@@ -549,7 +549,7 @@ class SystemControlInterfaceView(DetailView):
     def get_similar_systems(self, system):
         """Get similar systems using enhanced manager methods."""
         if system.status == 'deployed':
-            return SystemModule.objectcs.deployed().filter(
+            return SystemModule.objects.deployed().filter(
                 system_type=system.system_type
             ).exclude(id=system.id)[:4]
         elif system.status in ['in_development', 'testing']:
@@ -821,15 +821,15 @@ class SystemControlInterfaceView(DetailView):
             completed_features = features_data['features_by_status'].get('completed', [])
             in_progress_features = features_data['features_by_status'].get('in_progress', [])
 
-            generated_content = f'## {system.title} Features\n\n'
+            generated_content = f'### {system.title} Features\n\n'
 
             if completed_features:
-                generated_content += '### **Implemented Features**\n\n'
+                generated_content += '#### **Implemented Features**\n\n'
                 for feature in completed_features[:5]:  # Limit to 5
                     generated_content += f'- **{feature.title}**: {feature.description[:100]}{"..." if len(feature.description) > 100 else ""}\n'
                     generated_content += "\n"
             if in_progress_features:
-                generated_content += '### **Features in Development**\n\n'
+                generated_content += '#### **Features in Development**\n\n'
                 for feature in in_progress_features[:3]:  # Limit to 3
                     generated_content += f'- **{feature.title}**: {feature.description[:100]}{"..." if len(feature.description) > 100 else ""}\n'
                     generated_content += "\n"
