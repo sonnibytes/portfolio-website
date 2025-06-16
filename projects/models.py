@@ -348,6 +348,32 @@ class SystemModule(models.Model):
         help_text="Production deployment date"
     )
 
+    # ================= LEARNING-FOCUSED ADDITIONS =================
+
+    # Learning Stage Classification
+    LEARNING_STAGE_CHOICES = (
+        ('tutorial', 'Following Tutorial'),
+        ('guided', 'Guided Project'),
+        ('independent', 'Independent Development'),
+        ('refactoring', 'Refactoring/Improving'),
+        ('contributing', 'Open Source Contributing'),
+        ('teaching', 'Teaching/Sharing'),
+    )
+
+    learning_stage = models.CharField(max_length=20, choices=LEARNING_STAGE_CHOICES, default='independent', help_text='What stage of learning was this project for you?')
+
+    # Skill Development Connection
+    skills_developed = models.ManyToManyField(
+        "core.Skill",
+        through='SystemSkillGain',
+        blank=True,
+        related_name='developed_in_projects',
+        help_text="Skills gained or improved through this project"
+    )
+
+    # Portfolio Assessment
+    portfolio_ready = models.BooleanField(default=False, help_text="Is this project ready to show to potential employers?")
+
     # ================= CUSTOM MANAGER =================
     objects = SystemModuleManager()
 
@@ -666,6 +692,149 @@ class SystemModule(models.Model):
         }
         return icons.get(self.status, 'sync-alt')
 
+    # ================= LEARNING-FOCUSED METHODS =================
+
+    def get_learning_velocity(self):
+        """Skills gained per month of development"""
+        if not self.created_at or not self.skills_developed.exists():
+            return 0
+
+        months = max((timezone.now() - self.created_at).days / 30, 1)
+        return round(self.skills_developed.count() / months, 2)
+
+    def get_complexity_evolution_score(self):
+        """Project complexity based on metrics"""
+        tech_score = self.technologies.count() * 2
+        loc_score = min(self.code_lines / 1000, 5) if self.code_lines else 0
+        commit_score = min(self.commit_count / 50, 3) if self.commit_count else 0
+
+        return round(tech_score + loc_score + commit_score, 1)
+
+    def get_learning_stage_color(self):
+        """Color coding for learning stage badges"""
+        colors = {
+            "tutorial": "#FFB74D",      # Orange - learning basics
+            "guided": "#81C784",        # Green - following guidance
+            "independent": "#64B5F6",   # Blue - working independently
+            "refactoring": "#BA68C8",   # Purple - improving skills
+            "contributing": "#4FC3F7",  # Cyan - giving back
+            "teaching": "#FFD54F",      # Gold - sharing knowledge
+        }
+        return colors.get(self.learning_stage, "#64B5F6")
+
+    def get_portfolio_readiness_score(self):
+        """Calculate portfolio readiness using existing fields"""
+        score = 0
+
+        # Content completeness (40 points)
+        if self.description:
+            score += 10
+        if self.excerpt:
+            score += 10
+        if self.live_url or self.demo_url:
+            score += 10
+        if self.github_url:
+            score += 10
+
+        # Technical polish (30 points)
+        if self.technologies.exists():
+            score += 10
+        if self.featured_image:
+            score += 10
+        if self.completion_percent >= 80:
+            score += 10
+
+        # Learning documentation via DataLogs (20 points)
+        if self.get_related_logs().exists():
+            score += 20
+
+        # Manual assessment (10 points)
+        if self.portfolio_ready:
+            score += 10
+
+        return min(score, 100)
+    
+    def get_development_stats_for_learning(self):
+        """Learning-focused stats using existing fields"""
+        return {
+            # Use existing time tracking
+            'estimated_hours': self.estimated_dev_hours or 0,
+            'actual_hours': self.actual_dev_hours or 0,
+            'hours_variance': self.hours_variance() or 0,
+
+            # Use existing code metrics
+            'lines_of_code': self.code_lines,
+            'commits': self.commit_count,
+            'last_commit': self.last_commit_date,
+
+            # New learning metrics
+            'skills_count': self.skills_developed.count(),
+            'learning_stage': self.get_learning_stage_display(),  # Created by django automatically w choice field
+            'learning_velocity': self.get_learning_velocity(),
+            'complexity_score': self.get_complexity_evolution_score(),
+            'portfolio_ready': self.portfolio_ready,
+            'readiness_score': self.get_portfolio_readiness_score(),
+
+            # Use existing status tracking
+            'completion_percent': float(self.completion_percent),
+            'status': self.status,
+            'complexity': self.complexity,
+        }
+
+    def get_skills_summary(self):
+        """Get comma-sparated skills for cards"""
+        skills = list(self.skills_developed.values_list('name', flat=True)[:4])
+        if self.skills_developed.count() > 4:
+            return f"{', '.join(skills)} +{self.skills_developed.count() - 4} more"
+        return ", ".join(skills) if skills else "No skills tracked yet"
+
+    def get_investment_summary(self):
+        """Summary of time invested using existing fields"""
+        if self.actual_dev_hours:
+            return f"{self.actual_dev_hours} hours actual"
+        elif self.estimated_dev_hours:
+            return f"{self.estimated_dev_hours} hours estimated"
+        else:
+            # Calculate rough estimate from timeline
+            if self.start_date and self.end_date:
+                days = (self.end_date - self.start_date).days
+                return f"~{days} days development"
+            return "Time not tracked"
+
+    def get_learning_documentation_from_logs(self):
+        """Extract learning content from related DataLogs"""
+        related_logs = self.get_related_logs()
+
+        if not related_logs.exists():
+            return None
+
+        learning_docs = {
+            'total_posts': related_logs.count(),
+            'latest_post': related_logs.first().post if related_logs.exists() else None,
+            'development_logs': related_logs.filter(connection_type='development'),
+            'documentation_logs': related_logs.filter(connection_type='documentation'),
+            'analysis_logs': related_logs.filter(connection_type='analysis'),
+        }
+
+        return learning_docs
+
+    def has_learning_documentation(self):
+        """Check if learning is documented via DataLogs"""
+        return self.get_related_logs().exists()
+
+    def get_github_metrics_summary(self):
+        """GitHub activity summary using existing fields"""
+        return {
+            'repository_url': self.github_url,
+            'commits': self.commit_count,
+            'lines_of_code': self.code_lines,
+            'last_activity': self.last_commit_date,
+            'has_repo': bool(self.github_url),
+            'active_development': bool(
+                self.last_commit_date and self.last_commit_date >= timezone.now() - timedelta(days=30)
+            ),
+        }
+
     # ================= TEMPLATE PROPERTIES =================
     @property
     def health_status(self):
@@ -916,3 +1085,90 @@ class SystemDependency(models.Model):
 
     def get_absolute_url(self):
         return f"{self.system.get_absolute_url()}#dependency-{self.pk}"
+
+
+class SystemSkillGain(models.Model):
+    """
+    Through model connecting SystemModule to core.Skill
+    Tracks what skills were gained/improved through each project
+    Focused on essential learning data only
+    """
+
+    PROFICIENCY_GAINED_CHOICES = (
+        (1, 'First Exposure'),
+        (2, 'Basic Understanding'),
+        (3, 'Practical Application'),
+        (4, 'Confident Usage'),
+        (5, 'Teaching Level'),
+    )
+
+    # Core relationships
+    system = models.ForeignKey(SystemModule, on_delete=models.CASCADE, related_name='skill_gains')
+    skill = models.ForeignKey('core.Skill', on_delete=models.CASCADE, related_name='project_gains')
+
+    # Essentail Learning Data
+    proficiency_gained = models.IntegerField(choices=PROFICIENCY_GAINED_CHOICES, help_text="Level of proficiency gained")
+
+    # Optional Context (keep minimal)
+    how_learned = models.TextField(blank=True, help_text="Brief note on how this skill was used/learned in this project")
+
+    # Optional before/after tracking
+    skill_level_before = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level before project (1-5, optional)")
+    skill_level_after = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level after project (1-5, optional)")
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['system', 'skill']
+        ordering = ['-created_at']
+        verbose_name = "System Skill Gain"
+        verbose_name_plural = "System Skill Gains"
+
+    def __str__(self):
+        return f"{self.skill.name} gained in {self.system.title}"
+
+    def get_proficiency_display_short(self):
+        """Short display for UI cards"""
+        display_map = {
+            1: "First Time",
+            2: "Learned Basics",
+            3: "Applied Practically",
+            4: "Gained Confidence",
+            5: "Teaching Level"
+        }
+        return display_map.get(self.proficiency_gained, "Unknokwn")
+
+    def get_proficiency_color(self):
+        """Color for proficiency level badges"""
+        colors = {
+            1: "#FFB74D",  # Orange - first exposure
+            2: "#81C784",  # Green - basic understanding
+            3: "#64B5F6",  # Blue - practical application
+            4: "#BA68C8",  # Purple - confident usage
+            5: "#FFD54F",  # Gold - teaching level
+        }
+        return colors.get(self.proficiency_gained, "#64B5F6")
+
+    def get_skill_improvement(self):
+        """Calculate improvement if before/after levels set"""
+        if self.skill_level_before and self.skill_level_after:
+            return self.skill_level_after - self.skill_level_before
+        return None
+
+    def has_improvement_data(self):
+        """Check if before/after tracking is available"""
+        return bool(self.skill_level_before and self.skill_level_after)
+
+    def get_learning_context(self):
+        """Get learning context for dashboard display"""
+        return {
+            'skill_name': self.skill.name,
+            'system_title': self.system.title,
+            'proficiency_gained': self.get_proficiency_display_short(),
+            'color': self.get_proficiency_color(),
+            'how_learned': self.how_learned,
+            'improvement': self.get_skill_improvement(),
+            'date': self.created_at,
+        }
