@@ -286,9 +286,8 @@ class EnhancedLearningSystemListView(ListView):
     """
 
     model = SystemModule
-    template_name = (
-        "projects/system_list.html"  # Reuse existing template with learning context
-    )
+    # template_name = "projects/system_list.html"  # Reuse existing template with learning context
+    template_name = "projects/learning_system_list.html"  # Replace main system_list once cleaned up
     context_object_name = "systems"
     paginate_by = 12
 

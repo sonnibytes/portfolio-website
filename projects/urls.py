@@ -32,6 +32,7 @@ urlpatterns = [
 
     # Learning Journey
     path("learning/", views.LearningJourneyDashboardView.as_view(), name="learning_dashboard"),
+    path("learning/systems/", views.EnhancedLearningSystemListView.as_view(), name="learning_system_list"),
 
     # ================= API ENDPOINTS =================
     # path("api/dashboard/metrics/", views.DashboardMetricsAPIView.as_view(), name="dashboard_metrics_api"),
