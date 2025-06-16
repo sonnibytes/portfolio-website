@@ -21,9 +21,258 @@ from datetime import timedelta, datetime, date
 import random
 from collections import Counter
 
-from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage
+from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage, SystemSkillGain, LearningMilestone
 from blog.models import Post, SystemLogEntry
 from core.models import Skill, PortfolioAnalytics
+
+
+# ===================== LEARNING FOCUSED VIEWS =====================
+
+class LearningJourneyDashboardView(TemplateView):
+    """
+    Learning Journey Dashboard - showcases learning progression and skill development
+    Uses the same beautiful AURA dashboard structure but with learning-focused data
+    """
+    template_name = "projects/learning_journey_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Core learning metrics for hero section
+        context.update(
+            {
+                # Learning velocity metrics (replaces performance metrics)
+                "learning_metrics": self.get_learning_metrics(),
+                # Skills progression over time
+                "skills_timeline": self.get_skills_timeline(),
+                # Recent learning milestones (replaces system activity)
+                "recent_milestones": self.get_recent_milestones(),
+                # Technology mastery progression
+                "technology_mastery": self.get_technology_mastery(),
+                # Project complexity evolution
+                "complexity_evolution": self.get_complexity_evolution(),
+                # Portfolio readiness stats
+                "portfolio_readiness": self.get_portfolio_readiness_stats(),
+                # Learning stage distribution
+                "learning_stages": self.get_learning_stage_distribution(),
+                # Featured learning systems
+                "featured_learning_systems": self.get_featured_learning_systems(),
+            }
+        )
+
+        return context
+
+    def get_learning_metrics(self):
+        """Core learning metrics for dashboard hero section"""
+        all_systems = SystemModule.objects.all()
+
+        return {
+            # Total learning volume
+            'total_systems': all_systems.count(),
+            'total_skills_gained': SystemSkillGain.objects.count(),
+            'total_milestones': LearningMilestone.objects.count(),
+            'portfolio_ready_count': all_systems.filter(portfolio_ready=True).count(),
+
+            # Learning velocity (skills gained per month)
+            'learning_velocity': self.calculate_learning_velocity(),
+
+            # Technology diversity
+            'technologies_mastered': self.get_technologies_with_multiple_systems(),
+
+            # Time investment
+            'total_learning_hours': self.get_total_learning_hours(),
+
+            # Recent activity
+            'days_since_last_system': self.get_days_since_last_system(),
+        }
+
+    def calculate_learning_velocity(self):
+        """Calculate skills gained per month"""
+        # Get first and latest skill gains
+        first_gain = SystemSkillGain.objects.order_by('created_at').first()
+        if not first_gain:
+            return 0
+
+        # Calculate months since first learning project
+        months = max((timezone.now() - first_gain.created_at).days / 30, 1)
+        total_skills = SystemSkillGain.objects.count()
+
+        return round(total_skills / months, 2)
+    
+    def get_technologies_with_multiple_systems(self):
+        """Count technologies used in 2+ projects/systems (shows progression)"""
+        return Technology.objects.annotate(
+            system_count=Count('systems')
+        ).filter(system_count__gte=2).count()
+    
+    def get_total_learning_hours(self):
+        """Sum of actual_dev_hours across all projects/systems"""
+        total = SystemModule.objects.aggregate(
+            total_hours=Sum('actual_dev_hours')
+        )['total_hours'] or 0
+
+        # Fallback to estimated hours if no actual hours
+        if total == 0:
+            total = SystemModule.objects.aggregate(
+                total_hours=Sum('estimated_dev_hours')
+            )['total_hours'] or 0
+        
+        return total
+    
+    def get_days_since_last_system(self):
+        """Days since last project/system was updated"""
+        latest = SystemModule.objects.order_by('-updated_at').first()
+        if latest:
+            return (timezone.now() - latest.updated_at).days
+        return 0
+    
+    def get_skills_timeline(self):
+        """Skills gained over time for timeline chart"""
+
+        # Get skills gained by month for the last 12 months
+        timeline = []
+        current_date = timezone.now() - timedelta(days=365)
+
+        while current_date <= timezone.now():
+            month_start = current_date.replace(day=1)
+            next_month = (month_start + timedelta(days=32)).replace(day=1)
+
+            # Skills gained in projects/systems created this month
+            month_skills = SystemSkillGain.objects.filter(
+                system__created_at__gte=month_start,
+                system__created_at__lt=next_month
+            ).count()
+
+            timeline.append({
+                'month': month_start.strftime('%B %Y'),
+                'month_short': month_start.strftime('%b'),
+                'skills_gained': month_skills,
+            })
+
+            current_date = next_month
+
+        return timeline
+
+    def get_recent_milestones(self):
+        """Recent learning milestones for activity feed"""
+        return LearningMilestone.objects.select_related(
+            'system', 'related_post', 'related_skill'
+        ).order_by('-date_schieved')[:8]
+
+    def get_technology_mastery(self):
+        """Technology mastery progression"""
+        tech_mastery = Technology.objects.annotate(
+            system_count=Count('systems')
+        ).filter(system_count__gt=0).order_by('-system_count')
+
+        mastery_data = []
+        for tech in tech_mastery:
+            # Calculate mastery level based on project count
+            if tech.system_count >= 5:
+                mastery = 'expert'
+            elif tech.system_count >= 3:
+                mastery = 'advanced'
+            elif tech.system_count >= 2:
+                mastery = 'intermediate'
+            else:
+                mastery = 'beginner'
+
+            mastery_data.append({
+                'technology': tech,
+                'system_count': tech.system_count,
+                'mastery_level': mastery,
+                'mastery_color': {
+                    'beginner': '#FFB74D',
+                    'intermediate': '#81C784',
+                    'advanced': '#64B5F6', 
+                    'expert': '#FFD54F'
+                }.get(mastery, '#81C784')
+            })
+        return mastery_data[:8]  # Top 8 Technologies
+
+    def get_complexity_evolution(self):
+        """System/Project complexity evolution over time"""
+        systems = SystemModule.objects.order_by("created_at")
+
+        evolution = []
+        for system in systems:
+            evolution.append(
+                {
+                    "system": system.title,
+                    "date": system.created_at,
+                    "complexity_score": system.get_complexity_evolution_score(),
+                    "learning_stage": system.learning_stage,
+                    "learning_stage_color": system.get_learning_stage_color(),
+                }
+            )
+
+        return evolution
+
+    def get_portfolio_readiness_stats(self):
+        """Portfolio readiness statistics"""
+        all_systems = SystemModule.objects.all()
+
+        if not all_systems.exists():
+            return {
+                "ready_count": 0,
+                "total_count": 0,
+                "ready_percentage": 0,
+                "needs_work": [],
+            }
+
+        ready_count = all_systems.filter(portfolio_ready=True).count()
+        total_count = all_systems.count()
+
+        return {
+            "ready_count": ready_count,
+            "total_count": total_count,
+            "ready_percentage": round((ready_count / total_count) * 100, 1),
+            "needs_work": all_systems.filter(
+                portfolio_ready=False, status__in=["deployed", "published"]
+            )[:3],  # Top 3 that need portfolio prep
+        }
+
+    def get_learning_stage_distribution(self):
+        """Distribution of projects/systems by learning stage"""
+        stages = (
+            SystemModule.objects.values("learning_stage")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        stage_data = []
+        for stage in stages:
+            stage_data.append(
+                {
+                    "stage": stage["learning_stage"],
+                    "stage_display": dict(SystemModule.LEARNING_STAGE_CHOICES).get(
+                        stage["learning_stage"], stage["learning_stage"]
+                    ),
+                    "count": stage["count"],
+                    "color": {
+                        "tutorial": "#FFB74D",
+                        "guided": "#81C784",
+                        "independent": "#64B5F6",
+                        "refactoring": "#BA68C8",
+                        "contributing": "#4FC3F7",
+                        "teaching": "#FFD54F",
+                    }.get(stage["learning_stage"], "#64B5F6"),
+                }
+            )
+
+        return stage_data
+
+    def get_featured_learning_systems(self):
+        """Featured systems with learning focus"""
+        return (
+            SystemModule.objects.featured()
+            .select_related("system_type")
+            .prefetch_related("technologies", "skills_developed")
+            .order_by("-updated_at")[:6]
+        )
+
+
+# ===================== GOLD STANDARD VIEWS - BEFORE LEARNING FOCUS REWORK =====================
 
 
 class EnhancedSystemsDashboardView(TemplateView):
@@ -1077,40 +1326,7 @@ class SystemTypeOverviewView(ListView):
             })
 
 
-class SystemTypeDetailView(DetailView):
-    """
-    Enhanced System Type Detail View - Focused analytics for spcific type
-    This view renders when specific system type is selected
-    """
-    model = SystemType
-    template_name = "projects/system_type_detail.html"
-    context_object_name = "system_type"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        system_type = self.object
-
-        # Get systems for this type using enhancecd manager methods
-        type_systems = SystemModule.objects.filter(system_type=system_type)
-
-        # Filter systems based on user params
-        systems_queryset = self.get_filtered_systems(type_systems)
-
-        context.update({
-            'systems': systems_queryset.select_related('system_type').prefetch_related('technologies'),
-
-            # Type-spcific metrics
-            'type_metrics': self.get_type_metrics(type_systems),
-
-            # Technology analysis for this type
-            'technology_analysis': self.get_technology_analysis(type_systems),
-
-            # Performance insights
-            'performance_insights': self.get_performance_insights(type_systems),
-
-            # Development timeline
-            'development_timeline': self.get_development_timeline(type_systems),
-        })
 
 
 
