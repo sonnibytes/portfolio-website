@@ -19,7 +19,7 @@ from django.core.cache import cache
 import re
 from datetime import timedelta, datetime, date
 import random
-from collections import Counter
+from collections import Counter, defaultdict
 
 from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage, SystemSkillGain, LearningMilestone
 from blog.models import Post, SystemLogEntry
@@ -270,6 +270,310 @@ class LearningJourneyDashboardView(TemplateView):
             .prefetch_related("technologies", "skills_developed")
             .order_by("-updated_at")[:6]
         )
+
+
+class EnhancedLearningSystemListView(ListView):
+    """
+    Learning-Focused System List - Transform existing system list to showcase
+    learning progression instead of performance metrics.
+
+    Features:
+    - Learning stage filtering (tutorial → independent → teaching)
+    - Skills gained filtering and display
+    - Portfolio readiness indicators
+    - Time investment tracking
+    - Learning velocity calculations
+    """
+
+    model = SystemModule
+    template_name = (
+        "projects/system_list.html"  # Reuse existing template with learning context
+    )
+    context_object_name = "systems"
+    paginate_by = 12
+
+    def get_queryset(self):
+        """Enhanced query with learning-focused optimizations"""
+        # Start with optimized base query for learning data
+        queryset = (
+            SystemModule.objects.select_related("system_type", "author")
+            .prefetch_related(
+                "technologies",
+                "skills_developed",  # Important for learning cards
+                "milestones",  # For recent achievements
+                "systemskillgain_set__skill",  # For skill gain details
+            )
+            .order_by("-updated_at")
+        )
+
+        # LEARNING STAGE FILTERING (replaces status filtering)
+        learning_stage = self.request.GET.get("learning_stage")
+        if learning_stage:
+            queryset = queryset.filter(learning_stage=learning_stage)
+
+        # PORTFOLIO READINESS FILTERING
+        portfolio_ready = self.request.GET.get("portfolio_ready")
+        if portfolio_ready == "ready":
+            queryset = queryset.filter(portfolio_ready=True)
+        elif portfolio_ready == "in_progress":
+            queryset = queryset.filter(portfolio_ready=False)
+
+        # SKILLS FILTERING
+        skill_filter = self.request.GET.get("skill")
+        if skill_filter:
+            queryset = queryset.filter(skills_developed__slug=skill_filter)
+
+        # TIME INVESTMENT FILTERING
+        time_filter = self.request.GET.get("time_investment")
+        if time_filter == "short":  # <20 hours
+            queryset = queryset.filter(development_time_hours__lt=20)
+        elif time_filter == "medium":  # 20-50 hours
+            queryset = queryset.filter(development_time_hours__range=[20, 50])
+        elif time_filter == "long":  # 50+ hours
+            queryset = queryset.filter(development_time_hours__gte=50)
+
+        # Technology filter (keep existing)
+        tech_filter = self.request.GET.get("tech")
+        if tech_filter:
+            queryset = queryset.filter(technologies__slug=tech_filter)
+
+        # Search across learning-relevant fields
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search)
+                | Q(description__icontains=search)
+                | Q(learning_objectives__icontains=search)
+                | Q(key_learnings__icontains=search)
+                | Q(skills_developed__name__icontains=search)
+                | Q(technologies__name__icontains=search)
+            ).distinct()
+
+        # LEARNING-FOCUSED ORDERING
+        order = self.request.GET.get("order", "recent")
+        if order == "recent":
+            queryset = queryset.order_by("-updated_at")
+        elif order == "learning_velocity":
+            # Order by skills gained per month (calculated on-the-fly)
+            queryset = queryset.annotate(
+                skills_count=Count("skills_developed")
+            ).order_by("-skills_count")
+        elif order == "complexity_evolution":
+            # Order by complexity progression
+            queryset = queryset.order_by("-complexity")
+        elif order == "portfolio_readiness":
+            # Portfolio ready items first
+            queryset = queryset.order_by("-portfolio_ready", "-updated_at")
+        elif order == "time_investment":
+            queryset = queryset.order_by("-development_time_hours")
+        elif order == "learning_stage":
+            # Order by learning progression
+            stage_order = {
+                "tutorial": 1,
+                "guided": 2,
+                "independent": 3,
+                "refactoring": 4,
+                "teaching": 5,
+            }
+            # This would need custom ordering logic
+            queryset = queryset.order_by("-updated_at")  # Fallback for now
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        """Enhanced context with learning-focused metrics and filters"""
+        context = super().get_context_data(**kwargs)
+
+        # LEARNING METRICS FOR SIDEBAR (replaces performance metrics)
+        context.update(
+            {
+                # Learning stage distribution
+                "learning_stage_stats": self.get_learning_stage_distribution(),
+                # Portfolio readiness stats
+                "portfolio_stats": self.get_portfolio_readiness_stats(),
+                # Skills statistics
+                "skills_stats": self.get_skills_statistics(),
+                # Time investment breakdown
+                "time_investment_stats": self.get_time_investment_stats(),
+                # Technology mastery (enhanced with learning context)
+                "tech_mastery": self.get_technology_mastery(),
+                # Available filter options
+                "available_skills": self.get_available_skills(),
+                "available_learning_stages": SystemModule.LEARNING_STAGE_CHOICES,
+                # Current filters for display
+                "active_filters": self.get_active_learning_filters(),
+                # Recent learning activity
+                "recent_milestones": LearningMilestone.objects.order_by(
+                    "-date_achieved"
+                )[:5],
+            }
+        )
+
+        return context
+
+    def get_learning_stage_distribution(self):
+        """Get count of systems by learning stage"""
+        distribution = {}
+        for stage_code, stage_name in SystemModule.LEARNING_STAGE_CHOICES:
+            count = SystemModule.objects.filter(learning_stage=stage_code).count()
+            distribution[stage_code] = {
+                "name": stage_name,
+                "count": count,
+                "color": self.get_learning_stage_color(stage_code),
+            }
+        return distribution
+
+    def get_portfolio_readiness_stats(self):
+        """Get portfolio readiness breakdown"""
+        total_systems = SystemModule.objects.count()
+        ready_count = SystemModule.objects.filter(portfolio_ready=True).count()
+
+        return {
+            "ready": ready_count,
+            "in_progress": total_systems - ready_count,
+            "total": total_systems,
+            "ready_percentage": round(
+                (ready_count / total_systems * 100) if total_systems > 0 else 0, 1
+            ),
+        }
+
+    def get_skills_statistics(self):
+        """Get skills development statistics"""
+
+        # Skills with most systems
+        top_skills = (
+            Skill.objects.annotate(systems_count=Count("systemskillgain"))
+            .filter(systems_count__gt=0)
+            .order_by("-systems_count")[:8]
+        )
+
+        return {
+            "total_skills": SystemSkillGain.objects.values("skill").distinct().count(),
+            "top_skills": top_skills,
+            "avg_skills_per_system": SystemSkillGain.objects.count()
+            / max(SystemModule.objects.count(), 1),
+        }
+
+    def get_time_investment_stats(self):
+        """Get time investment distribution"""
+        systems_with_time = SystemModule.objects.exclude(
+            development_time_hours__isnull=True
+        )
+
+        return {
+            "short": systems_with_time.filter(development_time_hours__lt=20).count(),
+            "medium": systems_with_time.filter(
+                development_time_hours__range=[20, 50]
+            ).count(),
+            "long": systems_with_time.filter(development_time_hours__gte=50).count(),
+            "total_hours": systems_with_time.aggregate(
+                total=Sum("development_time_hours")
+            )["total"]
+            or 0,
+            "avg_hours": systems_with_time.aggregate(avg=Avg("development_time_hours"))[
+                "avg"
+            ]
+            or 0,
+        }
+
+    def get_technology_mastery(self):
+        """Get technology usage with learning context"""
+
+        # Technologies with system count and learning stage progression
+        tech_stats = defaultdict(lambda: {"systems": 0, "stages": set()})
+
+        for system in SystemModule.objects.prefetch_related("technologies"):
+            for tech in system.technologies.all():
+                tech_stats[tech]["systems"] += 1
+                tech_stats[tech]["stages"].add(system.learning_stage)
+
+        # Convert to list with mastery indicators
+        mastery_list = []
+        for tech, stats in tech_stats.items():
+            mastery_level = "beginner"
+            if stats["systems"] >= 3:
+                mastery_level = "intermediate"
+            if "teaching" in stats["stages"] or stats["systems"] >= 5:
+                mastery_level = "advanced"
+
+            mastery_list.append(
+                {
+                    "technology": tech,
+                    "systems_count": stats["systems"],
+                    "mastery_level": mastery_level,
+                    "progression": len(stats["stages"]),  # Stages used across
+                }
+            )
+
+        return sorted(mastery_list, key=lambda x: x["systems_count"], reverse=True)[:8]
+
+    def get_available_skills(self):
+        """Get skills available for filtering"""
+
+        return (
+            Skill.objects.filter(systemskillgain__isnull=False)
+            .distinct()
+            .order_by("name")
+        )
+
+    def get_active_learning_filters(self):
+        """Get currently active learning-focused filters"""
+        filters = {}
+
+        if self.request.GET.get("learning_stage"):
+            stage_code = self.request.GET.get("learning_stage")
+            stage_name = dict(SystemModule.LEARNING_STAGE_CHOICES).get(
+                stage_code, stage_code
+            )
+            filters["Learning Stage"] = stage_name
+
+        if self.request.GET.get("portfolio_ready"):
+            ready_map = {"ready": "Portfolio Ready", "in_progress": "In Progress"}
+            filters["Portfolio Status"] = ready_map.get(
+                self.request.GET.get("portfolio_ready")
+            )
+
+        if self.request.GET.get("skill"):
+            try:
+                from core.models import Skill
+
+                skill = Skill.objects.get(slug=self.request.GET.get("skill"))
+                filters["Skill"] = skill.name
+            except:
+                pass
+
+        if self.request.GET.get("time_investment"):
+            time_map = {
+                "short": "Short (<20h)",
+                "medium": "Medium (20-50h)",
+                "long": "Long (50h+)",
+            }
+            filters["Time Investment"] = time_map.get(
+                self.request.GET.get("time_investment")
+            )
+
+        if self.request.GET.get("tech"):
+            try:
+                tech = Technology.objects.get(slug=self.request.GET.get("tech"))
+                filters["Technology"] = tech.name
+            except:
+                pass
+
+        if self.request.GET.get("search"):
+            filters["Search"] = self.request.GET.get("search")
+
+        return filters
+
+    def get_learning_stage_color(self, stage_code):
+        """Get color for learning stage badges"""
+        colors = {
+            "tutorial": "orange",  # Learning/following
+            "guided": "yellow",  # Guided practice
+            "independent": "teal",  # Independent work
+            "refactoring": "purple",  # Improving/optimizing
+            "teaching": "gold",  # Sharing knowledge
+        }
+        return colors.get(stage_code, "gray")
 
 
 # ===================== GOLD STANDARD VIEWS - BEFORE LEARNING FOCUS REWORK =====================
