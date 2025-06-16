@@ -157,7 +157,7 @@ class LearningJourneyDashboardView(TemplateView):
         """Recent learning milestones for activity feed"""
         return LearningMilestone.objects.select_related(
             'system', 'related_post', 'related_skill'
-        ).order_by('-date_schieved')[:8]
+        ).order_by('-date_achieved')[:8]
 
     def get_technology_mastery(self):
         """Technology mastery progression"""
