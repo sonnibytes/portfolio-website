@@ -989,6 +989,134 @@ class SystemControlInterfaceView(DetailView):
         }
 
 
+# ===================== ENHANCED SYSTEM TYPE VIEWS =====================
+
+class SystemTypeOverviewView(ListView):
+    """
+    Global System Type Overview - Shows all systems grouped by type
+    This view renders when no specific system type is selected
+    """
+    model = SystemType
+    template_name = "projects/system_type_overview.html"
+    context_object_name = "system_types"
+
+    def get_queryset(self):
+        return SystemType.objects.prefetch_related(
+            "systems__technologies"
+        ).annotate(
+            systems_count=Count('systems', filter=Q(systems__status='published')),
+            deployed_count=Count('systems', filter=Q(systems__status='deployed')),
+            avg_completion=Avg('systems__completion_percent')
+        ).order_by('display_order')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Global stats using enhanced manager methods
+        all_systems = SystemModule.objects.all()
+
+        context.update({
+            'page_title': 'System Types Overview',
+            'total_systems': all_systems.count(),
+            'total_deployed': all_systems.deployed().count(),
+            'total_featured': all_systems.featured().count(),
+            'total_in_development': all_systems.in_development().count(),
+
+            # Performance distribution
+            'performance_distribution': self.get_performance_distribution(),
+
+            # Technology distribution across all types
+            'top_technologies': Technology.objects.annotate(
+                systems_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+            ).order_by('-systems_count')[:8],
+
+            # Recent activity
+            'recently_updated': all_systems.recently_updated(7).select_related('system_type')[:5],
+
+            # Type analytics
+            'type_analytics': self.get_type_analytics(),
+        })
+
+        return context
+
+    def get_performance_distribution(self):
+        """Get performance score distribution across all systems."""
+        systems = SystemModule.objects.with_performance_data()
+
+        return {
+            'excellent': systems.filter(performance_score__gte=90).count(),
+            'good': systems.filter(performance_score__range=[70, 89]).count(),
+            'fair': systems.filter(performance_score__range=[50, 69]).count(),
+            'poor': systems.filter(performance_score__lt=50).count(),
+        }
+
+    def get_type_analytics(self):
+        """Get analytics for each system type."""
+        type_data = []
+
+        for system_type in self.get_queryset():
+            type_systems = SystemModule.objects.filter(system_type=system_type)
+
+            # Calculate health score based on deployment ratio and completion
+            deployed_ratio = type_systems.deployed().count() / max(type_systems.count(), 1)
+            avg_completion = type_systems.aggregate(avg=Avg('completion_percent'))['avg'] or 0
+            health_score = (deployed_ratio * 50) + (avg_completion * 0.5)
+
+            type_data.append({
+                'type': system_type,
+                'systems_count': type_systems.count(),
+                'deployed_count': type_systems.deployed().count(),
+                'featured_count': type_systems.featured().count(),
+                'avg_completion': avg_completion,
+                'health_score': min(100, health_score),
+                'top_technologies': Technology.objects.filter(
+                    systems__system_type=system_type
+                ).annotate(
+                    count=Count('systems')
+                ).order_by('-count')[:3]
+            })
+
+
+class SystemTypeDetailView(DetailView):
+    """
+    Enhanced System Type Detail View - Focused analytics for spcific type
+    This view renders when specific system type is selected
+    """
+    model = SystemType
+    template_name = "projects/system_type_detail.html"
+    context_object_name = "system_type"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        system_type = self.object
+
+        # Get systems for this type using enhancecd manager methods
+        type_systems = SystemModule.objects.filter(system_type=system_type)
+
+        # Filter systems based on user params
+        systems_queryset = self.get_filtered_systems(type_systems)
+
+        context.update({
+            'systems': systems_queryset.select_related('system_type').prefetch_related('technologies'),
+
+            # Type-spcific metrics
+            'type_metrics': self.get_type_metrics(type_systems),
+
+            # Technology analysis for this type
+            'technology_analysis': self.get_technology_analysis(type_systems),
+
+            # Performance insights
+            'performance_insights': self.get_performance_insights(type_systems),
+
+            # Development timeline
+            'development_timeline': self.get_development_timeline(type_systems),
+        })
+
+
+
+
+
+
 # ===================== ENHANCED FEATURE VIEWS =====================
 
 
