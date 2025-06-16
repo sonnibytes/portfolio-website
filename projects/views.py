@@ -98,13 +98,13 @@ class LearningJourneyDashboardView(TemplateView):
         total_skills = SystemSkillGain.objects.count()
 
         return round(total_skills / months, 2)
-    
+
     def get_technologies_with_multiple_systems(self):
         """Count technologies used in 2+ projects/systems (shows progression)"""
         return Technology.objects.annotate(
             system_count=Count('systems')
         ).filter(system_count__gte=2).count()
-    
+
     def get_total_learning_hours(self):
         """Sum of actual_dev_hours across all projects/systems"""
         total = SystemModule.objects.aggregate(
@@ -116,16 +116,16 @@ class LearningJourneyDashboardView(TemplateView):
             total = SystemModule.objects.aggregate(
                 total_hours=Sum('estimated_dev_hours')
             )['total_hours'] or 0
-        
+
         return total
-    
+
     def get_days_since_last_system(self):
         """Days since last project/system was updated"""
         latest = SystemModule.objects.order_by('-updated_at').first()
         if latest:
             return (timezone.now() - latest.updated_at).days
         return 0
-    
+
     def get_skills_timeline(self):
         """Skills gained over time for timeline chart"""
 
@@ -184,7 +184,7 @@ class LearningJourneyDashboardView(TemplateView):
                 'mastery_color': {
                     'beginner': '#FFB74D',
                     'intermediate': '#81C784',
-                    'advanced': '#64B5F6', 
+                    'advanced': '#64B5F6',
                     'expert': '#FFD54F'
                 }.get(mastery, '#81C784')
             })

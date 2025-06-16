@@ -1,0 +1,370 @@
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load system_tags %}
+{% load aura_filters %}
+
+{% block title %}Learning Journey - AURA Portfolio{% endblock %}
+{% block meta_description %}Track your development learning journey, skill progression, and project evolution in the AURA command center{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
+{% endblock %}
+
+{% block systems_content %}
+<!-- Hero Section - Learning Metrics -->
+<div class="unified-dashboard-container teal mb-4">
+    <div class="unified-container-header">
+        <div class="header-content">
+            <h1 class="unified-container-title">
+                <i class="fas fa-chart-line"></i>
+                Learning Journey Dashboard
+            </h1>
+            <p class="unified-container-subtitle">
+                Track your development skills, project evolution, and learning milestones
+            </p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'projects:system_list' %}" class="btn btn-outline-light">
+                <i class="fas fa-project-diagram"></i> View All Systems
+            </a>
+        </div>
+    </div>
+
+    <!-- Learning Metrics Grid -->
+    <div class="metrics-grid">
+        <div class="metric-item">
+            <div class="metric-icon teal">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value" data-counter-target="{{ learning_metrics.total_skills_gained }}">0</div>
+                <div class="metric-label">Skills Gained</div>
+                <div class="metric-sublabel">{{ learning_metrics.learning_velocity }}/month velocity</div>
+            </div>
+        </div>
+
+        <div class="metric-item">
+            <div class="metric-icon mint">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value" data-counter-target="{{ learning_metrics.total_milestones }}">0</div>
+                <div class="metric-label">Milestones</div>
+                <div class="metric-sublabel">Learning achievements</div>
+            </div>
+        </div>
+
+        <div class="metric-item">
+            <div class="metric-icon coral">
+                <i class="fas fa-code"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value" data-counter-target="{{ learning_metrics.technologies_mastered }}">0</div>
+                <div class="metric-label">Tech Mastery</div>
+                <div class="metric-sublabel">Multi-project skills</div>
+            </div>
+        </div>
+
+        <div class="metric-item">
+            <div class="metric-icon yellow">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-value" data-counter-target="{{ learning_metrics.portfolio_ready_count }}">0</div>
+                <div class="metric-label">Portfolio Ready</div>
+                <div class="metric-sublabel">{{ portfolio_readiness.ready_percentage }}% complete</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Dashboard Content -->
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-lg-8">
+        <!-- Featured Learning Systems -->
+        {% dashboard_panel style="grid" color="navy" %}
+            <h3>Featured Learning Projects</h3>
+            <p class="panel-subtitle">Showcase systems demonstrating skill development and growth</p>
+            
+            <div class="learning-systems-grid">
+                {% for system in featured_learning_systems %}
+                <div class="learning-system-card" data-system-id="{{ system.slug }}">
+                    <div class="system-header">
+                        <div class="system-identity">
+                            <h4 class="system-title">{{ system.title }}</h4>
+                            <div class="learning-stage-badge" style="background: {{ system.get_learning_stage_color }}22; color: {{ system.get_learning_stage_color }};">
+                                {{ system.get_learning_stage_display }}
+                            </div>
+                        </div>
+                        <div class="portfolio-status">
+                            {% if system.portfolio_ready %}
+                            <span class="portfolio-ready">
+                                <i class="fas fa-check-circle"></i> Portfolio Ready
+                            </span>
+                            {% else %}
+                            <span class="portfolio-not-ready">
+                                <i class="fas fa-clock"></i> In Progress
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Learning Metrics -->
+                    <div class="learning-metrics">
+                        <div class="metric-row">
+                            <div class="metric-item">
+                                <span class="metric-label">Skills</span>
+                                <span class="metric-value">{{ system.skills_developed.count }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Complexity</span>
+                                <span class="metric-value">{{ system.get_complexity_evolution_score }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Hours</span>
+                                <span class="metric-value">{{ system.actual_dev_hours|default:system.estimated_dev_hours|default:0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Developed -->
+                    {% if system.skills_developed.exists %}
+                    <div class="skills-developed">
+                        <div class="skills-label">Skills Developed:</div>
+                        <div class="skills-list">
+                            {% for skill in system.skills_developed.all|slice:":3" %}
+                            <span class="skill-pill" style="--skill-color: {{ skill.color }}">
+                                {{ skill.name }}
+                            </span>
+                            {% endfor %}
+                            {% if system.skills_developed.count > 3 %}
+                            <span class="skill-pill more">+{{ system.skills_developed.count|add:"-3" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Technologies -->
+                    {% if system.technologies.exists %}
+                    <div class="system-technologies">
+                        {% for tech in system.technologies.all|slice:":4" %}
+                        <span class="tech-pill" style="--tech-color: {{ tech.color }}">
+                            {{ tech.name }}
+                        </span>
+                        {% endfor %}
+                        {% if system.technologies.count > 4 %}
+                        <span class="tech-pill more">+{{ system.technologies.count|add:"-4" }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Actions -->
+                    <div class="system-actions">
+                        <a href="{{ system.get_absolute_url }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search"></i> Explore Learning
+                        </a>
+                        {% if system.live_url %}
+                        <a href="{{ system.live_url }}" target="_blank" class="btn btn-outline btn-sm">
+                            <i class="fas fa-external-link-alt"></i> Live Demo
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="no-systems-message">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h4>No Featured Learning Projects Yet</h4>
+                    <p>Mark some projects as featured to showcase your learning journey!</p>
+                </div>
+                {% endfor %}
+            </div>
+        {% enddashboard_panel %}
+
+        <!-- Learning Stage Distribution -->
+        {% dashboard_panel style="chart" color="lavender" %}
+            <h4>Learning Stage Distribution</h4>
+            <div class="learning-stages-chart">
+                <canvas id="learningStagesChart" width="400" height="200"></canvas>
+            </div>
+            <div class="stages-legend">
+                {% for stage in learning_stages %}
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: {{ stage.color }}"></span>
+                    <span>{{ stage.stage_display }}: {{ stage.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        {% enddashboard_panel %}
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-lg-4">
+        <!-- Technology Mastery -->
+        {% dashboard_panel style="component" color="coral" %}
+            <h4>Technology Mastery</h4>
+            <div class="technology-mastery-list">
+                {% for tech_data in technology_mastery %}
+                <div class="mastery-item">
+                    <div class="tech-info">
+                        <span class="tech-name" style="color: {{ tech_data.technology.color }}">
+                            {% if tech_data.technology.icon %}<i class="fab {{ tech_data.technology.icon }}"></i>{% endif %}
+                            {{ tech_data.technology.name }}
+                        </span>
+                        <span class="mastery-level" style="color: {{ tech_data.mastery_color }}">
+                            {{ tech_data.mastery_level|title }}
+                        </span>
+                    </div>
+                    <div class="mastery-progress">
+                        <div class="mastery-bar">
+                            <div class="mastery-fill" 
+                                 style="width: {{ tech_data.project_count|multiply:25 }}%; 
+                                        background: {{ tech_data.mastery_color }}">
+                            </div>
+                        </div>
+                        <span class="project-count">{{ tech_data.system_count }} projects</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% enddashboard_panel %}
+
+        <!-- Recent Milestones -->
+        {% dashboard_panel style="activity" color="yellow" %}
+            <h4>Recent Milestones</h4>
+            <div class="milestones-feed">
+                {% for milestone in recent_milestones %}
+                <div class="milestone-item">
+                    <div class="milestone-icon" style="background: {{ milestone.get_milestone_color }}22; color: {{ milestone.get_milestone_color }}">
+                        <i class="{{ milestone.get_milestone_icon }}"></i>
+                    </div>
+                    <div class="milestone-content">
+                        <div class="milestone-title">{{ milestone.title }}</div>
+                        <div class="milestone-meta">
+                            <span class="milestone-system">{{ milestone.system.title }}</span>
+                            <span class="milestone-date">{{ milestone.date_achieved|timesince }} ago</span>
+                        </div>
+                        {% if milestone.description %}
+                        <div class="milestone-description">
+                            {{ milestone.description|truncatewords:15 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="no-milestones">
+                    <i class="fas fa-trophy"></i>
+                    <p>No learning milestones recorded yet. Add some achievements to track your progress!</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% if recent_milestones %}
+            <a href="#" class="view-all-milestones">
+                View All Milestones <i class="fas fa-arrow-right"></i>
+            </a>
+            {% endif %}
+        {% enddashboard_panel %}
+
+        <!-- Portfolio Readiness -->
+        {% dashboard_panel style="metric" color="mint" %}
+            <h4>Portfolio Readiness</h4>
+            <div class="readiness-overview">
+                <div class="readiness-score">
+                    <div class="score-circle">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" 
+                                  stroke-dasharray="{{ portfolio_readiness.ready_percentage }}, 100"
+                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="percentage-text">{{ portfolio_readiness.ready_percentage }}%</div>
+                    </div>
+                </div>
+                
+                <div class="readiness-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ portfolio_readiness.ready_count }}</span>
+                        <span class="stat-label">Ready</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ portfolio_readiness.total_count|subtract:portfolio_readiness.ready_count }}</span>
+                        <span class="stat-label">Need Work</span>
+                    </div>
+                </div>
+
+                {% if portfolio_readiness.needs_work %}
+                <div class="needs-work-section">
+                    <h5>Needs Portfolio Work:</h5>
+                    {% for system in portfolio_readiness.needs_work %}
+                    <div class="needs-work-item">
+                        <a href="{{ system.get_absolute_url }}" class="system-link">{{ system.title }}</a>
+                        <span class="readiness-score">{{ system.get_portfolio_readiness_score }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        {% enddashboard_panel %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'projects/js/dashboard_panels.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dashboard manager
+    const dashboard = new UnifiedDashboardManager();
+    
+    // Learning Stages Chart
+    const stagesCtx = document.getElementById('learningStagesChart');
+    if (stagesCtx) {
+        const stagesData = {{ learning_stages|safe }};
+        
+        new Chart(stagesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: stagesData.map(stage => stage.stage_display),
+                datasets: [{
+                    data: stagesData.map(stage => stage.count),
+                    backgroundColor: stagesData.map(stage => stage.color),
+                    borderWidth: 2,
+                    borderColor: 'var(--bg-primary)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'var(--bg-secondary)',
+                        titleColor: 'var(--text-primary)',
+                        bodyColor: 'var(--text-secondary)',
+                        borderColor: 'var(--border-primary)',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    }
+    
+    // Learning system card animations
+    document.querySelectorAll('.learning-system-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+            this.style.boxShadow = '0 8px 25px rgba(0, 240, 255, 0.2)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+});
+</script>
+{% endblock %}

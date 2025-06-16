@@ -30,6 +30,9 @@ urlpatterns = [
     # Search and filtering
     # path("search/", views.SystemSearchView.as_view(), name="system_search"),
 
+    # Learning Journey
+    path("learning/", views.LearningJourneyDashboardView.as_view(), name="learning_dashboard"),
+
     # ================= API ENDPOINTS =================
     # path("api/dashboard/metrics/", views.DashboardMetricsAPIView.as_view(), name="dashboard_metrics_api"),
     # path("api/dashboard/timeseries/", views.SystemTimeSeriesAPIView.as_view(), name="dashboard_timeseries_api"),
