@@ -1172,3 +1172,122 @@ class SystemSkillGain(models.Model):
             'improvement': self.get_skill_improvement(),
             'date': self.created_at,
         }
+
+
+class LearningMilestone(models.Model):
+    """
+    Track major learning milestones and achievements
+    Focused on key moments in learning journey
+    """
+
+    MILESTONE_TYPES = (
+        ('first_time', 'First Time Using Technology'),
+        ('breakthrough', 'Major Understanding Breakthrough'),
+        ('completion', 'Project Completion'),
+        ('deployment', 'First Successful Deployment'),
+        ('debugging', 'Major Problem Solved'),
+        ('teaching', 'First Time Teaching/Helping Others'),
+        ('contribution', 'Open Source Contribution'),
+        ('recognition', 'External Recognition'),
+    )
+
+    # Core info
+    system = models.ForeignKey(SystemModule, on_delete=models.CASCADE, related_name='milestones', help_text='Project/System this milestone is related to')
+    milestone_type = models.CharField(max_length=20, choices=MILESTONE_TYPES, help_text='Type of learning milestone')
+    title = models.CharField(max_length=200, help_text='Brief milestone title (e.g. "First successful API integration")')
+    description = models.TextField(help_text="What you achieved and why it was significant")
+    date_achieved = models.DateTimeField(help_text="When did you achieve this milestone?")
+
+    # Optional Connections
+    related_post = models.ForeignKey('blog.Post', on_delete=models.SET_NULL, null=True, blank=True, related_name='documented_milestones', help_text='DataLog entry about this milestone (optional)')
+    related_skill = models.ForeignKey('core.Skill', on_delete=models.SET_NULL, null=True, blank=True, related_name='milestones', help_text='Primary skill this relates to (optional)')
+
+    # Learning impact (simple 1-5 scale)
+    difficulty_level = models.IntegerField(
+        choices=[(i, f"Level {i}") for i in range(1, 6)],
+        default=3,
+        help_text="How challenging was this to achieve? (1=Easy, 5=Very Hard)"
+    )
+
+    confidence_boost = models.IntegerField(
+        choices=[(i, f"{i} stars") for i in range(1, 6)],
+        default=3,
+        help_text="How much did this boost you confidence? (1-5 stars)"
+    )
+
+    # Sharing/Impact
+    shared_publicly = models.BooleanField(default=False, help_text="Did you share this achievement? (blog, social media, etc)")
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date_achieved']
+        verbose_name = "Learning Milestone"
+        verbose_name_plural = "Learning Milestones"
+
+    def __str__(self):
+        return f"{self.title} - {self.system.title}"
+
+    def get_milestone_icon(self):
+        """Font Awesome icon for milesstone type"""
+        icons = {
+            "first_time": "fas fa-star",
+            "breakthrough": "fas fa-lightbulb",
+            "completion": "fas fa-check-circle",
+            "deployment": "fas fa-rocket",
+            "debugging": "fas fa-bug",
+            "teaching": "fas fa-chalkboard-teacher",
+            "contribution": "fas fa-code-branch",
+            "recognition": "fas fa-trophy",
+        }
+        return icons.get(self.milestone_type, "fas fa-star")
+
+    def get_milestone_color(self):
+        """Color for milestone type"""
+        colors = {
+            "first_time": "#FFD54F",  # Gold
+            "breakthrough": "#4FC3F7",  # Cyan
+            "completion": "#81C784",  # Green
+            "deployment": "#64B5F6",  # Blue
+            "debugging": "#FF8A65",  # Orange
+            "teaching": "#A5D6A7",  # Light green
+            "contribution": "#90CAF9",  # Light blue
+            "recognition": "#FFB74D",  # Amber
+        }
+        return colors.get(self.milestone_type, "#64B5F6")
+
+    def get_difficulty_stars(self):
+        """Visual difficulty representation"""
+        return "★" * self.difficulty_level + "☆" * (5 - self.difficulty_level)
+
+    def get_confidence_stars(self):
+        """Visual confidence boost representation"""
+        return "★" * self.confidence_boost + "☆" * (5 - self.confidence_boost)
+
+    def days_since_achieved(self):
+        """Days since milestone was achieved"""
+        return (timezone.now() - self.date_achieved).days
+
+    def get_absolute_url(self):
+        """Link to related content"""
+        if self.related_post:
+            return self.related_post.get_absolute_url()
+        return self.system.get_absolute_url()
+
+    def get_milestone_summary(self):
+        """Summary for dashboard cards"""
+        return {
+            "title": self.title,
+            "type": self.get_milestone_type_display(),
+            "system": self.system.title,
+            "date": self.date_achieved,
+            "difficulty": self.difficulty_level,
+            "confidence_boost": self.confidence_boost,
+            "icon": self.get_milestone_icon(),
+            "color": self.get_milestone_color(),
+            "days_ago": self.days_since_achieved(),
+            "has_post": bool(self.related_post),
+            "shared": self.shared_publicly,
+        }
