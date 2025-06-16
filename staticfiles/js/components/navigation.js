@@ -565,6 +565,42 @@ function initStatusIndicators() {
     });
 }
 
+
+/**
+* Initialize Real-time Clock Updates
+*/
+function initRealtimeClock() {
+  const timestampElements = document.querySelectorAll('[data-timestamp]');
+  
+  function updateTimestamps() {
+      const now = new Date();
+      
+      timestampElements.forEach(element => {
+          const format = element.dataset.timestamp || 'datetime';
+          
+          switch (format) {
+              case 'time':
+                  element.textContent = now.toLocaleTimeString('en-US', { 
+                      hour12: false, 
+                      timeZone: 'UTC' 
+                  }) + ' UTC';
+                  break;
+              case 'date':
+                  element.textContent = now.toISOString().split('T')[0];
+                  break;
+              case 'datetime':
+              default:
+                  element.textContent = now.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
+                  break;
+          }
+      });
+  }
+  
+  // Update immediately and then every second
+  updateTimestamps();
+  setInterval(updateTimestamps, 1000);
+}
+
 /**
  * Show Tooltip
  */
@@ -800,6 +836,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initBreadcrumbNavigation();
     initNavigationSearch();
     initStatusIndicators();
+    initRealtimeClock();
     initPerformanceMonitoring();
     initThemeDetection();
     initAccessibilityFeatures();

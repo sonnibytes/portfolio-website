@@ -6,13 +6,90 @@ from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 import re
 from bs4 import BeautifulSoup
-from datetime import date
+from datetime import date, timedelta
+from django.db.models import Avg, Count
+from django.utils import timezone
+
 
 """
 ENHANCED SYSTEM ARCHITECTURE MODELS
 System Type > System Module > System Features/Images
 Connected to Blog via SystemLogEntry
 """
+
+
+class SystemModuleQuerySet(models.QuerySet):
+    """Custom queryset for SystemModule w useful filters."""
+
+    def deployed(self):
+        return self.filter(status='deployed')
+
+    def published(self):
+        return self.filter(status='published')
+
+    def in_development(self):
+        return self.filter(status='in_development')
+
+    def featured(self):
+        return self.filter(featured=True)
+
+    def with_performance_data(self):
+        return self.filter(
+            performance_score__isnull=False,
+            uptime_percentage__isnull=False
+        )
+
+    def high_priority(self):
+        return self.filter(priority__in=[3, 4])  # High and Critical
+
+    def recently_updated(self, days=7):
+        return self.filter(
+            updated_at__gte=timezone.now() - timedelta(days=days)
+        )
+
+
+class SystemModuleManager(models.Manager):
+    """Custom Manager for SystemModule."""
+
+    def get_queryset(self):
+        return SystemModuleQuerySet(self.model, using=self._db)
+
+    def deployed(self):
+        return self.get_queryset().deployed()
+
+    def published(self):
+        return self.get_queryset().published()
+
+    def in_development(self):
+        return self.get_queryset().in_development()
+
+    def featured(self):
+        return self.get_queryset().featured()
+
+    def with_performance_data(self):
+        return self.get_queryset().with_performance_data()
+
+    def recently_updated(self, days=7):
+        return self.get_queryset().recently_updated(days)
+
+    def high_priority(self):
+        return self.get_queryset().high_priority()
+
+    def dashboard_stats(self):
+        """Get key dashboard statistics."""
+        return {
+            'total': self.count(),
+            'deployed': self.deployed().count(),
+            'published': self.published().count(),
+            'in_development': self.in_development().count(),
+            'featured': self.featured().count(),
+            'avg_completion': self.aggregate(
+                avg=Avg('completion_percent')
+            )['avg'] or 0,
+            'avg_performance': self.with_performance_data().aggregate(
+                avg=Avg('performance_score')
+            )['avg'] or 0,
+        }
 
 
 class Technology(models.Model):
@@ -103,6 +180,7 @@ class SystemModule(models.Model):
     """System Module model (Project model)."""
 
     STATUS_CHOICES = (
+        # ('idea', 'Idea'),
         ('draft', 'Draft'),
         ('in_development', 'In Development'),
         ('testing', 'Testing Phase'),
@@ -138,16 +216,13 @@ class SystemModule(models.Model):
         blank=True,
         help_text="Brief summary for display on system cards"
     )
-    featured = models.BooleanField(
-        default=False, help_text="Feature this system on the homepage")
 
     # ================= CONTENT FIELDS =================
     description = MarkdownxField(
-        help_text="Main system description and overview"
+        help_text="Full project description in Markdown"
     )
     features_overview = MarkdownxField(
-        blank=True,
-        help_text="Key features and capabilities"
+        blank=True, help_text="Key features and capabilities overview"
     )
     technical_details = MarkdownxField(
         blank=True,
@@ -155,51 +230,52 @@ class SystemModule(models.Model):
     )
     challenges = MarkdownxField(
         blank=True,
-        help_text="Development challenges and solutions"
+        help_text="Development challenges faced and how they were overcome"
     )
     future_enhancements = MarkdownxField(
         blank=True,
-        help_text="Planned improvement and roadmap"
+        help_text="Planned improvement and next steps"
     )
 
-    # ================= TECHNICAL DETAILS =================
-    github_url = models.URLField(blank=True)
-    live_url = models.URLField(blank=True,
-                               help_text="Live demo/deployment URL")
-    demo_url = models.URLField(blank=True,
-                               help_text="Interactive demo URL")
-    documentation_url = models.URLField(blank=True)
-
-    # ================= SYSTEM METRICS =================
-    completion_percent = models.IntegerField(
-        default=100,
-        help_text="Development completion percentage (0-100)"
-    )
-    complexity = models.IntegerField(
-        choices=COMPLEXITY_CHOICES,
-        default=2,
-        help_text="System Complexity level"
-    )
-    priority = models.IntegerField(
-        choices=PRIORITY_CHOICES,
-        default=2,
-        help_text="Development priority"
-    )
-
-    # ================= PERFORMANCE METRICS (HUD DISPLAY) =================
-    performance_score = models.DecimalField(
-        max_digits=4,
-        decimal_places=1,
+    # ================= CATEGORIZATION =================
+    system_type = models.ForeignKey(
+        SystemType,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="Performance score (0.0-100.0)"
+        related_name="systems",
+    )
+    technologies = models.ManyToManyField(
+        Technology, blank=True, related_name="systems"
+    )
+    complexity = models.IntegerField(
+        choices=COMPLEXITY_CHOICES, default=2, help_text="System Complexity level"
+    )
+    priority = models.IntegerField(
+        choices=PRIORITY_CHOICES, default=2, help_text="Development priority"
+    )
+
+    # ================= PROJECT STATUS =================
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    featured = models.BooleanField(default=False)
+    completion_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, default=100, help_text="Completion percentage (0-100)"
+    )
+
+    # ================= PERFORMANCE METRICS =================
+    performance_score = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Performance score (0-100)",
     )
     uptime_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="System uptime percentage"
+        help_text="System uptime percentage",
     )
 
     response_time_ms = models.IntegerField(default=0, help_text="Average response time in milliseconds")
@@ -210,38 +286,28 @@ class SystemModule(models.Model):
     commit_count = models.PositiveIntegerField(default=0, help_text="Total Git commits")
     last_commit_date = models.DateTimeField(null=True, blank=True, help_text="Date of last Git commit")
 
-    # PROJECT TIIMELINE
+    # ================= PROJECT TIMELINE =================
     estimated_completion_date = models.DateField(null=True, blank=True, help_text="Estimated project completion")
 
-    # RESOURCE TRACKING
+    # ================= RESOURCE TRACKING =================
     estimated_dev_hours = models.IntegerField(null=True, blank=True, help_text="Estimated development hours")
     actual_dev_hours = models.IntegerField(null=True, blank=True, help_text="Actual development hours spent")
 
-    # COLLABORATION
+    # ================= COLLABORATION =================
     team_size = models.IntegerField(default=1, help_text="Number of team members")
 
-    # ================= RELATIONSHIP FIELDS =================
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="systems"
-    )
-    system_type = models.ForeignKey(
-        SystemType, on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name="systems"
-    )
-    technologies = models.ManyToManyField(
-        Technology, blank=True, related_name="systems"
-    )
-    related_systems = models.ManyToManyField(
-        'self', blank=True,
-        verbose_name="Related Systems",
-        help_text="Other systems that integrate with this one"
-    )
+    # ================= LINKS AND RESOURCES =================
+    github_url = models.URLField(blank=True)
+    live_url = models.URLField(blank=True, help_text="Live demo/deployment URL")
+    demo_url = models.URLField(blank=True, help_text="Interactive demo URL")
+    documentation_url = models.URLField(blank=True)
 
-    # ================= MEDIA FIELDS =================
+    # ================= VISUAL ASSETS =================
     thumbnail = models.ImageField(
-        upload_to="systems/thumbnails/", null=True, blank=True,
-        help_text="System card thumbnail (400x300px recommended)"
+        upload_to="systems/thumbnails/",
+        null=True,
+        blank=True,
+        help_text="System card thumbnail (400x300px recommended)",
     )
     banner_image = models.ImageField(
         upload_to="systems/banners/",
@@ -259,13 +325,11 @@ class SystemModule(models.Model):
         upload_to="systems/diagrams/",
         null=True,
         blank=True,
-        help_text="System architecture diagram"
+        help_text="System architecture diagram",
     )
 
-    # ================= META FIELDS =================
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='draft'
-    )
+    # ================= METADATA =================
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="systems")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     start_date = models.DateField(
@@ -283,6 +347,9 @@ class SystemModule(models.Model):
         null=True,
         help_text="Production deployment date"
     )
+
+    # ================= CUSTOM MANAGER =================
+    objects = SystemModuleManager()
 
     class Meta:
         ordering = ['-created_at']
@@ -316,6 +383,7 @@ class SystemModule(models.Model):
 
         super().save(*args, **kwargs)
 
+    # ================= CONTENT RENDERING METHODS =================
     def rendered_content(self):
         """Return description field as HTML with heading IDs for TOC links."""
         html_content = markdownify(self.description)
@@ -340,62 +408,7 @@ class SystemModule(models.Model):
         """Return future enhancements field as HTML."""
         return markdownify(self.future_enhancements)
 
-    def get_technology_colors(self):
-        """Return a list of technology color codes for this System."""
-        return [tech.color for tech in self.technologies.all()]
-
-    def is_in_development(self):
-        """Check if the system is still in development."""
-        return self.status in ['draft', 'in_development', 'testing']
-
-    def is_live(self):
-        """Check if system is deployed and live."""
-        return self.status in ['deployed', 'published']
-
-    def get_status_color(self):
-        """Return status color for HUD display."""
-        status_colors = {
-            "draft": "#808080",  # Gray
-            "in_development": "#ffbd2e",  # Yellow
-            "testing": "#ff6b8b",  # Coral
-            "deployed": "#27c93f",  # Green
-            "published": "#00f0ff",  # Cyan
-            "archived": "#666666",  # Dark Gray
-        }
-        return status_colors.get(self.status, "#00f0ff")
-
-    def get_complexity_display(self):
-        """Return complexity as a visual indicator."""
-        return "●" * self.complexity + "○" * (5 - self.complexity)
-
-    def get_related_logs(self):
-        """Get all related system logs ordered by priority and date"""
-        return (
-            self.log_entries.all()
-            .select_related("post")
-            .order_by("-priority", "-created_at")
-        )
-
-    def get_latest_log_entry(self):
-        """Get the most recent system log."""
-        return self.log_entries.first()
-
-    def get_development_progress(self):
-        """Calculate development progress based on various factors."""
-        if self.completion_percent:
-            return self.completion_percent
-
-        # Calculate based on status if no explicit percentage
-        status_progress = {
-            'draft': 10,
-            'in_development': 40,
-            'testing': 80,
-            'deployed': 95,
-            'published': 100,
-            'archived': 100,
-        }
-        return status_progress.get(self.status, 0)
-
+    # ================= STATUS AND HEALTH METHODS =================
     def get_health_status(self):
         """Return system health based on metrics"""
         if not self.uptime_percentage:
@@ -422,6 +435,34 @@ class SystemModule(models.Model):
         else:
             return "poor"
 
+    def get_status_color(self):
+        """Return status color for HUD display."""
+        status_colors = {
+            "draft": "#808080",  # Gray
+            "in_development": "#ffbd2e",  # Yellow
+            "testing": "#ff6b8b",  # Coral
+            "deployed": "#27c93f",  # Green
+            "published": "#00f0ff",  # Cyan
+            "archived": "#666666",  # Dark Gray
+        }
+        return status_colors.get(self.status, "#00f0ff")
+
+    def get_development_progress(self):
+        """Calculate development progress based on various factors."""
+        if self.completion_percent:
+            return self.completion_percent
+
+        # Calculate based on status if no explicit percentage
+        status_progress = {
+            "draft": 10,
+            "in_development": 40,
+            "testing": 80,
+            "deployed": 95,
+            "published": 100,
+            "archived": 100,
+        }
+        return status_progress.get(self.status, 0)
+
     def hours_variance(self):
         """Calculate hours over/under estimate"""
         if self.estimated_dev_hours and self.actual_dev_hours:
@@ -441,6 +482,253 @@ class SystemModule(models.Model):
             else:
                 return "on_track"
         return "unknown"
+
+    def get_technology_colors(self):
+        """Return a list of technology color codes for this System."""
+        return [tech.color for tech in self.technologies.all()]
+
+    def is_in_development(self):
+        """Check if the system is still in development."""
+        return self.status in ['draft', 'in_development', 'testing']
+
+    def is_live(self):
+        """Check if system is deployed and live."""
+        return self.status in ['deployed', 'published']
+
+    def get_complexity_stars(self):
+        """Return complexity as a visual indicator."""
+        return "●" * self.complexity + "○" * (5 - self.complexity)
+
+    def get_related_logs(self):
+        """Get all related system logs ordered by priority and date"""
+        return (
+            self.log_entries.all()
+            .select_related("post")
+            .order_by("-priority", "-created_at")
+        )
+
+    def get_latest_log_entry(self):
+        """Get the most recent system log."""
+        return self.log_entries.first()
+
+    # ================= NEW ENHANCED METHODS FOR DASHBOARD =================
+    def get_status_badge_color(self):
+        """Get color class based on system status for badges."""
+        status_colors = {
+            'deployed': 'success',
+            'published': 'success',
+            'in_development': 'warning',
+            'testing': 'info',
+            'maintenance': 'warning',
+            'draft': 'seccondary',
+            'archived': 'muted',
+        }
+        return status_colors.get(self.status, 'secondary')
+
+    def get_priority_color(self):
+        """Get color class based on priority level."""
+        priority_colors = {
+            1: 'success',   # Low - green
+            2: 'info',      # Normal - blue
+            3: 'warning',   # High - yellow
+            4: 'danger',    # Critical - red
+        }
+        return priority_colors.get(self.priority, 'info')
+
+    def get_progress_color(self):
+        """Get color class based on completion progress."""
+        if not self.completion_percent:
+            return 'secondary'
+
+        if self.completion_percent >= 90:
+            return 'success'
+        elif self.completion_percent >= 70:
+            return 'info'
+        elif self.completion_percent >= 50:
+            return 'warning'
+        else:
+            return 'danger'
+
+    def get_complexity_display(self):
+        """Get human-readable complexity display with visual indiccators."""
+        complexity_map = {
+            1: {'label': 'Basic', 'stars': '★☆☆☆☆', 'color': 'success'},
+            2: {'label': 'Intermediate', 'stars': '★★☆☆☆', 'color': 'info'},
+            3: {'label': 'Advanced', 'stars': '★★★☆☆', 'color': 'warning'},
+            4: {'label': 'Complex', 'stars': '★★★★☆', 'color': 'warning'},
+            5: {'label': 'Enterprise', 'stars': '★★★★★', 'color': 'danger'},
+        }
+        return complexity_map.get(self.complexity, {'label': 'Unknown', 'stars': '☆☆☆☆☆', 'color': 'secondary'})
+
+    def get_technology_summary(self):
+        """Get technology stack summary for dashboard display."""
+        techs = self.technologies.all()
+        return {
+            'total_count': techs.count(),
+            'primary_techs': techs[:3],  # First 3 as primary
+            'color_palette': [tech.color for tech in techs if hasattr(tech, 'color')],
+        }
+
+    def get_dashboard_metrics(self):
+        """Get all metrics for dashboard display in one call."""
+        return {
+            'basic_info': {
+                'system_id': self.system_id,
+                'title': self.title,
+                'status': self.status,
+                'status_color': self.get_status_badge_color(),
+                'complexity': self.get_complexity_display(),
+                'priority': self.priority,
+                'priority_color': self.get_priority_color(),
+            },
+            'progress': {
+                'completion_percent': self.completion_percent,
+                'progress_color': self.get_priority_color(),
+                'development_progress': self.get_development_progress(),
+            },
+            'performance': {
+                'health_status': self.get_health_status(),
+                'performance_score': self.performance_score,
+                'uptime_percentage': self.uptime_percentage,
+                'response_status': self.get_response_status(),
+                'daily_users': self.daily_users,
+            },
+            'development': {
+                'code_lines': self.code_lines,
+                'commit_count': self.commit_count,
+                'hours_variance': self.hours_variance(),
+                'completion_trend': self.completion_trend(),
+            },
+        }
+
+    def get_deployment_readiness(self):
+        """Calculate deployment readiness score."""
+        score = 0
+        max_score = 10
+
+        # Basic information completeness (2 pt)
+        if self.description and self.title:
+            score += 1
+        if self.technical_details:
+            score += 1
+
+        # Development progress (3 pt)
+        if self.completion_percent:
+            if self.completion_percent >= 90:
+                score += 3
+            elif self.completion_percent >= 70:
+                score += 2
+            elif self.completion_percent >= 50:
+                score += 1
+
+        # Testing and quality (2 pt)
+        if self.status in ['testing', 'deployed', 'published']:
+            score += 1
+        if hasattr(self, 'features') and self.features.filter(implementation_status='tested').exists():
+            score += 1
+
+        # Documentation and links (2 pt)
+        if self.github_url:
+            score += 1
+        if self.live_url or self.demo_url:
+            score += 1
+
+        # Performance metrics (1 pt)
+        if self.performance_score and self.uptime_percentage:
+            score += 1
+
+        readiness_percent = (score / max_score) * 100
+
+        # Determine readiness status
+        if readiness_percent >= 90:
+            status = 'ready'
+        elif readiness_percent >= 70:
+            status = 'almost_ready'
+        elif readiness_percent >= 50:
+            status = 'in_progress'
+        else:
+            status = 'not_ready'
+
+        return {
+            'score': score,
+            'max_score': max_score,
+            'percentage': round(readiness_percent, 1),
+            'status': status,
+        }
+
+    def get_status_icon(self):
+        """Return Font Awesome icon for status"""
+        icons = {
+            'deployed': 'rocket',
+            'in_development': 'code',
+            'testing': 'vial',
+            'updated': 'sync-alt',
+        }
+        return icons.get(self.status, 'sync-alt')
+
+    # ================= TEMPLATE PROPERTIES =================
+    @property
+    def health_status(self):
+        """Property version for easy template access."""
+        return self.get_health_status()
+
+    @property
+    def progress_color(self):
+        """Property version for easy template access."""
+        return self.get_progress_color()
+
+    @property
+    def status_badge_color(self):
+        """Property version for easy template access."""
+        return self.get_status_badge_color()
+
+    @property
+    def complexity_display(self):
+        """Property version for easy template access."""
+        return self.get_complexity_display()
+
+    @property
+    def dashboard_metrics(self):
+        """Property version for easy template access."""
+        return self.get_dashboard_metrics()
+
+    @property
+    def deployment_readiness(self):
+        """Property version for easy template access."""
+        return self.get_deployment_readiness()
+
+    # ================= CLASS METHODS FOR BULK OPERATIONS =================
+    @classmethod
+    def get_health_distribution(cls):
+        """Get distribution of systems by health status."""
+        systems = cls.objects.all()
+        distribution = {'excellent': 0, 'good': 0, 'fair': 0, 'poor': 0, 'unknown': 0}
+
+        for system in systems:
+            health = system.get_health_status()
+            distribution[health] += 1
+        return distribution
+
+    @classmethod
+    def get_status_statistics(cls):
+        """Get comprehensive status statistics."""
+        stats = {}
+        for status_choice in cls.STATUS_CHOICES:
+            status_key = status_choice[0]
+            status_label = status_choice[1]
+
+            systems = cls.objects.filter(status=status_key)
+            count = systems.count()
+
+            if count > 0:
+                avg_completion = systems.aggregate(avg=Avg('completion_percent'))['avg'] or 0
+                stats[status_key] = {
+                    'label': status_label,
+                    'count': count,
+                    'avg_completion': round(avg_completion, 1),
+                    'systems': systems[:3]  # Sample systems
+                }
+        return stats
 
 
 class SystemImage(models.Model):

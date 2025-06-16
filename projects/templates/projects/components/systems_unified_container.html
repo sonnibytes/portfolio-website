@@ -1,0 +1,273 @@
+<!----
+ * AURA Portfolio - Systems Unified Container Component Template
+ * File: projects/templates/projects/components/systems_unified_container.html
+ * Reusable component for consistent container styling across systems app
+ * 
+ * Usage:
+ * {--% include 'projects/components/systems_unified_container.html' with variant='dashboard' title='Container Title' system=system_object %--}
+ * 
+ * Parameters:
+ * - variant: dashboard, metrics, performance, alerts, technology (default: dashboard)
+ * - title: Container title
+ * - subtitle: Optional subtitle
+ * - system: System object (optional)
+ * - badge_text: Custom badge text (optional)
+ * - badge_icon: Custom badge icon (optional)
+ * - compact: Boolean for compact styling (optional)
+---->
+
+{% load static %}
+{% load aura_filters %}
+
+<!-- Set defaults -->
+{% with variant=variant|default:'dashboard' %}
+{% with compact_class=compact|yesno:'compact,' %}
+
+<div class="systems-unified-container {{ variant }} {{ compact_class }}">
+    
+    <!-- Container Header -->
+    <div class="systems-container-header">
+        
+        <!-- Featured/Custom Badge -->
+        {% if badge_text %}
+        <div class="systems-featured-badge">
+            {% if badge_icon %}<i class="{{ badge_icon }}"></i>{% endif %}
+            <span>{{ badge_text }}</span>
+        </div>
+        {% endif %}
+        
+        <!-- Title -->
+        {% if title %}
+        <h3 class="systems-container-title">{{ title }}</h3>
+        {% endif %}
+        
+        <!-- Status/Type Information -->
+        <div class="systems-container-status">
+            {% if system %}
+                <span class="systems-status-id">{{ system.system_id|default:system.slug|upper }}</span>
+                {% if system.system_type %}
+                <span class="systems-type-badge">
+                    {% if system.system_type.icon %}<i class="{{ system.system_type.icon }}"></i>{% endif %}
+                    {{ system.system_type.name }}
+                </span>
+                {% endif %}
+            {% else %}
+                {% if status_id %}
+                <span class="systems-status-id">{{ status_id }}</span>
+                {% endif %}
+                {% if type_badge %}
+                <span class="systems-type-badge">
+                    {% if type_icon %}<i class="{{ type_icon }}"></i>{% endif %}
+                    {{ type_badge }}
+                </span>
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Subtitle -->
+        {% if subtitle %}
+        <div class="systems-description">
+            <p>{{ subtitle }}</p>
+        </div>
+        {% endif %}
+        
+    </div>
+    
+    <!-- Content Grid -->
+    <div class="systems-content-grid">
+        
+        <!-- Content Info Section -->
+        <div class="systems-content-info">
+            
+            <!-- Description -->
+            {% if system.description or description %}
+            <div class="systems-description">
+                <p>{{ system.description|default:description }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- System Metrics (if system provided) -->
+            {% if system and show_metrics %}
+            <div class="systems-metrics-section">
+                <div class="systems-metrics-grid">
+                    {% if system.completion_percent %}
+                    <div class="systems-metric-item">
+                        <div class="systems-metric-value">{{ system.completion_percent }}%</div>
+                        <div class="systems-metric-label">Complete</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if system.performance_score %}
+                    <div class="systems-metric-item">
+                        <div class="systems-metric-value">{{ system.performance_score|floatformat:1 }}</div>
+                        <div class="systems-metric-label">Performance</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if system.uptime_percentage %}
+                    <div class="systems-metric-item">
+                        <div class="systems-metric-value">{{ system.uptime_percentage }}%</div>
+                        <div class="systems-metric-label">Uptime</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if system.code_lines %}
+                    <div class="systems-metric-item">
+                        <div class="systems-metric-value">{{ system.code_lines|format_number }}</div>
+                        <div class="systems-metric-label">Lines of Code</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Technologies Section (if system provided) -->
+            {% if system.technologies.exists and show_technologies %}
+            <div class="systems-technologies-section">
+                <div class="systems-section-header">
+                    <i class="fas fa-code"></i>
+                    <span>Technologies</span>
+                </div>
+                <div class="systems-technologies-list">
+                    {% for tech in system.technologies.all|slice:":6" %}
+                    <a href="{% url 'projects:technology_detail' slug=tech.slug %}" class="systems-technology-tag">
+                        {% if tech.icon %}<i class="{{ tech.icon }}"></i>{% endif %}
+                        {{ tech.name }}
+                    </a>
+                    {% endfor %}
+                    {% if system.technologies.count > 6 %}
+                    <span class="systems-technology-tag" style="opacity: 0.6;">
+                        +{{ system.technologies.count|add:"-6" }} more
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Actions Section -->
+            {% if system and show_actions %}
+            <div class="systems-actions-section">
+                <a href="{% url 'projects:system_detail' slug=system.slug %}" class="systems-action-btn primary">
+                    <i class="fas fa-eye"></i>
+                    View System
+                </a>
+                {% if system.github_url %}
+                <a href="{{ system.github_url }}" target="_blank" class="systems-action-btn">
+                    <i class="fab fa-github"></i>
+                    Source
+                </a>
+                {% endif %}
+                {% if system.live_url %}
+                <a href="{{ system.live_url }}" target="_blank" class="systems-action-btn">
+                    <i class="fas fa-external-link-alt"></i>
+                    Live
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Custom Content Slot -->
+            {% if content %}
+                {{ content|safe }}
+            {% endif %}
+            
+        </div>
+        
+        <!-- Media/Chart Section -->
+        {% if show_media or chart_type %}
+        <div class="systems-content-media">
+            {% if chart_type %}
+                <div class="systems-chart-container">
+                    {% if chart_type == 'placeholder' %}
+                        <div class="systems-chart-placeholder">
+                            <i class="fas fa-chart-{{ chart_icon|default:'area' }}"></i>
+                        </div>
+                    {% else %}
+                        <canvas id="{{ chart_id|default:'systemChart' }}"></canvas>
+                    {% endif %}
+                </div>
+            {% elif media_content %}
+                {{ media_content|safe }}
+            {% endif %}
+        </div>
+        {% endif %}
+        
+    </div>
+    
+    <!-- Container Footer -->
+    {% if show_footer %}
+    <div class="systems-container-footer">
+        
+        <!-- Footer Stats -->
+        <div class="systems-footer-stats">
+            {% if system %}
+                <div class="systems-stat-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Status: {{ system.get_status_display }}</span>
+                </div>
+                {% if system.updated_at %}
+                <div class="systems-stat-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Updated {{ system.updated_at|timesince }} ago</span>
+                </div>
+                {% endif %}
+                {% if system.team_size %}
+                <div class="systems-stat-item">
+                    <i class="fas fa-users"></i>
+                    <span>Team: {{ system.team_size }} member{{ system.team_size|pluralize }}</span>
+                </div>
+                {% endif %}
+            {% else %}
+                {% if footer_stats %}
+                    {{ footer_stats|safe }}
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Footer Actions -->
+        <div class="systems-footer-actions">
+            {% if system %}
+                <button class="systems-footer-action-btn" title="Bookmark System">
+                    <i class="fas fa-bookmark"></i>
+                </button>
+                <button class="systems-footer-action-btn" title="Share System">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                {% if system.documentation_url %}
+                <a href="{{ system.documentation_url }}" target="_blank" class="systems-footer-action-btn" title="Documentation">
+                    <i class="fas fa-book"></i>
+                </a>
+                {% endif %}
+            {% else %}
+                {% if footer_actions %}
+                    {{ footer_actions|safe }}
+                {% endif %}
+            {% endif %}
+        </div>
+        
+    </div>
+    {% endif %}
+    
+</div>
+
+{% endwith %}
+{% endwith %}
+
+<!-- Usage Examples:
+
+1. Basic System Card:
+{--% include 'projects/components/systems_unified_container.html' with variant='metrics' title=system.title system=system show_metrics=True show_technologies=True show_actions=True show_footer=True %--}
+
+2. Dashboard Container:
+{--% include 'projects/components/systems_unified_container.html' with variant='dashboard' title='Command Center' badge_text='Live Dashboard' badge_icon='fas fa-tachometer-alt' subtitle='Real-time system monitoring' chart_type='placeholder' chart_icon='area' show_footer=True %--}
+
+3. Compact System Card:
+{--% include 'projects/components/systems_unified_container.html' with variant='performance' title=system.title system=system compact=True show_metrics=True show_actions=True %--}
+
+4. Custom Content Container:
+{--% include 'projects/components/systems_unified_container.html' with variant='technology' title='Technology Usage' content='<div class="tech-usage-grid">...</div>' show_footer=True %--}
+
+5. Alert Container:
+{--% include 'projects/components/systems_unified_container.html' with variant='alerts' title='System Alerts' badge_text='3 Active Alerts' badge_icon='fas fa-exclamation-triangle' content='<div class="alert-list">...</div>' %--}
+
+-->

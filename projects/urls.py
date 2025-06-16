@@ -6,14 +6,16 @@ app_name = 'projects'
 urlpatterns = [
     # ================= MAIN VIEWS =================
     # Main dashboard and systems views
-    path("", views.UnifiedDashboardView.as_view(), name="unified_dashboard"),
+    # path("", views.UnifiedDashboardView.as_view(), name="unified_dashboard"),
     # AURA Enhanced dashboard
-    path("dashboard/", views.EnhancedSystemsDashboard.as_view(), name="enhanced_dashboard"),
-    path("systems/", views.SystemModuleListView.as_view(), name="system_list"),
-    path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
+    path("dashboard/", views.EnhancedSystemsDashboardView.as_view(), name="systems_dashboard"),
+    path("systems/", views.EnhancedSystemListView.as_view(), name="system_list"),
+    # path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
 
     # System Detail and management
-    path("systems/<slug:slug>/", views.SystemModuleDetailView.as_view(), name="system_detail"),
+    # path("systems/<slug:slug>/", views.EnhancedSystemModuleDetailView.as_view(), name="system_detail"),
+    # path("systems/<slug:slug>/", views.SystemModuleDetailView.as_view(), name="system_detail"),
+    path("systems/<slug:slug>/", views.SystemControlInterfaceView.as_view(), name="system_detail"),
     path("systems/create/", views.SystemModuleCreateView.as_view(), name="system_create"),
     path("systems/<slug:slug>/edit/", views.SystemModuleUpdateView.as_view(), name="system_update"),
     path("systems/<slug:slug>/delete/", views.SystemModuleDeleteView.as_view(), name="system_delete"),
@@ -24,9 +26,9 @@ urlpatterns = [
 
     # Showcase and presentation views
     path("featured/", views.FeaturedSystemsView.as_view(), name="featured_systems"),
-    path("timeline/", views.SystemTimelineView.as_view(), name="system_timeline"),
+    # path("timeline/", views.SystemTimelineView.as_view(), name="system_timeline"),
     # Search and filtering
-    path("search/", views.SystemSearchView.as_view(), name="system_search"),
+    # path("search/", views.SystemSearchView.as_view(), name="system_search"),
 
     # ================= API ENDPOINTS =================
     # path("api/dashboard/metrics/", views.DashboardMetricsAPIView.as_view(), name="dashboard_metrics_api"),
@@ -35,6 +37,6 @@ urlpatterns = [
     # path("api/technologies/usage/", views.TechnologyUsageAPIView.as_view(), name="technology_usage_api"),
     
     # Rework - Simplified API Endpoints
-    path("api/dashboard/", views.dashboard_api, name="dashboard_api"),
+    # path("api/dashboard/", views.DashboardAPIView.as_view(), name="dashboard_api"),
     # path("api/quick-stats/", ),
 ]

@@ -1,485 +1,1381 @@
-{% extends "base.html" %}
+<!----
+ * AURA Portfolio - Phase 3 Enhanced Systems Dashboard 
+ * CLEANED VERSION - Using Unified Container Pattern
+ * Version: 3.4.0 - Consolidated Styling Approach
+---->
+
+{% extends "projects/systems_base.html" %}
 {% load static %}
-{% load core_tags %}
+{% load aura_filters %}
+{% load aura_components %}
+{% load system_tags %}
 
-{% block title %}Systems Dashboard | ML DEVLOG{% endblock %}
-{% block meta_description %}Real-time systems dashboard showing project metrics, development status, and performance analytics{% endblock %}
+{% block systems_title %}Systems Command Center{% endblock %}
+{% block systems_body_class %}systems-dashboard enhanced-dashboard phase-3-cleaned{% endblock %}
 
-{% block extra_css %}
+{% block systems_css %}
 <link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+{% comment %} <link rel="stylesheet" href="{% static 'projects/css/enhanced_dashboard.css' %}"> {% endcomment %}
+<link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
+<style>
+{% comment %} /* ========== UNIFIED CONTAINER FOUNDATION ========== */
+/* Based on blog/css/datalogs-detail.css unified container pattern */
+
+.unified-dashboard-container {
+    background: 
+        var(--gradient-glass),
+        rgba(var(--container-category-rgb, 38, 198, 218), 0.06);
+    border: 1px solid rgba(var(--container-category-rgb, 38, 198, 218), 0.25);
+    border-radius: var(--border-radius-xl, 16px);
+    padding: var(--spacing-xl, 2rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.unified-dashboard-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, 
+        var(--container-category-color, var(--color-teal)), 
+        var(--color-coral), 
+        var(--color-lavender)
+    );
+    opacity: 0.8;
+}
+
+.unified-dashboard-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 
+                0 0 30px rgba(var(--container-category-rgb, 38, 198, 218), 0.15);
+}
+
+/* ========== CONTAINER VARIANTS ========== */
+.unified-dashboard-container.teal {
+    --container-category-rgb: 38, 198, 218;
+    --container-category-color: var(--color-teal);
+}
+
+.unified-dashboard-container.lavender {
+    --container-category-rgb: 179, 157, 219;
+    --container-category-color: var(--color-lavender);
+}
+
+.unified-dashboard-container.coral {
+    --container-category-rgb: 255, 138, 128;
+    --container-category-color: var(--color-coral);
+}
+
+.unified-dashboard-container.mint {
+    --container-category-rgb: 165, 214, 167;
+    --container-category-color: var(--color-mint);
+}
+
+.unified-dashboard-container.yellow {
+    --container-category-rgb: 255, 245, 157;
+    --container-category-color: var(--color-yellow);
+}
+
+.unified-dashboard-container.navy {
+    --container-category-rgb: 63, 81, 181;
+    --container-category-color: #5c6bc0;
+    background: 
+        var(--gradient-glass),
+        rgba(63, 81, 181, 0.12);
+    border: 1px solid rgba(63, 81, 181, 0.35);
+}
+
+.unified-dashboard-container.gunmetal {
+    --container-category-rgb: 84, 110, 122;
+    --container-category-color: var(--color-gunmetal);
+}
+
+/* ========== UNIFIED CONTAINER HEADER ========== */
+.unified-container-header {
+    margin-bottom: var(--spacing-xl, 2rem);
+    text-align: center;
+}
+
+.unified-featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);
+    background: rgba(var(--container-category-rgb, 38, 198, 218), 0.2);
+    border: 1px solid rgba(var(--container-category-rgb, 38, 198, 218), 0.4);
+    border-radius: var(--border-radius-md, 8px);
+    color: var(--container-category-color, var(--color-teal));
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.unified-container-title {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-md, 1rem);
+    line-height: 1.2;
+    background: linear-gradient(135deg, 
+        var(--color-text), 
+        var(--container-category-color, var(--color-teal))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.unified-container-subtitle {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    font-family: var(--font-heading);
+}
+
+/* ========== LAYOUT GRIDS ========== */
+.dashboard-grid {
+    display: grid;
+    gap: var(--spacing-xl, 2rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.grid-2-1 {
+    grid-template-columns: 2fr 1fr;
+}
+
+.grid-4-col {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.grid-3-col {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-2-col {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-1-col {
+    grid-template-columns: 1fr;
+}
+
+/* ========== METRIC DISPLAYS ========== */
+
+.metric-value {
+    font-weight: 700;
+    color: var(--container-category-color, var(--color-teal));
+    display: block;
+    margin-bottom: var(--spacing-sm, 0.75rem);
+    font-family: var(--font-heading);
+}
+
+.metric-label {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.metric-icon {
+    color: var(--container-category-color, var(--color-teal));
+}
+
+.metric-card {
+    margin-bottom: var(--spacing-md);
+}
+
+.metric-trend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs, 0.5rem);
+    color: var(--color-mint);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.metric-trend .material-icons {
+    font-size: 1rem;
+}
+
+/* ========== HERO SECTION ========== */
+.hero-content {
+    text-align: center;
+    padding: var(--spacing-lg, 1.5rem) 0;
+}
+
+.hero-badges {
+    display: flex;
+    gap: var(--spacing-md, 1rem);
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);
+    background: rgba(var(--container-category-rgb, 38, 198, 218), 0.15);
+    border: 1px solid rgba(var(--container-category-rgb, 38, 198, 218), 0.3);
+    border-radius: var(--border-radius-full, 50px);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--container-category-color, var(--color-teal));
+}
+
+.status-badge.live {
+    --container-category-rgb: 76, 175, 80;
+    --container-category-color: var(--color-mint);
+}
+
+.hero-quick-stats {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-xl, 2rem);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-lg, 1.5rem);
+}
+
+.quick-stat {
+    text-align: center;
+}
+
+.quick-stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--container-category-color, var(--color-teal));
+    font-family: var(--font-heading);
+}
+
+.quick-stat-label {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: var(--spacing-xs, 0.5rem);
+}
+
+/* ========== HEALTH STATUS ========== */
+.health-overview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.health-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem);
+    background: rgba(var(--container-category-rgb, 76, 175, 80), 0.05);
+    border-radius: var(--border-radius-lg, 12px);
+    border-left: 4px solid var(--container-category-color, var(--color-mint));
+}
+
+.health-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(var(--container-category-rgb, 76, 175, 80), 0.2);
+    color: var(--container-category-color, var(--color-mint));
+}
+
+.health-details {
+    flex: 1;
+}
+
+.health-status {
+    font-weight: 600;
+    color: var(--container-category-color, var(--color-mint));
+    margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
+.health-timestamp {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.health-metrics {
+    display: flex;
+    gap: var(--spacing-lg, 1.5rem);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-md, 1rem);
+}
+
+.health-metric {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    font-size: 0.9rem;
+}
+
+.health-metric-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--container-category-color, var(--color-mint));
+}
+
+/* ========== FEATURED SYSTEMS GRID ========== */
+.featured-systems-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.featured-system-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(var(--container-category-rgb, 38, 198, 218), 0.1);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: var(--spacing-lg, 1.5rem);
+    transition: all 0.3s ease;
+}
+
+.featured-system-card:hover {
+    background: rgba(var(--container-category-rgb, 38, 198, 218), 0.08);
+    border-color: rgba(var(--container-category-rgb, 38, 198, 218), 0.3);
+    transform: translateY(-2px);
+}
+
+.system-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.system-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(var(--container-category-rgb, 38, 198, 218), 0.2);
+    border-radius: var(--border-radius-md, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--container-category-color, var(--color-teal));
+}
+
+.system-info {
+    flex: 1;
+}
+
+.system-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    color: var(--color-text);
+}
+
+.system-status {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.system-progress {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--container-category-color, var(--color-teal)) 0% var(--progress, 75%),
+        rgba(255,255,255,0.1) var(--progress, 75%) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    position: relative;
+}
+
+.system-progress::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    background: var(--color-bg-secondary);
+    border-radius: 50%;
+}
+
+.system-progress span {
+    position: relative;
+    z-index: 1;
+}
+
+.system-technologies {
+    display: flex;
+    gap: var(--spacing-xs, 0.5rem);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-md, 1rem);
+}
+
+.tech-badge {
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.2);
+    color: var(--color-lavender);
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+    border-radius: var(--border-radius-sm, 4px);
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.3);
+}
+
+/* ========== ACTIVITY FEED ========== */
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md, 1rem);
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-md, 8px);
+    border-left: 3px solid var(--container-category-color, var(--color-mint));
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: rgba(var(--container-category-rgb, 165, 214, 167), 0.05);
+}
+
+.activity-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(var(--container-category-rgb, 165, 214, 167), 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--container-category-color, var(--color-mint));
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-title {
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    font-size: 0.9rem;
+}
+
+.activity-details {
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    line-height: 1.4;
+}
+
+.activity-time {
+    color: var(--color-text-tertiary);
+    font-size: 0.7rem;
+    margin: 0;
+}
+
+/* ========== TECHNOLOGY STACK ========== */
+.tech-stack-overview {
+    padding: var(--spacing-md, 1rem) 0;
+}
+
+.tech-categories {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.tech-category {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm, 0.75rem);
+}
+
+.tech-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md, 1rem);
+}
+
+.tech-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.75rem);
+}
+
+.tech-name .fas,
+.tech-name .fab {
+    font-size: 1rem;
+    color: var(--container-category-color, var(--color-yellow));
+    width: 20px;
+    text-align: center;
+}
+
+.tech-count {
+    background: rgba(var(--container-category-rgb, 255, 245, 157), 0.2);
+    color: var(--container-category-color, var(--color-yellow));
+    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+    border-radius: var(--border-radius-full, 50px);
+    font-size: 0.7rem;
+    font-weight: 600;
+    min-width: 24px;
+    text-align: center;
+    border: 1px solid rgba(var(--container-category-rgb, 255, 245, 157), 0.3);
+}
+
+.tech-usage-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.usage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, 
+        var(--container-category-color, var(--color-yellow)), 
+        rgba(var(--container-category-rgb, 255, 245, 157), 0.8)
+    );
+    border-radius: 2px;
+    transition: width 1s ease;
+}
+
+/* ========== SYSTEM ALERTS ========== */
+.alerts-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md, 1rem);
+}
+
+.alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem);
+    border-radius: var(--border-radius-md, 8px);
+    border-left: 4px solid;
+}
+
+.alert-item.success {
+    background: rgba(76, 175, 80, 0.1);
+    border-left-color: var(--color-mint);
+}
+
+.alert-item.warning {
+    background: rgba(255, 193, 7, 0.1);
+    border-left-color: var(--color-yellow);
+}
+
+.alert-item.error {
+    background: rgba(244, 67, 54, 0.1);
+    border-left-color: #f44336;
+}
+
+.alert-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.alert-item.success .alert-icon {
+    background: rgba(76, 175, 80, 0.2);
+    color: var(--color-mint);
+}
+
+.alert-item.warning .alert-icon {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--color-yellow);
+}
+
+.alert-item.error .alert-icon {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    font-size: 0.9rem;
+}
+
+.alert-message {
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+    line-height: 1.4;
+}
+
+.alert-time {
+    color: var(--color-text-tertiary);
+    font-size: 0.7rem;
+    margin: 0;
+}
+
+/* ========== CHART CONTAINER ========== */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.chart-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-lg, 12px);
+    border: 2px dashed rgba(var(--container-category-rgb, 84, 110, 122), 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+.chart-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-md, 1rem);
+    color: var(--container-category-color, var(--color-gunmetal));
+}
+
+.chart-note {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-sm, 0.75rem);
+}
+
+.chart-metrics {
+    display: flex;
+    justify-content: space-around;
+    gap: var(--spacing-md, 1rem);
+    flex-wrap: wrap;
+}
+
+.chart-metric {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    font-size: 0.8rem;
+}
+
+.metric-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.metric-dot.green { background: var(--color-mint); }
+.metric-dot.blue { background: var(--color-teal); }
+.metric-dot.purple { background: var(--color-lavender); }
+
+/* ========== FOOTER SECTIONS ========== */
+.unified-container-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--spacing-lg, 1.5rem);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: var(--spacing-lg, 1.5rem);
+}
+
+.action-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.5rem);
+    color: var(--container-category-color, var(--color-teal));
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.action-link:hover {
+    color: var(--container-category-color, var(--color-teal));
+    transform: translateX(4px);
+}
+
+/* ========== QUICK ACTIONS GRID ========== */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md, 1rem);
+}
+
+.quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm, 0.75rem);
+    padding: var(--spacing-lg, 1.5rem);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg, 12px);
+    border: 1px solid rgba(var(--container-category-rgb, 179, 157, 219), 0.1);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all 0.3s ease;
+}
+
+.quick-action:hover {
+    background: rgba(var(--container-category-rgb, 179, 157, 219), 0.1);
+    color: var(--container-category-color, var(--color-lavender));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--container-category-rgb, 179, 157, 219), 0.2);
+}
+
+.quick-action .fas {
+    font-size: 1.5rem;
+    color: var(--container-category-color, var(--color-lavender));
+}
+
+.quick-action span {
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* ========== NAVY VARIANT ENHANCEMENTS ========== */
+.unified-dashboard-container.navy .unified-container-title {
+    color: #e8eaf6;
+    background: linear-gradient(135deg, #e8eaf6, #5c6bc0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.unified-dashboard-container.navy .system-title,
+.unified-dashboard-container.navy .activity-title {
+    color: #e8eaf6;
+}
+
+.unified-dashboard-container.navy .system-status,
+.unified-dashboard-container.navy .activity-details {
+    color: rgba(232, 234, 246, 0.8);
+}
+
+.unified-dashboard-container.navy .activity-time {
+    color: rgba(232, 234, 246, 0.6);
+}
+
+.unified-dashboard-container.navy .featured-system-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(92, 107, 192, 0.2);
+}
+
+.unified-dashboard-container.navy .featured-system-card:hover {
+    background: rgba(92, 107, 192, 0.12);
+    border-color: rgba(92, 107, 192, 0.4);
+}
+
+.unified-dashboard-container.navy .system-icon {
+    background: rgba(92, 107, 192, 0.25);
+    color: #7986cb;
+}
+
+.unified-dashboard-container.navy .system-progress {
+    background: conic-gradient(
+        #5c6bc0 0% var(--progress, 75%),
+        rgba(255,255,255,0.15) var(--progress, 75%) 100%
+    );
+}
+
+.unified-dashboard-container.navy .action-link {
+    color: #7986cb;
+}
+
+.unified-dashboard-container.navy .action-link:hover {
+    color: #9fa8da;
+}
+@media (max-width: 1200px) {
+    .grid-2-1,
+    .grid-4-col {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-3-col {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .unified-container-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .grid-3-col,
+    .grid-2-col {
+        grid-template-columns: 1fr;
+    }
+    
+    .unified-dashboard-container {
+        padding: var(--spacing-lg, 1.5rem);
+    }
+    
+    .unified-container-title {
+        font-size: 1.8rem;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+    }
+    
+    .featured-systems-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .hero-quick-stats {
+        gap: var(--spacing-lg, 1.5rem);
+    }
+    
+    .chart-metrics {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-badges {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+    
+    .health-metrics {
+        flex-direction: column;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+    
+    .system-header {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+} {% endcomment %}
+</style>
 {% endblock %}
 
-{% block body_class %}systems-dashboard-page grid-pattern{% endblock %}
+{% block systems_content %}
+<div class="dashboard-main-content container">
 
-{% block content %}
-<!-- Dashboard Header -->
-<section class="dashboard-header-section">
-    <div class="container">
-        <div class="dashboard-header">
+    <!-- HERO SECTION -->
+    <div class="unified-dashboard-container teal">
+        <div class="unified-container-header">
+            <div class="hero-badges">
+                <div class="unified-featured-badge">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Command Center</span>
+                </div>
+            </div>
+            </div>
             <div class="header-info">
-                <h1 class="dashboard-title">
-                    SYSTEMS<span class="text-purple">DASHBOARD</span>
-                    <span class="dashboard-subtitle">Real-time System Monitoring</span>
-                </h1>
-                <div class="dashboard-timestamp">
-                    <i class="fas fa-clock"></i>
-                    <span id="current-time">{% now "Y-m-d H:i:s" %}</span>
-                    <span class="timezone">UTC</span>
+            <h1 class="unified-container-title">AURA DASHBOARD</h1>
+            <p class="unified-container-subtitle">Real-time system monitoring</p>
+            {% comment %} <div class="hero-quick-stats">
+                <div class="quick-stat">
+                    <span class="quick-stat-value">{{ dashboard_stats.deployed|default:5 }}</span>
+                    <span class="quick-stat-label">Deployed</span>
                 </div>
-            </div>
+                <div class="quick-stat">
+                    <span class="quick-stat-value">{{ performance_data.avg_uptime|default:98.5|floatformat:1 }}%</span>
+                    <span class="quick-stat-label">Uptime</span>
+                </div>
+                <div class="quick-stat">
+                    <span class="quick-stat-value">{{ dashboard_stats.in_development|default:3 }}</span>
+                    <span class="quick-stat-label">In Dev</span>
+                </div>
+            </div> {% endcomment %}
             
-            <div class="dashboard-status">
-                <div class="status-indicator operational">
-                    <div class="status-pulse"></div>
-                </div>
-                <div class="status-text">
-                    <div class="status-label">SYSTEM STATUS</div>
-                    <div class="status-value">OPERATIONAL</div>
-                </div>
-            </div>
+        
         </div>
-    </div>
-</section>
 
-<!-- Main Dashboard Metrics -->
-<section class="dashboard-metrics-section">
-    <div class="container">
-        <div class="metrics-grid">
-            <!-- Total Systems -->
-            <div class="metric-card">
-                <div class="metric-icon" style="--metric-color: var(--color-cyan)">
-                    <i class="fas fa-server"></i>
+        <!-- METRICS SECTION -->
+    <div class="metrics-overview">
+        
+        <!-- Total Systems -->
+        <div class="metric-card unified-dashboard-container teal">
+            <div class="metric-content">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
                 </div>
-                <div class="metric-content">
-                    <div class="metric-value" data-target="{{ dashboard_stats.total_systems }}">0</div>
-                    <div class="metric-label">TOTAL SYSTEMS</div>
-                </div>
-                <div class="metric-trend positive">
+                <div class="metric-value" data-target="{{ dashboard_stats.total|default:8 }}">0</div>
+                <div class="metric-label">Total Systems</div>
+                <div class="metric-trend">
                     <i class="fas fa-arrow-up"></i>
                     <span>+2 this month</span>
                 </div>
             </div>
-            
-            <!-- Systems in Development -->
-            <div class="metric-card">
-                <div class="metric-icon" style="--metric-color: var(--color-yellow)">
-                    <i class="fas fa-cogs"></i>
+        </div>
+        
+        <!-- Performance Score -->
+        <div class="metric-card unified-dashboard-container lavender">
+            <div class="metric-content">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
                 </div>
-                <div class="metric-content">
-                    <div class="metric-value" data-target="{{ dashboard_stats.systems_in_development }}">0</div>
-                    <div class="metric-label">IN DEVELOPMENT</div>
-                </div>
-                <div class="metric-progress">
-                    <div class="progress-bar" style="width: {{ dashboard_stats.systems_in_development|mul:100|divisibleby:dashboard_stats.total_systems }}%"></div>
-                </div>
-            </div>
-            
-            <!-- Systems Testing -->
-            <div class="metric-card">
-                <div class="metric-icon" style="--metric-color: var(--color-coral)">
-                    <i class="fas fa-vial"></i>
-                </div>
-                <div class="metric-content">
-                    <div class="metric-value" data-target="{{ dashboard_stats.systems_testing }}">0</div>
-                    <div class="metric-label">TESTING PHASE</div>
-                </div>
-                <div class="metric-status">
-                    <span class="status-dot testing"></span>
-                    <span>ACTIVE TESTING</span>
+                <div class="metric-value" data-target="{{ performance_data.avg_performance|default:94.8|floatformat:1 }}">0</div>
+                <div class="metric-label">Avg Performance</div>
+                <div class="metric-trend">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+3.2% vs last week</span>
                 </div>
             </div>
+        </div>
+        
+        <!-- Development Progress -->
+        <div class="metric-card unified-dashboard-container coral">
+            <div class="metric-content">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
+                </div>
+                <div class="metric-value" data-target="{{ dashboard_stats.avg_completion|default:78.5|floatformat:0 }}">0</div>
+                <div class="metric-label">Avg Completion %</div>
+                <div class="metric-trend">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+12% this sprint</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Users -->
+        <div class="metric-card unified-dashboard-container mint">
+            <div class="metric-content">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="metric-value" data-target="{{ performance_data.total_daily_users|default:1247 }}">0</div>
+                <div class="metric-label">Daily Users</div>
+                <div class="metric-trend">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>+18% vs yesterday</span>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    </div>
+
+    
+
+    <!-- 🎯 MAIN CONTENT SECTION -->
+    <div class="dashboard-grid grid-2-1">
+        
+        <!-- Featured Systems -->
+        <div class="unified-dashboard-container yellow">
+            <div class="unified-container-header">
+                
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;"><i class="fas fa-star"></i>  Featured Systems</h3>
+            </div>
             
-            <!-- Average Completion -->
-            <div class="metric-card">
-                <div class="metric-icon" style="--metric-color: var(--color-purple)">
+            <div class="featured-systems-grid">
+                {% for system in featured_systems|slice:":6" %}
+                <div class="featured-system-card">
+                    <div class="system-header">
+                        <div class="system-icon">
+                            <i class="fas fa-{{ system.system_type.icon|default:'apps' }}"></i>
+                        </div>
+                        <div class="system-info">
+                            <h4 class="system-title">{{ system.title|truncatechars:25 }}</h4>
+                            {% comment %} <p class="system-status">{{ system.get_status_display }}</p> {% endcomment %}
+                        </div>
+                        {% comment %} <div class="system-progress" style="--progress: {{ system.completion_percent|default:75 }}%">
+                            <span>{{ system.completion_percent|default:75 }}%</span>
+                        </div> {% endcomment %}
+                    </div>
+                    <div class="system-info">
+                        
+                    </div>
+                    <div class="system-technologies">
+                        {% for tech in system.technologies.all|slice:":3" %}
+                        <span class="tech-badge">{{ tech.name }}</span>
+                        {% endfor %}
+                        {% if system.technologies.count > 3 %}
+                        <span class="tech-badge" style="opacity: 0.7;">+{{ system.technologies.count|add:"-3" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="featured-system-card">
+                    <div class="system-header">
+                        <div class="system-icon">
+                            <i class="material-icons">star_border</i>
+                        </div>
+                        <div class="system-info">
+                            <h4 class="system-title">No featured systems</h4>
+                            <p class="system-status">Add some featured systems</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="unified-container-footer">
+                <a href="{% url 'projects:featured_systems' %}" class="action-link">
+                    <span>View All Featured</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- System Health Status -->
+        <div class="unified-dashboard-container navy">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">System Health</h3>
+            </div>
+            
+            <div class="health-overview">
+                <div class="health-indicator">
+                    <div class="health-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="health-details">
+                        <div class="health-status">All Systems Operational</div>
+                        <div class="health-timestamp">Last checked: 2 minutes ago</div>
+                    </div>
+                </div>
+                
+                <div class="health-metrics">
+                    <div class="health-metric">
+                        <div class="health-metric-dot" style="background: var(--color-mint);"></div>
+                        <span>{{ dashboard_stats.deployed|default:5 }} Active</span>
+                    </div>
+                    <div class="health-metric">
+                        <div class="health-metric-dot" style="background: var(--color-yellow);"></div>
+                        <span>{{ dashboard_stats.in_development|default:3 }} In Dev</span>
+                    </div>
+                    <div class="health-metric">
+                        <div class="health-metric-dot" style="background: var(--color-teal);"></div>
+                        <span>{{ dashboard_stats.featured|default:4 }} Featured</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- 🔧 FEATURES SECTION -->
+    <div class="dashboard-grid grid-2-col">
+        
+        <!-- Recent Activity -->
+        <div class="unified-dashboard-container mint">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Recent Activity</h3>
+            </div>
+            
+            <div class="activity-feed">
+                {% for system in recent_systems|slice:":8" %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-{{ system.get_status_icon|default:'sync-alt' }}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p class="activity-title">{{ system.title }} updated</p>
+                        <p class="activity-details">{{ system.get_latest_change|default:"System configuration updated" }}</p>
+                        <p class="activity-time">{{ system.updated_at|timesince }} ago</p>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p class="activity-title">No recent activity</p>
+                        <p class="activity-details">All systems stable</p>
+                        <p class="activity-time">Last update: 2 hours ago</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="unified-container-footer">
+                <a href="{% url 'projects:system_list' %}" class="action-link">
+                    <span>View All Systems</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Technology Stack -->
+        <div class="unified-dashboard-container yellow">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">Technology Stack</h3>
+            </div>
+            
+            <div class="tech-stack-overview">
+                <div class="tech-categories">
+                    {% for category in tech_usage_stats|slice:":6" %}
+                    <div class="tech-category">
+                        <div class="tech-category-header">
+                            <span class="tech-name">
+                                <i class="{{ category.icon|default:'code' }}"></i>
+                                {{ category.name|default:'Python' }}
+                            </span>
+                            <span class="tech-count">{{ category.usage_count|default:4 }}</span>
+                        </div>
+                        <div class="tech-usage-bar">
+                            <div class="usage-fill" style="width: {{ category.usage_count|default:4 }}0%"></div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="tech-category">
+                        <div class="tech-category-header">
+                            <span class="tech-name">
+                                <i class="fab fa-python"></i>
+                                Python
+                            </span>
+                            <span class="tech-count">8</span>
+                        </div>
+                        <div class="tech-usage-bar">
+                            <div class="usage-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                    <div class="tech-category">
+                        <div class="tech-category-header">
+                            <span class="tech-name">
+                                <i class="fas fa-globe"></i>
+                                Django
+                            </span>
+                            <span class="tech-count">6</span>
+                        </div>
+                        <div class="tech-usage-bar">
+                            <div class="usage-fill" style="width: 75%"></div>
+                        </div>
+                    </div>
+                    <div class="tech-category">
+                        <div class="tech-category-header">
+                            <span class="tech-name">
+                                <i class="fab fa-react"></i>
+                                React
+                            </span>
+                            <span class="tech-count">4</span>
+                        </div>
+                        <div class="tech-usage-bar">
+                            <div class="usage-fill" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- 📈 PERFORMANCE CHART -->
+    <div class="unified-dashboard-container gunmetal">
+        <div class="unified-container-header">
+            <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">System Performance Trends</h3>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-placeholder">
+                <div class="chart-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
-                <div class="metric-content">
-                    <div class="metric-value" data-target="{{ dashboard_stats.avg_completion|floatformat:0 }}">0</div>
-                    <div class="metric-unit">%</div>
-                    <div class="metric-label">AVG COMPLETION</div>
+                <p>Performance analytics visualization</p>
+                <p class="chart-note">Chart.js integration ready</p>
+            </div>
+            <div class="chart-metrics">
+                <div class="chart-metric">
+                    <span class="metric-dot green"></span>
+                    <span>Performance: {{ performance_data.avg_performance|default:94.8|floatformat:1 }}%</span>
                 </div>
-                <div class="metric-gauge">
-                    <div class="gauge-fill" style="width: {{ dashboard_stats.avg_completion }}%"></div>
+                <div class="chart-metric">
+                    <span class="metric-dot blue"></span>
+                    <span>Uptime: {{ performance_data.avg_uptime|default:98.5|floatformat:1 }}%</span>
+                </div>
+                <div class="chart-metric">
+                    <span class="metric-dot purple"></span>
+                    <span>Response Time: 245ms avg</span>
                 </div>
             </div>
         </div>
     </div>
-</section>
 
-<!-- Dashboard Content Grid -->
-<section class="dashboard-content-section">
-    <div class="container">
-        <div class="row">
-            <!-- Main Dashboard Column -->
-            <div class="col-lg-8">
-                <!-- System Type Distribution -->
-                <div class="dashboard-panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">SYSTEM TYPE DISTRIBUTION</h2>
-                        <div class="panel-controls">
-                            <button class="control-btn active" data-view="chart">
-                                <i class="fas fa-chart-pie"></i>
-                            </button>
-                            <button class="control-btn" data-view="list">
-                                <i class="fas fa-list"></i>
-                            </button>
-                        </div>
-                        <div class="panel-divider"></div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="system-type-chart" id="systemTypeChart">
-                            <div class="chart-container">
-                                <!-- Chart will be rendered here -->
-                                <canvas id="typeDistributionChart"></canvas>
-                            </div>
-                            <div class="chart-legend">
-                                {% for type_stat in system_type_stats %}
-                                <div class="legend-item">
-                                    <div class="legend-color" style="background-color: {{ type_stat.color }}"></div>
-                                    <div class="legend-label">{{ type_stat.name }}</div>
-                                    <div class="legend-value">{{ type_stat.systems_count }}</div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        
-                        <div class="system-type-list" id="systemTypeList" style="display: none;">
-                            {% for type_stat in system_type_stats %}
-                            <div class="type-stat-item">
-                                <div class="type-info">
-                                    <div class="type-icon" style="--type-color: {{ type_stat.color }}">
-                                        {% if type_stat.icon %}
-                                        <i class="fas {{ type_stat.icon }}"></i>
-                                        {% else %}
-                                        {{ type_stat.code }}
-                                        {% endif %}
-                                    </div>
-                                    <div class="type-details">
-                                        <h3 class="type-name">{{ type_stat.name }}</h3>
-                                        <div class="type-count">{{ type_stat.systems_count }} systems</div>
-                                    </div>
-                                </div>
-                                <div class="type-progress">
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: {{ type_stat.systems_count|multiply:100|divisibleby:dashboard_stats.total_systems }}%; background-color: {{ type_stat.color }}"></div>
-                                    </div>
-                                    <span class="progress-percentage">{{ type_stat.systems_count|multiply:100|divisibleby:dashboard_stats.total_systems|floatformat:0 }}%</span>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Technology Usage Analytics -->
-                <div class="dashboard-panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">TECHNOLOGY USAGE ANALYTICS</h2>
-                        <div class="panel-divider"></div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="tech-usage-grid">
-                            {% for tech_stat in tech_usage_stats %}
-                            <div class="tech-usage-item">
-                                <div class="tech-icon" style="--tech-color: {{ tech_stat.color }}">
-                                    {% if tech_stat.icon %}
-                                    <i class="fab {{ tech_stat.icon }}"></i>
-                                    {% else %}
-                                    <i class="fas fa-code"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="tech-info">
-                                    <h3 class="tech-name">{{ tech_stat.name }}</h3>
-                                    <div class="tech-category">{{ tech_stat.get_category_display }}</div>
-                                </div>
-                                <div class="tech-metrics">
-                                    <div class="usage-count">{{ tech_stat.usage_count }}</div>
-                                    <div class="usage-bar">
-                                        <div class="usage-fill" style="width: {{ tech_stat.usage_count|multiply:100|divisibleby:tech_usage_stats.0.usage_count }}%; background-color: {{ tech_stat.color }}"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Recent Systems -->
-                <div class="dashboard-panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">RECENT SYSTEMS</h2>
-                        <div class="panel-actions">
-                            <a href="{% url 'projects:system_list' %}" class="panel-action-link">
-                                VIEW ALL <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                        <div class="panel-divider"></div>
-                    </div>
-                    <div class="panel-content">
-                        <div class="recent-systems-list">
-                            {% for system in recent_systems %}
-                            <div class="recent-system-item">
-                                <div class="system-status-indicator" style="--status-color: {{ system.get_status_color }}"></div>
-                                <div class="system-image">
-                                    {% if system.thumbnail %}
-                                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
-                                    {% else %}
-                                    <div class="image-placeholder">
-                                        <i class="fas fa-microchip"></i>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <div class="system-info">
-                                    <div class="system-header">
-                                        <span class="system-id">{{ system.system_id }}</span>
-                                        <span class="system-type">{{ system.system_type.name|default:"UNCLASSIFIED" }}</span>
-                                    </div>
-                                    <h3 class="system-title">{{ system.title }}</h3>
-                                    <div class="system-meta">
-                                        <span class="meta-item">
-                                            <i class="fas fa-calendar"></i>
-                                            {{ system.created_at|date:"M d, Y" }}
-                                        </span>
-                                        <span class="meta-item">
-                                            <i class="fas fa-layer-group"></i>
-                                            {{ system.get_complexity_display }}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="system-progress">
-                                    <div class="progress-circle">
-                                        <svg viewBox="0 0 36 36">
-                                            <circle cx="18" cy="18" r="16" class="progress-bg"></circle>
-                                            <circle cx="18" cy="18" r="16" class="progress-bar" 
-                                                    style="--progress: {{ system.completion_percent }}"></circle>
-                                        </svg>
-                                        <div class="progress-text">{{ system.completion_percent }}%</div>
-                                    </div>
-                                </div>
-                                <div class="system-actions">
-                                    <a href="{{ system.get_absolute_url }}" class="system-action-btn">
-                                        <i class="fas fa-search"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
+    <!-- 🚀 FOOTER ACTIONS -->
+    <div class="dashboard-grid grid-3-col">
+        
+        <!-- Quick Actions -->
+        <div class="unified-dashboard-container lavender">
+            <div class="unified-container-header">
+                <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Quick Actions</h4>
             </div>
             
-            <!-- Sidebar Column -->
-            <div class="col-lg-4">
-                <!-- System Status Overview -->
-                <div class="dashboard-widget">
-                    <div class="widget-header">
-                        <h3 class="widget-title">SYSTEM STATUS</h3>
-                        <div class="widget-divider"></div>
+            <div class="quick-actions-grid">
+                <a href="{% url 'projects:system_create' %}" class="quick-action">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>New System</span>
+                </a>
+                <a href="{% url 'projects:system_list' %}?status=in_development" class="quick-action">
+                    <i class="fas fa-tools"></i>
+                    <span>Dev Systems</span>
+                </a>
+                <a href="#" class="quick-action">
+                    <i class="fas fa-analytics"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="{% url 'blog:post_list' %}" class="quick-action">
+                    <i class="fas fa-file-alt"></i>
+                    <span>DataLogs</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- System Alerts -->
+        <div class="unified-dashboard-container coral">
+            <div class="unified-container-header">
+                <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">System Alerts</h4>
+            </div>
+            
+            <div class="alerts-container">
+                {% for alert in system_alerts|slice:":3" %}
+                <div class="alert-item {{ alert.level }}">
+                    <div class="alert-icon">
+                        <i class="fas fa-{{ alert.icon }}"></i>
                     </div>
-                    <div class="widget-content">
-                        <div class="status-breakdown">
-                            {% for status, count in systems_by_status.items %}
-                            {% if count > 0 %}
-                            <div class="status-item">
-                                <div class="status-info">
-                                    <span class="status-label">{{ status|upper }}</span>
-                                    <span class="status-count">{{ count }}</span>
-                                </div>
-                                <div class="status-bar">
-                                    <div class="status-fill" style="width: {{ count|multiply:100|divisibleby:dashboard_stats.total_systems }}%"></div>
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Recent Development Logs -->
-                {% if recent_logs %}
-                <div class="dashboard-widget">
-                    <div class="widget-header">
-                        <h3 class="widget-title">RECENT DEV LOGS</h3>
-                        <div class="widget-actions">
-                            <a href="{% url 'blog:post_list' %}" class="widget-action-link">
-                                VIEW ALL <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                        <div class="widget-divider"></div>
-                    </div>
-                    <div class="widget-content">
-                        <div class="recent-logs-list">
-                            {% for log_entry in recent_logs %}
-                            <div class="log-item">
-                                <div class="log-header">
-                                    <span class="log-id">{{ log_entry.log_entry_id }}</span>
-                                    <span class="log-priority" style="--priority-color: {{ log_entry.get_status_color }}">
-                                        {{ log_entry.get_priority_display }}
-                                    </span>
-                                </div>
-                                <a href="{{ log_entry.post.get_absolute_url }}" class="log-title">
-                                    {{ log_entry.post.title|truncatewords:6 }}
-                                </a>
-                                <div class="log-meta">
-                                    <span class="log-system">{{ log_entry.system.system_id }}</span>
-                                    <span class="log-date">{{ log_entry.created_at|timesince }} ago</span>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
+                    <div class="alert-content">
+                        <h4 class="alert-title">{{ alert.title }}</h4>
+                        <p class="alert-message">{{ alert.message }}</p>
+                        <p class="alert-time">{{ alert.created_at|timesince }} ago</p>
                     </div>
                 </div>
-                {% endif %}
-                
-                <!-- Quick Actions -->
-                <div class="dashboard-widget">
-                    <div class="widget-header">
-                        <h3 class="widget-title">QUICK ACTIONS</h3>
-                        <div class="widget-divider"></div>
+                {% empty %}
+                <div class="alert-item success">
+                    <div class="alert-icon">
+                        <i class="fas fa-check-circle"></i>
                     </div>
-                    <div class="widget-content">
-                        <div class="quick-actions-grid">
-                            <a href="{% url 'projects:system_create' %}" class="quick-action-btn">
-                                <i class="fas fa-plus"></i>
-                                <span>NEW SYSTEM</span>
-                            </a>
-                            <a href="{% url 'blog:post_create' %}" class="quick-action-btn">
-                                <i class="fas fa-file-alt"></i>
-                                <span>NEW LOG</span>
-                            </a>
-                            <a href="{% url 'projects:system_list' %}" class="quick-action-btn">
-                                <i class="fas fa-search"></i>
-                                <span>BROWSE</span>
-                            </a>
-                            <a href="#" class="quick-action-btn" onclick="refreshDashboard()">
-                                <i class="fas fa-sync"></i>
-                                <span>REFRESH</span>
-                            </a>
-                        </div>
+                    <div class="alert-content">
+                        <h4 class="alert-title">All Clear</h4>
+                        <p class="alert-message">No active alerts - all systems running smoothly</p>
+                        <p class="alert-time">Status verified 5 minutes ago</p>
                     </div>
                 </div>
-                
-                <!-- System Performance -->
-                <div class="dashboard-widget">
-                    <div class="widget-header">
-                        <h3 class="widget-title">PERFORMANCE</h3>
-                        <div class="widget-divider"></div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Development Status -->
+        <div class="unified-dashboard-container teal">
+            <div class="unified-container-header">
+                <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Development Status</h4>
+            </div>
+            
+            <div class="dev-status-overview">
+                <div class="status-item">
+                    <span class="status-label">Active Sprints</span>
+                    <span class="status-value">{{ systems_in_development|length|default:2 }}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Code Lines</span>
+                    <span class="status-value">{{ dashboard_stats.total_code_lines|default:15420 }}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Commits</span>
+                    <span class="status-value">{{ dashboard_stats.total_commits|default:342 }}</span>
+                </div>
+                <div class="dev-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ dashboard_stats.avg_completion|default:78 }}%"></div>
                     </div>
-                    <div class="widget-content">
-                        <div class="performance-metrics">
-                            <div class="performance-item">
-                                <div class="performance-label">RESPONSE TIME</div>
-                                <div class="performance-value">
-                                    <span class="value">142</span>
-                                    <span class="unit">ms</span>
-                                </div>
-                                <div class="performance-bar">
-                                    <div class="performance-fill good" style="width: 85%"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="performance-item">
-                                <div class="performance-label">UPTIME</div>
-                                <div class="performance-value">
-                                    <span class="value">99.9</span>
-                                    <span class="unit">%</span>
-                                </div>
-                                <div class="performance-bar">
-                                    <div class="performance-fill excellent" style="width: 99.9%"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="performance-item">
-                                <div class="performance-label">DEPLOYMENT SUCCESS</div>
-                                <div class="performance-value">
-                                    <span class="value">96</span>
-                                    <span class="unit">%</span>
-                                </div>
-                                <div class="performance-bar">
-                                    <div class="performance-fill good" style="width: 96%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <span class="progress-text">{{ dashboard_stats.avg_completion|default:78 }}% Complete</span>
                 </div>
             </div>
         </div>
+        
     </div>
-</section>
+
+</div>
+
+
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-<script src="{% static 'projects/js/dashboard.js' %}"></script>
+{{ block.super }}
+<script src="{% static 'projects/js/dashboard_panel.js' %}"></script>
 <script>
-// Real-time clock update
-function updateClock() {
-    const now = new Date();
-    const timeString = now.toISOString().slice(0, 19).replace('T', ' ');
-    document.getElementById('current-time').textContent = timeString;
-}
-
-setInterval(updateClock, 1000);
-
-// Animate counter values
-function animateCounters() {
-    const counters = document.querySelectorAll('.metric-value[data-target]');
-    
-    counters.forEach(counter => {
-        const target = parseInt(counter.dataset.target);
-        const duration = 2000;
-        const step = target / (duration / 16);
-        let current = 0;
-        
-        const updateCounter = () => {
-            current += step;
-            if (current < target) {
-                counter.textContent = Math.floor(current);
-                requestAnimationFrame(updateCounter);
-            } else {
-                counter.textContent = target;
-            }
-        };
-        
-        updateCounter();
-    });
-}
-
-// Dashboard refresh
-function refreshDashboard() {
-    // Add refresh animation
-    const refreshBtn = document.querySelector('[onclick="refreshDashboard()"] i');
-    refreshBtn.classList.add('fa-spin');
-    
-    // Simulate refresh (in real app, this would reload data)
-    setTimeout(() => {
-        refreshBtn.classList.remove('fa-spin');
-        // You could reload the page or update data via AJAX here
-    }, 2000);
-}
-
-// Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    animateCounters();
-    
-    // Initialize chart view toggles
-    const viewButtons = document.querySelectorAll('[data-view]');
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const view = this.dataset.view;
-            viewButtons.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            if (view === 'chart') {
-                document.getElementById('systemTypeChart').style.display = 'block';
-                document.getElementById('systemTypeList').style.display = 'none';
-            } else {
-                document.getElementById('systemTypeChart').style.display = 'none';
-                document.getElementById('systemTypeList').style.display = 'block';
-            }
-        });
+    // Initialize progress circles with animation
+    const progressCircles = document.querySelectorAll('.system-progress');
+    progressCircles.forEach(circle => {
+        const progress = circle.style.getPropertyValue('--progress');
+        circle.style.setProperty('--progress', '0%');
+        setTimeout(() => {
+            circle.style.setProperty('--progress', progress);
+        }, 500);
     });
+    
+    // Animate usage bars
+    setTimeout(() => {
+        const usageFills = document.querySelectorAll('.usage-fill');
+        usageFills.forEach(fill => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.width = width;
+            }, 100);
+        });
+    }, 800);
+    
+    // Animate progress bars
+    setTimeout(() => {
+        const progressFills = document.querySelectorAll('.progress-fill');
+        progressFills.forEach(fill => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.width = width;
+            }, 100);
+        });
+    }, 1000);
+    
+    console.log('🚀 AURA Dashboard Phase 3 - Cleaned & Loaded!');
 });
 </script>
 {% endblock %}

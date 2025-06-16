@@ -1,7 +1,7 @@
 <!----
  * AURA Portfolio - Enhanced Systems Base Template
  * Advanced User Repository & Archive - Complete Foundation
- * Version: 3.0.0 - Optimized for Component Architecture, w Enhanced Global Tags/Filters, Updated Nav/Sub-Nav
+ * Version: 3.1.0 - Unified Structure for All Systems Views
 ---->
 {% extends "base.html" %}
 {% load static %}
@@ -11,15 +11,17 @@
 {% block title %}{% block systems_title %}Systems{% endblock %} | AURA Portfolio{% endblock %}
 
 {% block extra_css %}
-<!-- Systems Specific CSS -->
+<!-- Core Systems Styling -->
+<link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
 {% block systems_css %}{% endblock %}
 {% endblock %}
 
-{% block body_class %}systems-interface {% block systems_body_class %}{% endblock %}{% endblock %}
+{% block body_class %}systems-interface {% block systems_body_class %}{% endblock %} grid-pattern{% endblock %}
 
 {% block subnav %}
-<!-- Systems Sub-Navigation using existing navigation.css structure -->
+<!-- Systems Sub-Navigation -->
 <nav class="app-subnav systems-subnav" id="systemsSubnav">
     <div class="container subnav-container">
         
@@ -30,68 +32,70 @@
                 <span>Systems Command</span>
             </div>
             
-            <!-- Systems Navigation Links using existing .subnav-link class -->
+            <!-- Systems Navigation Links -->
             <div class="subnav-links">
                 <a href="{% url 'projects:system_list' %}" 
-                   class="subnav-link {% if 'system_list' in request.resolver_match.url_name %}active{% endif %}">
+                   class="subnav-action-btn {% if 'system_list' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-th-large subnav-icon"></i>
                     <span>All Systems</span>
                 </a>
                 
-                <a href="{% url 'projects:enhanced_dashboard' %}" 
-                   class="subnav-link {% if 'dashboard' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'projects:systems_dashboard' %}" 
+                   class="subnav-action-btn {% if 'dashboard' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-tachometer-alt subnav-icon"></i>
                     <span>Dashboard</span>
                 </a>
                 
                 <a href="{% url 'projects:featured_systems' %}" 
-                   class="subnav-link {% if 'featured' in request.resolver_match.url_name %}active{% endif %}">
+                   class="subnav-action-btn {% if 'featured' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-star subnav-icon"></i>
                     <span>Featured</span>
                 </a>
                 
-                <a href="{% url 'projects:system_timeline' %}" 
-                   class="subnav-link {% if 'timeline' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="#" 
+                   class="subnav-action-btn {% if 'system_type' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-history subnav-icon"></i>
-                    <span>Timeline</span>
+                    <span>System Types</span>
                 </a>
                 
-                <a href="#" 
-                   class="subnav-link {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}">
+                {% comment %} <a href="#" 
+                   class="subnav-action-btn {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-chart-bar subnav-icon"></i>
                     <span>Analytics</span>
-                </a>
+                </a> {% endcomment %}
             </div>
         </div>
         
         <div class="subnav-right">
-            <!-- Quick Stats using existing .subnav-stats structure -->
+            <!-- Quick Stats -->
             <div class="subnav-stats">
                 <div class="stat-item">
                     <i class="fas fa-server"></i>
-                    <span class="stat-value" id="total-systems-nav">{{ total_systems|default:"--" }}</span>
+                    <span class="stat-value" id="total-systems-nav">{{ total_systems|default:"8" }}</span>
                     <span class="stat-label">Systems</span>
                 </div>
                 <span class="stat-separator">|</span>
                 <div class="stat-item">
                     <i class="fas fa-check-circle"></i>
-                    <span class="stat-value" id="active-systems-nav">{{ active_systems|default:"--" }}</span>
+                    <span class="stat-value" id="active-systems-nav">{{ active_systems|default:"5" }}</span>
                     <span class="stat-label">Active</span>
                 </div>
                 <span class="stat-separator">|</span>
                 <div class="stat-item">
                     <i class="fas fa-cogs"></i>
-                    <span class="stat-value" id="technologies-nav">{{ total_technologies|default:"--" }}</span>
+                    <span class="stat-value" id="technologies-nav">{{ total_technologies|default:"12" }}</span>
                     <span class="stat-label">Tech</span>
                 </div>
             </div>
             
-            <!-- Systems Actions using existing .subnav-actions structure -->
+            <!-- Systems Actions -->
             <div class="subnav-actions">
+                {% if user.is_authenticated %}
                 <a href="{% url 'projects:system_create' %}" class="subnav-action-btn">
                     <i class="fas fa-plus"></i>
                     <span>New System</span>
                 </a>
+                {% endif %}
                 
                 <button class="subnav-action-btn" id="systems-search-toggle">
                     <i class="fas fa-search"></i>
@@ -103,354 +107,221 @@
     <!-- Enhanced Search Panel (hidden by default) -->
     <div class="systems-search-panel" id="systems-search-panel" style="display: none;">
         <div class="container">
-            {% glass_card css_class="search-panel-card" %}
                 <div class="search-panel-content">
                     <div class="search-input-group">
                         <input type="text" 
-                               id="systems-search-input" 
-                               placeholder="Search systems, technologies, features..." 
-                               class="search-input">
-                        <button class="search-btn">
+                           class="search-input" 
+                           placeholder="Search systems, technologies, status..."
+                           id="systemsSearchInput">
+                    <button class="search-btn" type="button">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
                     
-                    <div class="search-suggestions" id="search-suggestions">
-                        <!-- Search suggestions will be populated here -->
-                    </div>
-                    
                     <div class="search-filters">
                         <div class="filter-group">
-                            <label>Status:</label>
-                            <select id="status-filter" class="filter-select">
-                                <option value="">All Statuses</option>
-                                <option value="deployed">Deployed</option>
-                                <option value="in_development">In Development</option>
-                                <option value="testing">Testing</option>
-                                <option value="draft">Draft</option>
-                            </select>
+                        <label class="filter-label">Status:</label>
+                        <div class="filter-options">
+                            <button class="filter-option active" data-filter="all">All</button>
+                            <button class="filter-option" data-filter="deployed">Deployed</button>
+                            <button class="filter-option" data-filter="development">Development</button>
+                            <button class="filter-option" data-filter="testing">Testing</button>
+                        </div>
                         </div>
                         
                         <div class="filter-group">
-                            <label>Type:</label>
-                            <select id="type-filter" class="filter-select">
-                                <option value="">All Types</option>
-                                {% for system_type in system_types %}
-                                <option value="{{ system_type.slug }}">{{ system_type.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label>Technology:</label>
-                            <select id="tech-filter" class="filter-select">
-                                <option value="">All Technologies</option>
-                                {% for tech in popular_technologies %}
-                                <option value="{{ tech.slug }}">{{ tech.name }}</option>
-                                {% endfor %}
-                            </select>
+                        <label class="filter-label">Type:</label>
+                        <div class="filter-options">
+                            <button class="filter-option active" data-filter="all">All Types</button>
+                            <button class="filter-option" data-filter="ml">ML/AI</button>
+                            <button class="filter-option" data-filter="web">Web App</button>
+                            <button class="filter-option" data-filter="api">API</button>
+                            <button class="filter-option" data-filter="tool">Tool</button>
                         </div>
                     </div>
                 </div>
-            {% endglass_card %}
+            </div>
         </div>
     </div>
-    
-    <!-- Optional: HUD scanning line animation -->
-    <div class="subnav-scanning-line"></div>
 </nav>
 {% endblock %}
 
 {% block content %}
-<!-- =================== SYSTEMS CONTENT =================== -->
-<main class="systems-main-content">
-    {% block systems_content %}
-    <!-- Systems page content goes here -->
-    {% endblock %}
-</main>
-
-<!-- =================== SYSTEMS SIDEBAR (Optional) =================== -->
-{% block systems_sidebar %}
-{% if show_systems_sidebar %}
-<aside class="systems-sidebar">
-    <div class="sidebar-content">
-        
-        <!-- System Status Summary -->
-        <div class="sidebar-section">
-            {% glass_card title="System Status" css_class="sidebar-card" %}
-                <div class="status-summary">
-                    {% for status_key, status_count in systems_by_status.items %}
-                    <div class="status-item">
-                        {% status_indicator status_key size="sm" with_text=True %}
-                        <span class="status-count">{{ status_count }}</span>
-                    </div>
-                    {% endfor %}
+<!-- Systems Interface Container -->
+<div class="systems-interface-container">
+    
+    <!-- Systems Page Header (Optional) -->
+    {% block systems_header %}{% endblock %}
+    
+    <!-- Main Systems Content Area -->
+    <div class="systems-main-content">
+        {% block systems_content %}
+        <div class="container">
+            <div class="systems-placeholder">
+                <h2>Systems Content Area</h2>
+                <p>Override the <code>systems_content</code> block to add your specific systems view content.</p>
                 </div>
-            {% endglass_card %}
         </div>
-        
-        <!-- Technology Stack -->
-        <div class="sidebar-section">
-            {% glass_card title="Technology Stack" css_class="sidebar-card" %}
-                <div class="tech-stack">
-                    {% for tech in featured_technologies %}
-                    <div class="tech-item">
-                        {% tech_badge tech.name color=tech.color %}
-                        <span class="tech-usage">{{ tech.systems_count }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% endglass_card %}
-        </div>
-        
-        <!-- Quick Actions -->
-        <div class="sidebar-section">
-            {% glass_card title="Quick Actions" css_class="sidebar-card" %}
-                <div class="quick-actions">
-                    <a href="{% url 'projects:system_create' %}" class="quick-action">
-                        <i class="fas fa-plus"></i>
-                        <span>New System</span>
-                    </a>
-                    
-                    <a href="{% url 'blog:post_create' %}" class="quick-action">
-                        <i class="fas fa-edit"></i>
-                        <span>New DataLog</span>
-                    </a>
-                    
-                    <a href="{% url 'projects:analytics' %}" class="quick-action">
-                        <i class="fas fa-chart-line"></i>
-                        <span>View Analytics</span>
-                    </a>
-                </div>
-            {% endglass_card %}
-        </div>
-        
-        <!-- Recent Activity -->
-        {% if recent_systems %}
-        <div class="sidebar-section">
-            {% glass_card title="Recent Updates" css_class="sidebar-card" %}
-                <div class="recent-activity">
-                    {% for system in recent_systems|slice:":5" %}
-                    <div class="activity-item">
-                        <a href="{{ system.get_absolute_url }}" class="activity-link">
-                            <div class="activity-icon">
-                                {% status_indicator system.status size="xs" %}
-                            </div>
-                            <div class="activity-content">
-                                <div class="activity-title">{{ system.title|truncatechars:25 }}</div>
-                                <div class="activity-time">{{ system.updated_at|time_since_published }}</div>
-                            </div>
-                        </a>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% endglass_card %}
-        </div>
-        {% endif %}
+        {% endblock %}
     </div>
-</aside>
-{% endif %}
-{% endblock %}
-
+        
+    <!-- Systems Sidebar (Optional) -->
+    {% block systems_sidebar %}{% endblock %}
+    
+    </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Systems Base JavaScript using your existing navigation.js -->
+<!-- Systems Base JavaScript -->
+{% comment %} <script src="{% static 'projects/js/systems.js' %}"></script> {% endcomment %}
+{% block systems_js %}{% endblock %}
+
 <script>
+// Systems Interface Initialization
 document.addEventListener('DOMContentLoaded', function() {
+    initSystemsInterface();
+});
     
-    // =================== SEARCH FUNCTIONALITY ===================
-    
+function initSystemsInterface() {
+    // Systems Search Panel Toggle
     const searchToggle = document.getElementById('systems-search-toggle');
-    const searchPanel = document.getElementById('systems-search-panel');
-    const searchInput = document.getElementById('systems-search-input');
-    const searchSuggestions = document.getElementById('search-suggestions');
+    const searchPanel = document.getElementById('systemsSearchPanel');
+    const searchInput = document.getElementById('systemsSearchInput');
     
-    // Toggle search panel
     if (searchToggle && searchPanel) {
         searchToggle.addEventListener('click', function() {
-            const isActive = searchPanel.style.display !== 'none';
+            const isOpen = searchPanel.classList.contains('active');
             
-            if (isActive) {
-                searchPanel.style.display = 'none';
+            if (isOpen) {
+                closeSearchPanel();
             } else {
-                searchPanel.style.display = 'block';
-                setTimeout(() => searchInput.focus(), 100);
+                openSearchPanel();
             }
         });
     }
     
-    // Search input handling
+    // Filter Options Handler
+    const filterOptions = document.querySelectorAll('.filter-option');
+    filterOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove active from siblings
+            const siblings = this.parentElement.querySelectorAll('.filter-option');
+            siblings.forEach(sibling => sibling.classList.remove('active'));
+            
+            // Add active to clicked option
+            this.classList.add('active');
+            
+            // Trigger filter logic
+            const filterType = this.getAttribute('data-filter');
+            applySystemsFilter(filterType, this.closest('.filter-group'));
+        });
+    });
+    
+    // Search Input Handler
     if (searchInput) {
         let searchTimeout;
-        
         searchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
-            const query = this.value.trim();
-            
-            if (query.length >= 2) {
                 searchTimeout = setTimeout(() => {
-                    performSearch(query);
+                performSystemsSearch(this.value);
                 }, 300);
-            } else {
-                clearSearchSuggestions();
-            }
-        });
-        
-        // Handle Enter key
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const query = this.value.trim();
-                if (query) {
-                    redirectToSearchResults(query);
-                }
-            }
         });
     }
     
-    function performSearch(query) {
-        // Perform AJAX search for suggestions
-        fetch(`/projects/api/search/?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                displaySearchSuggestions(data.suggestions);
-            })
-            .catch(error => {
-                console.error('Search error:', error);
-            });
-    }
-    
-    function displaySearchSuggestions(suggestions) {
-        if (!searchSuggestions) return;
-        
-        searchSuggestions.innerHTML = '';
-        
-        if (suggestions.length === 0) {
-            searchSuggestions.innerHTML = '<div class="no-suggestions">No suggestions found</div>';
-            return;
-        }
-        
-        suggestions.forEach(suggestion => {
-            const suggestionElement = document.createElement('div');
-            suggestionElement.className = 'search-suggestion';
-            suggestionElement.innerHTML = `
-                <div class="suggestion-icon">
-                    <i class="${suggestion.icon}"></i>
-                </div>
-                <div class="suggestion-content">
-                    <div class="suggestion-title">${suggestion.title}</div>
-                    <div class="suggestion-type">${suggestion.type}</div>
-                </div>
-            `;
-            
-            suggestionElement.addEventListener('click', function() {
-                window.location.href = suggestion.url;
-            });
-            
-            searchSuggestions.appendChild(suggestionElement);
-        });
-    }
-    
-    function clearSearchSuggestions() {
-        if (searchSuggestions) {
-            searchSuggestions.innerHTML = '';
-        }
-    }
-    
-    function redirectToSearchResults(query) {
-        window.location.href = `/projects/search/?q=${encodeURIComponent(query)}`;
-    }
-    
-    // =================== FILTER FUNCTIONALITY ===================
-    
-    const statusFilter = document.getElementById('status-filter');
-    const typeFilter = document.getElementById('type-filter');
-    const techFilter = document.getElementById('tech-filter');
-    
-    // Apply filters when changed
-    [statusFilter, typeFilter, techFilter].forEach(filter => {
-        if (filter) {
-            filter.addEventListener('change', function() {
-                applyFilters();
-            });
+    // Close search panel when clicking outside
+    document.addEventListener('click', function(e) {
+        if (searchPanel && !searchPanel.contains(e.target) && !searchToggle.contains(e.target)) {
+            closeSearchPanel();
         }
     });
     
-    function applyFilters() {
-        const params = new URLSearchParams();
-        
-        if (statusFilter && statusFilter.value) {
-            params.set('status', statusFilter.value);
-        }
-        
-        if (typeFilter && typeFilter.value) {
-            params.set('type', typeFilter.value);
-        }
-        
-        if (techFilter && techFilter.value) {
-            params.set('tech', techFilter.value);
-        }
-        
-        // Add search query if present
-        if (searchInput && searchInput.value.trim()) {
-            params.set('search', searchInput.value.trim());
-        }
-        
-        // Redirect to filtered results
-        const currentPath = window.location.pathname;
-        const newUrl = `${currentPath}?${params.toString()}`;
-        window.location.href = newUrl;
+    // Real-time Stats Updates
+    updateSystemsStats();
     }
     
-    // =================== QUICK STATS UPDATES ===================
+function openSearchPanel() {
+    const searchPanel = document.getElementById('systemsSearchPanel');
+    const searchInput = document.getElementById('systemsSearchInput');
+    const searchToggle = document.getElementById('systems-search-toggle');
     
-    // Update quick stats periodically using your existing navigation pattern
-    updateQuickStats();
-    setInterval(updateQuickStats, 60000); // Update every minute
-    
-    function updateQuickStats() {
-        fetch('/projects/api/quick-stats/')
-            .then(response => response.json())
-            .then(data => {
-                updateStatValue('total-systems-nav', data.total_systems);
-                updateStatValue('active-systems-nav', data.active_systems);
-                updateStatValue('technologies-nav', data.total_technologies);
-            })
-            .catch(error => {
-                console.error('Error updating quick stats:', error);
-            });
-    }
-    
-    function updateStatValue(elementId, value) {
-        const element = document.getElementById(elementId);
-        if (element && element.textContent !== value.toString()) {
-            element.textContent = value;
-            element.classList.add('stat-updated');
-            setTimeout(() => element.classList.remove('stat-updated'), 1000);
-        }
-    }
-    
-    // =================== KEYBOARD SHORTCUTS ===================
-    
-    document.addEventListener('keydown', function(e) {
-        // Ctrl/Cmd + K to open search
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            if (searchToggle) {
-                searchToggle.click();
+    if (searchPanel) {
+        searchPanel.classList.add('active');
+        searchToggle.classList.add('active');
+        
+        // Focus search input after animation
+        setTimeout(() => {
+            if (searchInput) {
+                searchInput.focus();
             }
+        }, 300);
         }
-        
-        // Escape to close search panel
-        if (e.key === 'Escape') {
-            if (searchPanel && searchPanel.style.display !== 'none') {
-                searchPanel.style.display = 'none';
-            }
+    }
+    
+function closeSearchPanel() {
+    const searchPanel = document.getElementById('systemsSearchPanel');
+    const searchToggle = document.getElementById('systems-search-toggle');
+    
+    if (searchPanel) {
+        searchPanel.classList.remove('active');
+        searchToggle.classList.remove('active');
+    }
         }
-    });
-});
-</script>
+    
+function applySystemsFilter(filterType, filterGroup) {
+    const filterCategory = filterGroup.querySelector('.filter-label').textContent.toLowerCase().replace(':', '');
+    
+    console.log(`Applying ${filterCategory} filter: ${filterType}`);
+    
+    // Emit custom event for specific views to handle
+    document.dispatchEvent(new CustomEvent('systemsFilterChange', {
+        detail: {
+            category: filterCategory,
+            filter: filterType
+        }
+    }));
+}
 
-<!-- Page-specific JavaScript -->
-{% block systems_js %}{% endblock %}
+function performSystemsSearch(query) {
+    console.log(`Searching systems for: ${query}`);
+    
+    // Emit custom event for specific views to handle
+    document.dispatchEvent(new CustomEvent('systemsSearchChange', {
+        detail: {
+            query: query
+        }
+    }));
+}
+
+function updateSystemsStats() {
+    // Update navigation stats - can be overridden by specific views
+    const totalSystemsEl = document.getElementById('total-systems-nav');
+    const activeSystemsEl = document.getElementById('active-systems-nav');
+    const technologiesEl = document.getElementById('technologies-nav');
+    
+    // This can be enhanced to fetch real-time data
+    // For now, we'll use template values or defaults
+}
+
+// Real-time Clock for Systems Interface
+function startSystemsClock() {
+    const clockElements = document.querySelectorAll('.systems-clock, #current-time');
+    
+    if (clockElements.length > 0) {
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toISOString().slice(0, 19).replace('T', ' ');
+            
+            clockElements.forEach(el => {
+                el.textContent = timeString;
+            });
+        }
+        
+        updateClock();
+        setInterval(updateClock, 1000);
+            }
+        }
+        
+// Initialize systems clock
+startSystemsClock();
+</script>
 {% endblock %}

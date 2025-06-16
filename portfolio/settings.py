@@ -73,6 +73,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "blog.context_processors.blog_context",
                 "core.context_processors.global_context",
+                "projects.context_processors.systems_context",
             ],
         },
     },
@@ -139,6 +140,7 @@ STATICFILES_DIRS = [
 
 MEDIA_ROOT = BASE_DIR / "uploads"
 MEDIA_URL = "/files/"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
