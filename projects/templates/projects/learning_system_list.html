@@ -1,7 +1,7 @@
 <!----
- * AURA Portfolio - Enhanced Learning Focused System List Template
- * Using Unified Container Styling & Enhanced Model Methods
- * Version: 4.0.0 - Complete System Showcase
+ * AURA Portfolio - Learning-Enhanced System List Template
+ * Complete template with all learning-focused updates and corrections
+ * Version: 4.0.0 - Learning Journey Showcase
 ---->
 
 {% extends "projects/systems_base.html" %}
@@ -10,16 +10,17 @@
 {% load aura_components %}
 {% load system_tags %}
 
-{% block systems_title %}All Systems{% endblock %}
-{% block systems_body_class %}systems-list enhanced-list{% endblock %}
+{% block systems_title %}Learning Systems{% endblock %}
+{% block systems_body_class %}systems-list enhanced-list learning-focused{% endblock %}
 
 {% block systems_css %}
 <link rel="stylesheet" href="{% static 'projects/css/systems_list.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
-{% comment %} <link rel="stylesheet" href="{% static 'projects/css/enhanced_dashboard.css' %}"> {% endcomment %}
 <link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
 <style>
+/* Learning-Specific Enhancements */
+
     /* Learning Stage Badges */
 .learning-stage-badge {
     display: flex;
@@ -46,7 +47,6 @@
     color: var(--color-warning);
     border: 1px solid rgba(255, 152, 0, 0.3);
 }
-
 .learning-stage-tutorial .stage-dot { background: var(--color-warning); }
 
 .learning-stage-guided,
@@ -55,7 +55,6 @@
     color: var(--color-yellow);
     border: 1px solid rgba(255, 193, 7, 0.3);
 }
-
 .learning-stage-guided .stage-dot { background: var(--color-yellow); }
 
 .learning-stage-independent,
@@ -64,7 +63,6 @@
     color: var(--color-teal);
     border: 1px solid rgba(38, 198, 218, 0.3);
 }
-
 .learning-stage-independent .stage-dot { background: var(--color-teal); }
 
 .learning-stage-refactoring,
@@ -73,8 +71,15 @@
     color: var(--color-purple);
     border: 1px solid rgba(147, 51, 234, 0.3);
 }
-
 .learning-stage-refactoring .stage-dot { background: var(--color-purple); }
+
+.learning-stage-contributing,
+.learning-stage-badge.learning-stage-contributing {
+    background: rgba(64, 224, 208, 0.15);
+    color: var(--color-mint, #40e0d0);
+    border: 1px solid rgba(64, 224, 208, 0.3);
+}
+.learning-stage-contributing .stage-dot { background: var(--color-mint, #40e0d0); }
 
 .learning-stage-teaching,
 .learning-stage-badge.learning-stage-teaching {
@@ -82,7 +87,6 @@
     color: #ffd700;
     border: 1px solid rgba(255, 215, 0, 0.3);
 }
-
 .learning-stage-teaching .stage-dot { background: #ffd700; }
 
 /* Portfolio Ready/Progress Badges */
@@ -179,19 +183,18 @@
 .progress-fill.learning-progress-tutorial {
     background: linear-gradient(90deg, var(--color-warning), #ffb74d);
 }
-
 .progress-fill.learning-progress-guided {
     background: linear-gradient(90deg, var(--color-yellow), #fff176);
 }
-
 .progress-fill.learning-progress-independent {
     background: linear-gradient(90deg, var(--color-teal), #4dd0e1);
 }
-
 .progress-fill.learning-progress-refactoring {
     background: linear-gradient(90deg, var(--color-purple), #ba68c8);
 }
-
+.progress-fill.learning-progress-contributing {
+    background: linear-gradient(90deg, var(--color-mint, #40e0d0), #66ffff);
+}
 .progress-fill.learning-progress-teaching {
     background: linear-gradient(90deg, #ffd700, #ffecb3);
 }
@@ -246,6 +249,29 @@
     color: #ffd700;
 }
 
+/* Time Investment Display */
+.time-investment-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.time-actual {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.time-estimated {
+    color: var(--color-text-tertiary);
+    font-style: italic;
+}
+
+.time-none {
+    color: var(--color-text-tertiary);
+    opacity: 0.7;
+}
+
 /* Learning Card Hover Effects */
 .system-card.learning-card {
     position: relative;
@@ -267,19 +293,18 @@
 .system-card.learning-card.learning-stage-tutorial::before {
     background: linear-gradient(90deg, var(--color-warning), #ffb74d);
 }
-
 .system-card.learning-card.learning-stage-guided::before {
     background: linear-gradient(90deg, var(--color-yellow), #fff176);
 }
-
 .system-card.learning-card.learning-stage-independent::before {
     background: linear-gradient(90deg, var(--color-teal), #4dd0e1);
 }
-
 .system-card.learning-card.learning-stage-refactoring::before {
     background: linear-gradient(90deg, var(--color-purple), #ba68c8);
 }
-
+.system-card.learning-card.learning-stage-contributing::before {
+    background: linear-gradient(90deg, var(--color-mint, #40e0d0), #66ffff);
+}
 .system-card.learning-card.learning-stage-teaching::before {
     background: linear-gradient(90deg, #ffd700, #ffecb3);
 }
@@ -332,6 +357,17 @@
         gap: 0.5rem;
         align-items: flex-start;
     }
+    
+    .search-controls > div {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: var(--spacing-md, 1rem) !important;
+    }
+    
+    .search-controls .filter-option {
+        font-size: 0.85rem !important;
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem) !important;
+    }
 }
 
 @media (max-width: 480px) {
@@ -346,40 +382,15 @@
     .skills-pills .skill-pill.more {
         display: inline-block;
     }
-}
-
-
-
-    .system-card-metrics {
-        display: contents;
-        grid-template-columns: repeat(3, 1fr);
-        gap: var(--spacing-md, 1rem);
-        margin-bottom: var(--spacing-lg, 1.5rem);
-        padding: var(--spacing-md, 1rem);
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: var(--border-radius-md, 8px);
-    }
     
-    .metric-item {
+    .search-controls .filter-option {
+        flex: 1 1 calc(50% - 0.375rem);
+        min-width: 120px;
         text-align: center;
     }
-    
-    .metric-value {
-        display: block;
-        font-family: var(--font-code);
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--card-category-color, var(--color-teal));
-        margin-bottom: var(--spacing-xs, 0.5rem);
-    }
-    
-    .metric-label {
-        font-size: 0.7rem;
-        color: var(--color-text-tertiary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-{% comment %} /* Enhanced System List Specific Styles */
+}
+
+/* Systems List Layout */
 .systems-list-layout {
     display: grid;
     grid-template-columns: 300px 1fr;
@@ -405,410 +416,7 @@
     margin-bottom: var(--spacing-xl, 2rem);
 }
 
-.system-card {
-    background: 
-        var(--gradient-glass),
-        rgba(var(--card-category-rgb, 38, 198, 218), 0.08);
-    border: 1px solid rgba(var(--card-category-rgb, 38, 198, 218), 0.25);
-    border-radius: var(--border-radius-xl, 16px);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    min-height: 400px;
-}
-
-.system-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, 
-        var(--card-category-color, var(--color-teal)), 
-        var(--color-coral), 
-        var(--color-lavender)
-    );
-    opacity: 0.8;
-}
-
-.system-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 
-                0 0 30px rgba(var(--card-category-rgb, 38, 198, 218), 0.2);
-}
-
-/* System Card Variants */
-.system-card.deployed {
-    --card-category-rgb: 76, 175, 80;
-    --card-category-color: var(--color-mint);
-}
-
-.system-card.in_development {
-    --card-category-rgb: 255, 193, 7;
-    --card-category-color: var(--color-yellow);
-}
-
-.system-card.testing {
-    --card-category-rgb: 255, 138, 128;
-    --card-category-color: var(--color-coral);
-}
-
-.system-card.featured {
-    --card-category-rgb: 179, 157, 219;
-    --card-category-color: var(--color-lavender);
-}
-
-/* System Card Content */
-.system-card-header {
-    padding: var(--spacing-lg, 1.5rem);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.system-card-badges {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md, 1rem);
-}
-
-.system-id-badge {
-    font-family: var(--font-code);
-    font-size: 0.7rem;
-    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-    background: rgba(var(--card-category-rgb, 38, 198, 218), 0.2);
-    border: 1px solid rgba(var(--card-category-rgb, 38, 198, 218), 0.4);
-    border-radius: var(--border-radius-full, 50px);
-    color: var(--card-category-color, var(--color-teal));
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-}
-
-.system-status-badge {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs, 0.5rem);
-    font-size: 0.8rem;
-    color: var(--card-category-color, var(--color-teal));
-    font-weight: 500;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--card-category-color, var(--color-teal));
-    animation: pulse 2s infinite;
-}
-
-.system-card-title {
-    font-family: var(--font-heading);
-    font-size: 1.3rem;
-    color: var(--color-text);
-    margin: 0 0 var(--spacing-sm, 0.75rem) 0;
-    line-height: 1.2;
-}
-
-.system-card-subtitle {
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    margin: 0;
-}
-
-.system-card-body {
-    padding: var(--spacing-lg, 1.5rem);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.system-card-excerpt {
-    color: var(--color-text-secondary);
-    line-height: 1.5;
-    margin-bottom: var(--spacing-lg, 1.5rem);
-    flex: 1;
-}
-
-.system-card-metrics {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-md, 1rem);
-    margin-bottom: var(--spacing-lg, 1.5rem);
-    padding: var(--spacing-md, 1rem);
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: var(--border-radius-md, 8px);
-}
-
-.metric-item {
-    text-align: center;
-}
-
-.metric-value {
-    display: block;
-    font-family: var(--font-code);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--card-category-color, var(--color-teal));
-    margin-bottom: var(--spacing-xs, 0.5rem);
-}
-
-.metric-label {
-    font-size: 0.7rem;
-    color: var(--color-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.system-technologies {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs, 0.5rem);
-    margin-bottom: var(--spacing-lg, 1.5rem);
-}
-
-.tech-badge {
-    background: rgba(var(--card-category-rgb, 179, 157, 219), 0.15);
-    color: var(--color-lavender);
-    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-    border-radius: var(--border-radius-sm, 4px);
-    font-size: 0.7rem;
-    font-weight: 500;
-    border: 1px solid rgba(var(--card-category-rgb, 179, 157, 219), 0.3);
-    transition: all 0.3s ease;
-}
-
-.tech-badge:hover {
-    background: rgba(var(--card-category-rgb, 179, 157, 219), 0.25);
-    transform: translateY(-1px);
-}
-
-.system-card-footer {
-    padding: var(--spacing-lg, 1.5rem);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.progress-section {
-    flex: 1;
-    margin-right: var(--spacing-md, 1rem);
-}
-
-.progress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-xs, 0.5rem);
-}
-
-.progress-label {
-    font-size: 0.7rem;
-    color: var(--color-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.progress-percentage {
-    font-family: var(--font-code);
-    font-size: 0.8rem;
-    color: var(--card-category-color, var(--color-teal));
-    font-weight: 600;
-}
-
-.progress-bar {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, 
-        var(--card-category-color, var(--color-teal)), 
-        rgba(var(--card-category-rgb, 38, 198, 218), 0.8)
-    );
-    border-radius: 2px;
-    transition: width 1.5s ease;
-}
-
-.system-actions {
-    display: flex;
-    gap: var(--spacing-sm, 0.75rem);
-}
-
-.action-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs, 0.5rem);
-    padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
-    background: rgba(var(--card-category-rgb, 38, 198, 218), 0.1);
-    border: 1px solid rgba(var(--card-category-rgb, 38, 198, 218), 0.3);
-    border-radius: var(--border-radius-md, 8px);
-    color: var(--card-category-color, var(--color-teal));
-    text-decoration: none;
-    font-size: 0.8rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.action-btn:hover {
-    background: rgba(var(--card-category-rgb, 38, 198, 218), 0.2);
-    color: var(--card-category-color, var(--color-teal));
-    transform: translateY(-1px);
-}
-
-.action-btn.primary {
-    background: var(--card-category-color, var(--color-teal));
-    color: var(--color-bg-primary);
-}
-
-.action-btn.primary:hover {
-    background: var(--card-category-color, var(--color-teal));
-    color: var(--color-bg-primary);
-    box-shadow: 0 4px 12px rgba(var(--card-category-rgb, 38, 198, 218), 0.4);
-}
-
-/* Filter Section */
-.filter-section {
-    margin-bottom: var(--spacing-md, 1rem);
-}
-
-.filter-group {
-    margin-bottom: var(--spacing-md, 1rem);
-}
-
-.filter-title {
-    font-size: 0.9rem;
-    color: var(--color-text);
-    margin-bottom: var(--spacing-sm, 0.75rem);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.filter-options {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs, 0.5rem);
-}
-
-.filter-option {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing-sm, 0.75rem);
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: var(--border-radius-md, 8px);
-    transition: all 0.3s ease;
-    text-decoration: none;
-    color: var(--color-text-secondary);
-    font-size: 0.8rem;
-}
-
-.filter-option:hover,
-.filter-option.active {
-    background: rgba(38, 198, 218, 0.1);
-    color: var(--color-teal);
-    transform: translateX(4px);
-}
-
-.filter-count {
-    font-family: var(--font-code);
-    font-size: 0.7rem;
-    padding: var(--spacing-xs, 0.5rem);
-    background: rgba(38, 198, 218, 0.2);
-    border-radius: var(--border-radius-sm, 4px);
-    color: var(--color-teal);
-}
-
-/* Search and Controls */
-.search-controls {
-    margin-bottom: var(--spacing-lg, 1.5rem);
-}
-
-.search-input {
-    width: 100%;
-    padding: var(--spacing-md, 1rem);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius-lg, 12px);
-    color: var(--color-text);
-    font-size: 0.9rem;
-    backdrop-filter: blur(10px);
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--color-teal);
-    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
-}
-
-.search-input::placeholder {
-    color: var(--color-text-tertiary);
-}
-
-/* Active Filters */
-.active-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs, 0.5rem);
-    margin-bottom: var(--spacing-lg, 1.5rem);
-}
-
-.active-filter {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs, 0.5rem);
-    padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-    background: rgba(38, 198, 218, 0.2);
-    color: var(--color-teal);
-    border-radius: var(--border-radius-full, 50px);
-    font-size: 0.7rem;
-    font-weight: 500;
-}
-
-.filter-remove {
-    cursor: pointer;
-    opacity: 0.7;
-}
-
-.filter-remove:hover {
-    opacity: 1;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: var(--spacing-xxl, 4rem);
-    color: var(--color-text-secondary);
-}
-
-.empty-state .fas {
-    font-size: 4rem;
-    margin-bottom: var(--spacing-lg, 1.5rem);
-    opacity: 0.3;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .systems-list-layout {
-        grid-template-columns: 280px 1fr;
-        gap: var(--spacing-lg, 1.5rem);
-    }
-    
-    .systems-grid {
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    }
-}
-
-@media (max-width: 991px) {
+@media (max-width: 1024px) {
     .systems-list-layout {
         grid-template-columns: 1fr;
         gap: var(--spacing-md, 1rem);
@@ -830,16 +438,7 @@
     .systems-grid {
         grid-template-columns: 1fr;
     }
-    
-    .system-card-metrics {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .system-actions {
-        flex-direction: column;
-        gap: var(--spacing-sm, 0.75rem);
-    }
-} {% endcomment %}
+}
 </style>
 {% endblock %}
 
@@ -850,42 +449,48 @@
     <div class="unified-dashboard-container teal" style="margin-bottom: var(--spacing-xl, 2rem);">
         <div class="unified-container-header">
             <div class="unified-featured-badge">
-                <i class="fas fa-th-large"></i>
-                <span>Systems Overview</span>
+                <i class="fas fa-graduation-cap"></i>
+                <span>Learning Journey</span>
             </div>
             
-            <h1 class="unified-container-title" style="margin-bottom: var(--spacing-sm, 0.75rem);">All Systems</h1>
-            <p class="unified-container-subtitle">{{ total_systems }} systems across {{ system_types|length }} categories</p>
+            <h1 class="unified-container-title" style="margin-bottom: var(--spacing-sm, 0.75rem);">Learning Systems</h1>
+            <p class="unified-container-subtitle">
+                Track your development journey across {{ quick_stats.total_systems }} learning projects
+                <span style="margin-left: 1rem;">
+                    <a href="{% url 'projects:learning_dashboard' %}" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </span>
+            </p>
         </div>
 
-        <!-- Quick Stats -->
+        <!-- Learning Journey Quick Stats -->
         <div class="dashboard-grid grid-4-col" style="margin: 0;">
             <div class="metric-content">
-                <div class="metric-value" data-target="{{ quick_stats.deployed_count }}">{{ quick_stats.deployed_count }}</div>
-                <div class="metric-label">Deployed</div>
+                <div class="metric-value" data-target="{{ skills_stats.total_skills }}">{{ skills_stats.total_skills }}</div>
+                <div class="metric-label">Skills Gained</div>
             </div>
             
             <div class="metric-content">
-                <div class="metric-value" data-target="{{ quick_stats.featured_count }}">{{ quick_stats.featured_count }}</div>
-                <div class="metric-label">Featured</div>
+                <div class="metric-value" data-target="{{ portfolio_stats.ready }}">{{ portfolio_stats.ready }}</div>
+                <div class="metric-label">Portfolio Ready</div>
             </div>
             
             <div class="metric-content">
-                <div class="metric-value" data-target="{{ quick_stats.in_development_count }}">{{ quick_stats.in_development_count }}</div>
-                <div class="metric-label">In Development</div>
+                <div class="metric-value" data-target="{{ time_investment_stats.total_hours|floatformat:0 }}">{{ time_investment_stats.total_hours|floatformat:0 }}h</div>
+                <div class="metric-label">Time Invested</div>
             </div>
             
             <div class="metric-content">
-                <div class="metric-value" data-target="{{ dashboard_stats.avg_completion|floatformat:0 }}">{{ dashboard_stats.avg_completion|floatformat:0 }}</div>
-                <div class="metric-label">Avg Completion %</div>
+                <div class="metric-value" data-target="{{ recent_milestones|length }}">{{ recent_milestones|length }}</div>
+                <div class="metric-label">Recent Milestones</div>
             </div>
         </div>
     </div>
 
-    <!-- Main Layout -->
     <div class="systems-list-layout">
         
-        <!-- NEW LEARNING Sidebar -->
+        <!-- Learning-Focused Sidebar -->
         <aside class="systems-sidebar">
     
             <!-- Learning Journey Overview -->
@@ -1047,43 +652,113 @@
         
         </aside>
         
-
         <!-- Main Content -->
         <main class="systems-main-content">
             
-            <!-- Sort Controls -->
+            <!-- Updated Learning-Focused Sort Controls -->
             <div class="unified-dashboard-container navy" style="margin-bottom: var(--spacing-lg, 1.5rem);">
                 <div class="search-controls">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-md, 1rem);">
                         <div style="display: flex; align-items: center; gap: var(--spacing-md, 1rem);">
                             <span style="color: var(--color-text-secondary); font-size: 0.9rem;">Sort by:</span>
                             <div style="display: flex; gap: var(--spacing-sm, 0.75rem); flex-wrap: wrap;">
-                                <a href="?order=recent{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
-                                   class="filter-option {% if request.GET.order == 'recent' or not request.GET.order %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                
+                                <!-- Recent (default) -->
+                                <a href="?order=recent{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'recent' or not request.GET.order %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
                                    <span><i class="fas fa-clock"></i> Recent</span>
                                 </a>
-                                <a href="?order=name{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
-                                   class="filter-option {% if request.GET.order == 'name' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                
+                                <!-- Learning Velocity -->
+                                <a href="?order=learning_velocity{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'learning_velocity' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-graduation-cap"></i> Learning Velocity</span>
+                                </a>
+                                
+                                <!-- Portfolio Readiness -->
+                                <a href="?order=portfolio_readiness{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'portfolio_readiness' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-check-circle"></i> Portfolio Ready</span>
+                                </a>
+                                
+                                <!-- Time Investment -->
+                                <a href="?order=time_investment{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'time_investment' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-hourglass-half"></i> Time Investment</span>
+                                </a>
+                                
+                                <!-- Learning Stage -->
+                                <a href="?order=learning_stage{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'learning_stage' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-layer-group"></i> Learning Stage</span>
+                                </a>
+                                
+                                <!-- Complexity Evolution -->
+                                <a href="?order=complexity_evolution{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'complexity_evolution' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-chart-line"></i> Complexity</span>
+                                </a>
+                                
+                                <!-- Name -->
+                                <a href="?order=name{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'name' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
                                    <span><i class="fas fa-sort-alpha-down"></i> Name</span>
                                 </a>
-                                <a href="?order=completion{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
-                                   class="filter-option {% if request.GET.order == 'completion' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
-                                   <span><i class="fas fa-percentage"></i> Completion</span>
-                                </a>
-                                <a href="?order=performance{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
-                                   class="filter-option {% if request.GET.order == 'performance' %}active{% endif %}" style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
-                                   <span><i class="fas fa-tachometer-alt"></i> Performance</span>
-                                </a>
+                                
                             </div>
                         </div>
-                        <div style="color: var(--color-text-secondary); font-size: 0.9rem;">
-                            Showing {{ systems|length }} of {{ total_systems }} systems
+                        
+                        <!-- Enhanced Status Display -->
+                        <div style="color: var(--color-text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: var(--spacing-md, 1rem);">
+                            <!-- Learning Context Stats -->
+                            <div style="display: flex; align-items: center; gap: var(--spacing-sm, 0.75rem);">
+                                {% if skills_stats.total_skills > 0 %}
+                                <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <i class="fas fa-graduation-cap" style="color: var(--color-teal);"></i>
+                                    {{ skills_stats.total_skills }} skills
+                                </span>
+                                {% endif %}
+                                
+                                {% if portfolio_stats.ready > 0 %}
+                                <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <i class="fas fa-check-circle" style="color: var(--color-success);"></i>
+                                    {{ portfolio_stats.ready }} portfolio ready
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- System Count -->
+                            <span>Showing {{ systems|length }} of {{ quick_stats.total_systems }} systems</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- NEW LEARNING Systems Grid -->
+            <!-- Active Filters Display -->
+            {% if active_filters %}
+            <div style="margin-bottom: var(--spacing-lg, 1.5rem);">
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm, 0.75rem); flex-wrap: wrap;">
+                    <span style="color: var(--color-text-secondary); font-size: 0.9rem;">Active filters:</span>
+                    {% for filter_type, filter_value in active_filters.items %}
+                    <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: rgba(38, 198, 218, 0.15); border: 1px solid rgba(38, 198, 218, 0.3); border-radius: 6px; font-size: 0.8rem;">
+                        <span>{{ filter_type }}: {{ filter_value }}</span>
+                        <button class="filter-remove" data-filter="{{ filter_type|lower }}" style="background: none; border: none; color: var(--color-teal); cursor: pointer; padding: 0; margin-left: 0.25rem;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Learning-Enhanced Systems Grid -->
             {% if systems %}
 <div class="systems-grid">
     {% for system in systems %}
@@ -1136,11 +811,19 @@
                     <span class="metric-label">Skills Gained</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-value">{{ system.development_time_hours|default:0 }}h</span>
+                    <span class="metric-value">
+                        {% if system.actual_dev_hours %}
+                            {{ system.actual_dev_hours }}h
+                        {% elif system.estimated_dev_hours %}
+                            ~{{ system.estimated_dev_hours }}h
+                        {% else %}
+                            0h
+                        {% endif %}
+                    </span>
                     <span class="metric-label">Time Invested</span>
                 </div>
                 <div class="metric-item">
-                    <span class="metric-value">{{ system.complexity|default:0 }}/10</span>
+                                <span class="metric-value">{{ system.complexity|default:0 }}/5</span>
                     <span class="metric-label">Complexity</span>
                 </div>
             </div>
@@ -1169,7 +852,7 @@
                 </div>
             </div>
 
-            <!-- Technology Stack (keep existing) -->
+                        <!-- Technology Stack -->
             {% if system.technologies.all %}
             <div class="tech-stack">
                 {% for tech in system.technologies.all|slice:":5" %}
@@ -1205,9 +888,17 @@
                     <span>{{ system.updated_at|date:"M d, Y" }}</span>
                 </div>
                 {% if system.github_url %}
+                            <div class="github-info">
                 <div class="meta-item">
                     <i class="fab fa-github"></i>
-                    <span>{{ system.commit_count|default:0 }} commits</span>
+                                    <span>{{ system.commit_count|default:0 }} commit{{ system.commit_count|pluralize }}</span>
+                                </div>
+                                {% if system.last_commit_date %}
+                                <div class="meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Last commit {{ system.last_commit_date|timesince }} ago</span>
+                                </div>
+                                {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -1215,7 +906,6 @@
     </article>
     {% endfor %}
 </div>
-{% endif %}
 
             <!-- Pagination -->
             {% if is_paginated %}
@@ -1241,6 +931,34 @@
                     </a>
                     {% endif %}
                 </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="unified-dashboard-container gunmetal" style="text-align: center; padding: var(--spacing-xxl, 4rem);">
+                <div style="opacity: 0.6; margin-bottom: var(--spacing-lg, 1.5rem);">
+                    <i class="fas fa-graduation-cap" style="font-size: 4rem; color: var(--color-teal);"></i>
+                </div>
+                <h3 style="margin-bottom: var(--spacing-md, 1rem);">No Learning Systems Found</h3>
+                <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg, 1.5rem);">
+                    {% if active_filters %}
+                        Try adjusting your filters to see more learning systems.
+                    {% else %}
+                        Start your learning journey by creating your first system!
+                    {% endif %}
+                </p>
+                {% if active_filters %}
+                <a href="{% url 'projects:learning_system_list' %}" class="action-btn">
+                    <i class="fas fa-filter"></i>
+                    Clear All Filters
+                </a>
+                {% else %}
+                <a href="{% url 'projects:system_create' %}" class="action-btn primary">
+                    <i class="fas fa-plus"></i>
+                    Create Learning System
+                </a>
+                {% endif %}
             </div>
             {% endif %}
 
@@ -1286,10 +1004,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Remove the specific filter parameter
             const paramMap = {
-                'status': 'status',
+                'learning stage': 'learning_stage',
+                'portfolio status': 'portfolio_ready',
+                'skill': 'skill',
+                'time investment': 'time_investment',
                 'technology': 'tech',
-                'type': 'type',
-                'complexity': 'complexity',
                 'search': 'search'
             };
             
@@ -1312,7 +1031,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    console.log('🚀 Enhanced System List loaded successfully!');
+    // Initialize metric animations
+    const metricValues = document.querySelectorAll('.metric-value[data-target]');
+    metricValues.forEach(metric => {
+        const target = parseInt(metric.dataset.target);
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                current = target;
+                clearInterval(timer);
+            }
+            metric.textContent = Math.floor(current);
+        }, 30);
+    });
+
+    console.log('🎓 Learning-Enhanced System List loaded successfully!');
 });
 </script>
 {% endblock %}
