@@ -652,10 +652,24 @@ class LearningSystemControlInterfaceView(DetailView):
         context = super().get_context_data(**kwargs)
         system = self.object
 
-        # Define learning-focused control panels
+        # Define comprehensive control panels (system info + learning focused)
         context["control_panels"] = [
             {
                 "id": "overview",
+                "name": "System Overview",
+                "icon": "tachometer-alt",
+                "description": "System metrics, technologies, and recent activity",
+                "count": None,
+            },
+            {
+                "id": "details",
+                "name": "System Details",
+                "icon": "file-alt",
+                "description": "Technical documentation and system specifications",
+                "count": None,
+            },
+            {
+                "id": "learning_overview",
                 "name": "Learning Overview",
                 "icon": "chart-line",
                 "description": "Learning metrics and project development progression",
@@ -724,6 +738,10 @@ class LearningSystemControlInterfaceView(DetailView):
         """Generate data for each learning-focused panel"""
 
         if active_panel == "overview":
+            return self.get_system_overview_data(system)
+        elif active_panel == "details":
+            return self.get_system_details_data(system)
+        elif active_panel == "learning_overview":
             return self.get_learning_overview_data(system)
         elif active_panel == "skills":
             return self.get_skills_progression_data(system)
@@ -741,6 +759,178 @@ class LearningSystemControlInterfaceView(DetailView):
             return self.get_dependencies_data(system)
 
         return {}
+
+    def get_system_overview_data(self, system):
+        """System overview panel - basic system info, tech, recent activity"""
+        return {
+            'system_metrics': {
+                'status': system.status,
+                'status_display': system.get_status_display(),
+                'completion_percent': float(system.completion_percent),
+                'complexity': system.complexity,
+                'priority': system.priority,
+                'created_date': system.created_at,
+                'last_updated': system.updated_at,
+            },
+            'technology_summary': {
+                'technologies': system.technologies.all()[:8],
+                'total_count': system.technologies.count(),
+                'primary_languages': system.technologies.filter(
+                    category__in=['Programming Language', 'Framework']
+                )[:4],
+            },
+            'development_stats': {
+                'lines_of_code': system.code_lines,
+                'commit_count': system.commit_count,
+                'last_commit': system.last_commit_date,
+                'estimated_hours': system.estimated_dev_hours,
+                'actual_hours': system.actual_dev_hours,
+            },
+            'system_health': {
+                'status': system.get_health_status() if hasattr(system, 'get_health_status') else 'unknown',
+                'deployment_ready': system.status == 'deployed',
+                'has_documentation': bool(system.description),
+                'has_features': system.features.count() > 0,
+            },
+            'recent_activity': self.get_recent_activity_feed(system),
+            'quick_links': {
+                'github_url': system.github_url,
+                'live_url': system.live_url or system.demo_url,
+                'documentation_url': system.documentation_url,
+            }
+        }
+
+    def get_system_details_data(self, system):
+        """System details panel data (markdown content and technical specs)"""
+        return {
+            'descriptions': {
+                'main_description': system.description,
+                'brief_description': system.excerpt,
+                'technical_details': getattr(system, 'technical_details', None),
+                # Leaving bc might add setup and usage
+                'setup_instructions': getattr(system, 'setup_instructions', None),
+                'usage_examples': getattr(system, 'usage_examples', None),
+                # Probably won't add, but just in case
+                'deployment_notes': getattr(system, 'deployment_notes', None),
+            },
+            'specifications': {
+                'system_type': system.system_type,
+                'complexity_level': system.complexity,
+                'estimated_timeline': f"{system.estimated_dev_hours} hours" if system.estimated_dev_hours else None,
+            },
+            'architecture_info': {
+                'architecture_diagram': system.architechture_diagram,
+                # May add? Not sure
+                'database_schema': getattr(system, 'database_schema', None),
+                'api_documentation': getattr(system, 'api_documentation', None),
+                'security_considerations': getattr(system, 'security_considerations', None),
+            },
+            'learning_context': {
+                'skills_developed': getattr(system, 'skills_developed', None),
+                'challenges': getattr(system, 'challenges', None),
+            }
+        }
+
+    def get_recent_activity_feed(self, system):
+        """Generate recent activity feed for system overview"""
+        activity = []
+
+        # Recent commits
+        if system.last_commit_date:
+            activity.append({
+                'type': 'commit',
+                'date': system.last_commit_date,
+                'description': f"Latest commit pushed ({system.commit_count} total)",
+                'icon': 'code-branch',
+                'color': 'teal'
+            })
+
+        # Recent milestones
+        recent_milestones = system.milestones.order_by("-date_achieved")[:3]
+        for milestone in recent_milestones:
+            activity.append(
+                {
+                    "type": "milestone",
+                    "date": milestone.date_achieved,
+                    "description": milestone.title,
+                    "icon": self.get_milestone_icon(milestone.milestone_type),
+                    "color": self.get_milestone_color(milestone.milestone_type),
+                }
+            )
+
+        # System Updates
+        if system.updated_at != system.created_at:
+            activity.append({
+                'type': 'update',
+                'date': system.updated_at,
+                'description': 'System information updated',
+                'icon': 'edit',
+                'color': 'info'
+            })
+
+        # Recent DataLogs
+        recent_logs = system.get_related_logs()[:3]
+        for log in recent_logs:
+            activity.append({
+                'type': 'datalog',
+                'date': log.post.created_at,
+                'description': f"DataLog: {log.post.title}",
+                'icon': 'file-text',
+                'color': 'lavender',
+            })
+
+        # Sort by date and return recent items
+        activity.sort(key=lambda x: x['date'], reverse=True)
+        return activity[:8]
+
+    def get_related_challenge_logs(self, system):
+        """Find DataLogs related to system challenges"""
+        if not system.challenges:
+            return []
+
+        challenges_logs = []
+        if system.challenges:
+            # Search for DataLogs that might address challenges mentioned in challenges field
+            challenges_keywords = self.extract_keywords_from_markdown(system.challenges)
+
+            # Find posts that contain challenge-related keywords
+            for keyword in challenges_keywords[:5]:  # Limit to top 5 keywords
+                related_posts = system.log_entries.select_related("post").filter(
+                    Q(post__title__icontains=keyword)
+                    | Q(post__content__icontains=keyword)
+                    | Q(post__excerpt__icontains=keyword)
+                )[:3]
+                for entry in related_posts:
+                    if entry not in challenges_logs:
+                        challenges_logs.append(
+                            {
+                                "log_entry": entry,
+                                "keyword": keyword,
+                                "relevance": "addresses challenges",
+                            }
+                        )
+        return challenges_logs[:3]
+
+    def extract_keywords_from_markdown(self, markdown_content):
+        """Extract key terms from markdown content for finding related logs."""
+        if not markdown_content:
+            return []
+
+        # Remove additional formatting
+        text = re.sub(r"[#*`\[\]()_-]", " ", markdown_content)
+
+        # Split into words and filter for meaningful terms
+        words = text.lower().split()
+
+        # Filter out common words and keep technical terms
+        stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'was', 'are', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'}
+
+        keywords = [word for word in words if len(word) > 3 and word not in stopwords]
+
+        # Count frequency and return top keywords
+        word_counts = Counter(keywords)
+
+        return [word for word, count in word_counts.most_common(10)]
 
     def get_learning_overview_data(self, system):
         """Learning metrics for overview panel (replaces performance metrics)"""
@@ -791,6 +981,8 @@ class LearningSystemControlInterfaceView(DetailView):
         for gain in skill_gains:
             skills_analysis.append({
                 'skill': gain.skill,
+                'proficiency_gained': gain.skill.proficiency_gained,
+                'how_learned': gain.skill.how_learned,
                 'has_breakthrough_moment': gain.skill.has_breakthroughs(),
                 'breakthrough_moments': gain.skill.get_breakthrough_moments(),
                 'mastery_level': gain.skill.get_mastery_level(),
@@ -1288,7 +1480,12 @@ class LearningSystemControlInterfaceView(DetailView):
     def get_tech_learning_context(self, tech, system):
         """Determine learning context for technology"""
         # Simple heuristic
-        return 'first_time' if system.learning_stage in ['tutorial', 'guided'] else 'building_on'
+        if system.learning_stage in ['tutorial', 'guided']:
+            return 'first_time'
+        elif system.learning_stage == 'independent':
+            return 'building_on'
+        else:
+            return 'mastery'
 
     def assess_tech_mastery(self, tech, system):
         """Assess mastery level of technology in this project/system"""
@@ -1303,12 +1500,12 @@ class LearningSystemControlInterfaceView(DetailView):
     def assess_tech_learning_impact(self, tech, system):
         """Assess learning impact of using this tech"""
         # Simplfied metric
-        return system.complexity * 2
+        return min(system.complexity * 2, 10)
 
     def extract_learning_challenges(self, feature):
         """Extract learning challenges from feature description - can integrate logic from performance-based view for keyword searches"""
         # Simplified - look for challenge keywords
-        challenge_keywords = ['challenge', 'difficult', 'complex', 'new', 'first time']
+        challenge_keywords = ['challenge', 'difficult', 'complex', 'new', 'first time', 'hard']
         challenges = []
 
         if feature.description:
@@ -1330,9 +1527,9 @@ class LearningSystemControlInterfaceView(DetailView):
     def assess_feature_complexity(self, feature):
         """Assess individual feature complexity - can enhance"""
         # Simplified assessment based on description length and keywords
-        complexity_keywords = ['api', 'database', 'authentication', 'real-time', 'async']
+        complexity_keywords = ['api', 'database', 'authentication', 'real-time', 'async', 'integration']
         # Base complexity
-        score = 5
+        score = 3
 
         if feature.description:
             score += min(len(feature.description) // 100, 3)
@@ -1368,14 +1565,17 @@ class LearningSystemControlInterfaceView(DetailView):
     def get_dependency_learning_context(self, dependency):
         """Get learning context for dependency"""
         # Why was this dependency chosen? What did it teach?
-        # This would be more for when I incorporate technology/skills into dependencies
-        # return f"Learning {dependency.name} for {dependency.description}" if dependency.description else ""
-        return f"Depends on {dependency.depends_on} for {dependency.dependency_type}" if dependency.dependency_type else ""
+        # This would be more for when I incorporate technology/skills into dependencies and purpose field
+        # if dependency.purpose:
+        #     return f"Learning {dependency.name} for {dependency.purpose}"
+        return f"Integrating {dependency.depends_on} into system as type {dependency.dependency_type}"
 
     def assess_integration_complexity(self, dependency):
         """Assess complexity of integrating dependency - can enhance"""
-        # Simplified assessment - default medium complexity
-        return 6
+        # Simplified assessment - could be enhanced
+        if dependency.is_critical:
+            return 8
+        return 5
 
     def map_dependency_skills(self, dependency, system):
         """Map dependency to skills required/learned - can enhance"""
