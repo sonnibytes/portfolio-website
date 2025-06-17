@@ -639,16 +639,18 @@ class LearningSystemControlInterfaceView(DetailView):
         ).prefetch_related(
             'technologies',
             'skills_developed',
-            'skills_gain__skill',   # For detailed skill progression
+            'skill_gains__skill',   # For detailed skill progression
             'milestones',           # For learning timeline
             'features',
             'dependencies',
-            'related_logs__post'    # DataLogs integration
+            'log_entries__post',    # DataLogs integration
+            'log_entries__post__category',
+            'log_entries__post__tags'
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        system = self.object 
+        system = self.object
 
         # Define learning-focused control panels
         context["control_panels"] = [

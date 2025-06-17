@@ -801,6 +801,21 @@ class SystemModule(models.Model):
                 return f"~{days} days development"
             return "Time not tracked"
 
+    def get_time_investment_level(self):
+        """Categorize time-investment level"""
+        hours = self.actual_dev_hours
+        if not hours:
+            return "Unknown"
+
+        if hours >= 100:
+            return "Major Project"
+        elif hours >= 50:
+            return "Substantial"
+        elif hours >= 20:
+            return "Moderate"
+        else:
+            return "Quick Build"
+
     def get_learning_documentation_from_logs(self):
         """Extract learning content from related DataLogs"""
         related_logs = self.get_related_logs()
