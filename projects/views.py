@@ -613,6 +613,779 @@ class EnhancedLearningSystemListView(ListView):
         return colors.get(stage_code, "gray")
 
 
+class LearningSystemControlInterfaceView(DetailView):
+    """
+    Learning-Focused System Control Interface
+
+    Transform existing SystemControlInterfaceView to showcase learning progression
+    instead of performance metrics while maintaining the beautiful 8-panel structure.
+
+    Key Changes:
+    - Overview Panel: Learning metrics instead of performance metrics
+    - Skills Panel: Detailed skill progression (replaces Details panel)
+    - Learning Timeline: Milestones and breakthroughs (replaces Performance panel)
+    - Portfolio Assessment: Readiness breakdown (new panel)
+    - Keep: DataLogs, Technologies, Features, Dependencies panels (already learning-relevant)
+    """
+
+    model = SystemModule
+    template_name = "projects/learning_system_control_interface.html"
+    context_object_name = "system"
+
+    def get_queryset(self):
+        # Optimized for learning data
+        return SystemModule.objects.select_related(
+            'system_type', 'author'
+        ).prefetch_related(
+            'technologies',
+            'skills_developed',
+            'skills_gain__skill',   # For detailed skill progression
+            'milestones',           # For learning timeline
+            'features',
+            'dependencies',
+            'related_logs__post'    # DataLogs integration
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        system = self.object 
+
+        # Define learning-focused control panels
+        context["control_panels"] = [
+            {
+                "id": "overview",
+                "name": "Learning Overview",
+                "icon": "chart-line",
+                "description": "Learning metrics and project development progression",
+                "count": None,
+            },
+            {
+                "id": "skills",
+                "name": "Skills Developed",
+                "icon": "brain",
+                "description": "Detailed skill progression and competency gains",
+                "count": system.skills_developed.count(),
+            },
+            {
+                "id": "timeline",
+                "name": "Learning Timeline",
+                "icon": "timeline",
+                "description": "Milestones, breakthroughs, and development history",
+                "count": system.milestones.count(),
+            },
+            {
+                "id": "portfolio",
+                "name": "Portfolio Assessment",
+                "icon": "clipboard-check",
+                "description": "Portfolio readiness analysis and recommendations",
+                "count": None,
+            },
+            {
+                "id": "datalogs",
+                "name": "DataLogs",
+                "icon": "file-text",
+                "description": "Learning documentation and related posts",
+                "count": system.get_related_logs().count(),
+            },
+            {
+                "id": "technologies",
+                "name": "Technologies",
+                "icon": "cogs",
+                "description": "Technology stack analysis and learning context",
+                "count": system.technologies.count(),
+            },
+            {
+                "id": "features",
+                "name": "Features",
+                "icon": "list",
+                "description": "Feature development and implementation challenges",
+                "count": system.features.count(),
+            },
+            {
+                "id": "dependencies",
+                "name": "Dependencies",
+                "icon": "link",
+                "description": "External dependencies and integration challenges",
+                "count": system.dependencies.count(),
+            },
+        ]
+
+        # Active panel (default to overview)
+        context['active_panel'] = self.request.GET.get('panel', 'overview')
+
+        # Panel-specific data
+        context['panel_data'] = self.get_panel_data(system, context['active_panel'])
+
+        return context
+
+    def get_panel_data(self, system, active_panel):
+        """Generate data for each learning-focused panel"""
+
+        if active_panel == "overview":
+            return self.get_learning_overview_data(system)
+        elif active_panel == "skills":
+            return self.get_skills_progression_data(system)
+        elif active_panel == "timeline":
+            return self.get_learning_timeline_data(system)
+        elif active_panel == "portfolio":
+            return self.get_portfolio_assessment_data(system)
+        elif active_panel == "datalogs":
+            return self.get_datalogs_data(system)
+        elif active_panel == "technologies":
+            return self.get_tech_learning_data(system)
+        elif active_panel == "features":
+            return self.get_features_learning_data(system)
+        elif active_panel == "dependencies":
+            return self.get_dependencies_data(system)
+
+        return {}
+
+    def get_learning_overview_data(self, system):
+        """Learning metrics for overview panel (replaces performance metrics)"""
+        stats = system.get_development_stats_for_learning()
+
+        return {
+            "learning_stage": {
+                "current": system.learning_stage,
+                "display": system.get_learning_stage_display(),
+                "color": system.get_learning_stage_color(),
+                "next_stage": self.get_next_learning_stage(system.learning_stage),
+            },
+            "skills_summary": {
+                "total_count": system.skills_developed.count(),
+                "primary_skills": list(system.skills_developed.all()[:4]),
+                "skills_text": system.get_skills_summary(),
+            },
+            "development_progress": {
+                "completion_score": float(system.completion_percent),
+                "portfolio_ready": system.portfolio_ready,
+                "readiness_score": system.get_portfolio_readiness_score(),
+                "complexity_evolution": system.get_complexity_evolution_score(),
+            },
+            "time_investment": {
+                "estimated_hours": stats["estimated_hours"],
+                "actual_hours": stats["actual_hours"],
+                "efficiency": self.calculate_learning_efficiency(stats),
+                "investment_level": system.get_time_investment_level(),
+            },
+            "code_metrics": {
+                "lines_of_code": stats["lines_of_code"],
+                "commits": stats["commits"],
+                "last_commit": stats["last_commit"],
+                "activity_level": self.get_activity_level(stats),
+            },
+            "learning_velocity": {
+                "skills_per_month": system.get_learning_velocity(),
+                "complexity_growth": stats["complexity_score"],
+                "milestone_count": system.milestones.count(),
+            },
+        }
+
+    def get_skills_progression_data(self, system):
+        """Detailed skills analysis (replaces Details panel)"""
+        skill_gains = system.skill_gains.select_related('skill').all()
+
+        skills_analysis = []
+        for gain in skill_gains:
+            skills_analysis.append({
+                'skill': gain.skill,
+                'proficiency_gained': gain.proficiency_gained,
+                'how_learned': gain.how_learned,
+                'learning_context': gain.learning_context,
+                'breakthrough_moment': gain.breakthrough_moment,
+                'mastery_level': gain.get_mastery_level(),
+                'other_systems': gain.skill.get_systems_using_skill().exclude(system=system)[:3],
+                'progression': gain.skill.get_learning_progression()
+            })
+
+        return {
+            'skills_analysis': skills_analysis,
+            'skill_categories': self.categorize_skills(skill_gains),
+            'learning_focus': self.identify_learning_focus(skill_gains),
+            'skill_gaps': self.identify_skill_gaps(system),
+            'recommended_next_skills': self.get_recommended_skills(system)
+        }
+
+    def get_learning_timeline_data(self, system):
+        """Learning milestones adn timeline (replaces performance panel)"""
+        milestones = system.milestones.order_by('date_achieved')
+
+        timeline_events = []
+
+        # Add project start
+        if system.start_date:
+            timeline_events.append({
+                'date': system.start_date,
+                'type': 'project_start',
+                'title': 'Project Started',
+                'description': f'Began development in {system.learning_stage} stage',
+                'icon': 'play',
+                'color': 'teal'
+            })
+
+        # Add milestones
+        for milestone in milestones:
+            timeline_events.append({
+                'date': milestone.date_achieved,
+                'type': 'milestone',
+                'title': milestone.title,
+                'description': milestone.description,
+                'milestone_type': milestone.milestone_type,
+                'icon': self.get_milestone_icon(milestone.milestone_type),
+                'color': self.get_milestone_color(milestone.milestone_type),
+                'related_post': milestone.related_post
+            })
+
+        # Add skill gains
+        for gain in system.skill_gains.all():
+            if gain.breakthrough_moment:
+                timeline_events.append({
+                    'date': system.created_at,  # Appx - could be more specific
+                    'type': 'skill_breakthrough',
+                    'title': f'{gain.skill.name} Breakthrough',
+                    'description': gain.breakthrough_moment,
+                    'icon': 'lightbulb',
+                    'color': 'yellow'
+                })
+
+        # Sort by date
+        timeline_events.sort(key=lambda x: x['date'])
+
+        return {
+            'timeline_events': timeline_events,
+            'learning_duration': self.calculate_learning_duration(system),
+            'major_breakthroughs': milestones.filter(
+                milestone_type__in['breakthrough', 'first_time']
+            ).count(),
+            'completion_milestones': milestones.filter(
+                milestone_type='completion'
+            ).count()
+        }
+
+    def get_portfolio_assessment_data(self, system):
+        """Portfolio readiness assessment (new panel)"""
+        assessment = {
+            'overall_ready': system.portfolio_ready,
+            'readiness_score': system.get_portfolio_readiness_score(),
+            'assessment_criteria': []
+        }
+
+        # Assess different criteria
+        criteria = [
+            {
+                "name": "Code Quality",
+                "weight": 25,
+                "score": self.assess_code_quality(system),
+                "description": "Clean, well-structured, documented code",
+            },
+            {
+                "name": "Feature Completeness",
+                "weight": 20,
+                "score": self.assess_feature_completeness(system),
+                "description": "Core features implemented and working",
+            },
+            {
+                "name": "Documentation",
+                "weight": 20,
+                "score": self.assess_documentation(system),
+                "description": "Clear README, setup instructions, usage examples",
+            },
+            {
+                "name": "Technology Showcase",
+                "weight": 15,
+                "score": self.assess_tech_showcase(system),
+                "description": "Demonstrates relevant technical skills",
+            },
+            {
+                "name": "Learning Evidence",
+                "weight": 10,
+                "score": self.assess_learning_evidence(system),
+                "description": "Shows learning progression and growth",
+            },
+            {
+                "name": "Deployment/Demo",
+                "weight": 10,
+                "score": self.assess_deployment(system),
+                "description": "Live demo or deployment available",
+            },
+        ]
+
+        assessment['assessment_criteria'] = criteria
+        assessment['weighted_score'] = sum(
+            c['score'] * c['weight'] / 100 for c in criteria
+        )
+
+        # Recommendations
+        assessment['recommendations'] = self.get_portfolio_recommendations(system, criteria)
+
+        return assessment
+
+    def get_datalogs_data(self, system):
+        """DataLogs integration (keep existing structure)"""
+        related_logs = system.get_related_logs()[:10]
+
+        return {
+            'related_logs': related_logs,
+            'learning_posts': related_logs.filter(post__excerpt__icontains='learn')[:5],
+            'challenge_posts': related_logs.filter(post__excerpt__icontains='challenge')[:5],
+            'has_documentation': related_logs.exists(),
+            'documentation_completeness': self.assess_documentation_completeness(system, related_logs)
+        }
+
+    def get_tech_learning_data(self, system):
+        """Technology analysis with learning context"""
+        tech_analysis = []
+
+        for tech in system.technologies.all():
+            analysis = {
+                'technology': tech,
+                'learning_context': self.get_tech_learning_content(tech, system),
+                'skill_connections': system.skills_developed.filter(name__icontains=tech.name),
+                'other_uses': tech.systems.exclude(id=system.id)[:3],
+                'mastery_level': self.assess_tech_mastery(tech, system),
+                'learning_impact': self.assess_tech_learning_impact(tech, system)
+            }
+            tech_analysis.append(analysis)
+
+        return {
+            'tech_analysis': tech_analysis,
+            'primary_stack': tech_analysis[:4],
+            'learning_new_techs': [t for t in tech_analysis if t['learning_context'] == 'first_time'],
+            'mastery_showcase': [t for t in tech_analysis if t['mastery_level'] >= 'intermediate']
+        }
+
+    def get_features_learning_data(self, system):
+        """Features with learning challenges context"""
+        features_data = []
+
+        for feature in system.features.all():
+            feature_data = {
+                'feature': feature,
+                'learning_challenges': self.extract_learning_challenges(feature),
+                'skills_applied': self.map_feature_to_skills(feature, system),
+                'complexity_contribution': self.assess_feature_complexity(feature),
+                'implementation_insights': self.get_implementation_insights(feature)
+            }
+            features_data.append(feature_data)
+
+        return {
+            'features_data': features_data,
+            'challenging_features': [f for f in features_data if f['complexity_contribution'] >= 7],
+            'skill_development_features': [f for f in features_data if f['skills_applied']],
+            'learning_moments': self.identify_feature_learning_moments(features_data)
+        }
+
+    def get_dependencies_data(self, system):
+        """Dependencies with learning integration context"""
+        deps_data = []
+
+        for dep in system.dependencies.all():
+            dep_data = {
+                'dependency': dep,
+                'learning_rationale': self.get_dependency_learning_context(dep),
+                'integration_challenges': self.assess_integration_complexity(dep),
+                'skill_requirements': self.map_dependency_skills(dep, system),
+                'alternative_options': self.suggest_alternatives(dep)
+            }
+            deps_data.append(dep_data)
+
+        return {
+            'dependencies_data': deps_data,
+            'learning_dependencies': [d for d in deps_data if d['learning_rationale']],
+            'complex_integrations': [d for d in deps_data if d['integration_challenges'] >= 7],
+            'skill_expanding': [d for d in deps_data if d['skill_requirements']]
+        }
+
+    # Helper methods for learning assessment
+    def get_next_learning_stage(self, current_stage):
+        """Suggest next learning stage"""
+        progression = {
+            'tutorial': 'guided',
+            'guided': 'independent',
+            'independent': 'refactoring',
+            'refactoring': 'contributing',
+            'contributing': 'teaching',
+            'teaching': 'mentoring'
+        }
+        return progression.get(current_stage, 'advanced')
+
+    def calculate_learning_efficiency(self, stats):
+        """Calculate learning efficiency ratio"""
+        if stats['estimated_hours'] and stats['actual_hours']:
+            return stats['estimated_hours'] / stats['actual_hours']
+        return 1.0
+
+    def get_activity_level(self, stats):
+        """Determine development activity level"""
+        commits = stats['commits']
+        if commits >= 100:
+            return 'high'
+        elif commits >= 50:
+            return 'medium'
+        elif commits >= 20:
+            return 'low'
+        else:
+            return 'minimal'
+
+    def categorize_skills(self, skill_gains):
+        """Categorize skills by type"""
+        categories = {'technical': [], 'soft': [], 'tools': []}
+
+        for gain in skill_gains:
+            category = gain.skill.category.lower() if gain.skill.category else 'technical'
+            if category in categories:
+                categories[category].append(gain)
+            else:
+                categories['technical'].append(gain)
+
+        return categories
+
+    def identify_learning_focus(self, skill_gains):
+        """Identify main learning focus areas"""
+        focus_areas = {}
+        for gain in skill_gains:
+            area = gain.skill.category or 'General'
+            focus_areas[area] = focus_areas.get(area, 0) + 1
+
+        return sorted(focus_areas.items(), key=lambda x: x[1], reverse=True)[:3]
+
+    def identify_skill_gaps(self, system):
+        """Identify potential skill gaps"""
+        # This could be enhanced w more sophisticated analysis
+        # TODO: Logic Enhancement
+        common_skills = ['testing', 'documentation', 'deployment', 'security']
+        current_skills = set(system.skills_developed.values_list('name', flat=True))
+
+        gaps = [skill for skill in common_skills if not any(skill.lower() in cs.lower() for cs in current_skills)]
+
+        return gaps[:3]
+
+    def get_recommended_skills(self, system):
+        """Recommend next skills to learn"""
+        # Based on technologies used and current skill level
+        recommendations = []
+
+        # Simple rec logic (can be enhanced)
+        # TODO: Logic Enhancement
+        for tech in system.technologies.all():
+            if 'python' in tech.name.lower():
+                recommendations.extend(['testing', 'async programming', 'packaging'])
+            elif 'django' in tech.name.lower():
+                recommendations.extend(['django rest framework', 'celery', 'caching'])
+            elif 'javascript' in tech.name.lower():
+                recommendations.extend(['typescript', 'testing', 'bundling'])
+
+        # Remove dupes and skills already learned
+        current_skills = set(system.skills_developed.values_list('name', flat=True))
+
+        recommendations = list(set(recommendations) - current_skills)
+
+        return recommendations[:4]
+
+    def get_milestone_icon(self, milestone_type):
+        """Get appropriate icon for milestone type"""
+        icons = {
+            "first_time": "star",
+            "breakthrough": "lightbulb",
+            "completion": "check-circle",
+            "deployment": "rocket",
+            "teaching": "users",
+            "contribution": "code-branch",
+        }
+        return icons.get(milestone_type, "flag")
+
+    def get_milestone_color(self, milestone_type):
+        """Get appropriate color for milestone type"""
+        colors = {
+            "first_time": "yellow",
+            "breakthrough": "purple",
+            "completion": "teal",
+            "deployment": "coral",
+            "teaching": "mint",
+            "contribution": "lavender",
+        }
+        return colors.get(milestone_type, "navy")
+
+    def calculate_learning_duration(self, system):
+        """Calculate total learning/development duration"""
+        if system.start_date and system.end_date:
+            duration = (system.end_date - system.start_date).days
+            return {
+                'total_days': duration,
+                'weeks': duration // 7,
+                'months': duration // 30
+            }
+        return None
+
+    # Portfolio assessment helper methods
+    def assess_code_quality(self, system):
+        """Assess code quality for portfolio readiness (can enhance logic)"""
+        # TODO: Logic Enhancement
+        # Base score
+        score = 50
+
+        # GitHub Metrics
+        if system.commit_count >= 50:
+            score += 20
+        elif system.commit_count >= 20:
+            score += 10
+
+        # Code size indicate effort
+        if system.code_lines >= 1000:
+            score += 15
+        elif system.code_lines >= 500:
+            score += 10
+
+        # Documentation
+        if system.description and len(system.description) > 200:
+            score += 15
+
+        return min(score, 100)
+
+    def assess_feature_completeness(self, system):
+        """Assess feature completeness (can enhance w GH issue tracking etc)"""
+        # TODO: Logic Enhancement - API Integration
+        feature_count = system.features.count()
+        completion = system.completion_percent
+
+        # Based on completion percentage
+        score = completion * 0.7
+
+        # Bonus for having features documented
+        if feature_count >= 5:
+            score += 20
+        elif feature_count >= 3:
+            score += 10
+
+        return min(score, 100)
+
+    def assess_documentation(self, system):
+        """Assess documentation quality (can enhance)"""
+        # TODO: Logic Enhancement
+        score = 0
+
+        # Has description
+        if system.description:
+            score += 30
+
+        # Has setup instructions (later)
+        # if system.setup_instructions:
+        #     score += 25
+
+        # Has usage examples (later)
+        # if system.usage_examples:
+        #     score += 25
+
+        # For now, use other content fields
+        # Has Technical Details
+        if system.technical_details:
+            score += 25
+
+        # Has Challenges
+        if system.challenges:
+            score += 25
+
+        # Has related DataLogs
+        if system.get_related_datalogs().exists():
+            score += 20
+
+        return min(score, 100)
+
+    def assess_tech_showcase(self, system):
+        """Assess how well system showcases technical skills (can enhance)"""
+        # TODO: Logic Enhancement
+        # Base score
+        score = 50
+
+        # Number of technologies
+        tech_count = system.technologies.count()
+        if tech_count >= 5:
+            score += 25
+        elif tech_count >= 3:
+            score += 15
+
+        # Skills developed
+        skills_count = system.skills_developed.count()
+        if skills_count >= 5:
+            score += 25
+        elif skills_count >= 3:
+            score += 15
+
+        return min(score, 100)
+
+    def assess_learning_evidence(self, system):
+        """Assess evidence of learning progression (can enhance)"""
+        # TODO: Logic Enhancement
+        # Base score
+        score = 40
+
+        # Has learning documentation
+        if system.key_learnings:
+            score += 25
+
+        # Has milestones
+        milestone_count = system.milestones.count()
+        if milestone_count >= 3:
+            score += 20
+        elif milestone_count >= 1:
+            score += 10
+
+        # Has skill gains documented
+        if system.skill_gains.exists():
+            score += 15
+
+        return min(score, 100)
+
+    def assess_development(self, system):
+        """Assess development/demo availability"""
+        # Base score
+        score = 30
+
+        if system.live_url or system.demo_url:
+            score += 40
+
+        if system.github_url:
+            score += 20
+
+        if system.status == 'deployed':
+            score += 10
+
+        return min(score, 100)
+
+    def get_portfolio_recommendations(self, system, criteria):
+        """Generate portfolio improvement recommendations (can enhance)"""
+        # TODO: Logic Enhancement
+        recommendations = []
+
+        for criterion in criteria:
+            if criterion['score'] < 70:
+                recommendations.append({
+                    'area': criterion['name'],
+                    'current_score': criterion['score'],
+                    'suggestion': self.get_improvement_suggestion(criterion['name'], criterion['score']),
+                    'priority': 'high' if criterion['score'] < 50 else 'medium'
+                })
+
+        return sorted(recommendations, key=lambda x: x['current_score'])[:4]
+
+    def get_improvement_suggestion(self, area, score):
+        """Get specific improvement suggestions (can enhance)"""
+        suggestions = {
+            "Code Quality": "Add more commits, improve documentation, refactor complex code",
+            "Feature Completeness": "Complete remaining features, add more functionality",
+            "Documentation": "Add comprehensive README, setup instructions, usage examples",
+            "Technology Showcase": "Integrate additional relevant technologies",
+            "Learning Evidence": "Document learning process, add milestones",
+            "Deployment/Demo": "Deploy to live server, create demo video",
+        }
+        return suggestions.get(area, "Continue improving this area")
+
+    # Additional helper methods - SIMPLIFIED - can enhance later
+    def assess_documentation_completeness(self, system, related_logs):
+        """Assess how well-documented learning process is"""
+        return min(related_logs.count() * 20, 100)
+
+    def get_tech_learning_context(self, tech, system):
+        """Determine learning context for technology"""
+        # Simple heuristic
+        return 'first_time' if system.learning_stage in ['tutorial', 'guided'] else 'building_on'
+
+    def assess_tech_mastery(self, tech, system):
+        """Assess mastery level of technology in this project/system"""
+        # Simplifed assessment
+        if system.complexity >= 8:
+            return 'advanced'
+        elif system.complexity >= 5:
+            return 'intermediate'
+        else:
+            return 'beginner'
+
+    def assess_tech_learning_impact(self, tech, system):
+        """Assess learning impact of using this tech"""
+        # Simplfied metric
+        return system.complexity * 2
+
+    def extract_learning_challenges(self, feature):
+        """Extract learning challenges from feature description - can integrate logic from performance-based view for keyword searches"""
+        # Simplified - look for challenge keywords
+        challenge_keywords = ['challenge', 'difficult', 'complex', 'new', 'first time']
+        challenges = []
+
+        if feature.description:
+            for keyword in challenge_keywords:
+                if keyword in feature.description.lower():
+                    challenges.append(keyword)
+
+        return challenges
+
+    def map_feature_to_skills(self, feature, system):
+        """Map feature to skills developed - can enhance"""
+        # Simplified mapping
+        feature_skills = []
+        for skill in system.skills_developed.all():
+            if skill.name.lower() in feature.description.lower():
+                feature_skills.append(skill)
+        return feature_skills[:3]
+
+    def assess_feature_complexity(self, feature):
+        """Assess individual feature complexity - can enhance"""
+        # Simplified assessment based on description length and keywords
+        complexity_keywords = ['api', 'database', 'authentication', 'real-time', 'async']
+        # Base complexity
+        score = 5
+
+        if feature.description:
+            score += min(len(feature.description) // 100, 3)
+            for keyword in complexity_keywords:
+                if keyword in feature.description.lower():
+                    score += 1
+
+        return min(score, 10)
+
+    def get_implementation_insights(self, feature):
+        """Extract implementation insights from feature - can enhance"""
+        # Simplified - could be enhanced with NLP
+        insights = []
+        if feature.description and len(feature.description) > 100:
+            insights.append("Detailed implementation documented")
+
+        return insights
+
+    def identify_feature_learning_moments(self, features_data):
+        """Identify key learning moments from features"""
+        learning_moments = []
+
+        for feature_data in features_data:
+            if feature_data['learning_challenges']:
+                learning_moments.append({
+                    'feature': feature_data['feature'].title,
+                    'challenges': feature_data['learning_challenges'],
+                    'skills': [s.name for s in feature_data['skills_applied']]
+                })
+
+        return learning_moments[:3]
+
+    def get_dependency_learning_context(self, dependency):
+        """Get learning context for dependency"""
+        # Why was this dependency chosen? What did it teach?
+        return f"Learning {dependency.name} for {dependency.description}" if dependency.description else ""
+
+    def assess_integration_complexity(self, dependency):
+        """Assess complexity of integrating dependency - can enhance"""
+        # Simplified assessment - default medium complexity
+        return 6
+
+    def map_dependency_skills(self, dependency, system):
+        """Map dependency to skills required/learned - can enhance"""
+        # Simplified - for now return empty list
+        return []
+
+    def suggest_alternatives(self, dependency):
+        """Suggest alternative dependencies - can enhance"""
+        # Simplified return empty list - could be enhanced w alternative database
+        return []
+
+
 # ===================== GOLD STANDARD VIEWS - BEFORE LEARNING FOCUS REWORK =====================
 
 
