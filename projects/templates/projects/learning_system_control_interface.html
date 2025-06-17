@@ -1,0 +1,1068 @@
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+{% load system_tags %}
+
+{% block title %}{{ system.title }} - Learning Control Interface{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+<style>
+    /* Learning-specific styling */
+    .learning-stage-badge {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .learning-stage-tutorial { background: rgba(255, 183, 77, 0.2); color: #FFB74D; border: 1px solid #FFB74D; }
+    .learning-stage-guided { background: rgba(129, 199, 132, 0.2); color: #81C784; border: 1px solid #81C784; }
+    .learning-stage-independent { background: rgba(100, 181, 246, 0.2); color: #64B5F6; border: 1px solid #64B5F6; }
+    .learning-stage-refactoring { background: rgba(186, 104, 200, 0.2); color: #BA68C8; border: 1px solid #BA68C8; }
+    .learning-stage-contributing { background: rgba(79, 195, 247, 0.2); color: #4FC3F7; border: 1px solid #4FC3F7; }
+    .learning-stage-teaching { background: rgba(255, 213, 79, 0.2); color: #FFD54F; border: 1px solid #FFD54F; }
+    
+    .skill-pill {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        margin: 0.2rem;
+        background: rgba(100, 181, 246, 0.15);
+        color: var(--color-info);
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border: 1px solid rgba(100, 181, 246, 0.3);
+    }
+    
+    .portfolio-ready-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    
+    .portfolio-ready-yes {
+        background: rgba(76, 175, 80, 0.2);
+        color: var(--color-success);
+        border: 1px solid var(--color-success);
+    }
+    
+    .portfolio-ready-no {
+        background: rgba(255, 152, 0, 0.2);
+        color: var(--color-warning);
+        border: 1px solid var(--color-warning);
+    }
+    
+    .learning-metric-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .learning-metric-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-2px);
+    }
+    
+    .metric-value-large {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .timeline-event {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        border-left: 4px solid var(--color-teal);
+    }
+    
+    .timeline-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    
+    .timeline-icon.milestone-breakthrough { background: rgba(186, 104, 200, 0.2); color: var(--color-purple); }
+    .timeline-icon.milestone-completion { background: rgba(76, 175, 80, 0.2); color: var(--color-success); }
+    .timeline-icon.milestone-first_time { background: rgba(255, 213, 79, 0.2); color: var(--color-yellow); }
+    
+    .assessment-criteria {
+        display: grid;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .criteria-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .criteria-score {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .score-excellent { color: var(--color-success); }
+    .score-good { color: var(--color-info); }
+    .score-fair { color: var(--color-warning); }
+    .score-poor { color: var(--color-danger); }
+    
+    .skill-progression-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .skill-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+    
+    .skill-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--color-info);
+    }
+    
+    .mastery-level {
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .mastery-beginner { background: rgba(255, 183, 77, 0.2); color: #FFB74D; }
+    .mastery-intermediate { background: rgba(100, 181, 246, 0.2); color: #64B5F6; }
+    .mastery-advanced { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
+    .mastery-expert { background: rgba(255, 213, 79, 0.2); color: #FFD54F; }
+    
+    .recommendation-card {
+        background: rgba(255, 245, 157, 0.1);
+        border: 1px solid rgba(255, 245, 157, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .recommendation-priority-high {
+        border-left: 4px solid var(--color-danger);
+    }
+    
+    .recommendation-priority-medium {
+        border-left: 4px solid var(--color-warning);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="enhanced-system-control-interface">
+    
+    <!-- System Header -->
+    <header class="system-header">
+        <div class="unified-dashboard-container navy">
+            <div class="system-header-content">
+                <div class="system-meta">
+                    <div class="system-type-badge">
+                        <i class="fas {{ system.system_type.icon|default:'cube' }}"></i>
+                        {{ system.system_type.name }}
+                    </div>
+                    <div class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
+                        {{ system.get_learning_stage_display }}
+                    </div>
+                </div>
+                
+                <h1 class="system-title">{{ system.title }}</h1>
+                
+                <div class="system-header-metrics">
+                    <div class="header-metric">
+                        <div class="metric-value">{{ system.skills_developed.count }}</div>
+                        <div class="metric-label">Skills Gained</div>
+                    </div>
+                    <div class="header-metric">
+                        <div class="metric-value">{{ system.completion_percent|floatformat:0 }}%</div>
+                        <div class="metric-label">Complete</div>
+                    </div>
+                    <div class="header-metric">
+                        <div class="portfolio-ready-indicator {% if system.portfolio_ready %}portfolio-ready-yes{% else %}portfolio-ready-no{% endif %}">
+                            <i class="fas {% if system.portfolio_ready %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+                            {% if system.portfolio_ready %}Portfolio Ready{% else %}Needs Work{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="control-interface-layout">
+        
+        <!-- Control Panel Navigation -->
+        <aside class="control-panel-nav">
+            <nav class="panel-navigation">
+                <div class="nav-header">
+                    <h3>Learning Control Panels</h3>
+                </div>
+                
+                <div class="nav-panels">
+                    {% for panel in control_panels %}
+                    <a href="?panel={{ panel.id }}" 
+                       class="nav-panel-item {% if panel.id == active_panel %}active{% endif %}">
+                        <div class="panel-nav-icon">
+                            <i class="fas fa-{{ panel.icon }}"></i>
+                        </div>
+                        <div class="panel-nav-content">
+                            <div class="panel-nav-name">{{ panel.name }}</div>
+                            {% if panel.count is not None %}
+                            <div class="panel-nav-count">{{ panel.count }}</div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Control Content -->
+        <main class="control-content-area">
+
+            <!-- Panel Header -->
+            <header class="control-content-header">
+                {% for panel in control_panels %}
+                {% if panel.id == active_panel %}
+                <h2 class="panel-title">
+                    <div class="panel-title-icon">
+                        <i class="fas fa-{{ panel.icon }}"></i>
+                    </div>
+                    {{ panel.name }}
+                </h2>
+                <p class="panel-description">{{ panel.description }}</p>
+                {% endif %}
+                {% endfor %}
+            </header>
+
+            <!-- Dynamic Panel Content -->
+            <div class="panel-content-container">
+
+                {% if active_panel == 'overview' %}
+                <!-- Learning Overview Panel -->
+                <div class="panel-content-grid grid-2-col">
+
+                    <!-- Learning Stage & Progress -->
+                    <div class="unified-dashboard-container teal">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Learning Progress</h3>
+                        </div>
+                        
+                        <div class="metric-content">
+                            <div class="metric-value">{{ panel_data.development_progress.completion_score|floatformat:0 }}%</div>
+                            <div class="metric-label">Project Completion</div>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                                <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Learning Progress</span>
+                                <span style="font-size: 0.8rem; color: var(--color-teal);">{{ panel_data.development_progress.readiness_score }}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ panel_data.development_progress.readiness_score }}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">Stage</div>
+                                <div class="learning-stage-badge learning-stage-{{ panel_data.learning_stage.current }}">
+                                    {{ panel_data.learning_stage.display }}
+                                </div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">Portfolio</div>
+                                <div class="portfolio-ready-indicator {% if panel_data.development_progress.portfolio_ready %}portfolio-ready-yes{% else %}portfolio-ready-no{% endif %}">
+                                    <i class="fas {% if panel_data.development_progress.portfolio_ready %}fa-check{% else %}fa-clock{% endif %}"></i>
+                                    {% if panel_data.development_progress.portfolio_ready %}Ready{% else %}In Progress{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Summary -->
+                    <div class="unified-dashboard-container purple">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Skills Developed</h3>
+                        </div>
+                        
+                        <div class="metric-content">
+                            <div class="metric-value">{{ panel_data.skills_summary.total_count }}</div>
+                            <div class="metric-label">Skills Gained</div>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem;">
+                            <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">Primary Skills</div>
+                            <div class="skills-pills">
+                                {% for skill in panel_data.skills_summary.primary_skills %}
+                                <span class="skill-pill">{{ skill.name }}</span>
+                                {% empty %}
+                                <span style="color: var(--color-text-secondary); font-style: italic;">No skills tracked yet</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem;">
+                            <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Learning Velocity</div>
+                            <div style="color: var(--color-purple); font-weight: 600;">
+                                {{ panel_data.learning_velocity.skills_per_month|floatformat:1 }} skills/month
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time Investment -->
+                    <div class="unified-dashboard-container coral">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Time Investment</h3>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-coral);">
+                                    {{ panel_data.time_investment.actual_hours|default:"--" }}
+                                </div>
+                                <div class="metric-label">Actual Hours</div>
+                            </div>
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-coral);">
+                                    {{ panel_data.time_investment.estimated_hours|default:"--" }}
+                                </div>
+                                <div class="metric-label">Estimated Hours</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Learning Efficiency</span>
+                            <span style="color: var(--color-coral); font-weight: 600;">
+                                {{ panel_data.time_investment.efficiency|floatformat:1 }}x
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Code Metrics -->
+                    <div class="unified-dashboard-container mint">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Development Activity</h3>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-mint);">
+                                    {{ panel_data.code_metrics.commits|default:"0" }}
+                                </div>
+                                <div class="metric-label">Commits</div>
+                            </div>
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-mint);">
+                                    {{ panel_data.code_metrics.lines_of_code|default:"0" }}
+                                </div>
+                                <div class="metric-label">Lines of Code</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Activity Level</span>
+                            <span style="color: var(--color-mint); font-weight: 600; text-transform: capitalize;">
+                                {{ panel_data.code_metrics.activity_level }}
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+
+                {% elif active_panel == 'skills' %}
+                <!-- Skills Progression Panel -->
+                <div class="panel-content-grid grid-1-col">
+
+                    {% if panel_data.skills_analysis %}
+                    <div class="skills-progression-container">
+                        {% for skill_data in panel_data.skills_analysis %}
+                        <div class="skill-progression-item">
+                            <div class="skill-header">
+                                <div class="skill-name">{{ skill_data.skill.name }}</div>
+                                <div class="mastery-level mastery-{{ skill_data.mastery_level }}">
+                                    {{ skill_data.mastery_level|title }}
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">How Learned</div>
+                                    <div>{{ skill_data.how_learned|default:"Through project development" }}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Proficiency Gained</div>
+                                    <div>{{ skill_data.proficiency_gained|default:"Intermediate" }}</div>
+                                </div>
+                            </div>
+                            
+                            {% if skill_data.learning_context %}
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Learning Context</div>
+                                <div>{{ skill_data.learning_context }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if skill_data.breakthrough_moment %}
+                            <div style="background: rgba(255, 213, 79, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--color-yellow);">
+                                <div style="font-size: 0.8rem; color: var(--color-yellow); margin-bottom: 0.5rem; font-weight: 600;">
+                                    <i class="fas fa-lightbulb"></i> Breakthrough Moment
+                                </div>
+                                <div>{{ skill_data.breakthrough_moment }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if skill_data.other_projects %}
+                            <div style="margin-top: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Also used in:</div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    {% for project in skill_data.other_projects %}
+                                    <span style="padding: 0.2rem 0.6rem; background: rgba(255, 255, 255, 0.1); border-radius: 12px; font-size: 0.8rem;">
+                                        {{ project.system.title }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Skill Gaps & Recommendations -->
+                    {% if panel_data.skill_gaps or panel_data.recommended_next_skills %}
+                    <div class="unified-dashboard-container yellow">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">
+                                <i class="fas fa-lightbulb" style="margin-right: 0.75rem;"></i>
+                                Learning Opportunities
+                            </h3>
+                        </div>
+                        
+                        {% if panel_data.skill_gaps %}
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="color: var(--color-warning); margin-bottom: 0.75rem;">Potential Skill Gaps</h4>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                {% for gap in panel_data.skill_gaps %}
+                                <span class="skill-pill" style="background: rgba(255, 152, 0, 0.2); color: var(--color-warning); border-color: var(--color-warning);">
+                                    {{ gap }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if panel_data.recommended_next_skills %}
+                        <div>
+                            <h4 style="color: var(--color-yellow); margin-bottom: 0.75rem;">Recommended Next Skills</h4>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                {% for skill in panel_data.recommended_next_skills %}
+                                <span class="skill-pill" style="background: rgba(255, 213, 79, 0.2); color: var(--color-yellow); border-color: var(--color-yellow);">
+                                    {{ skill }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="unified-dashboard-container purple">
+                        <div style="text-align: center; padding: 4rem;">
+                            <i class="fas fa-brain" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1.5rem;"></i>
+                            <h3>No Skills Tracked Yet</h3>
+                            <p>Start documenting the skills you're developing in this project to see your learning progression.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                {% elif active_panel == 'timeline' %}
+                <!-- Learning Timeline Panel -->
+                <div class="panel-content-grid grid-1-col">
+
+                    {% if panel_data.timeline_events %}
+                    <div class="unified-dashboard-container gunmetal">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Learning Journey Timeline</h3>
+                        </div>
+                        
+                        <div class="timeline-container" style="margin-top: 1.5rem;">
+                            {% for event in panel_data.timeline_events %}
+                            <div class="timeline-event">
+                                <div class="timeline-icon milestone-{{ event.type }}">
+                                    <i class="fas fa-{{ event.icon }}"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <h4 style="margin: 0; color: var(--color-text-primary);">{{ event.title }}</h4>
+                                        <span style="font-size: 0.8rem; color: var(--color-text-secondary);">
+                                            {{ event.date|date:"M d, Y" }}
+                                        </span>
+                                    </div>
+                                    <p style="margin: 0; color: var(--color-text-secondary);">{{ event.description }}</p>
+                                    
+                                    {% if event.related_post %}
+                                    <div style="margin-top: 0.75rem;">
+                                        <a href="{% url 'blog:post_detail' event.related_post.slug %}" 
+                                           style="color: var(--color-info); text-decoration: none; font-size: 0.9rem;">
+                                            <i class="fas fa-file-text" style="margin-right: 0.5rem;"></i>
+                                            Read related DataLog
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if panel_data.learning_duration %}
+                        <div style="margin-top: 2rem; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-gunmetal);">
+                                        {{ panel_data.learning_duration.total_days }}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Total Days</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-gunmetal);">
+                                        {{ panel_data.major_breakthroughs }}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Breakthroughs</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-gunmetal);">
+                                        {{ panel_data.completion_milestones }}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Completions</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% else %}
+                    <div class="unified-dashboard-container gunmetal">
+                        <div style="text-align: center; padding: 4rem;">
+                            <i class="fas fa-timeline" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1.5rem;"></i>
+                            <h3>No Timeline Events Yet</h3>
+                            <p>Add learning milestones and breakthroughs to track your development journey.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                {% elif active_panel == 'portfolio' %}
+                <!-- Portfolio Assessment Panel -->
+                <div class="panel-content-grid grid-1-col">
+
+                    <!-- Overall Assessment -->
+                    <div class="unified-dashboard-container {% if panel_data.overall_ready %}teal{% else %}yellow{% endif %}">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Portfolio Readiness Assessment</h3>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 2rem;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; font-weight: 700; margin-bottom: 0.5rem; color: {% if panel_data.overall_ready %}var(--color-teal){% else %}var(--color-yellow){% endif %};">
+                                    {{ panel_data.readiness_score|floatformat:0 }}%
+                                </div>
+                                <div style="font-size: 0.9rem; color: var(--color-text-secondary);">Overall Score</div>
+                                <div style="margin-top: 1rem;">
+                                    <div class="portfolio-ready-indicator {% if panel_data.overall_ready %}portfolio-ready-yes{% else %}portfolio-ready-no{% endif %}">
+                                        <i class="fas {% if panel_data.overall_ready %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+                                        {% if panel_data.overall_ready %}Portfolio Ready{% else %}Needs Improvement{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 style="margin-bottom: 1rem;">Assessment Breakdown</h4>
+                                <div class="assessment-criteria">
+                                    {% for criterion in panel_data.assessment_criteria %}
+                                    <div class="criteria-item">
+                                        <div>
+                                            <div style="font-weight: 600;">{{ criterion.name }}</div>
+                                            <div style="font-size: 0.8rem; color: var(--color-text-secondary);">{{ criterion.description }}</div>
+                                        </div>
+                                        <div class="criteria-score score-{% if criterion.score >= 80 %}excellent{% elif criterion.score >= 60 %}good{% elif criterion.score >= 40 %}fair{% else %}poor{% endif %}">
+                                            {{ criterion.score }}%
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    {% if panel_data.recommendations %}
+                    <div class="unified-dashboard-container coral">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">
+                                <i class="fas fa-lightbulb" style="margin-right: 0.75rem;"></i>
+                                Improvement Recommendations
+                            </h3>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem;">
+                            {% for rec in panel_data.recommendations %}
+                            <div class="recommendation-card recommendation-priority-{{ rec.priority }}">
+                                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 0.5rem;">
+                                    <h4 style="margin: 0; color: var(--color-text-primary);">{{ rec.area }}</h4>
+                                    <span style="font-size: 0.8rem; padding: 0.2rem 0.6rem; background: rgba(255, 152, 0, 0.2); color: var(--color-warning); border-radius: 12px; text-transform: uppercase;">
+                                        {{ rec.priority }} Priority
+                                    </span>
+                                </div>
+                                <p style="margin: 0.5rem 0; color: var(--color-text-secondary);">{{ rec.suggestion }}</p>
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
+                                    Current Score: {{ rec.current_score }}%
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                {% elif active_panel == 'datalogs' %}
+                <!-- DataLogs Panel (Keep existing structure with learning context) -->
+                <div class="panel-content-grid grid-1-col">
+
+                    {% if panel_data.related_logs %}
+                    <div class="unified-dashboard-container lavender">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Learning Documentation</h3>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem;">
+                            {% for log_entry in panel_data.related_logs %}
+                            <div class="datalog-item">
+                                <div class="datalog-header">
+                                    <h4><a href="{% url 'blog:post_detail' log_entry.post.slug %}">{{ log_entry.post.title }}</a></h4>
+                                    <span class="datalog-date">{{ log_entry.post.created_at|date:"M d, Y" }}</span>
+                                </div>
+                                
+                                {% if log_entry.post.excerpt %}
+                                <p class="datalog-excerpt">{{ log_entry.post.excerpt }}</p>
+                                {% endif %}
+                                
+                                <div class="datalog-meta">
+                                    <span class="connection-type">{{ log_entry.connection_type|title }}</span>
+                                    {% if log_entry.post.tags.all %}
+                                    <div class="datalog-tags">
+                                        {% for tag in log_entry.post.tags.all %}
+                                        <span class="tag">{{ tag.name }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="datalog-actions">
+                                    <a href="{% url 'blog:post_detail' log_entry.post.slug %}" class="datalog-action">
+                                        <i class="fas fa-external-link-alt"></i> Read Full Post
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div style="margin-top: 2rem; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; text-align: center;">
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-lavender);">
+                                        {{ panel_data.learning_posts.count }}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Learning Posts</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-lavender);">
+                                        {{ panel_data.challenge_posts.count }}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Challenge Posts</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <div class="unified-dashboard-container lavender">
+                        <div style="text-align: center; padding: 4rem;">
+                            <i class="fas fa-file-text" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1.5rem;"></i>
+                            <h3>No DataLogs Connected</h3>
+                            <p>Document your learning journey by writing DataLogs about this project's challenges and breakthroughs.</p>
+                            <a href="{% url 'blog:post_create' %}" class="datalog-action" style="margin-top: 1rem; display: inline-block;">
+                                <i class="fas fa-plus"></i> Create Learning DataLog
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                {% elif active_panel == 'technologies' %}
+                <!-- Technologies Panel with Learning Context -->
+                <div class="panel-content-grid grid-1-col">
+
+                    {% if panel_data.tech_analysis %}
+                    <div class="tech-analysis-grid">
+                        {% for analysis in panel_data.tech_analysis %}
+                        <div class="tech-analysis-card">
+                            <div class="tech-card-header">
+                                <div class="tech-name">{{ analysis.technology.name }}</div>
+                                <span class="tech-usage-count">{{ analysis.learning_context|title }}</span>
+                            </div>
+                            <div class="tech-icon" style="display: inline; font-size: 1.5rem; color: var(--color-coral);">
+                                <i class="fas {{ analysis.technology.icon|default:'cogs' }}"></i>
+                            </div>
+
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Learning Impact</div>
+                                <div style="color: var(--color-coral); font-weight: 500;">{{ analysis.learning_impact }}/10</div>
+                            </div>
+
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Mastery Level</div>
+                                <div class="mastery-level mastery-{{ analysis.mastery_level }}">{{ analysis.mastery_level|title }}</div>
+                            </div>
+
+                            {% if analysis.skill_connections %}
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Related Skills</div>
+                                <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+                                    {% for skill in analysis.skill_connections %}
+                                    <span class="skill-pill" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">{{ skill.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if analysis.other_uses %}
+                            <div class="tech-similar-systems">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">Also used in:</div>
+                                {% for similar_system in analysis.other_uses %}
+                                <div class="similar-system-item">
+                                    <i class="fas {{ similar_system.system_type.icon|default:'cube' }}"></i>
+                                    <span>{{ similar_system.title }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Technology Learning Summary -->
+                    <div class="unified-dashboard-container coral">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Technology Learning Summary</h3>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.5rem;">
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-coral);">
+                                    {{ panel_data.learning_new_techs|length }}
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">New Technologies</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-coral);">
+                                    {{ panel_data.mastery_showcase|length }}
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Mastery Showcase</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-coral);">
+                                    {{ panel_data.primary_stack|length }}
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Primary Stack</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <div class="unified-dashboard-container coral">
+                        <div style="text-align: center; padding: 4rem;">
+                            <i class="fas fa-cogs" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1.5rem;"></i>
+                            <h3>No Technologies Documented</h3>
+                            <p>Add the technologies used in this project to showcase your technical learning.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                {% elif active_panel == 'features' %}
+                <!-- Features Panel with Learning Challenges -->
+                <div class="panel-content-grid grid-1-col">
+
+                    {% if panel_data.features_data %}
+                    <div class="features-learning-container">
+                        {% for feature_data in panel_data.features_data %}
+                        <div class="feature-learning-item" style="background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                                <h4 style="margin: 0; color: var(--color-text-primary);">{{ feature_data.feature.title }}</h4>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Complexity:</span>
+                                    <span style="color: var(--color-info); font-weight: 600;">{{ feature_data.complexity_contribution }}/10</span>
+                                </div>
+                            </div>
+
+                            {% if feature_data.feature.description %}
+                            <p style="color: var(--color-text-secondary); margin-bottom: 1rem;">{{ feature_data.feature.description|truncatewords:30 }}</p>
+                            {% endif %}
+
+                            {% if feature_data.learning_challenges %}
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-warning); margin-bottom: 0.5rem; font-weight: 600;">
+                                    <i class="fas fa-exclamation-triangle"></i> Learning Challenges
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    {% for challenge in feature_data.learning_challenges %}
+                                    <span style="padding: 0.2rem 0.6rem; background: rgba(255, 152, 0, 0.2); color: var(--color-warning); border-radius: 12px; font-size: 0.8rem;">
+                                        {{ challenge }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if feature_data.skills_applied %}
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-info); margin-bottom: 0.5rem; font-weight: 600;">
+                                    <i class="fas fa-brain"></i> Skills Applied
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    {% for skill in feature_data.skills_applied %}
+                                    <span class="skill-pill">{{ skill.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if feature_data.implementation_insights %}
+                            <div style="background: rgba(100, 181, 246, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--color-info);">
+                                <div style="font-size: 0.8rem; color: var(--color-info); margin-bottom: 0.5rem; font-weight: 600;">
+                                    <i class="fas fa-lightbulb"></i> Implementation Insights
+                                </div>
+                                {% for insight in feature_data.implementation_insights %}
+                                <div style="color: var(--color-text-secondary);">{{ insight }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Feature Learning Summary -->
+                    {% if panel_data.learning_moments %}
+                    <div class="unified-dashboard-container mint">
+                        <div class="unified-container-header">
+                            <h3 class="unified-container-title">Key Learning Moments</h3>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem;">
+                            {% for moment in panel_data.learning_moments %}
+                            <div style="padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; margin-bottom: 1rem;">
+                                <h4 style="margin: 0 0 0.5rem 0; color: var(--color-mint);">{{ moment.feature }}</h4>
+                                <div style="display: flex; gap: 1rem; align-items: center;">
+                                    <div>
+                                        <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Challenges:</span>
+                                        <span style="color: var(--color-warning);">{{ moment.challenges|join:", " }}</span>
+                                    </div>
+                                    <div>
+                                        <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Skills:</span>
+                                        <span style="color: var(--color-mint);">{{ moment.skills|join:", " }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="unified-dashboard-container mint">
+                        <div style="text-align: center; padding: 4rem;">
+                            <i class="fas fa-list" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1.5rem;"></i>
+                            <h3>No Features Documented</h3>
+                            <p>Document the features you've built to showcase implementation challenges and learning moments.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                {% elif active_panel == 'dependencies' %}
+                <!-- Dependencies Panel (Keep existing structure with learning context) -->
+                <div class="panel-content-grid grid-1-col">
+
+                    {% if panel_data.dependencies_data %}
+                    <div class="dependencies-learning-container">
+                        {% for dep_data in panel_data.dependencies_data %}
+                        <div style="background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                                <h4 style="margin: 0; color: var(--color-text-primary);">{{ dep_data.dependency.name }}</h4>
+                                <span style="padding: 0.2rem 0.6rem; background: rgba(100, 181, 246, 0.2); color: var(--color-info); border-radius: 12px; font-size: 0.8rem;">
+                                    {{ dep_data.dependency.purpose|default:"Library" }}
+                                </span>
+                            </div>
+
+                            {% if dep_data.dependency.description %}
+                            <p style="color: var(--color-text-secondary); margin-bottom: 1rem;">{{ dep_data.dependency.description }}</p>
+                            {% endif %}
+
+                            {% if dep_data.learning_rationale %}
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-info); margin-bottom: 0.5rem; font-weight: 600;">
+                                    <i class="fas fa-graduation-cap"></i> Learning Context
+                                </div>
+                                <div style="color: var(--color-text-secondary);">{{ dep_data.learning_rationale }}</div>
+                            </div>
+                            {% endif %}
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Integration Complexity</div>
+                                    <div style="color: var(--color-info); font-weight: 600;">{{ dep_data.integration_challenges }}/10</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Version</div>
+                                    <div style="color: var(--color-text-primary);">{{ dep_data.dependency.version|default:"Latest" }}</div>
+                                </div>
+                            </div>
+
+                            {% if dep_data.skill_requirements %}
+                            <div style="margin-top: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-info); margin-bottom: 0.5rem; font-weight: 600;">Required Skills</div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    {% for skill in dep_data.skill_requirements %}
+                                    <span class="skill-pill">{{ skill.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% else %}
+                    <div class="unified-dashboard-container navy">
+                        <div style="text-align: center; padding: 4rem;">
+                            <i class="fas fa-link" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1.5rem;"></i>
+                            <h3>No Dependencies Documented</h3>
+                            <p>Document the external libraries and dependencies used to show integration skills.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </main>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="{% static 'projects/js/dashboard_panels.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the learning system control interface
+        const manager = new UnifiedDashboardManager();
+        
+        // Add smooth transitions between panels
+        const panelLinks = document.querySelectorAll('.nav-panel-item');
+        panelLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Remove active class from all panels
+                panelLinks.forEach(l => l.classList.remove('active'));
+                // Add active class to clicked panel
+                this.classList.add('active');
+            });
+        });
+        
+        // Animate skill pills
+        const skillPills = document.querySelectorAll('.skill-pill');
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const pillObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '0';
+                    entry.target.style.transform = 'translateY(20px)';
+                    entry.target.style.transition = 'all 0.4s ease';
+                    
+                    setTimeout(() => {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }, Math.random() * 200);
+                }
+            });
+        }, observerOptions);
+        
+        skillPills.forEach(pill => {
+            pillObserver.observe(pill);
+        });
+        
+        // Animate timeline events
+        const timelineEvents = document.querySelectorAll('.timeline-event');
+        timelineEvents.forEach((event, index) => {
+            event.style.opacity = '0';
+            event.style.transform = 'translateX(-30px)';
+            event.style.transition = 'all 0.6s ease';
+            
+            setTimeout(() => {
+                event.style.opacity = '1';
+                event.style.transform = 'translateX(0)';
+            }, index * 150);
+        });
+    });
+</script>
+{% endblock %}

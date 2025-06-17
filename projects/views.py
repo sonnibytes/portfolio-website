@@ -854,9 +854,7 @@ class LearningSystemControlInterfaceView(DetailView):
         return {
             'timeline_events': timeline_events,
             'learning_duration': self.calculate_learning_duration(system),
-            'major_breakthroughs': milestones.filter(
-                milestone_type__in['breakthrough', 'first_time']
-            ).count(),
+            'major_breakthroughs': milestones.filter(milestone_type__in=['breakthrough', 'first_time']).count(),
             'completion_milestones': milestones.filter(
                 milestone_type='completion'
             ).count()
