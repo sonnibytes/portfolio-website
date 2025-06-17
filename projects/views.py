@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy, reverse
 
-from django.db.models import Count, Avg, Q, Sum, Max, Min, F, Prefetch, OuterRef
+from django.db.models import Count, Avg, Q, Sum, Max, Min, F, Prefetch, OuterRef, Case, When, Value, IntegerField
 from django.db.models.functions import TruncMonth, Extract
 from django.http import JsonResponse
 from django.utils import timezone
@@ -300,7 +300,7 @@ class EnhancedLearningSystemListView(ListView):
                 "technologies",
                 "skills_developed",  # Important for learning cards
                 "milestones",  # For recent achievements
-                "systemskillgain_set__skill",  # For skill gain details
+                "skill_gains__skill",  # For skill gain details
             )
             .order_by("-updated_at")
         )
@@ -325,11 +325,11 @@ class EnhancedLearningSystemListView(ListView):
         # TIME INVESTMENT FILTERING
         time_filter = self.request.GET.get("time_investment")
         if time_filter == "short":  # <20 hours
-            queryset = queryset.filter(development_time_hours__lt=20)
+            queryset = queryset.filter(actual_dev_hours__lt=20)
         elif time_filter == "medium":  # 20-50 hours
-            queryset = queryset.filter(development_time_hours__range=[20, 50])
+            queryset = queryset.filter(actual_dev_hours__range=[20, 50])
         elif time_filter == "long":  # 50+ hours
-            queryset = queryset.filter(development_time_hours__gte=50)
+            queryset = queryset.filter(actual_dev_hours__gte=50)
 
         # Technology filter (keep existing)
         tech_filter = self.request.GET.get("tech")
@@ -342,8 +342,6 @@ class EnhancedLearningSystemListView(ListView):
             queryset = queryset.filter(
                 Q(title__icontains=search)
                 | Q(description__icontains=search)
-                | Q(learning_objectives__icontains=search)
-                | Q(key_learnings__icontains=search)
                 | Q(skills_developed__name__icontains=search)
                 | Q(technologies__name__icontains=search)
             ).distinct()
@@ -359,23 +357,30 @@ class EnhancedLearningSystemListView(ListView):
             ).order_by("-skills_count")
         elif order == "complexity_evolution":
             # Order by complexity progression
-            queryset = queryset.order_by("-complexity")
+            queryset = queryset.order_by("-complexity", "-updated_at")
         elif order == "portfolio_readiness":
             # Portfolio ready items first
             queryset = queryset.order_by("-portfolio_ready", "-updated_at")
         elif order == "time_investment":
-            queryset = queryset.order_by("-development_time_hours")
+            # Use actual_dev_hours w fallback to estimated_dev_hours
+            queryset = queryset.order_by(
+                F('actual_dev_hours').desc(nulls_last=True),
+                F('estimated_dev_hours').desc(nulls_last=True),
+                "-updated_at"
+            )
         elif order == "learning_stage":
-            # Order by learning progression
-            stage_order = {
-                "tutorial": 1,
-                "guided": 2,
-                "independent": 3,
-                "refactoring": 4,
-                "teaching": 5,
-            }
-            # This would need custom ordering logic
-            queryset = queryset.order_by("-updated_at")  # Fallback for now
+            # Custom ordering by learning stage progression
+            stage_order = Case(
+                When(learning_stage='tutorial', then=Value(1)),
+                When(learning_stage='guided', then=Value(2)),
+                When(learning_stage='independent', then=Value(3)),
+                When(learning_stage='refactoring', then=Value(4)),
+                When(learning_stage='contributing', then=Value(5)),
+                When(learning_stage='teaching', then=Value(6)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+            queryset = queryset.order_by(stage_order=stage_order).order_by('-stage_order', '-updated_at')
 
         return queryset
 
@@ -388,23 +393,33 @@ class EnhancedLearningSystemListView(ListView):
             {
                 # Learning stage distribution
                 "learning_stage_stats": self.get_learning_stage_distribution(),
+
                 # Portfolio readiness stats
                 "portfolio_stats": self.get_portfolio_readiness_stats(),
+
                 # Skills statistics
                 "skills_stats": self.get_skills_statistics(),
+
                 # Time investment breakdown
                 "time_investment_stats": self.get_time_investment_stats(),
+
                 # Technology mastery (enhanced with learning context)
                 "tech_mastery": self.get_technology_mastery(),
+
                 # Available filter options
                 "available_skills": self.get_available_skills(),
                 "available_learning_stages": SystemModule.LEARNING_STAGE_CHOICES,
+
                 # Current filters for display
                 "active_filters": self.get_active_learning_filters(),
+
                 # Recent learning activity
-                "recent_milestones": LearningMilestone.objects.order_by(
-                    "-date_achieved"
-                )[:5],
+                "recent_milestones": LearningMilestone.objects.select_related(
+                    'system', 'related_skill'
+                ).order_by("-date_achieved")[:5],
+
+                # Quick stats for header (learning-focused)
+                'quick_stats': self.get_learning_quick_stats(),
             }
         )
 
@@ -438,41 +453,51 @@ class EnhancedLearningSystemListView(ListView):
 
     def get_skills_statistics(self):
         """Get skills development statistics"""
-
         # Skills with most systems
         top_skills = (
-            Skill.objects.annotate(systems_count=Count("systemskillgain"))
+            Skill.objects.annotate(systems_count=Count("project_gains"))
             .filter(systems_count__gt=0)
             .order_by("-systems_count")[:8]
         )
 
+        total_skill_gains = SystemSkillGain.objects.count()
+        total_systems = SystemModule.objects.count()
+
         return {
             "total_skills": SystemSkillGain.objects.values("skill").distinct().count(),
+            "total_skill_gains": total_skill_gains,
             "top_skills": top_skills,
-            "avg_skills_per_system": SystemSkillGain.objects.count()
-            / max(SystemModule.objects.count(), 1),
+            "avg_skills_per_system": round(total_skill_gains / max(total_systems, 1), 1)
         }
 
     def get_time_investment_stats(self):
         """Get time investment distribution"""
-        systems_with_time = SystemModule.objects.exclude(
-            development_time_hours__isnull=True
-        )
+        # Use actual_dev_hours primarily, w estimated as fallback
+        systems_with_actual_time = SystemModule.objects.exclude(actual_dev_hours__isnull=True)
+        systems_with_estimated_time = SystemModule.objects.exclude(estimated_dev_hours__isnull=True)
+
+        # Combine acctual and estimated for broader coverage
+        actual_total = systems_with_actual_time.aggregate(total=Sum('actual_dev_hours'))['total'] or 0
+        estimated_total = systems_with_estimated_time.aggregate(total=Sum('estimated_dev_hours'))['total'] or 0
+
+        # For categorization, prioritize actual hours but use estimated as fallback
+        short_count = systems_with_actual_time.filter(actual_dev_hours__lt=20).count()
+        medium_count = systems_with_actual_time.filter(actual_dev_hours__range=[20, 50]).count()
+        long_count = systems_with_actual_time.filter(actual_dev_hours__gte=50).count()
+
+        # If no actual hours, use estimated
+        if short_count + medium_count + long_count == 0:
+            short_count = systems_with_estimated_time.filter(estimated_dev_hours__lt=20).count()
+            medium_count = systems_with_estimated_time.filter(estimated_dev_hours__range=[20, 50]).count()
+            long_count = systems_with_estimated_time.filter(estimated_dev_hours__gte=50).count()
 
         return {
-            "short": systems_with_time.filter(development_time_hours__lt=20).count(),
-            "medium": systems_with_time.filter(
-                development_time_hours__range=[20, 50]
-            ).count(),
-            "long": systems_with_time.filter(development_time_hours__gte=50).count(),
-            "total_hours": systems_with_time.aggregate(
-                total=Sum("development_time_hours")
-            )["total"]
-            or 0,
-            "avg_hours": systems_with_time.aggregate(avg=Avg("development_time_hours"))[
-                "avg"
-            ]
-            or 0,
+            'short': short_count,
+            'medium': medium_count,
+            'long': long_count,
+            'total_hours': actual_total or estimated_total,
+            'avg_hours': round((actual_total or estimated_total) / max(SystemModule.objects.count(), 1), 1),
+            'systems_with_time_data': systems_with_actual_time.count() or systems_with_estimated_time.count(),
         }
 
     def get_technology_mastery(self):
@@ -510,7 +535,7 @@ class EnhancedLearningSystemListView(ListView):
         """Get skills available for filtering"""
 
         return (
-            Skill.objects.filter(systemskillgain__isnull=False)
+            Skill.objects.filter(project_gains__isnull=False)
             .distinct()
             .order_by("name")
         )
@@ -534,8 +559,6 @@ class EnhancedLearningSystemListView(ListView):
 
         if self.request.GET.get("skill"):
             try:
-                from core.models import Skill
-
                 skill = Skill.objects.get(slug=self.request.GET.get("skill"))
                 filters["Skill"] = skill.name
             except:
@@ -563,6 +586,20 @@ class EnhancedLearningSystemListView(ListView):
 
         return filters
 
+    def get_learning_quick_stats(self):
+        """Quick stats for header using learning metrics"""
+        total_systems = SystemModule.objects.count()
+
+        return {
+            'total_systems': total_systems,
+            'portfolio_ready_count': SystemModule.objects.filter(portfolio_ready=True).count(),
+            'skills_gained_count': SystemSkillGain.objects.count(),
+            'learning_stages_count': SystemModule.objects.values('learning_stage').distinct().count(),
+            'recent_milestones_count': LearningMilestone.objects.filter(
+                date_achieved__gte=timezone.now() - timezone.timedelta(days=30)
+            ).count()
+        }
+
     def get_learning_stage_color(self, stage_code):
         """Get color for learning stage badges"""
         colors = {
@@ -570,6 +607,7 @@ class EnhancedLearningSystemListView(ListView):
             "guided": "yellow",  # Guided practice
             "independent": "teal",  # Independent work
             "refactoring": "purple",  # Improving/optimizing
+            "contributing": "mint",  # Contributing to others
             "teaching": "gold",  # Sharing knowledge
         }
         return colors.get(stage_code, "gray")

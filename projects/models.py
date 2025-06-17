@@ -753,7 +753,7 @@ class SystemModule(models.Model):
             score += 10
 
         return min(score, 100)
-    
+
     def get_development_stats_for_learning(self):
         """Learning-focused stats using existing fields"""
         return {
