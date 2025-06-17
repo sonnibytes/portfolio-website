@@ -791,11 +791,9 @@ class LearningSystemControlInterfaceView(DetailView):
         for gain in skill_gains:
             skills_analysis.append({
                 'skill': gain.skill,
-                'proficiency_gained': gain.proficiency_gained,
-                'how_learned': gain.how_learned,
-                'learning_context': gain.learning_context,
-                'breakthrough_moment': gain.breakthrough_moment,
-                'mastery_level': gain.get_mastery_level(),
+                'has_breakthrough_moment': gain.skill.has_breakthroughs(),
+                'breakthrough_moments': gain.skill.get_breakthrough_moments(),
+                'mastery_level': gain.skill.get_mastery_level(),
                 'other_systems': gain.skill.get_systems_using_skill().exclude(system=system)[:3],
                 'progression': gain.skill.get_learning_progression()
             })
@@ -828,7 +826,7 @@ class LearningSystemControlInterfaceView(DetailView):
         # Add milestones
         for milestone in milestones:
             timeline_events.append({
-                'date': milestone.date_achieved,
+                'date': milestone.date_achieved.date(),
                 'type': 'milestone',
                 'title': milestone.title,
                 'description': milestone.description,
@@ -840,15 +838,17 @@ class LearningSystemControlInterfaceView(DetailView):
 
         # Add skill gains
         for gain in system.skill_gains.all():
-            if gain.breakthrough_moment:
-                timeline_events.append({
-                    'date': system.created_at,  # Appx - could be more specific
-                    'type': 'skill_breakthrough',
-                    'title': f'{gain.skill.name} Breakthrough',
-                    'description': gain.breakthrough_moment,
-                    'icon': 'lightbulb',
-                    'color': 'yellow'
-                })
+            if gain.skill.has_breakthroughs():
+                breakthroughs = gain.skill.get_breakthrough_moments()
+                for moment in breakthroughs:
+                    timeline_events.append({
+                        'date': moment['date'].date(),  # Appx - could be more specific
+                        'type': 'skill_breakthrough',
+                        'title': f'{gain.skill.name} Breakthrough',
+                        'description': moment['learning_story'],
+                        'icon': 'lightbulb',
+                        'color': 'yellow'
+                    })
 
         # Sort by date
         timeline_events.sort(key=lambda x: x['date'])
@@ -922,10 +922,10 @@ class LearningSystemControlInterfaceView(DetailView):
 
     def get_datalogs_data(self, system):
         """DataLogs integration (keep existing structure)"""
-        related_logs = system.get_related_logs()[:10]
+        related_logs = system.get_related_logs()
 
         return {
-            'related_logs': related_logs,
+            'related_logs': related_logs[:10],
             'learning_posts': related_logs.filter(post__excerpt__icontains='learn')[:5],
             'challenge_posts': related_logs.filter(post__excerpt__icontains='challenge')[:5],
             'has_documentation': related_logs.exists(),
@@ -939,7 +939,7 @@ class LearningSystemControlInterfaceView(DetailView):
         for tech in system.technologies.all():
             analysis = {
                 'technology': tech,
-                'learning_context': self.get_tech_learning_content(tech, system),
+                'learning_context': self.get_tech_learning_context(tech, system),
                 'skill_connections': system.skills_developed.filter(name__icontains=tech.name),
                 'other_uses': tech.systems.exclude(id=system.id)[:3],
                 'mastery_level': self.assess_tech_mastery(tech, system),
@@ -1146,10 +1146,10 @@ class LearningSystemControlInterfaceView(DetailView):
         """Assess feature completeness (can enhance w GH issue tracking etc)"""
         # TODO: Logic Enhancement - API Integration
         feature_count = system.features.count()
-        completion = system.completion_percent
+        features_complete = system.features.filter(implementation_status='completed').count() if system.features else 0
 
-        # Based on completion percentage
-        score = completion * 0.7
+        # Based on percent complete
+        score = round(features_complete / feature_count * 100, 1) if feature_count else 0
 
         # Bonus for having features documented
         if feature_count >= 5:
@@ -1186,7 +1186,7 @@ class LearningSystemControlInterfaceView(DetailView):
             score += 25
 
         # Has related DataLogs
-        if system.get_related_datalogs().exists():
+        if system.get_related_logs().exists():
             score += 20
 
         return min(score, 100)
@@ -1220,7 +1220,7 @@ class LearningSystemControlInterfaceView(DetailView):
         score = 40
 
         # Has learning documentation
-        if system.key_learnings:
+        if system.has_learning_documentation():
             score += 25
 
         # Has milestones
@@ -1236,8 +1236,8 @@ class LearningSystemControlInterfaceView(DetailView):
 
         return min(score, 100)
 
-    def assess_development(self, system):
-        """Assess development/demo availability"""
+    def assess_deployment(self, system):
+        """Assess deployment/demo availability"""
         # Base score
         score = 30
 
@@ -1368,7 +1368,9 @@ class LearningSystemControlInterfaceView(DetailView):
     def get_dependency_learning_context(self, dependency):
         """Get learning context for dependency"""
         # Why was this dependency chosen? What did it teach?
-        return f"Learning {dependency.name} for {dependency.description}" if dependency.description else ""
+        # This would be more for when I incorporate technology/skills into dependencies
+        # return f"Learning {dependency.name} for {dependency.description}" if dependency.description else ""
+        return f"Depends on {dependency.depends_on} for {dependency.dependency_type}" if dependency.dependency_type else ""
 
     def assess_integration_complexity(self, dependency):
         """Assess complexity of integrating dependency - can enhance"""
