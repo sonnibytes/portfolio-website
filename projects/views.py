@@ -819,7 +819,7 @@ class LearningSystemControlInterfaceView(DetailView):
                 'estimated_timeline': f"{system.estimated_dev_hours} hours" if system.estimated_dev_hours else None,
             },
             'architecture_info': {
-                'architecture_diagram': system.architechture_diagram,
+                'architecture_diagram': system.architecture_diagram,
                 # May add? Not sure
                 'database_schema': getattr(system, 'database_schema', None),
                 'api_documentation': getattr(system, 'api_documentation', None),
@@ -981,8 +981,8 @@ class LearningSystemControlInterfaceView(DetailView):
         for gain in skill_gains:
             skills_analysis.append({
                 'skill': gain.skill,
-                'proficiency_gained': gain.skill.proficiency_gained,
-                'how_learned': gain.skill.how_learned,
+                'proficiency_gained': gain.proficiency_gained,
+                'how_learned': gain.how_learned,
                 'has_breakthrough_moment': gain.skill.has_breakthroughs(),
                 'breakthrough_moments': gain.skill.get_breakthrough_moments(),
                 'mastery_level': gain.skill.get_mastery_level(),
