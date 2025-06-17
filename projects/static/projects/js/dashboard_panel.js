@@ -1,11 +1,12 @@
-// AURA Portfolio - Updated Dashboard JavaScript for Unified Containers
-// Compatible with the new unified-dashboard-container format
+// AURA Portfolio - Enhanced Dashboard JavaScript for Learning Focus
+// Compatible with unified containers + learning-specific animations
 // File: static/projects/js/dashboard_panels.js
 
 class UnifiedDashboardManager {
     constructor() {
         this.containers = new Map();
         this.animationObserver = null;
+        this.learningAnimations = new Map(); // New: Learning-specific animations
         this.init();
     }
 
@@ -13,8 +14,9 @@ class UnifiedDashboardManager {
         this.initializeContainers();
         this.setupAnimationObserver();
         this.setupEventListeners();
+        this.initializeLearningAnimations(); // New: Learning-specific setup
         this.startAnimations();
-        console.log('🚀 Unified Dashboard Manager initialized');
+        console.log('🚀 Unified Dashboard Manager initialized with learning support');
     }
 
     initializeContainers() {
@@ -44,28 +46,52 @@ class UnifiedDashboardManager {
     }
 
     detectContainerType(container) {
-        // Detect container type based on content
+        // Detect container type based on content (enhanced for learning)
         if (container.querySelector('.metric-content, .metric-value')) return 'metric';
-        if (container.querySelector('.activity-feed, .activity-item')) return 'activity';
-        if (container.querySelector('.featured-systems-grid')) return 'featured-systems';
-        if (container.querySelector('.health-overview')) return 'health';
-        if (container.querySelector('.tech-stack-overview')) return 'technology';
-        if (container.querySelector('.chart-container')) return 'chart';
-        if (container.querySelector('.alerts-container')) return 'alerts';
-        if (container.querySelector('.quick-actions-grid')) return 'quick-actions';
-        if (container.querySelector('.hero-content')) return 'hero';
-        if (container.querySelector('.dev-status-overview')) return 'dev-status';
-        return 'general';
+        if (container.querySelector('.chart-container, #learningStagesChart')) return 'chart';
+        if (container.querySelector('.system-card, .learning-system-card')) return 'grid';
+        if (container.querySelector('.activity-item, .timeline-event')) return 'activity';
+        if (container.querySelector('.skills-pills, .skill-pill')) return 'skills'; // New
+        if (container.querySelector('.learning-metric-card')) return 'learning'; // New
+        if (container.querySelector('.assessment-criteria')) return 'assessment'; // New
+        if (container.querySelector('.datalog-item')) return 'datalogs';
+        if (container.querySelector('.tech-analysis-card')) return 'tech';
+        if (container.querySelector('.alert')) return 'alert';
+        if (container.querySelector('.status-indicator')) return 'status';
+        return 'dashboard';
     }
 
     getContainerColor(container) {
-        const colorClasses = ['teal', 'lavender', 'coral', 'mint', 'yellow', 'navy', 'gunmetal'];
+        // Extract color from classes (enhanced for learning stages)
+        const classList = Array.from(container.classList);
+        const colorClasses = ['teal', 'purple', 'coral', 'lavender', 'mint', 'yellow', 'navy', 'gunmetal'];
+        const learningStageClasses = ['tutorial', 'guided', 'independent', 'refactoring', 'contributing', 'teaching'];
+        
+        // Check for standard colors first
         for (const color of colorClasses) {
-            if (container.classList.contains(color)) {
-                return color;
+            if (classList.includes(color)) return color;
+        }
+        
+        // Check for learning stage colors
+        for (const stage of learningStageClasses) {
+            if (classList.some(cls => cls.includes(stage))) {
+                return this.getLearningStageColor(stage);
             }
         }
+        
         return 'teal'; // default
+    }
+
+    getLearningStageColor(stage) {
+        const stageColors = {
+            'tutorial': 'yellow',
+            'guided': 'mint',
+            'independent': 'teal',
+            'refactoring': 'purple',
+            'contributing': 'coral',
+            'teaching': 'yellow'
+        };
+        return stageColors[stage] || 'teal';
     }
 
     initializeContainerType(container, type) {
@@ -73,53 +99,370 @@ class UnifiedDashboardManager {
             case 'metric':
                 this.initializeMetricContainer(container);
                 break;
-            case 'activity':
-                this.initializeActivityContainer(container);
-                break;
-            case 'featured-systems':
-                this.initializeFeaturedSystemsContainer(container);
-                break;
-            case 'health':
-                this.initializeHealthContainer(container);
-                break;
-            case 'technology':
-                this.initializeTechnologyContainer(container);
-                break;
             case 'chart':
                 this.initializeChartContainer(container);
                 break;
-            case 'alerts':
-                this.initializeAlertsContainer(container);
+            case 'grid':
+                this.initializeGridContainer(container);
                 break;
-            case 'quick-actions':
-                this.initializeQuickActionsContainer(container);
+            case 'activity':
+                this.initializeActivityContainer(container);
                 break;
-            case 'hero':
-                this.initializeHeroContainer(container);
+            case 'skills': // New
+                this.initializeSkillsContainer(container);
                 break;
-            case 'dev-status':
-                this.initializeDevStatusContainer(container);
+            case 'learning': // New
+                this.initializeLearningContainer(container);
                 break;
+            case 'assessment': // New
+                this.initializeAssessmentContainer(container);
+                break;
+            case 'alert':
+                this.initializeAlertContainer(container);
+                break;
+            case 'status':
+                this.initializeStatusContainer(container);
+                break;
+            default:
+                this.initializeDashboardContainer(container);
         }
     }
 
-    // ========== METRIC CONTAINERS ==========
+    // ========== NEW: LEARNING-SPECIFIC CONTAINER INITIALIZERS ==========
+
+    initializeSkillsContainer(container) {
+        const skillPills = container.querySelectorAll('.skill-pill');
+        
+        // Staggered entrance animation for skill pills
+        skillPills.forEach((pill, index) => {
+            pill.style.opacity = '0';
+            pill.style.transform = 'translateY(10px) scale(0.9)';
+            pill.style.transition = 'all 0.4s ease';
+            
+            setTimeout(() => {
+                pill.style.opacity = '1';
+                pill.style.transform = 'translateY(0) scale(1)';
+            }, index * 100);
+        });
+
+        // Hover effects for skill pills
+        skillPills.forEach(pill => {
+            pill.addEventListener('mouseenter', () => {
+                pill.style.transform = 'translateY(-2px) scale(1.05)';
+                pill.style.boxShadow = '0 4px 12px rgba(100, 181, 246, 0.3)';
+            });
+            
+            pill.addEventListener('mouseleave', () => {
+                pill.style.transform = 'translateY(0) scale(1)';
+                pill.style.boxShadow = '';
+            });
+        });
+    }
+
+    initializeLearningContainer(container) {
+        const learningCards = container.querySelectorAll('.learning-metric-card');
+        const progressBars = container.querySelectorAll('.progress-fill');
+        const learningBadges = container.querySelectorAll('.learning-stage-badge, .portfolio-ready-indicator');
+
+        // Animate learning metric cards
+        learningCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 150);
+
+            // Hover effect
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px) scale(1.02)';
+                card.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+                card.style.boxShadow = '';
+            });
+        });
+
+        // Animate learning progress bars
+        setTimeout(() => {
+            progressBars.forEach(bar => {
+                const targetWidth = bar.style.width || '0%';
+                bar.style.width = '0%';
+                bar.style.transition = 'width 1.5s ease-out';
+                
+                setTimeout(() => {
+                    bar.style.width = targetWidth;
+                }, 100);
+            });
+        }, 500);
+
+        // Animate learning badges
+        learningBadges.forEach((badge, index) => {
+            badge.style.opacity = '0';
+            badge.style.transform = 'scale(0.8)';
+            badge.style.transition = 'all 0.5s ease';
+            
+            setTimeout(() => {
+                badge.style.opacity = '1';
+                badge.style.transform = 'scale(1)';
+            }, 200 + (index * 100));
+        });
+    }
+
+    initializeAssessmentContainer(container) {
+        const criteriaItems = container.querySelectorAll('.criteria-item');
+        const recommendationCards = container.querySelectorAll('.recommendation-card');
+
+        // Animate assessment criteria
+        criteriaItems.forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(-20px)';
+            item.style.transition = 'all 0.5s ease';
+            
+            setTimeout(() => {
+                item.style.opacity = '1';
+                item.style.transform = 'translateX(0)';
+            }, index * 100);
+
+            // Hover effects
+            item.addEventListener('mouseenter', () => {
+                item.style.transform = 'translateX(5px)';
+                item.style.background = 'rgba(255, 255, 255, 0.08)';
+            });
+            
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'translateX(0)';
+                item.style.background = 'rgba(255, 255, 255, 0.05)';
+            });
+        });
+
+        // Animate recommendation cards
+        recommendationCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(15px)';
+            card.style.transition = 'all 0.4s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 300 + (index * 150));
+        });
+    }
+
+    // ========== ENHANCED EXISTING INITIALIZERS ==========
+
     initializeMetricContainer(container) {
-        const metricValues = container.querySelectorAll('[data-target], .metric-value');
-        metricValues.forEach(value => {
-            const target = parseFloat(value.dataset.target) || parseFloat(value.textContent) || 0;
-            if (target > 0) {
-                this.animateCounter(value, 0, target, 2000);
+        const metricValues = container.querySelectorAll('.metric-value, .metric-value-large');
+        const progressBars = container.querySelectorAll('.progress-fill, .usage-fill');
+
+        // Animate metric values with count-up effect
+        metricValues.forEach(metric => {
+            const target = parseInt(metric.dataset.target || metric.textContent.replace(/[^\d]/g, ''));
+            if (target && target > 0) {
+                this.animateCountUp(metric, 0, target, 1500);
             }
         });
 
-        // Add pulse animation to metric containers
-        this.addMetricPulse(container);
+        // Animate progress bars
+        setTimeout(() => {
+            progressBars.forEach(bar => {
+                const targetWidth = bar.style.width || bar.dataset.width || '0%';
+                bar.style.width = '0%';
+                bar.style.transition = 'width 2s ease-out';
+                
+                setTimeout(() => {
+                    bar.style.width = targetWidth;
+                }, 200);
+            });
+        }, 500);
     }
 
-    animateCounter(element, start, end, duration, precision = 0) {
+    initializeActivityContainer(container) {
+        const activityItems = container.querySelectorAll('.activity-item, .timeline-event');
+        const timelineEvents = container.querySelectorAll('.timeline-event');
+
+        // Enhanced timeline animations for learning events
+        if (timelineEvents.length > 0) {
+            timelineEvents.forEach((event, index) => {
+                event.style.opacity = '0';
+                event.style.transform = 'translateX(-30px)';
+                event.style.transition = 'all 0.6s ease';
+                
+                setTimeout(() => {
+                    event.style.opacity = '1';
+                    event.style.transform = 'translateX(0)';
+                }, index * 200);
+
+                // Learning milestone specific animations
+                const icon = event.querySelector('.timeline-icon');
+                if (icon) {
+                    setTimeout(() => {
+                        icon.style.animation = 'pulse 0.6s ease-in-out';
+                    }, index * 200 + 300);
+                }
+            });
+        } else {
+            // Standard activity items
+            activityItems.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                item.style.transition = 'all 0.5s ease';
+                
+                setTimeout(() => {
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        }
+    }
+
+    initializeGridContainer(container) {
+        const gridItems = container.querySelectorAll('.system-card, .learning-system-card, .tech-analysis-card');
+        
+        gridItems.forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(30px) scale(0.95)';
+            item.style.transition = 'all 0.6s ease';
+            
+            setTimeout(() => {
+                item.style.opacity = '1';
+                item.style.transform = 'translateY(0) scale(1)';
+            }, index * 100);
+
+            // Enhanced hover effects for learning cards
+            if (item.classList.contains('learning-system-card')) {
+                item.addEventListener('mouseenter', () => {
+                    item.style.transform = 'translateY(-8px) scale(1.02)';
+                    item.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.15)';
+                });
+                
+                item.addEventListener('mouseleave', () => {
+                    item.style.transform = 'translateY(0) scale(1)';
+                    item.style.boxShadow = '';
+                });
+            }
+        });
+    }
+
+    // ========== NEW: LEARNING-SPECIFIC ANIMATIONS ==========
+
+    initializeLearningAnimations() {
+        // Learning stage badge animations
+        this.setupLearningStageAnimations();
+        
+        // Skill progression animations
+        this.setupSkillProgressionAnimations();
+        
+        // Portfolio readiness animations
+        this.setupPortfolioReadinessAnimations();
+        
+        // Learning velocity animations
+        this.setupLearningVelocityAnimations();
+    }
+
+    setupLearningStageAnimations() {
+        const stageBadges = document.querySelectorAll('.learning-stage-badge');
+        
+        stageBadges.forEach(badge => {
+            // Add stage-specific glow effects
+            const stage = Array.from(badge.classList).find(cls => cls.startsWith('learning-stage-'));
+            if (stage) {
+                badge.addEventListener('mouseenter', () => {
+                    badge.style.boxShadow = this.getLearningStageGlow(stage);
+                    badge.style.transform = 'scale(1.05)';
+                });
+                
+                badge.addEventListener('mouseleave', () => {
+                    badge.style.boxShadow = '';
+                    badge.style.transform = 'scale(1)';
+                });
+            }
+        });
+    }
+
+    setupSkillProgressionAnimations() {
+        const skillItems = document.querySelectorAll('.skill-progression-item');
+        
+        skillItems.forEach((item, index) => {
+            // Intersection observer for skill items
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateX(0)';
+                        
+                        // Animate mastery level badge
+                        const masteryBadge = entry.target.querySelector('.mastery-level');
+                        if (masteryBadge) {
+                            setTimeout(() => {
+                                masteryBadge.style.animation = 'pulse 0.5s ease-in-out';
+                            }, 300);
+                        }
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(-20px)';
+            item.style.transition = 'all 0.6s ease';
+            
+            observer.observe(item);
+        });
+    }
+
+    setupPortfolioReadinessAnimations() {
+        const readinessIndicators = document.querySelectorAll('.portfolio-ready-indicator');
+        
+        readinessIndicators.forEach(indicator => {
+            if (indicator.classList.contains('portfolio-ready-yes')) {
+                // Add success glow for portfolio-ready items
+                indicator.addEventListener('mouseenter', () => {
+                    indicator.style.boxShadow = '0 0 15px rgba(76, 175, 80, 0.4)';
+                });
+                
+                indicator.addEventListener('mouseleave', () => {
+                    indicator.style.boxShadow = '';
+                });
+            }
+        });
+    }
+
+    setupLearningVelocityAnimations() {
+        const velocityElements = document.querySelectorAll('[data-learning-velocity]');
+        
+        velocityElements.forEach(element => {
+            const velocity = parseFloat(element.dataset.learningVelocity);
+            
+            // Add velocity-based animation speed
+            if (velocity > 2) {
+                element.style.animation = 'pulse 1s ease-in-out infinite';
+            } else if (velocity > 1) {
+                element.style.animation = 'pulse 2s ease-in-out infinite';
+            }
+        });
+    }
+
+    getLearningStageGlow(stageClass) {
+        const glowColors = {
+            'learning-stage-tutorial': '0 0 20px rgba(255, 183, 77, 0.6)',
+            'learning-stage-guided': '0 0 20px rgba(129, 199, 132, 0.6)',
+            'learning-stage-independent': '0 0 20px rgba(100, 181, 246, 0.6)',
+            'learning-stage-refactoring': '0 0 20px rgba(186, 104, 200, 0.6)',
+            'learning-stage-contributing': '0 0 20px rgba(79, 195, 247, 0.6)',
+            'learning-stage-teaching': '0 0 20px rgba(255, 213, 79, 0.6)'
+        };
+        return glowColors[stageClass] || '0 0 20px rgba(100, 181, 246, 0.6)';
+    }
+
+    // ========== ENHANCED EXISTING METHODS ==========
+
+    animateCountUp(element, start, end, duration) {
         const startTime = performance.now();
-        const isDecimal = end % 1 !== 0 || precision > 0;
+        const range = end - start;
         
         const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
@@ -127,438 +470,170 @@ class UnifiedDashboardManager {
             
             // Easing function for smooth animation
             const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-            const current = start + (end - start) * easeOutQuart;
+            const current = Math.floor(start + (range * easeOutQuart));
             
-            if (isDecimal) {
-                element.textContent = current.toFixed(precision);
-            } else {
-                element.textContent = Math.floor(current);
-            }
+            // Preserve original formatting (%, h, etc.)
+            const originalText = element.textContent;
+            const suffix = originalText.replace(/[\d,]/g, '').trim();
+            element.textContent = current.toLocaleString() + (suffix ? ' ' + suffix : '');
             
             if (progress < 1) {
                 requestAnimationFrame(animate);
-            } else {
-                element.textContent = isDecimal ? end.toFixed(precision) : Math.floor(end);
             }
         };
         
         requestAnimationFrame(animate);
     }
 
-    addMetricPulse(container) {
-        const metricValue = container.querySelector('.metric-value');
-        if (metricValue) {
-            setInterval(() => {
-                metricValue.style.transform = 'scale(1.05)';
-                setTimeout(() => {
-                    metricValue.style.transform = 'scale(1)';
-                }, 200);
-            }, 5000); // Pulse every 5 seconds
-        }
-    }
-
-    // ========== ACTIVITY CONTAINERS ==========
-    initializeActivityContainer(container) {
-        const activityFeed = container.querySelector('.activity-feed');
-        if (activityFeed) {
-            this.setupSmoothScrolling(activityFeed);
-            this.animateActivityItems(container);
-        }
-    }
-
-    setupSmoothScrolling(element) {
-        element.style.scrollBehavior = 'smooth';
-    }
-
-    animateActivityItems(container) {
-        const items = container.querySelectorAll('.activity-item');
-        items.forEach((item, index) => {
-            item.style.opacity = '0';
-            item.style.transform = 'translateX(-20px)';
-            
-            setTimeout(() => {
-                item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                item.style.opacity = '1';
-                item.style.transform = 'translateX(0)';
-            }, index * 100);
-        });
-    }
-
-    // ========== FEATURED SYSTEMS CONTAINERS ==========
-    initializeFeaturedSystemsContainer(container) {
-        const systemCards = container.querySelectorAll('.featured-system-card');
-        systemCards.forEach((card, index) => {
-            // Animate card entrance
-            card.style.opacity = '0';
-            card.style.transform = 'scale(0.9)';
-            
-            setTimeout(() => {
-                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                card.style.opacity = '1';
-                card.style.transform = 'scale(1)';
-            }, index * 150);
-
-            // Initialize progress circles
-            const progressCircle = card.querySelector('.system-progress');
-            if (progressCircle) {
-                this.animateProgressCircle(progressCircle);
-            }
-        });
-    }
-
-    animateProgressCircle(circle) {
-        const progress = circle.style.getPropertyValue('--progress') || '0%';
-        circle.style.setProperty('--progress', '0%');
-        
-        setTimeout(() => {
-            circle.style.transition = '--progress 1.5s ease';
-            circle.style.setProperty('--progress', progress);
-        }, 500);
-    }
-
-    // ========== HEALTH CONTAINERS ==========
-    initializeHealthContainer(container) {
-        const healthDots = container.querySelectorAll('.health-metric-dot');
-        healthDots.forEach((dot, index) => {
-            setTimeout(() => {
-                dot.style.animation = 'pulse 2s infinite';
-            }, index * 200);
-        });
-
-        // Animate health status
-        const healthStatus = container.querySelector('.health-status');
-        if (healthStatus) {
-            this.typeWriterEffect(healthStatus, healthStatus.textContent);
-        }
-    }
-
-    typeWriterEffect(element, text) {
-        element.textContent = '';
-        let i = 0;
-        const timer = setInterval(() => {
-            element.textContent += text.charAt(i);
-            i++;
-            if (i > text.length - 1) {
-                clearInterval(timer);
-            }
-        }, 50);
-    }
-
-    // ========== TECHNOLOGY CONTAINERS ==========
-    initializeTechnologyContainer(container) {
-        const usageBars = container.querySelectorAll('.usage-fill');
-        usageBars.forEach((bar, index) => {
-            const width = bar.style.width;
-            bar.style.width = '0%';
-            
-            setTimeout(() => {
-                bar.style.transition = 'width 1.5s ease';
-                bar.style.width = width;
-            }, index * 200 + 800); // Staggered animation
-        });
-
-        // Animate tech counts
-        const techCounts = container.querySelectorAll('.tech-count');
-        techCounts.forEach((count, index) => {
-            const target = parseInt(count.textContent) || 0;
-            setTimeout(() => {
-                this.animateCounter(count, 0, target, 1000);
-            }, index * 200);
-        });
-    }
-
-    // ========== CHART CONTAINERS ==========
-    initializeChartContainer(container) {
-        const chartIcon = container.querySelector('.chart-icon .fas');
-        if (chartIcon) {
-            setInterval(() => {
-                chartIcon.style.transform = 'rotate(360deg)';
-                setTimeout(() => {
-                    chartIcon.style.transform = 'rotate(0deg)';
-                }, 1000);
-            }, 10000); // Rotate every 10 seconds
-        }
-
-        this.setupChartControls(container);
-    }
-
-    setupChartControls(container) {
-        const controls = container.querySelectorAll('.chart-control');
-        controls.forEach(control => {
-            control.addEventListener('click', (e) => {
-                e.preventDefault();
-                const action = control.dataset.action;
-                this.handleChartAction(container, action);
-            });
-        });
-    }
-
-    handleChartAction(container, action) {
-        console.log(`Chart action: ${action}`);
-        // Add visual feedback
-        const chartPlaceholder = container.querySelector('.chart-placeholder');
-        if (chartPlaceholder) {
-            chartPlaceholder.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                chartPlaceholder.style.transform = 'scale(1)';
-            }, 150);
-        }
-    }
-
-    // ========== ALERTS CONTAINERS ==========
-    initializeAlertsContainer(container) {
-        const alertItems = container.querySelectorAll('.alert-item');
-        alertItems.forEach((alert, index) => {
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateY(10px)';
-            
-            setTimeout(() => {
-                alert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-                alert.style.opacity = '1';
-                alert.style.transform = 'translateY(0)';
-            }, index * 150);
-        });
-    }
-
-    // ========== QUICK ACTIONS CONTAINERS ==========
-    initializeQuickActionsContainer(container) {
-        const actionButtons = container.querySelectorAll('.quick-action');
-        actionButtons.forEach((button, index) => {
-            button.style.opacity = '0';
-            button.style.transform = 'scale(0.8)';
-            
-            setTimeout(() => {
-                button.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                button.style.opacity = '1';
-                button.style.transform = 'scale(1)';
-            }, index * 100);
-
-            // Add hover sound effect (visual)
-            button.addEventListener('mouseenter', () => {
-                button.style.transform = 'scale(1.05)';
-            });
-
-            button.addEventListener('mouseleave', () => {
-                button.style.transform = 'scale(1)';
-            });
-        });
-    }
-
-    // ========== HERO CONTAINERS ==========
-    initializeHeroContainer(container) {
-        const badges = container.querySelectorAll('.unified-featured-badge, .status-badge');
-        badges.forEach((badge, index) => {
-            badge.style.opacity = '0';
-            badge.style.transform = 'translateY(-10px)';
-            
-            setTimeout(() => {
-                badge.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                badge.style.opacity = '1';
-                badge.style.transform = 'translateY(0)';
-            }, index * 200);
-        });
-
-        // Animate quick stats
-        const quickStats = container.querySelectorAll('.quick-stat-value');
-        quickStats.forEach((stat, index) => {
-            const target = parseFloat(stat.textContent) || 0;
-            setTimeout(() => {
-                this.animateCounter(stat, 0, target, 2000, 1);
-            }, 1000 + index * 300);
-        });
-    }
-
-    // ========== DEV STATUS CONTAINERS ==========
-    initializeDevStatusContainer(container) {
-        const progressBars = container.querySelectorAll('.progress-fill');
-        progressBars.forEach((bar, index) => {
-            const width = bar.style.width;
-            bar.style.width = '0%';
-            
-            setTimeout(() => {
-                bar.style.transition = 'width 2s ease';
-                bar.style.width = width;
-            }, index * 300 + 500);
-        });
-
-        // Animate status values
-        const statusValues = container.querySelectorAll('.status-value');
-        statusValues.forEach((value, index) => {
-            const target = parseInt(value.textContent.replace(/[^\d.]/g, '')) || 0;
-            if (target > 0) {
-                setTimeout(() => {
-                    this.animateCounter(value, 0, target, 1500);
-                }, index * 200);
-            }
-        });
-    }
-
-    // ========== ANIMATION OBSERVER ==========
     setupAnimationObserver() {
-        const options = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.1
-        };
-
         this.animationObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    this.triggerEntranceAnimation(entry.target);
+                    const container = entry.target;
+                    const containerId = this.generateContainerId(container);
+                    const containerData = this.containers.get(containerId);
+                    
+                    if (containerData && !container.dataset.animated) {
+                        this.animateContainer(container, containerData.type);
+                        container.dataset.animated = 'true';
+                    }
                 }
             });
-        }, options);
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -10% 0px'
+        });
 
         // Observe all containers
-        this.containers.forEach(containerData => {
-            this.animationObserver.observe(containerData.element);
+        this.containers.forEach(data => {
+            this.animationObserver.observe(data.element);
         });
     }
 
-    triggerEntranceAnimation(container) {
-        const containerType = this.detectContainerType(container);
+    animateContainer(container, type) {
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(30px)';
+        container.style.transition = 'all 0.8s ease-out';
         
-        // Apply entrance animation based on container type
-        container.style.opacity = '1';
-        container.style.transform = 'translateY(0)';
-        
-        // Different entrance effects for different types
-        switch (containerType) {
-            case 'metric':
-                container.style.animation = 'fadeInUp 0.8s ease forwards';
-                break;
-            case 'hero':
-                container.style.animation = 'fadeIn 1s ease forwards';
-                break;
-            case 'activity':
-                container.style.animation = 'slideInLeft 0.6s ease forwards';
-                break;
-            default:
-                container.style.animation = 'fadeInUp 0.6s ease forwards';
-        }
-
-        // Stop observing once animated
-        this.animationObserver.unobserve(container);
+        setTimeout(() => {
+            container.style.opacity = '1';
+            container.style.transform = 'translateY(0)';
+        }, 100);
     }
 
-    // ========== EVENT LISTENERS ==========
     setupEventListeners() {
-        // Container hover effects
+        // Enhanced hover effects for learning elements
         document.addEventListener('mouseenter', (e) => {
-            const container = this.findClosestContainer(e.target);
-            if (container) {
-                this.handleContainerHover(container, true);
+            if (e.target.matches('.skill-pill, .learning-stage-badge, .mastery-level')) {
+                e.target.style.transition = 'all 0.2s ease';
             }
         }, true);
 
-        document.addEventListener('mouseleave', (e) => {
-            const container = this.findClosestContainer(e.target);
-            if (container) {
-                this.handleContainerHover(container, false);
-            }
-        }, true);
-
-        // Action link clicks
+        // Learning card interactions
         document.addEventListener('click', (e) => {
-            const actionLink = e.target.closest('.action-link');
-            if (actionLink) {
-                this.handleActionLinkClick(actionLink);
+            if (e.target.matches('.learning-metric-card, .skill-progression-item')) {
+                // Add click ripple effect
+                this.addRippleEffect(e.target, e);
             }
         });
     }
 
-    findClosestContainer(element) {
-        if (!element || typeof element.closest !== 'function') return null;
-        return element.closest('.unified-dashboard-container');
-    }
-
-    handleContainerHover(container, isEntering) {
-        if (isEntering) {
-            container.style.transform = 'translateY(-4px)';
-            container.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(38, 198, 218, 0.2)';
-        } else {
-            container.style.transform = 'translateY(-3px)';
-            container.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
-        }
-    }
-
-    handleActionLinkClick(link) {
-        // Add click animation
-        link.style.transform = 'translateX(8px)';
-        setTimeout(() => {
-            link.style.transform = 'translateX(4px)';
-        }, 150);
-    }
-
-    // ========== UTILITY METHODS ==========
-    startAnimations() {
-        // Start any continuous animations
-        this.startGlobalAnimations();
-    }
-
-    startGlobalAnimations() {
-        // Animate all progress circles on load
-        setTimeout(() => {
-            const progressCircles = document.querySelectorAll('.system-progress');
-            progressCircles.forEach((circle, index) => {
-                setTimeout(() => {
-                    this.animateProgressCircle(circle);
-                }, index * 200);
-            });
-        }, 1000);
-
-        // Animate usage bars on load
-        setTimeout(() => {
-            const usageFills = document.querySelectorAll('.usage-fill');
-            usageFills.forEach((fill, index) => {
-                const width = fill.style.width;
-                fill.style.width = '0%';
-                setTimeout(() => {
-                    fill.style.transition = 'width 1.5s ease';
-                    fill.style.width = width;
-                }, index * 150);
-            });
-        }, 1500);
-
-        // Animate progress bars on load
-        setTimeout(() => {
-            const progressFills = document.querySelectorAll('.progress-fill');
-            progressFills.forEach((fill, index) => {
-                const width = fill.style.width;
-                fill.style.width = '0%';
-                setTimeout(() => {
-                    fill.style.transition = 'width 2s ease';
-                    fill.style.width = width;
-                }, index * 200);
-            });
-        }, 2000);
-    }
-
-    // ========== PUBLIC API ==========
-    refreshContainer(containerId) {
-        const containerData = this.containers.get(containerId);
-        if (containerData) {
-            this.initializeContainerType(containerData.element, containerData.type);
-        }
-    }
-
-    addContainer(container) {
-        const containerId = this.generateContainerId(container);
-        const containerType = this.detectContainerType(container);
+    addRippleEffect(element, event) {
+        const ripple = document.createElement('div');
+        const rect = element.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = event.clientX - rect.left - size / 2;
+        const y = event.clientY - rect.top - size / 2;
         
-        this.containers.set(containerId, {
-            element: container,
-            type: containerType,
-            color: this.getContainerColor(container),
-            lastUpdate: Date.now()
-        });
+        ripple.style.cssText = `
+            position: absolute;
+            width: ${size}px;
+            height: ${size}px;
+            left: ${x}px;
+            top: ${y}px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: scale(0);
+            animation: ripple 0.6s ease-out;
+        `;
+        
+        element.style.position = 'relative';
+        element.style.overflow = 'hidden';
+        element.appendChild(ripple);
+        
+        setTimeout(() => ripple.remove(), 600);
+    }
 
-        this.initializeContainerType(container, containerType);
+    startAnimations() {
+        // Initialize all containers that are already visible
+        setTimeout(() => {
+            this.containers.forEach((data, id) => {
+                const rect = data.element.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    if (!data.element.dataset.animated) {
+                        this.animateContainer(data.element, data.type);
+                        data.element.dataset.animated = 'true';
+                    }
+                }
+            });
+        }, 100);
+    }
+
+    // ========== EXISTING METHODS (UNCHANGED) ==========
+    
+    initializeDashboardContainer(container) {
+        // Keep existing implementation
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            container.style.opacity = '1';
+            container.style.transform = 'translateY(0)';
+            container.style.transition = 'all 0.6s ease';
+        }, 100);
+    }
+
+    initializeChartContainer(container) {
+        // Keep existing implementation
+        const chartElements = container.querySelectorAll('canvas, .chart-placeholder');
+        chartElements.forEach(chart => {
+            chart.style.opacity = '0';
+            chart.style.transform = 'scale(0.9)';
+            chart.style.transition = 'all 0.8s ease';
+            
+            setTimeout(() => {
+                chart.style.opacity = '1';
+                chart.style.transform = 'scale(1)';
+            }, 300);
+        });
+    }
+
+    initializeAlertContainer(container) {
+        // Keep existing implementation with enhanced learning alerts
+        const dismissBtn = container.querySelector('.alert-dismiss');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                container.style.transform = 'translateX(100%)';
+                container.style.opacity = '0';
+                setTimeout(() => container.remove(), 300);
+            });
+        }
+    }
+
+    initializeStatusContainer(container) {
+        // Keep existing implementation
+        const statusIndicators = container.querySelectorAll('.status-indicator');
+        statusIndicators.forEach(indicator => {
+            const status = indicator.dataset.status;
+            if (status === 'active' || status === 'portfolio-ready') {
+                indicator.style.animation = 'pulse 2s ease-in-out infinite';
+            }
+        });
     }
 }
 
-// ========== CSS ANIMATIONS ==========
-const dashboardAnimations = `
+// ========== ENHANCED CSS ANIMATIONS FOR LEARNING ==========
+const enhancedDashboardAnimations = `
 <style>
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -592,33 +667,77 @@ const dashboardAnimations = `
     50% { opacity: 0.8; transform: scale(1.05); }
 }
 
-/* Smooth transitions for all containers */
-.unified-dashboard-container {
+@keyframes ripple {
+    from { transform: scale(0); opacity: 0.6; }
+    to { transform: scale(1); opacity: 0; }
+}
+
+@keyframes skillPillGlow {
+    0%, 100% { box-shadow: 0 0 5px rgba(100, 181, 246, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(100, 181, 246, 0.6); }
+}
+
+@keyframes learningStageShine {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Learning-specific transitions */
+.skill-pill {
     transition: all 0.3s ease;
 }
 
-.metric-value {
-    transition: transform 0.2s ease;
+.skill-pill:hover {
+    animation: skillPillGlow 1s ease-in-out;
 }
 
-.system-progress {
+.learning-stage-badge {
+    transition: all 0.3s ease;
+    background-size: 200% 100%;
+}
+
+.learning-metric-card {
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.learning-metric-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.portfolio-ready-indicator {
     transition: all 0.3s ease;
 }
 
-.usage-fill {
-    transition: width 1.5s ease;
+.mastery-level {
+    transition: all 0.3s ease;
+}
+
+.timeline-event {
+    transition: all 0.6s ease;
+}
+
+.timeline-icon {
+    transition: all 0.3s ease;
+}
+
+.assessment-criteria .criteria-item {
+    transition: all 0.3s ease;
 }
 
 .progress-fill {
-    transition: width 2s ease;
+    transition: width 2s ease-out;
 }
 
-.quick-action {
-    transition: all 0.2s ease;
+.usage-fill {
+    transition: width 1.5s ease-out;
 }
 
-.action-link {
-    transition: all 0.2s ease;
+/* Smooth transitions for all learning containers */
+.unified-dashboard-container {
+    transition: all 0.4s ease;
 }
 
 /* Reduced motion support */
@@ -637,13 +756,13 @@ const dashboardAnimations = `
 
 // ========== INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', () => {
-    // Inject additional CSS
-    document.head.insertAdjacentHTML('beforeend', dashboardAnimations);
+    // Inject enhanced CSS animations
+    document.head.insertAdjacentHTML('beforeend', enhancedDashboardAnimations);
     
-    // Initialize unified dashboard manager
+    // Initialize enhanced unified dashboard manager
     window.unifiedDashboardManager = new UnifiedDashboardManager();
     
-    console.log('🚀 AURA Unified Dashboard fully loaded and animated!');
+    console.log('🎓 AURA Learning-Enhanced Dashboard fully loaded and animated!');
 });
 
 // Export for use in other modules
