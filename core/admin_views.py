@@ -167,5 +167,127 @@ class BaseAdminUpdateView(AdminAccessMixin, BaseAdminView, UpdateView):
         return 'fas fa-edit'
 
 
+class BaseAdminDeleteView(AdminAccessMixin, BaseAdminView, DeleteView):
+    """Base delete view for admin operations."""
+
+    template_name = 'admin/forms/delete_confirm.html'
+
+    def delete(self, request, *args, **kwargs):
+        obj_name = str(self.get_object())
+        response = super().delete(request, *args, **kwargs)
+
+        messages.success(request, f'{self.model._meta.verbose_name.title()} "{obj_name}" deleted successfully!')
+        return response
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update({
+            'title': f'Delete {self.model._meta.verbose_name}',
+            'object_name': str(self.object),
+            'form_type': 'delete',
+            'icon': 'fas fa-trash-alt',
+            'warning_message': self.get_delete_warning(),
+            'related_objects': self.get_related_objects(),
+        })
+
+        return context
+    
+    def get_delete_warning(self):
+        """Override to provide model-specific delete warnings."""
+        return f'This will permanently delete this {self.model._meta.verbose_name}.'
+    
+    def get_related_objects(self):
+        """Override to show related objects that will be affected."""
+        return []
 
 
+class AjaxableResponseMixin:
+    """Mixin to add AJAX support to admin views."""
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'{self.model._meta.verbose_name.title()} saved successfully!',
+                'redirect_url': str(self.get_success_url()),
+                'object_id': self.object.pk if hasattr(self, 'object') else None,
+            })
+        return response
+    
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors,
+                'message': 'Please correct the errors below.',
+            }, status=400)
+        return response
+
+
+class BulkActionMixin:
+    """Mixin to add bulk actions to list views."""
+
+    def post(self, request, *args, **kwargs):
+        """Handle bulk actions."""
+        action = request.POST.get('action')
+        selected_ids = request.POST.getlist('selected_items')
+
+        if not action or not selected_ids:
+            messages.error(request, 'No action or items selected.')
+            return self.get(request, *args, **kwargs)
+        return self.handle_bulk_action(action, selected_ids)
+    
+    def handle_bulk_action(self, action, selected_ids):
+        """Override in subclasses to handle specific bulk actions."""
+        queryset = self.model.objects.filter(id__in=selected_ids)
+
+        if action == 'delete':
+            count = queryset.count()
+            queryset.delete()
+            messages.success(self.request, f'Successfully deleted {count} {self.model._meta.verbose_name_plural}.')
+
+        return self.get(self.request)
+
+
+# Specioalized admin views for common patterns
+class SlugAdminCreateView(BaseAdminCreateView):
+    """Create view that auto-generates slugs."""
+
+    def form_valid(self, form):
+        if hasattr(form.instance, 'slug') and not form.instance.slug:
+            if hasattr(form.instance, 'title'):
+                form.instance.slug = slugify(form.instance.title)
+            elif hasattr(form.instance, 'name'):
+                form.instance.slug = slugify(form.instance.name)
+        
+        return super().form_valid(form)
+
+
+class AuthorAdminCreateView(BaseAdminCreateView):
+    """Create view that set the current user as author."""
+
+    def form_valid(self, form):
+        if hasattr(form.instance, 'author') and not form.instance.author:
+            form.instance.author = self.request.user
+        
+        return super().form_valid(form)
+
+
+class StatusAdminCreateView(BaseAdminCreateView):
+    """Create view w status-specific logic."""
+
+    def form_valid(self, form):
+        # Auto-set published_date for published items
+        if (hasattr(form.instance, 'status') and 
+            form.instance.status == 'published' and
+            hasattr(form.instance, 'published_date') and
+            not form.instance.published_date):
+            from django.utils import timezone
+            form.instance.published_date = timezone.now()
+        
+        return super().form_valid(form)
