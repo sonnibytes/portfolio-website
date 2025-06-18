@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy, reverse
 
-from django.db.models import Count, Avg, Q, Sum, Max, Min, F, Prefetch, OuterRef, Case, When, Value, IntegerField
+from django.db.models import Count, Avg, Q, Sum, Max, Min, F, Case, When, Value, IntegerField, CharField
 from django.db.models.functions import TruncMonth, Extract
 from django.http import JsonResponse
 from django.utils import timezone
@@ -26,564 +26,808 @@ from blog.models import Post, SystemLogEntry
 from core.models import Skill, PortfolioAnalytics
 
 
+# Should replace all dashboards....and act as landing page
 # Should replace LearningJourneyDashboardView and EnhancedDashboardView
-class HybridLearningSystemsDashboardView(TemplateView):
+class PortfolioLandingDashboardView(TemplateView):
     """
-    Hybrid Dashboard combining system information with learning progression
-
-    Mirrors the structure of system_dashboard.html but includes:
-    - System stats (deployed, active, performance)
-    - Learning metrics (skills gained, learning velocity, portfolio readiness)
-    - Both system health and learning progression
-    - Featured systems with learning context
-    - Technology usage with learning impact
+    Comprehensive portfolio landing dashboard - showcases entire portfolio
+    Systems + DataLogs + Learning + Technologies in a cohesive presentation
     """
-    template_name = "projects/hybrid_systems_dashboard.html"
+    template_name = "projects/portfolio_landing_dashboard.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # ========== SYSTEM INFORMATION (Original Dashboard) ==========
+        # ========== HERO METRICS (Combined Portfolio Overview) ==========
         context.update(
             {
-                # System statistics using manager methods
-                "dashboard_stats": SystemModule.objects.dashboard_stats(),
-                # System performance and health
-                "performance_data": self.get_system_performance_data(),
-                # Featured systems with enhanced data
-                "featured_systems": self.get_featured_systems_with_learning(),
-                # System activity and recent changes
-                "recent_activity": self.get_recent_system_activity(),
-                # Technology usage across systems
-                "technology_usage": self.get_technology_usage_with_learning(),
+                "portfolio_metrics": self.get_portfolio_metrics(),
             }
         )
 
-        # ========== LEARNING INFORMATION (Enhanced) ==========
-        context.update(
-            {
-                # Core learning metrics
-                "learning_metrics": self.get_comprehensive_learning_metrics(),
-                # Learning progression over time
-                "learning_progression": self.get_learning_progression_data(),
-                # Skills development tracking
-                "skills_development": self.get_skills_development_data(),
-                # Portfolio readiness analysis
-                "portfolio_analysis": self.get_portfolio_readiness_analysis(),
-                # Learning milestones and achievements
-                "recent_milestones": self.get_recent_learning_milestones(),
-                # Learning stage distribution
-                "learning_stages": self.get_learning_stage_distribution(),
-            }
-        )
+        # ========== FEATURED CONTENT SECTIONS ==========
+        context.update({
+            # Featured systems for project showcase
+            'featured_systems': self.get_featured_systems(),
 
-        # ========== COMBINED ANALYTICS ==========
-        context.update(
-            {
-                # System complexity vs learning progression
-                "complexity_vs_learning": self.get_complexity_learning_correlation(),
-                # Technology adoption timeline
-                "tech_learning_timeline": self.get_technology_learning_timeline(),
-                # Project evolution metrics
-                "project_evolution": self.get_project_evolution_metrics(),
-            }
-        )
+            # Recent and featured DataLog entries
+            'featured_datalogs': self.get_featured_datalogs(),
+            'recent_datalogs': self.get_recent_datalogs(),
+        })
+
+        # ========== LEARNING & GROWTH TRACKING ==========
+        context.update({
+            # Learning progression metrics
+            'learning_metrics': self.get_learning_metrics(),
+
+            # Skills and technology mastery
+            'technology_mastery': self.get_technology_mastery(),
+
+            # Recent learning milestones
+            'recent_milestones': self.get_recent_milestones(),
+
+            # Learning stage distribution for chart
+            'learning_stages': self.get_learning_stage_distribution(),
+        })
+
+        # ========== RECENT ACTIVITY FEED ==========
+        context.update({
+            # Mixed activity feed (systems updates, blog posts, milestones)
+            'recent_activity': self.get_mixed_recent_activity(),
+
+            # Technology usage stats
+            'tech_stats': self.get_technology_stats(),
+
+            # Portfolio health alerts
+            'portfolio_alerts': self.get_portfolio_alerts(),
+        })
 
         return context
 
-    # ========== SYSTEM INFORMATION METHODS ==========
+    # ========== HERO METRICS ==========
+    def get_portfolio_metrics(self):
+        """Combined metrics for hero section"""
+        # Systems metrics
+        total_systems = SystemModule.objects.count()
+        deployed_systems = SystemModule.objects.deployed().count()
 
-    def get_system_performance_data(self):
-        """Enhanced system performance data"""
-        all_systems = SystemModule.objects.all()
+        # DataLogs metrics
+        total_posts = Post.objects.filter(status='published').count()
+        recent_posts = Post.objects.filter(
+            status='published',
+            published_date__gte=timezone.now() - timedelta(days=30)
+        ).count()
 
-        # Get base stats w dashboard_stats() method
-        base_stats = SystemModule.objects.dashboard_stats()
+        # Learning metrics
+        total_skills = SystemSkillGain.objects.values('skill').distinct().count()
+
+        # Technology metrics
+        technologies_used = Technology.objects.annotate(
+            system_count=Count('systems')
+        ).filter(system_count__gt=0).count()
+
+        # Portfolio Readiness
+        portfolio_ready = SystemModule.objects.filter(portfolio_ready=True).count()
+        portfolio_percentage = round((portfolio_ready / max(total_systems, 1)) * 100, 1) if total_systems > 0 else 0
 
         return {
-            # Include all base stats from manager
-            **base_stats,
-            # Fallback for template in case I miss a field name update
-            'deployed_systems': base_stats['deployed_count'],
-            'active_development': base_stats['in_development_count'],
+            # Primary metrics for hero
+            'total_systems': total_systems,
+            'total_posts': total_posts,
+            'total_skills': total_skills,
+            'portfolio_percentage': portfolio_percentage,
 
-            # Additional stats
-            'avg_complexity': all_systems.aggregate(avg=Avg('complexity'))['avg'] or 0,
-            'total_features': SystemFeature.objects.count(),
-            'total_technologies': Technology.objects.count(),
-            'total_code_lines': all_systems.aggregate(total=Sum('code_lines'))['total'] or 0,
+            # Secondary metrics for context
+            'deployed_systems': deployed_systems,
+            'recent_posts': recent_posts,
+            'technologies_used': technologies_used,
+            'portfolio_ready_count': portfolio_ready,
         }
 
-    def get_featured_systems_with_learning(self):
-        """Featured systems with learning context"""
-        return SystemModule.objects.featured().select_related(
-            'system_type'
-        ).prefetch_related(
+    # ========== FEATURED CONTENT ==========
+    def get_featured_systems(self):
+        """Get featured systems with learning context"""
+        return SystemModule.objects.filter(
+            featured=True
+        ).select_related('system_type').prefetch_related(
             'technologies',
-            'skills_developed',
-            'milestones'
+            'skill_gains__skill'
         ).order_by('-updated_at')[:6]
 
-    def get_recent_system_activity(self):
-        """Recent system activity w learning context"""
-        activities = []
+    def get_featured_datalogs(self):
+        """Get featured DataLog entries"""
+        return Post.objects.filter(
+            status='published',
+            featured=True
+        ).select_related('category', 'author').prefetch_related(
+            'tags',
+            'related_systems'
+        ).order_by('-published_date')[:4]
 
-        # Recent system updates
-        recent_systems = SystemModule.objects.order_by('-updated_at')[:5]
-        for system in recent_systems:
-            activities.append({
-                'type': 'system_update',
-                'title': f"Updated {system.title}",
-                'description': f"System in {system.learning_stage} stage",
-                'date': system.updated_at,
-                'icon': 'edit',
-                'color': 'teal',
-                'url': system.get_absolute_url(),
-                'learning_context': system.get_learning_stage_display()
-            })
+    def get_recent_datalogs(self):
+        """Get recent DataLog entries"""
+        return Post.objects.filter(status='published').select_related(
+            'category', 'author'
+        ).prefetch_related('tags').order_by('-published_date')[:6]
 
-        # Recent milestones
-        recent_milestones = LearningMilestone.objects.select_related(
-            'system'
-        ).order_by('-date_achieved')[:5]
-        for milestone in recent_milestones:
-            activities.append({
-                'type': 'milestone',
-                'title': milestone.title,
-                'description': f"Achieved in {milestone.system.title}",
-                'date': milestone.date_achieved,
-                'icon': self.get_milestone_icon(milestone.milestone_type),
-                'color': self.get_milestone_color(milestone.milestone_type),
-                'url': system.get_absolute_url(),
-                'learning_context': milestone.get_milestone_type_display()
-            })
+    # ========== LEARNING METRICS ==========
+    def get_learning_metrics(self):
+        """Learning progression metrics"""
+        # Calculate learning velocity
+        earliest_project = SystemModule.objects.filter(
+            create_at__isnull=False
+        ).order_by('created_at').first()
 
-        # Recent skill gains
-        recent_skills = SystemSkillGain.objects.select_related(
-            'system', 'skill'
-        ).order_by('-id')[:3]
-        for skill_gain in recent_skills:
-            activities.append({
-                'type': 'skill_gain',
-                'title': f"Gained {skill_gain.skill.name}",
-                'description': f"Through {skill_gain.system.title}",
-                'date': skill_gain.system.updated_at,
-                'icon': 'brain',
-                'color': 'purple',
-                'url': system.get_absolute_url(),
-                'learning_context': skill_gain.proficiency_gained or 'Intermediate'
-            })
+        total_skills = SystemSkillGain.objects.values('skill').distinct().count()
 
-        # Sort by date and return recent
-        activities.sort(key=lambda x: x['date'], reverse=True)
-        return activities[:10]
-
-    def get_technology_usage_with_learning(self):
-        """Technology usage with learning impact"""
-        tech_data = Technology.objects.annotate(
-            usage_count=Count('systems'),
-            learning_projects=Count('systems', filter=Q(systems__skills_developed__isnull=False))
-        ).filter(usage_count__gt=0).order_by('-usage_count')[:8]
-
-        usage_data = []
-        for tech in tech_data:
-            # Calculate learning impact
-            systems_with_tech = SystemModule.objects.filter(technologies=tech)
-            sys = systems_with_tech.annotate(
-                skills_count=Count('id')
-            ).aggregate(
-                avg_velocity=Avg('skills_count')
-            )['avg_velocity'] or 0
-            # avg_learning_velocity = systems_with_tech.aggregate(
-            #     skills_count=Count('id'),
-            #     avg_velocity=Avg('skills_count')
-            # )['avg_velocity'] or 0
-
-            usage_data.append({
-                'technology': tech,
-                'usage_count': tech.usage_count,
-                'learning_projects': tech.learning_projects,
-                'learning_impact': min(sys * 2, 10),  # Scale 0-10
-                'mastery_projects': systems_with_tech.filter(
-                    learning_stage__in=['refactoring', 'teaching']
-                ).count(),
-                'first_usage_stage': systems_with_tech.filter(
-                    learning_stage__in=['tutorial', 'guided']
-                ).count()
-            })
-        return usage_data
-
-    # ========== LEARNING INFORMATION METHODS ==========
-    def get_comprehensive_learning_metrics(self):
-        """Comprehensive learning metrics for dashboard"""
-        all_systems = SystemModule.objects.all()
-        all_skills = SystemSkillGain.objects.all()
-        all_milestones = LearningMilestone.objects.all()
-
-        # Calculate learning velocity (skills per month)
-        if all_systems.exists():
-            first_system = all_systems.order_by('created_at').first()
-            months_active = max(
-                (timezone.now().date() - first_system.created_at.date()).days / 30, 1
-            )
-            learning_velocity = all_skills.count() / months_active
+        if earliest_project:
+            months_active = max((timezone.now() - earliest_project.created_at).days / 30, 1)
+            learning_velocity = round(total_skills / months_active, 1)
         else:
             learning_velocity = 0
 
-        # Portfolio readiness
-        portfolio_ready = all_systems.filter(portfolio_ready=True).count()
-        total_systems = all_systems.count()
-        portfolio_percentage = (portfolio_ready / max(total_systems, 1)) * 100
+        # Recent learning activity
+        recent_skill_gains = SystemSkillGain.objects.filter(
+            system__updated_at__gte=timezone.now() - timedelta(days=30)
+        ).count()
 
-        # Technology mastery (used in 3+ projects)
-        tech_mastery = Technology.objects.annotate(
-            project_count=Count('systems')
-        ).filter(project_count__gt=3).count()
-
-        return {
-            'total_skills_gained': all_skills.count(),
-            'learning_velocity': round(learning_velocity, 1),
-            'total_milestones': all_milestones.count(),
-            'technologies_mastered': tech_mastery,
-            'portfolio_ready_count': portfolio_ready,
-            'portfolio_ready_percentage': round(portfolio_percentage, 1),
-            'total_development_hours': all_systems.aggregate(
-                total=Sum('actual_dev_hours')
-            )['total'] or 0,
-            'avg_project_complexity': all_systems.aggregate(
-                avg=Avg('complexity')
-            )['avg'] or 0,
-            'learning_stage_advanced': all_systems.filter(
-                learning_stage__in=['refactoring', 'contributing', 'teaching']
-            ).count(),
-        }
-
-    def get_learning_progression_data(self):
-        """Learning progression over time"""
-        # Monthly skill gains
-        monthly_skills = SystemSkillGain.objects.annotate(
-            month=TruncMonth('system__created_at')
-        ).values('month').annotate(
-            skills_count=Count('id')
-        ).order_by('month')
-
-        # Monthly project complexity progression
-        monthly_complexity = SystemModule.objects.annotate(
-            month=TruncMonth('created_at')
-        ).values('month').annotate(
-            avg_complexity=Avg('complexity')
-        ).order_by('month')
+        # Milestone tracking
+        total_milestones = LearningMilestone.objects.count()
+        recent_milestones = LearningMilestone.objects.filter(
+            date_achieved__gte=timezone.now() - timedelta(days=30)
+        ).count()
 
         return {
-            'monthly_skills': list(monthly_skills),
-            'monthly_complexity': list(monthly_complexity),
-            'total_months_active': monthly_skills.count(),
-            'skills_acceleration': self.calculate_skill_acceleration(monthly_skills),
+            'total_skill_gained': total_skills,
+            'learning_velocity': learning_velocity,
+            'recent_skill_gains': recent_skill_gains,
+            'total_milestones': total_milestones,
+            'recent_milestones': recent_milestones,
         }
 
-    def get_skills_development_data(self):
-        """Skills development analysis"""
-        # Skills by category
-        skills_by_category = Skill.objects.annotate(
-            usage_count=Count('developed_in_projects')
-        ).filter(usage_count__gt=0).values(
-            'category'
-        ).annotate(
-            skills_count=Count('id'),
-            avg_usage=Avg('usage_count')
-        ).order_by('-skills_count')
-
-        # Most developed skills
-        top_skills = Skill.objects.annotate(
-            usage_count=Count('developed_in_projects')
-        ).filter(usage_count__gt=0).order_by('-usage_count')[:10]
-
-        # Recent skill gains
-        recent_gains = SystemSkillGain.objects.select_related(
-            'skill', 'system'
-        ).order_by('-system__created_at')[:5]
-
-        return {
-            'skills_by_category': list(skills_by_category),
-            'top_skills': top_skills,
-            'recent_gains': recent_gains,
-            'total_unique_skills': Skill.objects.filter(
-                developed_in_projects__isnull=False
-            ).distinct().count(),
-        }
-
-    def get_portfolio_readiness_analysis(self):
-        """Portfolio readiness analysis"""
-        all_systems = SystemModule.objects.all()
-
-        # Readiness by learning stage
-        readiness_by_stage = all_systems.values('learning_stage').annotate(
-            total=Count('id'),
-            ready=Count('id', filter=Q(portfolio_ready=True)),
-            percentage=Case(
-                When(total=0, then=Value(0)),
-                default=f('ready') * 100 / F('total'),
-                output_field=IntegerField()
+    def get_technology_mastery(self):
+        """Technology mastery w progression levels"""
+        return Technology.objects.annotate(
+            project_count=Count("systems"),
+            mastery_level=Case(
+                When(project_count__gte=5, then=Value("Expert")),
+                When(project_count__gte=3, then=Value("Advanced")),
+                When(project_count__gte=2, then=Value("Intermediate")),
+                default=Value("Beginner"),
+                output_field=CharField(),
+            ),
+            mastery_color=Case(
+                When(project_count__gte=5, then=Value("#FFD54F")),  # Gold
+                When(project_count__gte=3, then=Value("#64B5F6")),  # Blue
+                When(project_count__gte=2, then=Value("#81C784")),  # Green
+                default=Value("#FFB74D"),  # Orange
+                output_field=CharField(),
             )
-        ).order_by('learning_stage')
-
-        # Systems needing portfolio work
-        needs_work = all_systems.filter(
-            portfolio_ready=False,
-            status__in=['deployed', 'published']
-        ).select_related('system_type').order_by('-completion_percent')[:5]
-
-        # Portfolio improvement recommendations
-        recommendations = self.get_portfolio_recommendations(all_systems)
-
-        return {
-            'readiness_by_stage': list(readiness_by_stage),
-            'needs_work': needs_work,
-            'recommendations': recommendations,
-            'overall_readiness': all_systems.filter(portfolio_ready=True).count(),
-            'total_systems': all_systems.count(),
-        }
-
-    def get_recent_learning_milestones(self):
-        """Recent learning milestones w context"""
-        return LearningMilestone.objects.select_related(
-            'system'
-        ).prefetch_related(
-            'system__technologies'
-        ).order_by('-date_achieved')[:8]
+        ).filter(project_count__gt=0).order_by('-project_count')[:12]
 
     def get_learning_stage_distribution(self):
-        """Learning stage distribution w colors"""
-        stages = (
-            SystemModule.objects.values("learning_stage")
-            .annotate(count=Count("id"))
-            .order_by("-count")
-        )
+        """Distribution of systems across learning stages"""
+        stages = SystemModule.objects.values('learning_stage').annotate(
+            count=Count('id')
+        ).order_by('learning_stage')
 
-        stage_data = []
+        # Add display names and colors
+        stage_data = {
+            "tutorial": {"display": "Following Tutorial", "color": "#FFB74D"},
+            "guided": {"display": "Guided Project", "color": "#81C784"},
+            "independent": {"display": "Independent Development", "color": "#64B5F6"},
+            "refactoring": {"display": "Refactoring/Improving", "color": "#FFD54F"},
+            "teaching": {"display": "Teaching/Sharing", "color": "#F06292"},
+        }
+
         for stage in stages:
-            stage_data.append(
+            stage_info = stage_data.get(stage["learning_stage"], {})
+            stage["color"] = stage_info.get("color", "#81C784")
+            stage["stage_display"] = stage_info.get("display", stage["learning_stage"])
+
+        return stages
+
+    def get_recent_milestones(self):
+        """Recent learning achievements"""
+        return LearningMilestone.objects.select_related(
+            'system'
+        ).order_by('-date_achieved')[:5]
+
+    # ========== ACTIVITY & ALERTS ==========
+    def get_mixed_recent_activity(self):
+        """Mixed activity feed from systems, blog posts, and milestones"""
+        activities = []
+
+        # Recent system updates
+        recent_systems = SystemModule.objects.filter(
+            updated_at__gte=timezone.now() - timedelta(days=14)
+        ).select_related('system_type').order_by("-updated_at")[:5]
+
+        for system in recent_systems:
+            activities.append(
                 {
-                    "stage": stage["learning_stage"],
-                    "stage_display": dict(SystemModule.LEARNING_STAGE_CHOICES).get(
-                        stage["learning_stage"], stage["learning_stage"]
-                    ),
-                    "count": stage["count"],
-                    "color": {
-                        "tutorial": "#FFB74D",
-                        "guided": "#81C784",
-                        "independent": "#64B5F6",
-                        "refactoring": "#BA68C8",
-                        "contributing": "#4FC3F7",
-                        "teaching": "#FFD54F",
-                    }.get(stage["learning_stage"], "#64B5F6"),
+                    "type": "system_update",
+                    "title": f"Updated {system.title}",
+                    "subtitle": f"{system.get_learning_stage_display()} • {system.technologies.count()} technologies",
+                    "date": system.updated_at,
+                    "icon": "fas fa-project-diagram",
+                    "color": "#64B5F6",
+                    "url": system.get_absolute_url(),
                 }
             )
 
-        return stage_data
+        # Recent blog posts
+        recent_posts = Post.objects.filter(
+            status='published',
+            published_date__gte=timezone.now() - timedelta(days=14)
+        ).select_related('category').order_by('-published_date')[:5]
 
-    # ========== COMBINED ANALYTICS METHODS ==========
-
-    def get_complexity_learning_correlation(self):
-        """Analyze correlation between project complexity and learning"""
-        systems_data = SystemModule.objects.annotate(
-            skills_count=Count('skills_developed')
-        ).values('complexity', 'skills_count', 'learning_stage').order_by('complexity')
-
-        return {
-            'systems_data': list(systems_data),
-            'correlation_insights': self.analyze_complexity_learning_correlation(systems_data),
-        }
-
-    def get_technology_learning_timeline(self):
-        """Technology adoption timeline w learning context"""
-        tech_timeline = []
-
-        for tech in Technology.objects.annotate(
-            first_usage=Min('systems__created_at'),
-            total_usage=Count('systems')
-        ).filter(total_usage__gt=0).order_by('first_use')[:10]:
-
-            tech_timeline.append({
-                'technology': tech,
-                'first_use': tech.first_usage,
-                'learning_projects': tech.systems.filter(
-                    skills_developed__isnull=False
-                ).count(),
-                'mastery_achieved': tech.systems.filter(
-                    learning_stage__in=['refactoring', 'teaching']
-                ).exists(),
+        for post in recent_posts:
+            activities.append({
+                'type': 'datalog_post',
+                'title': f"New Datalog Entry: {post.title}",
+                'subtitle': f"{post.category.name} • {post.reading_time} min read",
+                'date': post.published_date,
+                'icon': 'fas fa-file-alt',
+                'color': '#B39DDB',
+                'url': post.get_absolute_url()
             })
 
-        return tech_timeline
+        # Recent milestones
+        recent_milestones = LearningMilestone.objects.filter(
+            date_achieved__gte=timezone.now() - timedelta(days=14)
+        ).select_related("system").order_by(
+            "-date_achieved"
+        )[:3]
+        for milestone in recent_milestones:
+            activities.append(
+                {
+                    "type": "milestone",
+                    "title": f"Milestone: {milestone.title}",
+                    "subtitle": f"{milestone.system.title} • {milestone.get_milestone_type_display()}",
+                    "date": milestone.date_achieved,
+                    "icon": "fas fa-trophy",
+                    "color": "#FFD54F",
+                    "url": milestone.system.get_absolute_url(),
+                }
+            )
 
-    def get_project_evolution_metrics(self):
-        """Project evolution and growth metrics"""
-        systems_by_quarter = SystemModule.objects.annotate(
-            quarter=Extract('created_at__quarter'),
-            year=Extract('created_at__year')
-        ).values('year', 'quarter').annotate(
-            system_count=Count('id'),
-            avg_complexity=Avg('complexity'),
-            skills_gained=Count('skills_developed'),
-            portfolio_ready=Count('id', filter=Q(portfolio_ready=True))
-        ).order_by('year', 'quarter')
+        # Sort by date and return recent
+        return sorted(activities, key=lambda x: x['date'], reverse=True)[:10]
 
-        return {
-            'quarterly_evolution': list(systems_by_quarter),
-            'growth_trends': self.calculate_growth_trends(systems_by_quarter),
-        }
+    def get_technology_stats(self):
+        """Technology usage stats"""
+        return Technology.objects.annotate(
+            system_count=Count('systems')
+        ).filter(system_count__gt=0).order_by('-system_count')[:8]
 
-    # ========== HELPER METHODS ==========
+    def get_portfolio_alerts(self):
+        """Portfolio improvement alerts"""
+        alerts = []
 
-    def get_milestone_icon(self, milestone_type):
-        """Get icon for milestone type"""
-        icons = {
-            "first_time": "star",
-            "breakthrough": "lightbulb",
-            "completion": "check-circle",
-            "deployment": "rocket",
-            "teaching": "users",
-            "contribution": "code-branch",
-        }
-        return icons.get(milestone_type, "flag")
+        # Check portfolio readiness
+        total_systems = SystemModule.objects.count()
+        unready_systems = SystemModule.objects.filter(portfolio_ready=False).count()
 
-    def get_milestone_color(self, milestone_type):
-        """Get color for milestone type"""
-        colors = {
-            "first_time": "yellow",
-            "breakthrough": "purple",
-            "completion": "teal",
-            "deployment": "coral",
-            "teaching": "mint",
-            "contribution": "lavender",
-        }
-        return colors.get(milestone_type, "navy")
+        if unready_systems > 0 and total_systems > 0:
+            percentage = round((unready_systems / total_systems) * 100)
+            alerts.append({
+                'type': 'warning',
+                'message': f'{percentage}% of systems need portfolio updates',
+                'action': 'Review documentation and learning objectives',
+                'icon': 'fas fa-clipboard-check',
+                'priority': 'medium'
+            })
 
-    def calculate_skill_acceleration(self, monthly_skills):
-        """Calculate if skill acquisition is accelerating"""
-        if len(monthly_skills) < 2:
-            return 0
-
-        recent_avg = sum(m['skills_count'] for m in monthly_skills[-3:]) / min(3, len(monthly_skills))
-        early_avg = sum(m['skills_count'] for m in monthly_skills[:3]) / min(3, len(monthly_skills))
-
-        return round(
-            ((recent_avg - early_avg) / max(early_avg, 1)) * 100, 1
-        )
-
-    def get_portfolio_recommendations(self, systems):
-        """Generate portfolio improvement recommendations"""
-        recommendations = []
-
-        # Systems needing documentation
-        undocumented = systems.filter(
-            Q(description='') | Q(description__isnull=True),
-            status__in=['deployed', 'published']
+        # Check for recent activity
+        recent_activity = SystemModule.objects.filter(
+            updated_at__gte=timezone.now() - timedelta(days=7)
         ).count()
 
-        if undocumented > 0:
-            recommendations.append({
-                'type': 'documentation',
-                'priority': 'high',
-                'title': 'Add System Documentation',
-                'description': f"{undocumented} deployed or published systems need descriptions",
-                'action': 'Write comprehensive README files and system descriptions'
+        if recent_activity == 0:
+            alerts.append({
+                'type': 'info',
+                'message': 'No recent development activity',
+                'action': 'Consider working on a project or adding a DataLog entry',
+                'icon': 'fas fa-calendar-plus',
+                'priority': 'low'
             })
-        
-        # Systems without GitHub links
-        no_github = systems.filter(
-            Q(github_url='') | Q(github_url__isnull=True),
-            portfolio_ready=False
+
+        # Check learning documentation
+        missing_objectives = SystemModule.objects.filter(
+            learning_objectives__in=['', None]
         ).count()
 
-        if no_github > 0:
-            recommendations.append({
-                'type': 'repository',
-                'priority': 'medium',
-                'title': 'Add GitHub Repository Links',
-                'description': f"{no_github} systems missing source code links",
-                'action': 'Upload code to GitHub and add repository URLs'
+        if missing_objectives > 0:
+            alerts.append({
+                'type': 'info',
+                'message': f'{missing_objectives} projects missing learning objectives',
+                'action': 'Add learning documentation to showcase growth',
+                'icon': 'fas fa-graduation-cap',
+                'priority': 'medium'
             })
 
-        # Learning documentation opportunities
-        no_learning_docs = systems.filter(
-            skills_developed__isnull=False,
-            log_entries__isnull=True
-        ).count()
+        return sorted(alerts, key=lambda x: {'high': 3, 'medium': 2, 'low': 1}[x['priority']], reverse=True)
 
-        if no_learning_docs > 0:
-            recommendations.append({
-                'type': 'learning',
-                'priority': 'medium',
-                'title': 'Document Learning Journey',
-                'description': f"{no_learning_docs} systems w skills gained need learning documentation",
-                'action': 'Write log entries about challenges overcome and lessons learned'
-            })
+
+
+
+    # # ========== SYSTEM INFORMATION METHODS ==========
+
+    # def get_dashboard_stats(self):
+    #     """Core system stats"""
+    #     # Get using manager method
+    #     return SystemModule.objects.dashboard_stats()
+
+    # def get_featured_systems(self):
+    #     """Featured systems with learning context"""
+    #     return SystemModule.objects.featured().select_related(
+    #         'system_type'
+    #     ).prefetch_related(
+    #         'technologies',
+    #         'skill_gains__skill',
+    #         'milestones'
+    #     ).order_by('-updated_at')[:6]
+
+    # def get_recent_activity(self):
+    #     """Recent system updates and changes"""
+    #     activities = []
+
+    #     # Recent system updates
+    #     recent_systems = SystemModule.objects.order_by('-updated_at')[:5]
+    #     for system in recent_systems:
+    #         activities.append({
+    #             'type': 'system_update',
+    #             'title': f"Updated {system.title}",
+    #             'description': f"System in {system.learning_stage} stage",
+    #             'date': system.updated_at,
+    #             'icon': 'edit',
+    #             'color': 'teal',
+    #             'url': system.get_absolute_url(),
+    #             'learning_context': system.get_learning_stage_display()
+    #         })
+
+    #     # Recent milestones
+    #     recent_milestones = LearningMilestone.objects.select_related(
+    #         'system'
+    #     ).order_by('-date_achieved')[:5]
+    #     for milestone in recent_milestones:
+    #         activities.append({
+    #             'type': 'milestone',
+    #             'title': milestone.title,
+    #             'description': f"Achieved in {milestone.system.title}",
+    #             'date': milestone.date_achieved,
+    #             'icon': self.get_milestone_icon(milestone.milestone_type),
+    #             'color': self.get_milestone_color(milestone.milestone_type),
+    #             'url': system.get_absolute_url(),
+    #             'learning_context': milestone.get_milestone_type_display()
+    #         })
+
+    #     # Recent skill gains
+    #     recent_skills = SystemSkillGain.objects.select_related(
+    #         'system', 'skill'
+    #     ).order_by('-id')[:3]
+    #     for skill_gain in recent_skills:
+    #         activities.append({
+    #             'type': 'skill_gain',
+    #             'title': f"Gained {skill_gain.skill.name}",
+    #             'description': f"Through {skill_gain.system.title}",
+    #             'date': skill_gain.system.updated_at,
+    #             'icon': 'brain',
+    #             'color': 'purple',
+    #             'url': system.get_absolute_url(),
+    #             'learning_context': skill_gain.proficiency_gained or 'Intermediate'
+    #         })
+
+    #     # Sort by date and return recent
+    #     activities.sort(key=lambda x: x['date'], reverse=True)
+    #     return activities[:10]
+
+    # def get_technology_usage_with_learning(self):
+    #     """Technology usage with learning impact"""
+    #     tech_data = Technology.objects.annotate(
+    #         usage_count=Count('systems'),
+    #         learning_projects=Count('systems', filter=Q(systems__skills_developed__isnull=False))
+    #     ).filter(usage_count__gt=0).order_by('-usage_count')[:8]
+
+    #     usage_data = []
+    #     for tech in tech_data:
+    #         # Calculate learning impact
+    #         systems_with_tech = SystemModule.objects.filter(technologies=tech)
+    #         sys = systems_with_tech.annotate(
+    #             skills_count=Count('id')
+    #         ).aggregate(
+    #             avg_velocity=Avg('skills_count')
+    #         )['avg_velocity'] or 0
+    #         # avg_learning_velocity = systems_with_tech.aggregate(
+    #         #     skills_count=Count('id'),
+    #         #     avg_velocity=Avg('skills_count')
+    #         # )['avg_velocity'] or 0
+
+    #         usage_data.append({
+    #             'technology': tech,
+    #             'usage_count': tech.usage_count,
+    #             'learning_projects': tech.learning_projects,
+    #             'learning_impact': min(sys * 2, 10),  # Scale 0-10
+    #             'mastery_projects': systems_with_tech.filter(
+    #                 learning_stage__in=['refactoring', 'teaching']
+    #             ).count(),
+    #             'first_usage_stage': systems_with_tech.filter(
+    #                 learning_stage__in=['tutorial', 'guided']
+    #             ).count()
+    #         })
+    #     return usage_data
+
+    # # ========== LEARNING INFORMATION METHODS ==========
+    # def get_comprehensive_learning_metrics(self):
+    #     """Comprehensive learning metrics for dashboard"""
+    #     all_systems = SystemModule.objects.all()
+    #     all_skills = SystemSkillGain.objects.all()
+    #     all_milestones = LearningMilestone.objects.all()
+
+    #     # Calculate learning velocity (skills per month)
+    #     if all_systems.exists():
+    #         first_system = all_systems.order_by('created_at').first()
+    #         months_active = max(
+    #             (timezone.now().date() - first_system.created_at.date()).days / 30, 1
+    #         )
+    #         learning_velocity = all_skills.count() / months_active
+    #     else:
+    #         learning_velocity = 0
+
+    #     # Portfolio readiness
+    #     portfolio_ready = all_systems.filter(portfolio_ready=True).count()
+    #     total_systems = all_systems.count()
+    #     portfolio_percentage = (portfolio_ready / max(total_systems, 1)) * 100
+
+    #     # Technology mastery (used in 3+ projects)
+    #     tech_mastery = Technology.objects.annotate(
+    #         project_count=Count('systems')
+    #     ).filter(project_count__gt=3).count()
+
+    #     return {
+    #         'total_skills_gained': all_skills.count(),
+    #         'learning_velocity': round(learning_velocity, 1),
+    #         'total_milestones': all_milestones.count(),
+    #         'technologies_mastered': tech_mastery,
+    #         'portfolio_ready_count': portfolio_ready,
+    #         'portfolio_ready_percentage': round(portfolio_percentage, 1),
+    #         'total_development_hours': all_systems.aggregate(
+    #             total=Sum('actual_dev_hours')
+    #         )['total'] or 0,
+    #         'avg_project_complexity': all_systems.aggregate(
+    #             avg=Avg('complexity')
+    #         )['avg'] or 0,
+    #         'learning_stage_advanced': all_systems.filter(
+    #             learning_stage__in=['refactoring', 'contributing', 'teaching']
+    #         ).count(),
+    #     }
+
+    # def get_learning_progression_data(self):
+    #     """Learning progression over time"""
+    #     # Monthly skill gains
+    #     monthly_skills = SystemSkillGain.objects.annotate(
+    #         month=TruncMonth('system__created_at')
+    #     ).values('month').annotate(
+    #         skills_count=Count('id')
+    #     ).order_by('month')
+
+    #     # Monthly project complexity progression
+    #     # monthly_complexity = SystemModule.objects.annotate(
+    #     #     month=TruncMonth('created_at')
+    #     # ).values('month').annotate(
+    #     #     avg_complexity=Avg('complexity')
+    #     # ).order_by('month')
+
+    #     return {
+    #         'monthly_skills': list(monthly_skills),
+    #         # 'monthly_complexity': list(monthly_complexity),
+    #         'total_months_active': monthly_skills.count(),
+    #         'skills_acceleration': self.calculate_skill_acceleration(monthly_skills),
+    #     }
+
+    # def get_skills_development_data(self):
+    #     """Skills development analysis"""
+    #     # Skills by category
+    #     skills_by_category = Skill.objects.annotate(usage_count=Count('developed_in_projects')
+    #     ).filter(usage_count__gt=0).values(
+    #         'category'
+    #     ).annotate(
+    #         skills_count=Count('id'),
+    #         avg_usage=Avg('usage_count')
+    #     ).order_by('-skills_count')
+
+    #     # Most developed skills
+    #     top_skills = Skill.objects.annotate(
+    #         usage_count=Count('developed_in_projects')
+    #     ).filter(usage_count__gt=0).order_by('-usage_count')[:10]
+
+    #     # Recent skill gains
+    #     recent_gains = SystemSkillGain.objects.select_related(
+    #         'skill', 'system'
+    #     ).order_by('-system__created_at')[:5]
+
+    #     return {
+    #         'skills_by_category': list(skills_by_category),
+    #         'top_skills': top_skills,
+    #         'recent_gains': recent_gains,
+    #         'total_unique_skills': Skill.objects.filter(
+    #             developed_in_projects__isnull=False
+    #         ).distinct().count(),
+    #     }
+
+    # def get_portfolio_readiness_analysis(self):
+    #     """Portfolio readiness analysis"""
+    #     all_systems = SystemModule.objects.all()
+
+    #     # Readiness by learning stage
+    #     readiness_by_stage = all_systems.values('learning_stage').annotate(
+    #         total=Count('id'),
+    #         ready=Count('id', filter=Q(portfolio_ready=True)),
+    #         percentage=Case(
+    #             When(total=0, then=Value(0)),
+    #             default=f('ready') * 100 / F('total'),
+    #             output_field=IntegerField()
+    #         )
+    #     ).order_by('learning_stage')
+
+    #     # Systems needing portfolio work
+    #     needs_work = all_systems.filter(
+    #         portfolio_ready=False,
+    #         status__in=['deployed', 'published']
+    #     ).select_related('system_type').order_by('-completion_percent')[:5]
+
+    #     # Portfolio improvement recommendations
+    #     recommendations = self.get_portfolio_recommendations(all_systems)
+
+    #     return {
+    #         'readiness_by_stage': list(readiness_by_stage),
+    #         'needs_work': needs_work,
+    #         'recommendations': recommendations,
+    #         'overall_readiness': all_systems.filter(portfolio_ready=True).count(),
+    #         'total_systems': all_systems.count(),
+    #     }
+
+    # def get_recent_learning_milestones(self):
+    #     """Recent learning milestones w context"""
+    #     return LearningMilestone.objects.select_related(
+    #         'system'
+    #     ).prefetch_related(
+    #         'system__technologies'
+    #     ).order_by('-date_achieved')[:8]
+
+    # def get_learning_stage_distribution(self):
+    #     """Learning stage distribution w colors"""
+    #     stages = (
+    #         SystemModule.objects.values("learning_stage")
+    #         .annotate(count=Count("id"))
+    #         .order_by("-count")
+    #     )
+
+    #     stage_data = []
+    #     for stage in stages:
+    #         stage_data.append(
+    #             {
+    #                 "stage": stage["learning_stage"],
+    #                 "stage_display": dict(SystemModule.LEARNING_STAGE_CHOICES).get(
+    #                     stage["learning_stage"], stage["learning_stage"]
+    #                 ),
+    #                 "count": stage["count"],
+    #                 "color": {
+    #                     "tutorial": "#FFB74D",
+    #                     "guided": "#81C784",
+    #                     "independent": "#64B5F6",
+    #                     "refactoring": "#BA68C8",
+    #                     "contributing": "#4FC3F7",
+    #                     "teaching": "#FFD54F",
+    #                 }.get(stage["learning_stage"], "#64B5F6"),
+    #             }
+    #         )
+
+    #     return stage_data
+
+    # # ========== COMBINED ANALYTICS METHODS ==========
+
+    # def get_complexity_learning_correlation(self):
+    #     """Analyze correlation between project complexity and learning"""
+    #     systems_data = SystemModule.objects.annotate(
+    #         skills_count=Count('skills_developed')
+    #     ).values('complexity', 'skills_count', 'learning_stage').order_by('complexity')
+
+    #     return {
+    #         'systems_data': list(systems_data),
+    #         'correlation_insights': self.analyze_complexity_learning_correlation(systems_data),
+    #     }
+
+    # def get_technology_learning_timeline(self):
+    #     """Technology adoption timeline w learning context"""
+    #     tech_timeline = []
+
+    #     for tech in Technology.objects.annotate(
+    #         first_usage=Min('systems__created_at'),
+    #         total_usage=Count('systems')
+    #     ).filter(total_usage__gt=0).order_by('first_use')[:10]:
+
+    #         tech_timeline.append({
+    #             'technology': tech,
+    #             'first_use': tech.first_usage,
+    #             'learning_projects': tech.systems.filter(
+    #                 skills_developed__isnull=False
+    #             ).count(),
+    #             'mastery_achieved': tech.systems.filter(
+    #                 learning_stage__in=['refactoring', 'teaching']
+    #             ).exists(),
+    #         })
+
+    #     return tech_timeline
+
+    # def get_project_evolution_metrics(self):
+    #     """Project evolution and growth metrics"""
+    #     systems_by_quarter = SystemModule.objects.annotate(
+    #         quarter=Extract('created_at__quarter'),
+    #         year=Extract('created_at__year')
+    #     ).values('year', 'quarter').annotate(
+    #         system_count=Count('id'),
+    #         avg_complexity=Avg('complexity'),
+    #         skills_gained=Count('skills_developed'),
+    #         portfolio_ready=Count('id', filter=Q(portfolio_ready=True))
+    #     ).order_by('year', 'quarter')
+
+    #     return {
+    #         'quarterly_evolution': list(systems_by_quarter),
+    #         'growth_trends': self.calculate_growth_trends(systems_by_quarter),
+    #     }
+
+    # # ========== HELPER METHODS ==========
+
+    # def get_milestone_icon(self, milestone_type):
+    #     """Get icon for milestone type"""
+    #     icons = {
+    #         "first_time": "star",
+    #         "breakthrough": "lightbulb",
+    #         "completion": "check-circle",
+    #         "deployment": "rocket",
+    #         "teaching": "users",
+    #         "contribution": "code-branch",
+    #     }
+    #     return icons.get(milestone_type, "flag")
+
+    # def get_milestone_color(self, milestone_type):
+    #     """Get color for milestone type"""
+    #     colors = {
+    #         "first_time": "yellow",
+    #         "breakthrough": "purple",
+    #         "completion": "teal",
+    #         "deployment": "coral",
+    #         "teaching": "mint",
+    #         "contribution": "lavender",
+    #     }
+    #     return colors.get(milestone_type, "navy")
+
+    # def calculate_skill_acceleration(self, monthly_skills):
+    #     """Calculate if skill acquisition is accelerating"""
+    #     if len(monthly_skills) < 2:
+    #         return 0
+
+    #     recent_avg = sum(m['skills_count'] for m in monthly_skills[-3:]) / min(3, len(monthly_skills))
+    #     early_avg = sum(m['skills_count'] for m in monthly_skills[:3]) / min(3, len(monthly_skills))
+
+    #     return round(
+    #         ((recent_avg - early_avg) / max(early_avg, 1)) * 100, 1
+    #     )
+
+    # def get_portfolio_recommendations(self, systems):
+    #     """Generate portfolio improvement recommendations"""
+    #     recommendations = []
+
+    #     # Systems needing documentation
+    #     undocumented = systems.filter(
+    #         Q(description='') | Q(description__isnull=True),
+    #         status__in=['deployed', 'published']
+    #     ).count()
+
+    #     if undocumented > 0:
+    #         recommendations.append({
+    #             'type': 'documentation',
+    #             'priority': 'high',
+    #             'title': 'Add System Documentation',
+    #             'description': f"{undocumented} deployed or published systems need descriptions",
+    #             'action': 'Write comprehensive README files and system descriptions'
+    #         })
         
-        return recommendations[:5]
+    #     # Systems without GitHub links
+    #     no_github = systems.filter(
+    #         Q(github_url='') | Q(github_url__isnull=True),
+    #         portfolio_ready=False
+    #     ).count()
 
-    def analyze_complexity_learning_correlation(self, systems_data):
-        """Analyze correlation between complexity and learning"""
-        if not systems_data:
-            return {}
+    #     if no_github > 0:
+    #         recommendations.append({
+    #             'type': 'repository',
+    #             'priority': 'medium',
+    #             'title': 'Add GitHub Repository Links',
+    #             'description': f"{no_github} systems missing source code links",
+    #             'action': 'Upload code to GitHub and add repository URLs'
+    #         })
 
-        # Simple correlation analysis
-        total_projects = len(systems_data)
-        high_complexity_high_learning = len([s for s in systems_data if s['complexity'] >= 7 and s['skills_count'] >= 3])
+    #     # Learning documentation opportunities
+    #     no_learning_docs = systems.filter(
+    #         skills_developed__isnull=False,
+    #         log_entries__isnull=True
+    #     ).count()
 
-        high_high_ratio = round(
-                (high_complexity_high_learning / max(total_projects, 1)) * 100, 1
-            )
-
-        low_avg_skills = round(
-            sum(s['skills_count'] for s in systems_data if s['complexity'] <= 3) / 
-            max(len([s for s in systems_data if s['complexity'] <= 3]), 1), 1
-            )
-
-        medium_avg_skills = round(
-            sum(s['skills_count'] for s in systems_data if 4 <= s['complexity'] <= 6) / 
-            max(len([s for s in systems_data if 4 <= s['complexity'] <= 6]), 1), 1
-            )
+    #     if no_learning_docs > 0:
+    #         recommendations.append({
+    #             'type': 'learning',
+    #             'priority': 'medium',
+    #             'title': 'Document Learning Journey',
+    #             'description': f"{no_learning_docs} systems w skills gained need learning documentation",
+    #             'action': 'Write log entries about challenges overcome and lessons learned'
+    #         })
         
-        high_avg_skills = round(
-            sum(s['skills_count'] for s in systems_data if s['complexity'] >= 7) / 
-            max(len([s for s in systems_data if s['complexity'] >= 7]), 1), 1
-            )
+    #     return recommendations[:5]
 
-        return {
-            'high_complexity_high_learning_ratio': high_high_ratio,
-            'avg_skills_per_complexity': {
-                'low': low_avg_skills,
-                'medium': medium_avg_skills,
-                'high': high_avg_skills
-            }
-        }
+    # def analyze_complexity_learning_correlation(self, systems_data):
+    #     """Analyze correlation between complexity and learning"""
+    #     if not systems_data:
+    #         return {}
 
-    def calculate_growth_trends(self, quarterly_data):
-        """Calculate growth trends from quarterly data"""
-        if len(quarterly_data) < 2:
-            return {}
+    #     # Simple correlation analysis
+    #     total_projects = len(systems_data)
+    #     high_complexity_high_learning = len([s for s in systems_data if s['complexity'] >= 7 and s['skills_count'] >= 3])
+
+    #     high_high_ratio = round(
+    #             (high_complexity_high_learning / max(total_projects, 1)) * 100, 1
+    #         )
+
+    #     low_avg_skills = round(
+    #         sum(s['skills_count'] for s in systems_data if s['complexity'] <= 3) / 
+    #         max(len([s for s in systems_data if s['complexity'] <= 3]), 1), 1
+    #         )
+
+    #     medium_avg_skills = round(
+    #         sum(s['skills_count'] for s in systems_data if 4 <= s['complexity'] <= 6) / 
+    #         max(len([s for s in systems_data if 4 <= s['complexity'] <= 6]), 1), 1
+    #         )
         
-        latest = quarterly_data[-1]
-        previous = quarterly_data[-2]
+    #     high_avg_skills = round(
+    #         sum(s['skills_count'] for s in systems_data if s['complexity'] >= 7) / 
+    #         max(len([s for s in systems_data if s['complexity'] >= 7]), 1), 1
+    #         )
 
-        return {
-            'project_growth': round(
-                ((latest['system_count'] - previous['system_count']) /
-                 max(previous['system_count'], 1)) * 100, 1
-            ),
+    #     return {
+    #         'high_complexity_high_learning_ratio': high_high_ratio,
+    #         'avg_skills_per_complexity': {
+    #             'low': low_avg_skills,
+    #             'medium': medium_avg_skills,
+    #             'high': high_avg_skills
+    #         }
+    #     }
 
-            'complexity_growth': round(
-                ((latest['avg_complexity'] - previous['avg_complexity']) /
-                 max(previous['avg_complexity'], 1)) * 100, 1
-            ),
+    # def calculate_growth_trends(self, quarterly_data):
+    #     """Calculate growth trends from quarterly data"""
+    #     if len(quarterly_data) < 2:
+    #         return {}
+        
+    #     latest = quarterly_data[-1]
+    #     previous = quarterly_data[-2]
 
-            'skills_growth': round(
-                ((latest['skills_gained'] - previous['skills_gained']) /
-                 max(previous['skills_gained'], 1)) * 100, 1
-            ),
-        }
+    #     return {
+    #         'project_growth': round(
+    #             ((latest['system_count'] - previous['system_count']) /
+    #              max(previous['system_count'], 1)) * 100, 1
+    #         ),
+
+    #         'complexity_growth': round(
+    #             ((latest['avg_complexity'] - previous['avg_complexity']) /
+    #              max(previous['avg_complexity'], 1)) * 100, 1
+    #         ),
+
+    #         'skills_growth': round(
+    #             ((latest['skills_gained'] - previous['skills_gained']) /
+    #              max(previous['skills_gained'], 1)) * 100, 1
+    #         ),
+    #     }
 
 
 # ===================== LEARNING FOCUSED VIEWS =====================
