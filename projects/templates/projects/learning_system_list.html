@@ -69,7 +69,7 @@
 .learning-stage-refactoring,
 .learning-stage-badge.learning-stage-refactoring {
     background: rgba(147, 51, 234, 0.15);
-    color: var(--color-purple);
+    color: var(--color-lavender);
     border: 1px solid rgba(147, 51, 234, 0.3);
 }
 .learning-stage-refactoring .stage-dot { background: var(--color-purple); }
@@ -96,9 +96,7 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.25rem 0.5rem;
-    background: rgba(76, 175, 80, 0.15);
     color: var(--color-success);
-    border: 1px solid rgba(76, 175, 80, 0.3);
     border-radius: 12px;
     font-size: 0.75rem;
     font-weight: 500;
@@ -109,9 +107,7 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.25rem 0.5rem;
-    background: rgba(255, 152, 0, 0.15);
     color: var(--color-warning);
-    border: 1px solid rgba(255, 152, 0, 0.3);
     border-radius: 12px;
     font-size: 0.75rem;
     font-weight: 500;
@@ -126,6 +122,10 @@
     padding: var(--spacing-md, 1rem);
     background: rgba(255, 255, 255, 0.03);
     border-radius: var(--border-radius-md, 8px);
+}
+
+.metric-item {
+    display: block;
 }
 
 /* Skills Pills */
@@ -196,7 +196,7 @@
     background: linear-gradient(90deg, var(--color-teal), #4dd0e1);
 }
 .progress-fill.learning-progress-refactoring {
-    background: linear-gradient(90deg, var(--color-purple), #ba68c8);
+    background: linear-gradient(90deg, var(--color-lavender), #ba68c8);
 }
 .progress-fill.learning-progress-contributing {
     background: linear-gradient(90deg, var(--color-mint, #40e0d0), #66ffff);
@@ -235,7 +235,7 @@
 
 .mastery-badge.mastery-advanced {
     background: rgba(147, 51, 234, 0.2);
-    color: var(--color-purple);
+    color: var(--color-lavender);
 }
 
 /* Milestones Indicator */
@@ -711,7 +711,7 @@
         <main class="systems-main-content">
             
             <!-- Updated Learning-Focused Sort Controls -->
-            <div class="unified-dashboard-container navy" style="margin-bottom: var(--spacing-lg, 1.5rem);">
+            <div class="unified-dashboard-container lavender" style="margin-bottom: var(--spacing-lg, 1.5rem);">
                 <div class="search-controls">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-md, 1rem);">
                         <div style="display: flex; align-items: center; gap: var(--spacing-md, 1rem);">
@@ -864,7 +864,7 @@
             {% endif %}
 
             <!-- Learning Metrics (replaces performance metrics) -->
-            <div class="system-card-metrics learning-metrics" style="display: contents;">
+            <div class="system-card-metrics learning-metrics">
                 <div class="metric-item">
                     <span class="metric-value">{{ system.skills_developed.count }}</span>
                     <span class="metric-label">Skills Gained</span>
@@ -907,7 +907,7 @@
             
             {% endif %}
 
-            <!-- Learning Progress Bar -->
+            {% comment %} <!-- Learning Progress Bar -->
             <div class="learning-progress">
                 <div class="progress-info">
                     <span>Learning Progress</span>
@@ -917,7 +917,7 @@
                     <div class="progress-fill learning-progress-{{ system.learning_stage }}" 
                          style="width: {{ system.completion_percent|default:0 }}%;"></div>
                 </div>
-            </div>
+            </div> {% endcomment %}
 
                         <!-- Technology Stack -->
             {% if system.technologies.all %}
@@ -959,8 +959,39 @@
     </div>
 </div>
 
+<!-- Card Footer -->
+<footer class="system-card-footer">
+    <div class="learning-progress progress-section">
+        <div class="progress-info">
+            <span>Progress</span>
+            <span>{{ system.completion_percent|default:0 }}%</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill learning-progress-{{ system.learning_stage }}" 
+                 style="width: {{ system.completion_percent|default:0 }}%;"></div>
+        </div>
+    </div>
+    
+    <div class="system-actions">
+        <a href="{{ system.get_absolute_url }}" class="action-btn primary">
+            <i class="fas fa-eye"></i>
+            <span>View</span>
+        </a>
+        {% if system.github_url %}
+        <a href="{{ system.github_url }}" target="_blank" class="action-btn">
+            <i class="fab fa-github"></i>
+        </a>
+        {% endif %}
+        {% if system.live_url %}
+        <a href="{{ system.live_url }}" target="_blank" class="action-btn">
+            <i class="fas fa-external-link-alt"></i>
+        </a>
+        {% endif %}
+    </div>
+</footer>
 
-        <!-- Card Footer -->
+
+        {% comment %} <!-- Card Footer -->
         <footer class="system-card-footer">
             <div class="system-actions">
                 <!-- Learning Milestones Indicator -->
@@ -976,7 +1007,7 @@
                     View Learning Details
                 </a>
             </div>
-        </footer>
+        </footer> {% endcomment %}
     </article>
     {% endfor %}
 </div>
