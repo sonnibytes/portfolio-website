@@ -138,7 +138,7 @@ class BaseAdminCreateView(AdminAccessMixin, BaseAdminView, CreateView):
 class BaseAdminUpdateView(AdminAccessMixin, BaseAdminView, UpdateView):
     """Base update view for admin operations."""
 
-    template_name = 'admon/forms/update_form.html'
+    template_name = 'admin/forms/update_form.html'
 
     def form_valid(self, form):
         messages.success(self.request, f'{self.model._meta.verbose_name.title()} updated successfully!')

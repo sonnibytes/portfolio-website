@@ -1,185 +1,121 @@
 <!-- templates/admin/admin_base.html -->
-{% extends "base.html" %}
-{% load static %}
-{% load aura_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AURA Admin{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- AURA Admin Styles -->
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --cyan: #06b6d4;
+            --lavender: #a855f7;
+            --emerald: #10b981;
+        }
 
-{% block title %}{{ title|default:"Admin Dashboard" }} | AURA Portfolio{% endblock %}
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin.css' %}">
-{% block admin_css %}{% endblock %}
-{% endblock %}
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
 
-{% block body_class %}admin-interface{% endblock %}
+        .admin-nav {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-{% block content %}
-<!-- Admin Header -->
-<section class="admin-header">
-    <div class="container">
-        <div class="admin-header-content">
-            <div class="admin-title-section">
-                <div class="admin-breadcrumbs">
-                    {% for crumb in breadcrumbs %}
-                        {% if crumb.url %}
-                            <a href="{{ crumb.url }}" class="breadcrumb-link">{{ crumb.name }}</a>
-                        {% else %}
-                            <span class="breadcrumb-current">{{ crumb.name }}</span>
-                        {% endif %}
-                        {% if not forloop.last %}<span class="breadcrumb-separator">/</span>{% endif %}
+        .admin-nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-right: 1rem;
+        }
+
+        .admin-nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Header -->
+    <header class="bg-dark border-bottom py-3">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-shield-alt me-2" style="color: var(--cyan);"></i>
+                        AURA Admin
+                    </h1>
+                </div>
+                <div class="col-md-6 text-end">
+                    {% if user.is_authenticated %}
+                        <span class="text-muted">Welcome, {{ user.username }}</span>
+                        <a href="/" class="btn btn-outline-secondary btn-sm ms-2">
+                            <i class="fas fa-home me-1"></i>
+                            View Site
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Navigation -->
+    <nav class="admin-nav py-2">
+        <div class="container-fluid">
+            <a href="{% url 'core:admin_dashboard' %}" class="admin-nav-link">
+                <i class="fas fa-home me-2"></i>Dashboard
+            </a>
+            <a href="{% url 'blog_admin:dashboard' %}" class="admin-nav-link">
+                <i class="fas fa-database me-2"></i>DataLogs
+            </a>
+            <a href="{% url 'projects_admin:dashboard' %}" class="admin-nav-link">
+                <i class="fas fa-microchip me-2"></i>Systems
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="py-4">
+        <div class="container-fluid">
+            <!-- Messages -->
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     {% endfor %}
                 </div>
-                <h1 class="admin-title">
-                    {% if icon %}
-                        <i class="{{ icon }} me-2"></i>
-                    {% endif %}
-                    {{ title }}
-                </h1>
-            </div>
-            
-            <div class="admin-actions">
-                {% block header_actions %}{% endblock %}
-            </div>
+            {% endif %}
+
+            {% block admin_content %}{% endblock %}
         </div>
-    </div>
-</section>
+    </main>
 
-<!-- Admin Navigation -->
-<section class="admin-nav">
-    <div class="container">
-        <div class="admin-nav-content">
-            <div class="nav-section">
-                <h3 class="nav-section-title">DataLogs Management</h3>
-                <div class="nav-links">
-                    <a href="{% url 'blog:dashboard' %}" class="admin-nav-link {% if app_label == 'blog' %}active{% endif %}">
-                        <i class="fas fa-database me-2"></i>
-                        <span class="link-text">DataLogs Dashboard</span>
-                        <div class="link-indicator" style="background: var(--lavender);"></div>
-                    </a>
-                    <a href="{% url 'blog:post_list_admin' %}" class="admin-nav-link">
-                        <i class="fas fa-file-alt me-2"></i>
-                        <span class="link-text">Manage Posts</span>
-                    </a>
-                    <a href="{% url 'blog:category_list' %}" class="admin-nav-link">
-                        <i class="fas fa-tags me-2"></i>
-                        <span class="link-text">Categories</span>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="nav-section">
-                <h3 class="nav-section-title">Systems Management</h3>
-                <div class="nav-links">
-                    <a href="{% url 'projects:systems_dashboard' %}" class="admin-nav-link {% if app_label == 'projects' %}active{% endif %}">
-                        <i class="fas fa-microchip me-2"></i>
-                        <span class="link-text">Systems Dashboard</span>
-                        <div class="link-indicator" style="background: var(--cyan);"></div>
-                    </a>
-                    <a href="{% url 'projects:system_list_admin' %}" class="admin-nav-link">
-                        <i class="fas fa-server me-2"></i>
-                        <span class="link-text">Manage Systems</span>
-                    </a>
-                    <a href="#" class="admin-nav-link">
-                        <i class="fas fa-code-branch me-2"></i>
-                        <span class="link-text">Technologies</span>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="nav-section">
-                <h3 class="nav-section-title">Core Management</h3>
-                <div class="nav-links">
-                    <a href="#" class="admin-nav-link {% if app_label == 'core' %}active{% endif %}">
-                        <i class="fas fa-home me-2"></i>
-                        <span class="link-text">Core Dashboard</span>
-                        <div class="link-indicator" style="background: var(--emerald);"></div>
-                    </a>
-                    <a href="#" class="admin-nav-link">
-                        <i class="fas fa-user me-2"></i>
-                        <span class="link-text">Profile Settings</span>
-                    </a>
-                    <a href="#" class="admin-nav-link">
-                        <i class="fas fa-cog me-2"></i>
-                        <span class="link-text">Site Settings</span>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="nav-section">
-                <h3 class="nav-section-title">System Operations</h3>
-                <div class="nav-links">
-                    <a href="#" class="admin-nav-link">
-                        <i class="fas fa-chart-line me-2"></i>
-                        <span class="link-text">Analytics Dashboard</span>
-                    </a>
-                    <a href="#" class="admin-nav-link">
-                        <i class="fas fa-users me-2"></i>
-                        <span class="link-text">User Management</span>
-                    </a>
-                    <a href="#" class="admin-nav-link">
-                        <i class="fas fa-shield-alt me-2"></i>
-                        <span class="link-text">Security Center</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Admin Content -->
-<section class="admin-content">
-    <div class="container">
-        {% if messages %}
-            <div class="admin-messages">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        <i class="fas fa-{{ message.tags|message_icon }} me-2"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-        
-        {% block admin_content %}{% endblock %}
-    </div>
-</section>
-{% endblock %}
-
-{% block extra_js %}
-<!-- Admin JavaScript -->
-<script src="{% static 'js/components/admin.js' %}"></script>
-{% block admin_js %}{% endblock %}
-{% endblock %}
-
-{% block inline_js %}
-// Admin interface initialization
-console.log('🛡️ Admin Interface Initialized');
-
-// Initialize admin-specific features
-if (typeof initAdminFeatures === 'function') {
-    initAdminFeatures();
-}
-
-// Enhanced security warnings for sensitive actions
-const sensitiveActions = document.querySelectorAll('.delete-action, .critical-action');
-sensitiveActions.forEach(action => {
-    action.addEventListener('click', function(e) {
-        if (!confirm('This action cannot be undone. Are you sure you want to proceed?')) {
-            e.preventDefault();
-        }
-    });
-});
-
-// Auto-hide messages after 5 seconds
-setTimeout(() => {
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(alert => {
-        if (alert.querySelector('.btn-close')) {
-            alert.querySelector('.btn-close').click();
-        }
-    });
-}, 5000);
-
-// Page-specific admin initialization
-{% block admin_inline_js %}{% endblock %}
-{% endblock %}
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

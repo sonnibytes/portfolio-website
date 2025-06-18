@@ -21,32 +21,47 @@ def admin_context(request):
         if request.user.is_authenticated and (
             request.user.is_staff or request.user.is_superuser
         ):
-            from blog.models import Post, Category
-            from projects.models import SystemModule, Technology
+            # Import here to avoid circular imports
+            try:
+                from blog.models import Post, Category
+                from projects.models import SystemModule, Technology
 
-            context.update(
-                {
-                    "admin_stats": {
-                        "total_posts": Post.objects.count(),
-                        "total_systems": SystemModule.objects.count(),
-                        "total_categories": Category.objects.count(),
-                        "total_technologies": Technology.objects.count(),
-                    },
-                    "admin_quick_links": [
-                        {
-                            "name": "DataLogs",
-                            "url": "/aura-admin/blog/",
-                            "icon": "fas fa-database",
-                            "color": "lavender",
+                context.update(
+                    {
+                        "admin_stats": {
+                            "total_posts": Post.objects.count(),
+                            "total_systems": SystemModule.objects.count(),
+                            "total_categories": Category.objects.count(),
+                            "total_technologies": Technology.objects.count(),
                         },
-                        {
-                            "name": "Systems",
-                            "url": "/aura-admin/projects/",
-                            "icon": "fas fa-microchip",
-                            "color": "cyan",
+                        "admin_quick_links": [
+                            {
+                                "name": "DataLogs",
+                                "url": "/aura-admin/blog/",
+                                "icon": "fas fa-database",
+                                "color": "lavender",
+                            },
+                            {
+                                "name": "Systems",
+                                "url": "/aura-admin/projects/",
+                                "icon": "fas fa-microchip",
+                                "color": "cyan",
+                            },
+                        ],
+                    }
+                )
+            except ImportError:
+                # If models don't exist yet, provide empty stats
+                context.update(
+                    {
+                        "admin_stats": {
+                            "total_posts": 0,
+                            "total_systems": 0,
+                            "total_categories": 0,
+                            "total_technologies": 0,
                         },
-                    ],
-                }
-            )
+                        "admin_quick_links": [],
+                    }
+                )
 
     return context

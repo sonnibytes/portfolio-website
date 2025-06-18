@@ -80,8 +80,49 @@ def completion_bar(percentage):
 
 
 @register.simple_tag
-def admin_card(title, value, icon, color="primary", trend=None):
-    """Generate admin dashboard card HTML."""
+def admin_card(*args, **kwargs):
+    """
+    Generate admin dashboard card HTML.
+
+    Supports both syntaxes:
+    {% admin_card "Title" value "icon" "color" %}  (positional)
+    {% admin_card title="Title" value=value icon="icon" color="color" %}  (named)
+    """
+    # Handle named parameters
+    if kwargs:
+        title = kwargs.get("title", "Metric")
+        value = kwargs.get("value", 0)
+        icon = kwargs.get("icon", "fas fa-chart-bar")
+        color = kwargs.get("color", "primary")
+        trend = kwargs.get("trend", None)
+
+    # Handle positional parameters
+    elif args:
+        title = args[0] if len(args) > 0 else "Metric"
+        value = args[1] if len(args) > 1 else 0
+        icon = args[2] if len(args) > 2 else "fas fa-chart-bar"
+        color = args[3] if len(args) > 3 else "primary"
+        trend = args[4] if len(args) > 4 else None
+
+    # Default fallback
+    else:
+        title = "Metric"
+        value = 0
+        icon = "fas fa-chart-bar"
+        color = "primary"
+        trend = None
+
+    # Handle icon name hyphens via lookup for now
+    icons = {
+        'database': 'fas fa-database',
+        'microchip': 'fas fa-microchip',
+        'tags': 'fas fa-tags',
+        'code_branch': 'fas fa-code-branch',
+    }
+
+    clean_icon = icon or icons.get(icon, 'fas fa-chart-bar')
+
+    # Ensure value is not None
     if value is None:
         value = 0
 
@@ -99,6 +140,7 @@ def admin_card(title, value, icon, color="primary", trend=None):
         "amber": "#f59e0b",
         "rose": "#f43f5e",
         "blue": "#3b82f6",
+        "yellow": "#eab308",
     }
 
     icon_color = color_map.get(color, color_map["primary"])
@@ -114,7 +156,7 @@ def admin_card(title, value, icon, color="primary", trend=None):
     <div class="admin-metric-card glass-card">
         <div class="metric-header">
             <div class="metric-icon" style="color: {icon_color};">
-                <i class="{icon}"></i>
+                <i class="{clean_icon}"></i>
             </div>
             <div class="metric-value">
                 <span class="value" data-counter="{value}">{value}</span>
