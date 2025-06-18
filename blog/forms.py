@@ -1,306 +1,254 @@
+"""
+Blog Forms - DataLogs Management
+Minimal forms to get server running for testing
+"""
+
 from django import forms
+from django.core.exceptions import ValidationError
 from django.utils.text import slugify
-from markdownx.fields import MarkdownxFormField
-from markdownx.widgets import MarkdownxWidget
-from .models import Post, Category, Tag, Series, SeriesPost
+from .models import Post, Category, Tag, Series
 
 
 class PostForm(forms.ModelForm):
-    """Enhanced form for creating and editing DataLog posts."""
-
-    # ================= CONTENT FIELDS =================
-
-    # Enhanced content field w markdown
-    content = MarkdownxFormField(
-        widget=MarkdownxWidget(
-            attrs={
-                "class": "form-control markdown-editor",
-                "rows": 25,
-                "placeholder": "Write your DataLog content using Markdown...",
-            }
-        )
-    )
-
-    featured_code = forms.CharField(
-        widget=forms.Textarea(
-            attrs={
-                "class": "form-control code-editor",
-                "rows": 10,
-                "placeholder": "Paste your featured code snippet here...",
-            }
-        ),
-        required=False,
-        help_text="Optional code snippet to highlight in this DataLog",
-    )
-
-    # Tags as a multiple select field
-    tags = forms.ModelMultipleChoiceField(
-        queryset=Tag.objects.all().order_by("name"),
-        required=False,
-        widget=forms.SelectMultiple(
-            attrs={"class": "form-select tags-select", "size": "5"}
-        ),
-    )
-
-    tags = forms.ModelMultipleChoiceField(
-        queryset=Tag.objects.all(),
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "tag-selector"}),
-        required=False,
-        help_text="Select relevant tags for this DataLog",
-    )
-
-    related_systems = forms.ModelMultipleChoiceField(
-        queryset=None,  # Will be set in __init__
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "system-selector"}),
-        required=False,
-        help_text="Link this DataLog to relevant systems",
-    )
+    """Form for creating and editing DataLog posts."""
 
     class Meta:
         model = Post
         fields = [
             "title",
             "slug",
-            "content",
             "excerpt",
+            "content",
             "category",
             "tags",
-            "featured_code",
-            "featured_code_format",
-            "status",
             "featured",
-            "show_toc",
-            "complexity_level",
-            "reading_time",
-            "related_systems",
+            "status",
             "thumbnail",
             "banner_image",
-            "published_date",
-            "",
+            "featured_code",
+            "featured_code_format",
+            "show_toc",
         ]
         widgets = {
-            'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter log title'
-            }),
-            'excerpt': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Brief description for post cards and previews'
-            }),
-            'status': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'published_date': forms.DateTimeInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local'
-            }),
-            'featured_code': forms.Textarea(attrs={
-                'class': 'form-control code editor',
-                'rows': 8,
-                'placeholder': 'Code to display in featured entry section'
-            }),
-            'featured_code_format': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'show_toc': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
-            'featured': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
+            "content": forms.Textarea(
+                attrs={
+                    "rows": 20,
+                    "class": "form-control content-editor",
+                    "placeholder": "Write your DataLog content in Markdown...",
+                }
+            ),
+            "excerpt": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "class": "form-control",
+                    "placeholder": "Brief description for post cards and search results...",
+                }
+            ),
+            "title": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-lg",
+                    "placeholder": "Enter DataLog title...",
+                }
+            ),
+            "slug": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "auto-generated-from-title",
+                }
+            ),
+            "tags": forms.CheckboxSelectMultiple(),
+            "category": forms.Select(attrs={"class": "form-select"}),
+            "status": forms.Select(attrs={"class": "form-select"}),
+            "featured_code_format": forms.Select(attrs={"class": "form-select"}),
+            "featured_code": forms.Textarea(
+                attrs={
+                    "rows": 8,
+                    "class": "form-control code-editor",
+                    "placeholder": "Enter code snippet to highlight...",
+                }
+            ),
         }
 
-    def clean_new_tags(self):
-        """Process new tags entered as comma-separated values."""
-        new_tags_str = self.cleaned_data.get('new_tags', '')
-        if not new_tags_str:
-            return []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        # Split by comma and strip whitespace
-        tag_names = [name.strip() for name in new_tags_str.split(',') if name.strip()]
-        tags = []
+        # Make certain fields optional in the form
+        self.fields["slug"].required = False
+        self.fields["excerpt"].required = False
+        self.fields["featured_code"].required = False
+        self.fields["thumbnail"].required = False
+        self.fields["banner_image"].required = False
 
-        # Create new tags
-        for name in tag_names:
-            slug = slugify(name)
-            tag, created_at = Tag.objects.get_or_create(
-                slug=slug,
-                defaults={'name': name}
-            )
-            tags.append(tag)
+        # Add help text
+        self.fields["slug"].help_text = "Leave blank to auto-generate from title"
+        self.fields[
+            "featured_code"
+        ].help_text = "Code snippet to display in featured section"
+        self.fields["content"].help_text = "Use Markdown formatting"
 
-        return tags
+    def clean_slug(self):
+        """Auto-generate slug if not provided."""
+        slug = self.cleaned_data.get("slug")
+        title = self.cleaned_data.get("title")
 
-    def clean_new_series(self):
-        """Process new series entered."""
+        if not slug and title:
+            slug = slugify(title)
 
-        new_series = self.cleaned_data.get('new_series', '')
-        if not new_series:
-            return None
+        # Check for uniqueness
+        if slug:
+            qs = Post.objects.filter(slug=slug)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise ValidationError(f"A post with slug '{slug}' already exists.")
 
-        # Create new series
-        slug = slugify(new_series)
-        series, created_at = Series.objects.get_or_create(
-            slug=slug,
-            defaults={'title': new_series}
-        )
+        return slug
 
-        return series
-
-    def clean(self):
-        """Validate form data."""
-
-        cleaned_data = super().clean()
-
-        # Handle series logic
-        series = cleaned_data.get('series')
-        new_series = cleaned_data.get('new_series')
-        series_order = cleaned_data.get('series_order')
-
-        # If both series and new_series provided, use new_series
-        if new_series:
-            cleaned_data['series'] = new_series
-
-        # Ensure order is provided if series is selected
-        if (series or new_series) and not series_order:
-            self.add_error('series_order', 'Order is required when adding to a series')
-
-        return cleaned_data
-
-    def save(self, commit=True):
-        """Save the post and handle tags and series."""
-
-        post = super().save(commit=False)
-
-        if commit:
-            post.save()
-
-            # Handle tags
-            self.cleaned_data['tags'] = list(self.cleaned_data.get('tags', []))
-            new_tags = self.cleaned_data.get('new_tags', [])
-            if new_tags:
-                self.cleaned_data['tags'].extend(new_tags)
-            self.save_m2m()
-
-            # Handle series
-            series = self.cleaned_data.get('series')
-            series_order = self.cleaned_data.get('series_order')
-
-            if series and series_order:
-                # Delete existing series association if any
-                SeriesPost.objects.filter(post=post).delete()
-
-                # Create new series association
-                SeriesPost.objects.create(
-                    series=series,
-                    post=post,
-                    order=series_order
-                )
-        return post
-
-        # # Start building the markdown content
-        # markdown_content = []
-
-        # # Add intro if provided
-        # if self.cleaned_data.get('introduction'):
-        #     markdown_content.append(self.cleaned_data['introduction'])
-        #     markdown_content.append("\n")
-
-        # # Add each section with proper markdown heading (##)
-        # for i in range(1, 6):
-        #     section_title = self.cleaned_data.get(f'section_{i}_title')
-        #     section_content = self.cleaned_data.get(f'section_{i}_content')
-
-        #     if section_title and section_content:
-        #         markdown_content.append(f"## {section_title}")
-        #         markdown_content.append("\n")
-        #         markdown_content.append(section_content)
-        #         markdown_content.append("\n")
-
-        # # Add code snippet if provided
-        # code_snippet = self.cleaned_data.get('code_snippet')
-        # code_language = self.cleaned_data.get('code_language')
-
-        # if code_snippet and code_language:
-        #     markdown_content.append(f"```{code_language}")
-        #     markdown_content.append(code_snippet)
-        #     markdown_content.append("```")
-        #     markdown_content.append("\n")
-
-        # # Add conclusion if provided
-        # if self.cleaned_data.get('conclusion'):
-        #     markdown_content.append("## Conclusion")
-        #     markdown_content.append("\n")
-        #     markdown_content.append(self.cleaned_data["conclusion"])
-
-        # # Join all content with a doube newlines for readability
-        # post.content = "\n\n".join(markdown_content)
-
-        # if commit:
-        #     post.save()
-        #     self.save_m2m()
-
-        # return post
-
-        """
-        Can you tell me why we include some fields but not others? Like for the PostForm, we aren't including any of the image fields and some models don't have forms at all, and some forms don't have all the model fields?
-        """
+    def clean_title(self):
+        """Validate title."""
+        title = self.cleaned_data.get("title")
+        if len(title) < 5:
+            raise ValidationError("Title must be at least 5 characters long.")
+        return title
 
 
 class CategoryForm(forms.ModelForm):
     """Form for creating and editing categories."""
+
     class Meta:
         model = Category
-        fields = ['name', 'code', 'description', 'color', 'icon']
+        fields = ["name", "slug", "description", "color_hex", "icon_class"]
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control'
-            }),
-            'code': forms.TextInput(attrs={
-                'class': 'form-control',
-                'maxlength': 2,
-                'placeholder': 'Two-letter code'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3
-            }),
-            'color': forms.TextInput(attrs={
-                'class': 'form-control color-picker',
-                'type': 'color',
-                'value': '#00f0ff'
-            }),
-            'icon': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Font Awesome class (e.g., fa-code)'
-            }),
+            "name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Category name..."}
+            ),
+            "slug": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "auto-generated-from-name",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "class": "form-control",
+                    "placeholder": "Brief description of this category...",
+                }
+            ),
+            "color_hex": forms.TextInput(
+                attrs={
+                    "type": "color",
+                    "class": "form-control form-control-color",
+                    "title": "Choose category color",
+                }
+            ),
+            "icon_class": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "fas fa-folder",
+                    "data-toggle": "tooltip",
+                    "title": "FontAwesome icon class",
+                }
+            ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["slug"].required = False
+        self.fields["description"].required = False
+        self.fields["color_hex"].initial = "#a855f7"  # Default lavender
+        self.fields["icon_class"].initial = "fas fa-folder"
+
+    def clean_slug(self):
+        """Auto-generate slug if not provided."""
+        slug = self.cleaned_data.get("slug")
+        name = self.cleaned_data.get("name")
+
+        if not slug and name:
+            slug = slugify(name)
+
+        return slug
 
 
 class TagForm(forms.ModelForm):
     """Form for creating and editing tags."""
+
     class Meta:
         model = Tag
-        fields = ['name']
+        fields = ["name", "slug", "description"]
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control'
-            }),
+            "name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Tag name..."}
+            ),
+            "slug": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "auto-generated-from-name",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "rows": 2,
+                    "class": "form-control",
+                    "placeholder": "Optional tag description...",
+                }
+            ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["slug"].required = False
+        self.fields["description"].required = False
+
+    def clean_slug(self):
+        """Auto-generate slug if not provided."""
+        slug = self.cleaned_data.get("slug")
+        name = self.cleaned_data.get("name")
+
+        if not slug and name:
+            slug = slugify(name)
+
+        return slug
 
 
 class SeriesForm(forms.ModelForm):
     """Form for creating and editing series."""
+
     class Meta:
         model = Series
-        fields = ['title', 'description']
+        fields = ["title", "slug", "description", "is_complete", "is_featured"]
         widgets = {
-            'title': forms.TextInput(attrs={
-                'class': 'form-control'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3
-            }),
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Series title..."}
+            ),
+            "slug": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "auto-generated-from-title",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "class": "form-control",
+                    "placeholder": "Series description and overview...",
+                }
+            ),
+            "is_complete": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "is_featured": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["slug"].required = False
+        self.fields["description"].required = False
+
+    def clean_slug(self):
+        """Auto-generate slug if not provided."""
+        slug = self.cleaned_data.get("slug")
+        title = self.cleaned_data.get("title")
+
+        if not slug and title:
+            slug = slugify(title)
+
+        return slug

@@ -1,5 +1,7 @@
+# core/templatetags/admin_filters.py
 """
 Template filters for admin interface
+Minimal implementation for testing
 """
 
 from django import template
@@ -38,6 +40,9 @@ def status_color(status):
 @register.filter
 def priority_badge(priority):
     """Return priority badge HTML."""
+    if priority is None:
+        return mark_safe('<span class="badge bg-secondary">-</span>')
+
     badges = {
         1: '<span class="badge bg-info">Low</span>',
         2: '<span class="badge bg-primary">Medium</span>',
@@ -77,6 +82,9 @@ def completion_bar(percentage):
 @register.simple_tag
 def admin_card(title, value, icon, color="primary", trend=None):
     """Generate admin dashboard card HTML."""
+    if value is None:
+        value = 0
+
     trend_html = ""
     if trend:
         trend_icon = (
@@ -99,3 +107,21 @@ def admin_card(title, value, icon, color="primary", trend=None):
     </div>
     '''
     return mark_safe(html)
+
+
+# Add basic widget_tweaks functionality if not available
+try:
+    from widget_tweaks.templatetags.widget_tweaks import *
+except ImportError:
+
+    @register.filter
+    def add_class(field, css_class):
+        """Add CSS class to form field."""
+        return field.as_widget(attrs={"class": css_class})
+
+    @register.filter
+    def add_error_class(field, css_class):
+        """Add error CSS class to form field if field has errors."""
+        if hasattr(field, "errors") and field.errors:
+            return field.as_widget(attrs={"class": css_class})
+        return field
