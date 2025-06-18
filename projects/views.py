@@ -521,20 +521,20 @@ class HybridLearningSystemsDashboardView(TemplateView):
         """Analyze correlation between complexity and learning"""
         if not systems_data:
             return {}
-        
+
         # Simple correlation analysis
         total_projects = len(systems_data)
-        high_complexity_high_learning = len([s for s in systems_data of s['complexity'] >= 7 and s['skills_count'] >= 3])
+        high_complexity_high_learning = len([s for s in systems_data if s['complexity'] >= 7 and s['skills_count'] >= 3])
 
         high_high_ratio = round(
                 (high_complexity_high_learning / max(total_projects, 1)) * 100, 1
             )
-        
+
         low_avg_skills = round(
             sum(s['skills_count'] for s in systems_data if s['complexity'] <= 3) / 
             max(len([s for s in systems_data if s['complexity'] <= 3]), 1), 1
             )
-        
+
         medium_avg_skills = round(
             sum(s['skills_count'] for s in systems_data if 4 <= s['complexity'] <= 6) / 
             max(len([s for s in systems_data if 4 <= s['complexity'] <= 6]), 1), 1

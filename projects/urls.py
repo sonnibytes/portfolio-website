@@ -34,6 +34,7 @@ urlpatterns = [
     path("learning/", views.LearningJourneyDashboardView.as_view(), name="learning_dashboard"),
     path("learning/systems/", views.EnhancedLearningSystemListView.as_view(), name="learning_system_list"),
     path("learning/systems/<slug:slug>/", views.LearningSystemControlInterfaceView.as_view(), name="learning_system_detail"),
+    path("hybrid-dashboard/", views.HybridLearningSystemsDashboardView.as_view(), name="hybrid_dashboard"),
 
 ]
     # ================= API ENDPOINTS =================

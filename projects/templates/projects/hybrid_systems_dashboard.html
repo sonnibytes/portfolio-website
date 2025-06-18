@@ -1,0 +1,581 @@
+<!----
+ * AURA Portfolio - Hybrid Learning & Systems Dashboard
+ * Combines system information with learning progression tracking
+ * Mirrors structure of system_dashboard.html with enhanced learning data
+ * Version: 1.0.0 - Complete Portfolio Command Center
+---->
+
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+{% load system_tags %}
+
+{% block systems_title %}AURA Dashboard{% endblock %}
+{% block systems_body_class %}hybrid-dashboard enhanced-dashboard{% endblock %}
+
+{% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
+
+<style>
+/* Additional hybrid dashboard styling */
+.learning-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.learning-stage-tutorial { background: rgba(255, 183, 77, 0.2); color: #FFB74D; border: 1px solid rgba(255, 183, 77, 0.3); }
+.learning-stage-guided { background: rgba(129, 199, 132, 0.2); color: #81C784; border: 1px solid rgba(129, 199, 132, 0.3); }
+.learning-stage-independent { background: rgba(100, 181, 246, 0.2); color: #64B5F6; border: 1px solid rgba(100, 181, 246, 0.3); }
+.learning-stage-refactoring { background: rgba(186, 104, 200, 0.2); color: #BA68C8; border: 1px solid rgba(186, 104, 200, 0.3); }
+.learning-stage-contributing { background: rgba(79, 195, 247, 0.2); color: #4FC3F7; border: 1px solid rgba(79, 195, 247, 0.3); }
+.learning-stage-teaching { background: rgba(255, 213, 79, 0.2); color: #FFD54F; border: 1px solid rgba(255, 213, 79, 0.3); }
+
+.hybrid-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg, 1.5rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    border-left: 3px solid var(--color-teal);
+}
+
+.activity-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.activity-icon.system-update { background: rgba(38, 198, 218, 0.2); color: var(--color-teal); }
+.activity-icon.milestone { background: rgba(186, 104, 200, 0.2); color: var(--color-purple); }
+.activity-icon.skill-gain { background: rgba(179, 157, 219, 0.2); color: var(--color-lavender); }
+
+.tech-learning-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.tech-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tech-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.portfolio-progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.portfolio-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-warning), var(--color-success));
+    transition: width 2s ease;
+}
+</style>
+{% endblock %}
+
+{% block systems_content %}
+<div class="dashboard-main-content container">
+
+    <!-- HERO SECTION - HYBRID METRICS -->
+    <div class="unified-dashboard-container teal">
+        <div class="unified-container-header">
+            <div class="hero-badges">
+                <div class="unified-featured-badge">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Command Center</span>
+                </div>
+                <div class="unified-featured-badge" style="background: rgba(186, 104, 200, 0.2); border-color: rgba(186, 104, 200, 0.4); color: var(--color-purple);">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Learning Hub</span>
+                </div>
+            </div>
+            
+            <h1 class="unified-container-title">AURA DASHBOARD</h1>
+            <p class="unified-container-subtitle">System monitoring & learning progression</p>
+        </div>
+
+        <!-- HYBRID METRICS SECTION - System Stats + Learning Metrics -->
+        <div class="metrics-overview hybrid-metric-grid">
+            
+            <!-- Systems Metrics (Left Side) -->
+            <div class="metric-card unified-dashboard-container teal">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ dashboard_stats.total|default:8 }}">0</div>
+                    <div class="metric-label">Total Systems</div>
+                    <div class="metric-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>{{ dashboard_stats.deployed|default:5 }} deployed</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card unified-dashboard-container coral">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ performance_data.avg_completion|default:78 }}">0</div>
+                    <div class="metric-label">Avg Completion %</div>
+                    <div class="metric-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>{{ performance_data.total_features|default:24 }} features</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Learning Metrics (Right Side) -->
+            <div class="metric-card unified-dashboard-container purple">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ learning_metrics.total_skills_gained }}">0</div>
+                    <div class="metric-label">Skills Gained</div>
+                    <div class="metric-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>{{ learning_metrics.learning_velocity }}/month velocity</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card unified-dashboard-container mint">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ learning_metrics.portfolio_ready_count }}">0</div>
+                    <div class="metric-label">Portfolio Ready</div>
+                    <div class="metric-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>{{ learning_metrics.portfolio_ready_percentage }}% readiness</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card unified-dashboard-container yellow">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ learning_metrics.total_milestones }}">0</div>
+                    <div class="metric-label">Milestones</div>
+                    <div class="metric-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>{{ learning_metrics.technologies_mastered }} tech mastered</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card unified-dashboard-container lavender">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ learning_metrics.total_development_hours|floatformat:0 }}">0</div>
+                    <div class="metric-label">Dev Hours</div>
+                    <div class="metric-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>{{ learning_metrics.avg_project_complexity|floatformat:1 }} avg complexity</span>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT SECTION - Mirrors original structure -->
+    <div class="dashboard-grid grid-2-1">
+        
+        <!-- Left Column: Featured Systems with Learning Context -->
+        <div class="unified-dashboard-container yellow">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">
+                    <i class="fas fa-star"></i> Featured Learning Projects
+                </h3>
+            </div>
+            
+            <div class="featured-systems-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                {% for system in featured_systems %}
+                <div class="featured-system-card" style="background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.25rem; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease;">
+                    <div class="system-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div class="system-type" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--color-text-secondary);">
+                            <i class="fas {{ system.system_type.icon|default:'cube' }}"></i>
+                            <span>{{ system.system_type.name }}</span>
+                        </div>
+                        <div class="learning-badge learning-stage-{{ system.learning_stage }}">
+                            {{ system.get_learning_stage_display }}
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin: 0 0 0.75rem 0; color: var(--color-text-primary);">
+                        <a href="{% url 'projects:system_detail' system.slug %}" style="color: inherit; text-decoration: none;">{{ system.title }}</a>
+                    </h4>
+                    
+                    <div class="system-metrics" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 600; color: var(--color-yellow);">{{ system.skills_developed.count }}</div>
+                            <div style="font-size: 0.7rem; color: var(--color-text-secondary);">Skills</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 600; color: var(--color-yellow);">{{ system.complexity }}/10</div>
+                            <div style="font-size: 0.7rem; color: var(--color-text-secondary);">Complexity</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: 600; color: var(--color-yellow);">{{ system.completion_percent|floatformat:0 }}%</div>
+                            <div style="font-size: 0.7rem; color: var(--color-text-secondary);">Complete</div>
+                        </div>
+                    </div>
+                    
+                    {% if system.skills_developed.all %}
+                    <div class="skills-preview" style="margin-bottom: 1rem;">
+                        <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Skills Gained:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                            {% for skill in system.skills_developed.all|slice:":3" %}
+                            <span style="padding: 0.2rem 0.5rem; background: rgba(255, 245, 157, 0.15); color: var(--color-yellow); border-radius: 8px; font-size: 0.7rem;">{{ skill.name }}</span>
+                            {% endfor %}
+                            {% if system.skills_developed.count > 3 %}
+                            <span style="padding: 0.2rem 0.5rem; background: rgba(255, 255, 255, 0.1); color: var(--color-text-secondary); border-radius: 8px; font-size: 0.7rem;">+{{ system.skills_developed.count|add:"-3" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="portfolio-readiness" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Portfolio Ready:</span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas {% if system.portfolio_ready %}fa-check-circle{% else %}fa-clock{% endif %}" style="color: {% if system.portfolio_ready %}var(--color-success){% else %}var(--color-warning){% endif %};"></i>
+                            <span style="font-size: 0.8rem; color: {% if system.portfolio_ready %}var(--color-success){% else %}var(--color-warning){% endif %}; font-weight: 600;">
+                                {% if system.portfolio_ready %}Ready{% else %}In Progress{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--color-text-secondary);">
+                    <i class="fas fa-star" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <h4>No Featured Projects Yet</h4>
+                    <p>Mark some projects as featured to showcase your learning journey!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right Column: Learning Analytics & System Health -->
+        <div class="dashboard-secondary">
+            
+            <!-- Learning Stage Distribution -->
+            <div class="unified-dashboard-container lavender">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Learning Stages</h4>
+                </div>
+                
+                <div class="learning-stages-chart" style="height: 200px; position: relative; margin-bottom: 1rem;">
+                    <canvas id="learningStagesChart" width="300" height="150"></canvas>
+                </div>
+                
+                <div class="stages-summary">
+                    {% for stage in learning_stages %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.8rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: {{ stage.color }}; flex-shrink: 0;"></span>
+                            <span style="color: var(--color-text-secondary);">{{ stage.stage_display }}</span>
+                        </div>
+                        <span style="color: var(--color-lavender); font-weight: 600;">{{ stage.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Portfolio Readiness Analysis -->
+            <div class="unified-dashboard-container mint">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Portfolio Readiness</h4>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--color-mint); margin-bottom: 0.5rem;">
+                        {{ learning_metrics.portfolio_ready_percentage|floatformat:0 }}%
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--color-text-secondary);">
+                        {{ learning_metrics.portfolio_ready_count }} of {{ dashboard_stats.total }} projects ready
+                    </div>
+                </div>
+                
+                <div class="portfolio-progress-bar">
+                    <div class="portfolio-progress-fill" style="width: {{ learning_metrics.portfolio_ready_percentage }}%;"></div>
+                </div>
+                
+                {% if portfolio_analysis.recommendations %}
+                <div style="margin-top: 1rem;">
+                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem; font-weight: 600;">Quick Improvements:</div>
+                    {% for rec in portfolio_analysis.recommendations|slice:":2" %}
+                    <div style="padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px; margin-bottom: 0.5rem;">
+                        <div style="font-size: 0.8rem; color: var(--color-mint); font-weight: 600;">{{ rec.title }}</div>
+                        <div style="font-size: 0.7rem; color: var(--color-text-secondary);">{{ rec.description }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Technology Learning Impact -->
+            <div class="unified-dashboard-container coral">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Tech Learning Impact</h4>
+                </div>
+                
+                <div class="tech-learning-list">
+                    {% for tech_data in technology_usage|slice:":6" %}
+                    <div class="tech-learning-item">
+                        <div class="tech-info">
+                            <i class="fas {{ tech_data.technology.icon|default:'cogs' }}" style="color: var(--color-coral);"></i>
+                            <span style="font-weight: 500;">{{ tech_data.technology.name }}</span>
+                        </div>
+                        <div class="tech-stats">
+                            <span>{{ tech_data.usage_count }} projects</span>
+                            <span>{{ tech_data.learning_projects }} learning</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ACTIVITY & INSIGHTS SECTION -->
+    <div class="dashboard-grid grid-2-col">
+        
+        <!-- Recent Activity with Learning Context -->
+        <div class="unified-dashboard-container gunmetal">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">
+                    <i class="fas fa-clock"></i> Recent Activity
+                </h3>
+            </div>
+            
+            <div class="activity-timeline">
+                {% for activity in recent_activity|slice:":8" %}
+                <div class="activity-item">
+                    <div class="activity-icon {{ activity.type }}">
+                        <i class="fas fa-{{ activity.icon }}"></i>
+                    </div>
+                    <div class="activity-content" style="flex: 1;">
+                        <div style="font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.25rem;">{{ activity.title }}</div>
+                        <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">{{ activity.description }}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.7rem; color: var(--color-text-tertiary);">{{ activity.date|date:"M d, Y" }}</span>
+                            {% if activity.learning_context %}
+                            <span style="font-size: 0.7rem; color: var(--color-{{ activity.color }}); font-weight: 500;">{{ activity.learning_context }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">
+                    <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <p>No recent activity to display</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Skills Development Progress -->
+        <div class="unified-dashboard-container purple">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title" style="font-size: 1.5rem; margin-bottom: 0;">
+                    <i class="fas fa-brain"></i> Skills Development
+                </h3>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-purple);">{{ skills_development.total_unique_skills }}</div>
+                        <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Unique Skills</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: var(--color-purple);">{{ learning_metrics.learning_velocity }}</div>
+                        <div style="font-size: 0.8rem; color: var(--color-text-secondary);">Monthly Velocity</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <div style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.75rem; font-weight: 600;">Top Skills:</div>
+                {% for skill in skills_development.top_skills|slice:":6" %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255, 255, 255, 0.03); border-radius: 6px; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 500;">{{ skill.name }}</span>
+                    <span style="font-size: 0.8rem; color: var(--color-purple); font-weight: 600;">{{ skill.usage_count }} projects</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if skills_development.recent_gains %}
+            <div>
+                <div style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.75rem; font-weight: 600;">Recent Gains:</div>
+                {% for gain in skills_development.recent_gains|slice:":3" %}
+                <div style="padding: 0.5rem; background: rgba(179, 157, 219, 0.1); border-radius: 6px; margin-bottom: 0.5rem; border-left: 3px solid var(--color-purple);">
+                    <div style="font-size: 0.8rem; color: var(--color-purple); font-weight: 600;">{{ gain.skill.name }}</div>
+                    <div style="font-size: 0.7rem; color: var(--color-text-secondary);">in {{ gain.system.title }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block systems_js %}
+<script src="{% static 'projects/js/dashboard_panel.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize enhanced dashboard manager
+    const dashboard = new UnifiedDashboardManager();
+    
+    // Learning Stages Chart
+    const stagesCtx = document.getElementById('learningStagesChart');
+    if (stagesCtx) {
+        const stagesData = {{ learning_stages|safe }};
+        
+        new Chart(stagesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: stagesData.map(stage => stage.stage_display),
+                datasets: [{
+                    data: stagesData.map(stage => stage.count),
+                    backgroundColor: stagesData.map(stage => stage.color),
+                    borderWidth: 2,
+                    borderColor: 'rgba(24, 26, 31, 0.8)',
+                    hoverBorderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(24, 26, 31, 0.95)',
+                        titleColor: '#e8eaf6',
+                        bodyColor: '#b0bec5',
+                        borderColor: 'rgba(179, 157, 219, 0.3)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%',
+                animation: {
+                    animateRotate: true,
+                    duration: 2000
+                }
+            }
+        });
+    }
+    
+    // Enhanced hover effects for featured system cards
+    document.querySelectorAll('.featured-system-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px) scale(1.02)';
+            this.style.boxShadow = '0 12px 40px rgba(255, 245, 157, 0.2)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+            this.style.boxShadow = '';
+        });
+    });
+    
+    // Activity timeline animations
+    const activityItems = document.querySelectorAll('.activity-item');
+    activityItems.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-20px)';
+        item.style.transition = 'all 0.5s ease';
+        
+        setTimeout(() => {
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0)';
+        }, index * 100);
+    });
+    
+    // Portfolio progress bar animation
+    setTimeout(() => {
+        const progressBar = document.querySelector('.portfolio-progress-fill');
+        if (progressBar) {
+            const targetWidth = progressBar.style.width;
+            progressBar.style.width = '0%';
+            setTimeout(() => {
+                progressBar.style.width = targetWidth;
+            }, 500);
+        }
+    }, 1000);
+    
+    console.log('🎓 Hybrid Learning & Systems Dashboard loaded successfully!');
+});
+</script>
+{% endblock %}
