@@ -155,7 +155,7 @@ class PortfolioLandingDashboardView(TemplateView):
         """Learning progression metrics"""
         # Calculate learning velocity
         earliest_project = SystemModule.objects.filter(
-            create_at__isnull=False
+            created_at__isnull=False
         ).order_by('created_at').first()
 
         total_skills = SystemSkillGain.objects.values('skill').distinct().count()
@@ -328,21 +328,21 @@ class PortfolioLandingDashboardView(TemplateView):
             alerts.append({
                 'type': 'info',
                 'message': 'No recent development activity',
-                'action': 'Consider working on a project or adding a DataLog entry',
+                'action': 'Consider working on a system or adding a DataLog entry',
                 'icon': 'fas fa-calendar-plus',
                 'priority': 'low'
             })
 
         # Check learning documentation
         missing_objectives = SystemModule.objects.filter(
-            learning_objectives__in=['', None]
+            log_entries__isnull=True
         ).count()
 
         if missing_objectives > 0:
             alerts.append({
                 'type': 'info',
-                'message': f'{missing_objectives} projects missing learning objectives',
-                'action': 'Add learning documentation to showcase growth',
+                'message': f'{missing_objectives} systems missing learning documentation',
+                'action': 'Document learning with DataLog entries to showcase growth',
                 'icon': 'fas fa-graduation-cap',
                 'priority': 'medium'
             })
