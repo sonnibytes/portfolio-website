@@ -1,153 +1,95 @@
-{% extends "blog/admin/base.html" %}
+<!-- blog/templates/blog/admin/dashboard.html -->
+{% extends 'admin/admin_base.html' %}
 {% load static %}
 
-{% block title %}Blog Dashboard | ML DEVLOG Admin{% endblock %}
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'blog/css/datalog-dashboard.css' %}">
+{% endblock %}
 
 {% block admin_content %}
-<div class="container">
-    <div class="row my-4">
-        <div class="col-12">
-            <h1 class="admin-title">{{ title }}</h1>
-            <div class="admin-breadcrumb mb-4">
-                Dashboard
-            </div>
-        </div>
+<div class="dashboard-header">
+    <h1 class="dashboard-title">
+        <i class="fas fa-database"></i>
+        DataLogs Control Center
+    </h1>
+    <div class="dashboard-actions">
+        <a href="{% url 'blog:post_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            New DataLog
+        </a>
     </div>
+</div>
 
-    <!-- Stats Row -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="admin-stat-card">
-                <div class="stat-number">{{ post_count }}</div>
-                <div class="stat-label">Total Posts</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="admin-stat-card">
-                <div class="stat-number">{{ published_count }}</div>
-                <div class="stat-label">Published</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="admin-stat-card">
-                <div class="stat-number">{{ draft_count }}</div>
-                <div class="stat-label">Drafts</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="admin-stat-card">
-                <div class="stat-number">{{ category_count }}</div>
-                <div class="stat-label">Categories</div>
-            </div>
-        </div>
+<div class="dashboard-grid">
+    <div class="stats-row">
+        {% include 'admin/components/stats_widget.html' with title="Total DataLogs" value=post_count icon="database" %}
+        {% include 'admin/components/stats_widget.html' with title="Published" value=published_count icon="check-circle" %}
+        {% include 'admin/components/stats_widget.html' with title="Drafts" value=draft_count icon="edit" %}
+        {% include 'admin/components/stats_widget.html' with title="Categories" value=category_count icon="folder" %}
     </div>
-
-    <!-- Quick Actions -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="admin-card">
-                <h3 class="card-title mb-4">Quick Actions</h3>
-                <div class="d-flex flex-wrap gap-3">
-                    <a href="{% url 'blog:post_create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus-circle me-2"></i> New Post
-                    </a>
-                    <a href="{% url 'blog:category_create' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-folder-plus me-2"></i> New Category
-                    </a>
-                    <a href="{% url 'blog:category_list' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-tags me-2"></i> Manage Categories
-                    </a>
-                    <a href="{% url 'blog:post_list' %}" class="btn btn-outline-info">
-                        <i class="fas fa-eye me-2"></i> View Blog
-                    </a>
-                </div>
+    
+    <div class="content-row">
+        <div class="recent-posts glass-card">
+            <h3 class="card-title">
+                <i class="fas fa-clock"></i>
+                Recent DataLogs
+            </h3>
+            <div class="posts-list">
+                {% for post in posts %}
+                    <div class="post-item">
+                        <div class="post-header">
+                            <h4 class="post-title">
+                                <a href="{% url 'blog:post_update' post.slug %}">{{ post.title }}</a>
+                            </h4>
+                            <span class="post-status {{ post.status }}">{{ post.get_status_display }}</span>
+                        </div>
+                        <div class="post-meta">
+                            <span>{{ post.category }}</span>
+                            <span>{{ post.created_at|date:"M d" }}</span>
+                            <span>{{ post.view_count|default:0 }} views</span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-database"></i>
+                        <p>No DataLogs yet. Create your first entry!</p>
+                        <a href="{% url 'blog:post_create' %}" class="btn btn-primary">
+                            Create DataLog
+                        </a>
+                    </div>
+                {% endfor %}
             </div>
         </div>
-    </div>
-
-    <!-- Recent Posts Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="admin-card">
-                <h3 class="card-title mb-4">Recent Posts</h3>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Category</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for post in posts %}
-                            <tr class="align-middle">
-                                <td>
-                                    {% if post.featured %}
-                                    <span class="badge bg-primary me-2">Featured</span>
-                                    {% endif %}
-                                    {{ post.title }}
-                                </td>
-                                <td>
-                                    {% if post.category %}
-                                    <span class="badge" style="background-color: {{ post.category.color }}">
-                                        {{ post.category.name }}
-                                    </span>
-                                    {% else %}
-                                    <span class="text-muted">Uncategorized</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if post.status == 'published' %}
-                                    <span class="badge bg-success">Published</span>
-                                    {% else %}
-                                    <span class="badge bg-warning text-dark">Draft</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if post.published_date %}
-                                    {{ post.published_date|date:"M d, Y" }}
-                                    {% else %}
-                                    <span class="text-muted">{{ post.created_at|date:"M d, Y" }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a href="{% url 'blog:post_edit' slug=post.slug %}" class="btn btn-sm btn-primary">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </a>
-                                        {% if post.status == 'published' %}
-                                        <a href="{{ post.get_absolute_url }}" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center py-4">
-                                    <div class="text-muted">No posts found</div>
-                                    <a href="{% url 'blog:post_create' %}" class="btn btn-primary mt-2">
-                                        Create your first post
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                
-                {% if posts.count > 0 %}
-                <div class="text-end mt-3">
-                    <a href="#" class="btn btn-outline-secondary">View All Posts</a>
-                </div>
-                {% endif %}
+        
+        <div class="quick-actions glass-card">
+            <h3 class="card-title">
+                <i class="fas fa-bolt"></i>
+                Quick Actions
+            </h3>
+            <div class="actions-grid">
+                <a href="{% url 'blog:post_create' %}" class="action-card">
+                    <i class="fas fa-plus"></i>
+                    <span>New DataLog</span>
+                </a>
+                <a href="{% url 'blog:category_create' %}" class="action-card">
+                    <i class="fas fa-folder-plus"></i>
+                    <span>New Category</span>
+                </a>
+                <a href="{% url 'blog:post_list' %}" class="action-card">
+                    <i class="fas fa-list"></i>
+                    <span>All Posts</span>
+                </a>
+                <a href="{% url 'blog:archive' %}" class="action-card">
+                    <i class="fas fa-archive"></i>
+                    <span>Archive</span>
+                </a>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block admin_js %}
+<script src="{% static 'blog/js/datalog-dashboard.js' %}"></script>
 {% endblock %}
