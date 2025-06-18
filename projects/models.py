@@ -78,11 +78,11 @@ class SystemModuleManager(models.Manager):
     def dashboard_stats(self):
         """Get key dashboard statistics."""
         return {
-            'total': self.count(),
-            'deployed': self.deployed().count(),
-            'published': self.published().count(),
-            'in_development': self.in_development().count(),
-            'featured': self.featured().count(),
+            'total_systems': self.count(),
+            'deployed_count': self.deployed().count(),
+            'published_count': self.published().count(),
+            'in_development_count': self.in_development().count(),
+            'featured_count': self.featured().count(),
             'avg_completion': self.aggregate(
                 avg=Avg('completion_percent')
             )['avg'] or 0,
@@ -1246,7 +1246,7 @@ class LearningMilestone(models.Model):
         return f"{self.title} - {self.system.title}"
 
     def get_milestone_icon(self):
-        """Font Awesome icon for milesstone type"""
+        """Font Awesome icon for milestone type"""
         icons = {
             "first_time": "fas fa-star",
             "breakthrough": "fas fa-lightbulb",
