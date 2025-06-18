@@ -6,16 +6,31 @@ from .models import Post, Category, Tag, Series, SeriesPost
 
 
 class PostForm(forms.ModelForm):
-    """Form for creating and editing posts/logs."""
+    """Enhanced form for creating and editing DataLog posts."""
 
     # ================= CONTENT FIELDS =================
 
-    # Category as a select field with empty option
-    category = forms.ModelChoiceField(
-        queryset=Category.objects.all(),
-        required=True,
-        empty_label="Select a Category",
-        widget=forms.Select(attrs={"class": "form-select"}),
+    # Enhanced content field w markdown
+    content = MarkdownxFormField(
+        widget=MarkdownxWidget(
+            attrs={
+                "class": "form-control markdown-editor",
+                "rows": 25,
+                "placeholder": "Write your DataLog content using Markdown...",
+            }
+        )
+    )
+
+    featured_code = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control code-editor",
+                "rows": 10,
+                "placeholder": "Paste your featured code snippet here...",
+            }
+        ),
+        required=False,
+        help_text="Optional code snippet to highlight in this DataLog",
     )
 
     # Tags as a multiple select field
@@ -27,73 +42,41 @@ class PostForm(forms.ModelForm):
         ),
     )
 
-    # Enhanced content field w markdown
-    content = MarkdownxFormField(
-        widget=MarkdownxWidget(
-            attrs={
-                "class": "form-control markdown-editor",
-                "rows": 25,
-                "placeholder": "Write post content here using Markdown...",
-            }
-        )
+    tags = forms.ModelMultipleChoiceField(
+        queryset=Tag.objects.all(),
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "tag-selector"}),
+        required=False,
+        help_text="Select relevant tags for this DataLog",
     )
 
-    # Create a new tag field
-    new_tags = forms.CharField(
+    related_systems = forms.ModelMultipleChoiceField(
+        queryset=None,  # Will be set in __init__
+        widget=forms.CheckboxSelectMultiple(attrs={"class": "system-selector"}),
         required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control",
-                "placeholder": "Add new tags (comma-separated)",
-            }
-        ),
-    )
-
-    # Series field
-    series = forms.ModelChoiceField(
-        queryset=Series.objects.all().order_by('title'),
-        required=False,
-        empty_label="Select a series (optional)",
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-
-    # Position in Series
-    series_order = forms.IntegerField(
-        required=False,
-        min_value=1,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Position in series'
-        })
-    )
-
-    # Create a new series
-    new_series = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Create new series'
-        })
+        help_text="Link this DataLog to relevant systems",
     )
 
     class Meta:
         model = Post
         fields = [
             "title",
+            "slug",
+            "content",
             "excerpt",
             "category",
             "tags",
-            "status",
-            "thumbnail",
-            "banner_image",
-            "featured",
             "featured_code",
             "featured_code_format",
+            "status",
+            "featured",
             "show_toc",
+            "complexity_level",
+            "reading_time",
+            "related_systems",
+            "thumbnail",
+            "banner_image",
             "published_date",
-            "content",
+            "",
         ]
         widgets = {
             'title': forms.TextInput(attrs={
@@ -259,6 +242,10 @@ class PostForm(forms.ModelForm):
         #     self.save_m2m()
 
         # return post
+
+        """
+        Can you tell me why we include some fields but not others? Like for the PostForm, we aren't including any of the image fields and some models don't have forms at all, and some forms don't have all the model fields?
+        """
 
 
 class CategoryForm(forms.ModelForm):
