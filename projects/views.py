@@ -189,15 +189,21 @@ class HybridLearningSystemsDashboardView(TemplateView):
         for tech in tech_data:
             # Calculate learning impact
             systems_with_tech = SystemModule.objects.filter(technologies=tech)
-            avg_learning_velocity = systems_with_tech.aggregate(
-                avg_velocity=Avg('skills_developed__count')
+            sys = systems_with_tech.annotate(
+                skills_count=Count('id')
+            ).aggregate(
+                avg_velocity=Avg('skills_count')
             )['avg_velocity'] or 0
+            # avg_learning_velocity = systems_with_tech.aggregate(
+            #     skills_count=Count('id'),
+            #     avg_velocity=Avg('skills_count')
+            # )['avg_velocity'] or 0
 
             usage_data.append({
                 'technology': tech,
                 'usage_count': tech.usage_count,
                 'learning_projects': tech.learning_projects,
-                'learning_impact': min(avg_learning_velocity * 2, 10),  # Scale 0-10
+                'learning_impact': min(sys * 2, 10),  # Scale 0-10
                 'mastery_projects': systems_with_tech.filter(
                     learning_stage__in=['refactoring', 'teaching']
                 ).count(),
