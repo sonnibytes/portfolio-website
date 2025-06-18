@@ -1,36 +1,16 @@
-<!----
- * AURA Portfolio - Admin Base Template
- * Advanced User Repository & Archive - Complete Foundation
- * Version: 2.0.1 - Optimized for Component Architecture
----->
-
+<!-- templates/admin/admin_base.html -->
 {% extends "base.html" %}
 {% load static %}
+{% load aura_filters %}
+
+{% block title %}{{ title|default:"Admin Dashboard" }} | AURA Portfolio{% endblock %}
 
 {% block extra_css %}
-<!-- Admin Specific Styles -->
-<link rel="stylesheet" href="{% static 'css/components/admin.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/forms.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
 {% block admin_css %}{% endblock %}
 {% endblock %}
 
-{% block body_class %}admin-interface {% block admin_body_class %}{% endblock %}{% endblock %}
-
-{% block breadcrumbs %}
-<div class="container">
-    <nav class="hud-breadcrumbs" aria-label="Breadcrumb">
-        <a href="{% url 'core:home' %}" class="breadcrumb-item">
-            <i class="fas fa-home me-1"></i>Dashboard
-        </a>
-        <span class="breadcrumb-separator">/</span>
-        <a href="#" class="breadcrumb-item">
-            <i class="fas fa-cog me-1"></i>Admin
-        </a>
-        {% block admin_breadcrumbs %}{% endblock %}
-    </nav>
-</div>
-{% endblock %}
+{% block body_class %}admin-interface{% endblock %}
 
 {% block content %}
 <!-- Admin Header -->
@@ -38,45 +18,88 @@
     <div class="container">
         <div class="admin-header-content">
             <div class="admin-title-section">
+                <div class="admin-breadcrumbs">
+                    {% for crumb in breadcrumbs %}
+                        {% if crumb.url %}
+                            <a href="{{ crumb.url }}" class="breadcrumb-link">{{ crumb.name }}</a>
+                        {% else %}
+                            <span class="breadcrumb-current">{{ crumb.name }}</span>
+                        {% endif %}
+                        {% if not forloop.last %}<span class="breadcrumb-separator">/</span>{% endif %}
+                    {% endfor %}
+                </div>
                 <h1 class="admin-title">
-                    <i class="fas fa-shield-alt me-2"></i>
-                    {% block admin_title %}AURA Admin Interface{% endblock %}
+                    {% if icon %}
+                        <i class="{{ icon }} me-2"></i>
+                    {% endif %}
+                    {{ title }}
                 </h1>
-                <p class="admin-subtitle">
-                    {% block admin_subtitle %}System administration and content management{% endblock %}
-                </p>
             </div>
             
-            <div class="admin-user-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                <div class="user-details">
-                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-                    <div class="user-role">System Administrator</div>
-                </div>
-                <div class="user-status">
-                    <div class="status-indicator operational"></div>
-                </div>
+            <div class="admin-actions">
+                {% block header_actions %}{% endblock %}
             </div>
         </div>
-        
-        <!-- Admin Navigation -->
-        <div class="admin-nav">
+    </div>
+</section>
+
+<!-- Admin Navigation -->
+<section class="admin-nav">
+    <div class="container">
+        <div class="admin-nav-content">
             <div class="nav-section">
-                <h3 class="nav-section-title">Content Management</h3>
+                <h3 class="nav-section-title">DataLogs Management</h3>
                 <div class="nav-links">
-                    <a href="{% url 'blog:dashboard' %}" class="admin-nav-link">
+                    <a href="{% url 'blog:dashboard' %}" class="admin-nav-link {% if app_label == 'blog' %}active{% endif %}">
                         <i class="fas fa-database me-2"></i>
-                        DataLogs Management
+                        <span class="link-text">DataLogs Dashboard</span>
+                        <div class="link-indicator" style="background: var(--lavender);"></div>
                     </a>
-                    <a href="#" class="admin-nav-link">
-                        <i class="fas fa-project-diagram me-2"></i>
-                        Systems Management
+                    <a href="{% url 'blog:post_list_admin' %}" class="admin-nav-link">
+                        <i class="fas fa-file-alt me-2"></i>
+                        <span class="link-text">Manage Posts</span>
                     </a>
-                    <a href="#" class="admin-nav-link">
+                    <a href="{% url 'blog:category_list' %}" class="admin-nav-link">
                         <i class="fas fa-tags me-2"></i>
-                        Categories & Tags
+                        <span class="link-text">Categories</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h3 class="nav-section-title">Systems Management</h3>
+                <div class="nav-links">
+                    <a href="{% url 'projects:systems_dashboard' %}" class="admin-nav-link {% if app_label == 'projects' %}active{% endif %}">
+                        <i class="fas fa-microchip me-2"></i>
+                        <span class="link-text">Systems Dashboard</span>
+                        <div class="link-indicator" style="background: var(--cyan);"></div>
+                    </a>
+                    <a href="{% url 'projects:system_list_admin' %}" class="admin-nav-link">
+                        <i class="fas fa-server me-2"></i>
+                        <span class="link-text">Manage Systems</span>
+                    </a>
+                    <a href="#" class="admin-nav-link">
+                        <i class="fas fa-code-branch me-2"></i>
+                        <span class="link-text">Technologies</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h3 class="nav-section-title">Core Management</h3>
+                <div class="nav-links">
+                    <a href="#" class="admin-nav-link {% if app_label == 'core' %}active{% endif %}">
+                        <i class="fas fa-home me-2"></i>
+                        <span class="link-text">Core Dashboard</span>
+                        <div class="link-indicator" style="background: var(--emerald);"></div>
+                    </a>
+                    <a href="#" class="admin-nav-link">
+                        <i class="fas fa-user me-2"></i>
+                        <span class="link-text">Profile Settings</span>
+                    </a>
+                    <a href="#" class="admin-nav-link">
+                        <i class="fas fa-cog me-2"></i>
+                        <span class="link-text">Site Settings</span>
                     </a>
                 </div>
             </div>
@@ -86,15 +109,15 @@
                 <div class="nav-links">
                     <a href="#" class="admin-nav-link">
                         <i class="fas fa-chart-line me-2"></i>
-                        Analytics Dashboard
+                        <span class="link-text">Analytics Dashboard</span>
                     </a>
                     <a href="#" class="admin-nav-link">
                         <i class="fas fa-users me-2"></i>
-                        User Management
+                        <span class="link-text">User Management</span>
                     </a>
                     <a href="#" class="admin-nav-link">
-                        <i class="fas fa-cog me-2"></i>
-                        System Settings
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <span class="link-text">Security Center</span>
                     </a>
                 </div>
             </div>
@@ -105,6 +128,18 @@
 <!-- Admin Content -->
 <section class="admin-content">
     <div class="container">
+        {% if messages %}
+            <div class="admin-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ message.tags|message_icon }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
         {% block admin_content %}{% endblock %}
     </div>
 </section>
@@ -125,7 +160,7 @@ if (typeof initAdminFeatures === 'function') {
     initAdminFeatures();
 }
 
-// Enhanced security warnings
+// Enhanced security warnings for sensitive actions
 const sensitiveActions = document.querySelectorAll('.delete-action, .critical-action');
 sensitiveActions.forEach(action => {
     action.addEventListener('click', function(e) {
@@ -134,6 +169,16 @@ sensitiveActions.forEach(action => {
         }
     });
 });
+
+// Auto-hide messages after 5 seconds
+setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        if (alert.querySelector('.btn-close')) {
+            alert.querySelector('.btn-close').click();
+        }
+    });
+}, 5000);
 
 // Page-specific admin initialization
 {% block admin_inline_js %}{% endblock %}
