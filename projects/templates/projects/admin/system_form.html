@@ -1,426 +1,363 @@
-<!-- System Create/Edit Form Template -->
 <!-- projects/templates/projects/admin/system_form.html -->
-{% extends "base.html" %}
+{% extends 'admin/forms/create_base.html' %}
 {% load static %}
-{% load core_tags %}
 
-{% block title %}{{ title }} | Systems Admin | ML DEVLOG{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'projects/css/admin.css' %}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'projects/css/system-admin.css' %}">
 {% endblock %}
 
-{% block body_class %}admin-page system-form-page{% endblock %}
+{% block form_navigation %}
+{% if object %}
+    <nav class="form-nav system-nav">
+        <a href="{{ object.get_absolute_url }}" class="nav-btn view-btn">
+            <i class="fas fa-cog"></i> System Interface
+        </a>
+        <a href="{% url 'projects:system_delete' object.slug %}" class="nav-btn delete-btn">
+            <i class="fas fa-trash"></i> Delete
+        </a>
+        <div class="nav-status">
+            <span class="status-badge {{ object.status|lower }}">
+                {{ object.get_status_display }}
+            </span>
+            <div class="system-health">
+                <span class="health-indicator {{ object.health_status|lower }}"></span>
+                {{ object.get_health_status_display }}
+            </div>
+        </div>
+    </nav>
+{% endif %}
+{% endblock %}
 
-{% block content %}
-<section class="admin-form-section">
-    <div class="container">
-        <!-- Admin Header -->
-        <div class="admin-header">
-            <nav class="admin-breadcrumbs">
-                <a href="{% url 'projects:dashboard' %}" class="breadcrumb-link">
-                    <i class="fas fa-tachometer-alt"></i> DASHBOARD
-                </a>
-                <span class="breadcrumb-separator">/</span>
-                <a href="{% url 'projects:system_list' %}" class="breadcrumb-link">SYSTEMS</a>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-current">{{ title|upper }}</span>
-            </nav>
-            
-            <h1 class="admin-title">{{ title }}</h1>
+{% block additional_fields %}
+<div class="system-core-section">
+    <h3 class="section-title">
+        <i class="fas fa-microchip"></i>
+        Core System Configuration
+    </h3>
+    
+    <div class="core-grid">
+        <div class="core-field">
+            <label class="field-label">System Type</label>
+            {{ form.system_type }}
         </div>
         
-        <!-- Form Container -->
-        <div class="row">
-            <div class="col-lg-8">
-                <form method="post" enctype="multipart/form-data" class="system-form">
-                    {% csrf_token %}
-                    
-                    <!-- Basic Information Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">BASIC INFORMATION</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="form-group">
-                                        <label for="{{ form.title.id_for_label }}" class="form-label">System Title</label>
-                                        {{ form.title }}
-                                        {% if form.title.errors %}
-                                        <div class="form-error">{{ form.title.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.system_type.id_for_label }}" class="form-label">System Type</label>
-                                        {{ form.system_type }}
-                                        {% if form.system_type.errors %}
-                                        <div class="form-error">{{ form.system_type.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="{{ form.subtitle.id_for_label }}" class="form-label">Subtitle</label>
-                                {{ form.subtitle }}
-                                {% if form.subtitle.errors %}
-                                <div class="form-error">{{ form.subtitle.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="{{ form.excerpt.id_for_label }}" class="form-label">System Excerpt</label>
-                                {{ form.excerpt }}
-                                <div class="form-help">Brief summary for system cards and previews</div>
-                                {% if form.excerpt.errors %}
-                                <div class="form-error">{{ form.excerpt.errors }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Content Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">SYSTEM DOCUMENTATION</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="form-group">
-                                <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
-                                {{ form.description }}
-                                <div class="form-help">Main system description and overview (Markdown supported)</div>
-                                {% if form.description.errors %}
-                                <div class="form-error">{{ form.description.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="{{ form.technical_details.id_for_label }}" class="form-label">Technical Details</label>
-                                {{ form.technical_details }}
-                                <div class="form-help">Technical implementation details (Markdown supported)</div>
-                                {% if form.technical_details.errors %}
-                                <div class="form-error">{{ form.technical_details.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.challenges.id_for_label }}" class="form-label">Development Challenges</label>
-                                        {{ form.challenges }}
-                                        {% if form.challenges.errors %}
-                                        <div class="form-error">{{ form.challenges.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.future_enhancements.id_for_label }}" class="form-label">Future Enhancements</label>
-                                        {{ form.future_enhancements }}
-                                        {% if form.future_enhancements.errors %}
-                                        <div class="form-error">{{ form.future_enhancements.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Technical Configuration Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">TECHNICAL CONFIGURATION</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.complexity.id_for_label }}" class="form-label">Complexity Level</label>
-                                        {{ form.complexity }}
-                                        {% if form.complexity.errors %}
-                                        <div class="form-error">{{ form.complexity.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.priority.id_for_label }}" class="form-label">Priority</label>
-                                        {{ form.priority }}
-                                        {% if form.priority.errors %}
-                                        <div class="form-error">{{ form.priority.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
-                                        {{ form.status }}
-                                        {% if form.status.errors %}
-                                        <div class="form-error">{{ form.status.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="{{ form.technologies.id_for_label }}" class="form-label">Technologies</label>
-                                {{ form.technologies }}
-                                <div class="form-help">Hold Ctrl/Cmd to select multiple technologies</div>
-                                {% if form.technologies.errors %}
-                                <div class="form-error">{{ form.technologies.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.completion_percent.id_for_label }}" class="form-label">Completion Percentage</label>
-                                        {{ form.completion_percent }}
-                                        {% if form.completion_percent.errors %}
-                                        <div class="form-error">{{ form.completion_percent.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.performance_score.id_for_label }}" class="form-label">Performance Score</label>
-                                        {{ form.performance_score }}
-                                        <div class="form-help">0.0 - 100.0</div>
-                                        {% if form.performance_score.errors %}
-                                        <div class="form-error">{{ form.performance_score.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- URLs Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">SYSTEM LINKS</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.github_url.id_for_label }}" class="form-label">GitHub Repository</label>
-                                        {{ form.github_url }}
-                                        {% if form.github_url.errors %}
-                                        <div class="form-error">{{ form.github_url.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.live_url.id_for_label }}" class="form-label">Live Demo URL</label>
-                                        {{ form.live_url }}
-                                        {% if form.live_url.errors %}
-                                        <div class="form-error">{{ form.live_url.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.demo_url.id_for_label }}" class="form-label">Interactive Demo</label>
-                                        {{ form.demo_url }}
-                                        {% if form.demo_url.errors %}
-                                        <div class="form-error">{{ form.demo_url.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.documentation_url.id_for_label }}" class="form-label">Documentation</label>
-                                        {{ form.documentation_url }}
-                                        {% if form.documentation_url.errors %}
-                                        <div class="form-error">{{ form.documentation_url.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Media Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">MEDIA ASSETS</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.thumbnail.id_for_label }}" class="form-label">Thumbnail</label>
-                                        {{ form.thumbnail }}
-                                        <div class="form-help">400x300px recommended</div>
-                                        {% if form.thumbnail.errors %}
-                                        <div class="form-error">{{ form.thumbnail.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.banner_image.id_for_label }}" class="form-label">Banner Image</label>
-                                        {{ form.banner_image }}
-                                        <div class="form-help">1200x400px recommended</div>
-                                        {% if form.banner_image.errors %}
-                                        <div class="form-error">{{ form.banner_image.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.featured_image.id_for_label }}" class="form-label">Featured Image</label>
-                                        {{ form.featured_image }}
-                                        <div class="form-help">For homepage showcase</div>
-                                        {% if form.featured_image.errors %}
-                                        <div class="form-error">{{ form.featured_image.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.architecture_diagram.id_for_label }}" class="form-label">Architecture Diagram</label>
-                                        {{ form.architecture_diagram }}
-                                        {% if form.architecture_diagram.errors %}
-                                        <div class="form-error">{{ form.architecture_diagram.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Timeline Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">PROJECT TIMELINE</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
-                                        {{ form.start_date }}
-                                        {% if form.start_date.errors %}
-                                        <div class="form-error">{{ form.start_date.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
-                                        {{ form.end_date }}
-                                        {% if form.end_date.errors %}
-                                        <div class="form-error">{{ form.end_date.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.deployment_date.id_for_label }}" class="form-label">Deployment Date</label>
-                                        {{ form.deployment_date }}
-                                        {% if form.deployment_date.errors %}
-                                        <div class="form-error">{{ form.deployment_date.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Form Actions -->
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> {{ submit_text }}
-                        </button>
-                        <a href="{% url 'projects:system_list' %}" class="btn btn-outline">
-                            <i class="fas fa-times"></i> Cancel
-                        </a>
-                        {% if object %}
-                        <a href="{{ object.get_absolute_url }}" class="btn btn-secondary">
-                            <i class="fas fa-eye"></i> View System
-                        </a>
-                        {% endif %}
-                    </div>
-                </form>
+        <div class="core-field">
+            <label class="field-label">Development Status</label>
+            <div class="status-wrapper">
+                {{ form.status }}
+                <div class="status-help">
+                    <i class="fas fa-info-circle"></i>
+                    Current development phase
+                </div>
             </div>
-            
-            <!-- Sidebar -->
-            <div class="col-lg-4">
-                <div class="form-sidebar">
-                    <!-- Quick Options -->
-                    <div class="sidebar-panel">
-                        <div class="panel-header">
-                            <h3 class="panel-title">QUICK OPTIONS</h3>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="form-check">
-                                {{ form.featured }}
-                                <label for="{{ form.featured.id_for_label }}" class="form-check-label">
-                                    Featured System
-                                </label>
-                                <div class="form-help">Display on homepage</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Form Tips -->
-                    <div class="sidebar-panel">
-                        <div class="panel-header">
-                            <h3 class="panel-title">TIPS</h3>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="tip-item">
-                                <i class="fas fa-lightbulb"></i>
-                                <span>Use Markdown in description fields for rich formatting</span>
-                            </div>
-                            <div class="tip-item">
-                                <i class="fas fa-image"></i>
-                                <span>Optimize images for web before uploading</span>
-                            </div>
-                            <div class="tip-item">
-                                <i class="fas fa-tags"></i>
-                                <span>Select relevant technologies for better discoverability</span>
-                            </div>
-                        </div>
-                    </div>
+        </div>
+        
+        <div class="core-field">
+            <label class="field-label">Priority Level</label>
+            {{ form.priority }}
+        </div>
+        
+        <div class="core-field">
+            <label class="field-label">Complexity Rating</label>
+            <div class="complexity-wrapper">
+                {{ form.complexity }}
+                <div class="complexity-scale">
+                    <span data-level="1">Basic</span>
+                    <span data-level="2">Intermediate</span>
+                    <span data-level="3">Advanced</span>
+                    <span data-level="4">Expert</span>
+                    <span data-level="5">Cutting-edge</span>
                 </div>
             </div>
         </div>
     </div>
-</section>
+</div>
+
+<div class="technology-section">
+    <h3 class="section-title">
+        <i class="fas fa-code-branch"></i>
+        Technology Stack
+    </h3>
+    
+    <div class="tech-fields">
+        <div class="field-group">
+            <label class="field-label">Primary Technologies</label>
+            <div class="tech-selector">
+                {{ form.technologies }}
+                <div class="tech-help">
+                    <i class="fas fa-lightbulb"></i>
+                    Select all technologies used in this system
+                </div>
+            </div>
+        </div>
+        
+        <div class="field-group">
+            <label class="field-label">Tech Stack Details</label>
+            <div class="stack-editor">
+                {{ form.tech_stack }}
+                <div class="editor-tools">
+                    <button type="button" class="tool-btn" data-action="add-tech">
+                        <i class="fas fa-plus"></i> Add Technology
+                    </button>
+                    <button type="button" class="tool-btn" data-action="import-stack">
+                        <i class="fas fa-download"></i> Import from GitHub
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="metrics-section">
+    <h3 class="section-title">
+        <i class="fas fa-chart-line"></i>
+        Performance Metrics
+    </h3>
+    
+    <div class="metrics-grid">
+        <div class="metric-field">
+            <label class="field-label">Performance Score</label>
+            <div class="score-input">
+                {{ form.performance_score }}
+                <div class="score-scale">
+                    <span class="scale-marker" data-score="0">0</span>
+                    <span class="scale-marker" data-score="25">25</span>
+                    <span class="scale-marker" data-score="50">50</span>
+                    <span class="scale-marker" data-score="75">75</span>
+                    <span class="scale-marker" data-score="100">100</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metric-field">
+            <label class="field-label">Code Quality</label>
+            {{ form.code_quality_score }}
+        </div>
+        
+        <div class="metric-field">
+            <label class="field-label">Test Coverage</label>
+            <div class="coverage-input">
+                {{ form.test_coverage }}
+                <span class="unit">%</span>
+            </div>
+        </div>
+        
+        <div class="metric-field">
+            <label class="field-label">Documentation Score</label>
+            {{ form.documentation_score }}
+        </div>
+    </div>
+</div>
+
+<div class="repository-section">
+    <h3 class="section-title">
+        <i class="fab fa-github"></i>
+        Repository & Deployment
+    </h3>
+    
+    <div class="repo-fields">
+        <div class="field-group">
+            <label class="field-label">GitHub Repository</label>
+            <div class="repo-input">
+                {{ form.github_repo }}
+                <button type="button" class="repo-btn" data-action="validate">
+                    <i class="fas fa-check"></i> Validate
+                </button>
+            </div>
+        </div>
+        
+        <div class="field-group">
+            <label class="field-label">Live Demo URL</label>
+            {{ form.demo_url }}
+        </div>
+        
+        <div class="field-group">
+            <label class="field-label">Deployment Status</label>
+            <div class="deployment-wrapper">
+                {{ form.deployment_status }}
+                <div class="deployment-indicator">
+                    <span class="indicator-dot"></span>
+                    <span class="indicator-text">Status will update automatically</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="challenges-section">
+    <h3 class="section-title">
+        <i class="fas fa-exclamation-triangle"></i>
+        Challenges & Solutions
+    </h3>
+    
+    <div class="challenges-fields">
+        <div class="field-group">
+            <label class="field-label">Technical Challenges</label>
+            <div class="challenges-editor">
+                {{ form.challenges }}
+                <div class="challenges-help">
+                    <i class="fas fa-info-circle"></i>
+                    Document key technical challenges faced during development
+                </div>
+            </div>
+        </div>
+        
+        <div class="field-group">
+            <label class="field-label">Learning Outcomes</label>
+            {{ form.learning_outcomes }}
+        </div>
+        
+        <div class="field-group">
+            <label class="field-label">Future Improvements</label>
+            {{ form.future_improvements }}
+        </div>
+    </div>
+</div>
+
+<div class="visibility-section">
+    <h3 class="section-title">
+        <i class="fas fa-eye"></i>
+        Display & Visibility
+    </h3>
+    
+    <div class="visibility-grid">
+        <div class="visibility-field">
+            {{ form.is_featured }}
+            <label for="{{ form.is_featured.id_for_label }}" class="option-label">
+                <i class="fas fa-star"></i>
+                Featured System
+            </label>
+        </div>
+        
+        <div class="visibility-field">
+            {{ form.show_on_homepage }}
+            <label for="{{ form.show_on_homepage.id_for_label }}" class="option-label">
+                <i class="fas fa-home"></i>
+                Show on Homepage
+            </label>
+        </div>
+        
+        <div class="visibility-field">
+            {{ form.is_public }}
+            <label for="{{ form.is_public.id_for_label }}" class="option-label">
+                <i class="fas fa-globe"></i>
+                Public System
+            </label>
+        </div>
+        
+        <div class="visibility-field">
+            {{ form.include_in_portfolio }}
+            <label for="{{ form.include_in_portfolio.id_for_label }}" class="option-label">
+                <i class="fas fa-briefcase"></i>
+                Include in Portfolio
+            </label>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="{% static 'projects/js/admin.js' %}"></script>
+{% block form_sidebar %}
+<div class="form-sidebar">
+    <div class="sidebar-widget glass-card">
+        <h4 class="widget-title">
+            <i class="fas fa-info-circle"></i>
+            System Health
+        </h4>
+        {% if object %}
+            <div class="health-overview">
+                <div class="health-metric">
+                    <span class="metric-label">Overall Health</span>
+                    <div class="health-bar">
+                        <div class="health-fill" style="width: {{ object.health_percentage }}%"></div>
+                    </div>
+                    <span class="metric-value">{{ object.health_percentage }}%</span>
+                </div>
+                
+                <div class="health-details">
+                    <div class="detail-item">
+                        <i class="fas fa-code"></i>
+                        <span>Code Quality: {{ object.code_quality_score }}/100</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Test Coverage: {{ object.test_coverage }}%</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-book"></i>
+                        <span>Documentation: {{ object.documentation_score }}/100</span>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p class="widget-help">Health metrics will be calculated after saving</p>
+        {% endif %}
+    </div>
+    
+    <div class="sidebar-widget glass-card">
+        <h4 class="widget-title">
+            <i class="fas fa-link"></i>
+            Related DataLogs
+        </h4>
+        {% if object.related_posts.exists %}
+            <div class="related-posts">
+                {% for post in object.related_posts.all|slice:":5" %}
+                    <div class="related-item">
+                        <a href="{% url 'blog:post_update' post.slug %}">{{ post.title }}</a>
+                        <span class="post-date">{{ post.created_at|date:"M d" }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="widget-help">No related DataLogs yet</p>
+            <a href="{% url 'blog:post_create' %}" class="btn btn-sm btn-outline">
+                Create DataLog
+            </a>
+        {% endif %}
+    </div>
+    
+    <div class="sidebar-widget glass-card">
+        <h4 class="widget-title">
+            <i class="fas fa-tools"></i>
+            System Tools
+        </h4>
+        <div class="system-tools">
+            {% if object.github_repo %}
+                <a href="{{ object.github_repo }}" class="tool-btn" target="_blank">
+                    <i class="fab fa-github"></i> Repository
+                </a>
+            {% endif %}
+            {% if object.demo_url %}
+                <a href="{{ object.demo_url }}" class="tool-btn" target="_blank">
+                    <i class="fas fa-external-link-alt"></i> Live Demo
+                </a>
+            {% endif %}
+            <button type="button" class="tool-btn" data-action="generate-docs">
+                <i class="fas fa-file-alt"></i> Generate Docs
+            </button>
+            <button type="button" class="tool-btn" data-action="run-tests">
+                <i class="fas fa-vial"></i> Run Tests
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_js %}
+<script src="{% static 'projects/js/system-admin.js' %}"></script>
 <script>
-// Initialize date pickers
-document.addEventListener('DOMContentLoaded', function() {
-    flatpickr('[type="date"]', {
-        dateFormat: "Y-m-d",
-        theme: "dark"
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize technology selector
+        initializeTechnologySelector();
+        
+        // Initialize performance metrics
+        initializeMetricsSliders();
+        
+        // Initialize repository validation
+        initializeRepoValidation();
+        
+        // Auto-calculate health score
+        calculateHealthScore();
     });
-});
 </script>
 {% endblock %}

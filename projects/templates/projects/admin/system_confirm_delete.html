@@ -1,187 +1,60 @@
-<!-- System Delete Confirmation Template -->
 <!-- projects/templates/projects/admin/system_confirm_delete.html -->
-{% extends "base.html" %}
-{% load static %}
+{% extends 'admin/forms/delete_base.html' %}
 
-{% block title %}{{ title }} | Systems Admin | ML DEVLOG{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'projects/css/admin.css' %}">
+{% block object_details %}
+    <div class="system-preview">
+        <h4>{{ object.name }}</h4>
+        <div class="system-meta">
+            <span class="meta-item">
+                <i class="fas fa-cog"></i> {{ object.system_type }}
+            </span>
+            <span class="meta-item">
+                <i class="fas fa-calendar"></i> {{ object.created_at|date:"M d, Y" }}
+            </span>
+            <span class="meta-item">
+                <i class="fas fa-star"></i> {{ object.priority }} Priority
+            </span>
+        </div>
+        
+        {% if object.description %}
+            <p class="description">{{ object.description|truncatewords:20 }}</p>
+        {% endif %}
+        
+        <div class="tech-preview">
+            {% for tech in object.technologies.all|slice:":5" %}
+                <span class="tech-tag">{{ tech.name }}</span>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
 
-{% block body_class %}admin-page system-delete-page{% endblock %}
-
-{% block content %}
-<section class="admin-delete-section">
-    <div class="container">
-        <!-- Admin Header -->
-        <div class="admin-header">
-            <nav class="admin-breadcrumbs">
-                <a href="{% url 'projects:dashboard' %}" class="breadcrumb-link">
-                    <i class="fas fa-tachometer-alt"></i> DASHBOARD
-                </a>
-                <span class="breadcrumb-separator">/</span>
-                <a href="{% url 'projects:system_list' %}" class="breadcrumb-link">SYSTEMS</a>
-                <span class="breadcrumb-separator">/</span>
-                    <a href="{{ object.get_absolute_url }}" class="breadcrumb-link">{{ object.system_id }}</a>
-                    <span class="breadcrumb-separator">/</span>
-                    <span class="breadcrumb-current">DELETE</span>
-                </nav>
-                
-                <h1 class="admin-title text-coral">{{ title }}</h1>
-            </div>
-            
-            <!-- Delete Confirmation -->
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="delete-confirmation-panel">
-                        <div class="panel-header danger">
-                            <div class="warning-icon">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <h2 class="panel-title">SYSTEM DELETION WARNING</h2>
-                            <div class="panel-divider danger"></div>
-                        </div>
-                        
-                        <div class="panel-content">
-                            <div class="system-info-display">
-                                <div class="system-header">
-                                    <div class="system-id-badge danger">{{ object.system_id }}</div>
-                                    <div class="system-status" style="--status-color: {{ object.get_status_color }}">
-                                        {{ object.get_status_display }}
-                                    </div>
-                                </div>
-                                <h3 class="system-title">{{ object.title }}</h3>
-                                {% if object.subtitle %}
-                                <div class="system-subtitle">{{ object.subtitle }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="deletion-warning">
-                                <p class="warning-text">
-                                    <strong>WARNING:</strong> This action will permanently delete the system and cannot be undone. 
-                                    All associated data will be removed from the database.
-                                </p>
-                            </div>
-                            
-                            <!-- Impact Assessment -->
-                            <div class="impact-assessment">
-                                <h4 class="impact-title">DELETION IMPACT</h4>
-                                <div class="impact-grid">
-                                    <div class="impact-item">
-                                        <div class="impact-icon">
-                                            <i class="fas fa-file-alt"></i>
-                                        </div>
-                                        <div class="impact-details">
-                                            <div class="impact-count">{{ related_logs|length }}</div>
-                                            <div class="impact-label">Development Logs</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="impact-item">
-                                        <div class="impact-icon">
-                                            <i class="fas fa-star"></i>
-                                        </div>
-                                        <div class="impact-details">
-                                            <div class="impact-count">{{ related_features }}</div>
-                                            <div class="impact-label">System Features</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="impact-item">
-                                        <div class="impact-icon">
-                                            <i class="fas fa-images"></i>
-                                        </div>
-                                        <div class="impact-details">
-                                            <div class="impact-count">{{ related_images }}</div>
-                                            <div class="impact-label">Gallery Images</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="impact-item">
-                                        <div class="impact-icon">
-                                            <i class="fas fa-link"></i>
-                                        </div>
-                                        <div class="impact-details">
-                                            <div class="impact-count">{{ object.related_systems.count }}</div>
-                                            <div class="impact-label">Related Systems</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Related Logs Preview -->
-                            {% if related_logs %}
-                            <div class="related-content-preview">
-                                <h4 class="preview-title">AFFECTED DEVELOPMENT LOGS</h4>
-                                <div class="logs-preview">
-                                    {% for log_entry in related_logs|slice:":5" %}
-                                    <div class="log-preview-item">
-                                        <span class="log-id">{{ log_entry.log_entry_id }}</span>
-                                        <span class="log-title">{{ log_entry.post.title }}</span>
-                                        <span class="log-date">{{ log_entry.created_at|date:"M d, Y" }}</span>
-                                    </div>
-                                    {% endfor %}
-                                    {% if related_logs|length > 5 %}
-                                    <div class="logs-more">
-                                        And {{ related_logs|length|add:"-5" }} more log{{ related_logs|length|add:"-5"|pluralize }}...
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endif %}
-                            
-                            <!-- Confirmation Form -->
-                            <form method="post" class="deletion-form">
-                                {% csrf_token %}
-                                
-                                <div class="confirmation-checkbox">
-                                    <input type="checkbox" id="confirm-deletion" name="confirm_deletion" required>
-                                    <label for="confirm-deletion" class="checkbox-label">
-                                        I understand that this action is irreversible and will permanently delete 
-                                        <strong>{{ object.system_id }}: {{ object.title }}</strong> and all associated data.
-                                    </label>
-                                </div>
-                                
-                                <div class="form-actions">
-                                    <button type="submit" class="btn btn-danger" id="delete-btn" disabled>
-                                        <i class="fas fa-trash"></i> CONFIRM DELETION
-                                    </button>
-                                    <a href="{{ object.get_absolute_url }}" class="btn btn-outline">
-                                        <i class="fas fa-times"></i> Cancel
-                                    </a>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
+{% block deletion_warnings %}
+{{ block.super }}
+<div class="system-warnings">
+    {% if object.related_posts.exists %}
+        <div class="warning-item">
+            <h5><i class="fas fa-database"></i> Related DataLogs</h5>
+            <p>{{ object.related_posts.count }} DataLog(s) reference this system. Connections will be removed.</p>
+            <ul class="affected-posts">
+                {% for post in object.related_posts.all %}
+                    <li>{{ post.title }}</li>
+                {% endfor %}
+            </ul>
         </div>
-    </section>
-    {% endblock %}
+    {% endif %}
     
-    {% block extra_js %}
-    <script>
-    // Enable delete button only when checkbox is checked
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkbox = document.getElementById('confirm-deletion');
-        const deleteBtn = document.getElementById('delete-btn');
-        
-        checkbox.addEventListener('change', function() {
-            deleteBtn.disabled = !this.checked;
-            if (this.checked) {
-                deleteBtn.classList.add('enabled');
-            } else {
-                deleteBtn.classList.remove('enabled');
-            }
-        });
-        
-        // Add confirmation dialog
-        deleteBtn.addEventListener('click', function(e) {
-            if (!confirm('Are you absolutely sure you want to delete this system? This action cannot be undone.')) {
-                e.preventDefault();
-            }
-        });
-    });
-    </script>
-    {% endblock %}
+    {% if object.github_repo %}
+        <div class="warning-item">
+            <h5><i class="fab fa-github"></i> Repository Link</h5>
+            <p>GitHub repository reference will be lost: {{ object.github_repo }}</p>
+        </div>
+    {% endif %}
+    
+    {% if object.demo_url %}
+        <div class="warning-item">
+            <h5><i class="fas fa-external-link-alt"></i> Live Demo</h5>
+            <p>Live demo URL will be lost: {{ object.demo_url }}</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
