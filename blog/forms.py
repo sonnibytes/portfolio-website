@@ -117,7 +117,7 @@ class CategoryForm(forms.ModelForm):
 
     class Meta:
         model = Category
-        fields = ["name", "slug", "description", "color_hex", "icon_class"]
+        fields = ["name", "slug", "description", "color", "icon"]
         widgets = {
             "name": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Category name..."}
@@ -135,14 +135,14 @@ class CategoryForm(forms.ModelForm):
                     "placeholder": "Brief description of this category...",
                 }
             ),
-            "color_hex": forms.TextInput(
+            "color": forms.TextInput(
                 attrs={
                     "type": "color",
                     "class": "form-control form-control-color",
                     "title": "Choose category color",
                 }
             ),
-            "icon_class": forms.TextInput(
+            "icon": forms.TextInput(
                 attrs={
                     "class": "form-control",
                     "placeholder": "fas fa-folder",
@@ -156,8 +156,8 @@ class CategoryForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["slug"].required = False
         self.fields["description"].required = False
-        self.fields["color_hex"].initial = "#a855f7"  # Default lavender
-        self.fields["icon_class"].initial = "fas fa-folder"
+        self.fields["color"].initial = "#a855f7"  # Default lavender
+        self.fields["icon"].initial = "fas fa-folder"
 
     def clean_slug(self):
         """Auto-generate slug if not provided."""
@@ -175,7 +175,7 @@ class TagForm(forms.ModelForm):
 
     class Meta:
         model = Tag
-        fields = ["name", "slug", "description"]
+        fields = ["name", "slug"]
         widgets = {
             "name": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Tag name..."}
@@ -186,19 +186,11 @@ class TagForm(forms.ModelForm):
                     "placeholder": "auto-generated-from-name",
                 }
             ),
-            "description": forms.Textarea(
-                attrs={
-                    "rows": 2,
-                    "class": "form-control",
-                    "placeholder": "Optional tag description...",
-                }
-            ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["slug"].required = False
-        self.fields["description"].required = False
 
     def clean_slug(self):
         """Auto-generate slug if not provided."""

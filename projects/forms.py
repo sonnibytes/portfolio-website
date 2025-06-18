@@ -16,7 +16,7 @@ class SystemModuleForm(forms.ModelForm):
     class Meta:
         model = SystemModule
         fields = [
-            "name",
+            "title",
             "slug",
             "description",
             "system_type",
@@ -24,14 +24,14 @@ class SystemModuleForm(forms.ModelForm):
             "status",
             "priority",
             "featured",
-            "repository_url",
+            "github_url",
             "live_url",
             "completion_percent",
             "performance_score",
             "uptime_percentage",
         ]
         widgets = {
-            "name": forms.TextInput(
+            "title": forms.TextInput(
                 attrs={
                     "class": "form-control form-control-lg",
                     "placeholder": "System name...",
@@ -54,7 +54,7 @@ class SystemModuleForm(forms.ModelForm):
             "technologies": forms.CheckboxSelectMultiple(),
             "status": forms.Select(attrs={"class": "form-select"}),
             "priority": forms.Select(attrs={"class": "form-select"}),
-            "repository_url": forms.URLInput(
+            "github_url": forms.URLInput(
                 attrs={
                     "class": "form-control",
                     "placeholder": "https://github.com/username/repo",
@@ -79,7 +79,7 @@ class SystemModuleForm(forms.ModelForm):
 
         # Make certain fields optional
         self.fields["slug"].required = False
-        self.fields["repository_url"].required = False
+        self.fields["github_url"].required = False
         self.fields["live_url"].required = False
         self.fields["performance_score"].required = False
         self.fields["uptime_percentage"].required = False
@@ -90,7 +90,7 @@ class SystemModuleForm(forms.ModelForm):
         self.fields["status"].initial = "in_development"
 
         # Add help text
-        self.fields["slug"].help_text = "Leave blank to auto-generate from name"
+        self.fields["slug"].help_text = "Leave blank to auto-generate from title"
         self.fields[
             "completion_percent"
         ].help_text = "Overall completion percentage (0-100)"
@@ -100,7 +100,7 @@ class SystemModuleForm(forms.ModelForm):
     def clean_slug(self):
         """Auto-generate slug if not provided."""
         slug = self.cleaned_data.get("slug")
-        name = self.cleaned_data.get("name")
+        name = self.cleaned_data.get("title")
 
         if not slug and name:
             slug = slugify(name)
@@ -117,7 +117,7 @@ class SystemModuleForm(forms.ModelForm):
 
     def clean_name(self):
         """Validate system name."""
-        name = self.cleaned_data.get("name")
+        name = self.cleaned_data.get("title")
         if len(name) < 3:
             raise ValidationError("System name must be at least 3 characters long.")
         return name
@@ -149,7 +149,7 @@ class TechnologyForm(forms.ModelForm):
 
     class Meta:
         model = Technology
-        fields = ["name", "slug", "category", "description", "documentation_url"]
+        fields = ["name", "slug", "category", "description"]
         widgets = {
             "name": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Technology name..."}
@@ -168,19 +168,12 @@ class TechnologyForm(forms.ModelForm):
                     "placeholder": "Technology description...",
                 }
             ),
-            "documentation_url": forms.URLInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "https://docs.example.com",
-                }
-            ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["slug"].required = False
         self.fields["description"].required = False
-        self.fields["documentation_url"].required = False
 
     def clean_slug(self):
         """Auto-generate slug if not provided."""
@@ -198,7 +191,7 @@ class SystemTypeForm(forms.ModelForm):
 
     class Meta:
         model = SystemType
-        fields = ["name", "slug", "description", "icon_class", "color_hex"]
+        fields = ["name", "slug", "description", "icon", "color"]
         widgets = {
             "name": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "System type name..."}
@@ -216,7 +209,7 @@ class SystemTypeForm(forms.ModelForm):
                     "placeholder": "System type description...",
                 }
             ),
-            "icon_class": forms.TextInput(
+            "icon": forms.TextInput(
                 attrs={
                     "class": "form-control",
                     "placeholder": "fas fa-server",
@@ -224,7 +217,7 @@ class SystemTypeForm(forms.ModelForm):
                     "title": "FontAwesome icon class",
                 }
             ),
-            "color_hex": forms.TextInput(
+            "color": forms.TextInput(
                 attrs={
                     "type": "color",
                     "class": "form-control form-control-color",
@@ -237,8 +230,8 @@ class SystemTypeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["slug"].required = False
         self.fields["description"].required = False
-        self.fields["color_hex"].initial = "#06b6d4"  # Default cyan
-        self.fields["icon_class"].initial = "fas fa-server"
+        self.fields["color"].initial = "#06b6d4"  # Default cyan
+        self.fields["icon"].initial = "fas fa-server"
 
     def clean_slug(self):
         """Auto-generate slug if not provided."""

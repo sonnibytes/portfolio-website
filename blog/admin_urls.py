@@ -47,16 +47,16 @@ urlpatterns = [
     # Tag Management
     path("tags/", admin_views.TagListAdminView.as_view(), name="tag_list"),
     path("tags/create/", admin_views.TagCreateAdminView.as_view(), name="tag_create"),
-    path(
-        "tags/<slug:slug>/edit/",
-        admin_views.TagUpdateAdminView.as_view(),
-        name="tag_update",
-    ),
-    path(
-        "tags/<slug:slug>/delete/",
-        admin_views.TagDeleteAdminView.as_view(),
-        name="tag_delete",
-    ),
+    # path(
+    #     "tags/<slug:slug>/edit/",
+    #     admin_views.TagUpdateAdminView.as_view(),
+    #     name="tag_update",
+    # ),
+    # path(
+    #     "tags/<slug:slug>/delete/",
+    #     admin_views.TagDeleteAdminView.as_view(),
+    #     name="tag_delete",
+    # ),
     # Series Management
     path("series/", admin_views.SeriesListAdminView.as_view(), name="series_list"),
     path(

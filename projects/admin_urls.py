@@ -43,11 +43,11 @@ urlpatterns = [
         admin_views.TechnologyUpdateAdminView.as_view(),
         name="technology_update",
     ),
-    path(
-        "technologies/<slug:slug>/delete/",
-        admin_views.TechnologyDeleteAdminView.as_view(),
-        name="technology_delete",
-    ),
+    # path(
+    #     "technologies/<slug:slug>/delete/",
+    #     admin_views.TechnologyDeleteAdminView.as_view(),
+    #     name="technology_delete",
+    # ),
     # System Type Management
     path(
         "types/", admin_views.SystemTypeListAdminView.as_view(), name="system_type_list"
@@ -57,16 +57,16 @@ urlpatterns = [
         admin_views.SystemTypeCreateAdminView.as_view(),
         name="system_type_create",
     ),
-    path(
-        "types/<slug:slug>/edit/",
-        admin_views.SystemTypeUpdateAdminView.as_view(),
-        name="system_type_update",
-    ),
-    path(
-        "types/<slug:slug>/delete/",
-        admin_views.SystemTypeDeleteAdminView.as_view(),
-        name="system_type_delete",
-    ),
+    # path(
+    #     "types/<slug:slug>/edit/",
+    #     admin_views.SystemTypeUpdateAdminView.as_view(),
+    #     name="system_type_update",
+    # ),
+    # path(
+    #     "types/<slug:slug>/delete/",
+    #     admin_views.SystemTypeDeleteAdminView.as_view(),
+    #     name="system_type_delete",
+    # ),
     # API Endpoints
     path(
         "api/metrics/", admin_views.SystemMetricsAPIView.as_view(), name="metrics_api"
