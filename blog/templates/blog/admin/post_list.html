@@ -1,0 +1,816 @@
+<!-- blog/templates/blog/admin/post_list.html -->
+{% extends 'admin/list.html' %}
+{% load static %}
+{% load admin_filters %}
+
+{% block header_actions %}
+    <!-- Advanced Search Bar -->
+    <div class="advanced-search-bar">
+        <form method="get" class="search-form">
+            <div class="search-row">
+                <div class="search-input-group">
+                    <input type="text" 
+                           name="search" 
+                           value="{{ search_query }}" 
+                           placeholder="Search posts, content, categories..." 
+                           class="form-control search-input">
+                    <button class="btn btn-outline-secondary search-btn" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    {% if search_query %}
+                        <a href="?" class="btn btn-outline-secondary clear-btn">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="filter-controls">
+                    <select name="status" class="form-select filter-select" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="published" {% if current_filters.status == 'published' %}selected{% endif %}>Published</option>
+                        <option value="draft" {% if current_filters.status == 'draft' %}selected{% endif %}>Draft</option>
+                    </select>
+                    
+                    <select name="category" class="form-select filter-select" onchange="this.form.submit()">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.slug }}" {% if current_filters.category == category.slug %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <select name="featured" class="form-select filter-select" onchange="this.form.submit()">
+                        <option value="">All Posts</option>
+                        <option value="1" {% if current_filters.featured == '1' %}selected{% endif %}>Featured Only</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <a href="{{ create_url }}" class="btn btn-admin-primary">
+        <i class="fas fa-plus me-2"></i>
+        New DataLog Entry
+    </a>
+{% endblock %}
+
+{% block additional_bulk_actions %}
+    <button type="button" class="btn btn-sm btn-outline-success" data-action="publish">
+        <i class="fas fa-check me-1"></i>
+        Publish
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-warning" data-action="draft">
+        <i class="fas fa-edit me-1"></i>
+        Move to Draft
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-info" data-action="feature">
+        <i class="fas fa-star me-1"></i>
+        Feature
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="unfeature">
+        <i class="fas fa-star-o me-1"></i>
+        Unfeature
+    </button>
+{% endblock %}
+
+{% block table_headers %}
+    <th width="40">
+        <i class="fas fa-image text-muted"></i>
+    </th>
+    <th>Post Details</th>
+    <th width="120">Category</th>
+    <th width="100">Status</th>
+    <th width="100">Metrics</th>
+    <th width="120">Created</th>
+    <th width="150">Actions</th>
+{% endblock %}
+
+{% block table_row %}
+    <td>
+        {% if post.thumbnail %}
+            <img src="{{ post.thumbnail.url }}" 
+                 alt="{{ post.title }}" 
+                 class="post-thumbnail">
+        {% else %}
+            <div class="post-thumbnail-placeholder">
+                <i class="fas fa-image"></i>
+            </div>
+        {% endif %}
+    </td>
+    <td>
+        <div class="post-details">
+            <h5 class="post-title">
+                <a href="{{ post.get_absolute_url }}" target="_blank" class="post-link">
+                    {{ post.title }}
+                </a>
+                {% if post.featured %}
+                    <i class="fas fa-star featured-star" title="Featured Post"></i>
+                {% endif %}
+            </h5>
+            <p class="post-excerpt">{{ post.excerpt|truncatechars:80 }}</p>
+            <div class="post-tags">
+                {% for tag in post.tags.all|slice:":3" %}
+                    <span class="tag-badge">{{ tag.name }}</span>
+                {% endfor %}
+                {% if post.tags.count > 3 %}
+                    <span class="tag-badge more">+{{ post.tags.count|add:"-3" }} more</span>
+                {% endif %}
+            </div>
+        </div>
+    </td>
+    <td>
+        <div class="category-display">
+            <div class="category-icon" style="color: {{ post.category.color_hex }};">
+                <i class="{{ post.category.icon_class }}"></i>
+            </div>
+            <div class="category-info">
+                <div class="category-name">{{ post.category.name }}</div>
+                <div class="category-code">{{ post.category.slug|upper }}</div>
+            </div>
+        </div>
+    </td>
+    <td>
+        <div class="status-column">
+            <span class="status-badge status-{{ post.status }}">
+                {{ post.get_status_display }}
+            </span>
+            {% if post.status == 'published' and post.published_date %}
+                <div class="published-date">
+                    {{ post.published_date|date:"M d" }}
+                </div>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        <div class="post-metrics">
+            <div class="metric-item">
+                <i class="fas fa-clock text-muted"></i>
+                <span>{{ post.reading_time }}m</span>
+            </div>
+            <div class="metric-item">
+                <i class="fas fa-link text-muted"></i>
+                <span>{{ post.related_systems.count }}</span>
+            </div>
+            {% if post.featured_code %}
+                <div class="metric-item">
+                    <i class="fas fa-code text-success"></i>
+                    <span>{{ post.featured_code_format|upper }}</span>
+                </div>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        <div class="date-column">
+            <div class="date-primary">{{ post.created_at|date:"M d, Y" }}</div>
+            <div class="date-secondary">{{ post.created_at|time:"g:i A" }}</div>
+            {% if post.updated_at != post.created_at %}
+                <div class="date-updated">
+                    <i class="fas fa-edit text-muted"></i>
+                    {{ post.updated_at|timesince }} ago
+                </div>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        <div class="action-buttons">
+            <a href="{{ post.get_absolute_url }}" 
+               target="_blank" 
+               class="btn btn-sm btn-outline-primary" 
+               title="View Post">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="{% url edit_url_name post.slug %}" 
+               class="btn btn-sm btn-outline-secondary" 
+               title="Edit Post">
+                <i class="fas fa-edit"></i>
+            </a>
+            {% if post.status == 'draft' %}
+                <button type="button" 
+                        class="btn btn-sm btn-outline-success quick-publish" 
+                        data-post-id="{{ post.id }}" 
+                        title="Quick Publish">
+                    <i class="fas fa-check"></i>
+                </button>
+            {% endif %}
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                        type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url edit_url_name post.slug %}">
+                            <i class="fas fa-edit me-2"></i>Edit
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ post.get_absolute_url }}" target="_blank">
+                            <i class="fas fa-eye me-2"></i>View
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% if post.featured %}
+                        <li>
+                            <a class="dropdown-item toggle-feature" href="#" data-post-id="{{ post.id }}" data-action="unfeature">
+                                <i class="fas fa-star-o me-2"></i>Remove Feature
+                            </a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a class="dropdown-item toggle-feature" href="#" data-post-id="{{ post.id }}" data-action="feature">
+                                <i class="fas fa-star me-2"></i>Make Featured
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li>
+                        <a class="dropdown-item" href="{% url 'blog_admin:system_connections' %}?post={{ post.id }}">
+                            <i class="fas fa-link me-2"></i>System Connections
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{% url delete_url_name post.slug %}">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </td>
+{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+.advanced-search-bar {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-input-group {
+    display: flex;
+    flex: 1;
+    min-width: 300px;
+}
+
+.search-input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.search-btn,
+.clear-btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    min-width: 140px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+.filter-select:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--lavender);
+    box-shadow: 0 0 0 0.25rem rgba(var(--lavender-rgb), 0.25);
+}
+
+.post-thumbnail {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.post-thumbnail-placeholder {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.post-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.post-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.post-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.post-link:hover {
+    color: var(--lavender);
+}
+
+.featured-star {
+    color: var(--amber);
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.post-excerpt {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.tag-badge {
+    padding: 0.125rem 0.5rem;
+    background: rgba(var(--blue-rgb), 0.1);
+    color: var(--blue);
+    border: 1px solid rgba(var(--blue-rgb), 0.2);
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.tag-badge.more {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.category-display {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.category-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.category-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.category-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    line-height: 1.2;
+}
+
+.category-code {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-family: 'Fira Code', monospace;
+    letter-spacing: 0.05em;
+}
+
+.status-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-start;
+}
+
+.published-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.post-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.metric-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.metric-item i {
+    width: 12px;
+    text-align: center;
+}
+
+.metric-item span {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.date-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.date-primary {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.date-secondary {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.date-updated {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.action-buttons .btn {
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
+}
+
+.quick-publish {
+    background: rgba(var(--success-rgb), 0.1);
+    border-color: rgba(var(--success-rgb), 0.3);
+    color: var(--success);
+}
+
+.quick-publish:hover {
+    background: rgba(var(--success-rgb), 0.2);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.dropdown-menu {
+    background: rgba(var(--bg-secondary), 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-item {
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.dropdown-item.text-danger {
+    color: var(--danger);
+}
+
+.dropdown-item.text-danger:hover {
+    background: rgba(var(--danger-rgb), 0.1);
+    color: var(--danger);
+}
+
+.dropdown-divider {
+    border-color: rgba(255, 255, 255, 0.1);
+    margin: 0.25rem 0;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+    .search-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-input-group {
+        min-width: auto;
+    }
+    
+    .filter-controls {
+        justify-content: stretch;
+    }
+    
+    .filter-select {
+        flex: 1;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .post-details {
+        gap: 0.25rem;
+    }
+    
+    .post-title {
+        font-size: 0.875rem;
+    }
+    
+    .post-excerpt {
+        display: none;
+    }
+    
+    .category-display {
+        flex-direction: column;
+        gap: 0.25rem;
+        align-items: flex-start;
+    }
+    
+    .category-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 0.75rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.25rem 0.375rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Filter active states */
+.filter-select option:checked {
+    background: var(--lavender);
+    color: white;
+}
+
+/* Bulk action enhancements */
+.bulk-actions-bar {
+    background: linear-gradient(135deg, rgba(var(--lavender-rgb), 0.1) 0%, rgba(var(--purple-rgb), 0.1) 100%);
+    border-color: rgba(var(--lavender-rgb), 0.2);
+}
+
+.selected-count {
+    color: var(--lavender);
+    font-weight: 600;
+}
+
+/* Empty state enhancement */
+.empty-state {
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 3rem 2rem;
+}
+
+.empty-state i {
+    color: var(--lavender);
+    opacity: 0.6;
+}
+
+.empty-state h5 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state .btn {
+    background: linear-gradient(135deg, var(--lavender) 0%, var(--purple) 100%);
+    border: none;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+// Quick publish functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Quick publish buttons
+    document.querySelectorAll('.quick-publish').forEach(button => {
+        button.addEventListener('click', function() {
+            const postId = this.dataset.postId;
+            const originalContent = this.innerHTML;
+            
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            this.disabled = true;
+            
+            // Simulate API call for quick publish
+            fetch(`/aura-admin/blog/posts/${postId}/quick-publish/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'publish' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the row to show published status
+                    const row = this.closest('tr');
+                    const statusBadge = row.querySelector('.status-badge');
+                    statusBadge.className = 'status-badge status-published';
+                    statusBadge.textContent = 'Published';
+                    
+                    // Remove the quick publish button
+                    this.remove();
+                    
+                    // Show success notification
+                    if (window.auraAdmin) {
+                        window.auraAdmin.showNotification('Post published successfully!', 'success');
+                    }
+                } else {
+                    this.innerHTML = originalContent;
+                    this.disabled = false;
+                    
+                    if (window.auraAdmin) {
+                        window.auraAdmin.showNotification('Failed to publish post.', 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                this.innerHTML = originalContent;
+                this.disabled = false;
+                console.error('Error:', error);
+                
+                if (window.auraAdmin) {
+                    window.auraAdmin.showNotification('An error occurred.', 'error');
+                }
+            });
+        });
+    });
+    
+    // Toggle feature functionality
+    document.querySelectorAll('.toggle-feature').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const postId = this.dataset.postId;
+            const action = this.dataset.action;
+            const row = this.closest('tr');
+            
+            fetch(`/aura-admin/blog/posts/${postId}/toggle-feature/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const titleElement = row.querySelector('.post-title');
+                    const existingStar = titleElement.querySelector('.featured-star');
+                    
+                    if (action === 'feature') {
+                        if (!existingStar) {
+                            titleElement.insertAdjacentHTML('beforeend', '<i class="fas fa-star featured-star" title="Featured Post"></i>');
+                        }
+                        this.innerHTML = '<i class="fas fa-star-o me-2"></i>Remove Feature';
+                        this.dataset.action = 'unfeature';
+                    } else {
+                        if (existingStar) {
+                            existingStar.remove();
+                        }
+                        this.innerHTML = '<i class="fas fa-star me-2"></i>Make Featured';
+                        this.dataset.action = 'feature';
+                    }
+                    
+                    if (window.auraAdmin) {
+                        window.auraAdmin.showNotification(data.message, 'success');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (window.auraAdmin) {
+                    window.auraAdmin.showNotification('An error occurred.', 'error');
+                }
+            });
+        });
+    });
+    
+    // Enhanced table interactions
+    const tableRows = document.querySelectorAll('.table-row');
+    tableRows.forEach(row => {
+        // Add hover effect for better UX
+        row.addEventListener('mouseenter', function() {
+            this.style.background = 'rgba(var(--lavender-rgb), 0.05)';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('selected')) {
+                this.style.background = '';
+            }
+        });
+    });
+    
+    // Filter persistence
+    const filterSelects = document.querySelectorAll('.filter-select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            // Add loading state to the select
+            this.style.opacity = '0.6';
+            this.disabled = true;
+            
+            // Form will submit automatically, but we add visual feedback
+            setTimeout(() => {
+                this.style.opacity = '';
+                this.disabled = false;
+            }, 1000);
+        });
+    });
+});
+
+// Advanced search with debouncing
+let searchTimeout;
+const searchInput = document.querySelector('.search-input');
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            // Auto-submit search after 500ms of no typing
+            if (this.value.length >= 3 || this.value.length === 0) {
+                this.form.submit();
+            }
+        }, 500);
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + K to focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('.search-input');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+    
+    // Ctrl/Cmd + N for new post
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        const createLink = document.querySelector('a[href*="create"]');
+        if (createLink) {
+            window.location.href = createLink.href;
+        }
+    }
+});
+
+console.log('📝 DataLogs Admin List Interface Ready');
+</script>
+{% endblock %}

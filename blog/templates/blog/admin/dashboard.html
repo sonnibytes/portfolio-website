@@ -1,95 +1,662 @@
 <!-- blog/templates/blog/admin/dashboard.html -->
 {% extends 'admin/admin_base.html' %}
 {% load static %}
+{% load admin_filters %}
 
-{% block extra_head %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'blog/css/datalog-dashboard.css' %}">
-{% endblock %}
+{% block title %}DataLogs Management | AURA Admin{% endblock %}
 
 {% block admin_content %}
-<div class="dashboard-header">
-    <h1 class="dashboard-title">
-        <i class="fas fa-database"></i>
-        DataLogs Control Center
-    </h1>
-    <div class="dashboard-actions">
-        <a href="{% url 'blog:post_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i>
-            New DataLog
-        </a>
+<div class="blog-admin-dashboard">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="dashboard-welcome">
+                    <h1 class="dashboard-title">
+                        <i class="fas fa-database me-3" style="color: var(--lavender);"></i>
+                        DataLogs Management
+                    </h1>
+                    <p class="dashboard-subtitle">
+                        Technical blog posts, development logs, and system documentation
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="header-actions">
+                    <a href="{% url 'blog_admin:post_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        New DataLog Entry
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="dashboard-grid">
-    <div class="stats-row">
-        {% include 'admin/components/stats_widget.html' with title="Total DataLogs" value=post_count icon="database" %}
-        {% include 'admin/components/stats_widget.html' with title="Published" value=published_count icon="check-circle" %}
-        {% include 'admin/components/stats_widget.html' with title="Drafts" value=draft_count icon="edit" %}
-        {% include 'admin/components/stats_widget.html' with title="Categories" value=category_count icon="folder" %}
-    </div>
-    
-    <div class="content-row">
-        <div class="recent-posts glass-card">
-            <h3 class="card-title">
-                <i class="fas fa-clock"></i>
-                Recent DataLogs
-            </h3>
-            <div class="posts-list">
-                {% for post in posts %}
-                    <div class="post-item">
-                        <div class="post-header">
-                            <h4 class="post-title">
-                                <a href="{% url 'blog:post_update' post.slug %}">{{ post.title }}</a>
-                            </h4>
-                            <span class="post-status {{ post.status }}">{{ post.get_status_display }}</span>
-                        </div>
-                        <div class="post-meta">
-                            <span>{{ post.category }}</span>
-                            <span>{{ post.created_at|date:"M d" }}</span>
-                            <span>{{ post.view_count|default:0 }} views</span>
-                        </div>
-                    </div>
-                {% empty %}
-                    <div class="empty-state">
-                        <i class="fas fa-database"></i>
-                        <p>No DataLogs yet. Create your first entry!</p>
-                        <a href="{% url 'blog:post_create' %}" class="btn btn-primary">
-                            Create DataLog
-                        </a>
-                    </div>
-                {% endfor %}
+    <!-- Stats Overview -->
+    <div class="stats-overview">
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4">
+                {% admin_card "Total Posts" total_posts "fas fa-file-alt" "lavender" %}
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                {% admin_card "Published" published_posts "fas fa-check-circle" "success" %}
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                {% admin_card "Draft Posts" draft_posts "fas fa-edit" "warning" %}
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                {% admin_card "Featured" featured_posts "fas fa-star" "amber" %}
             </div>
         </div>
         
-        <div class="quick-actions glass-card">
-            <h3 class="card-title">
-                <i class="fas fa-bolt"></i>
-                Quick Actions
-            </h3>
-            <div class="actions-grid">
-                <a href="{% url 'blog:post_create' %}" class="action-card">
-                    <i class="fas fa-plus"></i>
-                    <span>New DataLog</span>
-                </a>
-                <a href="{% url 'blog:category_create' %}" class="action-card">
-                    <i class="fas fa-folder-plus"></i>
-                    <span>New Category</span>
-                </a>
-                <a href="{% url 'blog:post_list' %}" class="action-card">
-                    <i class="fas fa-list"></i>
-                    <span>All Posts</span>
-                </a>
-                <a href="{% url 'blog:archive' %}" class="action-card">
-                    <i class="fas fa-archive"></i>
-                    <span>Archive</span>
-                </a>
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4">
+                {% admin_card "Categories" total_categories "fas fa-tags" "purple" %}
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                {% admin_card "Tags" total_tags "fas fa-hashtag" "blue" %}
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                {% admin_card "Series" total_series "fas fa-book" "emerald" %}
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                {% admin_card "System Connections" system_connections "fas fa-link" "cyan" %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+        <div class="row">
+            <!-- Recent Posts -->
+            <div class="col-lg-8 mb-4">
+                <div class="admin-panel glass-card">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <i class="fas fa-clock me-2" style="color: var(--lavender);"></i>
+                            Recent DataLog Entries
+                        </h3>
+                        <a href="{% url 'blog_admin:post_list' %}" class="panel-action-btn">
+                            View All <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="panel-content">
+                        <div class="posts-list">
+                            {% for post in recent_posts %}
+                                <div class="post-item">
+                                    <div class="post-info">
+                                        <h4 class="post-title">
+                                            <a href="{{ post.get_absolute_url }}" target="_blank">{{ post.title }}</a>
+                                        </h4>
+                                        <div class="post-meta">
+                                            <span class="post-date">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                {{ post.created_at|date:"M d, Y" }}
+                                            </span>
+                                            <span class="post-category" style="color: {{ post.category.color_hex }};">
+                                                <i class="{{ post.category.icon_class }} me-1"></i>
+                                                {{ post.category.name }}
+                                            </span>
+                                            <span class="post-reading-time">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ post.reading_time }} min read
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="post-status">
+                                        <span class="status-badge status-{{ post.status }}">
+                                            {{ post.get_status_display }}
+                                        </span>
+                                        {% if post.featured %}
+                                            <span class="featured-badge">
+                                                <i class="fas fa-star"></i>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="post-actions">
+                                        <a href="{% url 'blog_admin:post_update' post.slug %}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ post.get_absolute_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="empty-state">
+                                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                    <h5>No DataLog entries yet</h5>
+                                    <p class="text-muted">Create your first technical blog post to get started.</p>
+                                    <a href="{% url 'blog_admin:post_create' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>
+                                        Create First DataLog
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions & Stats -->
+            <div class="col-lg-4 mb-4">
+                <div class="admin-panel glass-card mb-4">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <i class="fas fa-bolt me-2" style="color: var(--amber);"></i>
+                            Quick Actions
+                        </h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="quick-actions-grid">
+                            <a href="{% url 'blog_admin:post_create' %}" class="quick-action">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>New Post</span>
+                            </a>
+                            <a href="{% url 'blog_admin:category_create' %}" class="quick-action">
+                                <i class="fas fa-tag"></i>
+                                <span>Add Category</span>
+                            </a>
+                            <a href="{% url 'blog_admin:series_create' %}" class="quick-action">
+                                <i class="fas fa-book"></i>
+                                <span>Create Series</span>
+                            </a>
+                            <a href="{% url 'blog_admin:system_connections' %}" class="quick-action">
+                                <i class="fas fa-link"></i>
+                                <span>Link Systems</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Analytics -->
+                <div class="admin-panel glass-card mb-4">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <i class="fas fa-chart-bar me-2" style="color: var(--purple);"></i>
+                            Content Analytics
+                        </h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="analytics-metrics">
+                            <div class="metric-item">
+                                <div class="metric-label">Average Reading Time</div>
+                                <div class="metric-value">{{ avg_reading_time|floatformat:1 }} min</div>
+                                <div class="metric-bar">
+                                    <div class="metric-progress" style="width: {{ avg_reading_time|default:0|floatformat:0 }}%;"></div>
+                                </div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Total Reading Time</div>
+                                <div class="metric-value">{{ total_reading_time }} min</div>
+                                <div class="metric-bar">
+                                    <div class="metric-progress" style="width: 75%;"></div>
+                                </div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Content Coverage</div>
+                                <div class="metric-value">{{ content_coverage|default:85 }}%</div>
+                                <div class="metric-bar">
+                                    <div class="metric-progress" style="width: {{ content_coverage|default:85 }}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Popular Categories -->
+                <div class="admin-panel glass-card">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <i class="fas fa-fire me-2" style="color: var(--rose);"></i>
+                            Popular Categories
+                        </h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="category-list">
+                            {% for category in popular_categories %}
+                                <div class="category-item">
+                                    <div class="category-info">
+                                        <div class="category-icon" style="color: {{ category.color_hex }};">
+                                            <i class="{{ category.icon_class }}"></i>
+                                        </div>
+                                        <div class="category-details">
+                                            <div class="category-name">{{ category.name }}</div>
+                                            <div class="category-count">{{ category.post_count }} post{{ category.post_count|pluralize }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="category-actions">
+                                        <a href="{% url 'blog_admin:category_update' category.slug %}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="empty-state small">
+                                    <i class="fas fa-tags fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">No categories yet</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Tags Section -->
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="admin-panel glass-card">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <i class="fas fa-hashtag me-2" style="color: var(--blue);"></i>
+                            Popular Tags
+                        </h3>
+                        <a href="{% url 'blog_admin:tag_list' %}" class="panel-action-btn">
+                            Manage Tags <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="panel-content">
+                        <div class="tags-cloud">
+                            {% for tag in popular_tags %}
+                                <span class="tag-item" style="font-size: {% widthratio tag.post_count 10 1 %}rem;">
+                                    {{ tag.name }}
+                                    <span class="tag-count">({{ tag.post_count }})</span>
+                                </span>
+                            {% empty %}
+                                <div class="empty-state small">
+                                    <i class="fas fa-hashtag fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">No tags yet</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Connections -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-panel glass-card">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <i class="fas fa-network-wired me-2" style="color: var(--cyan);"></i>
+                            System Connections
+                        </h3>
+                        <a href="{% url 'blog_admin:system_connections' %}" class="panel-action-btn">
+                            View All <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="panel-content">
+                        <div class="connections-overview">
+                            <div class="connection-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Total Connections:</span>
+                                    <span class="stat-value">{{ system_connections }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Connected Systems:</span>
+                                    <span class="stat-value">{{ connected_systems|default:0 }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Development Logs:</span>
+                                    <span class="stat-value">{{ dev_connections|default:0 }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="recent-connections">
+                                {% for connection in recent_connections %}
+                                    <div class="connection-item">
+                                        <div class="connection-info">
+                                            <div class="connection-title">{{ connection.post.title|truncatechars:40 }}</div>
+                                            <div class="connection-system">→ {{ connection.system.name }}</div>
+                                        </div>
+                                        <span class="connection-type">{{ connection.get_connection_type_display }}</span>
+                                    </div>
+                                {% empty %}
+                                    <div class="empty-state small">
+                                        <i class="fas fa-link fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted mb-0">No system connections yet</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block admin_js %}
-<script src="{% static 'blog/js/datalog-dashboard.js' %}"></script>
+{% block admin_css %}
+{{ block.super }}
+<style>
+.blog-admin-dashboard {
+    padding: 2rem 0;
+}
+
+.dashboard-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
+}
+
+.header-actions .btn {
+    background: linear-gradient(135deg, var(--lavender) 0%, var(--purple) 100%);
+    border: none;
+    color: white;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.header-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--lavender-rgb), 0.4);
+}
+
+.posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.post-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.post-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(5px);
+}
+
+.post-info {
+    flex: 1;
+}
+
+.post-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.post-title a {
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.post-title a:hover {
+    color: var(--lavender);
+}
+
+.post-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.post-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.featured-badge {
+    color: var(--amber);
+    font-size: 0.875rem;
+}
+
+.post-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.quick-action:hover {
+    background: rgba(var(--lavender-rgb), 0.1);
+    color: var(--lavender);
+    transform: translateY(-2px);
+    border-color: rgba(var(--lavender-rgb), 0.3);
+}
+
+.quick-action i {
+    font-size: 1.25rem;
+}
+
+.quick-action span {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.analytics-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.metric-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.metric-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.metric-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--lavender) 0%, var(--purple) 100%);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.category-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.category-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.category-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.category-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.category-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.category-count {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag-item {
+    padding: 0.25rem 0.75rem;
+    background: rgba(var(--blue-rgb), 0.1);
+    color: var(--blue);
+    border: 1px solid rgba(var(--blue-rgb), 0.2);
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.tag-item:hover {
+    background: rgba(var(--blue-rgb), 0.2);
+    transform: translateY(-1px);
+}
+
+.tag-count {
+    opacity: 0.7;
+    font-size: 0.75rem;
+}
+
+.connections-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.connection-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.recent-connections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.connection-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.connection-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.connection-system {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.connection-type {
+    padding: 0.25rem 0.5rem;
+    background: rgba(var(--cyan-rgb), 0.1);
+    color: var(--cyan);
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.empty-state.small {
+    text-align: center;
+    padding: 1rem;
+}
+
+.empty-state.small i {
+    opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header .row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .post-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .post-meta {
+        gap: 0.5rem;
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .category-item,
+    .connection-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+</style>
 {% endblock %}

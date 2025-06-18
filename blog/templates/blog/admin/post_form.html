@@ -1,183 +1,1065 @@
 <!-- blog/templates/blog/admin/post_form.html -->
-{% extends 'admin/forms/create_base.html' %}
+{% extends 'admin/forms/create_form.html' %}
 {% load static %}
+{% load widget_tweaks %}
 
-{% block extra_head %}
+{% block form_content %}
+<div class="post-form-container">
+    <!-- Main Content Section -->
+    <div class="form-section">
+        <h3 class="form-section-title">
+            <i class="fas fa-edit me-2"></i>
+            Content Details
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="form-field">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">
+                        DataLog Title
+                        <span class="required-indicator">*</span>
+                    </label>
+                    {{ form.title|add_class:"form-control form-control-lg"|add_error_class:"is-invalid" }}
+                    {% if form.title.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.title.errors.0 }}
+                        </div>
+                    {% endif %}
+                    {% if form.title.help_text %}
+                        <div class="form-text">{{ form.title.help_text }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-field">
+                    <label for="{{ form.slug.id_for_label }}" class="form-label">
+                        URL Slug
+                        <span class="slug-indicator">
+                            <i class="fas fa-link"></i>
+                        </span>
+                    </label>
+                    {{ form.slug|add_class:"form-control"|add_error_class:"is-invalid" }}
+                    <div class="form-text">
+                        <i class="fas fa-info-circle"></i>
+                        Auto-generated from title if left blank
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-field">
+            <label for="{{ form.excerpt.id_for_label }}" class="form-label">
+                Excerpt
+            </label>
+            {{ form.excerpt|add_class:"form-control"|add_error_class:"is-invalid" }}
+            <div class="form-text">Brief description for post cards and search results</div>
+        </div>
+        
+        <div class="form-field">
+            <label for="{{ form.content.id_for_label }}" class="form-label">
+                Content
+                <span class="required-indicator">*</span>
+                <span class="content-tools">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="markdown-help">
+                        <i class="fas fa-question-circle"></i>
+                        Markdown Help
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="content-preview">
+                        <i class="fas fa-eye"></i>
+                        Preview
+                    </button>
+                </span>
+            </label>
+            {{ form.content|add_class:"form-control content-editor"|add_error_class:"is-invalid" }}
+            <div class="content-stats">
+                <span class="word-count">Words: <span id="word-count">0</span></span>
+                <span class="reading-time">Reading time: <span id="reading-time">0</span> min</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classification Section -->
+    <div class="form-section">
+        <h3 class="form-section-title">
+            <i class="fas fa-tags me-2"></i>
+            Classification
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-field">
+                    <label for="{{ form.category.id_for_label }}" class="form-label">
+                        Category
+                        <span class="required-indicator">*</span>
+                    </label>
+                    {{ form.category|add_class:"form-select"|add_error_class:"is-invalid" }}
+                    <div class="category-preview" id="category-preview"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-field">
+                    <label for="{{ form.tags.id_for_label }}" class="form-label">
+                        Tags
+                    </label>
+                    <div class="tags-input-container">
+                        {{ form.tags|add_class:"form-control tags-input" }}
+                        <div class="tags-suggestions" id="tags-suggestions"></div>
+                    </div>
+                    <div class="form-text">Select multiple tags or create new ones</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Section -->
+    <div class="form-section">
+        <h3 class="form-section-title">
+            <i class="fas fa-image me-2"></i>
+            Media & Visual Content
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-field">
+                    <label for="{{ form.thumbnail.id_for_label }}" class="form-label">
+                        Thumbnail Image
+                    </label>
+                    {{ form.thumbnail|add_class:"form-control"|add_error_class:"is-invalid" }}
+                    <div class="form-text">Recommended: 300x200px for post cards</div>
+                    <div class="image-preview" id="thumbnail-preview"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-field">
+                    <label for="{{ form.banner_image.id_for_label }}" class="form-label">
+                        Banner Image
+                    </label>
+                    {{ form.banner_image|add_class:"form-control"|add_error_class:"is-invalid" }}
+                    <div class="form-text">Recommended: 1200x400px for post header</div>
+                    <div class="image-preview" id="banner-preview"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Code Section -->
+    <div class="form-section">
+        <h3 class="form-section-title">
+            <i class="fas fa-code me-2"></i>
+            Featured Code
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="form-field">
+                    <label for="{{ form.featured_code.id_for_label }}" class="form-label">
+                        Code Snippet
+                    </label>
+                    {{ form.featured_code|add_class:"form-control code-editor"|add_error_class:"is-invalid" }}
+                    <div class="form-text">Code to highlight in the featured section</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-field">
+                    <label for="{{ form.featured_code_format.id_for_label }}" class="form-label">
+                        Language
+                    </label>
+                    {{ form.featured_code_format|add_class:"form-select"|add_error_class:"is-invalid" }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="code-preview" id="code-preview" style="display: none;">
+            <div class="code-preview-header">
+                <div class="code-preview-title">Preview</div>
+                <div class="code-preview-language" id="preview-language"></div>
+            </div>
+            <div class="code-preview-content" id="preview-content"></div>
+        </div>
+    </div>
+
+    <!-- Publishing Section -->
+    <div class="form-section">
+        <h3 class="form-section-title">
+            <i class="fas fa-rocket me-2"></i>
+            Publishing Options
+        </h3>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-field">
+                    <label for="{{ form.status.id_for_label }}" class="form-label">
+                        Status
+                    </label>
+                    {{ form.status|add_class:"form-select"|add_error_class:"is-invalid" }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-field">
+                    <div class="form-check form-switch">
+                        {{ form.featured|add_class:"form-check-input" }}
+                        <label class="form-check-label" for="{{ form.featured.id_for_label }}">
+                            <i class="fas fa-star me-2"></i>
+                            Featured Post
+                        </label>
+                    </div>
+                    <div class="form-text">Display prominently on homepage</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-field">
+                    <div class="form-check form-switch">
+                        {{ form.show_toc|add_class:"form-check-input" }}
+                        <label class="form-check-label" for="{{ form.show_toc.id_for_label }}">
+                            <i class="fas fa-list me-2"></i>
+                            Show Table of Contents
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Connections Section (for edit mode) -->
+    {% if form_type == 'update' and system_connections %}
+    <div class="form-section">
+        <h3 class="form-section-title">
+            <i class="fas fa-link me-2"></i>
+            System Connections
+        </h3>
+        
+        <div class="system-connections-list">
+            {% for connection in system_connections %}
+                <div class="connection-item">
+                    <div class="connection-info">
+                        <div class="connection-system">
+                            <i class="fas fa-microchip me-2"></i>
+                            {{ connection.system.name }}
+                        </div>
+                        <div class="connection-type">{{ connection.get_connection_type_display }}</div>
+                        <div class="connection-priority">Priority: {{ connection.priority }}</div>
+                    </div>
+                    <div class="connection-actions">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editConnection({{ connection.id }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeConnection({{ connection.id }})">
+                            <i class="fas fa-unlink"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="add-connection-section">
+            <button type="button" class="btn btn-outline-primary" onclick="showAddConnectionModal()">
+                <i class="fas fa-plus me-2"></i>
+                Add System Connection
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block form_actions %}
+<div class="form-actions">
+    <a href="{{ cancel_url|default:request.META.HTTP_REFERER }}" class="btn btn-admin-secondary">
+        <i class="fas fa-arrow-left me-2"></i>
+        Cancel
+    </a>
+    
+    {% if form_type == 'create' %}
+        <button type="submit" name="status" value="draft" class="btn btn-outline-warning">
+            <i class="fas fa-save me-2"></i>
+            Save as Draft
+        </button>
+        <button type="submit" name="status" value="published" class="btn btn-admin-primary">
+            <i class="fas fa-rocket me-2"></i>
+            Publish DataLog
+        </button>
+    {% elif form_type == 'update' %}
+        <button type="submit" class="btn btn-admin-primary">
+            <i class="fas fa-save me-2"></i>
+            Update DataLog
+        </button>
+        <button type="submit" name="save_and_continue" class="btn btn-outline-primary">
+            <i class="fas fa-edit me-2"></i>
+            Save & Continue Editing
+        </button>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block admin_css %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'blog/css/datalog-admin.css' %}">
-<link rel="stylesheet" href="{% static 'markdownx/css/markdownx.min.css' %}">
-{% endblock %}
+<style>
+.post-form-container {
+    max-width: none;
+}
 
-{% block form_navigation %}
-{% if object %}
-    <nav class="form-nav datalog-nav">
-        <a href="{{ object.get_absolute_url }}" class="nav-btn view-btn">
-            <i class="fas fa-eye"></i> View DataLog
-        </a>
-        <a href="{% url 'blog:post_delete' object.slug %}" class="nav-btn delete-btn">
-            <i class="fas fa-trash"></i> Delete
-        </a>
-        <div class="nav-status">
-            <span class="status-badge {{ object.status }}">{{ object.get_status_display }}</span>
-        </div>
-    </nav>
-{% endif %}
-{% endblock %}
+.form-section {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
 
-{% block additional_fields %}
-<div class="datalog-meta-section">
-    <h3 class="section-title">
-        <i class="fas fa-database"></i>
-        DataLog Metadata
-    </h3>
+.form-section-title {
+    color: var(--lavender);
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(var(--lavender-rgb), 0.2);
+    display: flex;
+    align-items: center;
+}
+
+.content-tools {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.content-editor {
+    min-height: 300px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.content-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.content-stats span {
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.25rem;
+}
+
+.category-preview {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    display: none;
+}
+
+.category-preview.active {
+    display: block;
+}
+
+.category-preview-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.category-preview-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.category-preview-info {
+    flex: 1;
+}
+
+.category-preview-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.category-preview-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.tags-input-container {
+    position: relative;
+}
+
+.tags-input {
+    padding-right: 2.5rem;
+}
+
+.tags-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(var(--bg-secondary), 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.tags-suggestions.active {
+    display: block;
+}
+
+.tag-suggestion {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tag-suggestion:hover {
+    background: rgba(var(--blue-rgb), 0.1);
+    color: var(--blue);
+}
+
+.tag-suggestion:last-child {
+    border-bottom: none;
+}
+
+.image-preview {
+    margin-top: 0.75rem;
+    display: none;
+}
+
+.image-preview.active {
+    display: block;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.image-preview-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.code-editor {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9rem;
+    min-height: 150px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-preview {
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.code-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-preview-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.code-preview-language {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-family: 'Fira Code', monospace;
+}
+
+.code-preview-content {
+    padding: 1rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: var(--text-primary);
+}
+
+.system-connections-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.connection-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.connection-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(5px);
+}
+
+.connection-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.connection-system {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+.connection-type {
+    font-size: 0.875rem;
+    color: var(--cyan);
+    font-weight: 500;
+}
+
+.connection-priority {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.connection-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.slug-indicator {
+    margin-left: 0.5rem;
+    opacity: 0.6;
+}
+
+.required-indicator {
+    color: var(--danger);
+    margin-left: 0.25rem;
+}
+
+.form-check-input:checked {
+    background-color: var(--lavender);
+    border-color: var(--lavender);
+}
+
+.form-check-input:focus {
+    border-color: var(--lavender);
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(var(--lavender-rgb), 0.25);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-admin-primary {
+    background: linear-gradient(135deg, var(--lavender) 0%, var(--purple) 100%);
+    border: none;
+    color: white;
+    font-weight: 500;
+    padding: 0.75rem 2rem;
+}
+
+.btn-admin-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--lavender-rgb), 0.4);
+    color: white;
+}
+
+.btn-admin-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.75rem 2rem;
+}
+
+.btn-admin-secondary:hover {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .form-section {
+        padding: 1.5rem;
+    }
     
-    <div class="meta-grid">
-        <div class="meta-field">
-            <label class="field-label">Log Classification</label>
-            <div class="field-group">
-                {{ form.complexity_level }}
-                <span class="field-hint">Technical complexity level</span>
-            </div>
-        </div>
-        
-        <div class="meta-field">
-            <label class="field-label">Reading Time</label>
-            <div class="field-group">
-                {{ form.reading_time }}
-                <span class="field-hint">Estimated minutes to read</span>
-            </div>
-        </div>
-        
-        <div class="meta-field full-width">
-            <label class="field-label">System Connections</label>
-            <div class="system-connections">
-                {{ form.related_systems }}
-                <div class="connection-help">
-                    <i class="fas fa-info-circle"></i>
-                    Link this DataLog to relevant systems for cross-referencing
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="content-section">
-    <h3 class="section-title">
-        <i class="fas fa-code"></i>
-        Featured Code
-    </h3>
+    .content-tools {
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
     
-    <div class="code-fields">
-        <div class="field-group">
-            <label class="field-label">Code Language</label>
-            {{ form.featured_code_format }}
-        </div>
-        
-        <div class="field-group">
-            <label class="field-label">Featured Code Block</label>
-            <div class="code-editor-wrapper">
-                {{ form.featured_code }}
-                <div class="editor-tools">
-                    <button type="button" class="tool-btn" data-action="format">
-                        <i class="fas fa-code"></i> Format
-                    </button>
-                    <button type="button" class="tool-btn" data-action="preview">
-                        <i class="fas fa-eye"></i> Preview
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="visibility-section">
-    <h3 class="section-title">
-        <i class="fas fa-cog"></i>
-        Display Options
-    </h3>
+    .content-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
     
-    <div class="options-grid">
-        <div class="option-field">
-            {{ form.featured }}
-            <label for="{{ form.featured.id_for_label }}" class="option-label">
-                <i class="fas fa-star"></i>
-                Featured DataLog
-            </label>
-        </div>
-        
-        <div class="option-field">
-            {{ form.show_toc }}
-            <label for="{{ form.show_toc.id_for_label }}" class="option-label">
-                <i class="fas fa-list"></i>
-                Show Table of Contents
-            </label>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block form_sidebar %}
-<div class="form-sidebar">
-    <div class="sidebar-widget glass-card">
-        <h4 class="widget-title">
-            <i class="fas fa-chart-line"></i>
-            DataLog Analytics
-        </h4>
-        {% if object %}
-            <div class="analytics-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Views</span>
-                    <span class="stat-value">{{ object.view_count|default:0 }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Comments</span>
-                    <span class="stat-value">{{ object.comments.count }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Word Count</span>
-                    <span class="stat-value">{{ object.word_count|default:0 }}</span>
-                </div>
-            </div>
-        {% else %}
-            <p class="widget-help">Analytics will be available after saving</p>
-        {% endif %}
-    </div>
+    .connection-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
     
-    <div class="sidebar-widget glass-card">
-        <h4 class="widget-title">
-            <i class="fas fa-link"></i>
-            Quick Actions
-        </h4>
-        <div class="quick-actions">
-            <a href="{% url 'blog:post_list' %}" class="action-btn">
-                <i class="fas fa-list"></i> All DataLogs
-            </a>
-            <a href="{% url 'blog:category_list' %}" class="action-btn">
-                <i class="fas fa-folder"></i> Categories
-            </a>
-            <a href="{% url 'blog:dashboard' %}" class="action-btn">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-        </div>
-    </div>
-</div>
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Form field enhancements */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--lavender);
+    box-shadow: 0 0 0 0.25rem rgba(var(--lavender-rgb), 0.25);
+}
+
+.is-invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 0.25rem rgba(var(--danger-rgb), 0.25);
+}
+
+.invalid-feedback {
+    color: var(--danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.form-text {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-text i {
+    opacity: 0.7;
+}
+</style>
 {% endblock %}
 
 {% block admin_js %}
-<script src="{% static 'markdownx/js/markdownx.min.js' %}"></script>
-<script src="{% static 'blog/js/datalog-admin.js' %}"></script>
+{{ block.super }}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize markdown editor
-        if (document.querySelector('#id_content')) {
-            initializeMarkdownEditor();
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📝 DataLog Form Interface Initialized');
+    
+    // Content statistics
+    const contentEditor = document.querySelector('.content-editor');
+    const wordCountElement = document.getElementById('word-count');
+    const readingTimeElement = document.getElementById('reading-time');
+    
+    function updateContentStats() {
+        if (contentEditor && wordCountElement && readingTimeElement) {
+            const content = contentEditor.value;
+            const wordCount = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+            const readingTime = Math.max(1, Math.ceil(wordCount / 200)); // ~200 WPM
+            
+            wordCountElement.textContent = wordCount;
+            readingTimeElement.textContent = readingTime;
         }
+    }
+    
+    if (contentEditor) {
+        contentEditor.addEventListener('input', updateContentStats);
+        updateContentStats(); // Initial calculation
+    }
+    
+    // Category preview
+    const categorySelect = document.querySelector('select[name="category"]');
+    const categoryPreview = document.getElementById('category-preview');
+    
+    function updateCategoryPreview() {
+        if (!categorySelect || !categoryPreview) return;
         
-        // Initialize system connections
-        initializeSystemConnections();
+        const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            const categoryData = {
+                name: selectedOption.textContent,
+                color: selectedOption.dataset.color || '#6366f1',
+                icon: selectedOption.dataset.icon || 'fas fa-folder',
+                description: selectedOption.dataset.description || ''
+            };
+            
+            categoryPreview.innerHTML = `
+                <div class="category-preview-content">
+                    <div class="category-preview-icon" style="background: ${categoryData.color}20; color: ${categoryData.color};">
+                        <i class="${categoryData.icon}"></i>
+                    </div>
+                    <div class="category-preview-info">
+                        <div class="category-preview-name">${categoryData.name}</div>
+                        <div class="category-preview-desc">${categoryData.description}</div>
+                    </div>
+                </div>
+            `;
+            categoryPreview.classList.add('active');
+        } else {
+            categoryPreview.classList.remove('active');
+        }
+    }
+    
+    if (categorySelect) {
+        categorySelect.addEventListener('change', updateCategoryPreview);
+        updateCategoryPreview(); // Initial load
+    }
+    
+    // Image previews
+    function setupImagePreview(inputSelector, previewSelector) {
+        const input = document.querySelector(inputSelector);
+        const preview = document.querySelector(previewSelector);
         
-        // Auto-calculate reading time
-        calculateReadingTime();
-    });
+        if (!input || !preview) return;
+        
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <div class="image-preview-actions">
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearImagePreview('${inputSelector}', '${previewSelector}')">
+                                <i class="fas fa-times me-1"></i> Remove
+                            </button>
+                        </div>
+                    `;
+                    preview.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    setupImagePreview('input[name="thumbnail"]', '#thumbnail-preview');
+    setupImagePreview('input[name="banner_image"]', '#banner-preview');
+    
+    // Code preview
+    const codeEditor = document.querySelector('.code-editor');
+    const languageSelect = document.querySelector('select[name="featured_code_format"]');
+    const codePreview = document.getElementById('code-preview');
+    const previewContent = document.getElementById('preview-content');
+    const previewLanguage = document.getElementById('preview-language');
+    
+    function updateCodePreview() {
+        if (!codeEditor || !codePreview || !previewContent) return;
+        
+        const code = codeEditor.value.trim();
+        const language = languageSelect ? languageSelect.value : 'plaintext';
+        
+        if (code) {
+            previewContent.textContent = code;
+            if (previewLanguage) {
+                previewLanguage.textContent = language.toUpperCase();
+            }
+            codePreview.style.display = 'block';
+        } else {
+            codePreview.style.display = 'none';
+        }
+    }
+    
+    if (codeEditor) {
+        codeEditor.addEventListener('input', updateCodePreview);
+        updateCodePreview(); // Initial load
+    }
+    
+    if (languageSelect) {
+        languageSelect.addEventListener('change', updateCodePreview);
+    }
+    
+    // Markdown help modal
+    const markdownHelpBtn = document.getElementById('markdown-help');
+    if (markdownHelpBtn) {
+        markdownHelpBtn.addEventListener('click', function() {
+            showMarkdownHelp();
+        });
+    }
+    
+    // Content preview
+    const contentPreviewBtn = document.getElementById('content-preview');
+    if (contentPreviewBtn) {
+        contentPreviewBtn.addEventListener('click', function() {
+            toggleContentPreview();
+        });
+    }
+    
+    // Auto-save functionality
+    let autoSaveTimeout;
+    const form = document.querySelector('.admin-form');
+    
+    function autoSave() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            const formData = new FormData(form);
+            formData.append('auto_save', 'true');
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAutoSaveIndicator();
+                }
+            })
+            .catch(error => {
+                console.log('Auto-save failed:', error);
+            });
+        }, 30000); // Auto-save every 30 seconds
+    }
+    
+    if (form) {
+        const inputs = form.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.addEventListener('input', autoSave);
+        });
+    }
+    
+    // Form validation
+    function validateForm() {
+        let isValid = true;
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+                
+                // Show error message
+                let errorMsg = field.parentNode.querySelector('.invalid-feedback');
+                if (!errorMsg) {
+                    errorMsg = document.createElement('div');
+                    errorMsg.className = 'invalid-feedback';
+                    field.parentNode.appendChild(errorMsg);
+                }
+                errorMsg.textContent = 'This field is required.';
+            } else {
+                field.classList.remove('is-invalid');
+                const errorMsg = field.parentNode.querySelector('.invalid-feedback');
+                if (errorMsg) {
+                    errorMsg.remove();
+                }
+            }
+        });
+        
+        return isValid;
+    }
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                
+                // Focus first invalid field
+                const firstInvalid = form.querySelector('.is-invalid');
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                if (window.auraAdmin) {
+                    window.auraAdmin.showNotification('Please correct the errors below.', 'error');
+                }
+            }
+        });
+    }
+});
+
+// Helper functions
+function clearImagePreview(inputSelector, previewSelector) {
+    const input = document.querySelector(inputSelector);
+    const preview = document.querySelector(previewSelector);
+    
+    if (input) input.value = '';
+    if (preview) {
+        preview.classList.remove('active');
+        preview.innerHTML = '';
+    }
+}
+
+function showMarkdownHelp() {
+    const helpContent = `
+        <h5>Markdown Quick Reference</h5>
+        <div class="markdown-help-content">
+            <div class="help-section">
+                <strong>Headers:</strong><br>
+                # H1<br>
+                ## H2<br>
+                ### H3
+            </div>
+            <div class="help-section">
+                <strong>Text Formatting:</strong><br>
+                **bold text**<br>
+                *italic text*<br>
+                \`inline code\`
+            </div>
+            <div class="help-section">
+                <strong>Lists:</strong><br>
+                - Bullet point<br>
+                1. Numbered list
+            </div>
+            <div class="help-section">
+                <strong>Links & Images:</strong><br>
+                [Link text](URL)<br>
+                ![Alt text](image-url)
+            </div>
+            <div class="help-section">
+                <strong>Code Blocks:</strong><br>
+                \`\`\`python<br>
+                def hello():<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;print("Hello!")<br>
+                \`\`\`
+            </div>
+        </div>
+    `;
+    
+    if (window.auraAdmin) {
+        window.auraAdmin.showNotification(helpContent, 'info', 10000);
+    } else {
+        alert('Markdown help coming soon!');
+    }
+}
+
+function toggleContentPreview() {
+    const contentEditor = document.querySelector('.content-editor');
+    if (!contentEditor) return;
+    
+    const content = contentEditor.value;
+    if (!content.trim()) {
+        if (window.auraAdmin) {
+            window.auraAdmin.showNotification('Please enter some content to preview.', 'warning');
+        }
+        return;
+    }
+    
+    // Simple markdown to HTML conversion for preview
+    const htmlContent = content
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*)\*/gim, '<em>$1</em>')
+        .replace(/`([^`]*)`/gim, '<code>$1</code>')
+        .replace(/\n/gim, '<br>');
+    
+    // Show preview in a modal or popup
+    const previewWindow = window.open('', '_blank', 'width=800,height=600');
+    previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Content Preview</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 2rem; background: #1a1a1a; color: #e5e5e5; }
+                h1, h2, h3 { color: #a855f7; }
+                code { background: rgba(255,255,255,0.1); padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+                strong { color: #60a5fa; }
+                em { color: #fbbf24; }
+            </style>
+        </head>
+        <body>
+            <h1>Content Preview</h1>
+            <hr>
+            ${htmlContent}
+        </body>
+        </html>
+    `);
+}
+
+function showAutoSaveIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'auto-save-indicator';
+    indicator.innerHTML = '<i class="fas fa-check me-2"></i>Auto-saved';
+    indicator.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--success);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
+    
+    document.body.appendChild(indicator);
+    
+    // Fade in
+    setTimeout(() => {
+        indicator.style.opacity = '1';
+    }, 100);
+    
+    // Fade out and remove
+    setTimeout(() => {
+        indicator.style.opacity = '0';
+        setTimeout(() => {
+            indicator.remove();
+        }, 300);
+    }, 2000);
+}
+
+// System connection management (for edit mode)
+function editConnection(connectionId) {
+    // Implementation for editing system connections
+    console.log('Edit connection:', connectionId);
+}
+
+function removeConnection(connectionId) {
+    if (confirm('Are you sure you want to remove this system connection?')) {
+        // Implementation for removing system connections
+        console.log('Remove connection:', connectionId);
+    }
+}
+
+function showAddConnectionModal() {
+    // Implementation for adding new system connections
+    console.log('Add new system connection');
+}
+
+console.log('✅ DataLog Form Ready - Enhanced with auto-save, validation, and previews');
 </script>
 {% endblock %}
