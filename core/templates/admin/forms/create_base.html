@@ -1,0 +1,48 @@
+<!-- core/templates/admin/forms/create_base.html -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_content %}
+<div class="form-container">
+    <div class="form-header glass-card">
+        <div class="header-content">
+            <h1 class="form-title">{{ title|default:"Create New Entry" }}</h1>
+            <div class="system-status online">
+                <span class="status-dot"></span>
+                Form Active
+            </div>
+        </div>
+        {% block form_navigation %}{% endblock %}
+    </div>
+
+    <div class="form-body glass-card">
+        <form method="post" class="aura-form" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {% for error in form.non_field_errors %}
+                        <div class="error-message">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-grid">
+                {% block form_fields %}
+                    {% for field in form %}
+                        {% include 'admin/components/form_field.html' with field=field %}
+                    {% endfor %}
+                {% endblock %}
+                
+                {% block additional_fields %}{% endblock %}
+            </div>
+
+            <div class="form-actions">
+                {% include 'admin/components/action_buttons.html' %}
+            </div>
+        </form>
+    </div>
+    
+    {% block form_sidebar %}{% endblock %}
+</div>
+{% endblock %}
