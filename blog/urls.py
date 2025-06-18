@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 from django.views.generic import TemplateView
 
@@ -7,7 +7,11 @@ urlpatterns = [
     path("", views.PostListView.as_view(), name="post_list"),
     path("post/<slug:slug>/", views.PostDetailView.as_view(), name="post_detail"),
     # Category views
-    path("categories/", views.CategoriesOverviewView.as_view(), name="categories_overview"),
+    path(
+        "categories/",
+        views.CategoriesOverviewView.as_view(),
+        name="categories_overview",
+    ),
     path("category/<slug:slug>/", views.CategoryView.as_view(), name="category"),
     # Tags views
     path("tags/", views.TagListView.as_view(), name="tag_list"),
@@ -75,6 +79,8 @@ urlpatterns = [
         TemplateView.as_view(template_name="blog/debug/test_glass_card.html"),
         name="test-glass-card",
     ),
+    ## UPDATED Admin Views
+    path("admin/", include('blog.admin_urls')),
 ]
 
 app_name = 'blog'

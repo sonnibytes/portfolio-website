@@ -23,6 +23,8 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Custom Admin
+    path('aura-admin/', include('core.admin_urls')),
     # Core app URLs (homepage, about, contact)
     path("", include("core.urls")),
     # Projects app URLs
