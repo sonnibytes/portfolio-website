@@ -85,6 +85,24 @@ def admin_card(title, value, icon, color="primary", trend=None):
     if value is None:
         value = 0
 
+    # Map color names to actual CSS colors for compatibility
+    color_map = {
+        "primary": "#3b82f6",
+        "success": "#10b981",
+        "warning": "#f59e0b",
+        "danger": "#ef4444",
+        "info": "#06b6d4",
+        "lavender": "#a855f7",
+        "purple": "#8b5cf6",
+        "cyan": "#06b6d4",
+        "emerald": "#10b981",
+        "amber": "#f59e0b",
+        "rose": "#f43f5e",
+        "blue": "#3b82f6",
+    }
+
+    icon_color = color_map.get(color, color_map["primary"])
+
     trend_html = ""
     if trend:
         trend_icon = (
@@ -95,7 +113,7 @@ def admin_card(title, value, icon, color="primary", trend=None):
     html = f'''
     <div class="admin-metric-card glass-card">
         <div class="metric-header">
-            <div class="metric-icon" style="color: var(--{color});">
+            <div class="metric-icon" style="color: {icon_color};">
                 <i class="{icon}"></i>
             </div>
             <div class="metric-value">
@@ -125,3 +143,38 @@ except ImportError:
         if hasattr(field, "errors") and field.errors:
             return field.as_widget(attrs={"class": css_class})
         return field
+
+
+# Additional admin-specific template tags
+@register.filter
+def get_item(dictionary, key):
+    """Get item from dictionary in template."""
+    return dictionary.get(key)
+
+
+@register.filter
+def multiply(value, factor):
+    """Multiply two values."""
+    try:
+        return float(value) * float(factor)
+    except (ValueError, TypeError):
+        return 0
+
+
+@register.filter
+def percentage(value, total):
+    """Calculate percentage."""
+    try:
+        if total == 0:
+            return 0
+        return round((float(value) / float(total)) * 100, 1)
+    except (ValueError, TypeError, ZeroDivisionError):
+        return 0
+
+
+@register.simple_tag
+def url_replace(request, field, value):
+    """Replace URL parameter while keeping others."""
+    dict_ = request.GET.copy()
+    dict_[field] = value
+    return dict_.urlencode()
