@@ -1,4 +1,5 @@
-from django.urls import path
+# Version 2.0
+from django.urls import path, include
 from . import views
 
 app_name = 'core'
@@ -23,4 +24,7 @@ urlpatterns = [
 
     # Dynamic page from database
     path('page/<slug:slug>/', views.CorePageView.as_view(), name='page'),
+
+    # Admin URLs
+    path('admin/', include('core.admin_urls', namespace='admin')),
 ]
