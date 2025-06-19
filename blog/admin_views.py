@@ -277,7 +277,7 @@ class PostDeleteAdminView(BaseAdminDeleteView):
     """Delete DataLog entry."""
     
     model = Post
-    success_url = reverse_lazy('blog:admin_post_list')
+    success_url = reverse_lazy('blog:admin:post_list')
 
 
 # Category Management Views
@@ -386,7 +386,7 @@ class TagDeleteAdminView(BaseAdminDeleteView):
     success_url = reverse_lazy('blog:admin_tag_list')
 
 
-# Series Management Views  
+# Series Management Views
 class SeriesListAdminView(BaseAdminListView, BulkActionMixin):
     """Manage DataLog series."""
     
