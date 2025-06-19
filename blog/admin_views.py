@@ -198,6 +198,10 @@ class PostCreateAdminView(BaseAdminCreateView):
             form.instance.status = 'published'
             # print("DEBUG: Setting status to published")
         
+        # Set published_date when publishing for the first time
+        if form.instance.status == 'published' and not form.instance.published_date:
+            form.instance.published_date = timezone.now()
+        
         # print(f"DEBUG: About to save with author: {form.instance.author}")
         
         try:
@@ -209,9 +213,10 @@ class PostCreateAdminView(BaseAdminCreateView):
             )
             return response
         except Exception as e:
-            # print(f"DEBUG: Save failed with error: {e}")
-            # print(f"DEBUG: Form instance dict: {form.instance.__dict__}")
+            print(f"DEBUG: Save failed with error: {e}")
+            print(f"DEBUG: Form instance dict: {form.instance.__dict__}")
             raise
+
 
 class PostUpdateAdminView(BaseAdminUpdateView):
     """Edit existing DataLog entry."""
@@ -219,7 +224,7 @@ class PostUpdateAdminView(BaseAdminUpdateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/admin/post_form.html'
-    success_url = reverse_lazy('blog:admin_post_list')
+    success_url = reverse_lazy('blog:admin:post_list')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -234,11 +239,26 @@ class PostUpdateAdminView(BaseAdminUpdateView):
         if not form.instance.author:
             form.instance.author = self.request.user
         
+        # Store the old status to check if we're publishing for the first time
+        old_status = None
+        if form.instance.pk:
+            try:
+                old_post = Post.objects.get(pk=form.instance.pk)
+                old_status = old_post.status
+            except Post.DoesNotExist:
+                old_status = 'draft'
+        
         # Handle save button actions
         if 'save_draft' in self.request.POST:
             form.instance.status = 'draft'
         elif 'save_publish' in self.request.POST:
             form.instance.status = 'published'
+        
+        # Set published_date when publishing for the first time
+        if (form.instance.status == 'published' and 
+            old_status != 'published' and 
+            not form.instance.published_date):
+            form.instance.published_date = timezone.now()
         
         # Auto-calculate reading time if not set
         if not form.instance.reading_time:
@@ -421,14 +441,23 @@ class PostStatusToggleView(BaseAdminUpdateView):
     
     def post(self, request, *args, **kwargs):
         post = self.get_object()
+        old_status = post.status
         new_status = 'published' if post.status == 'draft' else 'draft'
+        
+        # Handle published_date when changing status
+        if new_status == 'published' and not post.published_date:
+            post.published_date = timezone.now()
+        elif new_status == 'draft':
+            post.published_date = None
+        
         post.status = new_status
         post.save()
         
         return JsonResponse({
             'success': True,
             'new_status': new_status,
-            'new_status_display': post.get_status_display()
+            'new_status_display': post.get_status_display(),
+            'published_date': post.published_date.isoformat() if post.published_date else None
         })
 
 
