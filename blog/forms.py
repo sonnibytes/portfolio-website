@@ -90,6 +90,7 @@ class PostForm(forms.ModelForm):
             'tags', 'featured', 'status', 'thumbnail', 'banner_image',
             'featured_code', 'featured_code_format', 'show_toc'
         ]
+        # Note: 'author' is excluded and set programmatically in the view
         
         widgets = {
             'title': forms.TextInput(attrs={
@@ -101,15 +102,6 @@ class PostForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'auto-generated-from-title',
                 'help_text': 'Leave blank to auto-generate from title'
-            }),
-            'category': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'status': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'featured_code_format': forms.Select(attrs={
-                'class': 'form-control'
             }),
             'featured': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -130,13 +122,10 @@ class PostForm(forms.ModelForm):
         help_texts = {
             'title': 'Descriptive title for your DataLog entry',
             'slug': 'URL-friendly version of title (auto-generated if empty)',
-            'category': 'Primary category for this DataLog',
-            'status': 'Publication status',
             'featured': 'Mark as featured DataLog',
             'show_toc': 'Show table of contents',
             'thumbnail': 'DataLog card thumbnail (400x300px recommended)',
             'banner_image': 'Header banner image (1200x400px recommended)',
-            'featured_code_format': 'Language for syntax highlighting',
         }
 
     def __init__(self, *args, **kwargs):

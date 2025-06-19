@@ -152,13 +152,13 @@ class PostListAdminView(BaseAdminListView, BulkActionMixin):
         return context
 
 
-class PostCreateAdminView(AuthorAdminCreateView, SlugAdminCreateView, StatusAdminCreateView):
+class PostCreateAdminView(BaseAdminCreateView):
     """Create new DataLog entry."""
     
     model = Post
     form_class = PostForm
     template_name = 'blog/admin/post_form.html'
-    success_url = reverse_lazy('blog:admin_post_list')
+    success_url = reverse_lazy('blog:admin:post_list')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -169,13 +169,49 @@ class PostCreateAdminView(AuthorAdminCreateView, SlugAdminCreateView, StatusAdmi
         return context
     
     def form_valid(self, form):
+        #  # Debug logging
+        # print(f"DEBUG: User is authenticated: {self.request.user.is_authenticated}")
+        # print(f"DEBUG: Current user: {self.request.user}")
+        # print(f"DEBUG: Form instance author before: {getattr(form.instance, 'author', 'NO AUTHOR FIELD')}")
+        
+        # Auto-assign author - CRITICAL
+        form.instance.author = self.request.user
+        
+        # print(f"DEBUG: Form instance author after: {form.instance.author}")
+        
+        # Auto-generate slug if not provided
+        if not form.instance.slug and form.instance.title:
+            form.instance.slug = slugify(form.instance.title)
+            # print(f"DEBUG: Generated slug: {form.instance.slug}")
+        
         # Auto-calculate reading time if not set
-        if not form.instance.reading_time:
+        if not form.instance.reading_time and form.instance.content:
             content_words = len(form.instance.content.split())
             form.instance.reading_time = max(1, content_words // 200)  # 200 WPM
+            # print(f"DEBUG: Calculated reading time: {form.instance.reading_time}")
         
-        return super().form_valid(form)
-
+        # Handle save button actions
+        if 'save_draft' in self.request.POST:
+            form.instance.status = 'draft'
+            # print("DEBUG: Setting status to draft")
+        elif 'save_publish' in self.request.POST:
+            form.instance.status = 'published'
+            # print("DEBUG: Setting status to published")
+        
+        # print(f"DEBUG: About to save with author: {form.instance.author}")
+        
+        try:
+            response = super().form_valid(form)
+            # print("DEBUG: Save successful!")
+            messages.success(
+                self.request, 
+                f'DataLog "{self.object.title}" created successfully!'
+            )
+            return response
+        except Exception as e:
+            # print(f"DEBUG: Save failed with error: {e}")
+            # print(f"DEBUG: Form instance dict: {form.instance.__dict__}")
+            raise
 
 class PostUpdateAdminView(BaseAdminUpdateView):
     """Edit existing DataLog entry."""
@@ -192,6 +228,29 @@ class PostUpdateAdminView(BaseAdminUpdateView):
             'subtitle': 'Update technical log entry',
         })
         return context
+    
+    def form_valid(self, form):
+        # Ensure author is preserved or set
+        if not form.instance.author:
+            form.instance.author = self.request.user
+        
+        # Handle save button actions
+        if 'save_draft' in self.request.POST:
+            form.instance.status = 'draft'
+        elif 'save_publish' in self.request.POST:
+            form.instance.status = 'published'
+        
+        # Auto-calculate reading time if not set
+        if not form.instance.reading_time:
+            content_words = len(form.instance.content.split())
+            form.instance.reading_time = max(1, content_words // 200)  # 200 WPM
+        
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f'DataLog "{self.object.title}" updated successfully!'
+        )
+        return response
 
 
 class PostDeleteAdminView(BaseAdminDeleteView):
