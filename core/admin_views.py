@@ -69,7 +69,7 @@ class BaseAdminView:
         model_name = self.model._meta.verbose_name_plural
 
         breadcrumbs = [
-            {"name": "AURA Admin", "url": reverse_lazy("core:admin_dashboard")},
+            {"name": "AURA Admin", "url": reverse_lazy("core:admin:dashboard")},
             {"name": app_label.title(), "url": f"/{app_label}/admin/"},
             {"name": model_name.title(), "url": None},
         ]

@@ -1,6 +1,8 @@
+# blog/admin_views.py
 """
 Blog Admin Views - DataLogs Management Interface
 Extends the global admin system with blog-specific functionality
+Version 2.0
 """
 
 from django.urls import reverse_lazy
@@ -8,394 +10,380 @@ from django.db.models import Q, Count, Avg, Sum
 from django.contrib import messages
 from django.utils import timezone
 from django.utils.text import slugify
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 
 from core.admin_views import (
     BaseAdminListView,
-    BaseAdminCreateView,
+    BaseAdminCreateView, 
     BaseAdminUpdateView,
     BaseAdminDeleteView,
     SlugAdminCreateView,
     AuthorAdminCreateView,
     StatusAdminCreateView,
-    BulkActionMixin,
+    BulkActionMixin
 )
-from .models import Post, Category, Tag, Series, SystemLogEntry
+from .models import Post, Category, Tag, Series
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 
 
 class BlogAdminDashboardView(BaseAdminListView):
     """Main DataLogs admin dashboard with enhanced metrics."""
-
+    
     model = Post
     template_name = 'blog/admin/dashboard.html'
     context_object_name = 'recent_posts'
     paginate_by = 10
-
+    
     def get_queryset(self):
-        return Post.objects.select_related('author', 'category').order_by('-created_at')[:10]
+        return Post.objects.select_related('author', 'category').prefetch_related('tags').order_by('-created_at')[:10]
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        
         # Dashboard statistics
-        context.update(
-            {
-                "title": "DataLogs Dashboard",
-                "total_posts": Post.objects.count(),
-                "published_posts": Post.objects.filter(status="published").count(),
-                "draft_posts": Post.objects.filter(status="draft").count(),
-                "featured_posts": Post.objects.filter(featured=True).count(),
-                "total_categories": Category.objects.count(),
-                "total_tags": Tag.objects.count(),
-                "total_series": Series.objects.count(),
-                "system_connections": SystemLogEntry.objects.count(),
-                # Recent activity
-                "recent_posts": self.get_queryset(),
-                "popular_categories": Category.objects.annotate(
-                    post_count=Count("posts")
-                ).order_by("-post_count")[:5],
-                "popular_tags": Tag.objects.annotate(
-                    post_count=Count("posts")
-                ).order_by("-post_count")[:5],
-                # Content insights
-                "avg_reading_time": Post.objects.aggregate(
-                    avg_time=Avg("reading_time")
-                )["avg_time"]
-                or 0,
-                "total_reading_time": Post.objects.aggregate(
-                    total_time=Sum("reading_time")
-                )["total_time"]
-                or 0,
-            }
-        )
-
+        total_posts = Post.objects.count()
+        published_posts = Post.objects.filter(status='published').count()
+        draft_posts = Post.objects.filter(status='draft').count()
+        
+        # Calculate totals and averages
+        avg_reading_time = Post.objects.aggregate(avg_time=Avg('reading_time'))['avg_time'] or 0
+        total_reading_time = Post.objects.aggregate(total_time=Sum('reading_time'))['total_time'] or 0
+        
+        # Popular content
+        popular_categories = Category.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).order_by('-post_count')[:5]
+        
+        popular_tags = Tag.objects.annotate(
+            post_count=Count('posts', filter=Q(posts__status='published'))
+        ).order_by('-post_count')[:5]
+        
+        context.update({
+            'title': 'DataLogs Command Center',
+            'subtitle': 'Manage technical logs and documentation',
+            
+            # Core statistics
+            'total_posts': total_posts,
+            'published_posts': published_posts,
+            'draft_posts': draft_posts,
+            'featured_posts': Post.objects.filter(featured=True).count(),
+            'total_categories': Category.objects.count(),
+            'total_tags': Tag.objects.count(),
+            'total_series': Series.objects.count(),
+            
+            # Content metrics
+            'avg_reading_time': round(avg_reading_time, 1),
+            'total_reading_time': total_reading_time,
+            'total_words': sum(len(post.content.split()) for post in Post.objects.all()),
+            
+            # Popular content
+            'popular_categories': popular_categories,
+            'popular_tags': popular_tags,
+            
+            # Recent activity
+            'recent_posts': self.get_queryset(),
+            'recent_categories': Category.objects.order_by('-id')[:3],
+            'recent_tags': Tag.objects.order_by('-id')[:5],
+            
+            # Quick stats for dashboard cards
+            'published_percentage': round((published_posts / total_posts * 100) if total_posts > 0 else 0, 1),
+            'featured_percentage': round((Post.objects.filter(featured=True).count() / total_posts * 100) if total_posts > 0 else 0, 1),
+        })
+        
         return context
 
 
 class PostListAdminView(BaseAdminListView, BulkActionMixin):
     """Enhanced post list view with filtering and bulk actions."""
-
+    
     model = Post
-    template_name = "blog/admin/post_list.html"
-    context_object_name = "posts"
+    template_name = 'blog/admin/post_list.html'
+    context_object_name = 'posts'
     paginate_by = 20
-
+    
     def get_queryset(self):
-        queryset = Post.objects.select_related("author", "category").prefetch_related(
-            "tags"
-        )
-
-        # Apply filters
-        status_filter = self.request.GET.get("status")
+        queryset = Post.objects.select_related('author', 'category').prefetch_related('tags').order_by('-created_at')
+        
+        # Search functionality
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(content__icontains=search_query) |
+                Q(excerpt__icontains=search_query)
+            )
+        
+        # Status filtering
+        status_filter = self.request.GET.get('status', '')
         if status_filter:
             queryset = queryset.filter(status=status_filter)
-
-        category_filter = self.request.GET.get("category")
+        
+        # Category filtering
+        category_filter = self.request.GET.get('category', '')
         if category_filter:
             queryset = queryset.filter(category__slug=category_filter)
-
-        featured_filter = self.request.GET.get("featured")
-        if featured_filter:
+        
+        # Featured filtering
+        featured_filter = self.request.GET.get('featured', '')
+        if featured_filter == 'true':
             queryset = queryset.filter(featured=True)
-
-        return queryset.order_by("-created_at")
-
-    def filter_queryset(self, queryset, search_query):
-        """Enhanced search across multiple fields."""
-        return queryset.filter(
-            Q(title__icontains=search_query)
-            | Q(excerpt__icontains=search_query)
-            | Q(content__icontains=search_query)
-            | Q(category__name__icontains=search_query)
-            | Q(tags__name__icontains=search_query)
-        ).distinct()
-
+        elif featured_filter == 'false':
+            queryset = queryset.filter(featured=False)
+            
+        return queryset.distinct()
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": "Manage DataLog Entries",
-                "create_url": reverse_lazy("blog:post_create_admin"),
-                "edit_url_name": "blog:post_update_admin",
-                "delete_url_name": "blog:post_delete_admin",
-                "categories": Category.objects.all(),
-                "current_filters": {
-                    "status": self.request.GET.get("status"),
-                    "category": self.request.GET.get("category"),
-                    "featured": self.request.GET.get("featured"),
-                },
+        
+        context.update({
+            'title': 'Manage DataLogs',
+            'subtitle': 'All technical logs and entries',
+            'categories': Category.objects.all(),
+            'status_choices': Post.STATUS_CHOICES,
+            'current_filters': {
+                'search': self.request.GET.get('search', ''),
+                'status': self.request.GET.get('status', ''),
+                'category': self.request.GET.get('category', ''),
+                'featured': self.request.GET.get('featured', ''),
             }
-        )
-
+        })
+        
         return context
 
-    def handle_bulk_action(self, action, selected_ids):
-        """Handle blog-specific bulk actions."""
-        queryset = Post.objects.filter(id__in=selected_ids)
 
-        if action == "publish":
-            count = queryset.filter(status="draft").update(
-                status="published", published_date=timezone.now()
-            )
-            messages.success(self.request, f"Successfully published {count} posts.")
-        elif action == "draft":
-            count = queryset.update(status="draft")
-            messages.success(
-                self.request, f"Successfully moved {count} posts to draft."
-            )
-        elif action == "feature":
-            count = queryset.update(featured=True)
-            messages.success(self.request, f"Successfully featured {count} posts.")
-        elif action == "unfeature":
-            count = queryset.update(featured=False)
-            messages.success(self.request, f"Successfully unfeatured {count} posts.")
-        else:
-            return super().handle_bulk_action(action, selected_ids)
-
-        return self.get(self.request)
-
-
-class PostCreateAdminView(
-    SlugAdminCreateView, AuthorAdminCreateView, StatusAdminCreateView
-):
-    """Create new DataLog entry with enhanced features."""
-
+class PostCreateAdminView(AuthorAdminCreateView, SlugAdminCreateView, StatusAdminCreateView):
+    """Create new DataLog entry."""
+    
     model = Post
     form_class = PostForm
-    template_name = "blog/admin/post_form.html"
-    success_url = reverse_lazy("blog:post_list_admin")
-
+    template_name = 'blog/admin/post_form.html'
+    success_url = reverse_lazy('blog:admin_post_list')
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": "Create New DataLog Entry",
-                "submit_text": "Create DataLog",
-                "icon": "fas fa-plus-circle",
-                "available_categories": Category.objects.all(),
-                "available_tags": Tag.objects.all(),
-                "available_series": Series.objects.all(),
-            }
-        )
-
+        context.update({
+            'title': 'Create New DataLog',
+            'subtitle': 'Add a new technical log entry',
+        })
         return context
-
+    
     def form_valid(self, form):
-        # Calculate reading time before saving
-        if form.instance.content:
-            word_count = len(form.instance.content.split())
-            form.instance.reading_time = max(1, word_count // 200)  # ~200 WPM
-
+        # Auto-calculate reading time if not set
+        if not form.instance.reading_time:
+            content_words = len(form.instance.content.split())
+            form.instance.reading_time = max(1, content_words // 200)  # 200 WPM
+        
         return super().form_valid(form)
 
 
 class PostUpdateAdminView(BaseAdminUpdateView):
-    """Update existing DataLog entry."""
-
+    """Edit existing DataLog entry."""
+    
     model = Post
     form_class = PostForm
-    template_name = "blog/admin/post_form.html"
-    success_url = reverse_lazy("blog:post_list_admin")
-
+    template_name = 'blog/admin/post_form.html'
+    success_url = reverse_lazy('blog:admin_post_list')
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": f"Edit DataLog: {self.object.title}",
-                "submit_text": "Update DataLog",
-                "icon": "fas fa-edit",
-                "available_categories": Category.objects.all(),
-                "available_tags": Tag.objects.all(),
-                "available_series": Series.objects.all(),
-                "system_connections": SystemLogEntry.objects.filter(post=self.object),
-            }
-        )
-
+        context.update({
+            'title': f'Edit DataLog: {self.object.title}',
+            'subtitle': 'Update technical log entry',
+        })
         return context
-
-    def form_valid(self, form):
-        # Recalculate reading time on update
-        if form.instance.content:
-            word_count = len(form.instance.content.split())
-            form.instance.reading_time = max(1, word_count // 200)
-
-        return super().form_valid(form)
 
 
 class PostDeleteAdminView(BaseAdminDeleteView):
-    """Delete DataLog entry with safety checks."""
-
+    """Delete DataLog entry."""
+    
     model = Post
-    success_url = reverse_lazy("blog:post_list_admin")
-
-    def get_delete_warning(self):
-        return f"This will permanently delete the DataLog entry '{self.object.title}' and all associated data."
-
-    def get_related_objects(self):
-        """Show related objects that will be affected."""
-        related = []
-
-        # System connections
-        connections = SystemLogEntry.objects.filter(post=self.object)
-        if connections.exists():
-            related.append(f"{connections.count()} system connection(s)")
-
-        # Comments (if implemented)
-        # comments = Comment.objects.filter(post=self.object)
-        # if comments.exists():
-        #     related.append(f"{comments.count()} comment(s)")
-
-        return related
+    success_url = reverse_lazy('blog:admin_post_list')
 
 
 # Category Management Views
-
-
 class CategoryListAdminView(BaseAdminListView, BulkActionMixin):
-    """Category management with post counts."""
-
+    """Manage DataLog categories."""
+    
     model = Category
-    template_name = "blog/admin/category_list.html"
-    context_object_name = "categories"
-
+    template_name = 'blog/admin/category_list.html'
+    context_object_name = 'categories'
+    
     def get_queryset(self):
-        return Category.objects.annotate(post_count=Count("posts")).order_by("name")
-
+        queryset = Category.objects.annotate(
+            post_count=Count('posts')
+        ).order_by('name')
+        
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+            
+        return queryset
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": "Manage Categories",
-                "create_url": reverse_lazy("blog:category_create_admin"),
-                "edit_url_name": "blog:category_update_admin",
-                "delete_url_name": "blog:category_delete_admin",
-            }
-        )
-
+        context.update({
+            'title': 'Manage Categories',
+            'subtitle': 'DataLog organization categories',
+        })
         return context
 
 
 class CategoryCreateAdminView(SlugAdminCreateView):
     """Create new category."""
-
+    
     model = Category
     form_class = CategoryForm
-    success_url = reverse_lazy("blog:category_list_admin")
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "title": "Create Category",
-                "icon": "fas fa-tag",
-            }
-        )
-        return context
+    template_name = 'blog/admin/category_form.html'
+    success_url = reverse_lazy('blog:admin_category_list')
 
 
 class CategoryUpdateAdminView(BaseAdminUpdateView):
-    """Update existing category."""
-
+    """Edit existing category."""
+    
     model = Category
     form_class = CategoryForm
-    success_url = reverse_lazy("blog:category_list_admin")
+    template_name = 'blog/admin/category_form.html'
+    success_url = reverse_lazy('blog:admin_category_list')
 
 
 class CategoryDeleteAdminView(BaseAdminDeleteView):
-    """Delete category with post reassignment."""
-
+    """Delete category."""
+    
     model = Category
-    success_url = reverse_lazy("blog:category_list_admin")
-
-    def get_related_objects(self):
-        post_count = self.object.posts.count()
-        if post_count > 0:
-            return [f"{post_count} DataLog entries will need reassignment"]
-        return []
+    success_url = reverse_lazy('blog:admin_category_list')
 
 
 # Tag Management Views
-
-
 class TagListAdminView(BaseAdminListView, BulkActionMixin):
-    """Tag management interface."""
-
+    """Manage DataLog tags."""
+    
     model = Tag
-    template_name = "blog/admin/tag_list.html"
-    context_object_name = "tags"
-
+    template_name = 'blog/admin/tag_list.html'
+    context_object_name = 'tags'
+    
     def get_queryset(self):
-        return Tag.objects.annotate(post_count=Count("posts")).order_by(
-            "-post_count", "name"
-        )
+        queryset = Tag.objects.annotate(
+            post_count=Count('posts')
+        ).order_by('-post_count', 'name')
+        
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+            
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Manage Tags',
+            'subtitle': 'DataLog tagging system',
+        })
+        return context
 
 
 class TagCreateAdminView(SlugAdminCreateView):
     """Create new tag."""
-
+    
     model = Tag
     form_class = TagForm
-    success_url = reverse_lazy("blog:tag_list_admin")
+    template_name = 'blog/admin/tag_form.html'
+    success_url = reverse_lazy('blog:admin_tag_list')
 
 
-# Series Management Views
+class TagUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing tag."""
+    
+    model = Tag
+    form_class = TagForm
+    template_name = 'blog/admin/tag_form.html'
+    success_url = reverse_lazy('blog:admin_tag_list')
 
 
-class SeriesListAdminView(BaseAdminListView):
-    """Series management interface."""
+class TagDeleteAdminView(BaseAdminDeleteView):
+    """Delete tag."""
+    
+    model = Tag
+    success_url = reverse_lazy('blog:admin_tag_list')
 
+
+# Series Management Views  
+class SeriesListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage DataLog series."""
+    
     model = Series
-    template_name = "blog/admin/series_list.html"
-    context_object_name = "series_list"
-
+    template_name = 'blog/admin/series_list.html'
+    context_object_name = 'series_list'
+    
     def get_queryset(self):
-        return Series.objects.prefetch_related("posts__post").order_by("-created_at")
+        return Series.objects.annotate(
+            actual_post_count=Count('posts')
+        ).order_by('-id')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Manage Series',
+            'subtitle': 'DataLog series and collections',
+        })
+        return context
 
 
 class SeriesCreateAdminView(SlugAdminCreateView):
     """Create new series."""
-
+    
     model = Series
     form_class = SeriesForm
-    success_url = reverse_lazy("blog:series_list_admin")
+    template_name = 'blog/admin/series_form.html'
+    success_url = reverse_lazy('blog:admin_series_list')
 
 
 class SeriesUpdateAdminView(BaseAdminUpdateView):
-    """Update existing series."""
-
+    """Edit existing series."""
+    
     model = Series
     form_class = SeriesForm
-    success_url = reverse_lazy("blog:series_list_admin")
+    template_name = 'blog/admin/series_form.html'
+    success_url = reverse_lazy('blog:admin_series_list')
 
 
-# System Connection Management
+class SeriesDeleteAdminView(BaseAdminDeleteView):
+    """Delete series."""
+    
+    model = Series
+    success_url = reverse_lazy('blog:admin_series_list')
 
 
-class SystemConnectionAdminView(BaseAdminListView):
-    """Manage connections between DataLogs and Systems."""
+# AJAX API Views for dynamic functionality
+class PostStatusToggleView(BaseAdminUpdateView):
+    """AJAX view to toggle post status."""
+    
+    model = Post
+    
+    def post(self, request, *args, **kwargs):
+        post = self.get_object()
+        new_status = 'published' if post.status == 'draft' else 'draft'
+        post.status = new_status
+        post.save()
+        
+        return JsonResponse({
+            'success': True,
+            'new_status': new_status,
+            'new_status_display': post.get_status_display()
+        })
 
-    model = SystemLogEntry
-    template_name = "blog/admin/system_connections.html"
-    context_object_name = "connections"
 
-    def get_queryset(self):
-        return SystemLogEntry.objects.select_related("post", "system").order_by(
-            "-created_at"
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": "System Connections",
-                "total_connections": SystemLogEntry.objects.count(),
-                "connection_types": SystemLogEntry.CONNECTION_TYPE_CHOICES,
-            }
-        )
-
-        return context
+class PostFeatureToggleView(BaseAdminUpdateView):
+    """AJAX view to toggle post featured status."""
+    
+    model = Post
+    
+    def post(self, request, *args, **kwargs):
+        post = self.get_object()
+        post.featured = not post.featured
+        post.save()
+        
+        return JsonResponse({
+            'success': True,
+            'featured': post.featured
+        })
