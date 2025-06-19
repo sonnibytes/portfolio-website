@@ -1,0 +1,239 @@
+<!-- 
+  *blog/templates/blog/admin/tag_form.html
+  *Version 2.0
+  -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_actions %}
+  <div class="flex items-center space-x-4">
+    <a href="{% url 'blog:admin:tag_list' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      Back to Tags
+    </a>
+  </div>
+{% endblock %}
+
+{% block admin_content %}
+  <div class="tag-form">
+    <form method="post" class="space-y-8">
+      {% csrf_token %}
+      
+      <!-- Basic Information -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-tag mr-2 text-purple-400"></i>
+            Tag Information
+          </h3>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Name -->
+            <div class="admin-form-field">
+              <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.name.label }}
+                <span class="text-red-400">*</span>
+              </label>
+              {{ form.name }}
+              {% if form.name.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.name.help_text }}</p>
+              {% endif %}
+              {% if form.name.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.name.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Slug -->
+            <div class="admin-form-field">
+              <label for="{{ form.slug.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.slug.label }}
+              </label>
+              {{ form.slug }}
+              {% if form.slug.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.slug.help_text }}</p>
+              {% endif %}
+              {% if form.slug.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.slug.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tag Preview -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-eye mr-2 text-purple-400"></i>
+            Tag Preview
+          </h3>
+          
+          <div class="tag-preview">
+            <div class="flex items-center space-x-4 mb-4">
+              <span class="tag-display inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-400 bg-opacity-20 text-purple-400 border border-purple-400 border-opacity-30" 
+                    id="preview-tag">
+                #<span id="preview-name">{{ form.name.value|default:'tagname' }}</span>
+              </span>
+              <span class="text-gray-400 text-sm">
+                URL: /blog/tags/<span id="preview-slug">{{ form.slug.value|default:'tagname' }}</span>/
+              </span>
+            </div>
+            
+            <div class="glass-card p-4 max-w-md">
+              <h4 class="text-white font-bold mb-2">How it will appear:</h4>
+              <div class="flex flex-wrap gap-2">
+                <span class="tag-example">#<span id="preview-name-2">{{ form.name.value|default:'tagname' }}</span></span>
+                <span class="tag-example">#python</span>
+                <span class="tag-example">#django</span>
+                <span class="tag-example">#webdev</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tag Usage (if editing) -->
+      {% if object %}
+        <div class="admin-form-container">
+          <div class="form-section">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+              <i class="fas fa-chart-bar mr-2 text-purple-400"></i>
+              Tag Usage Statistics
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="stat-card">
+                <div class="stat-number">{{ object.posts.count }}</div>
+                <div class="stat-label">Total Posts</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">{{ object.posts.filter.status='published'.count }}</div>
+                <div class="stat-label">Published Posts</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">
+                  {% if object.posts.exists %}
+                    {{ object.posts.first.published_date|date:"M Y" }}
+                  {% else %}
+                    --
+                  {% endif %}
+                </div>
+                <div class="stat-label">First Used</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Form Actions -->
+      <div class="admin-form-actions">
+        <div class="flex justify-between items-center">
+          <div class="flex space-x-4">
+            {% if object and object.posts.exists %}
+              <a href="{% url 'blog:admin:post_list' %}?search={{ object.name }}" class="btn btn-secondary">
+                <i class="fas fa-eye mr-2"></i>
+                View Tagged Posts
+              </a>
+            {% endif %}
+          </div>
+          
+          <div class="flex space-x-4">
+            <a href="{% url 'blog:admin:tag_list' %}" class="btn btn-secondary">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-purple">
+              <i class="fas fa-save mr-2"></i>
+              {% if form_mode == 'create' %}Create Tag{% else %}Update Tag{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+{% block admin_css %}
+<style>
+.tag-example {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  color: #a78bfa;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 0.75rem;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #a78bfa;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+</style>
+{% endblock %}
+
+{% block admin_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-generate slug from name
+    const nameField = document.getElementById('{{ form.name.id_for_label }}');
+    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
+    
+    // Preview elements
+    const previewName = document.getElementById('preview-name');
+    const previewName2 = document.getElementById('preview-name-2');
+    const previewSlug = document.getElementById('preview-slug');
+    
+    if (nameField && slugField) {
+        nameField.addEventListener('input', function() {
+            if (!slugField.dataset.modified) {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                slugField.value = slug;
+                previewSlug.textContent = slug || 'tagname';
+            }
+            
+            // Update preview
+            const name = this.value || 'tagname';
+            previewName.textContent = name;
+            previewName2.textContent = name;
+        });
+        
+        slugField.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+            previewSlug.textContent = this.value || 'tagname';
+        });
+    }
+});
+</script>
+{% endblock %}
