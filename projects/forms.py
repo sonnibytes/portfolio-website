@@ -17,7 +17,7 @@ class SystemModuleForm(forms.ModelForm):
         help_text="Full system description in Markdown format",
         widget=forms.Textarea(attrs={
             'rows': 15,
-            'class': 'markdownx-editor',
+            'class': 'markdownx-editor form-control',
             'placeholder': 'Describe your system, its purpose, features, and implementation...'
         })
     )
@@ -27,7 +27,7 @@ class SystemModuleForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={
             'rows': 8,
-            'class': 'markdownx-editor',
+            'class': 'markdownx-editor form-control',
             'placeholder': 'List the main features and capabilities...'
         })
     )
@@ -37,7 +37,7 @@ class SystemModuleForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={
             'rows': 10,
-            'class': 'markdownx-editor',
+            'class': 'markdownx-editor form-control',
             'placeholder': 'Technical architecture, frameworks, databases, APIs...'
         })
     )
@@ -47,8 +47,18 @@ class SystemModuleForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={
             'rows': 8,
-            'class': 'markdownx-editor',
+            'class': 'markdownx-editor form-control',
             'placeholder': 'Challenges faced and how they were overcome...'
+        })
+    )
+    
+    future_enhancements = MarkdownxFormField(
+        help_text="Planned improvements and next steps",
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 6,
+            'class': 'markdownx-editor form-control',
+            'placeholder': 'Future improvements and planned features...'
         })
     )
     
@@ -65,12 +75,13 @@ class SystemModuleForm(forms.ModelForm):
         model = SystemModule
         fields = [
             'title', 'slug', 'system_id', 'subtitle', 'excerpt',
-            'description', 'features_overview', 'technical_details', 'challenges',
+            'description', 'features_overview', 'technical_details', 'challenges', 'future_enhancements',
             'system_type', 'technologies', 'complexity', 'priority',
             'status', 'featured', 'completion_percent',
-            'performance_score', 'uptime_percentage',
+            'performance_score', 'uptime_percentage', 'response_time_ms', 'daily_users',
             'github_url', 'live_url', 'demo_url', 'documentation_url',
-            'thumbnail', 'banner_image', 'featured_image'
+            'thumbnail', 'banner_image', 'featured_image', 'architecture_diagram',
+            'estimated_dev_hours', 'actual_dev_hours', 'team_size'
         ]
         
         widgets = {
@@ -129,6 +140,14 @@ class SystemModuleForm(forms.ModelForm):
                 'max': 100,
                 'step': 0.01
             }),
+            'response_time_ms': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            }),
+            'daily_users': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            }),
             'github_url': forms.URLInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'https://github.com/username/repo'
@@ -157,6 +176,23 @@ class SystemModuleForm(forms.ModelForm):
                 'class': 'form-control',
                 'accept': 'image/*'
             }),
+            'architecture_diagram': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'estimated_dev_hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            }),
+            'actual_dev_hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            }),
+            'team_size': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'value': 1
+            }),
         }
         
         help_texts = {
@@ -173,9 +209,15 @@ class SystemModuleForm(forms.ModelForm):
             'completion_percent': 'Completion percentage (0-100)',
             'performance_score': 'Performance rating (0-100)',
             'uptime_percentage': 'Uptime percentage for deployed systems',
+            'response_time_ms': 'Average response time in milliseconds',
+            'daily_users': 'Average daily active users',
             'thumbnail': 'System card thumbnail (400x300px recommended)',
             'banner_image': 'Header banner image (1200x400px recommended)',
             'featured_image': 'Featured image for homepage (800x600px recommended)',
+            'architecture_diagram': 'System architecture diagram',
+            'estimated_dev_hours': 'Estimated development hours',
+            'actual_dev_hours': 'Actual development hours spent',
+            'team_size': 'Number of team members',
         }
 
     def __init__(self, *args, **kwargs):
@@ -200,6 +242,7 @@ class SystemModuleForm(forms.ModelForm):
             self.fields['complexity'].initial = 2
             self.fields['priority'].initial = 2
             self.fields['completion_percent'].initial = 10
+            self.fields['team_size'].initial = 1
 
     def clean_slug(self):
         slug = self.cleaned_data.get('slug')
@@ -232,6 +275,14 @@ class SystemModuleForm(forms.ModelForm):
         uptime = cleaned_data.get('uptime_percentage')
         if uptime is not None and (uptime < 0 or uptime > 100):
             raise forms.ValidationError('Uptime percentage must be between 0 and 100.')
+        
+        # Validate development hours
+        estimated = cleaned_data.get('estimated_dev_hours')
+        actual = cleaned_data.get('actual_dev_hours')
+        if estimated is not None and estimated < 0:
+            raise forms.ValidationError('Estimated development hours cannot be negative.')
+        if actual is not None and actual < 0:
+            raise forms.ValidationError('Actual development hours cannot be negative.')
         
         return cleaned_data
 

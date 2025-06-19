@@ -176,7 +176,7 @@ class SystemCreateAdminView(BaseAdminCreateView):
     model = SystemModule
     form_class = SystemModuleForm
     template_name = 'projects/admin/system_form.html'
-    success_url = reverse_lazy('projects:admin:system_list')
+    success_url = reverse_lazy('core:admin:projects:system_list')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -198,6 +198,9 @@ class SystemCreateAdminView(BaseAdminCreateView):
         # Auto-generate slug if not provided
         if not form.instance.slug and form.instance.title:
             form.instance.slug = slugify(form.instance.title)
+        
+        # Set author to current user
+        form.instance.author = self.request.user
         
         # Set default completion based on status
         if not form.instance.completion_percent:
@@ -224,7 +227,7 @@ class SystemUpdateAdminView(BaseAdminUpdateView):
     model = SystemModule
     form_class = SystemModuleForm
     template_name = 'projects/admin/system_form.html'
-    success_url = reverse_lazy('projects:admin:system_list')
+    success_url = reverse_lazy('core:admin:projects:system_list')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -239,7 +242,7 @@ class SystemDeleteAdminView(BaseAdminDeleteView):
     """Delete system."""
     
     model = SystemModule
-    success_url = reverse_lazy('projects:admin:system_list')
+    success_url = reverse_lazy('core:admin:projects:system_list')
 
 
 # Technology Management Views
@@ -285,7 +288,7 @@ class TechnologyCreateAdminView(SlugAdminCreateView):
     model = Technology
     form_class = TechnologyForm
     template_name = 'projects/admin/technology_form.html'
-    success_url = reverse_lazy('projects:admin:technology_list')
+    success_url = reverse_lazy('core:admin:projects:technology_list')
 
 
 class TechnologyUpdateAdminView(BaseAdminUpdateView):
@@ -294,14 +297,14 @@ class TechnologyUpdateAdminView(BaseAdminUpdateView):
     model = Technology
     form_class = TechnologyForm
     template_name = 'projects/admin/technology_form.html'
-    success_url = reverse_lazy('projects:admin:technology_list')
+    success_url = reverse_lazy('core:admin:projects:technology_list')
 
 
 class TechnologyDeleteAdminView(BaseAdminDeleteView):
     """Delete technology."""
     
     model = Technology
-    success_url = reverse_lazy('projects:admin:technology_list')
+    success_url = reverse_lazy('core:admin:projects:technology_list')
 
 
 # System Type Management Views
@@ -338,7 +341,7 @@ class SystemTypeCreateAdminView(SlugAdminCreateView):
     model = SystemType
     form_class = SystemTypeForm
     template_name = 'projects/admin/system_type_form.html'
-    success_url = reverse_lazy('projects:admin:system_type_list')
+    success_url = reverse_lazy('core:admin:projects:system_type_list')
 
 
 class SystemTypeUpdateAdminView(BaseAdminUpdateView):
@@ -347,14 +350,14 @@ class SystemTypeUpdateAdminView(BaseAdminUpdateView):
     model = SystemType
     form_class = SystemTypeForm
     template_name = 'projects/admin/system_type_form.html'
-    success_url = reverse_lazy('projects:admin:system_type_list')
+    success_url = reverse_lazy('core:admin:projects:system_type_list')
 
 
 class SystemTypeDeleteAdminView(BaseAdminDeleteView):
     """Delete system type."""
     
     model = SystemType
-    success_url = reverse_lazy('projects:admin:system_type_list')
+    success_url = reverse_lazy('core:admin:projects:system_type_list')
 
 
 # AJAX API Views for dynamic functionality
