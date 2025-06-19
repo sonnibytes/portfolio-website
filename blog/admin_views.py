@@ -11,7 +11,9 @@ from django.contrib import messages
 from django.utils import timezone
 from django.utils.text import slugify
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.views.generic import TemplateView
+from django.db import models
 
 from core.admin_views import (
     BaseAdminListView,
@@ -21,7 +23,9 @@ from core.admin_views import (
     SlugAdminCreateView,
     AuthorAdminCreateView,
     StatusAdminCreateView,
-    BulkActionMixin
+    BulkActionMixin,
+    BaseAdminView,
+    AdminAccessMixin
 )
 from .models import Post, Category, Tag, Series
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
@@ -371,7 +375,7 @@ class TagCreateAdminView(SlugAdminCreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # For new tags, set status to 0
+        # For new tags, set stats to 0
         context.update({
             'tag_total_posts': 0,
             'tag_published_posts': 0,
@@ -456,7 +460,123 @@ class SeriesDeleteAdminView(BaseAdminDeleteView):
     """Delete series."""
     
     model = Series
-    success_url = reverse_lazy('blog:admin:series_list')
+    success_url = reverse_lazy('blog:admin_series_list')
+
+
+class SeriesPostsManageView(AdminAccessMixin, BaseAdminView, TemplateView):
+    """Manage posts within a series - add, remove, reorder."""
+    
+    model = Series
+    template_name = 'blog/admin/series_posts_manage.html'
+    
+    def get_object(self):
+        return get_object_or_404(Series, pk=self.kwargs['pk'])
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        series = self.get_object()
+        
+        # Get current posts in series (ordered)
+        series_posts = series.posts.all().order_by('order')
+        
+        # Get all published posts not in this series
+        available_posts = Post.objects.filter(
+            status='published'
+        ).exclude(
+            id__in=series_posts.values_list('post__id', flat=True)
+        ).order_by('-published_date')
+        
+        context.update({
+            'series': series,
+            'series_posts': series_posts,
+            'available_posts': available_posts,
+            'title': f'Manage Posts: {series.title}',
+            'subtitle': 'Add, remove, and reorder posts in this series',
+        })
+        
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        """Handle adding/removing posts from series."""
+        series = self.get_object()
+        action = request.POST.get('action')
+        
+        if action == 'add_post':
+            post_id = request.POST.get('post_id')
+            try:
+                post = Post.objects.get(id=post_id, status='published')
+                # Get the next order number
+                last_order = series.posts.aggregate(
+                    max_order=models.Max('order')
+                )['max_order'] or 0
+                
+                # Add post to series
+                from .models import SeriesPost
+                SeriesPost.objects.create(
+                    series=series,
+                    post=post,
+                    order=last_order + 1
+                )
+                
+                messages.success(request, f'Added "{post.title}" to series.')
+                
+            except Post.DoesNotExist:
+                messages.error(request, 'Post not found.')
+        
+        elif action == 'remove_post':
+            series_post_id = request.POST.get('series_post_id')
+            try:
+                from .models import SeriesPost
+                series_post = SeriesPost.objects.get(id=series_post_id, series=series)
+                post_title = series_post.post.title
+                series_post.delete()
+                
+                # Reorder remaining posts
+                self._reorder_series_posts(series)
+                
+                messages.success(request, f'Removed "{post_title}" from series.')
+                
+            except SeriesPost.DoesNotExist:
+                messages.error(request, 'Series post not found.')
+        
+        elif action == 'reorder_posts':
+            # Handle reordering via AJAX
+            post_orders = request.POST.getlist('post_orders')
+            print(f"DEBUG: Received post_orders: {post_orders}")  # Debug log
+            
+            try:
+                from .models import SeriesPost
+
+                # Update each post's order
+                for i, series_post_id in enumerate(post_orders, 1):
+                    updated_count = SeriesPost.objects.filter(
+                        id=series_post_id, series=series
+                    ).update(order=i)
+                    print(
+                        f"DEBUG: Updated SeriesPost {series_post_id} to order {i}, affected rows: {updated_count}"
+                    )
+
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": f"Updated order for {len(post_orders)} posts",
+                    }
+                )
+
+            except Exception as e:
+                print(f"DEBUG: Error in reorder_posts: {e}")
+                return JsonResponse({"success": False, "error": str(e)})
+        
+        return redirect('blog:admin:series_posts_manage', pk=series.pk)
+    
+    def _reorder_series_posts(self, series):
+        """Reorder series posts to fill gaps."""
+        from .models import SeriesPost
+        series_posts = SeriesPost.objects.filter(series=series).order_by('order')
+        for i, series_post in enumerate(series_posts, 1):
+            if series_post.order != i:
+                series_post.order = i
+                series_post.save()
 
 
 # AJAX API Views for dynamic functionality

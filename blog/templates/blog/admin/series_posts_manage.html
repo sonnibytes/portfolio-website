@@ -1,0 +1,412 @@
+<!-- 
+  *blog/templates/blog/admin/series_posts_manage.html
+  *Version 2.0
+  -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_actions %}
+  <div class="flex items-center space-x-4">
+    <a href="{% url 'blog:admin:series_list' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      Back to Series
+    </a>
+    <a href="{% url 'blog:admin:series_edit' series.pk %}" class="btn btn-secondary">
+      <i class="fas fa-edit mr-2"></i>
+      Edit Series
+    </a>
+  </div>
+{% endblock %}
+
+{% block admin_content %}
+  <div class="series-posts-manage">
+    
+    <!-- Series Header -->
+    <div class="glass-card p-6 mb-8">
+      <div class="flex items-center space-x-4">
+        {% if series.thumbnail %}
+          <img src="{{ series.thumbnail.url }}" alt="{{ series.title }}" 
+               class="w-16 h-16 object-cover rounded-lg border border-gray-600">
+        {% else %}
+          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-layer-group text-white text-xl"></i>
+          </div>
+        {% endif %}
+        
+        <div>
+          <h2 class="text-2xl font-bold text-white">{{ series.title }}</h2>
+          <p class="text-gray-400">{{ series.description|default:"No description" }}</p>
+          <div class="flex items-center space-x-4 mt-2 text-sm">
+            <span class="difficulty-badge difficulty-{{ series.difficulty_level }}">
+              {{ series.get_difficulty_level_display }}
+            </span>
+            <span class="text-gray-400">{{ series_posts.count }} posts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <!-- Current Posts in Series -->
+      <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-white flex items-center">
+            <i class="fas fa-list-ol mr-2 text-blue-400"></i>
+            Posts in Series ({{ series_posts.count }})
+          </h3>
+          {% if series_posts.count > 1 %}
+            <button id="toggle-reorder" class="btn btn-sm btn-secondary">
+              <i class="fas fa-sort mr-1"></i>
+              Reorder
+            </button>
+          {% endif %}
+        </div>
+        
+        {% if series_posts %}
+          <div id="series-posts-list" class="space-y-3">
+            {% for series_post in series_posts %}
+              <div class="series-post-item" data-id="{{ series_post.id }}">
+                <div class="flex items-center justify-between p-4 bg-black bg-opacity-20 rounded-lg">
+                  <div class="flex items-center">
+                    <div class="drag-handle" style="display: none;">
+                      <i class="fas fa-grip-vertical text-gray-500 mr-3 cursor-move"></i>
+                    </div>
+                    <span class="post-order w-8 h-8 bg-blue-500 bg-opacity-20 text-blue-400 rounded-full flex items-center justify-center text-sm font-bold mr-3">
+                      {{ series_post.order }}
+                    </span>
+                    <div class="flex-1">
+                      <h4 class="font-medium text-white">{{ series_post.post.title }}</h4>
+                      <div class="text-sm text-gray-400">
+                        {{ series_post.post.category.name }} • 
+                        {{ series_post.post.reading_time }}min read •
+                        {{ series_post.post.created_at|date:"M j, Y" }}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center space-x-2">
+                    <a href="{{ series_post.post.get_absolute_url }}" target="_blank" 
+                       class="text-gray-400 hover:text-white" title="View Post">
+                      <i class="fas fa-external-link-alt"></i>
+                    </a>
+                    <a href="{% url 'blog:admin:post_edit' series_post.post.pk %}" 
+                       class="text-blue-400 hover:text-blue-300" title="Edit Post">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <form method="post" class="inline" onsubmit="return confirm('Remove this post from the series?')">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="remove_post">
+                      <input type="hidden" name="series_post_id" value="{{ series_post.id }}">
+                      <button type="submit" class="text-red-400 hover:text-red-300" title="Remove from Series">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          
+          <!-- Reorder Save Button (hidden by default) -->
+          <div id="reorder-controls" class="mt-6" style="display: none;">
+            <div class="flex items-center justify-between">
+              <p class="text-sm text-gray-400">Drag posts to reorder them</p>
+              <div class="space-x-2">
+                <button id="cancel-reorder" class="btn btn-sm btn-secondary">Cancel</button>
+                <button id="save-reorder" class="btn btn-sm btn-primary">Save Order</button>
+              </div>
+            </div>
+          </div>
+          
+        {% else %}
+          <div class="text-center py-8">
+            <i class="fas fa-inbox text-4xl text-gray-600 mb-4"></i>
+            <p class="text-gray-400 mb-4">No posts in this series yet</p>
+            <p class="text-sm text-gray-500">Add existing posts from the right panel or create new ones</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Available Posts to Add -->
+      <div class="glass-card p-6">
+        <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+          <i class="fas fa-plus-circle mr-2 text-green-400"></i>
+          Add Posts to Series
+        </h3>
+        
+        <!-- Quick Actions -->
+        <div class="flex items-center space-x-4 mb-6">
+          <a href="{% url 'blog:admin:post_create' %}" class="btn btn-sm btn-green">
+            <i class="fas fa-plus mr-1"></i>
+            Create New Post
+          </a>
+          <div class="admin-search-bar flex-1">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="available-posts-search" placeholder="Search available posts..." class="w-full">
+          </div>
+        </div>
+        
+        {% if available_posts %}
+          <div id="available-posts-list" class="space-y-3 max-h-96 overflow-y-auto">
+            {% for post in available_posts %}
+              <div class="available-post-item" data-title="{{ post.title|lower }}" data-category="{{ post.category.name|lower }}">
+                <div class="flex items-center justify-between p-4 bg-black bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors">
+                  <div class="flex-1">
+                    <h4 class="font-medium text-white">{{ post.title }}</h4>
+                    <div class="text-sm text-gray-400">
+                      {{ post.category.name }} • 
+                      {{ post.reading_time }}min read •
+                      {{ post.published_date|date:"M j, Y" }}
+                    </div>
+                    {% if post.tags.exists %}
+                      <div class="flex flex-wrap gap-1 mt-2">
+                        {% for tag in post.tags.all|slice:":3" %}
+                          <span class="inline-block px-2 py-1 text-xs bg-purple-400 bg-opacity-20 text-purple-300 rounded">
+                            {{ tag.name }}
+                          </span>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  
+                  <div class="flex items-center space-x-2 ml-4">
+                    <a href="{{ post.get_absolute_url }}" target="_blank" 
+                       class="text-gray-400 hover:text-white" title="View Post">
+                      <i class="fas fa-external-link-alt"></i>
+                    </a>
+                    <form method="post" class="inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="add_post">
+                      <input type="hidden" name="post_id" value="{{ post.id }}">
+                      <button type="submit" class="btn btn-sm btn-green" title="Add to Series">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-8">
+            <i class="fas fa-check-circle text-4xl text-green-600 mb-4"></i>
+            <p class="text-gray-400 mb-4">All published posts are in series</p>
+            <p class="text-sm text-gray-500">Create new posts to add them to this series</p>
+            <a href="{% url 'blog:admin:post_create' %}" class="btn btn-green mt-4">
+              <i class="fas fa-plus mr-2"></i>
+              Create New Post
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block admin_css %}
+<style>
+.difficulty-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.difficulty-beginner { background: rgba(34, 197, 94, 0.2); color: rgb(34, 197, 94); }
+.difficulty-intermediate { background: rgba(234, 179, 8, 0.2); color: rgb(234, 179, 8); }
+.difficulty-advanced { background: rgba(249, 115, 22, 0.2); color: rgb(249, 115, 22); }
+.difficulty-expert { background: rgba(239, 68, 68, 0.2); color: rgb(239, 68, 68); }
+
+.btn-green {
+  background: #10b981;
+  color: white;
+}
+
+.btn-green:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+}
+
+.series-post-item.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.drag-handle {
+  cursor: move;
+}
+
+.sortable-placeholder {
+  background: rgba(59, 130, 246, 0.2);
+  border: 2px dashed #3b82f6;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+  height: 80px;
+}
+</style>
+{% endblock %}
+
+{% block admin_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality for available posts
+    const searchInput = document.getElementById('available-posts-search');
+    const availablePostItems = document.querySelectorAll('.available-post-item');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            
+            availablePostItems.forEach(item => {
+                const title = item.dataset.title;
+                const category = item.dataset.category;
+                
+                if (title.includes(query) || category.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Reorder functionality
+    const toggleReorderBtn = document.getElementById('toggle-reorder');
+    const reorderControls = document.getElementById('reorder-controls');
+    const cancelReorderBtn = document.getElementById('cancel-reorder');
+    const saveReorderBtn = document.getElementById('save-reorder');
+    const seriesPostsList = document.getElementById('series-posts-list');
+    const dragHandles = document.querySelectorAll('.drag-handle');
+    
+    let sortable = null;
+    let originalOrder = [];
+    
+    if (toggleReorderBtn) {
+        toggleReorderBtn.addEventListener('click', function() {
+            // Save original order
+            originalOrder = Array.from(seriesPostsList.children).map(item => item.dataset.id);
+            
+            // Show drag handles and reorder controls
+            dragHandles.forEach(handle => handle.style.display = 'block');
+            reorderControls.style.display = 'block';
+            toggleReorderBtn.style.display = 'none';
+            
+            // Initialize sortable
+            sortable = new Sortable(seriesPostsList, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-placeholder',
+                onStart: function(evt) {
+                    evt.item.classList.add('dragging');
+                },
+                onEnd: function(evt) {
+                    evt.item.classList.remove('dragging');
+                    updateOrderNumbers();
+                }
+            });
+        });
+    }
+    
+    if (cancelReorderBtn) {
+        cancelReorderBtn.addEventListener('click', function() {
+            // Restore original order
+            originalOrder.forEach((id, index) => {
+                const item = document.querySelector(`[data-id="${id}"]`);
+                seriesPostsList.appendChild(item);
+            });
+            
+            updateOrderNumbers();
+            exitReorderMode();
+        });
+    }
+    
+    if (saveReorderBtn) {
+        saveReorderBtn.addEventListener('click', function() {
+            const newOrder = Array.from(seriesPostsList.children).map(item => item.dataset.id);
+            
+            // Create form data with proper array format
+            const formData = new FormData();
+            formData.append('action', 'reorder_posts');
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            // Add each post order individually
+            newOrder.forEach((id, index) => {
+                formData.append('post_orders', id);
+            });
+            
+            console.log('Sending order:', newOrder); // Debug log
+            
+            // Send AJAX request to save new order
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response:', data); // Debug log
+                if (data.success) {
+                    exitReorderMode();
+                    // Show success message
+                    showNotification('Series order updated successfully!', 'success');
+                    // Reload page to show updated order
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showNotification('Failed to update order: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred while updating order', 'error');
+            });
+        });
+    }
+    
+    function updateOrderNumbers() {
+        const items = seriesPostsList.children;
+        for (let i = 0; i < items.length; i++) {
+            const orderSpan = items[i].querySelector('.post-order');
+            if (orderSpan) {
+                orderSpan.textContent = i + 1;
+            }
+        }
+    }
+    
+    function exitReorderMode() {
+        // Hide drag handles and reorder controls
+        dragHandles.forEach(handle => handle.style.display = 'none');
+        reorderControls.style.display = 'none';
+        toggleReorderBtn.style.display = 'block';
+        
+        // Destroy sortable
+        if (sortable) {
+            sortable.destroy();
+            sortable = null;
+        }
+    }
+    
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} fixed top-4 right-4 z-50 max-w-sm`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

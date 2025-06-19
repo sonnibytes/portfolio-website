@@ -37,6 +37,8 @@ urlpatterns = [
     path('series/create/', admin_views.SeriesCreateAdminView.as_view(), name='series_create'),
     path('series/<int:pk>/edit/', admin_views.SeriesUpdateAdminView.as_view(), name='series_edit'),
     path('series/<int:pk>/delete/', admin_views.SeriesDeleteAdminView.as_view(), name='series_delete'),
+    path('series/<int:pk>/manage-posts/', admin_views.SeriesPostsManageView.as_view(), name='series_posts_manage'),
+
     
     # AJAX API endpoints
     path('api/posts/<int:pk>/toggle-status/', admin_views.PostStatusToggleView.as_view(), name='post_toggle_status'),
