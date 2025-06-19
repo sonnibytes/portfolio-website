@@ -12,7 +12,8 @@ app_name = "admin"
 urlpatterns = [
     # Main admin dashboard
     path("", MainAdminDashboardView.as_view(), name="dashboard"),
-
     # Blog admin (add this line)
-    path('blog/', include('blog.admin_urls', namespace='blog')),
+    path("blog/", include("blog.admin_urls", namespace="blog")),
+    # Projects/Systems admin
+    path("projects/", include("projects.admin_urls", namespace="projects")),
 ]

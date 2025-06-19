@@ -1,101 +1,105 @@
 """
 Projects Admin Views - Systems Management Interface
 Extends the global admin system with projects-specific functionality
+Version 2.0
 """
 
 from django.urls import reverse_lazy
-from django.db.models import Q, Count, Avg
+from django.db.models import Q, Count, Avg, Sum, Max, Min
 from django.contrib import messages
 from django.utils import timezone
+from django.utils.text import slugify
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.generic import TemplateView
+from django.db import models
 
 from core.admin_views import (
     BaseAdminListView,
-    BaseAdminCreateView,
+    BaseAdminCreateView, 
     BaseAdminUpdateView,
     BaseAdminDeleteView,
     SlugAdminCreateView,
-    BulkActionMixin,
-    AjaxableResponseMixin,
+    BulkActionMixin
 )
-from .models import (
-    SystemModule,
-    Technology,
-    SystemType,
-    SystemFeature,
-    SystemImage,
-    SystemMetric,
-)
+from .models import SystemModule, Technology, SystemType
 from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm
 
 
-class SystemsAdminDashboardView(BaseAdminListView):
+class ProjectsAdminDashboardView(BaseAdminListView):
     """Main Systems admin dashboard with enhanced metrics."""
-
+    
     model = SystemModule
     template_name = 'projects/admin/dashboard.html'
     context_object_name = 'recent_systems'
-    paginate_by = 8
-
+    paginate_by = 10
+    
     def get_queryset(self):
-        return SystemModule.objects.select_related('system_type').prefetch_related(
-            'technologies'
-        ).order_by('-updated_at')[:8]
+        return SystemModule.objects.select_related('system_type').prefetch_related('technologies').order_by('-updated_at')[:10]
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # System metrics using enhanced manager methods
-        stats = SystemModule.objects.dashboard_stats()
-
+        
+        # Dashboard statistics
+        total_systems = SystemModule.objects.count()
+        deployed_systems = SystemModule.objects.filter(status='deployed').count()
+        published_systems = SystemModule.objects.filter(status='published').count()
+        in_dev_systems = SystemModule.objects.filter(status='in_development').count()
+        
+        # Performance metrics
+        avg_completion = SystemModule.objects.aggregate(
+            avg_completion=Avg('completion_percent')
+        )['avg_completion'] or 0
+        
+        avg_performance = SystemModule.objects.filter(
+            performance_score__isnull=False
+        ).aggregate(
+            avg_performance=Avg('performance_score')
+        )['avg_performance'] or 0
+        
+        # Technology and type stats
+        popular_technologies = Technology.objects.annotate(
+            system_count=Count('systems')
+        ).order_by('-system_count')[:5]
+        
+        popular_system_types = SystemType.objects.annotate(
+            system_count=Count('systems')
+        ).order_by('-system_count')[:5]
+        
+        # Recent activity
+        recent_deployments = SystemModule.objects.filter(
+            status='deployed'
+        ).order_by('-updated_at')[:5]
+        
         context.update({
             'title': 'Systems Command Center',
-            'icon': 'fas fa-microchip',
-
-            # Core metrics
-            'total_systems': stats['total_systems'],
-            'deployed_systems': stats['deployed_count'],
-            'published_systems': stats['published_count'],
-            'dev_systems': stats['in_development_count'],
-            'featured_systems': stats['featured_count'],
+            'subtitle': 'Manage portfolio projects and technologies',
+            
+            # Core statistics
+            'total_systems': total_systems,
+            'deployed_systems': deployed_systems,
+            'published_systems': published_systems,
+            'in_dev_systems': in_dev_systems,
+            'total_technologies': Technology.objects.count(),
+            'total_system_types': SystemType.objects.count(),
             
             # Performance metrics
-            'avg_completion': round(stats['avg_completion'], 1),
-            'avg_performance': round(stats['avg_performance'], 1),
+            'avg_completion': round(avg_completion, 1),
+            'avg_performance': round(avg_performance, 1),
+            'high_priority_systems': SystemModule.objects.filter(priority__gte=3).count(),
             
-            # System health indicators
-            'high_priority_systems': SystemModule.objects.high_priority().count(),
-            'recently_updated': SystemModule.objects.recently_updated().count(),
-            'systems_with_metrics': SystemModule.objects.with_performance_data().count(),
-            
-            # Technology insights
-            'total_technologies': Technology.objects.count(),
-            'active_technologies': Technology.objects.filter(
-                systems__isnull=False
-            ).distinct().count(),
-            'popular_technologies': Technology.objects.annotate(
-                usage_count=Count('systems')
-            ).order_by('-usage_count')[:5],
-            
-            # System types breakdown
-            'system_types': SystemType.objects.annotate(
-                system_count=Count('systems')
-            ).order_by('-system_count'),
+            # Content insights
+            'popular_technologies': popular_technologies,
+            'popular_system_types': popular_system_types,
             
             # Recent activity
             'recent_systems': self.get_queryset(),
-            'critical_systems': SystemModule.objects.filter(priority=4),
+            'recent_deployments': recent_deployments,
+            'recent_technologies': Technology.objects.order_by('-id')[:5],
             
-            # Performance insights
-            'top_performers': SystemModule.objects.filter(
-                performance_score__isnull=False
-            ).order_by('-performance_score')[:3],
-            
-            'systems_needing_attention': SystemModule.objects.filter(
-                Q(performance_score__lt=70) | 
-                Q(uptime_percentage__lt=95) |
-                Q(health_status='critical')
-            )[:5],
+            # Quick stats for dashboard cards
+            'deployment_percentage': round((deployed_systems / total_systems * 100) if total_systems > 0 else 0, 1),
+            'completion_percentage': round(avg_completion, 1),
         })
         
         return context
@@ -103,383 +107,308 @@ class SystemsAdminDashboardView(BaseAdminListView):
 
 class SystemListAdminView(BaseAdminListView, BulkActionMixin):
     """Enhanced system list view with filtering and bulk actions."""
-
+    
     model = SystemModule
-    template_name = "projects/admin/system_list.html"
-    context_object_name = "systems"
+    template_name = 'projects/admin/system_list.html'
+    context_object_name = 'systems'
     paginate_by = 20
-
+    
     def get_queryset(self):
-        queryset = SystemModule.objects.select_related("system_type").prefetch_related(
-            "technologies"
-        )
-
-        # Apply filters
-        status_filter = self.request.GET.get("status")
+        queryset = SystemModule.objects.select_related('system_type').prefetch_related('technologies').order_by('-updated_at')
+        
+        # Search functionality
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(subtitle__icontains=search_query)
+            )
+        
+        # Status filtering
+        status_filter = self.request.GET.get('status', '')
         if status_filter:
             queryset = queryset.filter(status=status_filter)
-
-        type_filter = self.request.GET.get("type")
-        if type_filter:
-            queryset = queryset.filter(system_type__slug=type_filter)
-
-        priority_filter = self.request.GET.get("priority")
+        
+        # System type filtering
+        system_type_filter = self.request.GET.get('system_type', '')
+        if system_type_filter:
+            queryset = queryset.filter(system_type__slug=system_type_filter)
+        
+        # Priority filtering
+        priority_filter = self.request.GET.get('priority', '')
         if priority_filter:
             queryset = queryset.filter(priority=priority_filter)
-
-        health_filter = self.request.GET.get("health")
-        if health_filter:
-            queryset = queryset.filter(health_status=health_filter)
-
-        return queryset.order_by("-updated_at")
-
-    def filter_queryset(self, queryset, search_query):
-        """Enhanced search across multiple fields."""
-        return queryset.filter(
-            Q(name__icontains=search_query)
-            | Q(description__icontains=search_query)
-            | Q(system_type__name__icontains=search_query)
-            | Q(technologies__name__icontains=search_query)
-        ).distinct()
+        
+        # Featured filtering
+        featured_filter = self.request.GET.get('featured', '')
+        if featured_filter == 'true':
+            queryset = queryset.filter(featured=True)
+        elif featured_filter == 'false':
+            queryset = queryset.filter(featured=False)
+            
+        return queryset.distinct()
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": "Manage Systems",
-                "create_url": reverse_lazy("projects:system_create_admin"),
-                "edit_url_name": "projects:system_update_admin",
-                "delete_url_name": "projects:system_delete_admin",
-                "system_types": SystemType.objects.all(),
-                "technologies": Technology.objects.all(),
-                "current_filters": {
-                    "status": self.request.GET.get("status"),
-                    "type": self.request.GET.get("type"),
-                    "priority": self.request.GET.get("priority"),
-                    "health": self.request.GET.get("health"),
-                },
+        
+        context.update({
+            'title': 'Manage Systems',
+            'subtitle': 'All portfolio projects and systems',
+            'system_types': SystemType.objects.all(),
+            'status_choices': SystemModule.STATUS_CHOICES,
+            'priority_choices': SystemModule.PRIORITY_CHOICES,
+            'current_filters': {
+                'search': self.request.GET.get('search', ''),
+                'status': self.request.GET.get('status', ''),
+                'system_type': self.request.GET.get('system_type', ''),
+                'priority': self.request.GET.get('priority', ''),
+                'featured': self.request.GET.get('featured', ''),
             }
-        )
+        })
+        
+        return context
 
+
+class SystemCreateAdminView(BaseAdminCreateView):
+    """Create new system."""
+    
+    model = SystemModule
+    form_class = SystemModuleForm
+    template_name = 'projects/admin/system_form.html'
+    success_url = reverse_lazy('projects:admin:system_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Create New System',
+            'subtitle': 'Add a new portfolio project',
+        })
         return context
     
-    def handle_bulk_action(self, action, selected_ids):
-        """Handle system-specific bulk actions."""
-        queryset = SystemModule.objects.filter(id__in=selected_ids)
+    def form_valid(self, form):
+        # Auto-generate system_id if not set
+        if not form.instance.system_id:
+            # Get next system number
+            last_system = SystemModule.objects.aggregate(
+                max_id=Max('id')
+            )['max_id'] or 0
+            form.instance.system_id = f"SYS-{(last_system + 1):03d}"
+        
+        # Auto-generate slug if not provided
+        if not form.instance.slug and form.instance.title:
+            form.instance.slug = slugify(form.instance.title)
+        
+        # Set default completion based on status
+        if not form.instance.completion_percent:
+            status_defaults = {
+                'draft': 10,
+                'in_development': 50,
+                'testing': 80,
+                'deployed': 95,
+                'published': 100,
+            }
+            form.instance.completion_percent = status_defaults.get(form.instance.status, 0)
+        
+        response = super().form_valid(form)
+        messages.success(
+            self.request, 
+            f'System "{self.object.title}" created successfully!'
+        )
+        return response
 
-        if action == "deploy":
-            count = queryset.filter(status="published").update(
-                status="deployed", deployment_date=timezone.now()
-            )
-            messages.success(self.request, f"Successfully deployed {count} systems.")
-        elif action == "publish":
-            count = queryset.filter(status="in_development").update(status="published")
-            messages.success(self.request, f"Successfully published {count} systems.")
-        elif action == "feature":
-            count = queryset.update(featured=True)
-            messages.success(self.request, f"Successfully featured {count} systems.")
-        elif action == "update_health":
-            # Bulk health status update
-            for system in queryset:
-                system.update_health_status()
-            messages.success(
-                self.request,
-                f"Successfully updated health status for {queryset.count()} systems.",
-            )
-        else:
-            return super().handle_bulk_action(action, selected_ids)
 
-        return self.get(self.request)
-
-
-class SystemCreateAdminView(SlugAdminCreateView, AjaxableResponseMixin):
-    """Create new system with enhanced features."""
-
+class SystemUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing system."""
+    
     model = SystemModule
     form_class = SystemModuleForm
-    template_name = "projects/admin/system_form.html"
-    success_url = reverse_lazy("projects:system_list_admin")
-
+    template_name = 'projects/admin/system_form.html'
+    success_url = reverse_lazy('projects:admin:system_list')
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": "Create New System",
-                "submit_text": "Create System",
-                "icon": "fas fa-plus-circle",
-                "available_types": SystemType.objects.all(),
-                "available_technologies": Technology.objects.all(),
-                "priority_choices": SystemModule.PRIORITY_CHOICES,
-                "status_choices": SystemModule.STATUS_CHOICES,
-            }
-        )
-
+        context.update({
+            'title': f'Edit System: {self.object.title}',
+            'subtitle': 'Update system information',
+        })
         return context
-
-    def form_valid(self, form):
-        # Set initial values for new systems
-        form.instance.health_status = "healthy"
-        form.instance.completion_percent = 0
-
-        return super().form_valid(form)
-
-
-class SystemUpdateAdminView(BaseAdminUpdateView, AjaxableResponseMixin):
-    """Update existing system."""
-
-    model = SystemModule
-    form_class = SystemModuleForm
-    template_name = "projects/admin/system_form.html"
-    success_url = reverse_lazy("projects:system_list_admin")
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": f"Edit System: {self.object.name}",
-                "submit_text": "Update System",
-                "icon": "fas fa-edit",
-                "available_types": SystemType.objects.all(),
-                "available_technologies": Technology.objects.all(),
-                "priority_choices": SystemModule.PRIORITY_CHOICES,
-                "status_choices": SystemModule.STATUS_CHOICES,
-                # System-specific context
-                "system_features": SystemFeature.objects.filter(system=self.object),
-                "system_images": SystemImage.objects.filter(system=self.object),
-                "system_metrics": SystemMetric.objects.filter(
-                    system=self.object
-                ).order_by("-recorded_at")[:5],
-                "datalog_connections": self.object.related_posts.all(),
-            }
-        )
-
-        return context
-
-    def form_valid(self, form):
-        # Update health status and metrics on save
-        form.instance.update_health_status()
-
-        return super().form_valid(form)
 
 
 class SystemDeleteAdminView(BaseAdminDeleteView):
-    """Delete system with comprehensive safety checks."""
-
+    """Delete system."""
+    
     model = SystemModule
-    success_url = reverse_lazy("projects:system_list_admin")
-
-    def get_delete_warning(self):
-        return f"This will permanently delete the system '{self.object.name}' and all associated data."
-
-    def get_related_objects(self):
-        """Show related objects that will be affected."""
-        related = []
-
-        # Features
-        features_count = SystemFeature.objects.filter(system=self.object).count()
-        if features_count > 0:
-            related.append(f"{features_count} system feature(s)")
-
-        # Images
-        images_count = SystemImage.objects.filter(system=self.object).count()
-        if images_count > 0:
-            related.append(f"{images_count} system image(s)")
-
-        # Metrics
-        metrics_count = SystemMetric.objects.filter(system=self.object).count()
-        if metrics_count > 0:
-            related.append(f"{metrics_count} performance metric(s)")
-
-        # DataLog connections
-        datalog_connections = self.object.related_posts.count()
-        if datalog_connections > 0:
-            related.append(f"{datalog_connections} DataLog connection(s)")
-
-        # Dependencies
-        dependencies = self.object.dependencies.count()
-        if dependencies > 0:
-            related.append(f"{dependencies} system dependencies")
-
-        return related
+    success_url = reverse_lazy('projects:admin:system_list')
 
 
 # Technology Management Views
-
-
 class TechnologyListAdminView(BaseAdminListView, BulkActionMixin):
-    """Technology management interface."""
-
+    """Manage technologies."""
+    
     model = Technology
-    template_name = "projects/admin/technology_list.html"
-    context_object_name = "technologies"
-
+    template_name = 'projects/admin/technology_list.html'
+    context_object_name = 'technologies'
+    
     def get_queryset(self):
-        return Technology.objects.annotate(
-            system_count=Count("systems"), skill_count=Count("skills")
-        ).order_by("-system_count", "name")
-
+        queryset = Technology.objects.annotate(
+            system_count=Count('systems')
+        ).order_by('category', '-system_count', 'name')
+        
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+        
+        category_filter = self.request.GET.get('category', '')
+        if category_filter:
+            queryset = queryset.filter(category=category_filter)
+            
+        return queryset
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "title": "Manage Technologies",
-                "create_url": reverse_lazy("projects:technology_create_admin"),
-                "edit_url_name": "projects:technology_update_admin",
-                "delete_url_name": "projects:technology_delete_admin",
+        context.update({
+            'title': 'Manage Technologies',
+            'subtitle': 'Technology stack and tools',
+            'category_choices': Technology.CATEGORY_CHOICES,
+            'current_filters': {
+                'search': self.request.GET.get('search', ''),
+                'category': self.request.GET.get('category', ''),
             }
-        )
-
+        })
         return context
 
 
 class TechnologyCreateAdminView(SlugAdminCreateView):
     """Create new technology."""
-
+    
     model = Technology
     form_class = TechnologyForm
-    success_url = reverse_lazy("projects:technology_list_admin")
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "title": "Add Technology",
-                "icon": "fas fa-code-branch",
-            }
-        )
-        return context
+    template_name = 'projects/admin/technology_form.html'
+    success_url = reverse_lazy('projects:admin:technology_list')
 
 
 class TechnologyUpdateAdminView(BaseAdminUpdateView):
-    """Update existing technology."""
-
+    """Edit existing technology."""
+    
     model = Technology
     form_class = TechnologyForm
-    success_url = reverse_lazy("projects:technology_list_admin")
+    template_name = 'projects/admin/technology_form.html'
+    success_url = reverse_lazy('projects:admin:technology_list')
+
+
+class TechnologyDeleteAdminView(BaseAdminDeleteView):
+    """Delete technology."""
+    
+    model = Technology
+    success_url = reverse_lazy('projects:admin:technology_list')
 
 
 # System Type Management Views
-
-
-class SystemTypeListAdminView(BaseAdminListView):
-    """System type management interface."""
-
+class SystemTypeListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage system types."""
+    
     model = SystemType
-    template_name = "projects/admin/system_type_list.html"
-    context_object_name = "system_types"
-
+    template_name = 'projects/admin/system_type_list.html'
+    context_object_name = 'system_types'
+    
     def get_queryset(self):
-        return SystemType.objects.annotate(system_count=Count("systems")).order_by(
-            "name"
-        )
+        queryset = SystemType.objects.annotate(
+            system_count=Count('systems')
+        ).order_by('display_order', 'name')
+        
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+            
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Manage System Types',
+            'subtitle': 'Project categories and types',
+        })
+        return context
 
 
 class SystemTypeCreateAdminView(SlugAdminCreateView):
     """Create new system type."""
-
+    
     model = SystemType
     form_class = SystemTypeForm
-    success_url = reverse_lazy("projects:system_type_list_admin")
+    template_name = 'projects/admin/system_type_form.html'
+    success_url = reverse_lazy('projects:admin:system_type_list')
 
 
-# API Views for AJAX functionality
+class SystemTypeUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing system type."""
+    
+    model = SystemType
+    form_class = SystemTypeForm
+    template_name = 'projects/admin/system_type_form.html'
+    success_url = reverse_lazy('projects:admin:system_type_list')
 
 
-class SystemMetricsAPIView(BaseAdminListView):
-    """API endpoint for system metrics dashboard."""
-
-    def get(self, request, *args, **kwargs):
-        system_slug = kwargs.get("slug")
-
-        if system_slug:
-            # Individual system metrics
-            try:
-                system = SystemModule.objects.get(slug=system_slug)
-                metrics = SystemMetric.objects.filter(system=system).order_by(
-                    "-recorded_at"
-                )[:10]
-
-                data = {
-                    "system": {
-                        "name": system.name,
-                        "performance_score": system.performance_score,
-                        "uptime_percentage": system.uptime_percentage,
-                        "health_status": system.health_status,
-                        "completion_percent": system.completion_percent,
-                    },
-                    "metrics": [
-                        {
-                            "date": metric.recorded_at.isoformat(),
-                            "performance": metric.performance_score,
-                            "uptime": metric.uptime_percentage,
-                            "response_time": metric.response_time_ms,
-                            "error_rate": metric.error_rate,
-                        }
-                        for metric in metrics
-                    ],
-                }
-
-                return JsonResponse(data)
-
-            except SystemModule.DoesNotExist:
-                return JsonResponse({"error": "System not found"}, status=404)
-
-        else:
-            # Dashboard metrics
-            stats = SystemModule.objects.dashboard_stats()
-
-            # Recent performance data
-            recent_systems = SystemModule.objects.with_performance_data().order_by(
-                "-updated_at"
-            )[:5]
-
-            data = {
-                "overview": stats,
-                "recent_performance": [
-                    {
-                        "name": system.name,
-                        "performance": system.performance_score,
-                        "uptime": system.uptime_percentage,
-                        "health": system.health_status,
-                    }
-                    for system in recent_systems
-                ],
-                "system_distribution": {
-                    "deployed": stats["deployed_count"],
-                    "published": stats["published_count"],
-                    "in_development": stats["in_development_count"],
-                },
-            }
-
-            return JsonResponse(data)
+class SystemTypeDeleteAdminView(BaseAdminDeleteView):
+    """Delete system type."""
+    
+    model = SystemType
+    success_url = reverse_lazy('projects:admin:system_type_list')
 
 
-class SystemHealthCheckAPIView(BaseAdminListView):
-    """API endpoint for bulk health checks."""
-
+# AJAX API Views for dynamic functionality
+class SystemStatusToggleView(BaseAdminUpdateView):
+    """AJAX view to toggle system status."""
+    
+    model = SystemModule
+    
     def post(self, request, *args, **kwargs):
-        system_ids = request.POST.getlist("system_ids")
+        system = self.get_object()
+        
+        # Cycle through statuses: draft -> in_development -> testing -> deployed -> published
+        status_cycle = {
+            'draft': 'in_development',
+            'in_development': 'testing', 
+            'testing': 'deployed',
+            'deployed': 'published',
+            'published': 'draft'
+        }
+        
+        new_status = status_cycle.get(system.status, 'in_development')
+        system.status = new_status
+        
+        # Update completion percentage based on status
+        completion_mapping = {
+            'draft': 10,
+            'in_development': 50,
+            'testing': 80,
+            'deployed': 95,
+            'published': 100,
+        }
+        system.completion_percent = completion_mapping.get(new_status, system.completion_percent)
+        
+        system.save()
+        
+        return JsonResponse({
+            'success': True,
+            'new_status': new_status,
+            'new_status_display': system.get_status_display(),
+            'completion_percent': float(system.completion_percent)
+        })
 
-        if system_ids:
-            systems = SystemModule.objects.filter(id__in=system_ids)
-            updated_count = 0
 
-            for system in systems:
-                system.update_health_status()
-                updated_count += 1
-
-            return JsonResponse(
-                {
-                    "success": True,
-                    "updated_count": updated_count,
-                    "message": f"Updated health status for {updated_count} systems.",
-                }
-            )
-
-        return JsonResponse(
-            {"success": False, "message": "No systems selected."}, status=400
-        )
+class SystemFeatureToggleView(BaseAdminUpdateView):
+    """AJAX view to toggle system featured status."""
+    
+    model = SystemModule
+    
+    def post(self, request, *args, **kwargs):
+        system = self.get_object()
+        system.featured = not system.featured
+        system.save()
+        
+        return JsonResponse({
+            'success': True,
+            'featured': system.featured
+        })

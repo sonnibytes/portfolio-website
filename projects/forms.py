@@ -1,244 +1,409 @@
-# projects/forms.py
 """
-Projects Forms - Systems Management
-Minimal forms to get server running for testing
+Projects Admin Forms for Systems Management
+Enhanced forms with AURA styling and validation
+Version 2.0
 """
 
 from django import forms
-from django.core.exceptions import ValidationError
 from django.utils.text import slugify
+from markdownx.fields import MarkdownxFormField
 from .models import SystemModule, Technology, SystemType
 
 
 class SystemModuleForm(forms.ModelForm):
-    """Form for creating and editing systems."""
+    """Enhanced form for creating and editing systems."""
+    
+    description = MarkdownxFormField(
+        help_text="Full system description in Markdown format",
+        widget=forms.Textarea(attrs={
+            'rows': 15,
+            'class': 'markdownx-editor',
+            'placeholder': 'Describe your system, its purpose, features, and implementation...'
+        })
+    )
+    
+    features_overview = MarkdownxFormField(
+        help_text="Key features and capabilities overview",
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 8,
+            'class': 'markdownx-editor',
+            'placeholder': 'List the main features and capabilities...'
+        })
+    )
+    
+    technical_details = MarkdownxFormField(
+        help_text="Technical implementation details",
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 10,
+            'class': 'markdownx-editor',
+            'placeholder': 'Technical architecture, frameworks, databases, APIs...'
+        })
+    )
+    
+    challenges = MarkdownxFormField(
+        help_text="Development challenges and solutions",
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 8,
+            'class': 'markdownx-editor',
+            'placeholder': 'Challenges faced and how they were overcome...'
+        })
+    )
+    
+    technologies = forms.ModelMultipleChoiceField(
+        queryset=Technology.objects.all().order_by('category', 'name'),
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'technology-checkboxes'
+        }),
+        required=False,
+        help_text="Select technologies used in this system"
+    )
 
     class Meta:
         model = SystemModule
         fields = [
-            "title",
-            "slug",
-            "description",
-            "system_type",
-            "technologies",
-            "status",
-            "priority",
-            "featured",
-            "github_url",
-            "live_url",
-            "completion_percent",
-            "performance_score",
-            "uptime_percentage",
+            'title', 'slug', 'system_id', 'subtitle', 'excerpt',
+            'description', 'features_overview', 'technical_details', 'challenges',
+            'system_type', 'technologies', 'complexity', 'priority',
+            'status', 'featured', 'completion_percent',
+            'performance_score', 'uptime_percentage',
+            'github_url', 'live_url', 'demo_url', 'documentation_url',
+            'thumbnail', 'banner_image', 'featured_image'
         ]
+        
         widgets = {
-            "title": forms.TextInput(
-                attrs={
-                    "class": "form-control form-control-lg",
-                    "placeholder": "System name...",
-                }
-            ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "auto-generated-from-name",
-                }
-            ),
-            "description": forms.Textarea(
-                attrs={
-                    "rows": 4,
-                    "class": "form-control",
-                    "placeholder": "System description and overview...",
-                }
-            ),
-            "system_type": forms.Select(attrs={"class": "form-select"}),
-            "technologies": forms.CheckboxSelectMultiple(),
-            "status": forms.Select(attrs={"class": "form-select"}),
-            "priority": forms.Select(attrs={"class": "form-select"}),
-            "github_url": forms.URLInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "https://github.com/username/repo",
-                }
-            ),
-            "live_url": forms.URLInput(
-                attrs={"class": "form-control", "placeholder": "https://example.com"}
-            ),
-            "completion_percent": forms.NumberInput(
-                attrs={"class": "form-control", "min": 0, "max": 100, "step": 1}
-            ),
-            "performance_score": forms.NumberInput(
-                attrs={"class": "form-control", "min": 0, "max": 100, "step": 0.1}
-            ),
-            "uptime_percentage": forms.NumberInput(
-                attrs={"class": "form-control", "min": 0, "max": 100, "step": 0.01}
-            ),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter system title...',
+                'maxlength': 200
+            }),
+            'slug': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'auto-generated-from-title'
+            }),
+            'system_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'SYS-001 (auto-generated if empty)'
+            }),
+            'subtitle': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Brief subtitle or tagline...'
+            }),
+            'excerpt': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Brief summary for system cards...'
+            }),
+            'system_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'complexity': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'featured': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'completion_percent': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'max': 100,
+                'step': 0.1
+            }),
+            'performance_score': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'max': 100,
+                'step': 0.1
+            }),
+            'uptime_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'max': 100,
+                'step': 0.01
+            }),
+            'github_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://github.com/username/repo'
+            }),
+            'live_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://your-system.com'
+            }),
+            'demo_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://demo.your-system.com'
+            }),
+            'documentation_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://docs.your-system.com'
+            }),
+            'thumbnail': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'banner_image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'featured_image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+        }
+        
+        help_texts = {
+            'title': 'Descriptive title for your system',
+            'slug': 'URL-friendly version of title (auto-generated if empty)',
+            'system_id': 'Unique system identifier (auto-generated if empty)',
+            'subtitle': 'Brief subtitle or tagline',
+            'excerpt': 'Brief summary for system cards',
+            'system_type': 'Category/type of this system',
+            'complexity': 'Technical complexity level',
+            'priority': 'Development/maintenance priority',
+            'status': 'Current development status',
+            'featured': 'Feature this system prominently',
+            'completion_percent': 'Completion percentage (0-100)',
+            'performance_score': 'Performance rating (0-100)',
+            'uptime_percentage': 'Uptime percentage for deployed systems',
+            'thumbnail': 'System card thumbnail (400x300px recommended)',
+            'banner_image': 'Header banner image (1200x400px recommended)',
+            'featured_image': 'Featured image for homepage (800x600px recommended)',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Make certain fields optional
-        self.fields["slug"].required = False
-        self.fields["github_url"].required = False
-        self.fields["live_url"].required = False
-        self.fields["performance_score"].required = False
-        self.fields["uptime_percentage"].required = False
-
-        # Set initial values
-        self.fields["completion_percent"].initial = 0
-        self.fields["priority"].initial = 2  # Medium priority
-        self.fields["status"].initial = "in_development"
-
-        # Add help text
-        self.fields["slug"].help_text = "Leave blank to auto-generate from title"
-        self.fields[
-            "completion_percent"
-        ].help_text = "Overall completion percentage (0-100)"
-        self.fields["performance_score"].help_text = "System performance score (0-100)"
-        self.fields["uptime_percentage"].help_text = "System uptime percentage (0-100)"
+        
+        # Make slug and system_id optional for new systems
+        if not self.instance.pk:
+            self.fields['slug'].required = False
+            self.fields['system_id'].required = False
+        
+        # Ensure querysets are fresh
+        self.fields['system_type'].queryset = SystemType.objects.all().order_by('name')
+        self.fields['technologies'].queryset = Technology.objects.all().order_by('category', 'name')
+        
+        # Add empty labels
+        if not self.instance.pk:
+            self.fields['system_type'].empty_label = "Select a system type..."
+        
+        # Set default values for new systems
+        if not self.instance.pk:
+            self.fields['status'].initial = 'draft'
+            self.fields['complexity'].initial = 2
+            self.fields['priority'].initial = 2
+            self.fields['completion_percent'].initial = 10
 
     def clean_slug(self):
-        """Auto-generate slug if not provided."""
-        slug = self.cleaned_data.get("slug")
-        name = self.cleaned_data.get("title")
-
-        if not slug and name:
-            slug = slugify(name)
-
-        # Check for uniqueness
+        slug = self.cleaned_data.get('slug')
+        title = self.cleaned_data.get('title')
+        
+        if not slug and title:
+            slug = slugify(title)
+        
         if slug:
-            qs = SystemModule.objects.filter(slug=slug)
+            existing = SystemModule.objects.filter(slug=slug)
             if self.instance.pk:
-                qs = qs.exclude(pk=self.instance.pk)
-            if qs.exists():
-                raise ValidationError(f"A system with slug '{slug}' already exists.")
-
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise forms.ValidationError('A system with this slug already exists.')
+        
         return slug
 
-    def clean_name(self):
-        """Validate system name."""
-        name = self.cleaned_data.get("title")
-        if len(name) < 3:
-            raise ValidationError("System name must be at least 3 characters long.")
-        return name
-
-    def clean_completion_percent(self):
-        """Validate completion percentage."""
-        completion = self.cleaned_data.get("completion_percent")
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Validate performance metrics
+        completion = cleaned_data.get('completion_percent')
         if completion is not None and (completion < 0 or completion > 100):
-            raise ValidationError("Completion percentage must be between 0 and 100.")
-        return completion
-
-    def clean_performance_score(self):
-        """Validate performance score."""
-        score = self.cleaned_data.get("performance_score")
-        if score is not None and (score < 0 or score > 100):
-            raise ValidationError("Performance score must be between 0 and 100.")
-        return score
-
-    def clean_uptime_percentage(self):
-        """Validate uptime percentage."""
-        uptime = self.cleaned_data.get("uptime_percentage")
+            raise forms.ValidationError('Completion percentage must be between 0 and 100.')
+        
+        performance = cleaned_data.get('performance_score')
+        if performance is not None and (performance < 0 or performance > 100):
+            raise forms.ValidationError('Performance score must be between 0 and 100.')
+        
+        uptime = cleaned_data.get('uptime_percentage')
         if uptime is not None and (uptime < 0 or uptime > 100):
-            raise ValidationError("Uptime percentage must be between 0 and 100.")
-        return uptime
+            raise forms.ValidationError('Uptime percentage must be between 0 and 100.')
+        
+        return cleaned_data
 
 
 class TechnologyForm(forms.ModelForm):
     """Form for creating and editing technologies."""
-
+    
     class Meta:
         model = Technology
-        fields = ["name", "slug", "category", "description"]
+        fields = ['name', 'slug', 'description', 'category', 'icon', 'color']
+        
         widgets = {
-            "name": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Technology name..."}
-            ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "auto-generated-from-name",
-                }
-            ),
-            "category": forms.Select(attrs={"class": "form-select"}),
-            "description": forms.Textarea(
-                attrs={
-                    "rows": 3,
-                    "class": "form-control",
-                    "placeholder": "Technology description...",
-                }
-            ),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Technology name...',
+                'maxlength': 100
+            }),
+            'slug': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'auto-generated-from-name'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Technology description...'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'icon': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'fa-python (Font Awesome icon name)'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'value': '#00f0ff'
+            }),
+        }
+        
+        help_texts = {
+            'name': 'Technology or tool name',
+            'slug': 'URL-friendly version (auto-generated if empty)',
+            'description': 'Brief description of the technology',
+            'category': 'Technology category',
+            'icon': 'Font Awesome icon name (e.g., fa-python)',
+            'color': 'Hex color code for theming',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["slug"].required = False
-        self.fields["description"].required = False
+        self.fields['slug'].required = False
 
     def clean_slug(self):
-        """Auto-generate slug if not provided."""
-        slug = self.cleaned_data.get("slug")
-        name = self.cleaned_data.get("name")
-
+        slug = self.cleaned_data.get('slug')
+        name = self.cleaned_data.get('name')
+        
         if not slug and name:
             slug = slugify(name)
-
+        
+        if slug:
+            existing = Technology.objects.filter(slug=slug)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise forms.ValidationError('A technology with this slug already exists.')
+        
         return slug
 
 
 class SystemTypeForm(forms.ModelForm):
     """Form for creating and editing system types."""
-
+    
     class Meta:
         model = SystemType
-        fields = ["name", "slug", "description", "icon", "color"]
+        fields = ['name', 'slug', 'code', 'description', 'color', 'icon', 'display_order']
+        
         widgets = {
-            "name": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "System type name..."}
-            ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "auto-generated-from-name",
-                }
-            ),
-            "description": forms.Textarea(
-                attrs={
-                    "rows": 3,
-                    "class": "form-control",
-                    "placeholder": "System type description...",
-                }
-            ),
-            "icon": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "fas fa-server",
-                    "data-toggle": "tooltip",
-                    "title": "FontAwesome icon class",
-                }
-            ),
-            "color": forms.TextInput(
-                attrs={
-                    "type": "color",
-                    "class": "form-control form-control-color",
-                    "title": "Choose type color",
-                }
-            ),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'System type name...',
+                'maxlength': 100
+            }),
+            'slug': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'auto-generated-from-name'
+            }),
+            'code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'WEB',
+                'maxlength': 4,
+                'style': 'text-transform: uppercase;'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'System type description...'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'value': '#00f0ff'
+            }),
+            'icon': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'fa-globe (Font Awesome icon name)'
+            }),
+            'display_order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0
+            }),
+        }
+        
+        help_texts = {
+            'name': 'Display name for the system type',
+            'slug': 'URL-friendly version (auto-generated if empty)',
+            'code': 'Short code for display (e.g., WEB, API, ML)',
+            'description': 'Brief description of this system type',
+            'color': 'Hex color code for theming',
+            'icon': 'Font Awesome icon name (e.g., fa-globe)',
+            'display_order': 'Display order (lower numbers appear first)',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["slug"].required = False
-        self.fields["description"].required = False
-        self.fields["color"].initial = "#06b6d4"  # Default cyan
-        self.fields["icon"].initial = "fas fa-server"
+        self.fields['slug'].required = False
 
     def clean_slug(self):
-        """Auto-generate slug if not provided."""
-        slug = self.cleaned_data.get("slug")
-        name = self.cleaned_data.get("name")
-
+        slug = self.cleaned_data.get('slug')
+        name = self.cleaned_data.get('name')
+        
         if not slug and name:
             slug = slugify(name)
-
+        
+        if slug:
+            existing = SystemType.objects.filter(slug=slug)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise forms.ValidationError('A system type with this slug already exists.')
+        
         return slug
+
+
+# Quick forms for inline editing
+class QuickSystemStatusForm(forms.ModelForm):
+    """Quick form for changing system status."""
+    
+    class Meta:
+        model = SystemModule
+        fields = ['status']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-control form-control-sm'})
+        }
+
+
+class QuickTechnologyForm(forms.ModelForm):
+    """Quick form for basic technology creation."""
+    
+    class Meta:
+        model = Technology
+        fields = ['name', 'category', 'color']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Technology name'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-control form-control-sm'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'type': 'color'
+            }),
+        }

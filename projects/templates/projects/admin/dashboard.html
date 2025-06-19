@@ -1,1404 +1,424 @@
-<!-- projects/templates/projects/admin/dashboard.html -->
+<!-- 
+  *projects/templates/projects/admin/dashboard.html
+  *Version 2.0
+-->
 {% extends 'admin/admin_base.html' %}
 {% load static %}
-{% load admin_filters %}
-
-{% block title %}Systems Command Center | AURA Admin{% endblock %}
 
 {% block admin_content %}
-<div class="systems-admin-dashboard">
-    <!-- Dashboard Header -->
-    <div class="dashboard-header">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <div class="dashboard-welcome">
-                    <h1 class="dashboard-title">
-                        <i class="fas fa-microchip me-3" style="color: var(--cyan);"></i>
-                        Systems Command Center
-                    </h1>
-                    <p class="dashboard-subtitle">
-                        Portfolio systems management, performance monitoring, and deployment control
-                    </p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="header-actions">
-                    <a href="{% url 'projects_admin:system_create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>
-                        Deploy New System
-                    </a>
-                </div>
-            </div>
+  <div class="projects-admin-dashboard">
+    
+    <!-- Systems Overview Metrics -->
+    <div class="metrics-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      
+      <!-- Total Systems -->
+      <div class="admin-metric-card glass-card">
+        <div class="metric-header">
+          <div class="metric-icon text-cyan-400">
+            <i class="fas fa-project-diagram"></i>
+          </div>
+          <div class="metric-value text-right">
+            <div class="value">{{ total_systems }}</div>
+            <div class="metric-title">Total Systems</div>
+          </div>
         </div>
+        <div class="metric-breakdown text-sm text-gray-400 mt-4">
+          <div class="flex justify-between">
+            <span>Deployed:</span>
+            <span class="text-green-400">{{ deployed_systems }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Published:</span>
+            <span class="text-blue-400">{{ published_systems }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>In Development:</span>
+            <span class="text-yellow-400">{{ in_dev_systems }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Metrics -->
+      <div class="admin-metric-card glass-card">
+        <div class="metric-header">
+          <div class="metric-icon text-green-400">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="metric-value text-right">
+            <div class="value">{{ avg_performance|floatformat:1 }}%</div>
+            <div class="metric-title">Avg Performance</div>
+          </div>
+        </div>
+        <div class="metric-breakdown text-sm text-gray-400 mt-4">
+          <div class="flex justify-between">
+            <span>Completion:</span>
+            <span class="text-green-400">{{ avg_completion|floatformat:1 }}%</span>
+          </div>
+          <div class="flex justify-between">
+            <span>High Priority:</span>
+            <span class="text-orange-400">{{ high_priority_systems }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Technology Stack -->
+      <div class="admin-metric-card glass-card">
+        <div class="metric-header">
+          <div class="metric-icon text-purple-400">
+            <i class="fas fa-cogs"></i>
+          </div>
+          <div class="metric-value text-right">
+            <div class="value">{{ total_technologies }}</div>
+            <div class="metric-title">Technologies</div>
+          </div>
+        </div>
+        <div class="metric-breakdown text-sm text-gray-400 mt-4">
+          <div class="flex justify-between">
+            <span>System Types:</span>
+            <span class="text-purple-400">{{ total_system_types }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Deployment Rate:</span>
+            <span class="text-purple-400">{{ deployment_percentage }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Health -->
+      <div class="admin-metric-card glass-card">
+        <div class="metric-header">
+          <div class="metric-icon text-emerald-400">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <div class="metric-value text-right">
+            <div class="value">{{ completion_percentage|floatformat:0 }}%</div>
+            <div class="metric-title">Overall Health</div>
+          </div>
+        </div>
+        <div class="metric-breakdown text-sm text-gray-400 mt-4">
+          <div class="text-center">
+            <span class="text-emerald-400">Portfolio Status</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- System Status Grid -->
-    <div class="system-status-grid">
-        <div class="row">
-            <div class="col-lg-3 col-md-6 mb-4">
-                {% admin_card "Total Systems" total_systems "fas fa-server" "cyan" %}
-            </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                {% admin_card "Deployed" deployed_systems "fas fa-rocket" "success" %}
-            </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                {% admin_card "In Development" dev_systems "fas fa-code" "warning" %}
-            </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                {% admin_card "Featured" featured_systems "fas fa-star" "amber" %}
-            </div>
+    <!-- Quick Actions & Management -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      
+      <!-- Quick Actions -->
+      <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-white flex items-center">
+            <i class="fas fa-bolt mr-2 text-cyan-400"></i>
+            Quick Actions
+          </h3>
         </div>
         
-        <div class="row">
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="metric-card glass-card">
-                    <div class="metric-header">
-                        <div class="metric-icon" style="color: var(--purple);">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <div class="metric-value">
-                            <span class="value">{{ avg_completion|floatformat:1 }}%</span>
-                        </div>
-                    </div>
-                    <div class="metric-title">Average Completion</div>
-                    <div class="metric-progress">
-                        <div class="progress-bar" style="width: {{ avg_completion }}%; background: var(--purple);"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="metric-card glass-card">
-                    <div class="metric-header">
-                        <div class="metric-icon" style="color: var(--emerald);">
-                            <i class="fas fa-tachometer-alt"></i>
-                        </div>
-                        <div class="metric-value">
-                            <span class="value">{{ avg_performance|floatformat:1 }}%</span>
-                        </div>
-                    </div>
-                    <div class="metric-title">System Performance</div>
-                    <div class="metric-progress">
-                        <div class="progress-bar" style="width: {{ avg_performance }}%; background: var(--emerald);"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="metric-card glass-card">
-                    <div class="metric-header">
-                        <div class="metric-icon" style="color: var(--rose);">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="metric-value">
-                            <span class="value">{{ high_priority_systems }}</span>
-                        </div>
-                    </div>
-                    <div class="metric-title">High Priority</div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="metric-card glass-card">
-                    <div class="metric-header">
-                        <div class="metric-icon" style="color: var(--blue);">
-                            <i class="fas fa-code-branch"></i>
-                        </div>
-                        <div class="metric-value">
-                            <span class="value">{{ total_technologies }}</span>
-                        </div>
-                    </div>
-                    <div class="metric-title">Technologies</div>
-                </div>
-            </div>
+        <div class="space-y-4">
+          <a href="{% url 'projects:admin:system_create' %}" class="admin-quick-action w-full">
+            <i class="fas fa-plus-circle text-green-400 mb-2"></i>
+            <span>New System</span>
+          </a>
+          <a href="{% url 'projects:admin:technology_create' %}" class="admin-quick-action w-full">
+            <i class="fas fa-cog text-purple-400 mb-2"></i>
+            <span>New Technology</span>
+          </a>
+          <a href="{% url 'projects:admin:system_type_create' %}" class="admin-quick-action w-full">
+            <i class="fas fa-sitemap text-orange-400 mb-2"></i>
+            <span>New System Type</span>
+          </a>
         </div>
+      </div>
+
+      <!-- Popular Technologies -->
+      <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-white flex items-center">
+            <i class="fas fa-fire mr-2 text-purple-400"></i>
+            Popular Technologies
+          </h3>
+          <a href="{% url 'projects:admin:technology_list' %}" class="text-purple-400 hover:text-purple-300 text-sm">
+            View All
+          </a>
+        </div>
+        
+        {% if popular_technologies %}
+          <div class="space-y-3">
+            {% for tech in popular_technologies %}
+              <div class="flex items-center justify-between p-3 bg-black bg-opacity-20 rounded-lg">
+                <div class="flex items-center">
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm mr-3"
+                       style="background-color: {{ tech.color }}20; color: {{ tech.color }};">
+                    {% if tech.icon %}
+                      <i class="{{ tech.icon }}"></i>
+                    {% else %}
+                      <i class="fas fa-cog"></i>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <div class="font-medium text-white">{{ tech.name }}</div>
+                    <div class="text-xs text-gray-400">{{ tech.get_category_display }} • {{ tech.system_count }} systems</div>
+                  </div>
+                </div>
+                <a href="{% url 'projects:admin:technology_edit' tech.pk %}" class="text-blue-400 hover:text-blue-300">
+                  <i class="fas fa-edit"></i>
+                </a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-gray-400 text-center py-4">No technologies yet</p>
+        {% endif %}
+      </div>
+
+      <!-- System Types -->
+      <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-white flex items-center">
+            <i class="fas fa-sitemap mr-2 text-orange-400"></i>
+            System Types
+          </h3>
+          <a href="{% url 'projects:admin:system_type_list' %}" class="text-orange-400 hover:text-orange-300 text-sm">
+            View All
+          </a>
+        </div>
+        
+        {% if popular_system_types %}
+          <div class="space-y-3">
+            {% for type in popular_system_types %}
+              <div class="flex items-center justify-between p-3 bg-black bg-opacity-20 rounded-lg">
+                <div class="flex items-center">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mr-3"
+                       style="background-color: {{ type.color }}20; color: {{ type.color }};">
+                    {{ type.code }}
+                  </div>
+                  <div>
+                    <div class="font-medium text-white">{{ type.name }}</div>
+                    <div class="text-xs text-gray-400">{{ type.system_count }} systems</div>
+                  </div>
+                </div>
+                <a href="{% url 'projects:admin:system_type_edit' type.pk %}" class="text-blue-400 hover:text-blue-300">
+                  <i class="fas fa-edit"></i>
+                </a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-gray-400 text-center py-4">No system types yet</p>
+        {% endif %}
+      </div>
     </div>
 
-    <!-- Main Dashboard Grid -->
-    <div class="dashboard-grid">
-        <div class="row">
-            <!-- Recent Systems -->
-            <div class="col-lg-8 mb-4">
-                <div class="admin-panel glass-card">
-                    <div class="panel-header">
-                        <h3 class="panel-title">
-                            <i class="fas fa-history me-2" style="color: var(--cyan);"></i>
-                            Recent Systems
-                        </h3>
-                        <a href="{% url 'projects_admin:system_list' %}" class="panel-action-btn">
-                            Manage All <i class="fas fa-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-                    <div class="panel-content">
-                        <div class="systems-list">
-                            {% for system in recent_systems %}
-                                <div class="system-item">
-                                    <div class="system-info">
-                                        <div class="system-header">
-                                            <h4 class="system-name">
-                                                <a href="{{ system.get_absolute_url }}" target="_blank">{{ system.name }}</a>
-                                            </h4>
-                                            <div class="system-badges">
-                                                <span class="status-badge status-{{ system.status }}">
-                                                    {{ system.get_status_display }}
-                                                </span>
-                                                {% if system.featured %}
-                                                    <span class="featured-badge">
-                                                        <i class="fas fa-star"></i>
-                                                    </span>
-                                                {% endif %}
-                                                {{ system.priority|priority_badge }}
-                                            </div>
-                                        </div>
-                                        <div class="system-meta">
-                                            <span class="system-type">
-                                                <i class="{{ system.system_type.icon_class }} me-1"></i>
-                                                {{ system.system_type.name }}
-                                            </span>
-                                            <span class="system-updated">
-                                                <i class="fas fa-clock me-1"></i>
-                                                {{ system.updated_at|timesince }} ago
-                                            </span>
-                                            <span class="system-completion">
-                                                <i class="fas fa-tasks me-1"></i>
-                                                {{ system.completion_percent }}% complete
-                                            </span>
-                                        </div>
-                                        <div class="system-technologies">
-                                            {% for tech in system.technologies.all|slice:":4" %}
-                                                <span class="tech-badge">{{ tech.name }}</span>
-                                            {% endfor %}
-                                            {% if system.technologies.count > 4 %}
-                                                <span class="tech-badge more">+{{ system.technologies.count|add:"-4" }} more</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="system-metrics">
-                                        {% if system.performance_score %}
-                                            <div class="metric-item">
-                                                <div class="metric-label">Performance</div>
-                                                <div class="metric-value">{{ system.performance_score }}%</div>
-                                                <div class="metric-bar">
-                                                    <div class="metric-progress" style="width: {{ system.performance_score }}%;"></div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                        {% if system.uptime_percentage %}
-                                            <div class="metric-item">
-                                                <div class="metric-label">Uptime</div>
-                                                <div class="metric-value">{{ system.uptime_percentage }}%</div>
-                                                <div class="metric-bar">
-                                                    <div class="metric-progress" style="width: {{ system.uptime_percentage }}%;"></div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                        <div class="health-indicator health-{{ system.health_status }}">
-                                            <i class="fas fa-circle"></i>
-                                            {{ system.get_health_status_display }}
-                                        </div>
-                                    </div>
-                                    <div class="system-actions">
-                                        <a href="{% url 'projects_admin:system_update' system.slug %}" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="{{ system.get_absolute_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            {% empty %}
-                                <div class="empty-state">
-                                    <i class="fas fa-server fa-3x text-muted mb-3"></i>
-                                    <h5>No systems deployed yet</h5>
-                                    <p class="text-muted">Deploy your first system to start monitoring.</p>
-                                    <a href="{% url 'projects_admin:system_create' %}" class="btn btn-primary">
-                                        <i class="fas fa-plus me-2"></i>
-                                        Deploy First System
-                                    </a>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- System Health & Quick Actions -->
-            <div class="col-lg-4 mb-4">
-                <!-- Quick Actions -->
-                <div class="admin-panel glass-card mb-4">
-                    <div class="panel-header">
-                        <h3 class="panel-title">
-                            <i class="fas fa-bolt me-2" style="color: var(--amber);"></i>
-                            Quick Actions
-                        </h3>
-                    </div>
-                    <div class="panel-content">
-                        <div class="quick-actions-grid">
-                            <a href="{% url 'projects_admin:system_create' %}" class="quick-action">
-                                <i class="fas fa-plus-circle"></i>
-                                <span>New System</span>
-                            </a>
-                            <a href="{% url 'projects_admin:technology_create' %}" class="quick-action">
-                                <i class="fas fa-code-branch"></i>
-                                <span>Add Tech</span>
-                            </a>
-                            <a href="#" class="quick-action" onclick="runHealthCheck()">
-                                <i class="fas fa-heartbeat"></i>
-                                <span>Health Check</span>
-                            </a>
-                            <a href="#" class="quick-action">
-                                <i class="fas fa-chart-bar"></i>
-                                <span>Analytics</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- System Health Status -->
-                <div class="admin-panel glass-card mb-4">
-                    <div class="panel-header">
-                        <h3 class="panel-title">
-                            <i class="fas fa-heartbeat me-2" style="color: var(--rose);"></i>
-                            System Health
-                        </h3>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="refreshHealthStatus()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
-                    <div class="panel-content">
-                        <div class="health-overview">
-                            <div class="health-metric">
-                                <div class="health-label">Operational Systems</div>
-                                <div class="health-count">{{ systems_operational|default:0 }}</div>
-                                <div class="health-bar">
-                                    <div class="health-progress healthy" style="width: 85%;"></div>
-                                </div>
-                            </div>
-                            <div class="health-metric">
-                                <div class="health-label">Warning Status</div>
-                                <div class="health-count">{{ systems_warning|default:0 }}</div>
-                                <div class="health-bar">
-                                    <div class="health-progress warning" style="width: 10%;"></div>
-                                </div>
-                            </div>
-                            <div class="health-metric">
-                                <div class="health-label">Critical Issues</div>
-                                <div class="health-count">{{ systems_critical|default:0 }}</div>
-                                <div class="health-bar">
-                                    <div class="health-progress critical" style="width: 5%;"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {% if systems_needing_attention %}
-                            <div class="attention-systems">
-                                <h5>Systems Needing Attention</h5>
-                                {% for system in systems_needing_attention %}
-                                    <div class="attention-item">
-                                        <div class="attention-info">
-                                            <div class="attention-name">{{ system.name }}</div>
-                                            <div class="attention-issue">
-                                                {% if system.performance_score < 70 %}
-                                                    Low performance ({{ system.performance_score }}%)
-                                                {% elif system.uptime_percentage < 95 %}
-                                                    Low uptime ({{ system.uptime_percentage }}%)
-                                                {% else %}
-                                                    {{ system.health_status|title }} status
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <a href="{% url 'projects_admin:system_update' system.slug %}" class="btn btn-xs btn-outline-warning">
-                                            Fix
-                                        </a>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Top Performing Systems -->
-                <div class="admin-panel glass-card">
-                    <div class="panel-header">
-                        <h3 class="panel-title">
-                            <i class="fas fa-trophy me-2" style="color: var(--amber);"></i>
-                            Top Performers
-                        </h3>
-                    </div>
-                    <div class="panel-content">
-                        <div class="performers-list">
-                            {% for system in top_performers %}
-                                <div class="performer-item">
-                                    <div class="performer-rank">{{ forloop.counter }}</div>
-                                    <div class="performer-info">
-                                        <div class="performer-name">{{ system.name }}</div>
-                                        <div class="performer-score">{{ system.performance_score }}% performance</div>
-                                    </div>
-                                    <div class="performer-badge">
-                                        <i class="fas fa-medal"></i>
-                                    </div>
-                                </div>
-                            {% empty %}
-                                <div class="empty-state small">
-                                    <i class="fas fa-chart-line fa-2x text-muted mb-2"></i>
-                                    <p class="text-muted mb-0">No performance data yet</p>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Recent Activity & Management Links -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <!-- Recent Systems -->
+      <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-white flex items-center">
+            <i class="fas fa-clock mr-2 text-cyan-400"></i>
+            Recent Systems
+          </h3>
+          <a href="{% url 'projects:admin:system_list' %}" class="btn btn-sm btn-cyan">
+            <i class="fas fa-list mr-1"></i>
+            Manage All
+          </a>
         </div>
-
-        <!-- Technology & System Types Overview -->
-        <div class="row">
-            <div class="col-lg-6 mb-4">
-                <div class="admin-panel glass-card">
-                    <div class="panel-header">
-                        <h3 class="panel-title">
-                            <i class="fas fa-code-branch me-2" style="color: var(--blue);"></i>
-                            Technology Stack
-                        </h3>
-                        <a href="{% url 'projects_admin:technology_list' %}" class="panel-action-btn">
-                            Manage <i class="fas fa-arrow-right ms-1"></i>
-                        </a>
+        
+        {% if recent_systems %}
+          <div class="space-y-4">
+            {% for system in recent_systems %}
+              <div class="admin-recent-item">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center mb-1">
+                      <h4 class="font-medium text-white mr-2">{{ system.title }}</h4>
+                      {% if system.system_id %}
+                        <span class="text-xs bg-cyan-400 bg-opacity-20 text-cyan-400 px-2 py-1 rounded">
+                          {{ system.system_id }}
+                        </span>
+                      {% endif %}
                     </div>
-                    <div class="panel-content">
-                        <div class="technology-grid">
-                            {% for tech in popular_technologies %}
-                                <div class="tech-item">
-                                    <div class="tech-info">
-                                        <div class="tech-name">{{ tech.name }}</div>
-                                        <div class="tech-usage">{{ tech.usage_count }} system{{ tech.usage_count|pluralize }}</div>
-                                    </div>
-                                    <div class="tech-popularity">
-                                        <div class="popularity-bar">
-                                            <div class="popularity-fill" style="width: {% widthratio tech.usage_count total_systems 100 %}%;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% empty %}
-                                <div class="empty-state small">
-                                    <i class="fas fa-code fa-2x text-muted mb-2"></i>
-                                    <p class="text-muted mb-0">No technologies added yet</p>
-                                </div>
-                            {% endfor %}
-                        </div>
+                    <p class="text-sm text-gray-400 mt-1">
+                      {% if system.system_type %}{{ system.system_type.name }} • {% endif %}
+                      {{ system.get_complexity_display }} • 
+                      {{ system.updated_at|date:"M j, Y" }}
+                    </p>
+                    {% if system.technologies.exists %}
+                      <div class="flex flex-wrap gap-1 mt-2">
+                        {% for tech in system.technologies.all|slice:":3" %}
+                          <span class="inline-block px-2 py-1 text-xs rounded"
+                                style="background-color: {{ tech.color }}20; color: {{ tech.color }};">
+                            {{ tech.name }}
+                          </span>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="flex items-center space-x-2 ml-4">
+                    {% if system.featured %}
+                      <i class="fas fa-star text-yellow-400" title="Featured"></i>
+                    {% endif %}
+                    <span class="status-badge status-{{ system.status }}">
+                      {{ system.get_status_display }}
+                    </span>
+                    <div class="text-sm text-cyan-400">
+                      {{ system.completion_percent|floatformat:0 }}%
                     </div>
+                    <a href="{% url 'projects:admin:system_edit' system.pk %}" class="text-blue-400 hover:text-blue-300">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                  </div>
                 </div>
-            </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-8">
+            <i class="fas fa-project-diagram text-4xl text-gray-600 mb-4"></i>
+            <p class="text-gray-400 mb-4">No systems yet</p>
+            <a href="{% url 'projects:admin:system_create' %}" class="btn btn-cyan">
+              <i class="fas fa-plus mr-2"></i>
+              Create Your First System
+            </a>
+          </div>
+        {% endif %}
+      </div>
 
-            <div class="col-lg-6 mb-4">
-                <div class="admin-panel glass-card">
-                    <div class="panel-header">
-                        <h3 class="panel-title">
-                            <i class="fas fa-layer-group me-2" style="color: var(--purple);"></i>
-                            System Types
-                        </h3>
-                        <a href="{% url 'projects_admin:system_type_list' %}" class="panel-action-btn">
-                            Manage <i class="fas fa-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-                    <div class="panel-content">
-                        <div class="system-types-list">
-                            {% for type in system_types %}
-                                <div class="type-item">
-                                    <div class="type-icon" style="color: {{ type.color_hex }};">
-                                        <i class="{{ type.icon_class }}"></i>
-                                    </div>
-                                    <div class="type-info">
-                                        <div class="type-name">{{ type.name }}</div>
-                                        <div class="type-count">{{ type.system_count }} system{{ type.system_count|pluralize }}</div>
-                                    </div>
-                                    <div class="type-distribution">
-                                        {{ type.system_count|floatformat:0 }}
-                                    </div>
-                                </div>
-                            {% empty %}
-                                <div class="empty-state small">
-                                    <i class="fas fa-layer-group fa-2x text-muted mb-2"></i>
-                                    <p class="text-muted mb-0">No system types defined yet</p>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <!-- Management Center -->
+      <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-white flex items-center">
+            <i class="fas fa-cogs mr-2 text-cyan-400"></i>
+            Management Center
+          </h3>
         </div>
+        
+        <div class="grid grid-cols-1 gap-4">
+          <!-- Systems Management -->
+          <div class="admin-management-card">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <i class="fas fa-server text-cyan-400 text-xl mr-3"></i>
+                <div>
+                  <h4 class="font-medium text-white">Systems</h4>
+                  <p class="text-sm text-gray-400">{{ total_systems }} total systems</p>
+                </div>
+              </div>
+              <div class="flex space-x-2">
+                <a href="{% url 'projects:admin:system_list' %}" class="btn btn-sm btn-secondary">
+                  <i class="fas fa-list"></i>
+                </a>
+                <a href="{% url 'projects:admin:system_create' %}" class="btn btn-sm btn-cyan">
+                  <i class="fas fa-plus"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Technologies Management -->
+          <div class="admin-management-card">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <i class="fas fa-cogs text-purple-400 text-xl mr-3"></i>
+                <div>
+                  <h4 class="font-medium text-white">Technologies</h4>
+                  <p class="text-sm text-gray-400">{{ total_technologies }} technologies</p>
+                </div>
+              </div>
+              <div class="flex space-x-2">
+                <a href="{% url 'projects:admin:technology_list' %}" class="btn btn-sm btn-secondary">
+                  <i class="fas fa-list"></i>
+                </a>
+                <a href="{% url 'projects:admin:technology_create' %}" class="btn btn-sm btn-secondary" style="background: #a855f7;">
+                  <i class="fas fa-plus"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Types Management -->
+          <div class="admin-management-card">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <i class="fas fa-sitemap text-orange-400 text-xl mr-3"></i>
+                <div>
+                  <h4 class="font-medium text-white">System Types</h4>
+                  <p class="text-sm text-gray-400">{{ total_system_types }} types</p>
+                </div>
+              </div>
+              <div class="flex space-x-2">
+                <a href="{% url 'projects:admin:system_type_list' %}" class="btn btn-sm btn-secondary">
+                  <i class="fas fa-list"></i>
+                </a>
+                <a href="{% url 'projects:admin:system_type_create' %}" class="btn btn-sm btn-secondary" style="background: #f97316;">
+                  <i class="fas fa-plus"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Deployments -->
+          {% if recent_deployments %}
+            <div class="admin-management-card">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <i class="fas fa-rocket text-green-400 text-xl mr-3"></i>
+                  <div>
+                    <h4 class="font-medium text-white">Recent Deployments</h4>
+                    <p class="text-sm text-gray-400">{{ recent_deployments.count }} deployed recently</p>
+                  </div>
+                </div>
+                <div class="flex space-x-2">
+                  <a href="{% url 'projects:admin:system_list' %}?status=deployed" class="btn btn-sm btn-secondary" style="background: #10b981;">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 {% endblock %}
 
 {% block admin_css %}
-{{ block.super }}
 <style>
-.systems-admin-dashboard {
-    padding: 2rem 0;
+.admin-management-card {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
 }
 
-.dashboard-title {
-    font-size: 2.25rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
+.admin-management-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(5px);
 }
 
-.dashboard-subtitle {
-    color: var(--text-secondary);
-    font-size: 1rem;
-    margin: 0;
+.admin-quick-action.w-full {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
 }
 
-.header-actions .btn {
-    background: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 100%);
-    border: none;
-    color: white;
-    font-weight: 500;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    transition: all 0.3s ease;
+.admin-quick-action.w-full i {
+  margin-right: 0.75rem;
+  margin-bottom: 0;
 }
 
-.header-actions .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(var(--cyan-rgb), 0.4);
+.btn-cyan {
+  background: var(--cyan);
+  color: var(--bg-primary);
 }
 
-.metric-card {
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-}
-
-.metric-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.metric-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-}
-
-.metric-icon {
-    font-size: 1.75rem;
-    opacity: 0.8;
-}
-
-.metric-value .value {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.metric-title {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-}
-
-.metric-progress {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.progress-bar {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 1s ease-in-out;
-}
-
-.systems-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.system-item {
-    display: flex;
-    gap: 1rem;
-    padding: 1.5rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 1rem;
-    transition: all 0.3s ease;
-}
-
-.system-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateX(5px);
-    border-color: rgba(var(--cyan-rgb), 0.3);
-}
-
-.system-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.system-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-}
-
-.system-name {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 600;
-}
-
-.system-name a {
-    color: var(--text-primary);
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.system-name a:hover {
-    color: var(--cyan);
-}
-
-.system-badges {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.featured-badge {
-    color: var(--amber);
-    font-size: 0.875rem;
-}
-
-.system-meta {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    flex-wrap: wrap;
-}
-
-.system-meta span {
-    display: flex;
-    align-items: center;
-}
-
-.system-technologies {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.tech-badge {
-    padding: 0.25rem 0.75rem;
-    background: rgba(var(--blue-rgb), 0.1);
-    color: var(--blue);
-    border: 1px solid rgba(var(--blue-rgb), 0.2);
-    border-radius: 1rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.tech-badge.more {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-.system-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    min-width: 120px;
-}
-
-.metric-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.metric-label {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.metric-value {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.metric-bar {
-    height: 3px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 1.5px;
-    overflow: hidden;
-}
-
-.metric-progress {
-    height: 100%;
-    background: linear-gradient(90deg, var(--success) 0%, var(--cyan) 100%);
-    border-radius: 1.5px;
-    transition: width 0.3s ease;
-}
-
-.health-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.health-indicator.health-healthy {
-    color: var(--success);
-    background: rgba(var(--success-rgb), 0.1);
-}
-
-.health-indicator.health-warning {
-    color: var(--warning);
-    background: rgba(var(--warning-rgb), 0.1);
-}
-
-.health-indicator.health-critical {
-    color: var(--danger);
-    background: rgba(var(--danger-rgb), 0.1);
-}
-
-.system-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-.quick-actions-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-}
-
-.quick-action {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.75rem;
-    color: var(--text-secondary);
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.quick-action:hover {
-    background: rgba(var(--cyan-rgb), 0.1);
-    color: var(--cyan);
-    transform: translateY(-2px);
-    border-color: rgba(var(--cyan-rgb), 0.3);
-}
-
-.quick-action i {
-    font-size: 1.25rem;
-}
-
-.quick-action span {
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.health-overview {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.health-metric {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.health-label {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-}
-
-.health-count {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.health-bar {
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.health-progress {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.3s ease;
-}
-
-.health-progress.healthy {
-    background: var(--success);
-}
-
-.health-progress.warning {
-    background: var(--warning);
-}
-
-.health-progress.critical {
-    background: var(--danger);
-}
-
-.attention-systems h5 {
-    color: var(--text-primary);
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.attention-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background: rgba(var(--warning-rgb), 0.1);
-    border: 1px solid rgba(var(--warning-rgb), 0.2);
-    border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.attention-name {
-    font-weight: 500;
-    color: var(--text-primary);
-    font-size: 0.875rem;
-}
-
-.attention-issue {
-    font-size: 0.75rem;
-    color: var(--warning);
-}
-
-.btn-xs {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-}
-
-.performers-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.performer-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-}
-
-.performer-rank {
-    width: 24px;
-    height: 24px;
-    background: var(--amber);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    flex-shrink: 0;
-}
-
-.performer-info {
-    flex: 1;
-}
-
-.performer-name {
-    font-weight: 500;
-    color: var(--text-primary);
-    font-size: 0.875rem;
-}
-
-.performer-score {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.performer-badge {
-    color: var(--amber);
-    font-size: 1rem;
-}
-
-.technology-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.tech-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    transition: all 0.3s ease;
-}
-
-.tech-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.tech-info {
-    flex: 1;
-}
-
-.tech-name {
-    font-weight: 500;
-    color: var(--text-primary);
-    font-size: 0.875rem;
-}
-
-.tech-usage {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.tech-popularity {
-    min-width: 60px;
-}
-
-.popularity-bar {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.popularity-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--blue) 0%, var(--cyan) 100%);
-    border-radius: 2px;
-    transition: width 0.3s ease;
-}
-
-.system-types-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.type-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    transition: all 0.3s ease;
-}
-
-.type-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.type-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.875rem;
-    flex-shrink: 0;
-}
-
-.type-info {
-    flex: 1;
-}
-
-.type-name {
-    font-weight: 500;
-    color: var(--text-primary);
-    font-size: 0.875rem;
-}
-
-.type-count {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.type-distribution {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 1rem;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 2px dashed rgba(255, 255, 255, 0.1);
-    border-radius: 1rem;
-}
-
-.empty-state.small {
-    padding: 2rem 1rem;
-}
-
-.empty-state i {
-    color: var(--cyan);
-    opacity: 0.6;
-}
-
-.empty-state h5 {
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-}
-
-.empty-state .btn {
-    background: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 100%);
-    border: none;
-    color: white;
-}
-
-/* Responsive design */
-@media (max-width: 1200px) {
-    .system-item {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .system-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
-    .system-metrics {
-        flex-direction: row;
-        min-width: auto;
-        gap: 1rem;
-    }
-    
-    .system-actions {
-        flex-direction: row;
-        justify-content: flex-start;
-    }
-}
-
-@media (max-width: 768px) {
-    .dashboard-header .row {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .system-meta {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .quick-actions-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .tech-item,
-    .type-item,
-    .performer-item,
-    .attention-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
-    .system-badges {
-        flex-wrap: wrap;
-    }
-}
-
-/* Animation enhancements */
-@keyframes healthPulse {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 1; }
-}
-
-.health-indicator.health-critical {
-    animation: healthPulse 2s infinite;
-}
-
-.metric-progress,
-.progress-bar,
-.health-progress,
-.popularity-fill {
-    animation: fillProgress 1.5s ease-out;
-}
-
-@keyframes fillProgress {
-    from { width: 0%; }
-}
-
-/* Loading states */
-.loading-shimmer {
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0.1) 25%, 
-        rgba(255,255,255,0.2) 50%, 
-        rgba(255,255,255,0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+.btn-cyan:hover {
+  background: #06b6d4;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(var(--cyan-rgb), 0.4);
 }
 </style>
-{% endblock %}
-
-{% block admin_js %}
-{{ block.super }}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Systems Command Center Initialized');
-    
-    // Initialize metric animations
-    initMetricAnimations();
-    
-    // Setup real-time health monitoring
-    setupHealthMonitoring();
-    
-    // Initialize system status updates
-    initSystemStatusUpdates();
-});
-
-function initMetricAnimations() {
-    // Animate progress bars on load
-    const progressBars = document.querySelectorAll('.progress-bar, .metric-progress, .health-progress, .popularity-fill');
-    
-    progressBars.forEach(bar => {
-        const targetWidth = bar.style.width;
-        bar.style.width = '0%';
-        
-        setTimeout(() => {
-            bar.style.transition = 'width 1.5s ease-out';
-            bar.style.width = targetWidth;
-        }, 200 + Math.random() * 500);
-    });
-    
-    // Animate metric counters
-    const counters = document.querySelectorAll('.metric-value .value, .health-count, .type-distribution');
-    counters.forEach(counter => {
-        const target = parseInt(counter.textContent) || parseFloat(counter.textContent) || 0;
-        let current = 0;
-        const increment = target / 30;
-        const isFloat = counter.textContent.includes('.');
-        
-        const updateCounter = () => {
-            current += increment;
-            if (current < target) {
-                counter.textContent = isFloat ? current.toFixed(1) : Math.floor(current);
-                requestAnimationFrame(updateCounter);
-            } else {
-                counter.textContent = isFloat ? target.toFixed(1) : target;
-            }
-        };
-        
-        setTimeout(updateCounter, 300 + Math.random() * 200);
-    });
-}
-
-function setupHealthMonitoring() {
-    // Check for systems needing attention
-    const attentionSystems = document.querySelectorAll('.attention-item');
-    if (attentionSystems.length > 0) {
-        console.log(`⚠️ ${attentionSystems.length} systems need attention`);
-        
-        // Add pulse animation to critical health indicators
-        const criticalIndicators = document.querySelectorAll('.health-indicator.health-critical');
-        criticalIndicators.forEach(indicator => {
-            indicator.style.animation = 'healthPulse 2s infinite';
-        });
-    }
-    
-    // Auto-refresh health status every 5 minutes
-    setInterval(refreshHealthStatus, 5 * 60 * 1000);
-}
-
-function initSystemStatusUpdates() {
-    // Setup hover effects for system items
-    const systemItems = document.querySelectorAll('.system-item');
-    systemItems.forEach(item => {
-        item.addEventListener('mouseenter', function() {
-            const metrics = this.querySelector('.system-metrics');
-            if (metrics) {
-                metrics.style.transform = 'scale(1.05)';
-                metrics.style.transition = 'transform 0.3s ease';
-            }
-        });
-        
-        item.addEventListener('mouseleave', function() {
-            const metrics = this.querySelector('.system-metrics');
-            if (metrics) {
-                metrics.style.transform = 'scale(1)';
-            }
-        });
-    });
-}
-
-function runHealthCheck() {
-    const button = event.target.closest('.quick-action');
-    const originalContent = button.innerHTML;
-    
-    // Show loading state
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Checking...</span>';
-    button.style.pointerEvents = 'none';
-    
-    // Simulate health check API call
-    fetch('/aura-admin/projects/api/health-check/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-            action: 'full_health_check',
-            systems: 'all'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update health indicators
-            updateHealthIndicators(data.health_status);
-            
-            if (window.auraAdmin) {
-                window.auraAdmin.showNotification(
-                    `Health check complete. ${data.healthy_systems} systems operational.`, 
-                    'success'
-                );
-            }
-        } else {
-            if (window.auraAdmin) {
-                window.auraAdmin.showNotification('Health check failed.', 'error');
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Health check error:', error);
-        if (window.auraAdmin) {
-            window.auraAdmin.showNotification('Health check error.', 'error');
-        }
-    })
-    .finally(() => {
-        // Restore button
-        setTimeout(() => {
-            button.innerHTML = originalContent;
-            button.style.pointerEvents = '';
-        }, 1000);
-    });
-}
-
-function refreshHealthStatus() {
-    const button = event?.target?.closest('button');
-    if (button) {
-        const originalContent = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        button.disabled = true;
-    }
-    
-    fetch('/aura-admin/projects/api/metrics/', {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Update dashboard metrics
-        updateDashboardMetrics(data.overview);
-        
-        // Update health status
-        if (data.recent_performance) {
-            updateSystemPerformance(data.recent_performance);
-        }
-        
-        if (window.auraAdmin) {
-            window.auraAdmin.showNotification('Health status refreshed.', 'success');
-        }
-    })
-    .catch(error => {
-        console.error('Refresh error:', error);
-        if (window.auraAdmin) {
-            window.auraAdmin.showNotification('Failed to refresh status.', 'error');
-        }
-    })
-    .finally(() => {
-        if (button) {
-            setTimeout(() => {
-                button.innerHTML = '<i class="fas fa-sync-alt"></i>';
-                button.disabled = false;
-            }, 1000);
-        }
-    });
-}
-
-function updateHealthIndicators(healthData) {
-    // Update health metrics
-    const healthMetrics = document.querySelectorAll('.health-count');
-    if (healthData && healthMetrics.length >= 3) {
-        healthMetrics[0].textContent = healthData.operational || 0;
-        healthMetrics[1].textContent = healthData.warning || 0;
-        healthMetrics[2].textContent = healthData.critical || 0;
-        
-        // Update progress bars
-        const healthBars = document.querySelectorAll('.health-progress');
-        if (healthBars.length >= 3) {
-            const total = (healthData.operational || 0) + (healthData.warning || 0) + (healthData.critical || 0);
-            if (total > 0) {
-                healthBars[0].style.width = `${(healthData.operational / total) * 100}%`;
-                healthBars[1].style.width = `${(healthData.warning / total) * 100}%`;
-                healthBars[2].style.width = `${(healthData.critical / total) * 100}%`;
-            }
-        }
-    }
-}
-
-function updateDashboardMetrics(metrics) {
-    // Update metric values
-    const metricValues = document.querySelectorAll('.metric-value .value');
-    if (metrics && metricValues.length >= 4) {
-        metricValues[0].textContent = metrics.total || 0;
-        metricValues[1].textContent = metrics.deployed || 0;
-        metricValues[2].textContent = metrics.in_development || 0;
-        metricValues[3].textContent = metrics.featured || 0;
-    }
-    
-    // Update performance metrics
-    if (metrics.avg_completion !== undefined) {
-        const completionValue = document.querySelector('.metric-card .value');
-        if (completionValue && completionValue.textContent.includes('%')) {
-            completionValue.textContent = `${metrics.avg_completion.toFixed(1)}%`;
-        }
-    }
-}
-
-function updateSystemPerformance(performanceData) {
-    // Update individual system performance indicators
-    performanceData.forEach((system, index) => {
-        const systemItems = document.querySelectorAll('.system-item');
-        if (systemItems[index]) {
-            const healthIndicator = systemItems[index].querySelector('.health-indicator');
-            if (healthIndicator) {
-                healthIndicator.className = `health-indicator health-${system.health}`;
-                healthIndicator.querySelector('span')?.textContent = system.health.charAt(0).toUpperCase() + system.health.slice(1);
-            }
-            
-            const perfBar = systemItems[index].querySelector('.metric-progress');
-            if (perfBar && system.performance) {
-                perfBar.style.width = `${system.performance}%`;
-            }
-        }
-    });
-}
-
-// Keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + Shift + N for new system
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
-        e.preventDefault();
-        const createLink = document.querySelector('a[href*="system_create"]');
-        if (createLink) {
-            window.location.href = createLink.href;
-        }
-    }
-    
-    // Ctrl/Cmd + Shift + H for health check
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'H') {
-        e.preventDefault();
-        runHealthCheck();
-    }
-});
-
-// Enhanced system item interactions
-document.querySelectorAll('.system-item').forEach(item => {
-    // Add click-to-edit functionality
-    item.addEventListener('dblclick', function() {
-        const editLink = this.querySelector('a[href*="update"]');
-        if (editLink) {
-            window.location.href = editLink.href;
-        }
-    });
-    
-    // Add context menu
-    item.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        showSystemContextMenu(e, this);
-    });
-});
-
-function showSystemContextMenu(event, systemItem) {
-    // Create context menu for system actions
-    const menu = document.createElement('div');
-    menu.className = 'system-context-menu';
-    menu.style.cssText = `
-        position: fixed;
-        top: ${event.clientY}px;
-        left: ${event.clientX}px;
-        background: rgba(var(--bg-secondary), 0.95);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 0.5rem;
-        padding: 0.5rem;
-        z-index: 9999;
-        min-width: 150px;
-    `;
-    
-    const editLink = systemItem.querySelector('a[href*="update"]');
-    const viewLink = systemItem.querySelector('a[href*="system"]');
-    
-    menu.innerHTML = `
-        <div class="context-menu-item" onclick="window.location.href='${editLink?.href}'">
-            <i class="fas fa-edit me-2"></i>Edit System
-        </div>
-        <div class="context-menu-item" onclick="window.open('${viewLink?.href}', '_blank')">
-            <i class="fas fa-eye me-2"></i>View System
-        </div>
-        <div class="context-menu-divider"></div>
-        <div class="context-menu-item" onclick="runSystemHealthCheck('${systemItem.dataset.systemId}')">
-            <i class="fas fa-heartbeat me-2"></i>Health Check
-        </div>
-    `;
-    
-    document.body.appendChild(menu);
-    
-    // Remove menu on click outside
-    document.addEventListener('click', function removeMenu() {
-        menu.remove();
-        document.removeEventListener('click', removeMenu);
-    });
-}
-
-console.log('✅ Systems Command Center Ready - Real-time monitoring active');
-</script>
 {% endblock %}
