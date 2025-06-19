@@ -1,0 +1,121 @@
+<!-- templates/admin/forms/delete_confirm.html -->
+{% extends 'admin/admin_base.html' %}
+
+{% block admin_content %}
+<div class="admin-form-container">
+    <div class="admin-form-card glass-card delete-form">
+        <div class="admin-form-header">
+            <h2 class="admin-form-title">
+                <i class="fas fa-trash-alt me-2" style="color: var(--danger);"></i>
+                {{ title }}
+            </h2>
+            <p class="admin-form-subtitle">You are about to delete: <strong>{{ object_name }}</strong></p>
+        </div>
+        
+        <div class="delete-warning">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="warning-content">
+                <h4>⚠️ Warning</h4>
+                <p>{{ warning_message }}</p>
+                
+                {% if related_objects %}
+                    <div class="related-objects">
+                        <h5>This will also affect:</h5>
+                        <ul>
+                            {% for obj in related_objects %}
+                                <li>{{ obj }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <form method="post" class="admin-form">
+            {% csrf_token %}
+            
+            {% block additional_delete_fields %}{% endblock %}
+            
+            <div class="form-actions">
+                <a href="{{ cancel_url|default:request.META.HTTP_REFERER }}" class="btn btn-admin-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-danger delete-action">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    Yes, Delete {{ model_name }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+.delete-form {
+    border: 1px solid rgba(var(--danger-rgb), 0.3);
+}
+
+.delete-warning {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(var(--danger-rgb), 0.1);
+    border: 1px solid rgba(var(--danger-rgb), 0.2);
+    border-radius: 0.5rem;
+    margin: 1.5rem 0;
+}
+
+.warning-icon {
+    color: var(--danger);
+    font-size: 2rem;
+}
+
+.warning-content h4 {
+    color: var(--danger);
+    margin-bottom: 0.5rem;
+}
+
+.warning-content p {
+    margin-bottom: 1rem;
+}
+
+.related-objects {
+    margin-top: 1rem;
+}
+
+.related-objects h5 {
+    color: var(--warning);
+    margin-bottom: 0.5rem;
+}
+
+.related-objects ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.related-objects li {
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--danger-rgb), 0.4);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,499 @@
+<!-- 
+  *blog/templates/blog/admin/series_form.html
+  *Version 2.0
+  -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_actions %}
+  <div class="flex items-center space-x-4">
+    <a href="{% url 'blog:admin:series_list' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      Back to Series
+    </a>
+  </div>
+{% endblock %}
+
+{% block admin_content %}
+  <div class="series-form">
+    <form method="post" enctype="multipart/form-data" class="space-y-8">
+      {% csrf_token %}
+      
+      <!-- Basic Information -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-layer-group mr-2 text-blue-400"></i>
+            Series Information
+          </h3>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Title -->
+            <div class="admin-form-field lg:col-span-2">
+              <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.title.label }}
+                <span class="text-red-400">*</span>
+              </label>
+              {{ form.title }}
+              {% if form.title.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.title.help_text }}</p>
+              {% endif %}
+              {% if form.title.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.title.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Slug -->
+            <div class="admin-form-field">
+              <label for="{{ form.slug.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.slug.label }}
+              </label>
+              {{ form.slug }}
+              {% if form.slug.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.slug.help_text }}</p>
+              {% endif %}
+              {% if form.slug.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.slug.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Difficulty Level -->
+            <div class="admin-form-field">
+              <label for="{{ form.difficulty_level.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.difficulty_level.label }}
+              </label>
+              {{ form.difficulty_level }}
+              {% if form.difficulty_level.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.difficulty_level.help_text }}</p>
+              {% endif %}
+              {% if form.difficulty_level.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.difficulty_level.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Description -->
+          <div class="admin-form-field">
+            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+              {{ form.description.label }}
+            </label>
+            {{ form.description }}
+            {% if form.description.help_text %}
+              <p class="mt-1 text-sm text-gray-400">{{ form.description.help_text }}</p>
+            {% endif %}
+            {% if form.description.errors %}
+              <div class="mt-1 text-sm text-red-400">
+                {% for error in form.description.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Assets -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-image mr-2 text-blue-400"></i>
+            Visual Assets
+          </h3>
+          
+          <!-- Thumbnail -->
+          <div class="admin-form-field">
+            <label for="{{ form.thumbnail.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+              {{ form.thumbnail.label }}
+            </label>
+            {% if object.thumbnail %}
+              <div class="mb-3">
+                <img src="{{ object.thumbnail.url }}" alt="Current thumbnail" class="w-32 h-24 object-cover rounded border border-gray-600">
+                <p class="text-xs text-gray-400 mt-1">Current thumbnail</p>
+              </div>
+            {% endif %}
+            {{ form.thumbnail }}
+            {% if form.thumbnail.help_text %}
+              <p class="mt-1 text-sm text-gray-400">{{ form.thumbnail.help_text }}</p>
+            {% endif %}
+            {% if form.thumbnail.errors %}
+              <div class="mt-1 text-sm text-red-400">
+                {% for error in form.thumbnail.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Series Settings -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-cog mr-2 text-blue-400"></i>
+            Series Settings
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Status Checkboxes -->
+            <div class="admin-form-field">
+              <label class="block text-sm font-medium text-white mb-4">Status Options</label>
+              <div class="space-y-3">
+                <label class="flex items-center">
+                  {{ form.is_complete }}
+                  <span class="ml-2 text-sm text-gray-300">{{ form.is_complete.label }}</span>
+                  <span class="ml-2 text-xs text-gray-500">(Mark when all posts are published)</span>
+                </label>
+                <label class="flex items-center">
+                  {{ form.is_featured }}
+                  <span class="ml-2 text-sm text-gray-300">{{ form.is_featured.label }}</span>
+                  <span class="ml-2 text-xs text-gray-500">(Show prominently on site)</span>
+                </label>
+              </div>
+            </div>
+            
+            <!-- Difficulty Badge Preview -->
+            <div class="admin-form-field">
+              <label class="block text-sm font-medium text-white mb-4">Difficulty Preview</label>
+              <div class="difficulty-preview">
+                <span class="difficulty-badge" id="difficulty-preview">
+                  {{ form.difficulty_level.value|default:'intermediate'|title }}
+                </span>
+                <p class="text-xs text-gray-400 mt-2">This badge will appear on the series card</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Series Preview -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-eye mr-2 text-blue-400"></i>
+            Series Preview
+          </h3>
+          
+          <div class="series-preview-card glass-card p-6 max-w-2xl">
+            <div class="flex items-start space-x-4">
+              <div class="series-thumbnail-preview w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-layer-group text-white text-xl"></i>
+              </div>
+              
+              <div class="flex-1 min-w-0">
+                <h4 class="text-lg font-bold text-white mb-1" id="preview-title">{{ form.title.value|default:'Series Title' }}</h4>
+                <div class="flex items-center space-x-4 text-sm text-gray-400 mb-2">
+                  <span class="difficulty-badge" id="preview-difficulty">
+                    {{ form.difficulty_level.value|default:'intermediate'|title }}
+                  </span>
+                  <span class="status-badge bg-yellow-400 bg-opacity-20 text-yellow-400" id="preview-status">
+                    In Progress
+                  </span>
+                  <span class="status-badge bg-purple-400 bg-opacity-20 text-purple-400" id="preview-featured" style="display: none;">
+                    <i class="fas fa-star mr-1"></i>Featured
+                  </span>
+                </div>
+                <p class="text-gray-300 text-sm" id="preview-description">{{ form.description.value|default:'Series description will appear here...' }}</p>
+              </div>
+            </div>
+            
+            <!-- Preview Stats -->
+            <div class="grid grid-cols-3 gap-4 pt-4 mt-4 border-t border-gray-600">
+              <div class="text-center">
+                <div class="text-lg font-bold text-white">{{ object.posts.count|default:0 }}</div>
+                <div class="text-xs text-gray-400">Posts</div>
+              </div>
+              <div class="text-center">
+                <div class="text-lg font-bold text-white">{{ object.total_reading_time|default:0 }}</div>
+                <div class="text-xs text-gray-400">Minutes</div>
+              </div>
+              <div class="text-center">
+                <div class="text-lg font-bold text-white" id="preview-completion">
+                  {% if object.is_complete %}100{% else %}0{% endif %}%
+                </div>
+                <div class="text-xs text-gray-400">Complete</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Series Statistics (if editing) -->
+      {% if object and object.posts.exists %}
+        <div class="admin-form-container">
+          <div class="form-section">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+              <i class="fas fa-chart-bar mr-2 text-blue-400"></i>
+              Series Statistics
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div class="stat-card">
+                <div class="stat-number">{{ object.posts.count }}</div>
+                <div class="stat-label">Total Posts</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">{{ object.total_reading_time|default:0 }}</div>
+                <div class="stat-label">Reading Time</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">
+                  {% if object.posts.exists %}
+                    {{ object.posts.first.created_at|date:"M Y" }}
+                  {% else %}
+                    --
+                  {% endif %}
+                </div>
+                <div class="stat-label">Started</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">
+                  {% if object.is_complete %}
+                    100%
+                  {% else %}
+                    {{ object.get_progress_percentage|floatformat:0 }}%
+                  {% endif %}
+                </div>
+                <div class="stat-label">Progress</div>
+              </div>
+            </div>
+            
+            <!-- Recent Posts in Series -->
+            {% if object.posts.exists %}
+              <div class="mt-6">
+                <h4 class="text-lg font-bold text-white mb-4">Posts in Series</h4>
+                <div class="space-y-3">
+                  {% for series_post in object.posts.all|slice:":5" %}
+                    <div class="flex items-center justify-between p-3 bg-black bg-opacity-20 rounded-lg">
+                      <div class="flex items-center">
+                        <span class="w-8 h-8 bg-blue-500 bg-opacity-20 text-blue-400 rounded-full flex items-center justify-center text-sm font-bold mr-3">
+                          {{ series_post.order }}
+                        </span>
+                        <div>
+                          <div class="font-medium text-white">{{ series_post.post.title }}</div>
+                          <div class="text-xs text-gray-400">{{ series_post.post.created_at|date:"M j, Y" }}</div>
+                        </div>
+                      </div>
+                      <a href="{% url 'blog:admin:post_edit' series_post.post.pk %}" class="text-blue-400 hover:text-blue-300">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                    </div>
+                  {% endfor %}
+                  {% if object.posts.count > 5 %}
+                    <p class="text-gray-400 text-sm text-center">
+                      ... and {{ object.posts.count|add:"-5" }} more posts
+                    </p>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Form Actions -->
+      <div class="admin-form-actions">
+        <div class="flex justify-between items-center">
+          <div class="flex space-x-4">
+            {% if object %}
+              <a href="{% url 'blog:admin:series_posts_manage' object.pk %}" class="btn btn-secondary">
+                <i class="fas fa-cogs mr-2"></i>
+                Manage Posts ({{ object.posts.count }})
+              </a>
+              <a href="{% url 'blog:admin:post_list' %}?search={{ object.title }}" class="btn btn-secondary">
+                <i class="fas fa-eye mr-2"></i>
+                View Series Posts
+              </a>
+              <a href="{% url 'blog:admin:post_create' %}" class="btn btn-secondary">
+                <i class="fas fa-plus mr-2"></i>
+                Create New Post
+              </a>
+            {% endif %}
+          </div>
+          
+          <div class="flex space-x-4">
+            <a href="{% url 'blog:admin:series_list' %}" class="btn btn-secondary">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-purple">
+              <i class="fas fa-save mr-2"></i>
+              {% if form_mode == 'create' %}Create Series{% else %}Update Series{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+{% block admin_css %}
+<style>
+.difficulty-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.difficulty-badge.beginner {
+  background: rgba(34, 197, 94, 0.2);
+  color: rgb(34, 197, 94);
+}
+
+.difficulty-badge.intermediate {
+  background: rgba(234, 179, 8, 0.2);
+  color: rgb(234, 179, 8);
+}
+
+.difficulty-badge.advanced {
+  background: rgba(249, 115, 22, 0.2);
+  color: rgb(249, 115, 22);
+}
+
+.difficulty-badge.expert {
+  background: rgba(239, 68, 68, 0.2);
+  color: rgb(239, 68, 68);
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.series-preview-card {
+  transition: all 0.3s ease;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 0.75rem;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+</style>
+{% endblock %}
+
+{% block admin_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-generate slug from title
+    const titleField = document.getElementById('{{ form.title.id_for_label }}');
+    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
+    const descriptionField = document.getElementById('{{ form.description.id_for_label }}');
+    const difficultyField = document.getElementById('{{ form.difficulty_level.id_for_label }}');
+    const isCompleteField = document.getElementById('{{ form.is_complete.id_for_label }}');
+    const isFeaturedField = document.getElementById('{{ form.is_featured.id_for_label }}');
+    
+    // Preview elements
+    const previewTitle = document.getElementById('preview-title');
+    const previewDescription = document.getElementById('preview-description');
+    const previewDifficulty = document.getElementById('preview-difficulty');
+    const previewStatus = document.getElementById('preview-status');
+    const previewFeatured = document.getElementById('preview-featured');
+    const previewCompletion = document.getElementById('preview-completion');
+    const difficultyPreview = document.getElementById('difficulty-preview');
+    
+    // Auto-generate slug from title
+    if (titleField && slugField && !slugField.dataset.modified) {
+        titleField.addEventListener('input', function() {
+            if (!slugField.dataset.modified) {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                slugField.value = slug;
+            }
+            
+            // Update preview
+            previewTitle.textContent = this.value || 'Series Title';
+        });
+        
+        slugField.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+        });
+    }
+    
+    // Update description preview
+    if (descriptionField) {
+        descriptionField.addEventListener('input', function() {
+            previewDescription.textContent = this.value || 'Series description will appear here...';
+        });
+    }
+    
+    // Update difficulty preview
+    if (difficultyField) {
+        difficultyField.addEventListener('change', function() {
+            const difficulty = this.value || 'intermediate';
+            const difficultyText = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+            
+            // Update both previews
+            previewDifficulty.textContent = difficultyText;
+            previewDifficulty.className = `difficulty-badge ${difficulty}`;
+            
+            difficultyPreview.textContent = difficultyText;
+            difficultyPreview.className = `difficulty-badge ${difficulty}`;
+        });
+    }
+    
+    // Update status previews
+    if (isCompleteField) {
+        isCompleteField.addEventListener('change', function() {
+            if (this.checked) {
+                previewStatus.textContent = 'Complete';
+                previewStatus.className = 'status-badge bg-green-400 bg-opacity-20 text-green-400';
+                previewCompletion.textContent = '100%';
+            } else {
+                previewStatus.textContent = 'In Progress';
+                previewStatus.className = 'status-badge bg-yellow-400 bg-opacity-20 text-yellow-400';
+                previewCompletion.textContent = '0%';
+            }
+        });
+    }
+    
+    if (isFeaturedField) {
+        isFeaturedField.addEventListener('change', function() {
+            if (this.checked) {
+                previewFeatured.style.display = 'inline-flex';
+            } else {
+                previewFeatured.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

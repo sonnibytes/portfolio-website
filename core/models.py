@@ -6,6 +6,7 @@ from markdownx.utils import markdownify
 from django.utils import timezone
 
 from datetime import date
+from projects.models import SystemSkillGain, Technology
 
 
 class CorePage(models.Model):
@@ -85,7 +86,12 @@ class Skill(models.Model):
         ordering = ['category', 'display_order']
 
     def __str__(self):
-        return self.name
+        # Enhanced w mastery level
+        mastery = self.get_mastery_level().title()
+        system_count = self.get_systems_count()
+        if system_count > 0:
+            return f"{self.name} ({mastery} - {system_count} systems)"
+        return f"{self.name} ({self.get_proficiency_percentage():.0f}%)"
 
     def get_absolute_url(self):
         return reverse("core:skill", args=[self.slug])
@@ -118,6 +124,179 @@ class Skill(models.Model):
         """Convert 1-5 scale to percentage"""
         return (self.proficiency / 5) * 100
 
+    # ================= LEARNING-FOCUSED METHODS =================
+
+    def get_learning_progression(self):
+        """
+        Get learning progression of this skill across projects/systems
+        Shows how skill is developed over time
+        """
+        gains = SystemSkillGain.objects.filter(
+            skill=self
+        ).select_related('system').order_by('system__created_at')
+
+        progression = []
+        for gain in gains:
+            progression.append({
+                'system': gain.system.title,
+                'system_slug': gain.system.slug,
+                'date': gain.system.created_at,
+                'proficiency_gained': gain.proficiency_gained,
+                'proficiency_display': gain.get_proficiency_display_short(),
+                'how_learned': gain.how_learned,
+                'learning_stage': gain.system.get_learning_stage_display(),
+                'color': gain.get_proficiency_color(),
+            })
+        return progression
+
+    def get_systems_using_skill(self):
+        """Get all systems where this skill was developed/used"""
+        return SystemSkillGain.objects.filter(skill=self).select_related('system').order_by('-system__created_at')
+
+    def get_systems_count(self):
+        """Get count of systems using this skill"""
+        return self.get_systems_using_skill().count()
+
+    def get_latest_usage(self):
+        """Get the most recent system that used this skill"""
+        latest = self.get_systems_using_skill().first()
+        return latest.system if latest else None
+
+    def get_first_usage(self):
+        """Get the first system that used this skill"""
+        first = self.get_systems_using_skill().last()
+        return first.system if first else None
+
+    def get_skill_milestones(self):
+        """Get learning milestones related to this skill"""
+        return self.milestones.select_related('system').order_by('-date_achieved')
+
+    def get_mastery_level(self):
+        """
+        Calculate mastery level based on project usage and proficiency
+        Returns: beginner, intermediate, advanced, expert
+        """
+        system_count = self.get_systems_count()
+        current_proficiency = self.proficiency
+
+        # Mastery based on both usage frequency and proficiency level
+        if system_count >= 5 and current_proficiency >= 4:
+            return 'expert'
+        elif system_count >= 3 and current_proficiency >= 3:
+            return 'advanced'
+        elif system_count >= 2 and current_proficiency >= 2:
+            return 'intermediate'
+        else:
+            return 'beginner'
+
+    def get_mastery_color(self):
+        """Get color for mastery level"""
+        mastery = self.get_mastery_level()
+        colors = {
+            "beginner": "#FFB74D",  # Orange
+            "intermediate": "#81C784",  # Green
+            "advanced": "#64B5F6",  # Blue
+            "expert": "#FFD54F",  # Gold
+        }
+        return colors.get(mastery, "#81C784")
+
+    def get_learning_velocity(self):
+        """
+        Calculate how quickly this skill was developed
+        Projects/Systems using this skill per month
+        """
+        first_system = self.get_first_usage()
+        latest_system = self.get_latest_usage()
+
+        if not (first_system and latest_system):
+            return 0
+
+        # Calculate months between first and latest usage
+        time_diff = latest_system.created_at - first_system.created_at
+        months = max(time_diff.days / 30, 1)
+
+        # Systems using this skill
+        system_count = self.get_systems_count()
+
+        return round(system_count / months, 2)
+
+    def get_total_learning_time_estimate(self):
+        """
+        Estimate total time spent learning this skill across projects
+        Based on actual_dev_hours in projects that used this skill
+        """
+        total_hours = 0
+
+        for system_gain in self.get_systems_using_skill():
+            system = system_gain.system
+            if system.actual_dev_hours:
+                # Assume skill was used for portion of project time
+                # based on how many technologies were in the project
+                tech_count = system.technologies.count()
+                skill_portion = 1 / max(tech_count, 1)  # Divide time among technologies
+                total_hours += system.actual_dev_hours * skill_portion
+            elif system.estimated_dev_hours:
+                # Fallback to estimated hours
+                tech_count = system.technologies.count()
+                skill_portion = 1 / max(tech_count, 1)
+                total_hours += system.estimated_dev_hours * skill_portion
+
+        return round(total_hours, 1)
+
+    def has_breakthroughs(self):
+        """Check if any systems/projects has breakthrough moments with this skill"""
+        return self.get_systems_using_skill().exclude(how_learned__exact='').exists()
+
+    def get_breakthrough_moments(self):
+        """Get all breakthrough moments related to this skill"""
+        breakthroughs = []
+
+        for system_gain in self.get_systems_using_skill():
+            if system_gain.how_learned:
+                breakthroughs.append({
+                    'system': system_gain.system.title,
+                    'learning_story': system_gain.how_learned,
+                    'date': system_gain.system.created_at,
+                    'proficiency_gained': system_gain.get_proficiency_display_short(),
+                })
+        return breakthroughs
+
+    def get_related_technologies(self):
+        """
+        Get technologies that were used alongside this skill
+        Shows what this skill is commonly paired with
+        """
+        # Get all systems that used this skill
+        systems_with_skill = [
+            system_gain.system for system_gain in self.get_systems_using_skill()
+        ]
+
+        # Get technologies used in those systems
+        related_techs = Technology.objects.filter(
+            systems__in=systems_with_skill
+        ).distinct().exclude(name=self.name)  # Exclude self if skill name matches tech name
+
+        return related_techs
+
+    def get_skill_summary_for_dashboard(self):
+        """Get comprehensive skill summary for dashboard display"""
+        return {
+            'name': self.name,
+            'category': self.get_category_display(),
+            'proficiency': self.proficiency,
+            'proficiency_percentage': self.get_proficiency_percentage(),
+            'mastery_level': self.get_mastery_level(),
+            'mastery_color': self.get_mastery_color(),
+            'systems_count': self.get_systems_count(),
+            'learning_velocity': self.get_learning_velocity(),
+            'total_time_estimate': self.get_total_learning_time_estimate(),
+            'has_milestones': self.get_skill_milestones().exists(),
+            'is_featured': self.is_featured,
+            'is_currently_learning': self.is_currently_learning,
+            'years_experience': self.years_experience,
+            'color': self.color,
+            'icon': self.icon,
+        }
 
 class Education(models.Model):
     """Educational background."""

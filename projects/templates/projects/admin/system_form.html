@@ -1,426 +1,739 @@
-<!-- System Create/Edit Form Template -->
-<!-- projects/templates/projects/admin/system_form.html -->
-{% extends "base.html" %}
+<!-- 
+  *projects/templates/projects/admin/system_form.html
+  *Version 2.0
+  -->
+{% extends 'admin/admin_base.html' %}
 {% load static %}
-{% load core_tags %}
-
-{% block title %}{{ title }} | Systems Admin | ML DEVLOG{% endblock %}
+{% load markdownx_tags %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'projects/css/admin.css' %}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'markdownx/css/markdownx.min.css' %}">
 {% endblock %}
 
-{% block body_class %}admin-page system-form-page{% endblock %}
+{% block admin_actions %}
+  <div class="flex items-center space-x-4">
+    <a href="{% url 'core:admin:projects:system_list' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      Back to Systems
+    </a>
+    {% if object %}
+      <a href="{{ object.get_absolute_url }}" target="_blank" class="btn btn-secondary">
+        <i class="fas fa-eye mr-2"></i>
+        View System
+      </a>
+    {% endif %}
+  </div>
+{% endblock %}
 
-{% block content %}
-<section class="admin-form-section">
-    <div class="container">
-        <!-- Admin Header -->
-        <div class="admin-header">
-            <nav class="admin-breadcrumbs">
-                <a href="{% url 'projects:dashboard' %}" class="breadcrumb-link">
-                    <i class="fas fa-tachometer-alt"></i> DASHBOARD
-                </a>
-                <span class="breadcrumb-separator">/</span>
-                <a href="{% url 'projects:system_list' %}" class="breadcrumb-link">SYSTEMS</a>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-current">{{ title|upper }}</span>
-            </nav>
-            
-            <h1 class="admin-title">{{ title }}</h1>
-        </div>
+{% block admin_content %}
+  <form method="post" enctype="multipart/form-data" class="system-form">
+    {% csrf_token %}
+    
+    <!-- Form Errors -->
+    {% if form.non_field_errors %}
+      <div class="alert alert-error mb-6">
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Main Content -->
+      <div class="lg:col-span-2 space-y-8">
         
-        <!-- Form Container -->
-        <div class="row">
-            <div class="col-lg-8">
-                <form method="post" enctype="multipart/form-data" class="system-form">
-                    {% csrf_token %}
-                    
-                    <!-- Basic Information Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">BASIC INFORMATION</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="form-group">
-                                        <label for="{{ form.title.id_for_label }}" class="form-label">System Title</label>
-                                        {{ form.title }}
-                                        {% if form.title.errors %}
-                                        <div class="form-error">{{ form.title.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.system_type.id_for_label }}" class="form-label">System Type</label>
-                                        {{ form.system_type }}
-                                        {% if form.system_type.errors %}
-                                        <div class="form-error">{{ form.system_type.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="{{ form.subtitle.id_for_label }}" class="form-label">Subtitle</label>
-                                {{ form.subtitle }}
-                                {% if form.subtitle.errors %}
-                                <div class="form-error">{{ form.subtitle.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="{{ form.excerpt.id_for_label }}" class="form-label">System Excerpt</label>
-                                {{ form.excerpt }}
-                                <div class="form-help">Brief summary for system cards and previews</div>
-                                {% if form.excerpt.errors %}
-                                <div class="form-error">{{ form.excerpt.errors }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Content Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">SYSTEM DOCUMENTATION</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="form-group">
-                                <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
-                                {{ form.description }}
-                                <div class="form-help">Main system description and overview (Markdown supported)</div>
-                                {% if form.description.errors %}
-                                <div class="form-error">{{ form.description.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="{{ form.technical_details.id_for_label }}" class="form-label">Technical Details</label>
-                                {{ form.technical_details }}
-                                <div class="form-help">Technical implementation details (Markdown supported)</div>
-                                {% if form.technical_details.errors %}
-                                <div class="form-error">{{ form.technical_details.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.challenges.id_for_label }}" class="form-label">Development Challenges</label>
-                                        {{ form.challenges }}
-                                        {% if form.challenges.errors %}
-                                        <div class="form-error">{{ form.challenges.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.future_enhancements.id_for_label }}" class="form-label">Future Enhancements</label>
-                                        {{ form.future_enhancements }}
-                                        {% if form.future_enhancements.errors %}
-                                        <div class="form-error">{{ form.future_enhancements.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Technical Configuration Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">TECHNICAL CONFIGURATION</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.complexity.id_for_label }}" class="form-label">Complexity Level</label>
-                                        {{ form.complexity }}
-                                        {% if form.complexity.errors %}
-                                        <div class="form-error">{{ form.complexity.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.priority.id_for_label }}" class="form-label">Priority</label>
-                                        {{ form.priority }}
-                                        {% if form.priority.errors %}
-                                        <div class="form-error">{{ form.priority.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
-                                        {{ form.status }}
-                                        {% if form.status.errors %}
-                                        <div class="form-error">{{ form.status.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="{{ form.technologies.id_for_label }}" class="form-label">Technologies</label>
-                                {{ form.technologies }}
-                                <div class="form-help">Hold Ctrl/Cmd to select multiple technologies</div>
-                                {% if form.technologies.errors %}
-                                <div class="form-error">{{ form.technologies.errors }}</div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.completion_percent.id_for_label }}" class="form-label">Completion Percentage</label>
-                                        {{ form.completion_percent }}
-                                        {% if form.completion_percent.errors %}
-                                        <div class="form-error">{{ form.completion_percent.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.performance_score.id_for_label }}" class="form-label">Performance Score</label>
-                                        {{ form.performance_score }}
-                                        <div class="form-help">0.0 - 100.0</div>
-                                        {% if form.performance_score.errors %}
-                                        <div class="form-error">{{ form.performance_score.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- URLs Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">SYSTEM LINKS</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.github_url.id_for_label }}" class="form-label">GitHub Repository</label>
-                                        {{ form.github_url }}
-                                        {% if form.github_url.errors %}
-                                        <div class="form-error">{{ form.github_url.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.live_url.id_for_label }}" class="form-label">Live Demo URL</label>
-                                        {{ form.live_url }}
-                                        {% if form.live_url.errors %}
-                                        <div class="form-error">{{ form.live_url.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.demo_url.id_for_label }}" class="form-label">Interactive Demo</label>
-                                        {{ form.demo_url }}
-                                        {% if form.demo_url.errors %}
-                                        <div class="form-error">{{ form.demo_url.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.documentation_url.id_for_label }}" class="form-label">Documentation</label>
-                                        {{ form.documentation_url }}
-                                        {% if form.documentation_url.errors %}
-                                        <div class="form-error">{{ form.documentation_url.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Media Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">MEDIA ASSETS</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.thumbnail.id_for_label }}" class="form-label">Thumbnail</label>
-                                        {{ form.thumbnail }}
-                                        <div class="form-help">400x300px recommended</div>
-                                        {% if form.thumbnail.errors %}
-                                        <div class="form-error">{{ form.thumbnail.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.banner_image.id_for_label }}" class="form-label">Banner Image</label>
-                                        {{ form.banner_image }}
-                                        <div class="form-help">1200x400px recommended</div>
-                                        {% if form.banner_image.errors %}
-                                        <div class="form-error">{{ form.banner_image.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.featured_image.id_for_label }}" class="form-label">Featured Image</label>
-                                        {{ form.featured_image }}
-                                        <div class="form-help">For homepage showcase</div>
-                                        {% if form.featured_image.errors %}
-                                        <div class="form-error">{{ form.featured_image.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="{{ form.architecture_diagram.id_for_label }}" class="form-label">Architecture Diagram</label>
-                                        {{ form.architecture_diagram }}
-                                        {% if form.architecture_diagram.errors %}
-                                        <div class="form-error">{{ form.architecture_diagram.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Timeline Panel -->
-                    <div class="form-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">PROJECT TIMELINE</h2>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
-                                        {{ form.start_date }}
-                                        {% if form.start_date.errors %}
-                                        <div class="form-error">{{ form.start_date.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
-                                        {{ form.end_date }}
-                                        {% if form.end_date.errors %}
-                                        <div class="form-error">{{ form.end_date.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="{{ form.deployment_date.id_for_label }}" class="form-label">Deployment Date</label>
-                                        {{ form.deployment_date }}
-                                        {% if form.deployment_date.errors %}
-                                        <div class="form-error">{{ form.deployment_date.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Form Actions -->
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> {{ submit_text }}
-                        </button>
-                        <a href="{% url 'projects:system_list' %}" class="btn btn-outline">
-                            <i class="fas fa-times"></i> Cancel
-                        </a>
-                        {% if object %}
-                        <a href="{{ object.get_absolute_url }}" class="btn btn-secondary">
-                            <i class="fas fa-eye"></i> View System
-                        </a>
-                        {% endif %}
-                    </div>
-                </form>
+        <!-- Basic Information -->
+        <div class="glass-card p-6">
+          <div class="flex items-center mb-6">
+            <i class="fas fa-info-circle text-cyan-400 mr-3"></i>
+            <h3 class="text-xl font-semibold text-white">Basic Information</h3>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Title -->
+            <div class="md:col-span-2">
+              <label for="{{ form.title.id_for_label }}" class="form-label required">System Title</label>
+              {{ form.title }}
+              {% if form.title.errors %}
+                <div class="form-error">{{ form.title.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.title.help_text }}</div>
             </div>
             
-            <!-- Sidebar -->
-            <div class="col-lg-4">
-                <div class="form-sidebar">
-                    <!-- Quick Options -->
-                    <div class="sidebar-panel">
-                        <div class="panel-header">
-                            <h3 class="panel-title">QUICK OPTIONS</h3>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="form-check">
-                                {{ form.featured }}
-                                <label for="{{ form.featured.id_for_label }}" class="form-check-label">
-                                    Featured System
-                                </label>
-                                <div class="form-help">Display on homepage</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Form Tips -->
-                    <div class="sidebar-panel">
-                        <div class="panel-header">
-                            <h3 class="panel-title">TIPS</h3>
-                            <div class="panel-divider"></div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="tip-item">
-                                <i class="fas fa-lightbulb"></i>
-                                <span>Use Markdown in description fields for rich formatting</span>
-                            </div>
-                            <div class="tip-item">
-                                <i class="fas fa-image"></i>
-                                <span>Optimize images for web before uploading</span>
-                            </div>
-                            <div class="tip-item">
-                                <i class="fas fa-tags"></i>
-                                <span>Select relevant technologies for better discoverability</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- Slug and System ID -->
+            <div>
+              <label for="{{ form.slug.id_for_label }}" class="form-label">URL Slug</label>
+              {{ form.slug }}
+              {% if form.slug.errors %}
+                <div class="form-error">{{ form.slug.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.slug.help_text }}</div>
             </div>
+            
+            <div>
+              <label for="{{ form.system_id.id_for_label }}" class="form-label">System ID</label>
+              {{ form.system_id }}
+              {% if form.system_id.errors %}
+                <div class="form-error">{{ form.system_id.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.system_id.help_text }}</div>
+            </div>
+            
+            <!-- Subtitle -->
+            <div class="md:col-span-2">
+              <label for="{{ form.subtitle.id_for_label }}" class="form-label">Subtitle</label>
+              {{ form.subtitle }}
+              {% if form.subtitle.errors %}
+                <div class="form-error">{{ form.subtitle.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.subtitle.help_text }}</div>
+            </div>
+            
+            <!-- Excerpt -->
+            <div class="md:col-span-2">
+              <label for="{{ form.excerpt.id_for_label }}" class="form-label">Excerpt</label>
+              {{ form.excerpt }}
+              {% if form.excerpt.errors %}
+                <div class="form-error">{{ form.excerpt.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.excerpt.help_text }}</div>
+            </div>
+          </div>
         </div>
+
+        <!-- Content Sections -->
+        <div class="glass-card p-6">
+          <div class="flex items-center mb-6">
+            <i class="fas fa-file-alt text-cyan-400 mr-3"></i>
+            <h3 class="text-xl font-semibold text-white">Content & Documentation</h3>
+          </div>
+          
+          <!-- Description -->
+          <div class="mb-6">
+            <label for="{{ form.description.id_for_label }}" class="form-label required">System Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+              <div class="form-error">{{ form.description.errors.0 }}</div>
+            {% endif %}
+            <div class="form-help">{{ form.description.help_text }}</div>
+          </div>
+          
+          <!-- Features Overview -->
+          <div class="mb-6">
+            <label for="{{ form.features_overview.id_for_label }}" class="form-label">Features Overview</label>
+            {{ form.features_overview }}
+            {% if form.features_overview.errors %}
+              <div class="form-error">{{ form.features_overview.errors.0 }}</div>
+            {% endif %}
+            <div class="form-help">{{ form.features_overview.help_text }}</div>
+          </div>
+          
+          <!-- Technical Details -->
+          <div class="mb-6">
+            <label for="{{ form.technical_details.id_for_label }}" class="form-label">Technical Details</label>
+            {{ form.technical_details }}
+            {% if form.technical_details.errors %}
+              <div class="form-error">{{ form.technical_details.errors.0 }}</div>
+            {% endif %}
+            <div class="form-help">{{ form.technical_details.help_text }}</div>
+          </div>
+          
+          <!-- Challenges -->
+          <div class="mb-6">
+            <label for="{{ form.challenges.id_for_label }}" class="form-label">Development Challenges</label>
+            {{ form.challenges }}
+            {% if form.challenges.errors %}
+              <div class="form-error">{{ form.challenges.errors.0 }}</div>
+            {% endif %}
+            <div class="form-help">{{ form.challenges.help_text }}</div>
+          </div>
+          
+          <!-- Future Enhancements -->
+          <div>
+            <label for="{{ form.future_enhancements.id_for_label }}" class="form-label">Future Enhancements</label>
+            {{ form.future_enhancements }}
+            {% if form.future_enhancements.errors %}
+              <div class="form-error">{{ form.future_enhancements.errors.0 }}</div>
+            {% endif %}
+            <div class="form-help">{{ form.future_enhancements.help_text }}</div>
+          </div>
+        </div>
+
+        <!-- Links & Resources -->
+        <div class="glass-card p-6">
+          <div class="flex items-center mb-6">
+            <i class="fas fa-link text-cyan-400 mr-3"></i>
+            <h3 class="text-xl font-semibold text-white">Links & Resources</h3>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="{{ form.github_url.id_for_label }}" class="form-label">GitHub Repository</label>
+              {{ form.github_url }}
+              {% if form.github_url.errors %}
+                <div class="form-error">{{ form.github_url.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <div>
+              <label for="{{ form.live_url.id_for_label }}" class="form-label">Live URL</label>
+              {{ form.live_url }}
+              {% if form.live_url.errors %}
+                <div class="form-error">{{ form.live_url.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <div>
+              <label for="{{ form.demo_url.id_for_label }}" class="form-label">Demo URL</label>
+              {{ form.demo_url }}
+              {% if form.demo_url.errors %}
+                <div class="form-error">{{ form.demo_url.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <div>
+              <label for="{{ form.documentation_url.id_for_label }}" class="form-label">Documentation URL</label>
+              {{ form.documentation_url }}
+              {% if form.documentation_url.errors %}
+                <div class="form-error">{{ form.documentation_url.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-8">
+        
+        <!-- System Configuration -->
+        <div class="glass-card p-6">
+          <div class="flex items-center mb-6">
+            <i class="fas fa-cogs text-purple-400 mr-3"></i>
+            <h3 class="text-lg font-semibold text-white">Configuration</h3>
+          </div>
+          
+          <!-- System Type -->
+          <div class="mb-4">
+            <label for="{{ form.system_type.id_for_label }}" class="form-label">System Type</label>
+            {{ form.system_type }}
+            {% if form.system_type.errors %}
+              <div class="form-error">{{ form.system_type.errors.0 }}</div>
+            {% endif %}
+          </div>
+          
+          <!-- Status -->
+          <div class="mb-4">
+            <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+            {{ form.status }}
+            {% if form.status.errors %}
+              <div class="form-error">{{ form.status.errors.0 }}</div>
+            {% endif %}
+          </div>
+          
+          <!-- Priority -->
+          <div class="mb-4">
+            <label for="{{ form.priority.id_for_label }}" class="form-label">Priority</label>
+            {{ form.priority }}
+            {% if form.priority.errors %}
+              <div class="form-error">{{ form.priority.errors.0 }}</div>
+            {% endif %}
+          </div>
+          
+          <!-- Complexity -->
+          <div class="mb-4">
+            <label for="{{ form.complexity.id_for_label }}" class="form-label">Complexity</label>
+            {{ form.complexity }}
+            {% if form.complexity.errors %}
+              <div class="form-error">{{ form.complexity.errors.0 }}</div>
+            {% endif %}
+          </div>
+          
+          <!-- Featured -->
+          <div class="mb-4">
+            <div class="flex items-center">
+              {{ form.featured }}
+              <label for="{{ form.featured.id_for_label }}" class="ml-2 text-sm text-gray-300">
+                Feature this system
+              </label>
+            </div>
+            {% if form.featured.errors %}
+              <div class="form-error">{{ form.featured.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Technologies -->
+        <div class="glass-card p-6">
+          <div class="flex items-center mb-4">
+            <i class="fas fa-tools text-orange-400 mr-3"></i>
+            <h3 class="text-lg font-semibold text-white">Technologies</h3>
+          </div>
+          
+          <div class="technology-checkboxes max-h-64 overflow-y-auto">
+            {{ form.technologies }}
+            {% if form.technologies.errors %}
+              <div class="form-error">{{ form.technologies.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="glass-card p-6">
+          <div class="flex items-center mb-6">
+            <i class="fas fa-chart-line text-green-400 mr-3"></i>
+            <h3 class="text-lg font-semibold text-white">Performance</h3>
+          </div>
+          
+          <div class="space-y-4">
+            <!-- Completion Percentage -->
+            <div>
+              <label for="{{ form.completion_percent.id_for_label }}" class="form-label">Completion %</label>
+              {{ form.completion_percent }}
+              {% if form.completion_percent.errors %}
+                <div class="form-error">{{ form.completion_percent.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Performance Score -->
+            <div>
+              <label for="{{ form.performance_score.id_for_label }}" class="form-label">Performance Score</label>
+              {{ form.performance_score }}
+              {% if form.performance_score.errors %}
+                <div class="form-error">{{ form.performance_score.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Uptime Percentage -->
+            <div>
+              <label for="{{ form.uptime_percentage.id_for_label }}" class="form-label">Uptime %</label>
+              {{ form.uptime_percentage }}
+              {% if form.uptime_percentage.errors %}
+                <div class="form-error">{{ form.uptime_percentage.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Response Time -->
+            <div>
+              <label for="{{ form.response_time_ms.id_for_label }}" class="form-label">Response Time (ms)</label>
+              {{ form.response_time_ms }}
+              {% if form.response_time_ms.errors %}
+                <div class="form-error">{{ form.response_time_ms.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Daily Users -->
+            <div>
+              <label for="{{ form.daily_users.id_for_label }}" class="form-label">Daily Users</label>
+              {{ form.daily_users }}
+              {% if form.daily_users.errors %}
+                <div class="form-error">{{ form.daily_users.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Development Tracking -->
+        <div class="glass-card p-6">
+          <div class="flex items-center mb-6">
+            <i class="fas fa-code text-blue-400 mr-3"></i>
+            <h3 class="text-lg font-semibold text-white">Development</h3>
+          </div>
+          
+          <div class="space-y-4">
+            <!-- Estimated Hours -->
+            <div>
+              <label for="{{ form.estimated_dev_hours.id_for_label }}" class="form-label">Estimated Hours</label>
+              {{ form.estimated_dev_hours }}
+              {% if form.estimated_dev_hours.errors %}
+                <div class="form-error">{{ form.estimated_dev_hours.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Actual Hours -->
+            <div>
+              <label for="{{ form.actual_dev_hours.id_for_label }}" class="form-label">Actual Hours</label>
+              {{ form.actual_dev_hours }}
+              {% if form.actual_dev_hours.errors %}
+                <div class="form-error">{{ form.actual_dev_hours.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Team Size -->
+            <div>
+              <label for="{{ form.team_size.id_for_label }}" class="form-label">Team Size</label>
+              {{ form.team_size }}
+              {% if form.team_size.errors %}
+                <div class="form-error">{{ form.team_size.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Media & Assets -->
+        <div class="glass-card p-6">
+          <div class="flex items-center mb-6">
+            <i class="fas fa-images text-pink-400 mr-3"></i>
+            <h3 class="text-lg font-semibold text-white">Media & Assets</h3>
+          </div>
+          
+          <div class="space-y-4">
+            <!-- Thumbnail -->
+            <div>
+              <label for="{{ form.thumbnail.id_for_label }}" class="form-label">Thumbnail</label>
+              {{ form.thumbnail }}
+              {% if form.thumbnail.errors %}
+                <div class="form-error">{{ form.thumbnail.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.thumbnail.help_text }}</div>
+              {% if object.thumbnail %}
+                <div class="mt-2">
+                  <img src="{{ object.thumbnail.url }}" alt="Current thumbnail" 
+                       class="w-20 h-15 object-cover rounded border border-gray-600">
+                  <div class="text-xs text-gray-400 mt-1">Current thumbnail</div>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Banner Image -->
+            <div>
+              <label for="{{ form.banner_image.id_for_label }}" class="form-label">Banner Image</label>
+              {{ form.banner_image }}
+              {% if form.banner_image.errors %}
+                <div class="form-error">{{ form.banner_image.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.banner_image.help_text }}</div>
+              {% if object.banner_image %}
+                <div class="mt-2">
+                  <img src="{{ object.banner_image.url }}" alt="Current banner" 
+                       class="w-full h-16 object-cover rounded border border-gray-600">
+                  <div class="text-xs text-gray-400 mt-1">Current banner</div>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Featured Image -->
+            <div>
+              <label for="{{ form.featured_image.id_for_label }}" class="form-label">Featured Image</label>
+              {{ form.featured_image }}
+              {% if form.featured_image.errors %}
+                <div class="form-error">{{ form.featured_image.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.featured_image.help_text }}</div>
+              {% if object.featured_image %}
+                <div class="mt-2">
+                  <img src="{{ object.featured_image.url }}" alt="Current featured image" 
+                       class="w-20 h-15 object-cover rounded border border-gray-600">
+                  <div class="text-xs text-gray-400 mt-1">Current featured image</div>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Architecture Diagram -->
+            <div>
+              <label for="{{ form.architecture_diagram.id_for_label }}" class="form-label">Architecture Diagram</label>
+              {{ form.architecture_diagram }}
+              {% if form.architecture_diagram.errors %}
+                <div class="form-error">{{ form.architecture_diagram.errors.0 }}</div>
+              {% endif %}
+              <div class="form-help">{{ form.architecture_diagram.help_text }}</div>
+              {% if object.architecture_diagram %}
+                <div class="mt-2">
+                  <img src="{{ object.architecture_diagram.url }}" alt="Current architecture diagram" 
+                       class="w-full h-20 object-cover rounded border border-gray-600">
+                  <div class="text-xs text-gray-400 mt-1">Current diagram</div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Actions -->
+        <div class="glass-card p-6">
+          <div class="space-y-4">
+            <button type="submit" class="btn btn-cyan w-full">
+              <i class="fas fa-save mr-2"></i>
+              {% if object %}Update System{% else %}Create System{% endif %}
+            </button>
+            
+            {% if object %}
+              <button type="submit" name="save_and_continue" class="btn btn-secondary w-full">
+                <i class="fas fa-edit mr-2"></i>
+                Save and Continue Editing
+              </button>
+            {% endif %}
+            
+            <a href="{% url 'core:admin:projects:system_list' %}" class="btn btn-outline w-full">
+              <i class="fas fa-times mr-2"></i>
+              Cancel
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
-</section>
+  </form>
+{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.form-control::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.form-error {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #ef4444;
+}
+
+.form-help {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.technology-checkboxes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.technology-checkboxes input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+.technology-checkboxes label {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+}
+
+.technology-checkboxes label:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.technology-checkboxes input[type="checkbox"]:checked + label,
+.technology-checkboxes label:has(input[type="checkbox"]:checked) {
+  background: rgba(38, 198, 218, 0.1);
+  border-color: rgba(38, 198, 218, 0.3);
+  color: var(--color-teal);
+}
+
+.markdownx-editor {
+  min-height: 200px;
+  font-family: var(--font-code);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* File input styling */
+input[type="file"] {
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: var(--color-text-secondary);
+  transition: all 0.3s ease;
+}
+
+input[type="file"]:hover {
+  border-color: var(--color-teal);
+  background: rgba(38, 198, 218, 0.05);
+}
+
+/* Auto-resize textareas */
+.auto-resize {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Form sections spacing */
+.glass-card h3 {
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .grid.lg\\:grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .lg\\:col-span-2 {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .glass-card {
+    padding: 1rem;
+  }
+  
+  .form-control {
+    padding: 0.625rem;
+  }
+  
+  .technology-checkboxes {
+    max-height: 200px;
+  }
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="{% static 'projects/js/admin.js' %}"></script>
-<script>
-// Initialize date pickers
-document.addEventListener('DOMContentLoaded', function() {
-    flatpickr('[type="date"]', {
-        dateFormat: "Y-m-d",
-        theme: "dark"
-    });
-});
-</script>
+  {{ block.super }}
+  <script src="{% static 'markdownx/js/markdownx.min.js' %}"></script>
+  
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Auto-generate slug from title
+      const titleField = document.querySelector('#id_title');
+      const slugField = document.querySelector('#id_slug');
+      
+      if (titleField && slugField) {
+          titleField.addEventListener('input', function() {
+              if (!slugField.value || slugField.value === '') {
+                  const slug = this.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-')
+                      .replace(/^-+|-+$/g, '');
+                  slugField.value = slug;
+              }
+          });
+      }
+      
+      // Auto-resize textareas
+      const textareas = document.querySelectorAll('textarea');
+      textareas.forEach(textarea => {
+          textarea.classList.add('auto-resize');
+          
+          function resize() {
+              textarea.style.height = 'auto';
+              textarea.style.height = textarea.scrollHeight + 'px';
+          }
+          
+          textarea.addEventListener('input', resize);
+          textarea.addEventListener('focus', resize);
+          
+          // Initial resize
+          resize();
+      });
+      
+      // Form validation enhancement
+      const form = document.querySelector('.system-form');
+      if (form) {
+          form.addEventListener('submit', function(e) {
+              const requiredFields = form.querySelectorAll('[required]');
+              let isValid = true;
+              
+              requiredFields.forEach(field => {
+                  if (!field.value.trim()) {
+                      isValid = false;
+                      field.focus();
+                      
+                      // Add error styling
+                      field.style.borderColor = '#ef4444';
+                      setTimeout(() => {
+                          field.style.borderColor = '';
+                      }, 3000);
+                  }
+              });
+              
+              if (!isValid) {
+                  e.preventDefault();
+                  
+                  // Show error message
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'alert alert-error mb-6';
+                  errorDiv.innerHTML = '<p>Please fill in all required fields.</p>';
+                  
+                  const firstCard = document.querySelector('.glass-card');
+                  firstCard.parentNode.insertBefore(errorDiv, firstCard);
+                  
+                  setTimeout(() => {
+                      errorDiv.remove();
+                  }, 5000);
+              }
+          });
+      }
+      
+      // Preview images on upload
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+      fileInputs.forEach(input => {
+          input.addEventListener('change', function(e) {
+              const file = e.target.files[0];
+              if (file && file.type.startsWith('image/')) {
+                  const reader = new FileReader();
+                  reader.onload = function(e) {
+                      // Find or create preview element
+                      let preview = input.parentElement.querySelector('.image-preview');
+                      if (!preview) {
+                          preview = document.createElement('div');
+                          preview.className = 'image-preview mt-2';
+                          input.parentElement.appendChild(preview);
+                      }
+                      
+                      preview.innerHTML = `
+                          <img src="${e.target.result}" alt="Preview" 
+                               class="w-20 h-15 object-cover rounded border border-gray-600">
+                          <div class="text-xs text-gray-400 mt-1">New upload preview</div>
+                      `;
+                  };
+                  reader.readAsDataURL(file);
+              }
+          });
+      });
+  });
+  </script>
 {% endblock %}

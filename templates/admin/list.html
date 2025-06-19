@@ -1,0 +1,380 @@
+<!-- templates/admin/list.html -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block header_actions %}
+    {% include 'admin/components/search_bar.html' %}
+    {% if can_add %}
+        <a href="{{ create_url }}" class="btn btn-admin-primary">
+            <i class="fas fa-plus me-2"></i>
+            Add {{ model_name }}
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block admin_content %}
+<div class="admin-list-container">
+    <!-- Bulk Actions Bar -->
+    <div class="bulk-actions-bar" style="display: none;">
+        <div class="bulk-actions-content">
+            <span class="selected-count">0 items selected</span>
+            <div class="bulk-actions">
+                <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete">
+                    <i class="fas fa-trash me-1"></i>
+                    Delete Selected
+                </button>
+                {% block additional_bulk_actions %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Table -->
+    {% include 'admin/components/list_table.html' %}
+</div>
+{% endblock %}
+
+{% block admin_css %}
+<style>
+.admin-list-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-search-bar {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-form {
+    max-width: 400px;
+}
+
+.bulk-actions-bar {
+    background: rgba(var(--{{ app_color }}-rgb), 0.1);
+    border-bottom: 1px solid rgba(var(--{{ app_color }}-rgb), 0.2);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bulk-actions-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.selected-count {
+    font-weight: 500;
+    color: var(--{{ app_color }});
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.admin-table-container {
+    overflow-x: auto;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.stat-item {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.stat-item strong {
+    color: var(--text-primary);
+}
+
+.admin-table {
+    margin: 0;
+    background: transparent;
+}
+
+.admin-table th {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-table td {
+    padding: 1rem 1.5rem;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    vertical-align: middle;
+}
+
+.table-row {
+    transition: all 0.3s ease;
+}
+
+.table-row:hover {
+    background: rgba(var(--{{ app_color }}-rgb), 0.1);
+}
+
+.table-row.selected {
+    background: rgba(var(--{{ app_color }}-rgb), 0.15);
+}
+
+.item-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.view-link {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    transition: color 0.3s ease;
+}
+
+.view-link:hover {
+    color: var(--{{ app_color }});
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-published {
+    background: rgba(var(--success-rgb), 0.2);
+    color: var(--success);
+    border: 1px solid rgba(var(--success-rgb), 0.3);
+}
+
+.status-draft {
+    background: rgba(var(--warning-rgb), 0.2);
+    color: var(--warning);
+    border: 1px solid rgba(var(--warning-rgb), 0.3);
+}
+
+.status-deployed {
+    background: rgba(var(--info-rgb), 0.2);
+    color: var(--info);
+    border: 1px solid rgba(var(--info-rgb), 0.3);
+}
+
+.status-in_development {
+    background: rgba(var(--{{ app_color }}-rgb), 0.2);
+    color: var(--{{ app_color }});
+    border: 1px solid rgba(var(--{{ app_color }}-rgb), 0.3);
+}
+
+.date-info {
+    color: var(--text-primary);
+}
+
+.date-info small {
+    font-size: 0.75rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.action-buttons .btn {
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
+}
+
+.empty-state {
+    padding: 3rem 1rem;
+}
+
+.empty-state i {
+    opacity: 0.5;
+}
+
+.table-pagination {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pagination .page-link {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    margin: 0 0.125rem;
+    border-radius: 0.375rem;
+}
+
+.pagination .page-link:hover {
+    background: rgba(var(--{{ app_color }}-rgb), 0.1);
+    border-color: rgba(var(--{{ app_color }}-rgb), 0.3);
+    color: var(--{{ app_color }});
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--{{ app_color }});
+    border-color: var(--{{ app_color }});
+    color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .table-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .table-stats {
+        justify-content: center;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .admin-table th:not(:first-child):not(:last-child),
+    .admin-table td:not(:first-child):not(:last-child) {
+        display: none;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_js %}
+<script>
+// Bulk selection functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select-all');
+    const rowCheckboxes = document.querySelectorAll('.row-select');
+    const bulkActionsBar = document.querySelector('.bulk-actions-bar');
+    const selectedCountElement = document.querySelector('.selected-count');
+    
+    // Select all functionality
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            rowCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+                toggleRowSelection(checkbox.closest('tr'), isChecked);
+            });
+            updateBulkActionsBar();
+        });
+    }
+    
+    // Individual row selection
+    rowCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            toggleRowSelection(this.closest('tr'), this.checked);
+            updateSelectAllState();
+            updateBulkActionsBar();
+        });
+    });
+    
+    function toggleRowSelection(row, selected) {
+        if (selected) {
+            row.classList.add('selected');
+        } else {
+            row.classList.remove('selected');
+        }
+    }
+    
+    function updateSelectAllState() {
+        const checkedCount = document.querySelectorAll('.row-select:checked').length;
+        const totalCount = rowCheckboxes.length;
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = checkedCount === totalCount;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < totalCount;
+        }
+    }
+    
+    function updateBulkActionsBar() {
+        const selectedCount = document.querySelectorAll('.row-select:checked').length;
+        
+        if (selectedCount > 0) {
+            bulkActionsBar.style.display = 'block';
+            selectedCountElement.textContent = `${selectedCount} item${selectedCount !== 1 ? 's' : ''} selected`;
+        } else {
+            bulkActionsBar.style.display = 'none';
+        }
+    }
+    
+    // Bulk action handlers
+    document.querySelectorAll('[data-action]').forEach(button => {
+        button.addEventListener('click', function() {
+            const action = this.dataset.action;
+            const selectedIds = Array.from(document.querySelectorAll('.row-select:checked'))
+                .map(checkbox => checkbox.value);
+            
+            if (selectedIds.length === 0) {
+                alert('Please select items to perform this action.');
+                return;
+            }
+            
+            handleBulkAction(action, selectedIds);
+        });
+    });
+    
+    function handleBulkAction(action, selectedIds) {
+        if (action === 'delete') {
+            if (confirm(`Are you sure you want to delete ${selectedIds.length} item(s)?`)) {
+                // Create form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.style.display = 'none';
+                
+                // Add CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken.value;
+                    form.appendChild(csrfInput);
+                }
+                
+                // Add action
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = action;
+                form.appendChild(actionInput);
+                
+                // Add selected IDs
+                selectedIds.forEach(id => {
+                    const idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'selected_items';
+                    idInput.value = id;
+                    form.appendChild(idInput);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

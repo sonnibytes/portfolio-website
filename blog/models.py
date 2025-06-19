@@ -136,12 +136,39 @@ class Post(models.Model):
         return reverse('blog:post_detail', args=[self.slug])
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
+        """Custom save method to handle published_date and other auto-fields."""
 
-        # If publishing for first time, set published_date
-        if self.status == 'published' and not self.published_date:
-            self.published_date == timezone.now()
+        # Check if this is a new post or status change
+        is_new = not self.pk
+        old_status = None
+
+        if not is_new:
+            try:
+                old_post = Post.objects.get(pk=self.pk)
+                old_status = old_post.status
+            except Post.DoesNotExist:
+                old_status = "draft"
+
+        # Set published_date when publishing for the first time
+        if (self.status == "published" and old_status != "published" and not self.published_date):
+            self.published_date = timezone.now()
+
+        # Clear published_date if moving back to draft
+        elif self.status == "draft" and old_status == "published":
+            self.published_date = None
+
+        # Auto-generate slug if not provided
+        if not self.slug and self.title:
+            base_slug = slugify(self.title)
+            slug = base_slug
+            counter = 1
+
+            # Ensure slug uniqueness
+            while Post.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            self.slug = slug
 
         # Calculate reading time
         if self.content:

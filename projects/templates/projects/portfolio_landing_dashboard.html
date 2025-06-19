@@ -1,0 +1,529 @@
+<!----
+ * AURA Portfolio - Comprehensive Portfolio Landing Dashboard
+ * Complete portfolio showcase: Systems + DataLogs + Learning + Technologies
+ * Version: 1.0.0 - Portfolio Command Center
+---->
+
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+{% load system_tags %}
+
+{% block systems_title %}Portfolio Command Center{% endblock %}
+{% block systems_body_class %}portfolio-landing enhanced-dashboard{% endblock %}
+
+{% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/system-interface.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
+
+
+<style>
+/* Horizontal scroll containers */
+.horizontal-scroll-container {
+    display: flex;
+    gap: var(--spacing-lg, 1.5rem);
+    overflow-x: auto;
+    padding-bottom: var(--spacing-md, 1rem);
+    scroll-behavior: smooth;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Featured cards */
+.featured-card {
+    flex: 0 0 300px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: var(--spacing-lg, 1.5rem);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.featured-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.datalog-card {
+    flex: 0 0 280px;
+}
+
+/* Technology mastery grid */
+.tech-mastery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md, 1rem);
+}
+
+/* Activity timeline */
+.activity-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm, 0.75rem);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    padding: var(--spacing-md, 1rem);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-md, 8px);
+    border-left: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+</style>
+{% endblock %}
+
+{% block systems_content %}
+<div class="dashboard-main-content container">
+
+    <!-- HERO SECTION - Portfolio Overview Metrics -->
+    <div class="unified-dashboard-container teal">
+        <div class="unified-container-header">
+            <div class="hero-badges">
+                <div class="unified-featured-badge">
+                    <i class="fas fa-rocket"></i>
+                    <span>Portfolio Hub</span>
+                </div>
+                <div class="unified-featured-badge">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Growth Tracking</span>
+                </div>
+            </div>
+            <h1 class="unified-container-title">AURA PORTFOLIO</h1>
+            <p class="unified-container-subtitle">Complete development journey showcase</p>
+        </div>
+
+        <!-- PORTFOLIO METRICS GRID -->
+        <div class="dashboard-grid grid-4-col">
+            <!-- Total Projects -->
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ portfolio_metrics.total_systems }}">{{ portfolio_metrics.total_systems }}</div>
+                <div class="metric-label">Projects Built</div>
+                <div class="metric-sublabel">{{ portfolio_metrics.deployed_systems }} deployed</div>
+            </div>
+            
+            <!-- DataLog Entries -->
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ portfolio_metrics.total_posts }}">{{ portfolio_metrics.total_posts }}</div>
+                <div class="metric-label">DataLog Entries</div>
+                <div class="metric-sublabel">{{ portfolio_metrics.recent_posts }} this month</div>
+            </div>
+            
+            <!-- Skills Developed -->
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ portfolio_metrics.total_skills }}">{{ portfolio_metrics.total_skills }}</div>
+                <div class="metric-label">Skills Developed</div>
+                <div class="metric-sublabel">{{ learning_metrics.learning_velocity }}/month velocity</div>
+            </div>
+            
+            <!-- Portfolio Readiness -->
+            <div class="metric-content">
+                <div class="metric-value" data-target="{{ portfolio_metrics.portfolio_percentage }}">{{ portfolio_metrics.portfolio_percentage }}%</div>
+                <div class="metric-label">Portfolio Ready</div>
+                <div class="metric-sublabel">{{ portfolio_metrics.portfolio_ready_count }} systems ready</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURED PROJECTS SHOWCASE -->
+    <div class="unified-dashboard-container lavender">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title">Featured Projects</h2>
+            <p class="unified-container-subtitle">Showcase systems with learning highlights</p>
+        </div>
+        
+        <div class="horizontal-scroll-container">
+            {% for system in featured_systems %}
+            <div class="featured-card">
+                <!-- Project Header -->
+                <div class="system-header" style="display: flex; align-items: center; gap: var(--spacing-md, 1rem); margin-bottom: var(--spacing-lg, 1.5rem);">
+                    <div class="system-icon" style="width: 48px; height: 48px; background: rgba(179, 157, 219, 0.2); border-radius: var(--border-radius-md, 8px); display: flex; align-items: center; justify-content: center; color: var(--color-lavender);">
+                        <i class="fas {{ system.system_type.icon|default:'fa-cube' }}"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h3 style="color: var(--color-text); margin-bottom: var(--spacing-xs, 0.5rem); font-size: 1.1rem;">{{ system.title }}</h3>
+                        <div style="font-size: 0.8rem; color: var(--color-text-secondary);">{{ system.get_learning_stage_display }}</div>
+                    </div>
+                </div>
+                
+                <!-- Learning Summary -->
+                <div class="learning-summary" style="margin-bottom: var(--spacing-lg, 1.5rem);">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md, 1rem); margin-bottom: var(--spacing-md, 1rem);">
+                        <div style="text-align: center; padding: var(--spacing-sm, 0.75rem); background: rgba(179, 157, 219, 0.1); border-radius: var(--border-radius-sm, 4px);">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-lavender);">{{ system.skill_gains.count }}</div>
+                            <div style="font-size: 0.7rem; color: var(--color-text-secondary);">Skills Gained</div>
+                        </div>
+                        <div style="text-align: center; padding: var(--spacing-sm, 0.75rem); background: rgba(179, 157, 219, 0.1); border-radius: var(--border-radius-sm, 4px);">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-lavender);">{{ system.technologies.count }}</div>
+                            <div style="font-size: 0.7rem; color: var(--color-text-secondary);">Technologies</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Portfolio Status -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-sm, 0.75rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-sm, 4px);">
+                        <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Portfolio Status</span>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: {% if system.portfolio_ready %}var(--color-success){% else %}var(--color-warning){% endif %};">
+                            {% if system.portfolio_ready %}✓ Ready{% else %}In Progress{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Technology Stack -->
+                <div class="tech-stack" style="margin-bottom: var(--spacing-lg, 1.5rem);">
+                    <div style="font-size: 0.7rem; color: var(--color-text-secondary); margin-bottom: var(--spacing-sm, 0.75rem); text-transform: uppercase; letter-spacing: 0.5px;">Technology Stack</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        {% for tech in system.technologies.all|slice:":5" %}
+                        <span style="font-size: 0.7rem; padding: 0.25rem 0.5rem; background: rgba(179, 157, 219, 0.15); color: var(--color-lavender); border-radius: var(--border-radius-sm, 4px);">
+                            {{ tech.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Action Button -->
+                <a href="{{ system.get_absolute_url }}" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--color-lavender); text-decoration: none; font-size: 0.8rem; font-weight: 600; padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem); background: rgba(179, 157, 219, 0.1); border-radius: var(--border-radius-sm, 4px); transition: all 0.3s ease;">
+                    View Project <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% empty %}
+            <div style="flex: 1; text-align: center; padding: var(--spacing-xl, 2rem); color: var(--color-text-secondary);">
+                <i class="fas fa-plus-circle" style="font-size: 3rem; margin-bottom: var(--spacing-md, 1rem); opacity: 0.3;"></i>
+                <h4>No Featured Projects Yet</h4>
+                <p>Mark some systems as featured to showcase your best work!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- DATALOGS SHOWCASE -->
+    <div class="unified-dashboard-container coral">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title">Recent DataLogs</h2>
+            <p class="unified-container-subtitle">Technical writing and development insights</p>
+        </div>
+        
+        <div class="horizontal-scroll-container">
+            {% for post in recent_datalogs %}
+            <div class="featured-card datalog-card">
+                <!-- DataLog Header -->
+                <div style="display: flex; align-items: flex-start; gap: var(--spacing-md, 1rem); margin-bottom: var(--spacing-lg, 1.5rem);">
+                    <div style="width: 40px; height: 40px; background: rgba(255, 138, 128, 0.2); border-radius: var(--border-radius-md, 8px); display: flex; align-items: center; justify-content: center; color: var(--color-coral); flex-shrink: 0;">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <h3 style="color: var(--color-text); margin-bottom: var(--spacing-xs, 0.5rem); font-size: 1rem; line-height: 1.3;">{{ post.title }}</h3>
+                        <div style="font-size: 0.7rem; color: var(--color-text-secondary); margin-bottom: var(--spacing-xs, 0.5rem);">
+                            {{ post.category.name }} • {{ post.reading_time }} min read
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Excerpt -->
+                {% if post.excerpt %}
+                <div style="font-size: 0.8rem; color: var(--color-text-secondary); line-height: 1.4; margin-bottom: var(--spacing-lg, 1.5rem);">
+                    {{ post.excerpt|truncatewords:20 }}
+                </div>
+                {% endif %}
+                
+                <!-- Tags -->
+                {% if post.tags.all %}
+                <div style="margin-bottom: var(--spacing-lg, 1.5rem);">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                        {% for tag in post.tags.all|slice:":3" %}
+                        <span style="font-size: 0.6rem; padding: 0.2rem 0.4rem; background: rgba(255, 138, 128, 0.15); color: var(--color-coral); border-radius: var(--border-radius-sm, 4px);">
+                            {{ tag.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Meta Info -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-md, 1rem); font-size: 0.7rem; color: var(--color-text-tertiary);">
+                    <span>{{ post.published_date|timesince }} ago</span>
+                    {% if post.related_systems.exists %}
+                    <span><i class="fas fa-link"></i> {{ post.related_systems.count }} project{% if post.related_systems.count != 1 %}s{% endif %}</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Action Button -->
+                <a href="{{ post.get_absolute_url }}" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--color-coral); text-decoration: none; font-size: 0.8rem; font-weight: 600; padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem); background: rgba(255, 138, 128, 0.1); border-radius: var(--border-radius-sm, 4px); transition: all 0.3s ease;">
+                    Read Entry <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% empty %}
+            <div style="flex: 1; text-align: center; padding: var(--spacing-xl, 2rem); color: var(--color-text-secondary);">
+                <i class="fas fa-file-plus" style="font-size: 3rem; margin-bottom: var(--spacing-md, 1rem); opacity: 0.3;"></i>
+                <h4>No DataLog Entries Yet</h4>
+                <p>Start documenting your development journey!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- LEARNING & TECHNOLOGY SECTION -->
+    <div class="dashboard-grid grid-2-col">
+        
+        <!-- Learning Stage Distribution -->
+        <div class="unified-dashboard-container mint">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title">Learning Progression</h3>
+                <p class="unified-container-subtitle">Project stages and skill development</p>
+            </div>
+            
+            <div class="learning-chart-container" style="height: 200px; margin-bottom: var(--spacing-lg, 1.5rem);">
+                <canvas id="learningStagesChart" width="400" height="200"></canvas>
+            </div>
+            
+            <!-- Learning Metrics -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md, 1rem);">
+                <div style="text-align: center; padding: var(--spacing-md, 1rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--color-mint);">{{ learning_metrics.learning_velocity }}</div>
+                    <div style="font-size: 0.7rem; color: var(--color-text-secondary);">Skills/Month</div>
+                </div>
+                <div style="text-align: center; padding: var(--spacing-md, 1rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--color-mint);">{{ learning_metrics.total_milestones }}</div>
+                    <div style="font-size: 0.7rem; color: var(--color-text-secondary);">Milestones</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technology Mastery -->
+        <div class="unified-dashboard-container yellow">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title">Technology Mastery</h3>
+                <p class="unified-container-subtitle">Skills progression by technology</p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-sm, 0.75rem); max-height: 300px; overflow-y: auto;">
+                {% for tech in technology_mastery|slice:":8" %}
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-sm, 0.75rem);">
+                        <span style="font-weight: 600; color: var(--color-text); font-size: 0.9rem;">{{ tech.name }}</span>
+                        <span style="font-size: 0.7rem; color: var(--color-text-secondary);">{{ tech.project_count }} project{% if tech.project_count != 1 %}s{% endif %}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: var(--spacing-xs, 0.5rem);">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: {{ tech.mastery_color }};"></div>
+                        <span style="font-size: 0.7rem; color: {{ tech.mastery_color }}; font-weight: 600; text-transform: uppercase;">
+                            {{ tech.mastery_level }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- RECENT ACTIVITY & ALERTS -->
+    <div class="dashboard-grid grid-2-1">
+        
+        <!-- Recent Activity Timeline -->
+        <div class="unified-dashboard-container navy">
+            <div class="unified-container-header">
+                <h3 class="unified-container-title">Recent Activity</h3>
+                <p class="unified-container-subtitle">Latest development updates</p>
+            </div>
+            
+            <div class="activity-timeline">
+                {% for activity in recent_activity %}
+                <div class="activity-item" style="border-left-color: {{ activity.color }};">
+                    <div style="width: 36px; height: 36px; background: {{ activity.color }}20; border-radius: var(--border-radius-md, 8px); display: flex; align-items: center; justify-content: center; color: {{ activity.color }}; flex-shrink: 0;">
+                        <i class="{{ activity.icon }}"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; color: #e8eaf6; margin-bottom: var(--spacing-xs, 0.5rem); font-size: 0.9rem;">
+                            {% if activity.url %}
+                            <a href="{{ activity.url }}" style="color: inherit; text-decoration: none;">{{ activity.title }}</a>
+                            {% else %}
+                            {{ activity.title }}
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.8rem; color: rgba(232, 234, 246, 0.8); margin-bottom: var(--spacing-xs, 0.5rem);">
+                            {{ activity.subtitle }}
+                        </div>
+                        <div style="font-size: 0.7rem; color: rgba(232, 234, 246, 0.6);">
+                            {{ activity.date|timesince }} ago
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: var(--spacing-xl, 2rem); color: rgba(232, 234, 246, 0.6);">
+                    <i class="fas fa-clock" style="font-size: 2rem; margin-bottom: var(--spacing-md, 1rem); opacity: 0.3;"></i>
+                    <p>No recent activity</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Portfolio Alerts & Recent Milestones -->
+        <div class="dashboard-secondary">
+            
+            <!-- Recent Milestones -->
+            {% if recent_milestones %}
+            <div class="unified-dashboard-container gunmetal">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title">Recent Milestones</h4>
+                    <p class="unified-container-subtitle">Learning achievements</p>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-md, 1rem);">
+                    {% for milestone in recent_milestones %}
+                    <div style="display: flex; align-items: flex-start; gap: var(--spacing-sm, 0.75rem); padding: var(--spacing-md, 1rem); background: rgba(255, 215, 79, 0.1); border-radius: var(--border-radius-md, 8px); border-left: 3px solid var(--color-yellow);">
+                        <div style="width: 24px; height: 24px; background: rgba(255, 215, 79, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--color-yellow); flex-shrink: 0; margin-top: 2px;">
+                            <i class="fas fa-trophy" style="font-size: 0.7rem;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--color-text); margin-bottom: var(--spacing-xs, 0.5rem); font-size: 0.8rem;">
+                                {{ milestone.title }}
+                            </div>
+                            <div style="font-size: 0.7rem; color: var(--color-text-secondary); margin-bottom: var(--spacing-xs, 0.5rem);">
+                                {{ milestone.system.title }}
+                            </div>
+                            <div style="font-size: 0.6rem; color: var(--color-text-tertiary);">
+                                {{ milestone.date_achieved|timesince }} ago
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Portfolio Alerts -->
+            {% if portfolio_alerts %}
+            <div class="unified-dashboard-container gunmetal">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title">Portfolio Alerts</h4>
+                    <p class="unified-container-subtitle">Improvement opportunities</p>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-sm, 0.75rem);">
+                    {% for alert in portfolio_alerts %}
+                    <div style="display: flex; align-items: flex-start; gap: var(--spacing-sm, 0.75rem); padding: var(--spacing-md, 1rem); background: rgba(84, 110, 122, 0.1); border-radius: var(--border-radius-md, 8px); border-left: 3px solid {% if alert.type == 'warning' %}var(--color-warning){% elif alert.type == 'info' %}var(--color-info){% else %}var(--color-success){% endif %};">
+                        <i class="{{ alert.icon }}" style="color: {% if alert.type == 'warning' %}var(--color-warning){% elif alert.type == 'info' %}var(--color-info){% else %}var(--color-success){% endif %}; margin-top: 2px; flex-shrink: 0; font-size: 0.8rem;"></i>
+                        <div>
+                            <div style="font-weight: 600; color: var(--color-text); margin-bottom: var(--spacing-xs, 0.5rem); font-size: 0.8rem;">
+                                {{ alert.message }}
+                            </div>
+                            <div style="font-size: 0.7rem; color: var(--color-text-secondary);">
+                                {{ alert.action }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Charts and Interactions -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Learning Stages Chart
+    const learningStagesCtx = document.getElementById('learningStagesChart');
+    if (learningStagesCtx) {
+        const learningStagesData = [
+            {% for stage in learning_stages %}
+            {
+                label: '{{ stage.stage_display }}',
+                value: {{ stage.count }},
+                color: '{{ stage.color }}'
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        new Chart(learningStagesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: learningStagesData.map(item => item.label),
+                datasets: [{
+                    data: learningStagesData.map(item => item.value),
+                    backgroundColor: learningStagesData.map(item => item.color),
+                    borderWidth: 2,
+                    borderColor: 'rgba(255, 255, 255, 0.1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Animate metrics on load
+    const metricValues = document.querySelectorAll('.metric-value[data-target]');
+    metricValues.forEach(element => {
+        const target = parseInt(element.getAttribute('data-target'));
+        const duration = 2000;
+        const startTime = performance.now();
+        
+        function animate(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const current = Math.floor(progress * target);
+            
+            element.textContent = current;
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                element.textContent = target;
+            }
+        }
+        
+        requestAnimationFrame(animate);
+    });
+    
+    // Smooth scrolling for horizontal containers
+    const scrollContainers = document.querySelectorAll('.horizontal-scroll-container');
+    scrollContainers.forEach(container => {
+        container.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                container.scrollLeft += e.deltaY;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block systems_js %}
+<script src="{% static 'projects/js/dashboard_panel.js' %}"></script>
+{% endblock %}

@@ -74,6 +74,7 @@ TEMPLATES = [
                 "blog.context_processors.blog_context",
                 "core.context_processors.global_context",
                 "projects.context_processors.systems_context",
+                "core.context_processors.admin_context",
             ],
         },
     },

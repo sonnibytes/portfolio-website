@@ -1,0 +1,1158 @@
+<!----
+ * AURA Portfolio - Learning-Enhanced System List Template
+ * Complete template with all learning-focused updates and corrections
+ * Version: 4.0.0 - Learning Journey Showcase
+---->
+
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+{% load system_tags %}
+
+{% block systems_title %}All Systems{% endblock %}
+{% block systems_body_class %}systems-list enhanced-list learning-focused{% endblock %}
+
+{% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems_list.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/system-interface.css' %}">
+<style>
+/* Learning-Specific Enhancements */
+
+    /* Learning Stage Badges */
+.learning-stage-badge {
+    display: contents;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.learning-stage-badge .stage-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+/* Learning Stage Colors */
+.learning-stage-tutorial,
+.learning-stage-badge.learning-stage-tutorial {
+    background: rgba(255, 152, 0, 0.15);
+    color: var(--color-warning);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+}
+.learning-stage-tutorial .stage-dot { background: var(--color-warning); }
+
+.learning-stage-guided,
+.learning-stage-badge.learning-stage-guided {
+    background: rgba(255, 193, 7, 0.15);
+    color: var(--color-yellow);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+.learning-stage-guided .stage-dot { background: var(--color-yellow); }
+
+.learning-stage-independent,
+.learning-stage-badge.learning-stage-independent {
+    background: rgba(38, 198, 218, 0.15);
+    color: var(--color-teal);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+}
+.learning-stage-independent .stage-dot { background: var(--color-teal); }
+
+.learning-stage-refactoring,
+.learning-stage-badge.learning-stage-refactoring {
+    background: rgba(147, 51, 234, 0.15);
+    color: var(--color-lavender);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+}
+.learning-stage-refactoring .stage-dot { background: var(--color-purple); }
+
+.learning-stage-contributing,
+.learning-stage-badge.learning-stage-contributing {
+    background: rgba(64, 224, 208, 0.15);
+    color: var(--color-mint, #40e0d0);
+    border: 1px solid rgba(64, 224, 208, 0.3);
+}
+.learning-stage-contributing .stage-dot { background: var(--color-mint, #40e0d0); }
+
+.learning-stage-teaching,
+.learning-stage-badge.learning-stage-teaching {
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+.learning-stage-teaching .stage-dot { background: #ffd700; }
+
+/* Portfolio Ready/Progress Badges */
+.portfolio-ready-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    color: var(--color-success);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.portfolio-progress-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    color: var(--color-warning);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Learning Metrics */
+.learning-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md, 1rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    padding: var(--spacing-md, 1rem);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-md, 8px);
+}
+
+.metric-item {
+    display: block;
+}
+
+/* Skills Pills */
+.skills-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: var(--spacing-md, 1rem);
+    padding-top: inherit;
+}
+
+.skill-pill {
+    padding: 0.25rem 0.5rem;
+    background: rgba(38, 198, 218, 0.15);
+    color: var(--color-teal);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.skill-pill.more {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-tertiary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.system-meta {
+    padding-top: 0.5rem;
+}
+
+/* Learning Progress Bar */
+.learning-progress {
+    margin-bottom: var(--spacing-md, 1rem);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+
+.progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1.5s ease;
+}
+
+/* Progress Fill Colors by Learning Stage */
+.progress-fill.learning-progress-tutorial {
+    background: linear-gradient(90deg, var(--color-warning), #ffb74d);
+}
+.progress-fill.learning-progress-guided {
+    background: linear-gradient(90deg, var(--color-yellow), #fff176);
+}
+.progress-fill.learning-progress-independent {
+    background: linear-gradient(90deg, var(--color-teal), #4dd0e1);
+}
+.progress-fill.learning-progress-refactoring {
+    background: linear-gradient(90deg, var(--color-lavender), #ba68c8);
+}
+.progress-fill.learning-progress-contributing {
+    background: linear-gradient(90deg, var(--color-mint, #40e0d0), #66ffff);
+}
+.progress-fill.learning-progress-teaching {
+    background: linear-gradient(90deg, #ffd700, #ffecb3);
+}
+
+/* Learning Stage Dots in Sidebar */
+.learning-stage-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Mastery Badges */
+.mastery-badge {
+    padding: 0.125rem 0.375rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.mastery-badge.mastery-beginner {
+    background: rgba(255, 152, 0, 0.2);
+    color: var(--color-warning);
+}
+
+.mastery-badge.mastery-intermediate {
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+}
+
+.mastery-badge.mastery-advanced {
+    background: rgba(147, 51, 234, 0.2);
+    color: var(--color-lavender);
+}
+
+/* Milestones Indicator */
+.milestones-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.milestones-indicator i {
+    color: #ffd700;
+}
+
+/* Time Investment Display */
+.time-investment-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.time-actual {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.time-estimated {
+    color: var(--color-text-tertiary);
+    font-style: italic;
+}
+
+.time-none {
+    color: var(--color-text-tertiary);
+    opacity: 0.7;
+}
+
+/* Learning Card Hover Effects */
+.system-card.learning-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.system-card.learning-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--color-text-tertiary);
+    opacity: 0.3;
+    transition: all 0.3s ease;
+}
+
+.system-card.learning-card.learning-stage-tutorial::before {
+    background: linear-gradient(90deg, var(--color-warning), #ffb74d);
+}
+.system-card.learning-card.learning-stage-guided::before {
+    background: linear-gradient(90deg, var(--color-yellow), #fff176);
+}
+.system-card.learning-card.learning-stage-independent::before {
+    background: linear-gradient(90deg, var(--color-teal), #4dd0e1);
+}
+.system-card.learning-card.learning-stage-refactoring::before {
+    background: linear-gradient(90deg, var(--color-purple), #ba68c8);
+}
+.system-card.learning-card.learning-stage-contributing::before {
+    background: linear-gradient(90deg, var(--color-mint, #40e0d0), #66ffff);
+}
+.system-card.learning-card.learning-stage-teaching::before {
+    background: linear-gradient(90deg, #ffd700, #ffecb3);
+}
+
+.system-card.learning-card:hover::before {
+    opacity: 0.8;
+    height: 4px;
+}
+
+/* Portfolio Ready Cards */
+.system-card.portfolio-ready {
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.1);
+}
+
+.system-card.portfolio-ready::after {
+    content: '✓';
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 24px;
+    height: 24px;
+    background: var(--color-success);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .learning-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .skills-pills {
+        gap: 0.25rem;
+    }
+    
+    .skill-pill {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .system-card-badges {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .search-controls > div {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: var(--spacing-md, 1rem) !important;
+    }
+    
+    .search-controls .filter-option {
+        font-size: 0.85rem !important;
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .learning-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .skills-pills .skill-pill:nth-child(n+3) {
+        display: none;
+    }
+    
+    .skills-pills .skill-pill.more {
+        display: inline-block;
+    }
+    
+    .search-controls .filter-option {
+        flex: 1 1 calc(50% - 0.375rem);
+        min-width: 120px;
+        text-align: center;
+    }
+}
+
+/* Systems List Layout */
+.systems-list-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: var(--spacing-xl, 2rem);
+    align-items: flex-start;
+}
+
+.systems-sidebar {
+    position: sticky;
+    top: var(--spacing-xl, 2rem);
+    max-height: calc(100vh - var(--spacing-xxl, 4rem));
+    overflow-y: auto;
+}
+
+.systems-main-content {
+    min-width: 0;
+}
+
+.systems-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: var(--spacing-xl, 2rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+@media (max-width: 1024px) {
+    .systems-list-layout {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md, 1rem);
+    }
+    
+    .systems-sidebar {
+        position: static;
+        order: 2;
+        max-height: none;
+    }
+    
+    .systems-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+    }
+}
+
+@media (max-width: 767px) {
+    .systems-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block systems_content %}
+<div class="systems-list-container container">
+
+    <!-- Header Section -->
+    <div class="unified-dashboard-container lavender">
+        <div class="unified-container-header" style="text-align: justify;">
+            <div class="unified-featured-badge">
+                <i class="fa-solid fa-masks-theater"></i>
+                <span>Project Showcase</span>
+            </div>
+            <div class="header-info">
+            <h1 class="unified-container-title">ALL SYSTEMS</h1>
+            <p class="unified-container-subtitle">
+                System monitoring for {{ quick_stats.total_systems }} systems
+                {% comment %} <span style="margin-left: 1rem;">
+                    <a href="{% url 'projects:learning_dashboard' %}" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </span> {% endcomment %}
+            </p>
+        </div>
+        </div>
+
+        <!-- Learning Journey Quick Stats -->
+        <div class="metrics-overview">
+
+            <!-- Skills Gained -->
+            <div class="metric-card unified-dashboard-container teal">
+                <div class="metric-content">
+                {% comment %} <div class="dashboard-grid grid-4-col" style="margin: 0;"> {% endcomment %}
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ skills_stats.total_skills }}">{{ skills_stats.total_skills }}</div>
+                    <div class="metric-label">Skills Gained</div>
+                </div>
+            </div>
+            
+            
+            <!-- Skills Gained -->
+            <div class="metric-card unified-dashboard-container coral">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ portfolio_stats.ready }}">{{ portfolio_stats.ready }}</div>
+                    <div class="metric-label">Portfolio Ready</div>
+                </div>
+            </div>
+                
+
+            <!-- Skills Gained -->
+            <div class="metric-card unified-dashboard-container mint">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fa-solid fa-stopwatch"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ time_investment_stats.total_hours|floatformat:0 }}">{{ time_investment_stats.total_hours|floatformat:0 }}h</div>
+                    <div class="metric-label">Time Invested</div>
+                </div>
+            </div>
+
+            <!-- Skills Gained -->
+            <div class="metric-card unified-dashboard-container lavender">
+                <div class="metric-content">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" data-target="{{ recent_milestones|length }}">{{ recent_milestones|length }}</div>
+                    <div class="metric-label">Recent Milestones</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="systems-list-layout">
+        
+        <!-- Learning-Focused Sidebar -->
+        <aside class="systems-sidebar">
+    
+             <!-- Search -->
+             <div class="unified-dashboard-container lavender">
+                <div class="unified-container-header">
+                    <h3 class="unified-container-title" style="font-size: 1.2rem; margin-bottom: 0;">Search & Filter</h3>
+                </div>
+                
+                <div class="search-controls">
+                    <form method="get" id="searchForm">
+                        <input type="text" 
+                               name="search" 
+                               value="{{ request.GET.search }}" 
+                               placeholder="Search systems..." 
+                               class="search-input">
+                        <input type="hidden" name="status" value="{{ request.GET.status }}">
+                        <input type="hidden" name="tech" value="{{ request.GET.tech }}">
+                        <input type="hidden" name="type" value="{{ request.GET.type }}">
+                        <input type="hidden" name="order" value="{{ request.GET.order }}">
+                    </form>
+                </div>
+
+                <!-- Active Filters -->
+                {% if active_filters %}
+                <div class="active-filters">
+                    {% for filter_type, filter_value in active_filters.items %}
+                    <span class="active-filter">
+                        {{ filter_type }}: {{ filter_value }}
+                        <i class="fas fa-times filter-remove" 
+                           data-filter="{{ filter_type|lower }}" 
+                           title="Remove filter"></i>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        
+            <!-- Learning Stage Filter -->
+            <div class="unified-dashboard-container purple">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Learning Stages</h4>
+                </div>
+                
+                <div class="filter-options">
+                    {% for stage_code, stage_data in learning_stage_stats.items %}
+                    <a href="?learning_stage={{ stage_code }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.learning_stage == stage_code %}active{% endif %}">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            {% comment %} <span class="learning-stage-dot" style="background: var(--color-{{ stage_data.color }});"></span> {% endcomment %}
+                            <span>{{ stage_data.name }}</span>
+                        </div>
+                        <span class="filter-count">{{ stage_data.count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        
+            <!-- Portfolio Readiness Filter -->
+            <div class="unified-dashboard-container coral">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Portfolio Status</h4>
+                </div>
+                
+                <div class="filter-options">
+                    <a href="?portfolio_ready=ready{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.portfolio_ready == 'ready' %}active{% endif %}">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-check-circle" style="color: var(--color-success);"></i>
+                            <span>Portfolio Ready</span>
+                        </div>
+                        <span class="filter-count">{{ portfolio_stats.ready }}</span>
+                    </a>
+                    
+                    <a href="?portfolio_ready=in_progress{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.portfolio_ready == 'in_progress' %}active{% endif %}">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-clock" style="color: var(--color-warning);"></i>
+                            <span>In Progress</span>
+                        </div>
+                        <span class="filter-count">{{ portfolio_stats.in_progress }}</span>
+                    </a>
+                </div>
+            </div>
+        
+            <!-- Skills Filter -->
+            {% if available_skills %}
+            <div class="unified-dashboard-container lavender">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Skills Developed</h4>
+                </div>
+                
+                <div class="filter-options" style="max-height: 200px; overflow-y: auto;">
+                    {% for skill in available_skills %}
+                    <a href="?skill={{ skill.slug }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.skill == skill.slug %}active{% endif %}">
+                        <span>{{ skill.name }}</span>
+                        <span class="filter-count">{{ skill.systems_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        
+            <!-- Time Investment Filter -->
+            <div class="unified-dashboard-container mint">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Time Investment</h4>
+                </div>
+                
+                <div class="filter-options">
+                    <a href="?time_investment=short{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.time_investment == 'short' %}active{% endif %}">
+                        <span>Short (&lt;20h)</span>
+                        <span class="filter-count">{{ time_investment_stats.short }}</span>
+                    </a>
+                    
+                    <a href="?time_investment=medium{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.time_investment == 'medium' %}active{% endif %}">
+                        <span>Medium (20-50h)</span>
+                        <span class="filter-count">{{ time_investment_stats.medium }}</span>
+                    </a>
+                    
+                    <a href="?time_investment=long{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.time_investment == 'long' %}active{% endif %}">
+                        <span>Long (50h+)</span>
+                        <span class="filter-count">{{ time_investment_stats.long }}</span>
+                    </a>
+                </div>
+            </div>
+        
+            <!-- Technology Mastery -->
+            {% if tech_mastery %}
+            <div class="unified-dashboard-container gunmetal">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Technology Mastery</h4>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    {% for tech_stat in tech_mastery %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                        <span>{{ tech_stat.technology.name }}</span>
+                        <div style="display: flex; align-items: center; gap: 0.25rem;">
+                            <span class="mastery-badge mastery-{{ tech_stat.mastery_level }}">{{ tech_stat.mastery_level }}</span>
+                            <span style="color: var(--color-text-tertiary); font-size: 0.8rem;">{{ tech_stat.systems_count }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        
+            <!-- Recent Learning Milestones -->
+            {% if recent_milestones %}
+            <div class="unified-dashboard-container navy">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Recent Milestones</h4>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    {% for milestone in recent_milestones %}
+                    <div style="padding: 0.5rem; background: rgba(255, 255, 255, 0.03); border-radius: 4px;">
+                        <div style="font-weight: 500; margin-bottom: 0.25rem;">{{ milestone.title }}</div>
+                        <div style="font-size: 0.8rem; color: var(--color-text-tertiary);">
+                            {{ milestone.system.title }} • {{ milestone.date_achieved|date:"M d" }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="systems-main-content">
+            
+            <!-- Updated Learning-Focused Sort Controls -->
+            <div class="unified-dashboard-container lavender" style="margin-bottom: var(--spacing-lg, 1.5rem);">
+                <div class="search-controls">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-md, 1rem);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md, 1rem);">
+                            <span style="color: var(--color-text-secondary); font-size: 0.9rem;">Sort by:</span>
+                            <div style="display: flex; gap: var(--spacing-sm, 0.75rem); flex-wrap: wrap;">
+                                
+                                <!-- Recent (default) -->
+                                <a href="?order=recent{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'recent' or not request.GET.order %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-clock"></i> Recent</span>
+                                </a>
+                                
+                                {% comment %} <!-- Learning Velocity -->
+                                <a href="?order=learning_velocity{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'learning_velocity' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-graduation-cap"></i> Learning Velocity</span>
+                                </a> {% endcomment %}
+                                
+                                <!-- Portfolio Readiness -->
+                                <a href="?order=portfolio_readiness{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'portfolio_readiness' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-check-circle"></i> Portfolio Ready</span>
+                                </a>
+                                
+                                <!-- Time Investment -->
+                                <a href="?order=time_investment{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'time_investment' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-hourglass-half"></i> Time Investment</span>
+                                </a>
+                                
+                                <!-- Learning Stage -->
+                                <a href="?order=learning_stage{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'learning_stage' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-layer-group"></i> Learning Stage</span>
+                                </a>
+                                
+                                <!-- Complexity Evolution -->
+                                <a href="?order=complexity_evolution{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'complexity_evolution' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-chart-line"></i> Complexity</span>
+                                </a>
+                                
+                                <!-- Name -->
+                                <a href="?order=name{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'name' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fas fa-sort-alpha-down"></i> Name</span>
+                                </a>
+                                
+                            </div>
+                        </div>
+                        
+                        <!-- Enhanced Status Display -->
+                        <div style="color: var(--color-text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: var(--spacing-md, 1rem);">
+                            <!-- Learning Context Stats -->
+                            <div style="display: flex; align-items: center; gap: var(--spacing-sm, 0.75rem);">
+                                {% if skills_stats.total_skills > 0 %}
+                                <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <i class="fas fa-graduation-cap" style="color: var(--color-teal);"></i>
+                                    {{ skills_stats.total_skills }} skills
+                                </span>
+                                {% endif %}
+                                
+                                {% if portfolio_stats.ready > 0 %}
+                                <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <i class="fas fa-check-circle" style="color: var(--color-success);"></i>
+                                    {{ portfolio_stats.ready }} portfolio ready
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- System Count -->
+                            <span>Showing {{ systems|length }} of {{ quick_stats.total_systems }} systems</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Filters Display -->
+            {% if active_filters %}
+            <div style="margin-bottom: var(--spacing-lg, 1.5rem);">
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm, 0.75rem); flex-wrap: wrap;">
+                    <span style="color: var(--color-text-secondary); font-size: 0.9rem;">Active filters:</span>
+                    {% for filter_type, filter_value in active_filters.items %}
+                    <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: rgba(38, 198, 218, 0.15); border: 1px solid rgba(38, 198, 218, 0.3); border-radius: 6px; font-size: 0.8rem;">
+                        <span>{{ filter_type }}: {{ filter_value }}</span>
+                        <button class="filter-remove" data-filter="{{ filter_type|lower }}" style="background: none; border: none; color: var(--color-teal); cursor: pointer; padding: 0; margin-left: 0.25rem;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Learning-Enhanced Systems Grid -->
+            {% if systems %}
+<div class="systems-grid">
+    {% for system in systems %}
+    <article class="system-card learning-card {{ system.learning_stage }}{% if system.portfolio_ready %} portfolio-ready{% endif %}">
+        
+        <!-- Card Header -->
+        <header class="system-card-header">
+            <div class="system-card-badges">
+                <span class="system-id-badge">{{ system.system_id }}</span>
+                
+                {% comment %} <!-- Learning Stage Badge -->
+                <div class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
+                    <span class="stage-dot"></span>
+                    {{ system.get_learning_stage_display }}
+                </div> {% endcomment %}
+                
+                <!-- Portfolio Ready Indicator -->
+                {% if system.portfolio_ready %}
+                <div class="portfolio-ready-badge">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Portfolio Ready</span>
+                </div>
+                {% else %}
+                <div class="portfolio-progress-badge">
+                    <i class="fas fa-clock"></i>
+                    <span>In Progress</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <h3 class="system-card-title">{{ system.title }}</h3>
+            {% if system.system_type %}
+            <p class="system-card-subtitle">
+                <i class="fas fa-{{ system.system_type.icon|default:'apps' }}"></i> 
+                {{ system.system_type.name }}
+            </p>
+            {% endif %}
+            <!-- Learning Stage Badge -->
+            <div class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
+                {{ system.get_learning_stage_display }}
+            </div>
+        </header>
+
+        <!-- Card Body -->
+        <div class="system-card-body">
+            {% if system.excerpt %}
+            <p class="system-card-excerpt">{{ system.excerpt|truncatewords:25 }}</p>
+            {% endif %}
+
+            <!-- Learning Metrics (replaces performance metrics) -->
+            <div class="system-card-metrics learning-metrics">
+                <div class="metric-item">
+                    <span class="metric-value">{{ system.skills_developed.count }}</span>
+                    <span class="metric-label">Skills Gained</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-value">
+                        {% if system.actual_dev_hours %}
+                            {{ system.actual_dev_hours }}h
+                        {% elif system.estimated_dev_hours %}
+                            ~{{ system.estimated_dev_hours }}h
+                        {% else %}
+                            0h
+                        {% endif %}
+                    </span>
+                    <span class="metric-label">Time Invested</span>
+                </div>
+                <div class="metric-item">
+                                <span class="metric-value">{{ system.complexity|default:0 }}/5</span>
+                    <span class="metric-label">Complexity</span>
+                </div>
+            </div>
+
+            <!-- Skills Pills -->
+            {% if system.skills_developed.all %}
+            
+            <div class="skills-pills-container">
+                <div class="metric-label" style="padding-top: 1rem; padding-bottom: 0.5rem;">
+                    Skills
+                </div>
+                <div class="skills-pills">
+                {% for skill in system.skills_developed.all|slice:":4" %}
+                <span class="skill-pill">{{ skill.name }}</span>
+                {% endfor %}
+                {% if system.skills_developed.count > 4 %}
+                <span class="skill-pill more">+{{ system.skills_developed.count|add:"-4" }} more</span>
+                {% endif %}
+                </div>
+                
+            </div>
+            
+            {% endif %}
+
+            {% comment %} <!-- Learning Progress Bar -->
+            <div class="learning-progress">
+                <div class="progress-info">
+                    <span>Learning Progress</span>
+                    <span>{{ system.completion_percent|default:0 }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill learning-progress-{{ system.learning_stage }}" 
+                         style="width: {{ system.completion_percent|default:0 }}%;"></div>
+                </div>
+            </div> {% endcomment %}
+
+                        <!-- Technology Stack -->
+            {% if system.technologies.all %}
+            <div class="tech-stack-container">
+                <div class="metric-label" style="padding-top: 1rem; padding-bottom: 0.5rem;">
+                    Tech Stack
+                </div>
+            <div class="tech-stack">
+                {% for tech in system.technologies.all|slice:":5" %}
+                <span class="tech-tag {{ tech.category|lower }}">{{ tech.name }}</span>
+                {% endfor %}
+                {% if system.technologies.count > 5 %}
+                <span class="tech-tag more">+{{ system.technologies.count|add:"-5" }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    
+
+    <div class="system-meta">
+        <div class="meta-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>{{ system.updated_at|date:"M d, Y" }}</span>
+        </div>
+        {% if system.github_url %}
+                    <div class="github-info">
+        <div class="meta-item">
+            <i class="fab fa-github"></i>
+                            <span>{{ system.commit_count|default:0 }} commit{{ system.commit_count|pluralize }}</span>
+                        </div>
+                        {% if system.last_commit_date %}
+                        <div class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Last commit {{ system.last_commit_date|timesince }} ago</span>
+                        </div>
+                        {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Card Footer -->
+<footer class="system-card-footer">
+    <div class="learning-progress progress-section">
+        <div class="progress-info">
+            <span>Progress</span>
+            <span>{{ system.completion_percent|default:0 }}%</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill learning-progress-{{ system.learning_stage }}" 
+                 style="width: {{ system.completion_percent|default:0 }}%;"></div>
+        </div>
+    </div>
+    
+    <div class="system-actions">
+        <a href="{{ system.get_absolute_url }}" class="action-btn primary">
+            <i class="fas fa-eye"></i>
+            <span>View</span>
+        </a>
+        {% if system.github_url %}
+        <a href="{{ system.github_url }}" target="_blank" class="action-btn">
+            <i class="fab fa-github"></i>
+        </a>
+        {% endif %}
+        {% if system.live_url %}
+        <a href="{{ system.live_url }}" target="_blank" class="action-btn">
+            <i class="fas fa-external-link-alt"></i>
+        </a>
+        {% endif %}
+    </div>
+</footer>
+
+
+        {% comment %} <!-- Card Footer -->
+        <footer class="system-card-footer">
+            <div class="system-actions">
+                <!-- Learning Milestones Indicator -->
+                {% if system.milestones.count > 0 %}
+                <div class="milestones-indicator">
+                    <i class="fas fa-trophy"></i>
+                    <span>{{ system.milestones.count }} milestone{{ system.milestones.count|pluralize }}</span>
+                </div>
+                {% endif %}
+                
+                <a href="{% url 'projects:system_detail' system.slug %}" class="action-btn primary">
+                    <i class="fas fa-terminal"></i>
+                    View Learning Details
+                </a>
+            </div>
+        </footer> {% endcomment %}
+    </article>
+    {% endfor %}
+</div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="unified-dashboard-container teal">
+                <div style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-md, 1rem);">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="action-btn">
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </a>
+                    {% endif %}
+                    
+                    <span style="color: var(--color-text-secondary); font-size: 0.9rem;">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="action-btn">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="unified-dashboard-container gunmetal" style="text-align: center; padding: var(--spacing-xxl, 4rem);">
+                <div style="opacity: 0.6; margin-bottom: var(--spacing-lg, 1.5rem);">
+                    <i class="fas fa-graduation-cap" style="font-size: 4rem; color: var(--color-teal);"></i>
+                </div>
+                <h3 style="margin-bottom: var(--spacing-md, 1rem);">No Learning Systems Found</h3>
+                <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg, 1.5rem);">
+                    {% if active_filters %}
+                        Try adjusting your filters to see more learning systems.
+                    {% else %}
+                        Start your learning journey by creating your first system!
+                    {% endif %}
+                </p>
+                {% if active_filters %}
+                <a href="{% url 'projects:learning_system_list' %}" class="action-btn">
+                    <i class="fas fa-filter"></i>
+                    Clear All Filters
+                </a>
+                {% else %}
+                <a href="{% url 'projects:system_create' %}" class="action-btn primary">
+                    <i class="fas fa-plus"></i>
+                    Create Learning System
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="{% static 'projects/js/dashboard_panel.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize progress bars animation
+    setTimeout(() => {
+        const progressFills = document.querySelectorAll('.progress-fill');
+        progressFills.forEach((fill, index) => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.transition = 'width 1.5s ease';
+                fill.style.width = width;
+            }, index * 100);
+        });
+    }, 500);
+
+    // Search form auto-submit
+    const searchInput = document.querySelector('.search-input');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            document.getElementById('searchForm').submit();
+        }, 800);
+    });
+
+    // Filter removal
+    document.querySelectorAll('.filter-remove').forEach(remove => {
+        remove.addEventListener('click', function() {
+            const filterType = this.dataset.filter;
+            const url = new URL(window.location);
+            
+            // Remove the specific filter parameter
+            const paramMap = {
+                'learning stage': 'learning_stage',
+                'portfolio status': 'portfolio_ready',
+                'skill': 'skill',
+                'time investment': 'time_investment',
+                'technology': 'tech',
+                'search': 'search'
+            };
+            
+            if (paramMap[filterType]) {
+                url.searchParams.delete(paramMap[filterType]);
+            }
+            
+            window.location.href = url.toString();
+        });
+    });
+
+    // Card hover effects
+    document.querySelectorAll('.system-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-6px)';
+        });
+    });
+
+    // Initialize metric animations
+    const metricValues = document.querySelectorAll('.metric-value[data-target]');
+    metricValues.forEach(metric => {
+        const target = parseInt(metric.dataset.target);
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                current = target;
+                clearInterval(timer);
+            }
+            metric.textContent = Math.floor(current);
+        }, 30);
+    });
+
+    console.log('🎓 Learning-Enhanced System List loaded successfully!');
+});
+</script>
+{% endblock %}

@@ -1,168 +1,355 @@
-{% extends "blog/admin/base.html" %}
+<!-- 
+  *blog/templates/blog/admin/category_form.html
+  *Version 2.0
+  -->
+{% extends 'admin/admin_base.html' %}
 {% load static %}
 
-{% block title %}{{ title }} | ML DEVLOG Admin{% endblock %}
+{% block admin_actions %}
+  <div class="flex items-center space-x-4">
+    <a href="{% url 'blog:admin:category_list' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      Back to Categories
+    </a>
+  </div>
+{% endblock %}
 
 {% block admin_content %}
-<div class="container">
-    <div class="row my-4">
-        <div class="col-12">
-            <h1 class="admin-title">{{ title }}</h1>
-            <div class="admin-breadcrumb mb-4">
-                <a href="{% url 'blog:dashboard' %}">Dashboard</a> / 
-                <a href="{% url 'blog:category_list' %}">Categories</a> / 
-                {% if form.instance.pk %}
-                    Edit
-                {% else %}
-                    New Category
-                {% endif %}
+  <div class="category-form">
+    <form method="post" class="space-y-8">
+      {% csrf_token %}
+      
+      <!-- Basic Information -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-info-circle mr-2 text-orange-400"></i>
+            Category Information
+          </h3>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Name -->
+            <div class="admin-form-field">
+              <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.name.label }}
+                <span class="text-red-400">*</span>
+              </label>
+              {{ form.name }}
+              {% if form.name.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.name.help_text }}</p>
+              {% endif %}
+              {% if form.name.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.name.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
             </div>
+            
+            <!-- Slug -->
+            <div class="admin-form-field">
+              <label for="{{ form.slug.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.slug.label }}
+              </label>
+              {{ form.slug }}
+              {% if form.slug.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.slug.help_text }}</p>
+              {% endif %}
+              {% if form.slug.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.slug.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Code -->
+            <div class="admin-form-field">
+              <label for="{{ form.code.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.code.label }}
+                <span class="text-red-400">*</span>
+              </label>
+              {{ form.code }}
+              {% if form.code.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.code.help_text }}</p>
+              {% endif %}
+              {% if form.code.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.code.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Color -->
+            <div class="admin-form-field">
+              <label for="{{ form.color.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.color.label }}
+              </label>
+              <div class="flex items-center space-x-3">
+                {{ form.color }}
+                <div class="color-preview w-8 h-8 rounded border border-gray-600" 
+                     id="color-preview" style="background-color: {{ form.color.value|default:'#00f0ff' }};"></div>
+              </div>
+              {% if form.color.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.color.help_text }}</p>
+              {% endif %}
+              {% if form.color.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.color.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Description -->
+          <div class="admin-form-field">
+            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+              {{ form.description.label }}
+            </label>
+            {{ form.description }}
+            {% if form.description.help_text %}
+              <p class="mt-1 text-sm text-gray-400">{{ form.description.help_text }}</p>
+            {% endif %}
+            {% if form.description.errors %}
+              <div class="mt-1 text-sm text-red-400">
+                {% for error in form.description.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+          
+          <!-- Icon -->
+          <div class="admin-form-field">
+            <label for="{{ form.icon.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+              {{ form.icon.label }}
+            </label>
+            <div class="flex items-center space-x-3">
+              {{ form.icon }}
+              <div class="icon-preview w-8 h-8 flex items-center justify-center rounded border border-gray-600 text-orange-400" 
+                   id="icon-preview">
+                <i class="fa-solid {{ form.icon.value }}"></i>
+              </div>
+            </div>
+            {% if form.icon.help_text %}
+              <p class="mt-1 text-sm text-gray-400">{{ form.icon.help_text }}</p>
+            {% endif %}
+            <p class="mt-1 text-xs text-gray-500">
+              Common icons: fa-code, fa-database, fa-cog, fa-chart-line, fa-rocket, fa-brain, fa-server, fa-mobile-alt, fa-cloud, fa-lock
+            </p>
+            <p class="mt-1 text-xs text-gray-400">
+              Find more icons at <a href="https://fontawesome.com/icons" target="_blank" class="text-blue-400 hover:text-blue-300">fontawesome.com/icons</a>
+            </p>
+            {% if form.icon.errors %}
+              <div class="mt-1 text-sm text-red-400">
+                {% for error in form.icon.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
         </div>
-    </div>
+      </div>
 
-    <div class="row">
-        <div class="col-lg-8 offset-lg-2">
-            <div class="admin-card">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <!-- Form Errors -->
-                    {% if form.errors %}
-                    <div class="alert alert-danger">
-                        <strong>Error!</strong> Please correct the errors below.
-                    </div>
-                    {% endif %}
-                    
-                    <!-- Category Name -->
-                    <div class="mb-4">
-                        <label for="{{ form.name.id_for_label }}" class="form-label">Name</label>
-                        {{ form.name }}
-                        {% if form.name.errors %}
-                        <div class="text-danger">{{ form.name.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Category Code -->
-                    <div class="mb-4">
-                        <label for="{{ form.code.id_for_label }}" class="form-label">Code (2 letters)</label>
-                        {{ form.code }}
-                        <div class="form-text">Two-letter code displayed in the category hexagon</div>
-                        {% if form.code.errors %}
-                        <div class="text-danger">{{ form.code.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Category Description -->
-                    <div class="mb-4">
-                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
-                        {{ form.description }}
-                        {% if form.description.errors %}
-                        <div class="text-danger">{{ form.description.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Category Color -->
-                    <div class="mb-4">
-                        <label for="{{ form.color.id_for_label }}" class="form-label">Color</label>
-                        <div class="d-flex align-items-center">
-                            {{ form.color }}
-                            <div class="color-preview-large ms-3" id="color-preview" style="background-color: {{ form.instance.color|default:'#00f0ff' }}"></div>
-                        </div>
-                        <div class="form-text">Hex color code for category styling</div>
-                        {% if form.color.errors %}
-                        <div class="text-danger">{{ form.color.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Category Icon -->
-                    <div class="mb-4">
-                        <label for="{{ form.icon.id_for_label }}" class="form-label">Icon (Optional)</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-icons"></i></span>
-                            {{ form.icon }}
-                        </div>
-                        <div class="form-text">
-                            Font Awesome icon class (e.g., fa-code). If provided, will replace the category code in hexagons.
-                            <a href="https://fontawesome.com/icons" target="_blank">Browse available icons</a>
-                        </div>
-                        {% if form.icon.errors %}
-                        <div class="text-danger">{{ form.icon.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Category Preview -->
-                    <div class="mb-4 text-center">
-                        <label class="form-label d-block">Preview</label>
-                        <div class="category-preview-container">
-                            <div class="category-hex-preview" style="--category-color: {{ form.instance.color|default:'#00f0ff' }}">
-                                <span id="preview-content">{{ form.instance.code|default:'ML' }}</span>
-                            </div>
-                            <div class="mt-2">{{ form.instance.name|default:'Category Name' }}</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Form Actions -->
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
-                            <a href="{% url 'blog:category_list' %}" class="btn btn-outline-secondary">Cancel</a>
-                        </div>
-                        {% if form.instance.pk %}
-                        <a href="{% url 'blog:category_delete' slug=form.instance.slug %}" class="btn btn-outline-danger">Delete</a>
-                        {% endif %}
-                    </div>
-                </form>
+      <!-- Preview Section -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-eye mr-2 text-orange-400"></i>
+            Category Preview
+          </h3>
+          
+          <div class="category-preview glass-card p-6 max-w-md">
+            <div class="flex items-center">
+              <div class="category-icon w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold mr-4"
+                   id="preview-icon-container"
+                   style="background-color: {{ form.color.value|default:'#00f0ff' }}20; color: {{ form.color.value|default:'#00f0ff' }};">
+                <i class="fa-solid {{ form.icon.value|default:'fa-folder' }}" id="preview-icon"></i>
+              </div>
+              <div>
+                <h4 class="text-lg font-bold text-white" id="preview-name">{{ form.name.value|default:'Category Name' }}</h4>
+                <p class="text-sm text-gray-400" id="preview-code">{{ form.code.value|default:'XX' }}</p>
+              </div>
             </div>
+            {% if form.description.value %}
+              <p class="text-gray-300 text-sm mt-4" id="preview-description">{{ form.description.value }}</p>
+            {% endif %}
+          </div>
         </div>
-    </div>
-</div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="admin-form-actions">
+        <div class="flex justify-between items-center">
+          <div class="flex space-x-4">
+            {% if object %}
+              <a href="{% url 'blog:admin:post_list' %}?category={{ object.slug }}" class="btn btn-secondary">
+                <i class="fas fa-eye mr-2"></i>
+                View Posts in Category
+              </a>
+            {% endif %}
+          </div>
+          
+          <div class="flex space-x-4">
+            <a href="{% url 'blog:admin:category_list' %}" class="btn btn-secondary">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-purple">
+              <i class="fas fa-save mr-2"></i>
+              {% if form_mode == 'create' %}Create Category{% else %}Update Category{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
 {% endblock %}
 
 {% block admin_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Color picker preview
-    const colorInput = document.getElementById('{{ form.color.id_for_label }}');
-    const colorPreview = document.getElementById('color-preview');
-    const hexPreview = document.querySelector('.category-hex-preview');
+    // Auto-generate slug from name
+    const nameField = document.getElementById('{{ form.name.id_for_label }}');
+    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
+    const codeField = document.getElementById('{{ form.code.id_for_label }}');
+    const colorField = document.getElementById('{{ form.color.id_for_label }}');
+    const iconField = document.getElementById('{{ form.icon.id_for_label }}');
     
-    if (colorInput && colorPreview && hexPreview) {
-        colorInput.addEventListener('input', function() {
-            const newColor = this.value;
-            colorPreview.style.backgroundColor = newColor;
-            hexPreview.style.setProperty('--category-color', newColor);
+    // Preview elements
+    const previewName = document.getElementById('preview-name');
+    const previewCode = document.getElementById('preview-code');
+    const previewIconContainer = document.getElementById('preview-icon-container');
+    const previewIcon = document.getElementById('preview-icon');
+    const colorPreview = document.getElementById('color-preview');
+    const iconPreview = document.getElementById('icon-preview');
+    
+    // Auto-generate slug and code from name
+    if (nameField && slugField && !slugField.dataset.modified) {
+        nameField.addEventListener('input', function() {
+            if (!slugField.dataset.modified) {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                slugField.value = slug;
+            }
+            
+            // Auto-generate code from first 2 letters
+            if (!codeField.dataset.modified && this.value.length >= 2) {
+                codeField.value = this.value.substring(0, 2).toUpperCase();
+                previewCode.textContent = codeField.value;
+            }
+            
+            // Update preview
+            previewName.textContent = this.value || 'Category Name';
+        });
+        
+        slugField.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+        });
+        
+        codeField.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+            previewCode.textContent = this.value || 'XX';
         });
     }
     
-    // Icon/code preview
-    const codeInput = document.getElementById('{{ form.code.id_for_label }}');
-    const iconInput = document.getElementById('{{ form.icon.id_for_label }}');
-    const previewContent = document.getElementById('preview-content');
+    // Color picker updates
+    if (colorField) {
+        colorField.addEventListener('input', function() {
+            const color = this.value;
+            colorPreview.style.backgroundColor = color;
+            previewIconContainer.style.backgroundColor = color + '20';
+            previewIconContainer.style.color = color;
+        });
+    }
     
-    if (codeInput && previewContent) {
-        codeInput.addEventListener('input', function() {
-            if (iconInput.value === '') {
-                // If no icon, show code
-                if (this.value.length <= 2) {
-                    previewContent.textContent = this.value.toUpperCase();
-                } else {
-                    previewContent.textContent = this.value.substring(0, 2).toUpperCase();
-                    codeInput.value = this.value.substring(0, 2);
+    // Icon field updates with validation
+    if (iconField) {
+        // List of common Font Awesome icons that should work
+        const validIcons = [
+            'fa-folder', 'fa-code', 'fa-database', 'fa-cog', 'fa-chart-line', 
+            'fa-rocket', 'fa-brain', 'fa-server', 'fa-mobile-alt', 'fa-cloud', 
+            'fa-lock', 'fa-book', 'fa-graduation-cap', 'fa-tools', 'fa-laptop-code',
+            'fa-terminal', 'fa-project-diagram', 'fa-sitemap', 'fa-network-wired',
+            'fa-shield-alt', 'fa-bug', 'fa-flask', 'fa-lightbulb'
+        ];
+        
+        iconField.addEventListener('input', function() {
+            const iconValue = this.value.trim();
+            let iconClass = 'fa-folder'; // Default fallback
+            
+            if (iconValue) {
+                // Clean up the input - remove any extra spaces or prefixes
+                let cleanIcon = iconValue.toLowerCase()
+                    .replace(/^(fas?|far|fab)\s+/, '') // Remove fa/fas/far/fab prefix
+                    .replace(/^fa-/, ''); // Remove fa- prefix
+                
+                // Add fa- prefix
+                iconClass = `fa-${cleanIcon}`;
+                
+                // Check if it's in our known good list or set to default
+                if (!validIcons.includes(iconClass)) {
+                    // For unknown icons, still try to display but warn user
+                    console.log(`Icon "${iconClass}" might not exist. Using anyway.`);
                 }
             }
-        });
-    }
-    
-    if (iconInput && previewContent) {
-        iconInput.addEventListener('input', function() {
-            if (this.value !== '') {
-                // If icon provided, show icon
-                previewContent.innerHTML = `<i class="fas ${this.value}"></i>`;
-            } else {
-                // If no icon, show code
-                previewContent.textContent = codeInput.value.toUpperCase();
+            
+            // Update the input field to show the cleaned version
+            if (this.value !== iconClass) {
+                this.value = iconClass;
             }
+            
+            // Update both preview icons
+            updateIconPreviews(iconClass);
         });
+        
+        // Function to update icon previews
+        function updateIconPreviews(iconClass) {
+            // Update with fas (solid) prefix for Font Awesome 6
+            const fullIconClass = `fas ${iconClass}`;
+            
+            iconPreview.className = fullIconClass;
+            previewIcon.className = fullIconClass;
+            
+            // Add a subtle indication if icon might not exist
+            setTimeout(() => {
+                const testElement = document.createElement('i');
+                testElement.className = fullIconClass;
+                testElement.style.position = 'absolute';
+                testElement.style.left = '-9999px';
+                document.body.appendChild(testElement);
+                
+                const computedStyle = window.getComputedStyle(testElement, '::before');
+                const hasContent = computedStyle.content && computedStyle.content !== 'none' && computedStyle.content !== '""';
+                
+                document.body.removeChild(testElement);
+                
+                if (!hasContent) {
+                    // Icon doesn't exist, revert to folder
+                    iconPreview.className = 'fas fa-folder';
+                    previewIcon.className = 'fas fa-folder';
+                    iconField.style.borderColor = '#f59e0b'; // Yellow border to indicate issue
+                    iconField.title = 'Icon not found - using folder as fallback';
+                } else {
+                    iconField.style.borderColor = ''; // Reset border
+                    iconField.title = '';
+                }
+            }, 100);
+        }
+        
+        // Initialize with current value
+        if (iconField.value) {
+            updateIconPreviews(iconField.value);
+        }
     }
 });
 </script>
