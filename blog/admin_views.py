@@ -314,7 +314,7 @@ class CategoryCreateAdminView(SlugAdminCreateView):
     model = Category
     form_class = CategoryForm
     template_name = 'blog/admin/category_form.html'
-    success_url = reverse_lazy('blog:admin_category_list')
+    success_url = reverse_lazy('blog:admin:category_list')
 
 
 class CategoryUpdateAdminView(BaseAdminUpdateView):
@@ -323,14 +323,14 @@ class CategoryUpdateAdminView(BaseAdminUpdateView):
     model = Category
     form_class = CategoryForm
     template_name = 'blog/admin/category_form.html'
-    success_url = reverse_lazy('blog:admin_category_list')
+    success_url = reverse_lazy('blog:admin:category_list')
 
 
 class CategoryDeleteAdminView(BaseAdminDeleteView):
     """Delete category."""
     
     model = Category
-    success_url = reverse_lazy('blog:admin_category_list')
+    success_url = reverse_lazy('blog:admin:category_list')
 
 
 # Tag Management Views
@@ -367,7 +367,7 @@ class TagCreateAdminView(SlugAdminCreateView):
     model = Tag
     form_class = TagForm
     template_name = 'blog/admin/tag_form.html'
-    success_url = reverse_lazy('blog:admin_tag_list')
+    success_url = reverse_lazy('blog:admin:tag_list')
 
 
 class TagUpdateAdminView(BaseAdminUpdateView):
@@ -376,14 +376,14 @@ class TagUpdateAdminView(BaseAdminUpdateView):
     model = Tag
     form_class = TagForm
     template_name = 'blog/admin/tag_form.html'
-    success_url = reverse_lazy('blog:admin_tag_list')
+    success_url = reverse_lazy('blog:admin:tag_list')
 
 
 class TagDeleteAdminView(BaseAdminDeleteView):
     """Delete tag."""
     
     model = Tag
-    success_url = reverse_lazy('blog:admin_tag_list')
+    success_url = reverse_lazy('blog:admin:tag_list')
 
 
 # Series Management Views
@@ -414,7 +414,7 @@ class SeriesCreateAdminView(SlugAdminCreateView):
     model = Series
     form_class = SeriesForm
     template_name = 'blog/admin/series_form.html'
-    success_url = reverse_lazy('blog:admin_series_list')
+    success_url = reverse_lazy('blog:admin:series_list')
 
 
 class SeriesUpdateAdminView(BaseAdminUpdateView):
@@ -423,14 +423,14 @@ class SeriesUpdateAdminView(BaseAdminUpdateView):
     model = Series
     form_class = SeriesForm
     template_name = 'blog/admin/series_form.html'
-    success_url = reverse_lazy('blog:admin_series_list')
+    success_url = reverse_lazy('blog:admin:series_list')
 
 
 class SeriesDeleteAdminView(BaseAdminDeleteView):
     """Delete series."""
     
     model = Series
-    success_url = reverse_lazy('blog:admin_series_list')
+    success_url = reverse_lazy('blog:admin:series_list')
 
 
 # AJAX API Views for dynamic functionality
