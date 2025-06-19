@@ -369,6 +369,16 @@ class TagCreateAdminView(SlugAdminCreateView):
     template_name = 'blog/admin/tag_form.html'
     success_url = reverse_lazy('blog:admin:tag_list')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # For new tags, set status to 0
+        context.update({
+            'tag_total_posts': 0,
+            'tag_published_posts': 0,
+            'tag_first_post': None,
+        })
+        return context
+
 
 class TagUpdateAdminView(BaseAdminUpdateView):
     """Edit existing tag."""
@@ -377,6 +387,22 @@ class TagUpdateAdminView(BaseAdminUpdateView):
     form_class = TagForm
     template_name = 'blog/admin/tag_form.html'
     success_url = reverse_lazy('blog:admin:tag_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Add Tag stats
+        if self.object:
+            total_posts = Post.objects.filter(tags=self.object).count()
+            published_posts = Post.objects.filter(tags=self.object, status='published').count()
+            first_post = Post.objects.filter(tags=self.object).order_by('created_at').first()
+
+            context.update({
+                'tag_total_posts': total_posts,
+                'tag_published_posts': published_posts,
+                'tag_first_post': first_post,
+            })
+        return context
 
 
 class TagDeleteAdminView(BaseAdminDeleteView):

@@ -111,17 +111,21 @@
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div class="stat-card">
-                <div class="stat-number">{{ object.posts.count }}</div>
+                <div class="stat-number">{{ tag_total_posts|default:0 }}</div>
                 <div class="stat-label">Total Posts</div>
               </div>
               <div class="stat-card">
-                <div class="stat-number">{{ object.posts.filter.status='published'.count }}</div>
+                <div class="stat-number">{{ tag_published_posts|default:0 }}</div>
                 <div class="stat-label">Published Posts</div>
               </div>
               <div class="stat-card">
                 <div class="stat-number">
-                  {% if object.posts.exists %}
-                    {{ object.posts.first.published_date|date:"M Y" }}
+                  {% if tag_first_post %}
+                    {% if tag_first_post.published_date %}
+                      {{ tag_first_post.published_date|date:"M Y" }}
+                      {% else %}
+                      {{ tag_first_post.created_at|date:"M Y" }}
+                      {% endif %}
                   {% else %}
                     --
                   {% endif %}
@@ -137,10 +141,10 @@
       <div class="admin-form-actions">
         <div class="flex justify-between items-center">
           <div class="flex space-x-4">
-            {% if object and object.posts.exists %}
+            {% if object and tag_total_posts > 0 %}
               <a href="{% url 'blog:admin:post_list' %}?search={{ object.name }}" class="btn btn-secondary">
                 <i class="fas fa-eye mr-2"></i>
-                View Tagged Posts
+                View Tagged Posts ({{ tag_total_posts }})
               </a>
             {% endif %}
           </div>
