@@ -31,7 +31,4 @@ urlpatterns = [
     # path("learning/systems/<slug:slug>/", views.LearningSystemControlInterfaceView.as_view(), name="learning_system_detail"),
     path("landing/", views.PortfolioLandingDashboardView.as_view(), name="landing_dashboard"),
 
-    ## UPDATED Admin Views
-    path("admin/", include('projects.admin_urls')),
-
 ]

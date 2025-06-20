@@ -25,6 +25,4 @@ urlpatterns = [
     # Dynamic page from database
     path('page/<slug:slug>/', views.CorePageView.as_view(), name='page'),
 
-    # Admin URLs
-    path('admin/', include('core.admin_urls', namespace='admin')),
 ]

@@ -162,7 +162,7 @@ class PostCreateAdminView(BaseAdminCreateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/admin/post_form.html'
-    success_url = reverse_lazy('blog:admin:post_list')
+    success_url = reverse_lazy('aura_admin:blog:post_list')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -228,7 +228,7 @@ class PostUpdateAdminView(BaseAdminUpdateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/admin/post_form.html'
-    success_url = reverse_lazy('blog:admin:post_list')
+    success_url = reverse_lazy('aura_admin:blog:post_list')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -281,7 +281,7 @@ class PostDeleteAdminView(BaseAdminDeleteView):
     """Delete DataLog entry."""
     
     model = Post
-    success_url = reverse_lazy('blog:admin:post_list')
+    success_url = reverse_lazy('aura_admin:blog:post_list')
 
 
 # Category Management Views
@@ -318,7 +318,7 @@ class CategoryCreateAdminView(SlugAdminCreateView):
     model = Category
     form_class = CategoryForm
     template_name = 'blog/admin/category_form.html'
-    success_url = reverse_lazy('blog:admin:category_list')
+    success_url = reverse_lazy('aura_admin:blog:category_list')
 
 
 class CategoryUpdateAdminView(BaseAdminUpdateView):
@@ -327,14 +327,14 @@ class CategoryUpdateAdminView(BaseAdminUpdateView):
     model = Category
     form_class = CategoryForm
     template_name = 'blog/admin/category_form.html'
-    success_url = reverse_lazy('blog:admin:category_list')
+    success_url = reverse_lazy('aura_admin:blog:category_list')
 
 
 class CategoryDeleteAdminView(BaseAdminDeleteView):
     """Delete category."""
     
     model = Category
-    success_url = reverse_lazy('blog:admin:category_list')
+    success_url = reverse_lazy('aura_admin:blog:category_list')
 
 
 # Tag Management Views
@@ -371,7 +371,7 @@ class TagCreateAdminView(SlugAdminCreateView):
     model = Tag
     form_class = TagForm
     template_name = 'blog/admin/tag_form.html'
-    success_url = reverse_lazy('blog:admin:tag_list')
+    success_url = reverse_lazy('aura_admin:blog:tag_list')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -390,7 +390,7 @@ class TagUpdateAdminView(BaseAdminUpdateView):
     model = Tag
     form_class = TagForm
     template_name = 'blog/admin/tag_form.html'
-    success_url = reverse_lazy('blog:admin:tag_list')
+    success_url = reverse_lazy('aura_admin:blog:tag_list')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -413,7 +413,7 @@ class TagDeleteAdminView(BaseAdminDeleteView):
     """Delete tag."""
     
     model = Tag
-    success_url = reverse_lazy('blog:admin:tag_list')
+    success_url = reverse_lazy('aura_admin:blog:tag_list')
 
 
 # Series Management Views
@@ -444,7 +444,7 @@ class SeriesCreateAdminView(SlugAdminCreateView):
     model = Series
     form_class = SeriesForm
     template_name = 'blog/admin/series_form.html'
-    success_url = reverse_lazy('blog:admin:series_list')
+    success_url = reverse_lazy('aura_admin:blog:series_list')
 
 
 class SeriesUpdateAdminView(BaseAdminUpdateView):
@@ -453,14 +453,14 @@ class SeriesUpdateAdminView(BaseAdminUpdateView):
     model = Series
     form_class = SeriesForm
     template_name = 'blog/admin/series_form.html'
-    success_url = reverse_lazy('blog:admin:series_list')
+    success_url = reverse_lazy('aura_admin:blog:series_list')
 
 
 class SeriesDeleteAdminView(BaseAdminDeleteView):
     """Delete series."""
     
     model = Series
-    success_url = reverse_lazy('blog:admin_series_list')
+    success_url = reverse_lazy('aura_admin:blog_series_list')
 
 
 class SeriesPostsManageView(AdminAccessMixin, BaseAdminView, TemplateView):
@@ -567,7 +567,7 @@ class SeriesPostsManageView(AdminAccessMixin, BaseAdminView, TemplateView):
                 print(f"DEBUG: Error in reorder_posts: {e}")
                 return JsonResponse({"success": False, "error": str(e)})
         
-        return redirect('blog:admin:series_posts_manage', pk=series.pk)
+        return redirect('aura_admin:blog:series_posts_manage', pk=series.pk)
     
     def _reorder_series_posts(self, series):
         """Reorder series posts to fill gaps."""
