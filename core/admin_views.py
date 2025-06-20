@@ -1,7 +1,7 @@
 """
 Global Admin View Classes for AURA Portfolio
 Provides consistent base functionality for all app admin interfaces
-Version 2.0
+Version 2.0 - FIXED URL Namespaces
 """
 
 from django.views.generic import (
@@ -64,25 +64,47 @@ class BaseAdminView:
         return app_colors.get(self.model._meta.app_label, "slate")
 
     def get_breadcrumbs(self):
-        """Generate breadcrumb navigation"""
+        """Generate breadcrumb navigation - FIXED URL namespaces"""
         app_label = self.model._meta.app_label
         model_name = self.model._meta.verbose_name_plural
 
         breadcrumbs = [
-            {"name": "AURA Admin", "url": reverse_lazy("core:admin:dashboard")},
-            {"name": app_label.title(), "url": f"/{app_label}/admin/"},
-            {"name": model_name.title(), "url": None},
+            {"name": "AURA Admin", "url": reverse_lazy("aura_admin:dashboard")},
         ]
+        
+        # Add app-specific breadcrumb
+        if app_label == "blog":
+            breadcrumbs.append({
+                "name": "DataLogs", 
+                "url": reverse_lazy("aura_admin:blog:dashboard")
+            })
+        elif app_label == "projects":
+            breadcrumbs.append({
+                "name": "Systems", 
+                "url": reverse_lazy("aura_admin:projects:dashboard")
+            })
+        else:
+            breadcrumbs.append({
+                "name": app_label.title(), 
+                "url": None
+            })
+        
+        # Add model name
+        breadcrumbs.append({
+            "name": model_name.title(), 
+            "url": None
+        })
 
         return breadcrumbs
 
 
 class BaseAdminListView(AdminAccessMixin, BaseAdminView, ListView):
     """Base list view for admin interface."""
-
-    template_name = "admin/list.html"
-    paginate_by = 20
-
+    
+    template_name = 'admin/list.html'
+    context_object_name = 'objects'
+    paginate_by = 25
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -207,18 +229,18 @@ class BaseAdminDeleteView(AdminAccessMixin, BaseAdminView, DeleteView):
         return context
 
     def delete(self, request, *args, **kwargs):
-        obj_name = str(self.get_object())
+        object_name = str(self.get_object())
         response = super().delete(request, *args, **kwargs)
         messages.success(
-            request,
-            f'{self.model._meta.verbose_name} "{obj_name}" deleted successfully!',
+            request, 
+            f'{self.model._meta.verbose_name.title()} "{object_name}" deleted successfully!'
         )
         return response
 
 
 class BulkActionMixin:
-    """Mixin for bulk actions on list views."""
-
+    """Mixin to add bulk action functionality."""
+    
     def post(self, request, *args, **kwargs):
         """Handle bulk actions."""
         action = request.POST.get("action")

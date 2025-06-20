@@ -7,7 +7,7 @@ Version 2.0
 from django.urls import path
 from . import admin_views
 
-app_name = 'admin'
+app_name = 'projects'
 
 urlpatterns = [
     # Dashboard
