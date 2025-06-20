@@ -1,0 +1,475 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_title %}Technology Management{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .tech-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .tech-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  }
+  
+  .tech-header {
+    display: flex;
+    items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  
+  .tech-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .tech-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #000;
+    font-weight: bold;
+  }
+  
+  .tech-details h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  
+  .tech-category {
+    font-size: 0.75rem;
+    color: #b0bec5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+  }
+  
+  .tech-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .tech-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .tech-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .tech-action.edit { color: #26c6da; }
+  .tech-action.edit:hover { background: rgba(38, 198, 218, 0.2); }
+  
+  .tech-action.delete { color: #f44336; }
+  .tech-action.delete:hover { background: rgba(244, 67, 54, 0.2); }
+  
+  .tech-action.view { color: #4caf50; }
+  .tech-action.view:hover { background: rgba(76, 175, 80, 0.2); }
+  
+  .tech-description {
+    color: #e8eaf6;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
+  
+  .tech-stats {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+    color: #b0bec5;
+  }
+  
+  .tech-filter-bar {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .filter-label {
+    font-size: 0.875rem;
+    color: #e8eaf6;
+    font-weight: 500;
+  }
+  
+  .filter-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    color: white;
+    min-width: 120px;
+  }
+  
+  .filter-input:focus {
+    outline: none;
+    border-color: #26c6da;
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+  }
+  
+  .category-filter {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .category-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: #e8eaf6;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+  }
+  
+  .category-btn:hover,
+  .category-btn.active {
+    background: rgba(38, 198, 218, 0.2);
+    border-color: #26c6da;
+    color: #26c6da;
+  }
+  
+  .tech-count {
+    background: rgba(38, 198, 218, 0.2);
+    color: #26c6da;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  @media (max-width: 768px) {
+    .tech-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .filter-group {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .category-filter {
+      justify-content: center;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-white mb-2">
+        <i class="fas fa-tools text-orange-400 mr-2"></i>
+        Technology Stack Management
+      </h1>
+      <p class="text-gray-400">Manage technologies and tools used across your systems</p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+      <a href="{% url 'aura_admin:projects:technology_create' %}" 
+         class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25">
+        <i class="fas fa-plus mr-2"></i>
+        Add Technology
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-orange-400 mb-1">{{ technologies.count }}</div>
+      <div class="text-sm text-gray-400">Total Technologies</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-blue-400 mb-1">
+        {{ categories_count.language|default:0 }}
+      </div>
+      <div class="text-sm text-gray-400">Languages</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-green-400 mb-1">
+        {{ categories_count.framework|default:0 }}
+      </div>
+      <div class="text-sm text-gray-400">Frameworks</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-purple-400 mb-1">
+        {{ categories_count.database|default:0 }}
+      </div>
+      <div class="text-sm text-gray-400">Databases</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="tech-filter-bar">
+    <form method="GET" class="filter-form">
+      <div class="filter-group">
+        <div class="filter-item">
+          <label class="filter-label">Search Technologies</label>
+          <input type="text" name="search" value="{{ request.GET.search }}" 
+                 placeholder="Search by name or description..." class="filter-input">
+        </div>
+        
+        <div class="filter-item">
+          <label class="filter-label">Category</label>
+          <select name="category" class="filter-input">
+            <option value="">All Categories</option>
+            <option value="language" {% if request.GET.category == 'language' %}selected{% endif %}>Programming Language</option>
+            <option value="framework" {% if request.GET.category == 'framework' %}selected{% endif %}>Framework/Library</option>
+            <option value="database" {% if request.GET.category == 'database' %}selected{% endif %}>Database</option>
+            <option value="cloud" {% if request.GET.category == 'cloud' %}selected{% endif %}>Cloud Service</option>
+            <option value="tool" {% if request.GET.category == 'tool' %}selected{% endif %}>Development Tool</option>
+            <option value="other" {% if request.GET.category == 'other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search mr-2"></i>Filter
+          </button>
+          <a href="{% url 'aura_admin:projects:technology_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Clear
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Quick Category Filter -->
+  <div class="category-filter">
+    <a href="?category=" class="category-btn {% if not request.GET.category %}active{% endif %}">
+      All <span class="tech-count">{{ technologies.count }}</span>
+    </a>
+    <a href="?category=language" class="category-btn {% if request.GET.category == 'language' %}active{% endif %}">
+      Languages <span class="tech-count">{{ categories_count.language|default:0 }}</span>
+    </a>
+    <a href="?category=framework" class="category-btn {% if request.GET.category == 'framework' %}active{% endif %}">
+      Frameworks <span class="tech-count">{{ categories_count.framework|default:0 }}</span>
+    </a>
+    <a href="?category=database" class="category-btn {% if request.GET.category == 'database' %}active{% endif %}">
+      Databases <span class="tech-count">{{ categories_count.database|default:0 }}</span>
+    </a>
+    <a href="?category=cloud" class="category-btn {% if request.GET.category == 'cloud' %}active{% endif %}">
+      Cloud <span class="tech-count">{{ categories_count.cloud|default:0 }}</span>
+    </a>
+    <a href="?category=tool" class="category-btn {% if request.GET.category == 'tool' %}active{% endif %}">
+      Tools <span class="tech-count">{{ categories_count.tool|default:0 }}</span>
+    </a>
+  </div>
+
+  <!-- Technology Grid -->
+  <div class="tech-grid">
+    {% for tech in technologies %}
+      <div class="tech-card">
+        <div class="tech-header">
+          <div class="tech-info">
+            <div class="tech-icon" style="background-color: {{ tech.color }}">
+              {% if tech.icon %}
+                <i class="{{ tech.icon }}"></i>
+              {% else %}
+                {{ tech.name|first|upper }}
+              {% endif %}
+            </div>
+            <div class="tech-details">
+              <h3>{{ tech.name }}</h3>
+              <div class="tech-category">{{ tech.get_category_display }}</div>
+            </div>
+          </div>
+          <div class="tech-actions">
+            <a href="#" target="_blank" 
+               class="tech-action view" title="View Technology">
+              <i class="fas fa-eye"></i>
+            </a>
+            <a href="{% url 'aura_admin:projects:technology_edit' tech.pk %}" 
+               class="tech-action edit" title="Edit Technology">
+              <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'aura_admin:projects:technology_delete' tech.pk %}" 
+               class="tech-action delete" title="Delete Technology"
+               onclick="return confirm('Are you sure you want to delete {{ tech.name }}?')">
+              <i class="fas fa-trash"></i>
+            </a>
+          </div>
+        </div>
+        
+        {% if tech.description %}
+          <div class="tech-description">
+            {{ tech.description|truncatechars:120 }}
+          </div>
+        {% endif %}
+        
+        <div class="tech-stats">
+          <span>
+            <i class="fas fa-project-diagram mr-1"></i>
+            {{ tech.systems.count }} system{{ tech.systems.count|pluralize }}
+          </span>
+          <span>
+            {% if tech.documentation_url %}
+              <a href="{{ tech.documentation_url }}" target="_blank" 
+                 class="text-cyan-400 hover:text-cyan-300">
+                <i class="fas fa-external-link-alt mr-1"></i>Docs
+              </a>
+            {% else %}
+              <span class="text-gray-500">No docs</span>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-span-full">
+        <div class="text-center py-12">
+          <div class="text-gray-400">
+            <i class="fas fa-tools text-6xl mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">No Technologies Found</h3>
+            <p class="text-sm mb-4">
+              {% if request.GET.search or request.GET.category %}
+                No technologies match your current filters.
+                <br>
+                <a href="{% url 'aura_admin:projects:technology_list' %}" class="text-cyan-400 hover:text-cyan-300">Clear filters</a>
+                to see all technologies.
+              {% else %}
+                Start building your technology stack!
+              {% endif %}
+            </p>
+            <a href="{% url 'aura_admin:projects:technology_create' %}" 
+               class="btn btn-primary">
+              <i class="fas fa-plus mr-2"></i>Add Your First Technology
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+    <div class="flex items-center justify-between mt-8">
+      <div class="text-sm text-gray-400">
+        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} technologies
+      </div>
+      <div class="flex space-x-2">
+        {% if page_obj.has_previous %}
+          <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+             class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+            First
+          </a>
+          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+             class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+            Previous
+          </a>
+        {% endif %}
+        
+        <span class="px-3 py-2 bg-orange-500 text-black rounded-lg font-medium">
+          {{ page_obj.number }}
+        </span>
+        
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+             class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+            Next
+          </a>
+          <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+             class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+            Last
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit filters on change
+    document.querySelectorAll('.filter-input').forEach(input => {
+        if (input.type !== 'text') {
+            input.addEventListener('change', function() {
+                this.closest('form').submit();
+            });
+        }
+    });
+    
+    // Search input delay
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let timeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                this.closest('form').submit();
+            }, 500);
+        });
+    }
+    
+    // Tech card hover effects
+    document.querySelectorAll('.tech-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-2px) scale(1)';
+        });
+    });
+});
+</script>
+{% endblock %}

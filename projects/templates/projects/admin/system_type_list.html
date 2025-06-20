@@ -1,0 +1,645 @@
+{% extends "admin/admin_base.html" %}
+{% load static %}
+
+{% block admin_title %}System Type Management - AURA Admin{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+  .type-filter-bar {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    flex: 1;
+  }
+  
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 150px;
+  }
+  
+  .filter-label {
+    font-size: 0.875rem;
+    color: #b0bec5;
+    font-weight: 500;
+  }
+  
+  .filter-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: #ffffff;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+  }
+  
+  .filter-input:focus {
+    outline: none;
+    border-color: #26c6da;
+    box-shadow: 0 0 0 3px rgba(38, 198, 218, 0.1);
+  }
+  
+  .filter-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: #ffffff;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+  }
+  
+  .filter-select option {
+    background: #1a1a2e;
+    color: #ffffff;
+  }
+  
+  .filter-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+  
+  .type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .type-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .type-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--accent-color);
+    opacity: 0.8;
+  }
+  
+  .type-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .type-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  
+  .type-info {
+    flex: 1;
+  }
+  
+  .type-info h3 {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .type-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #000;
+    font-weight: bold;
+    margin-right: 0.75rem;
+  }
+  
+  .type-description {
+    color: #b0bec5;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+  
+  .type-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .type-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #b0bec5;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+  
+  .type-meta-item i {
+    font-size: 0.7rem;
+  }
+  
+  .systems-count {
+    background: rgba(38, 198, 218, 0.2);
+    color: #26c6da;
+  }
+  
+  .display-order {
+    background: rgba(179, 157, 219, 0.2);
+    color: #b39ddb;
+  }
+  
+  .type-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .type-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+  }
+  
+  .type-action.view {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border-color: rgba(76, 175, 80, 0.3);
+  }
+  
+  .type-action.view:hover {
+    background: rgba(76, 175, 80, 0.3);
+    transform: scale(1.1);
+  }
+  
+  .type-action.edit {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+    border-color: rgba(255, 152, 0, 0.3);
+  }
+  
+  .type-action.edit:hover {
+    background: rgba(255, 152, 0, 0.3);
+    transform: scale(1.1);
+  }
+  
+  .type-action.delete {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border-color: rgba(244, 67, 54, 0.3);
+  }
+  
+  .type-action.delete:hover {
+    background: rgba(244, 67, 54, 0.3);
+    transform: scale(1.1);
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #b0bec5;
+  }
+  
+  .empty-state i {
+    font-size: 4rem;
+    color: #546e7a;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+  }
+  
+  .bulk-actions {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+  
+  .bulk-actions.show {
+    display: block;
+  }
+  
+  .bulk-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .selected-count {
+    font-size: 0.875rem;
+    color: #26c6da;
+    font-weight: 500;
+  }
+  
+  .bulk-action-btn {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .bulk-action-btn:hover {
+    background: rgba(255, 152, 0, 0.3);
+  }
+  
+  .bulk-action-btn.danger {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border-color: rgba(244, 67, 54, 0.3);
+  }
+  
+  .bulk-action-btn.danger:hover {
+    background: rgba(244, 67, 54, 0.3);
+  }
+  
+  /* Color variations for different system types */
+  .type-card.web { --accent-color: #26c6da; }
+  .type-card.mobile { --accent-color: #4caf50; }
+  .type-card.desktop { --accent-color: #ff9800; }
+  .type-card.api { --accent-color: #9c27b0; }
+  .type-card.library { --accent-color: #ff5722; }
+  .type-card.tool { --accent-color: #795548; }
+  .type-card.game { --accent-color: #e91e63; }
+  .type-card.ml { --accent-color: #3f51b5; }
+  
+  @media (max-width: 768px) {
+    .type-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .filter-form {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .filter-group {
+      flex-direction: column;
+    }
+    
+    .filter-item {
+      min-width: auto;
+    }
+    
+    .bulk-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+  
+  <!-- Hidden CSRF token for JavaScript -->
+  <form style="display: none;">
+    {% csrf_token %}
+  </form>
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-white mb-2">
+        <i class="fas fa-layer-group text-purple-400 mr-2"></i>
+        System Type Management
+      </h1>
+      <p class="text-gray-400">Organize and categorize your system projects</p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+      <a href="{% url 'aura_admin:projects:system_type_create' %}" 
+         class="inline-flex items-center px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25">
+        <i class="fas fa-plus mr-2"></i>
+        Add System Type
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-purple-400 mb-1">{{ system_types.count }}</div>
+      <div class="text-sm text-gray-400">System Types</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-blue-400 mb-1">{{ total_systems }}</div>
+      <div class="text-sm text-gray-400">Total Systems</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-green-400 mb-1">{{ active_types }}</div>
+      <div class="text-sm text-gray-400">Active Types</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-orange-400 mb-1">{{ avg_systems_per_type|floatformat:1 }}</div>
+      <div class="text-sm text-gray-400">Avg Systems/Type</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="type-filter-bar">
+    <form method="GET" class="filter-form" id="filterForm">
+      <div class="filter-group">
+        <div class="filter-item">
+          <label class="filter-label">Search Types</label>
+          <input type="text" 
+                 name="search" 
+                 value="{{ request.GET.search }}"
+                 placeholder="Search by name or description..."
+                 class="filter-input">
+        </div>
+        
+        <div class="filter-item">
+          <label class="filter-label">Sort By</label>
+          <select name="sort" class="filter-select">
+            <option value="display_order" {% if request.GET.sort == 'display_order' %}selected{% endif %}>Display Order</option>
+            <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name A-Z</option>
+            <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name Z-A</option>
+            <option value="system_count" {% if request.GET.sort == 'system_count' %}selected{% endif %}>System Count</option>
+            <option value="-created_at" {% if request.GET.sort == '-created_at' %}selected{% endif %}>Newest First</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-search mr-2"></i>Filter
+        </button>
+        <a href="{% url 'aura_admin:projects:system_type_list' %}" class="btn btn-secondary">
+          <i class="fas fa-times mr-2"></i>Clear
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Bulk Actions -->
+  <div class="bulk-actions" id="bulkActions">
+    <div class="bulk-controls">
+      <span class="selected-count" id="selectedCount">0 types selected</span>
+      <button type="button" class="bulk-action-btn" onclick="bulkEdit()">
+        <i class="fas fa-edit mr-1"></i>Bulk Edit
+      </button>
+      <button type="button" class="bulk-action-btn" onclick="bulkUpdateOrder()">
+        <i class="fas fa-sort mr-1"></i>Update Order
+      </button>
+      <button type="button" class="bulk-action-btn danger" onclick="bulkDelete()">
+        <i class="fas fa-trash mr-1"></i>Delete Selected
+      </button>
+    </div>
+  </div>
+
+  <!-- System Types Grid -->
+  {% if system_types %}
+    <div class="type-grid">
+      {% for type in system_types %}
+        <div class="type-card {{ type.name|lower|slugify }}" 
+             data-type-id="{{ type.id }}"
+             style="--accent-color: {{ type.color|default:'#26c6da' }}">
+          
+          <!-- Selection Checkbox -->
+          <input type="checkbox" 
+                 class="type-select absolute top-4 left-4" 
+                 value="{{ type.id }}"
+                 onchange="updateBulkActions()">
+          
+          <div class="type-header">
+            <div class="type-info">
+              <h3>
+                {% if type.icon %}
+                  <div class="type-icon" style="background-color: {{ type.color|default:'#26c6da' }}">
+                    <i class="{{ type.icon }}"></i>
+                  </div>
+                {% endif %}
+                {{ type.name }}
+              </h3>
+              
+              {% if type.description %}
+                <div class="type-description">
+                  {{ type.description|truncatewords:20 }}
+                </div>
+              {% endif %}
+              
+              <div class="type-meta">
+                <div class="type-meta-item systems-count">
+                  <i class="fas fa-cube"></i>
+                  {{ type.systemmodule_set.count }} systems
+                </div>
+                <div class="type-meta-item display-order">
+                  <i class="fas fa-sort"></i>
+                  Order: {{ type.display_order }}
+                </div>
+              </div>
+            </div>
+            
+            <div class="type-actions">
+              <a href="{{ type.get_absolute_url }}" target="_blank"
+                 class="type-action view" title="View System Type">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="{% url 'aura_admin:projects:system_type_edit' type.pk %}" 
+                 class="type-action edit" title="Edit System Type">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="{% url 'aura_admin:projects:system_type_delete' type.pk %}" 
+                 class="type-action delete" title="Delete System Type"
+                 onclick="return confirm('Are you sure you want to delete {{ type.name }}? This will affect {{ type.systemmodule_set.count }} systems.')">
+                <i class="fas fa-trash"></i>
+              </a>
+            </div>
+          </div>
+          
+        </div>
+      {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+      <div class="pagination-container">
+        {% include "admin/components/pagination.html" %}
+      </div>
+    {% endif %}
+    
+  {% else %}
+    <div class="glass-card">
+      <div class="empty-state">
+        <i class="fas fa-layer-group"></i>
+        <h3>No System Types Found</h3>
+        <p>{% if request.GET.search %}No types match your search criteria.{% else %}Start by creating your first system type to organize your projects.{% endif %}</p>
+        <div class="mt-4">
+          {% if request.GET.search %}
+            <a href="{% url 'aura_admin:projects:system_type_list' %}" class="btn btn-secondary mr-2">
+              <i class="fas fa-times mr-2"></i>Clear Search
+            </a>
+          {% endif %}
+          <a href="{% url 'aura_admin:projects:system_type_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>Create System Type
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit filter form when select changes
+    const sortSelect = document.querySelector('select[name="sort"]');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    }
+});
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.type-select:checked');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (checkboxes.length > 0) {
+        bulkActions.classList.add('show');
+        selectedCount.textContent = `${checkboxes.length} types selected`;
+    } else {
+        bulkActions.classList.remove('show');
+    }
+}
+
+function getSelectedTypes() {
+    const checkboxes = document.querySelectorAll('.type-select:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function bulkEdit() {
+    const selected = getSelectedTypes();
+    if (selected.length === 0) return;
+    
+    // For now, just redirect to the first selected item's edit page
+    // TODO: Implement actual bulk edit interface
+    if (selected.length === 1) {
+        window.location.href = `/aura-admin/projects/system-types/${selected[0]}/edit/`;
+    } else {
+        alert(`Bulk editing ${selected.length} system types is not yet implemented. Please edit them individually.`);
+    }
+}
+
+function bulkUpdateOrder() {
+    const selected = getSelectedTypes();
+    if (selected.length === 0) return;
+    
+    const newOrder = prompt('Enter new display order for the first selected type (others will follow sequentially):');
+    if (!newOrder || isNaN(newOrder)) return;
+    
+    // Simple implementation - could be enhanced later
+    alert(`Bulk order update will be implemented in a future update. For now, please edit display order individually.`);
+}
+
+function bulkDelete() {
+    const selected = getSelectedTypes();
+    if (selected.length === 0) return;
+    
+    if (confirm(`Are you sure you want to delete ${selected.length} system types? This action cannot be undone and may affect associated systems.`)) {
+        // Use the existing BulkActionMixin pattern
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = window.location.pathname; // Current URL
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken.value;
+            form.appendChild(csrfInput);
+        }
+        
+        // Add action
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'delete';
+        form.appendChild(actionInput);
+        
+        // Add selected IDs
+        selected.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_items';
+            input.value = id;
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Select All functionality
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.closest('.type-grid')) {
+        e.preventDefault();
+        const checkboxes = document.querySelectorAll('.type-select');
+        checkboxes.forEach(cb => cb.checked = true);
+        updateBulkActions();
+    }
+});
+</script>
+{% endblock %}
