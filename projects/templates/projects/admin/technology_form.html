@@ -1,0 +1,561 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_title %}
+  {% if object %}Edit Technology: {{ object.name }}{% else %}Add New Technology{% endif %}
+{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+  .tech-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .color-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000;
+    transition: all 0.3s ease;
+  }
+  
+  .icon-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+  
+  .icon-demo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #26c6da;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #000;
+  }
+  
+  .color-swatches {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+  }
+  
+  .color-swatch:hover {
+    border-color: #ffffff;
+    transform: scale(1.1);
+  }
+  
+  .color-swatch.selected {
+    border-color: #26c6da;
+    transform: scale(1.1);
+  }
+  
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+  }
+  
+  .icon-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #e8eaf6;
+  }
+  
+  .icon-option:hover {
+    background: rgba(38, 198, 218, 0.2);
+    color: #26c6da;
+    transform: scale(1.1);
+  }
+  
+  .icon-option.selected {
+    background: rgba(38, 198, 218, 0.3);
+    color: #26c6da;
+  }
+  
+  .preview-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .tech-preview-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .tech-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .tech-preview-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #000;
+    font-weight: bold;
+  }
+  
+  .tech-preview-details h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #ffffff;
+  }
+  
+  .tech-preview-category {
+    font-size: 0.75rem;
+    color: #b0bec5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+  }
+  
+  .form-section {
+    margin-bottom: 2rem;
+  }
+  
+  .form-section h3 {
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .help-text {
+    font-size: 0.875rem;
+    color: #b0bec5;
+    margin-top: 0.25rem;
+  }
+  
+  @media (max-width: 768px) {
+    .color-swatches {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .icon-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .tech-form-container {
+      padding: 0 1rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="tech-form-container">
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-white mb-2">
+        {% if object %}
+          <i class="fas fa-edit text-orange-400 mr-2"></i>
+          Edit Technology: {{ object.name }}
+        {% else %}
+          <i class="fas fa-plus text-green-400 mr-2"></i>
+          Add New Technology
+        {% endif %}
+      </h1>
+      <p class="text-gray-400">
+        {% if object %}
+          Update technology information and appearance
+        {% else %}
+          Add a new technology to your stack
+        {% endif %}
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+      <a href="{% url 'aura_admin:projects:technology_list' %}" 
+         class="btn btn-secondary">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Technologies
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Form -->
+    <div class="lg:col-span-2">
+      <form method="post" id="technologyForm">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="glass-card p-6 form-section">
+          <h3>
+            <i class="fas fa-info-circle text-cyan-400"></i>
+            Basic Information
+          </h3>
+          
+          <div class="space-y-4">
+            <!-- Name -->
+            <div>
+              <label for="{{ form.name.id_for_label }}" class="form-label">Technology Name</label>
+              {{ form.name }}
+              {% if form.name.errors %}
+                <div class="form-error">{{ form.name.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Slug -->
+            <div>
+              <label for="{{ form.slug.id_for_label }}" class="form-label">URL Slug</label>
+              {{ form.slug }}
+              <div class="help-text">Auto-generated from name, but you can customize it</div>
+              {% if form.slug.errors %}
+                <div class="form-error">{{ form.slug.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Category -->
+            <div>
+              <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+              {{ form.category }}
+              {% if form.category.errors %}
+                <div class="form-error">{{ form.category.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Description -->
+            <div>
+              <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+              {{ form.description }}
+              <div class="help-text">Brief description of this technology and its use cases</div>
+              {% if form.description.errors %}
+                <div class="form-error">{{ form.description.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Documentation URL -->
+            <div>
+              <label for="{{ form.documentation_url.id_for_label }}" class="form-label">Documentation URL</label>
+              {{ form.documentation_url }}
+              <div class="help-text">Link to official documentation or resources</div>
+              {% if form.documentation_url.errors %}
+                <div class="form-error">{{ form.documentation_url.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Visual Styling -->
+        <div class="glass-card p-6 form-section">
+          <h3>
+            <i class="fas fa-palette text-purple-400"></i>
+            Visual Styling
+          </h3>
+          
+          <div class="space-y-6">
+            <!-- Color -->
+            <div>
+              <label for="{{ form.color.id_for_label }}" class="form-label">Brand Color</label>
+              {{ form.color }}
+              <div class="help-text">Hex color code for this technology (e.g., #00f0ff)</div>
+              
+              <!-- Color Preview -->
+              <div class="icon-preview">
+                <div class="color-preview" id="colorPreview">#26c6da</div>
+                <span class="text-sm text-gray-400">Preview</span>
+              </div>
+              
+              <!-- Color Swatches -->
+              <div class="color-swatches">
+                <div class="color-swatch" style="background: #f44336" data-color="#f44336"></div>
+                <div class="color-swatch" style="background: #e91e63" data-color="#e91e63"></div>
+                <div class="color-swatch" style="background: #9c27b0" data-color="#9c27b0"></div>
+                <div class="color-swatch" style="background: #673ab7" data-color="#673ab7"></div>
+                <div class="color-swatch" style="background: #3f51b5" data-color="#3f51b5"></div>
+                <div class="color-swatch" style="background: #2196f3" data-color="#2196f3"></div>
+                <div class="color-swatch" style="background: #03a9f4" data-color="#03a9f4"></div>
+                <div class="color-swatch" style="background: #00bcd4" data-color="#00bcd4"></div>
+                <div class="color-swatch" style="background: #009688" data-color="#009688"></div>
+                <div class="color-swatch" style="background: #4caf50" data-color="#4caf50"></div>
+                <div class="color-swatch" style="background: #8bc34a" data-color="#8bc34a"></div>
+                <div class="color-swatch" style="background: #cddc39" data-color="#cddc39"></div>
+                <div class="color-swatch" style="background: #ffeb3b" data-color="#ffeb3b"></div>
+                <div class="color-swatch" style="background: #ffc107" data-color="#ffc107"></div>
+                <div class="color-swatch" style="background: #ff9800" data-color="#ff9800"></div>
+                <div class="color-swatch" style="background: #ff5722" data-color="#ff5722"></div>
+              </div>
+              
+              {% if form.color.errors %}
+                <div class="form-error">{{ form.color.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Icon -->
+            <div>
+              <label for="{{ form.icon.id_for_label }}" class="form-label">Icon Class</label>
+              {{ form.icon }}
+              <div class="help-text">Font Awesome icon class (e.g., fab fa-python, fas fa-database)</div>
+              
+              <!-- Icon Preview -->
+              <div class="icon-preview">
+                <div class="icon-demo" id="iconPreview">
+                  <i class="fas fa-code"></i>
+                </div>
+                <span class="text-sm text-gray-400">Preview</span>
+              </div>
+              
+              <!-- Common Icons -->
+              <div class="icon-grid">
+                <div class="icon-option" data-icon="fab fa-python"><i class="fab fa-python"></i></div>
+                <div class="icon-option" data-icon="fab fa-js-square"><i class="fab fa-js-square"></i></div>
+                <div class="icon-option" data-icon="fab fa-react"><i class="fab fa-react"></i></div>
+                <div class="icon-option" data-icon="fab fa-vue"><i class="fab fa-vue"></i></div>
+                <div class="icon-option" data-icon="fab fa-angular"><i class="fab fa-angular"></i></div>
+                <div class="icon-option" data-icon="fab fa-node-js"><i class="fab fa-node-js"></i></div>
+                <div class="icon-option" data-icon="fab fa-php"><i class="fab fa-php"></i></div>
+                <div class="icon-option" data-icon="fab fa-java"><i class="fab fa-java"></i></div>
+                <div class="icon-option" data-icon="fas fa-database"><i class="fas fa-database"></i></div>
+                <div class="icon-option" data-icon="fab fa-docker"><i class="fab fa-docker"></i></div>
+                <div class="icon-option" data-icon="fab fa-git-alt"><i class="fab fa-git-alt"></i></div>
+                <div class="icon-option" data-icon="fab fa-github"><i class="fab fa-github"></i></div>
+                <div class="icon-option" data-icon="fab fa-aws"><i class="fab fa-aws"></i></div>
+                <div class="icon-option" data-icon="fas fa-cloud"><i class="fas fa-cloud"></i></div>
+                <div class="icon-option" data-icon="fas fa-server"><i class="fas fa-server"></i></div>
+                <div class="icon-option" data-icon="fas fa-code"><i class="fas fa-code"></i></div>
+              </div>
+              
+              {% if form.icon.errors %}
+                <div class="form-error">{{ form.icon.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-wrap gap-4 mb-4 sm:mb-0">
+            <button type="submit" name="action" value="save" class="btn btn-primary">
+              <i class="fas fa-save mr-2"></i>
+              {% if object %}Update Technology{% else %}Add Technology{% endif %}
+            </button>
+            
+            <button type="submit" name="action" value="save_and_continue" class="btn btn-secondary">
+              <i class="fas fa-save mr-2"></i>
+              Save & Continue Editing
+            </button>
+            
+            {% if object %}
+              <button type="submit" name="action" value="save_and_view" class="btn btn-secondary">
+                <i class="fas fa-eye mr-2"></i>
+                Save & View
+              </button>
+            {% endif %}
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Preview Sidebar -->
+    <div class="preview-section">
+      <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+        <i class="fas fa-eye text-green-400 mr-2"></i>
+        Live Preview
+      </h3>
+      
+      <div class="tech-preview-card">
+        <div class="tech-preview-header">
+          <div class="tech-preview-icon" id="previewIcon">
+            <i class="fas fa-code"></i>
+          </div>
+          <div class="tech-preview-details">
+            <h3 id="previewName">Technology Name</h3>
+            <div class="tech-preview-category" id="previewCategory">CATEGORY</div>
+          </div>
+        </div>
+        
+        <div class="text-gray-400 text-sm" id="previewDescription">
+          Technology description will appear here...
+        </div>
+      </div>
+      
+      <div class="mt-4 text-xs text-gray-500">
+        <i class="fas fa-info-circle mr-1"></i>
+        This preview shows how your technology will appear in the admin interface
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get form fields
+    const nameField = document.getElementById('id_name');
+    const slugField = document.getElementById('id_slug');
+    const categoryField = document.getElementById('id_category');
+    const descriptionField = document.getElementById('id_description');
+    const colorField = document.getElementById('id_color');
+    const iconField = document.getElementById('id_icon');
+    
+    // Preview elements
+    const previewName = document.getElementById('previewName');
+    const previewCategory = document.getElementById('previewCategory');
+    const previewDescription = document.getElementById('previewDescription');
+    const previewIcon = document.getElementById('previewIcon');
+    const colorPreview = document.getElementById('colorPreview');
+    const iconPreview = document.getElementById('iconPreview');
+    
+    // Auto-slug generation
+    if (nameField && slugField) {
+        nameField.addEventListener('input', function() {
+            if (!slugField.dataset.userModified) {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                slugField.value = slug;
+            }
+            updatePreview();
+        });
+        
+        slugField.addEventListener('input', function() {
+            this.dataset.userModified = 'true';
+        });
+    }
+    
+    // Update preview function
+    function updatePreview() {
+        if (previewName) previewName.textContent = nameField.value || 'Technology Name';
+        if (previewCategory) {
+            const categoryText = categoryField.selectedOptions[0]?.textContent || 'CATEGORY';
+            previewCategory.textContent = categoryText.toUpperCase();
+        }
+        if (previewDescription) {
+            previewDescription.textContent = descriptionField.value || 'Technology description will appear here...';
+        }
+        
+        // Update icon preview
+        const iconClass = iconField.value || 'fas fa-code';
+        if (previewIcon) {
+            previewIcon.innerHTML = `<i class="${iconClass}"></i>`;
+            previewIcon.style.backgroundColor = colorField.value || '#26c6da';
+        }
+        if (iconPreview) {
+            iconPreview.innerHTML = `<i class="${iconClass}"></i>`;
+        }
+        
+        // Update color preview
+        const color = colorField.value || '#26c6da';
+        if (colorPreview) {
+            colorPreview.style.backgroundColor = color;
+            colorPreview.textContent = nameField.value ? nameField.value.charAt(0).toUpperCase() : '#';
+        }
+    }
+    
+    // Add event listeners for live preview
+    [nameField, categoryField, descriptionField, colorField, iconField].forEach(field => {
+        if (field) {
+            field.addEventListener('input', updatePreview);
+            field.addEventListener('change', updatePreview);
+        }
+    });
+    
+    // Color swatch selection
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', function() {
+            const color = this.dataset.color;
+            colorField.value = color;
+            
+            // Update selected state
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            updatePreview();
+        });
+    });
+    
+    // Icon selection
+    document.querySelectorAll('.icon-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const icon = this.dataset.icon;
+            iconField.value = icon;
+            
+            // Update selected state
+            document.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            updatePreview();
+        });
+    });
+    
+    // Initialize preview
+    updatePreview();
+    
+    // Set initial selected states
+    const currentColor = colorField.value;
+    if (currentColor) {
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+            if (swatch.dataset.color === currentColor) {
+                swatch.classList.add('selected');
+            }
+        });
+    }
+    
+    const currentIcon = iconField.value;
+    if (currentIcon) {
+        document.querySelectorAll('.icon-option').forEach(option => {
+            if (option.dataset.icon === currentIcon) {
+                option.classList.add('selected');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
