@@ -1,174 +1,651 @@
-<!-- 
-  *projects/templates/projects/admin/system_form.html
-  *Version 2.0
-  -->
 {% extends 'admin/admin_base.html' %}
 {% load static %}
-{% load markdownx_tags %}
 
-{% block extra_css %}
-  {{ block.super }}
-  <link rel="stylesheet" href="{% static 'markdownx/css/markdownx.min.css' %}">
+{% block admin_title %}
+  {% if object %}Edit System: {{ object.title }}{% else %}Create New System{% endif %}
 {% endblock %}
 
-{% block admin_actions %}
-  <div class="flex items-center space-x-4">
-    <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-secondary">
-      <i class="fas fa-arrow-left mr-2"></i>
-      Back to Systems
-    </a>
-    {% if object %}
-      <a href="{{ object.get_absolute_url }}" target="_blank" class="btn btn-secondary">
-        <i class="fas fa-eye mr-2"></i>
-        View System
-      </a>
-    {% endif %}
-  </div>
+{% block admin_css %}
+{{ block.super }}
+<style>
+  /* MarkdownX Editor Styling - CRITICAL FIX */
+  .markdownx-editor {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    min-height: 200px;
+    font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .markdownx-editor:focus {
+    border-color: #26c6da !important;
+    box-shadow: 0 0 20px rgba(38, 198, 218, 0.3) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  /* MarkdownX Preview Styling */
+  .markdownx-preview {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    min-height: 200px;
+    padding: 1rem !important;
+  }
+
+  /* MarkdownX Toolbar */
+  .markdownx-toolbar {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .markdownx-toolbar button {
+    background: transparent !important;
+    color: #e8eaf6 !important;
+    border: none !important;
+    padding: 0.5rem !important;
+    margin: 0.2rem !important;
+    border-radius: 4px !important;
+  }
+
+  .markdownx-toolbar button:hover {
+    background: rgba(38, 198, 218, 0.2) !important;
+    color: #26c6da !important;
+  }
+
+  /* Form Control Base Styling */
+  .form-control {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    border-color: #26c6da !important;
+    box-shadow: 0 0 20px rgba(38, 198, 218, 0.3) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    outline: none !important;
+  }
+
+  /* Select Options Fix */
+  .form-control option {
+    background: #0d0d1f !important;
+    color: #ffffff !important;
+  }
+
+  .preview-note {
+    color: #b0bec5;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    font-style: italic;
+  }
+  
+  .completion-visual {
+    position: relative;
+  }
+  
+  .completion-visual::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: shimmer 2s infinite;
+    pointer-events: none;
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Smart Form Enhancements */
+  .form-tabs {
+    display: flex;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 2rem;
+  }
+  
+  .form-tab {
+    padding: 1rem 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: #e8eaf6;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px 8px 0 0;
+    margin-right: 0.5rem;
+  }
+  
+  .form-tab.active {
+    background: rgba(38, 198, 218, 0.2);
+    color: #26c6da;
+    border-bottom: 2px solid #26c6da;
+  }
+  
+  .form-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .form-section {
+    display: none;
+  }
+  
+  .form-section.active {
+    display: block;
+  }
+  
+  .auto-generate-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+  
+  .auto-generate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  
+  .generate-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #26c6da, #00acc1);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  
+  .generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(38, 198, 218, 0.4);
+  }
+  
+  .generate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .generate-btn i {
+    margin-right: 0.5rem;
+  }
+  
+  .generate-btn.regenerate {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+  }
+  
+  .generate-btn.regenerate:hover {
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+  }
+  
+  .field-help {
+    font-size: 0.875rem;
+    color: #b0bec5;
+    margin-bottom: 0.5rem;
+  }
+  
+  .auto-preview {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    display: none;
+  }
+  
+  .auto-preview.show {
+    display: block;
+  }
+  
+  .auto-preview h4 {
+    color: #26c6da;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .auto-preview pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    color: #e8eaf6;
+  }
+  
+  .technology-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .tech-option {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .tech-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  .tech-option input[type="checkbox"] {
+    margin-right: 0.5rem;
+    accent-color: #26c6da;
+  }
+  
+  .tech-option label {
+    cursor: pointer;
+    color: #e8eaf6;
+    font-size: 0.875rem;
+  }
+  
+  .image-upload-zone {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .image-upload-zone:hover {
+    border-color: #26c6da;
+    background: rgba(38, 198, 218, 0.05);
+  }
+  
+  .image-upload-zone.dragover {
+    border-color: #26c6da;
+    background: rgba(38, 198, 218, 0.1);
+  }
+  
+  .image-preview {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    margin-top: 1rem;
+  }
+  
+  .loading-spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid #26c6da;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .form-tabs {
+      flex-wrap: wrap;
+    }
+    
+    .form-tab {
+      flex: 1;
+      min-width: 120px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+    }
+    
+    .auto-generate-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+  }
+</style>
 {% endblock %}
 
 {% block admin_content %}
-  <form method="post" enctype="multipart/form-data" class="system-form">
+<div class="max-w-6xl mx-auto">
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-white mb-2">
+        {% if object %}
+          <i class="fas fa-edit text-cyan-400 mr-2"></i>
+          Edit System: {{ object.title }}
+        {% else %}
+          <i class="fas fa-plus text-green-400 mr-2"></i>
+          Create New System
+        {% endif %}
+      </h1>
+      <p class="text-gray-400">
+        {% if object %}
+          Update system information and auto-generate content from existing data
+        {% else %}
+          Create a new system with intelligent content generation
+        {% endif %}
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0 flex gap-2">
+      {% if object %}
+        <a href="{{ object.get_absolute_url }}" target="_blank" 
+           class="btn btn-secondary">
+          <i class="fas fa-eye mr-2"></i>Preview
+        </a>
+      {% endif %}
+      <a href="{% url 'aura_admin:projects:system_list' %}" 
+         class="btn btn-secondary">
+        <i class="fas fa-arrow-left mr-2"></i>Back to List
+      </a>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <form method="post" enctype="multipart/form-data" id="systemForm">
     {% csrf_token %}
     
-    <!-- Form Errors -->
-    {% if form.non_field_errors %}
-      <div class="alert alert-error mb-6">
-        {% for error in form.non_field_errors %}
-          <p>{{ error }}</p>
-        {% endfor %}
-      </div>
-    {% endif %}
+    <!-- Tabs -->
+    <div class="form-tabs">
+      <button type="button" class="form-tab active" data-tab="basic">
+        <i class="fas fa-info-circle mr-2"></i>Basic Info
+      </button>
+      <button type="button" class="form-tab" data-tab="content">
+        <i class="fas fa-file-alt mr-2"></i>Content
+      </button>
+      <button type="button" class="form-tab" data-tab="technical">
+        <i class="fas fa-cogs mr-2"></i>Technical
+      </button>
+      <button type="button" class="form-tab" data-tab="performance">
+        <i class="fas fa-chart-line mr-2"></i>Performance
+      </button>
+      <button type="button" class="form-tab" data-tab="media">
+        <i class="fas fa-images mr-2"></i>Media
+      </button>
+    </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- Main Content -->
-      <div class="lg:col-span-2 space-y-8">
+    <!-- Basic Information Tab -->
+    <div class="form-section active" id="basic-section">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Basic Information -->
-        <div class="glass-card p-6">
-          <div class="flex items-center mb-6">
-            <i class="fas fa-info-circle text-cyan-400 mr-3"></i>
-            <h3 class="text-xl font-semibold text-white">Basic Information</h3>
-          </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Main Info -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="glass-card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+              <i class="fas fa-tag text-cyan-400 mr-2"></i>
+              System Identity
+            </h3>
+            
             <!-- Title -->
-            <div class="md:col-span-2">
-              <label for="{{ form.title.id_for_label }}" class="form-label required">System Title</label>
+            <div class="mb-4">
+              <label for="{{ form.title.id_for_label }}" class="form-label">System Title</label>
               {{ form.title }}
               {% if form.title.errors %}
                 <div class="form-error">{{ form.title.errors.0 }}</div>
               {% endif %}
-              <div class="form-help">{{ form.title.help_text }}</div>
-            </div>
-            
-            <!-- Slug and System ID -->
-            <div>
-              <label for="{{ form.slug.id_for_label }}" class="form-label">URL Slug</label>
-              {{ form.slug }}
-              {% if form.slug.errors %}
-                <div class="form-error">{{ form.slug.errors.0 }}</div>
-              {% endif %}
-              <div class="form-help">{{ form.slug.help_text }}</div>
-            </div>
-            
-            <div>
-              <label for="{{ form.system_id.id_for_label }}" class="form-label">System ID</label>
-              {{ form.system_id }}
-              {% if form.system_id.errors %}
-                <div class="form-error">{{ form.system_id.errors.0 }}</div>
-              {% endif %}
-              <div class="form-help">{{ form.system_id.help_text }}</div>
             </div>
             
             <!-- Subtitle -->
-            <div class="md:col-span-2">
+            <div class="mb-4">
               <label for="{{ form.subtitle.id_for_label }}" class="form-label">Subtitle</label>
               {{ form.subtitle }}
               {% if form.subtitle.errors %}
                 <div class="form-error">{{ form.subtitle.errors.0 }}</div>
               {% endif %}
-              <div class="form-help">{{ form.subtitle.help_text }}</div>
+            </div>
+            
+            <!-- Slug -->
+            <div class="mb-4">
+              <label for="{{ form.slug.id_for_label }}" class="form-label">URL Slug</label>
+              {{ form.slug }}
+              <div class="field-help">Auto-generated from title, but you can customize it</div>
+              {% if form.slug.errors %}
+                <div class="form-error">{{ form.slug.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- System ID -->
+            <div class="mb-4">
+              <label for="{{ form.system_id.id_for_label }}" class="form-label">System ID</label>
+              {{ form.system_id }}
+              <div class="field-help">Auto-generated unique identifier (e.g., SYS-001)</div>
+              {% if form.system_id.errors %}
+                <div class="form-error">{{ form.system_id.errors.0 }}</div>
+              {% endif %}
             </div>
             
             <!-- Excerpt -->
-            <div class="md:col-span-2">
-              <label for="{{ form.excerpt.id_for_label }}" class="form-label">Excerpt</label>
+            <div class="mb-4">
+              <label for="{{ form.excerpt.id_for_label }}" class="form-label">Brief Summary</label>
               {{ form.excerpt }}
+              <div class="field-help">Short description for system cards and previews</div>
               {% if form.excerpt.errors %}
                 <div class="form-error">{{ form.excerpt.errors.0 }}</div>
               {% endif %}
-              <div class="form-help">{{ form.excerpt.help_text }}</div>
             </div>
           </div>
         </div>
 
-        <!-- Content Sections -->
-        <div class="glass-card p-6">
-          <div class="flex items-center mb-6">
-            <i class="fas fa-file-alt text-cyan-400 mr-3"></i>
-            <h3 class="text-xl font-semibold text-white">Content & Documentation</h3>
+        <!-- Configuration Sidebar -->
+        <div class="space-y-6">
+          <div class="glass-card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+              <i class="fas fa-sliders-h text-purple-400 mr-2"></i>
+              Configuration
+            </h3>
+            
+            <!-- System Type -->
+            <div class="mb-4">
+              <label for="{{ form.system_type.id_for_label }}" class="form-label">System Type</label>
+              {{ form.system_type }}
+              {% if form.system_type.errors %}
+                <div class="form-error">{{ form.system_type.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Status -->
+            <div class="mb-4">
+              <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+              {{ form.status }}
+              {% if form.status.errors %}
+                <div class="form-error">{{ form.status.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Priority -->
+            <div class="mb-4">
+              <label for="{{ form.priority.id_for_label }}" class="form-label">Priority</label>
+              {{ form.priority }}
+              {% if form.priority.errors %}
+                <div class="form-error">{{ form.priority.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Complexity -->
+            <div class="mb-4">
+              <label for="{{ form.complexity.id_for_label }}" class="form-label">Complexity</label>
+              {{ form.complexity }}
+              {% if form.complexity.errors %}
+                <div class="form-error">{{ form.complexity.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Featured -->
+            <div class="mb-4">
+              <div class="flex items-center">
+                {{ form.featured }}
+                <label for="{{ form.featured.id_for_label }}" class="ml-2 text-sm text-gray-300">
+                  Featured System
+                </label>
+              </div>
+              {% if form.featured.errors %}
+                <div class="form-error">{{ form.featured.errors.0 }}</div>
+              {% endif %}
+            </div>
           </div>
           
-          <!-- Description -->
-          <div class="mb-6">
-            <label for="{{ form.description.id_for_label }}" class="form-label required">System Description</label>
-            {{ form.description }}
-            {% if form.description.errors %}
-              <div class="form-error">{{ form.description.errors.0 }}</div>
+          <!-- Technology Stack -->
+          <div class="glass-card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+              <i class="fas fa-tools text-orange-400 mr-2"></i>
+              Technology Stack
+            </h3>
+            
+            <div class="technology-grid">
+              {% for choice in form.technologies %}
+                <div class="tech-option">
+                  {{ choice.tag }}
+                  <label for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                </div>
+              {% endfor %}
+            </div>
+            {% if form.technologies.errors %}
+              <div class="form-error mt-2">{{ form.technologies.errors.0 }}</div>
             {% endif %}
-            <div class="form-help">{{ form.description.help_text }}</div>
           </div>
-          
-          <!-- Features Overview -->
-          <div class="mb-6">
-            <label for="{{ form.features_overview.id_for_label }}" class="form-label">Features Overview</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Tab -->
+    <div class="form-section" id="content-section">
+      <div class="space-y-8">
+        
+        <!-- Description -->
+        <div class="glass-card p-6">
+          <div class="auto-generate-header">
+            <div>
+              <label for="{{ form.description.id_for_label }}" class="form-label">Project Description</label>
+              <div class="field-help">Full project description in Markdown</div>
+            </div>
+          </div>
+          {{ form.description }}
+          {% if form.description.errors %}
+            <div class="form-error">{{ form.description.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Features Overview with Auto-Generation -->
+        <div class="glass-card p-6">
+          <div class="auto-generate-group">
+            <div class="auto-generate-header">
+              <div>
+                <label for="{{ form.features_overview.id_for_label }}" class="form-label">Features Overview</label>
+                <div class="field-help">Key features and capabilities overview</div>
+              </div>
+              <button type="button" class="generate-btn" id="generateFeatures" data-field="features_overview">
+                <div class="loading-spinner"></div>
+                <i class="fas fa-magic"></i>
+                <span class="btn-text">Auto-Generate from Tech Stack</span>
+              </button>
+            </div>
             {{ form.features_overview }}
             {% if form.features_overview.errors %}
               <div class="form-error">{{ form.features_overview.errors.0 }}</div>
             {% endif %}
-            <div class="form-help">{{ form.features_overview.help_text }}</div>
+            <div class="auto-preview" id="featuresPreview">
+              <h4>Generated Content Preview:</h4>
+              <pre id="featuresPreviewText"></pre>
+            </div>
           </div>
-          
-          <!-- Technical Details -->
-          <div class="mb-6">
-            <label for="{{ form.technical_details.id_for_label }}" class="form-label">Technical Details</label>
+        </div>
+
+        <!-- Technical Details with Auto-Generation -->
+        <div class="glass-card p-6">
+          <div class="auto-generate-group">
+            <div class="auto-generate-header">
+              <div>
+                <label for="{{ form.technical_details.id_for_label }}" class="form-label">Technical Details</label>
+                <div class="field-help">Technical implementation details and architecture</div>
+              </div>
+              <button type="button" class="generate-btn" id="generateTechnical" data-field="technical_details">
+                <div class="loading-spinner"></div>
+                <i class="fas fa-cogs"></i>
+                <span class="btn-text">Auto-Generate from System Data</span>
+              </button>
+            </div>
             {{ form.technical_details }}
             {% if form.technical_details.errors %}
               <div class="form-error">{{ form.technical_details.errors.0 }}</div>
             {% endif %}
-            <div class="form-help">{{ form.technical_details.help_text }}</div>
+            <div class="auto-preview" id="technicalPreview">
+              <h4>Generated Content Preview:</h4>
+              <pre id="technicalPreviewText"></pre>
+            </div>
           </div>
-          
-          <!-- Challenges -->
-          <div class="mb-6">
-            <label for="{{ form.challenges.id_for_label }}" class="form-label">Development Challenges</label>
-            {{ form.challenges }}
-            {% if form.challenges.errors %}
-              <div class="form-error">{{ form.challenges.errors.0 }}</div>
-            {% endif %}
-            <div class="form-help">{{ form.challenges.help_text }}</div>
-          </div>
-          
-          <!-- Future Enhancements -->
-          <div>
-            <label for="{{ form.future_enhancements.id_for_label }}" class="form-label">Future Enhancements</label>
+        </div>
+
+        <!-- Future Enhancements with Auto-Generation -->
+        <div class="glass-card p-6">
+          <div class="auto-generate-group">
+            <div class="auto-generate-header">
+              <div>
+                <label for="{{ form.future_enhancements.id_for_label }}" class="form-label">Future Enhancements</label>
+                <div class="field-help">Planned improvements and next steps</div>
+              </div>
+              <button type="button" class="generate-btn" id="generateFuture" data-field="future_enhancements">
+                <div class="loading-spinner"></div>
+                <i class="fas fa-road"></i>
+                <span class="btn-text">Auto-Generate Roadmap</span>
+              </button>
+            </div>
             {{ form.future_enhancements }}
             {% if form.future_enhancements.errors %}
               <div class="form-error">{{ form.future_enhancements.errors.0 }}</div>
             {% endif %}
-            <div class="form-help">{{ form.future_enhancements.help_text }}</div>
+            <div class="auto-preview" id="futurePreview">
+              <h4>Generated Content Preview:</h4>
+              <pre id="futurePreviewText"></pre>
+            </div>
           </div>
         </div>
 
-        <!-- Links & Resources -->
+        <!-- Challenges -->
         <div class="glass-card p-6">
-          <div class="flex items-center mb-6">
-            <i class="fas fa-link text-cyan-400 mr-3"></i>
-            <h3 class="text-xl font-semibold text-white">Links & Resources</h3>
-          </div>
+          <label for="{{ form.challenges.id_for_label }}" class="form-label">Development Challenges</label>
+          <div class="field-help">Challenges faced and how they were overcome</div>
+          {{ form.challenges }}
+          {% if form.challenges.errors %}
+            <div class="form-error">{{ form.challenges.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Technical Tab -->
+    <div class="form-section" id="technical-section">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- URLs -->
+        <div class="glass-card p-6">
+          <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-link text-blue-400 mr-2"></i>
+            Project URLs
+          </h3>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
             <div>
               <label for="{{ form.github_url.id_for_label }}" class="form-label">GitHub Repository</label>
               {{ form.github_url }}
@@ -194,7 +671,7 @@
             </div>
             
             <div>
-              <label for="{{ form.documentation_url.id_for_label }}" class="form-label">Documentation URL</label>
+              <label for="{{ form.documentation_url.id_for_label }}" class="form-label">Documentation</label>
               {{ form.documentation_url }}
               {% if form.documentation_url.errors %}
                 <div class="form-error">{{ form.documentation_url.errors.0 }}</div>
@@ -202,147 +679,15 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Sidebar -->
-      <div class="space-y-8">
-        
-        <!-- System Configuration -->
+        <!-- Development Metrics -->
         <div class="glass-card p-6">
-          <div class="flex items-center mb-6">
-            <i class="fas fa-cogs text-purple-400 mr-3"></i>
-            <h3 class="text-lg font-semibold text-white">Configuration</h3>
-          </div>
-          
-          <!-- System Type -->
-          <div class="mb-4">
-            <label for="{{ form.system_type.id_for_label }}" class="form-label">System Type</label>
-            {{ form.system_type }}
-            {% if form.system_type.errors %}
-              <div class="form-error">{{ form.system_type.errors.0 }}</div>
-            {% endif %}
-          </div>
-          
-          <!-- Status -->
-          <div class="mb-4">
-            <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
-            {{ form.status }}
-            {% if form.status.errors %}
-              <div class="form-error">{{ form.status.errors.0 }}</div>
-            {% endif %}
-          </div>
-          
-          <!-- Priority -->
-          <div class="mb-4">
-            <label for="{{ form.priority.id_for_label }}" class="form-label">Priority</label>
-            {{ form.priority }}
-            {% if form.priority.errors %}
-              <div class="form-error">{{ form.priority.errors.0 }}</div>
-            {% endif %}
-          </div>
-          
-          <!-- Complexity -->
-          <div class="mb-4">
-            <label for="{{ form.complexity.id_for_label }}" class="form-label">Complexity</label>
-            {{ form.complexity }}
-            {% if form.complexity.errors %}
-              <div class="form-error">{{ form.complexity.errors.0 }}</div>
-            {% endif %}
-          </div>
-          
-          <!-- Featured -->
-          <div class="mb-4">
-            <div class="flex items-center">
-              {{ form.featured }}
-              <label for="{{ form.featured.id_for_label }}" class="ml-2 text-sm text-gray-300">
-                Feature this system
-              </label>
-            </div>
-            {% if form.featured.errors %}
-              <div class="form-error">{{ form.featured.errors.0 }}</div>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Technologies -->
-        <div class="glass-card p-6">
-          <div class="flex items-center mb-4">
-            <i class="fas fa-tools text-orange-400 mr-3"></i>
-            <h3 class="text-lg font-semibold text-white">Technologies</h3>
-          </div>
-          
-          <div class="technology-checkboxes max-h-64 overflow-y-auto">
-            {{ form.technologies }}
-            {% if form.technologies.errors %}
-              <div class="form-error">{{ form.technologies.errors.0 }}</div>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Performance Metrics -->
-        <div class="glass-card p-6">
-          <div class="flex items-center mb-6">
-            <i class="fas fa-chart-line text-green-400 mr-3"></i>
-            <h3 class="text-lg font-semibold text-white">Performance</h3>
-          </div>
+          <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-clock text-green-400 mr-2"></i>
+            Development Metrics
+          </h3>
           
           <div class="space-y-4">
-            <!-- Completion Percentage -->
-            <div>
-              <label for="{{ form.completion_percent.id_for_label }}" class="form-label">Completion %</label>
-              {{ form.completion_percent }}
-              {% if form.completion_percent.errors %}
-                <div class="form-error">{{ form.completion_percent.errors.0 }}</div>
-              {% endif %}
-            </div>
-            
-            <!-- Performance Score -->
-            <div>
-              <label for="{{ form.performance_score.id_for_label }}" class="form-label">Performance Score</label>
-              {{ form.performance_score }}
-              {% if form.performance_score.errors %}
-                <div class="form-error">{{ form.performance_score.errors.0 }}</div>
-              {% endif %}
-            </div>
-            
-            <!-- Uptime Percentage -->
-            <div>
-              <label for="{{ form.uptime_percentage.id_for_label }}" class="form-label">Uptime %</label>
-              {{ form.uptime_percentage }}
-              {% if form.uptime_percentage.errors %}
-                <div class="form-error">{{ form.uptime_percentage.errors.0 }}</div>
-              {% endif %}
-            </div>
-            
-            <!-- Response Time -->
-            <div>
-              <label for="{{ form.response_time_ms.id_for_label }}" class="form-label">Response Time (ms)</label>
-              {{ form.response_time_ms }}
-              {% if form.response_time_ms.errors %}
-                <div class="form-error">{{ form.response_time_ms.errors.0 }}</div>
-              {% endif %}
-            </div>
-            
-            <!-- Daily Users -->
-            <div>
-              <label for="{{ form.daily_users.id_for_label }}" class="form-label">Daily Users</label>
-              {{ form.daily_users }}
-              {% if form.daily_users.errors %}
-                <div class="form-error">{{ form.daily_users.errors.0 }}</div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-
-        <!-- Development Tracking -->
-        <div class="glass-card p-6">
-          <div class="flex items-center mb-6">
-            <i class="fas fa-code text-blue-400 mr-3"></i>
-            <h3 class="text-lg font-semibold text-white">Development</h3>
-          </div>
-          
-          <div class="space-y-4">
-            <!-- Estimated Hours -->
             <div>
               <label for="{{ form.estimated_dev_hours.id_for_label }}" class="form-label">Estimated Hours</label>
               {{ form.estimated_dev_hours }}
@@ -351,7 +696,6 @@
               {% endif %}
             </div>
             
-            <!-- Actual Hours -->
             <div>
               <label for="{{ form.actual_dev_hours.id_for_label }}" class="form-label">Actual Hours</label>
               {{ form.actual_dev_hours }}
@@ -360,7 +704,6 @@
               {% endif %}
             </div>
             
-            <!-- Team Size -->
             <div>
               <label for="{{ form.team_size.id_for_label }}" class="form-label">Team Size</label>
               {{ form.team_size }}
@@ -370,370 +713,634 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Media & Assets -->
+    <!-- Performance Tab -->
+    <div class="form-section" id="performance-section">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
         <div class="glass-card p-6">
-          <div class="flex items-center mb-6">
-            <i class="fas fa-images text-pink-400 mr-3"></i>
-            <h3 class="text-lg font-semibold text-white">Media & Assets</h3>
+          <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-percentage text-cyan-400 mr-2"></i>
+            Progress
+          </h3>
+          
+          <div>
+            <label for="{{ form.completion_percent.id_for_label }}" class="form-label">Completion %</label>
+            {{ form.completion_percent }}
+            {% if form.completion_percent.errors %}
+              <div class="form-error">{{ form.completion_percent.errors.0 }}</div>
+            {% endif %}
           </div>
+        </div>
+
+        <div class="glass-card p-6">
+          <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-tachometer-alt text-yellow-400 mr-2"></i>
+            Performance
+          </h3>
           
           <div class="space-y-4">
+            <div>
+              <label for="{{ form.performance_score.id_for_label }}" class="form-label">Performance Score</label>
+              {{ form.performance_score }}
+              {% if form.performance_score.errors %}
+                <div class="form-error">{{ form.performance_score.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <div>
+              <label for="{{ form.response_time_ms.id_for_label }}" class="form-label">Response Time (ms)</label>
+              {{ form.response_time_ms }}
+              {% if form.response_time_ms.errors %}
+                <div class="form-error">{{ form.response_time_ms.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card p-6">
+          <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-users text-purple-400 mr-2"></i>
+            Usage
+          </h3>
+          
+          <div class="space-y-4">
+            <div>
+              <label for="{{ form.uptime_percentage.id_for_label }}" class="form-label">Uptime %</label>
+              {{ form.uptime_percentage }}
+              {% if form.uptime_percentage.errors %}
+                <div class="form-error">{{ form.uptime_percentage.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <div>
+              <label for="{{ form.daily_users.id_for_label }}" class="form-label">Daily Users</label>
+              {{ form.daily_users }}
+              {% if form.daily_users.errors %}
+                <div class="form-error">{{ form.daily_users.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Media Tab -->
+    <div class="form-section" id="media-section">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <div class="glass-card p-6">
+          <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-image text-pink-400 mr-2"></i>
+            System Images
+          </h3>
+          
+          <div class="space-y-6">
             <!-- Thumbnail -->
             <div>
               <label for="{{ form.thumbnail.id_for_label }}" class="form-label">Thumbnail</label>
+              <div class="field-help">Small image for cards and lists (400x300 recommended)</div>
+              <div class="image-upload-zone" onclick="document.getElementById('{{ form.thumbnail.id_for_label }}').click()">
+                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                <p class="text-gray-400">Click to upload thumbnail</p>
+                {% if object.thumbnail %}
+                  <img src="{{ object.thumbnail.url }}" alt="Current thumbnail" class="image-preview">
+                {% endif %}
+              </div>
               {{ form.thumbnail }}
               {% if form.thumbnail.errors %}
                 <div class="form-error">{{ form.thumbnail.errors.0 }}</div>
-              {% endif %}
-              <div class="form-help">{{ form.thumbnail.help_text }}</div>
-              {% if object.thumbnail %}
-                <div class="mt-2">
-                  <img src="{{ object.thumbnail.url }}" alt="Current thumbnail" 
-                       class="w-20 h-15 object-cover rounded border border-gray-600">
-                  <div class="text-xs text-gray-400 mt-1">Current thumbnail</div>
-                </div>
               {% endif %}
             </div>
             
             <!-- Banner Image -->
             <div>
               <label for="{{ form.banner_image.id_for_label }}" class="form-label">Banner Image</label>
+              <div class="field-help">Hero image for system detail page (1200x600 recommended)</div>
+              <div class="image-upload-zone" onclick="document.getElementById('{{ form.banner_image.id_for_label }}').click()">
+                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                <p class="text-gray-400">Click to upload banner</p>
+                {% if object.banner_image %}
+                  <img src="{{ object.banner_image.url }}" alt="Current banner" class="image-preview">
+                {% endif %}
+              </div>
               {{ form.banner_image }}
               {% if form.banner_image.errors %}
                 <div class="form-error">{{ form.banner_image.errors.0 }}</div>
               {% endif %}
-              <div class="form-help">{{ form.banner_image.help_text }}</div>
-              {% if object.banner_image %}
-                <div class="mt-2">
-                  <img src="{{ object.banner_image.url }}" alt="Current banner" 
-                       class="w-full h-16 object-cover rounded border border-gray-600">
-                  <div class="text-xs text-gray-400 mt-1">Current banner</div>
-                </div>
-              {% endif %}
             </div>
-            
+          </div>
+        </div>
+
+        <div class="glass-card p-6">
+          <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+            <i class="fas fa-sitemap text-indigo-400 mr-2"></i>
+            Technical Assets
+          </h3>
+          
+          <div class="space-y-6">
             <!-- Featured Image -->
             <div>
               <label for="{{ form.featured_image.id_for_label }}" class="form-label">Featured Image</label>
+              <div class="field-help">Main showcase image</div>
+              <div class="image-upload-zone" onclick="document.getElementById('{{ form.featured_image.id_for_label }}').click()">
+                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                <p class="text-gray-400">Click to upload featured image</p>
+                {% if object.featured_image %}
+                  <img src="{{ object.featured_image.url }}" alt="Current featured" class="image-preview">
+                {% endif %}
+              </div>
               {{ form.featured_image }}
               {% if form.featured_image.errors %}
                 <div class="form-error">{{ form.featured_image.errors.0 }}</div>
-              {% endif %}
-              <div class="form-help">{{ form.featured_image.help_text }}</div>
-              {% if object.featured_image %}
-                <div class="mt-2">
-                  <img src="{{ object.featured_image.url }}" alt="Current featured image" 
-                       class="w-20 h-15 object-cover rounded border border-gray-600">
-                  <div class="text-xs text-gray-400 mt-1">Current featured image</div>
-                </div>
               {% endif %}
             </div>
             
             <!-- Architecture Diagram -->
             <div>
               <label for="{{ form.architecture_diagram.id_for_label }}" class="form-label">Architecture Diagram</label>
+              <div class="field-help">System architecture visualization</div>
+              <div class="image-upload-zone" onclick="document.getElementById('{{ form.architecture_diagram.id_for_label }}').click()">
+                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                <p class="text-gray-400">Click to upload architecture diagram</p>
+                {% if object.architecture_diagram %}
+                  <img src="{{ object.architecture_diagram.url }}" alt="Current diagram" class="image-preview">
+                {% endif %}
+              </div>
               {{ form.architecture_diagram }}
               {% if form.architecture_diagram.errors %}
                 <div class="form-error">{{ form.architecture_diagram.errors.0 }}</div>
               {% endif %}
-              <div class="form-help">{{ form.architecture_diagram.help_text }}</div>
-              {% if object.architecture_diagram %}
-                <div class="mt-2">
-                  <img src="{{ object.architecture_diagram.url }}" alt="Current architecture diagram" 
-                       class="w-full h-20 object-cover rounded border border-gray-600">
-                  <div class="text-xs text-gray-400 mt-1">Current diagram</div>
-                </div>
-              {% endif %}
             </div>
-          </div>
-        </div>
-
-        <!-- Save Actions -->
-        <div class="glass-card p-6">
-          <div class="space-y-4">
-            <button type="submit" class="btn btn-cyan w-full">
-              <i class="fas fa-save mr-2"></i>
-              {% if object %}Update System{% else %}Create System{% endif %}
-            </button>
-            
-            {% if object %}
-              <button type="submit" name="save_and_continue" class="btn btn-secondary w-full">
-                <i class="fas fa-edit mr-2"></i>
-                Save and Continue Editing
-              </button>
-            {% endif %}
-            
-            <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-outline w-full">
-              <i class="fas fa-times mr-2"></i>
-              Cancel
-            </a>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Form Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-8 pt-6 border-t border-gray-700">
+      <div class="flex flex-wrap gap-4 mb-4 sm:mb-0">
+        <button type="submit" name="action" value="save" class="btn btn-primary">
+          <i class="fas fa-save mr-2"></i>
+          {% if object %}Update System{% else %}Create System{% endif %}
+        </button>
+        
+        <button type="submit" name="action" value="save_and_continue" class="btn btn-secondary">
+          <i class="fas fa-save mr-2"></i>
+          Save & Continue Editing
+        </button>
+        
+        {% if object %}
+          <button type="submit" name="action" value="save_and_view" class="btn btn-secondary">
+            <i class="fas fa-eye mr-2"></i>
+            Save & View
+          </button>
+        {% endif %}
+      </div>
+      
+      <div class="text-sm text-gray-400">
+        <i class="fas fa-info-circle mr-1"></i>
+        Use Ctrl+S to quick save
+      </div>
+    </div>
+
   </form>
+</div>
 {% endblock %}
 
-{% block admin_css %}
+{% block admin_js %}
 {{ block.super }}
-<style>
-.form-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
-.form-label.required::after {
-  content: ' *';
-  color: #ef4444;
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  color: var(--color-text);
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--color-teal);
-  box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.form-control::placeholder {
-  color: var(--color-text-tertiary);
-}
-
-.form-error {
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-  color: #ef4444;
-}
-
-.form-help {
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary);
-}
-
-.technology-checkboxes {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.5rem;
-}
-
-.technology-checkboxes input[type="checkbox"] {
-  margin-right: 0.5rem;
-}
-
-.technology-checkboxes label {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.875rem;
-}
-
-.technology-checkboxes label:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.technology-checkboxes input[type="checkbox"]:checked + label,
-.technology-checkboxes label:has(input[type="checkbox"]:checked) {
-  background: rgba(38, 198, 218, 0.1);
-  border-color: rgba(38, 198, 218, 0.3);
-  color: var(--color-teal);
-}
-
-.markdownx-editor {
-  min-height: 200px;
-  font-family: var(--font-code);
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--color-text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-outline:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--color-text);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* File input styling */
-input[type="file"] {
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
-  color: var(--color-text-secondary);
-  transition: all 0.3s ease;
-}
-
-input[type="file"]:hover {
-  border-color: var(--color-teal);
-  background: rgba(38, 198, 218, 0.05);
-}
-
-/* Auto-resize textareas */
-.auto-resize {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* Form sections spacing */
-.glass-card h3 {
-  margin: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1024px) {
-  .grid.lg\\:grid-cols-3 {
-    grid-template-columns: 1fr;
-  }
-  
-  .lg\\:col-span-2 {
-    grid-column: 1;
-  }
-}
-
-@media (max-width: 768px) {
-  .glass-card {
-    padding: 1rem;
-  }
-  
-  .form-control {
-    padding: 0.625rem;
-  }
-  
-  .technology-checkboxes {
-    max-height: 200px;
-  }
-}
-</style>
-{% endblock %}
-
-{% block extra_js %}
-  {{ block.super }}
-  <script src="{% static 'markdownx/js/markdownx.min.js' %}"></script>
-  
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      // Auto-generate slug from title
-      const titleField = document.querySelector('#id_title');
-      const slugField = document.querySelector('#id_slug');
-      
-      if (titleField && slugField) {
-          titleField.addEventListener('input', function() {
-              if (!slugField.value || slugField.value === '') {
-                  const slug = this.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-+|-+$/g, '');
-                  slugField.value = slug;
-              }
-          });
-      }
-      
-      // Auto-resize textareas
-      const textareas = document.querySelectorAll('textarea');
-      textareas.forEach(textarea => {
-          textarea.classList.add('auto-resize');
-          
-          function resize() {
-              textarea.style.height = 'auto';
-              textarea.style.height = textarea.scrollHeight + 'px';
-          }
-          
-          textarea.addEventListener('input', resize);
-          textarea.addEventListener('focus', resize);
-          
-          // Initial resize
-          resize();
-      });
-      
-      // Form validation enhancement
-      const form = document.querySelector('.system-form');
-      if (form) {
-          form.addEventListener('submit', function(e) {
-              const requiredFields = form.querySelectorAll('[required]');
-              let isValid = true;
-              
-              requiredFields.forEach(field => {
-                  if (!field.value.trim()) {
-                      isValid = false;
-                      field.focus();
-                      
-                      // Add error styling
-                      field.style.borderColor = '#ef4444';
-                      setTimeout(() => {
-                          field.style.borderColor = '';
-                      }, 3000);
-                  }
-              });
-              
-              if (!isValid) {
-                  e.preventDefault();
-                  
-                  // Show error message
-                  const errorDiv = document.createElement('div');
-                  errorDiv.className = 'alert alert-error mb-6';
-                  errorDiv.innerHTML = '<p>Please fill in all required fields.</p>';
-                  
-                  const firstCard = document.querySelector('.glass-card');
-                  firstCard.parentNode.insertBefore(errorDiv, firstCard);
-                  
-                  setTimeout(() => {
-                      errorDiv.remove();
-                  }, 5000);
-              }
-          });
-      }
-      
-      // Preview images on upload
-      const fileInputs = document.querySelectorAll('input[type="file"]');
-      fileInputs.forEach(input => {
-          input.addEventListener('change', function(e) {
-              const file = e.target.files[0];
-              if (file && file.type.startsWith('image/')) {
-                  const reader = new FileReader();
-                  reader.onload = function(e) {
-                      // Find or create preview element
-                      let preview = input.parentElement.querySelector('.image-preview');
-                      if (!preview) {
-                          preview = document.createElement('div');
-                          preview.className = 'image-preview mt-2';
-                          input.parentElement.appendChild(preview);
-                      }
-                      
-                      preview.innerHTML = `
-                          <img src="${e.target.result}" alt="Preview" 
-                               class="w-20 h-15 object-cover rounded border border-gray-600">
-                          <div class="text-xs text-gray-400 mt-1">New upload preview</div>
-                      `;
-                  };
-                  reader.readAsDataURL(file);
-              }
-          });
-      });
-  });
-  </script>
+<!-- MarkdownX JavaScript for live previews -->
+<script src="{% static 'markdownx/js/markdownx.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Form script loaded'); // Debug log
+    
+    // Tab functionality
+    const tabs = document.querySelectorAll('.form-tab');
+    const sections = document.querySelectorAll('.form-section');
+    
+    console.log('Found tabs:', tabs.length, 'sections:', sections.length); // Debug log
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent form submission
+            e.stopPropagation(); // Stop event bubbling
+            
+            console.log('Tab clicked:', this.dataset.tab); // Debug log
+            
+            const targetTab = this.dataset.tab;
+            
+            // Update tab states
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update section states
+            sections.forEach(s => s.classList.remove('active'));
+            const targetSection = document.getElementById(targetTab + '-section');
+            if (targetSection) {
+                targetSection.classList.add('active');
+                console.log('Switched to section:', targetTab); // Debug log
+            } else {
+                console.error('Target section not found:', targetTab + '-section');
+            }
+            
+            // Handle required field validation for hidden sections
+            updateRequiredFields();
+        });
+    });
+    
+    // Function to manage required attributes based on visible sections
+    function updateRequiredFields() {
+        const allRequiredFields = document.querySelectorAll('[data-originally-required]');
+        
+        // First time setup - mark originally required fields
+        if (allRequiredFields.length === 0) {
+            const requiredFields = document.querySelectorAll('[required]');
+            requiredFields.forEach(field => {
+                field.dataset.originallyRequired = 'true'; // This creates data-originally-required attribute
+            });
+        }
+        
+        // Remove required from all originally required fields
+        document.querySelectorAll('[data-originally-required]').forEach(field => {
+            field.removeAttribute('required');
+        });
+        
+        // Add required back to fields in active sections
+        const activeSection = document.querySelector('.form-section.active');
+        if (activeSection) {
+            const visibleRequiredFields = activeSection.querySelectorAll('[data-originally-required]');
+            visibleRequiredFields.forEach(field => {
+                field.setAttribute('required', 'required');
+            });
+        }
+    }
+    
+    // Initialize required field management
+    setTimeout(updateRequiredFields, 100);
+    
+    // Completion percentage visual feedback
+    const completionField = document.getElementById('id_completion_percent');
+    if (completionField) {
+        const addCompletionVisual = () => {
+            if (completionField.nextElementSibling && completionField.nextElementSibling.classList.contains('completion-visual')) {
+                return; // Already added
+            }
+            
+            const visual = document.createElement('div');
+            visual.className = 'completion-visual';
+            visual.style.cssText = `
+                width: 100%;
+                height: 8px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+                margin-top: 0.5rem;
+                overflow: hidden;
+                position: relative;
+            `;
+            
+            const bar = document.createElement('div');
+            bar.className = 'completion-bar';
+            bar.style.cssText = `
+                height: 100%;
+                background: linear-gradient(90deg, #26c6da, #00acc1);
+                border-radius: 4px;
+                transition: width 0.3s ease;
+                width: 0%;
+            `;
+            
+            const text = document.createElement('div');
+            text.className = 'completion-text';
+            text.style.cssText = `
+                font-size: 0.75rem;
+                color: #e8eaf6;
+                margin-top: 0.25rem;
+                text-align: center;
+            `;
+            
+            visual.appendChild(bar);
+            completionField.parentNode.insertBefore(visual, completionField.nextSibling);
+            completionField.parentNode.insertBefore(text, visual.nextSibling);
+            
+            const updateVisual = () => {
+                const value = parseFloat(completionField.value) || 0;
+                const clampedValue = Math.max(0, Math.min(100, value));
+                bar.style.width = clampedValue + '%';
+                text.textContent = `${clampedValue}% Complete`;
+                
+                // Color coding
+                if (clampedValue < 25) {
+                    bar.style.background = 'linear-gradient(90deg, #f44336, #d32f2f)';
+                } else if (clampedValue < 50) {
+                    bar.style.background = 'linear-gradient(90deg, #ff9800, #f57c00)';
+                } else if (clampedValue < 75) {
+                    bar.style.background = 'linear-gradient(90deg, #ffc107, #ff8f00)';
+                } else {
+                    bar.style.background = 'linear-gradient(90deg, #4caf50, #388e3c)';
+                }
+                
+                if (clampedValue === 100) {
+                    bar.style.background = 'linear-gradient(90deg, #26c6da, #00acc1)';
+                    text.innerHTML = `<i class="fas fa-check mr-1"></i>100% Complete`;
+                }
+            };
+            
+            completionField.addEventListener('input', updateVisual);
+            completionField.addEventListener('change', updateVisual);
+            
+            // Initial update
+            updateVisual();
+        };
+        
+        addCompletionVisual();
+    }
+    
+    // Initialize MarkdownX editors for live preview
+    if (typeof window.markdownx !== 'undefined') {
+        // Initialize all MarkdownX editors
+        const markdownxFields = document.querySelectorAll('.markdownx-editor');
+        markdownxFields.forEach(field => {
+            if (typeof window.markdownx.init === 'function') {
+                window.markdownx.init();
+            }
+        });
+    } else {
+        // Fallback: try to initialize after a delay
+        setTimeout(() => {
+            if (typeof window.markdownx !== 'undefined' && typeof window.markdownx.init === 'function') {
+                window.markdownx.init();
+            }
+        }, 1000);
+    }
+    
+    // Auto-slug generation
+    const titleField = document.getElementById('id_title');
+    const slugField = document.getElementById('id_slug');
+    const systemIdField = document.getElementById('id_system_id');
+    
+    if (titleField && slugField) {
+        titleField.addEventListener('input', function() {
+            if (!slugField.value || slugField.dataset.autoGenerated) {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                slugField.value = slug;
+                slugField.dataset.autoGenerated = 'true';
+            }
+        });
+        
+        slugField.addEventListener('input', function() {
+            this.dataset.autoGenerated = 'false';
+        });
+    }
+    
+    // Auto-generate System ID preview
+    if (systemIdField && !systemIdField.value) {
+        // Generate a preview system ID (real one will be generated on save)
+        const generateSystemIdPreview = () => {
+            const title = titleField ? titleField.value : '';
+            if (title && !systemIdField.dataset.userModified) {
+                // Create a preview ID based on title + random number
+                const titleAbbrev = title.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+                const randomNum = Math.floor(Math.random() * 900) + 100; // 100-999
+                const previewId = `${titleAbbrev || 'SYS'}-${randomNum}`;
+                systemIdField.value = previewId;
+                systemIdField.style.fontStyle = 'italic';
+                systemIdField.style.opacity = '0.8';
+                
+                // Add preview indicator
+                if (!systemIdField.nextElementSibling || !systemIdField.nextElementSibling.classList.contains('preview-note')) {
+                    const previewNote = document.createElement('div');
+                    previewNote.className = 'preview-note field-help';
+                    previewNote.innerHTML = '<i class="fas fa-info-circle mr-1"></i>Preview ID - final ID will be generated on save';
+                    systemIdField.parentNode.insertBefore(previewNote, systemIdField.nextSibling);
+                }
+            }
+        };
+        
+        if (titleField) {
+            titleField.addEventListener('input', generateSystemIdPreview);
+        }
+        
+        systemIdField.addEventListener('input', function() {
+            this.dataset.userModified = 'true';
+            this.style.fontStyle = 'normal';
+            this.style.opacity = '1';
+            
+            // Remove preview note if user modifies
+            const previewNote = this.nextElementSibling;
+            if (previewNote && previewNote.classList.contains('preview-note')) {
+                previewNote.remove();
+            }
+        });
+        
+        // Generate initial preview if title exists
+        setTimeout(generateSystemIdPreview, 100);
+    }
+    
+    // Auto-generation functionality
+    const generateButtons = document.querySelectorAll('.generate-btn');
+    
+    generateButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const fieldName = this.dataset.field;
+            const loadingSpinner = this.querySelector('.loading-spinner');
+            const buttonText = this.querySelector('.btn-text');
+            const originalText = buttonText.textContent;
+            
+            // Show loading state
+            loadingSpinner.style.display = 'inline-block';
+            buttonText.textContent = 'Generating...';
+            this.disabled = true;
+            
+            // Gather form data for context
+            const formData = new FormData(document.getElementById('systemForm'));
+            
+            // Make AJAX call to generate content (endpoint to be implemented)
+            // For now, we'll simulate the generation locally
+            setTimeout(() => {
+                const simulatedContent = generateSimulatedContent(fieldName, formData);
+                
+                if (simulatedContent) {
+                    // Show preview
+                    const preview = document.getElementById(fieldName + 'Preview');
+                    const previewText = document.getElementById(fieldName + 'PreviewText');
+                    
+                    previewText.textContent = simulatedContent;
+                    preview.classList.add('show');
+                    
+                    // Add apply button functionality
+                    const applyBtn = document.createElement('button');
+                    applyBtn.type = 'button';
+                    applyBtn.className = 'btn btn-sm btn-primary mt-2';
+                    applyBtn.innerHTML = '<i class="fas fa-check mr-1"></i>Apply Generated Content';
+                    applyBtn.onclick = function() {
+                        // Construct field ID dynamically (Django form field IDs are typically id_fieldname)
+                        const fieldId = 'id_' + fieldName;
+                        const field = document.getElementById(fieldId);
+                        if (field) {
+                            field.value = simulatedContent; // Fixed: use simulatedContent instead of data.content
+                        preview.classList.remove('show');
+                        
+                        // Update button to regenerate
+                        buttonText.textContent = 'Regenerate Content';
+                        button.classList.add('regenerate');
+                        } else {
+                            console.error('Could not find field with ID:', fieldId);
+                        }
+                    };
+                    
+                    if (!preview.querySelector('.btn')) {
+                        preview.appendChild(applyBtn);
+                    }
+                } else {
+                alert('Error generating content. Please try again.');
+                }
+                
+                // Reset loading state
+                loadingSpinner.style.display = 'none';
+                buttonText.textContent = originalText;
+                button.disabled = false;
+            }, 1000); // Simulate network delay
+        });
+    });
+    
+    // Simulated content generation (replace with real AJAX when backend is ready)
+    function generateSimulatedContent(fieldName, formData) {
+        const selectedTechs = Array.from(document.querySelectorAll('input[name="technologies"]:checked'))
+            .map(cb => cb.nextElementSibling.textContent.trim());
+        const systemType = document.getElementById('id_system_type').selectedOptions[0]?.textContent || 'System';
+        const title = document.getElementById('id_title').value || 'Untitled System';
+        
+        switch(fieldName) {
+            case 'features_overview':
+                return `## Key Features\n\n### Core Capabilities\n- **${systemType} Architecture**: Built using modern ${selectedTechs.slice(0,2).join(' and ')} technologies\n- **Performance Optimized**: Designed for scalability and efficiency\n- **User-Friendly Interface**: Intuitive design following best practices\n\n### Technical Features\n${selectedTechs.map(tech => `- **${tech} Integration**: Advanced ${tech.toLowerCase()} functionality`).join('\n')}\n\n### System Highlights\n- Real-time data processing\n- Responsive design across all devices\n- Comprehensive error handling and logging\n- Security-first architecture`;
+                
+            case 'technical_details':
+                return `## Technical Implementation\n\n### Architecture Overview\nThe ${title} is built using a modern ${selectedTechs.length > 0 ? selectedTechs[0] : 'web'} architecture that emphasizes:\n\n- **Scalability**: Designed to handle growth\n- **Maintainability**: Clean, documented codebase\n- **Performance**: Optimized for speed and efficiency\n\n### Technology Stack\n${selectedTechs.map(tech => `- **${tech}**: ${getTechDescription(tech)}`).join('\n')}\n\n### Key Technical Decisions\n- Chosen ${selectedTechs[0] || 'modern frameworks'} for development speed and reliability\n- Implemented comprehensive testing strategies\n- Following industry best practices for security and performance\n\n### Development Approach\n- Agile development methodology\n- Test-driven development where applicable\n- Continuous integration and deployment`;
+                
+            case 'future_enhancements':
+                return `## Planned Enhancements\n\n### Short-term Goals (Next 3 months)\n- Performance optimization and monitoring\n- Enhanced user interface improvements\n- Additional ${selectedTechs.slice(-1)[0] || 'feature'} integrations\n\n### Medium-term Roadmap (3-6 months)\n- Mobile application development\n- API expansion and third-party integrations\n- Advanced analytics and reporting features\n\n### Long-term Vision (6+ months)\n- Machine learning integration for intelligent features\n- Microservices architecture migration\n- Global deployment and scaling\n\n### Continuous Improvements\n- Regular security audits and updates\n- User feedback implementation\n- Technology stack modernization\n- Documentation and knowledge base expansion`;
+                
+            default:
+                return `## Generated Content for ${fieldName}\n\nThis is simulated content that would be generated based on your system's data:\n\n- Technologies: ${selectedTechs.join(', ')}\n- System Type: ${systemType}\n- Title: ${title}\n\nThe actual implementation will analyze your complete system data to generate more detailed and relevant content.`;
+        }
+    }
+    
+    function getTechDescription(tech) {
+        const descriptions = {
+            'Python': 'Backend development and data processing',
+            'Django': 'Web framework for rapid development',
+            'JavaScript': 'Frontend interactivity and dynamic features',
+            'React': 'Component-based user interface development',
+            'PostgreSQL': 'Robust relational database management',
+            'Redis': 'High-performance caching and session storage',
+            'Docker': 'Containerization for consistent deployments',
+            'AWS': 'Cloud infrastructure and scalable hosting'
+        };
+        return descriptions[tech] || `${tech} integration and functionality`;
+    }
+    
+    // Image upload drag and drop
+    const uploadZones = document.querySelectorAll('.image-upload-zone');
+    
+    uploadZones.forEach(zone => {
+        zone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        zone.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+        
+        zone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = this.parentElement.querySelector('input[type="file"]');
+                fileInput.files = files;
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let preview = zone.querySelector('.image-preview');
+                    if (!preview) {
+                        preview = document.createElement('img');
+                        preview.className = 'image-preview';
+                        zone.appendChild(preview);
+                    }
+                    preview.src = e.target.result;
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        });
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            document.getElementById('systemForm').submit();
+        }
+    });
+    
+    // Form validation enhancement
+    const form = document.getElementById('systemForm');
+    form.addEventListener('submit', function(e) {
+        console.log('Form submission attempt'); // Debug log
+        
+        // Update required fields before validation
+        updateRequiredFields();
+        
+        // Only validate currently visible required fields
+        const activeSection = document.querySelector('.form-section.active');
+        const requiredFields = activeSection ? 
+            activeSection.querySelectorAll('[required]') : 
+            document.querySelectorAll('[required]');
+            
+        let hasErrors = false;
+        let firstErrorField = null;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                hasErrors = true;
+                field.classList.add('error');
+                if (!firstErrorField) {
+                    firstErrorField = field;
+                }
+            } else {
+                field.classList.remove('error');
+            }
+        });
+        
+        if (hasErrors && firstErrorField) {
+            e.preventDefault();
+            
+            // Find which tab contains the error field
+            const errorSection = firstErrorField.closest('.form-section');
+            if (errorSection && !errorSection.classList.contains('active')) {
+                const sectionId = errorSection.id.replace('-section', '');
+                const targetTab = document.querySelector(`[data-tab="${sectionId}"]`);
+                if (targetTab) {
+                    targetTab.click(); // Switch to the tab with the error
+                }
+            }
+            
+            setTimeout(() => {
+                firstErrorField.focus();
+                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            
+            alert('Please fill in all required fields.');
+        }
+    });
+}); // End of DOMContentLoaded
+</script>
 {% endblock %}
