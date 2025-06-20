@@ -11,6 +11,7 @@ from django.db.models import Count, Avg, Q
 from django.template.loader import render_to_string
 from django.conf import settings
 import os
+import calendar
 
 from .models import CorePage, Skill, Education, Experience, SocialLink, Contact
 from .forms import ContactForm
@@ -20,83 +21,258 @@ from datetime import timedelta
 
 
 class HomeView(TemplateView):
-    """AURA Home/Dashboard View with comprehensive system metrics."""
-    template_name = 'core/index.html'
+    """
+    Enhanced Home Page - Learning Journey Showcase
+    Highlights 2+ year learning progression from EHS Compliance to Software Development
+    """
+
+    template_name = "core/index.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # AURA System Metrics
-        context['total_systems'] = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).count() or 12
-
-        context['total_logs'] = Post.objects.filter(
-            status='published'
-        ).count() or 24
-
-        context['technologies_count'] = Technology.objects.count() or 15
-
-        # Featured Systems (limit 3 for homepage)
-        context['featured_projects'] = SystemModule.objects.filter(
-            featured=True,
-            status__in=['deployed', 'published']
-        ).select_related('system_type').prefetch_related(
-            'technologies').order_by('-created_at')[:3]
-
-        # Latest DataLogs (limit 3 for homepage)
-        context['latest_posts'] = Post.objects.filter(
-            status='published'
-        ).select_related('category').order_by('-published_date')[:3]
-
-        # Quick Stats for Dashboard Cards
-        context['deployed_systems'] = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).count() or 8
-
-        context['in_development'] = SystemModule.objects.filter(
-            status='in_development'
-        ).count() or 3
-
-        context['ml_projects'] = SystemModule.objects.filter(
-            Q(title__icontains='ML') |
-            Q(title__icontains='Machine Learning') |
-            Q(description__icontains='machine learning') |
-            Q(description__icontains='neural') |
-            Q(technologies__name__icontains='TensorFlow') |
-            Q(technologies__name__icontains='PyTorch')
-        ).distinct().count() or 5
-
-        context['recent_logs'] = Post.objects.filter(
-            status='published',
-            published_date__gte=timezone.now() - timedelta(days=30)
-        ).count() or 12
-
-        # System Status Metrics for HUD displays
-        context['system_metrics'] = {
-            'uptime': '99.7%',
-            'response_time': '142ms',
-            'security_level': 'AES-256',
-            'active_connections': '1,247',
-            'total_deployments': SystemModule.objects.filter(
-                status='deployed').count(),
-            'avg_completion': SystemModule.objects.aggregate(
-                avg=Avg('completion_percent')
-            )['avg'] or 85.0,
+        # LEARNING JOURNEY HERO METRICS
+        context["learning_journey"] = {
+            "start_date": "August 2022",
+            "duration_years": "2.5+ Years",
+            "courses_completed": 9,
+            "learning_hours": "460+",
+            "certificates_earned": 6,
+            "projects_built": "100+",
+            "platforms_used": 5,
         }
 
-        # Categories for navigation
-        context['categories'] = Category.objects.all()[:5]
+        # LEARNING HIGHLIGHTS & ACHIEVEMENTS
+        context["learning_highlights"] = [
+            {
+                "title": "Harvard CS50 Python",
+                "platform": "edX HarvardX",
+                "icon": "fas fa-university",
+                "color": "teal",
+                "description": "Academic programming foundation",
+                "badge": "Academic Excellence",
+            },
+            {
+                "title": "100 Days of Code",
+                "platform": "Udemy",
+                "icon": "fas fa-fire",
+                "color": "coral",
+                "description": "100 projects completed (Sept 2024)",
+                "badge": "Recent Achievement",
+            },
+            {
+                "title": "Data Science Bootcamp",
+                "platform": "Udemy",
+                "icon": "fas fa-chart-line",
+                "color": "lavender",
+                "description": "ML, TensorFlow, Scikit-Learn",
+                "badge": "Advanced Skills",
+            },
+            {
+                "title": "LLM Engineering",
+                "platform": "Udemy",
+                "icon": "fas fa-robot",
+                "color": "mint",
+                "description": "Currently learning cutting-edge AI",
+                "badge": "In Progress",
+            },
+        ]
 
-        # Additional metrics for status display
-        context['systems_tested'] = SystemModule.objects.filter(
-            status='testing'
-        ).count() or 2
+        # FEATURED PROJECT SHOWCASES
+        context['featured_projects'] = [
+            {
+                'title': 'AURA Portfolio',
+                'subtitle': 'Django Multi-App Architecture',
+                'description': 'Sophisticated portfolio with admin system, DataLogs, and Systems management. Demonstrates full-stack Django development with PostgreSQL, unified design system, and professional UI/UX.',
+                'technologies': ['Django', 'PostgreSQL', 'JavaScript', 'CSS3', 'Admin System'],
+                'live_url': '',  # Add when deployed
+                'github_url': 'https://github.com/yourusername/portfolio-project',  # Update with your repo
+                'learning_focus': 'Advanced Django architecture and professional web development'
+            },
+            {
+                'title': 'myRise Learning Tracker',
+                'subtitle': 'Flask Independent Project',
+                'description': 'Self-directed Flask web application for tracking learning resources, links, libraries, and APIs. Built to solve personal learning organization needs, demonstrating independent problem-solving and full-stack development.',
+                'technologies': ['Flask', 'SQLite', 'Python', 'HTML/CSS', 'API Integration'],
+                'live_url': '',  # Add when deployed
+                'github_url': 'https://github.com/yourusername/my-learning',  # Update with your repo
+                'learning_focus': 'Independent project development and Flask mastery'
+            },
+            {
+                'title': 'API Integration Collection',
+                'subtitle': 'REST API Mastery Showcase',
+                'description': 'Diverse collection of API integration projects including GitHub data, Spotify playlist builder, weather tracking, ISS location, and flight deals. Demonstrates API consumption and integration skills.',
+                'technologies': ['Python', 'REST APIs', 'JSON', 'Requests', 'OAuth'],
+                'live_url': '',
+                'github_url': '',  # Add your API projects repo
+                'learning_focus': 'API integration and external service communication'
+            }
+        ]
 
-        # TODO: Get from GitHub API
-        context['lines_of_code'] = 50000
-        # TODO: Get from GitHub API
-        context['commits_this_month'] = 127
+        # TECHNICAL SKILLS PROGRESSION
+        context["skill_progression"] = {
+            "confident_professional": [
+                {"name": "Python", "months_experience": 30, "color": "#3776ab"},
+                {
+                    "name": "Algorithm Development",
+                    "months_experience": 24,
+                    "color": "#ff6b35",
+                },
+                {"name": "Flask", "months_experience": 18, "color": "#000000"},
+                {
+                    "name": "API Integration",
+                    "months_experience": 20,
+                    "color": "#4caf50",
+                },
+            ],
+            "strong_growing": [
+                {"name": "Django", "months_experience": 12, "color": "#092e20"},
+                {"name": "Data Science", "months_experience": 15, "color": "#ff9800"},
+                {"name": "PostgreSQL", "months_experience": 10, "color": "#336791"},
+                {"name": "Linux/Ubuntu", "months_experience": 18, "color": "#e95420"},
+            ],
+            "active_learning": [
+                {"name": "LLM Engineering", "months_experience": 2, "color": "#9c27b0"},
+                {
+                    "name": "Machine Learning",
+                    "months_experience": 8,
+                    "color": "#ff5722",
+                },
+                {"name": "TensorFlow", "months_experience": 6, "color": "#ff6f00"},
+                {"name": "Rust (Next)", "months_experience": 0, "color": "#ce422b"},
+            ],
+        }
+
+        # LEARNING TIMELINE DATA
+        context["learning_timeline"] = [
+            {
+                "date": "Aug 2022",
+                "title": "Business Analytics Foundation",
+                "description": "Started with data analysis using Excel, SQL, and Tableau",
+                "color": "navy",
+                "icon": "fas fa-chart-bar",
+            },
+            {
+                "date": "Dec 2022",
+                "title": "Harvard CS50 Python",
+                "description": "Academic programming foundation and computer science principles",
+                "color": "teal",
+                "icon": "fas fa-university",
+            },
+            {
+                "date": "Mar 2023",
+                "title": "Web Development & Linux",
+                "description": "Django framework and Linux system administration",
+                "color": "lavender",
+                "icon": "fas fa-globe",
+            },
+            {
+                "date": "Jun 2023",
+                "title": "Data Science Mastery",
+                "description": "NumPy, Pandas, Machine Learning, TensorFlow",
+                "color": "coral",
+                "icon": "fas fa-brain",
+            },
+            {
+                "date": "Mar 2024",
+                "title": "100 Days of Code Challenge",
+                "description": "100 diverse Python projects over 6 months",
+                "color": "mint",
+                "icon": "fas fa-fire",
+            },
+            {
+                "date": "Current",
+                "title": "LLM Engineering & Portfolio",
+                "description": "Building sophisticated applications while learning AI",
+                "color": "yellow",
+                "icon": "fas fa-rocket",
+            },
+        ]
+
+        # PORTFOLIO INTEGRATION - Real Data
+        try:
+            # Systems showcase
+            featured_systems = (
+                SystemModule.objects.filter(status__in=["deployed", "published"])
+                .select_related("system_type")
+                .prefetch_related("technologies")[:3]
+            )
+            context["portfolio_systems"] = featured_systems
+
+            # DataLogs for learning documentation
+            recent_datalogs = Post.objects.filter(status="published").order_by(
+                "-published_date"
+            )[:3]
+            context["recent_datalogs"] = recent_datalogs
+
+            # Technology stats
+            context["portfolio_stats"] = {
+                "total_systems": SystemModule.objects.count(),
+                "total_technologies": Technology.objects.count(),
+                "total_datalogs": Post.objects.filter(status="published").count(),
+                "learning_entries_planned": 15,  # Backlog you mentioned
+            }
+
+        except Exception:
+            # Fallback for development
+            context["portfolio_stats"] = {
+                "total_systems": 8,
+                "total_technologies": 12,
+                "total_datalogs": 0,
+                "learning_entries_planned": 15,
+            }
+
+        # CURRENT LEARNING STATUS
+        context["current_status"] = {
+            "availability": "Seeking first professional tech role",
+            "current_learning": "LLM Engineering with Udemy",
+            "next_goal": "Rust development for high-performance applications",
+            "location": "Remote or Alabama-based opportunities",
+            "transition_stage": "Ready for entry-level Python development role",
+        }
+
+        # CALL-TO-ACTION DATA
+        context["cta_sections"] = [
+            {
+                "title": "Explore My Projects",
+                "description": "See the progression from simple scripts to complex applications",
+                "url": "/projects/",
+                "icon": "fas fa-folder-open",
+                "color": "teal",
+            },
+            {
+                "title": "Read Learning Journey",
+                "description": "Technical insights and learning documentation",
+                "url": "/blog/",
+                "icon": "fas fa-book-open",
+                "color": "lavender",
+            },
+            {
+                "title": "Download Resume",
+                "description": "Professional credentials and experience details",
+                "url": "/resume/download/",
+                "icon": "fas fa-download",
+                "color": "coral",
+            },
+            {
+                "title": "Let's Connect",
+                "description": "Discuss opportunities and collaboration",
+                "url": "/communication/",
+                "icon": "fas fa-envelope",
+                "color": "mint",
+            },
+        ]
+
+        # META DATA FOR SEO
+        context["page_title"] = (
+            "Python Developer & Algorithm Enthusiast - Learning Journey Portfolio"
+        )
+        context["page_description"] = (
+            "Self-taught Python developer with 2+ years intensive learning. Harvard CS50, 100 Days of Code completed, building complex applications. Ready for professional development role."
+        )
+        context["page_keywords"] = (
+            "Python Developer, Self-Taught Programmer, Algorithm Development, Django, Flask, Data Science, Machine Learning, Career Transition"
+        )
 
         return context
 
