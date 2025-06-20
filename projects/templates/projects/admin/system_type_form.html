@@ -1,0 +1,704 @@
+{% extends "admin/admin_base.html" %}
+{% load static %}
+
+{% block admin_title %}
+  {% if object %}Edit System Type: {{ object.name }}{% else %}Add System Type{% endif %} - AURA Admin
+{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+  .type-form-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  
+  .form-section {
+    margin-bottom: 2rem;
+  }
+  
+  .form-section h3 {
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .color-swatches {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  
+  .color-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .color-swatch:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  .color-swatch.selected {
+    border-color: #ffffff;
+    transform: scale(1.15);
+  }
+  
+  .color-swatch.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #000;
+    font-weight: bold;
+    font-size: 1rem;
+  }
+  
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .icon-option {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #b0bec5;
+  }
+  
+  .icon-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    transform: scale(1.1);
+  }
+  
+  .icon-option.selected {
+    border-color: #b39ddb;
+    background: rgba(179, 157, 219, 0.2);
+    color: #b39ddb;
+  }
+  
+  .type-preview-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .type-preview-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--preview-color, #b39ddb);
+    opacity: 0.8;
+  }
+  
+  .type-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .type-preview-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #000;
+    font-weight: bold;
+    background: var(--preview-color, #b39ddb);
+  }
+  
+  .type-preview-details h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #ffffff;
+  }
+  
+  .type-preview-order {
+    font-size: 0.75rem;
+    color: #b0bec5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+  }
+  
+  .type-preview-description {
+    color: #b0bec5;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+  
+  .type-preview-meta {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  
+  .type-preview-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #b0bec5;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+  
+  .help-text {
+    font-size: 0.875rem;
+    color: #b0bec5;
+    margin-top: 0.25rem;
+  }
+  
+  .order-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.5rem;
+  }
+  
+  .order-btn {
+    background: rgba(179, 157, 219, 0.2);
+    color: #b39ddb;
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+  }
+  
+  .order-btn:hover {
+    background: rgba(179, 157, 219, 0.3);
+  }
+  
+  .order-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .systems-using {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .systems-using h4 {
+    color: #26c6da;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .systems-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .system-tag {
+    background: rgba(38, 198, 218, 0.2);
+    color: #26c6da;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  
+  .system-tag:hover {
+    background: rgba(38, 198, 218, 0.3);
+  }
+  
+  .danger-zone {
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+  }
+  
+  .danger-zone h4 {
+    color: #f44336;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .danger-zone p {
+    color: #ffab91;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+  
+  @media (max-width: 768px) {
+    .color-swatches {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .icon-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .type-form-container {
+      padding: 0 1rem;
+    }
+    
+    .order-controls {
+      flex-wrap: wrap;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="type-form-container">
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-white mb-2">
+        {% if object %}
+          <i class="fas fa-edit text-purple-400 mr-2"></i>
+          Edit System Type: {{ object.name }}
+        {% else %}
+          <i class="fas fa-plus text-purple-400 mr-2"></i>
+          Add New System Type
+        {% endif %}
+      </h1>
+      <p class="text-gray-400">
+        {% if object %}
+          Update system type settings and organization
+        {% else %}
+          Create a new category for organizing your systems
+        {% endif %}
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+      <a href="{% url 'aura_admin:projects:system_type_list' %}" 
+         class="btn btn-secondary">
+        <i class="fas fa-arrow-left mr-2"></i>Back to System Types
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Form -->
+    <div class="lg:col-span-2">
+      <form method="post" id="systemTypeForm">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="glass-card p-6 form-section">
+          <h3>
+            <i class="fas fa-info-circle text-blue-400"></i>
+            Basic Information
+          </h3>
+          
+          <div class="space-y-4">
+            <!-- Name -->
+            <div>
+              <label for="{{ form.name.id_for_label }}" class="form-label">System Type Name</label>
+              {{ form.name }}
+              <div class="help-text">The display name for this system type</div>
+              {% if form.name.errors %}
+                <div class="form-error">{{ form.name.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Slug -->
+            <div>
+              <label for="{{ form.slug.id_for_label }}" class="form-label">URL Slug</label>
+              {{ form.slug }}
+              <div class="help-text">Auto-generated from name, used in URLs</div>
+              {% if form.slug.errors %}
+                <div class="form-error">{{ form.slug.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Description -->
+            <div>
+              <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+              {{ form.description }}
+              <div class="help-text">Brief description of this system type</div>
+              {% if form.description.errors %}
+                <div class="form-error">{{ form.description.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Visual Settings -->
+        <div class="glass-card p-6 form-section">
+          <h3>
+            <i class="fas fa-palette text-pink-400"></i>
+            Visual Settings
+          </h3>
+          
+          <!-- Color Selection -->
+          <div class="mb-6">
+            <label class="form-label">Theme Color</label>
+            <input type="hidden" id="id_color" name="color" value="{{ form.color.value|default:'#b39ddb' }}">
+            <div class="color-swatches">
+              <div class="color-swatch" style="background-color: #b39ddb" data-color="#b39ddb" title="Lavender (Default)"></div>
+              <div class="color-swatch" style="background-color: #26c6da" data-color="#26c6da" title="Teal"></div>
+              <div class="color-swatch" style="background-color: #4caf50" data-color="#4caf50" title="Green"></div>
+              <div class="color-swatch" style="background-color: #ff9800" data-color="#ff9800" title="Orange"></div>
+              <div class="color-swatch" style="background-color: #f44336" data-color="#f44336" title="Red"></div>
+              <div class="color-swatch" style="background-color: #9c27b0" data-color="#9c27b0" title="Purple"></div>
+              <div class="color-swatch" style="background-color: #3f51b5" data-color="#3f51b5" title="Indigo"></div>
+              <div class="color-swatch" style="background-color: #607d8b" data-color="#607d8b" title="Blue Grey"></div>
+            </div>
+            <div class="help-text">Choose a color theme for this system type</div>
+          </div>
+          
+          <!-- Icon Selection -->
+          <div>
+            <label class="form-label">Icon</label>
+            <input type="hidden" id="id_icon" name="icon" value="{{ form.icon.value|default:'fas fa-cube' }}">
+            <div class="icon-grid">
+              <div class="icon-option" data-icon="fas fa-cube" title="Cube (Default)">
+                <i class="fas fa-cube"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-globe" title="Web Application">
+                <i class="fas fa-globe"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-mobile-alt" title="Mobile App">
+                <i class="fas fa-mobile-alt"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-desktop" title="Desktop Application">
+                <i class="fas fa-desktop"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-server" title="API/Backend">
+                <i class="fas fa-server"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-database" title="Database">
+                <i class="fas fa-database"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-gamepad" title="Game">
+                <i class="fas fa-gamepad"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-robot" title="AI/ML">
+                <i class="fas fa-robot"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-book" title="Library">
+                <i class="fas fa-book"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-tools" title="Tool">
+                <i class="fas fa-tools"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-cloud" title="Cloud Service">
+                <i class="fas fa-cloud"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-microchip" title="Hardware">
+                <i class="fas fa-microchip"></i>
+              </div>
+            </div>
+            <div class="help-text">Select an icon to represent this system type</div>
+            {% if form.icon.errors %}
+              <div class="form-error">{{ form.icon.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <!-- Organization Settings -->
+        <div class="glass-card p-6 form-section">
+          <h3>
+            <i class="fas fa-sort text-green-400"></i>
+            Organization
+          </h3>
+          
+          <!-- Display Order -->
+          <div>
+            <label for="{{ form.display_order.id_for_label }}" class="form-label">Display Order</label>
+            {{ form.display_order }}
+            <div class="help-text">Controls the order in which this type appears (lower numbers first)</div>
+            <div class="order-controls">
+              <button type="button" class="order-btn" onclick="adjustOrder(-10)">
+                <i class="fas fa-angle-double-up"></i> -10
+              </button>
+              <button type="button" class="order-btn" onclick="adjustOrder(-1)">
+                <i class="fas fa-angle-up"></i> -1
+              </button>
+              <button type="button" class="order-btn" onclick="adjustOrder(1)">
+                <i class="fas fa-angle-down"></i> +1
+              </button>
+              <button type="button" class="order-btn" onclick="adjustOrder(10)">
+                <i class="fas fa-angle-double-down"></i> +10
+              </button>
+            </div>
+            {% if form.display_order.errors %}
+              <div class="form-error">{{ form.display_order.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-wrap gap-4 mb-4 sm:mb-0">
+            <button type="submit" name="action" value="save" class="btn btn-primary">
+              <i class="fas fa-save mr-2"></i>
+              {% if object %}Update System Type{% else %}Add System Type{% endif %}
+            </button>
+            
+            <button type="submit" name="action" value="save_and_continue" class="btn btn-secondary">
+              <i class="fas fa-save mr-2"></i>
+              Save & Continue Editing
+            </button>
+            
+            {% if object %}
+              <button type="submit" name="action" value="save_and_view" class="btn btn-secondary">
+                <i class="fas fa-eye mr-2"></i>
+                Save & View
+              </button>
+            {% endif %}
+          </div>
+        </div>
+
+      </form>
+      
+      <!-- Danger Zone (for editing existing types) -->
+      {% if object %}
+        <div class="danger-zone">
+          <h4>
+            <i class="fas fa-exclamation-triangle"></i>
+            Danger Zone
+          </h4>
+          <p>
+            This system type is currently used by {{ object.systemmodule_set.count }} systems. 
+            Deleting it will affect those systems.
+          </p>
+          <a href="{% url 'aura_admin:projects:system_type_delete' object.pk %}" 
+             class="btn btn-danger"
+             onclick="return confirm('Are you sure you want to delete this system type? This will affect {{ object.systemmodule_set.count }} systems.')">
+            <i class="fas fa-trash mr-2"></i>
+            Delete System Type
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Preview Sidebar -->
+    <div class="space-y-6">
+      
+      <!-- Live Preview -->
+      <div>
+        <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+          <i class="fas fa-eye text-green-400 mr-2"></i>
+          Live Preview
+        </h3>
+        
+        <div class="type-preview-card" id="previewCard">
+          <div class="type-preview-header">
+            <div class="type-preview-icon" id="previewIcon">
+              <i class="fas fa-cube"></i>
+            </div>
+            <div class="type-preview-details">
+              <h3 id="previewName">System Type Name</h3>
+              <div class="type-preview-order" id="previewOrder">Display Order: 0</div>
+            </div>
+          </div>
+          
+          <div class="type-preview-description" id="previewDescription">
+            System type description will appear here...
+          </div>
+          
+          <div class="type-preview-meta">
+            <div class="type-preview-meta-item">
+              <i class="fas fa-cube"></i>
+              {% if object %}{{ object.systemmodule_set.count }}{% else %}0{% endif %} systems
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4 text-xs text-gray-500">
+          <i class="fas fa-info-circle mr-1"></i>
+          This preview shows how your system type will appear in lists and cards
+        </div>
+      </div>
+      
+      <!-- Systems Using This Type -->
+      {% if object and object.systemmodule_set.exists %}
+        <div class="systems-using">
+          <h4>
+            <i class="fas fa-cube"></i>
+            Systems Using This Type
+          </h4>
+          <div class="systems-list">
+            {% for system in object.systemmodule_set.all|slice:":10" %}
+              <a href="{% url 'aura_admin:projects:system_edit' system.pk %}" class="system-tag">
+                {{ system.name }}
+              </a>
+            {% endfor %}
+            {% if object.systemmodule_set.count > 10 %}
+              <span class="text-gray-500 text-xs">
+                +{{ object.systemmodule_set.count|add:"-10" }} more
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get form fields
+    const nameField = document.getElementById('id_name');
+    const slugField = document.getElementById('id_slug');
+    const descriptionField = document.getElementById('id_description');
+    const colorField = document.getElementById('id_color');
+    const iconField = document.getElementById('id_icon');
+    const orderField = document.getElementById('id_display_order');
+    
+    // Preview elements
+    const previewCard = document.getElementById('previewCard');
+    const previewIcon = document.getElementById('previewIcon');
+    const previewName = document.getElementById('previewName');
+    const previewOrder = document.getElementById('previewOrder');
+    const previewDescription = document.getElementById('previewDescription');
+    
+    // Auto-generate slug from name
+    if (nameField && slugField) {
+        nameField.addEventListener('input', function() {
+            if (!slugField.value || slugField.value === slugify(nameField.dataset.oldValue || '')) {
+                slugField.value = slugify(this.value);
+            }
+            nameField.dataset.oldValue = this.value;
+            updatePreview();
+        });
+    }
+    
+    // Update preview when fields change
+    if (descriptionField) {
+        descriptionField.addEventListener('input', updatePreview);
+    }
+    if (orderField) {
+        orderField.addEventListener('input', updatePreview);
+    }
+    
+    // Color selection
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', function() {
+            // Remove selected class from all swatches
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            // Add selected class to clicked swatch
+            this.classList.add('selected');
+            // Update hidden field
+            colorField.value = this.dataset.color;
+            updatePreview();
+        });
+    });
+    
+    // Icon selection
+    document.querySelectorAll('.icon-option').forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove selected class from all options
+            document.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+            // Add selected class to clicked option
+            this.classList.add('selected');
+            // Update hidden field
+            iconField.value = this.dataset.icon;
+            updatePreview();
+        });
+    });
+    
+    // Set initial selections
+    const currentColor = colorField.value || '#b39ddb';
+    const currentIcon = iconField.value || 'fas fa-cube';
+    
+    document.querySelector(`[data-color="${currentColor}"]`)?.classList.add('selected');
+    document.querySelector(`[data-icon="${currentIcon}"]`)?.classList.add('selected');
+    
+    // Initial preview update
+    updatePreview();
+    
+    function updatePreview() {
+        const name = nameField.value || 'System Type Name';
+        const description = descriptionField.value || 'System type description will appear here...';
+        const color = colorField.value || '#b39ddb';
+        const icon = iconField.value || 'fas fa-cube';
+        const order = orderField.value || '0';
+        
+        previewName.textContent = name;
+        previewDescription.textContent = description;
+        previewOrder.textContent = `Display Order: ${order}`;
+        
+        // Update icon
+        previewIcon.innerHTML = `<i class="${icon}"></i>`;
+        previewIcon.style.backgroundColor = color;
+        
+        // Update card accent color
+        previewCard.style.setProperty('--preview-color', color);
+    }
+    
+    function slugify(text) {
+        return text.toLowerCase()
+            .replace(/[^\w\s-]/g, '') // Remove special characters
+            .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+            .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+    }
+});
+
+function adjustOrder(change) {
+    const orderField = document.getElementById('id_display_order');
+    const currentValue = parseInt(orderField.value) || 0;
+    orderField.value = Math.max(0, currentValue + change);
+    
+    // Trigger preview update
+    document.getElementById('previewOrder').textContent = `Display Order: ${orderField.value}`;
+}
+</script>
+{% endblock %}
