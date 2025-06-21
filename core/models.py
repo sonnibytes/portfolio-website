@@ -298,8 +298,9 @@ class Skill(models.Model):
             'icon': self.icon,
         }
 
+
 class Education(models.Model):
-    """Educational background."""
+    """Enhanced Educational background with learning journey connections"""
 
     institution = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, max_length=200)
@@ -309,6 +310,57 @@ class Education(models.Model):
     end_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
     is_current = models.BooleanField(default=False)
+
+    # ===== NEW LEARNING JOURNEY FIELDS =====
+    # LEARNING JOURNEY ENHANCEMENTS to capture certs, ongoing learning
+    # Course metrics
+    content_hours = models.FloatField(null=True, blank=True, help_text="Total course content hours")
+    has_certificate = models.BooleanField(default=False, help_text="Certificate or completion credential earned")
+    instructor = models.CharField(max_length=100, blank=True, help_text="Primary instructor or course creator")
+    platform_url = models.URLField(blank=True, help_text="Link to course if available")
+
+    # Learning difficulty and outcomes
+    difficulty_level = models.IntegerField(
+        choices=[
+            (1, 'Beginner'),
+            (2, 'Intermediate'),
+            (3, 'Advanced'),
+            (4, 'Expert')
+        ],
+        default=2,
+        help_text='Course difficulty level'
+    )
+
+    learning_intensity = models.CharField(
+        max_length=20,
+        choices=[
+            ('light', 'Light (<10 hrs/month)'),
+            ('moderate', 'Moderate (10-20 hrs/month)'),
+            ('intensive', 'Intensive (>20 hrs/month)'),
+        ],
+        default='moderate',
+        help_text='Learning time commitment'
+    )
+
+    # ===== LEARNING JOURNEY RELATIONSHIPS =====
+
+    # Skills learned/improved in this course (works w existing skill model)
+    skills_learned = models.ManyToManyField(
+        'Skill',
+        through='EducationSkillDevelopment',
+        related_name='learned_in_courses',
+        blank=True,
+        help_text='Skills developed through this education'
+    )
+
+    # Technologies covered in course (Works with existing Technology model)
+    technologies_covered = models.ManyToManyField(
+        'projects.Technology',
+        through='EducationTechnologyCoverage',
+        related_name='covered_in_courses',
+        blank=True,
+        help_text='Technologies learned or used in this course'
+    )
 
     class Meta:
         ordering = ["-end_date", "-start_date"]
@@ -324,6 +376,31 @@ class Education(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+    # ===== ENHANCED LEARNING JOURNEY METHODS =====
+
+    def get_learning_duration_months(self):
+        """Calculate learning duration in months"""
+        if self.end_date and self.start_date:
+            delta = self.end_date - self.start_date
+            return round(delta.days / 30.44, 1)
+        return None
+    
+    def get_learning_velocity(self):
+        """Calculate skills learned per month"""
+        duration = self.get_learning_duration_months()
+        if duration and duration > 0:
+            skills_count = self.skills_learned.count()
+            return round(skills_count / duration, 1)
+        return None
+    
+    def get_primary_technologies(self):
+        """Get top 3 technologies covered"""
+        return self.technologies_covered.all()[:3]
+    
+    def get_skill_categories_covered(self):
+        """Get unique skill categories from this education"""
+        return self.skills_learned.values_list('category', flat=True).distinct()
 
 
 class Experience(models.Model):

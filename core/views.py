@@ -279,80 +279,114 @@ class HomeView(TemplateView):
 
 class DeveloperProfileView(TemplateView):
     """
-    Comprehensive AURA Developer Profile with integrated resume functionality.
-    Combines profile display with downloadable resume generation.
+    Enhanced AURA Developer Profile showcasing learning journey progression.
+    Integrates with Skills, Experience, Education, and cross-app data.
     """
     template_name = 'core/developer-profile.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Skills grouped by category
+        # Enhanced skills progression w learning journey focus
         skill_categories = {}
         for category, label in Skill.CATEGORY_CHOICES:
-            skills = Skill.objects.filter(
-                category=category).order_by("display_order")
+            skills = Skill.objects.filter(category=category).order_by(
+                "-proficiency", "name"
+            )
             if skills.exists():
-                skill_categories[category] = {"label": label, "skills": skills}
+                skill_categories[category] = {
+                    "label": label,
+                    "skills": skills,
+                    "count": skills.count(),
+                    "avg_proficiency": skills.aggregate(avg=Avg("proficiency"))["avg"] or 0,
+                }
         context["skill_categories"] = skill_categories
 
-        # Education background
-        context["education"] = Education.objects.all()
+        # Educational background
+        context["education"] = Education.objects.all().order_by('-end_date', '-start_date')
 
         # Professional experience
-        context["experiences"] = Experience.objects.all()
+        context["experiences"] = Experience.objects.all().order_by('-end_date', '-start_date')
 
         # Social/Network links
-        context["social_links"] = SocialLink.objects.all()
+        context["social_links"] = SocialLink.objects.filter(is_active=True).order_by('display_order')
 
-        # Portfolio & System Metrics
+        # Enhanced portfolio metrics with learning journey focus
         context["portfolio_metrics"] = {
+            # Core metrics from your existing implementation
             "total_systems": SystemModule.objects.filter(
                 status__in=["deployed", "published"]
-            ).count()
-            or 12,
-            "systems_completed": SystemModule.objects.filter(
-                status="deployed").count()
-            or 8,
+            ).count() or 12,
+            "systems_completed": SystemModule.objects.filter(status="deployed").count() or 8,
             "systems_in_progress": SystemModule.objects.filter(
                 status="in_development"
-            ).count()
-            or 3,
-            "total_logs_count": Post.objects.filter(
-                status="published").count() or 24,
+            ).count() or 3,
+            "total_logs_count": Post.objects.filter(status="published").count() or 24,
             "technologies_mastered": Technology.objects.count() or 15,
-            "languages_used": Technology.objects.filter(
-                category="language").count()
-            or 8,
+            "languages_used": Technology.objects.filter(category="language").count() or 8,
             "coding_years": 3,
-            # TODO: Get from GitHub API
+            # Enhanced learning journey metrics
+            "skills_learned": Skill.objects.count(),
+            "skill_mastery_avg": Skill.objects.aggregate(avg=Avg("proficiency"))["avg"] or 75,
+            "learning_velocity": self.calculate_learning_velocity(),
+            "portfolio_ready_systems": SystemModule.objects.filter(
+                portfolio_ready=True
+            ).count(),
+            "learning_milestones": self.get_learning_milestones_count(),
+            # GitHub/external metrics (can be populated with real API data later)
             "github_repos": 25,
-            # TODO: Can get from GitHub API
             "lines_of_code": 50000,
-            # TODO: Get from GitHub API
             "contributions_this_year": 284,
         }
 
-        # Recent Activity for timeline
-        context['recent_systems'] = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).order_by('-created_at')[:3]
+        # Recent activity showcasing learning progression
+        context["recent_systems"] = SystemModule.objects.filter(
+            status__in=["deployed", "published"]
+        ).order_by("-updated_at")[:3]
 
-        context['recent_posts'] = Post.objects.filter(
-            status='published'
-        ).order_by('-published_date')[:3]
+        context["recent_posts"] = Post.objects.filter(status="published").order_by(
+            "-published_date"
+        )[:3]
 
-        # Tech Breakdown
-        context['tech_by_category'] = {}
+        # Technology breakdown by category
+        context["tech_by_category"] = {}
         for category, label in Technology.CATEGORY_CHOICES:
-            techs = Technology.objects.filter(category=category)
+            techs = (
+                Technology.objects.filter(category=category)
+                .annotate(system_count=Count("systems"))
+                .order_by("-system_count")
+            )
             if techs.exists():
-                context['tech_by_category'][category] = {
-                    'label': label,
-                    'technologies': techs[:8]
+                context["tech_by_category"][category] = {
+                    "label": label,
+                    "technologies": techs[:8],  # Top 8 most used
                 }
 
+        # Learning progression summary
+        context["learning_summary"] = self.get_learning_progression_summary()
+
+        # Meta information for SEO and sharing
+        context["page_description"] = (
+            "Self-taught Python developer with 2+ years intensive learning journey. "
+            f"{context['portfolio_metrics']['skills_learned']} skills mastered, "
+            f"{context['portfolio_metrics']['total_systems']} projects built. "
+            "Ready for professional development role."
+        )
+        context["page_keywords"] = (
+            "Python Developer, Self-Taught Programmer, Learning Journey, "
+            "Algorithm Development, Django, Flask, Career Transition, "
+            "EHS to Tech, Portfolio Ready"
+        )
+
         return context
+    
+    def calculate_learning_velocity(self):
+        """Calculate skills learned per month over learning journey."""
+        # This could be enhanced w actual date tracking
+        skills_count = Skill.objects.count()
+        # 2.5yr * 12 mo
+        learning_months = 30
+        return round(skills_count / learning_months, 1) if learning_months > 0 else 0
 
 
 # TODO: Clean up -- May be able to combine dashboards on home instead of separate in sep apps.
