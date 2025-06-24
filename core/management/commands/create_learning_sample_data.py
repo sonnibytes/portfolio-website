@@ -598,7 +598,7 @@ class Command(BaseCommand):
                 ('AI/Machine Learning', 0, 3, 'foundation', 4),
                 ('API Development', 2, 4, 'advanced', 3),
             ],
-        ]
+        }
         
         created_count = 0
         skills_created = 0
