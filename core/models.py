@@ -410,7 +410,7 @@ class Education(models.Model):
 
     learning_type = models.CharField(max_length=20, choices=LEARNING_TYPE_CHOICES, default='formal_degree')
     platform = models.CharField(max_length=100, blank=True, help_text="e.g., 'edX HarvardX', 'Udemy', 'University of Alabama'")
-    certification_url = models.URLField(blank=True, help_text='Link to certificate or completion proof')
+    certificate_url = models.URLField(blank=True, help_text='Link to certificate or completion proof')
     hours_completed = models.IntegerField(default=0, help_text="Total hours of instruction/study")
     
     # ========== SKILL CONNECTIONS ==========
@@ -486,7 +486,7 @@ class Education(models.Model):
             'projects_applied': self.get_projects_applied_count(),
             'hours_completed': self.hours_completed,
             'career_relevance': self.career_relevance,
-            'has_certificate': bool(self.certification_url),
+            'has_certificate': bool(self.certificate_url),
             'is_current': self.is_current,
         }
 
@@ -857,7 +857,7 @@ class LearningJourneyManager:
                 end_date__isnull=False
             ).count(),
             'learning_hours': PortfolioAnalytics.get_learning_summary(days=365)['total_learning_hours'],
-            'certificates_earned': Education.objects.filter(certification_url__isnull=False).exclude(certification_url='').count(),
+            'certificates_earned': Education.objects.filter(certificate_url__isnull=False).exclude(certificate_url='').count(),
             'systems_built': SystemModule.objects.filter(status__in=['deployed', 'published']).count(),
             'skills_mastered': Skill.objects.filter(proficiency__gte=4).count(),
             'current_projects': SystemModule.objects.filter(status='in_development').count(),
@@ -886,7 +886,7 @@ class LearningJourneyManager:
                 'badge': 'Completed' if edu.end_date else 'In Progress',
                 'skills_count': edu.get_skills_gained_count(),
                 'hours': edu.hours_completed,
-                'certification_url': edu.certification_url,
+                'certificate_url': edu.certificate_url,
             })
         
         return highlights
