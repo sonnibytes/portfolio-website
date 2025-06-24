@@ -4,9 +4,12 @@ from django.urls import reverse
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 from django.utils import timezone
+from django.db.models import Count, Avg, Sum, Q
+from dateutil.relativedelta import relativedelta
 
-from datetime import date
-from projects.models import SystemSkillGain, Technology
+from datetime import date, timedelta
+from projects.models import SystemSkillGain, Technology, SystemModule, LearningMilestone
+from blog.models import Post
 
 
 class CorePage(models.Model):
@@ -297,14 +300,47 @@ class Skill(models.Model):
             'color': self.color,
             'icon': self.icon,
         }
+    
+    # ======================================
+    # ENHANCED SKILL MODEL ADDITIONS
+    # ======================================
+
+    def get_learning_journey_summary(self):
+        """Get comprehensive learning journey for this skill"""
+        return {
+            'name': self.name,
+            'proficiency': self.proficiency,
+            'mastery_level': self.get_mastery_level(),
+            'systems_using': self.get_systems_count(),
+            'education_sources': self.learned_through_education.count(),
+            'first_learned': self.learned_through_education.order_by('education__start_date').first(),
+            'learning_velocity': self.get_learning_velocity(),
+            'recent_projects': [
+                gain.system.title for gain in self.project_gains.order_by('-created_at')[:3]
+            ],
+            'learning_breakthroughs': self.get_breakthrough_moments()[:2],
+        }
+    
+    # Dynamically add attribute to model class after its initial definition
+    Skill.add_to_class('get_learning_journey_summary', get_learning_journey_summary)
 
 
 class Education(models.Model):
     """Enhanced Educational background with learning journey connections"""
 
+    LEARNING_TYPE_CHOICES = [
+        ('formal_degree', 'Formal Degree'),
+        ('online_course', 'Online Course'),
+        ('certification', 'Certification'),
+        ('bootcamp', 'Bootcamp'),
+        ('self_study', 'Self-Study'),
+        ('workshop', 'Workshop'),
+    ]
+
+    # ========== BASIC INFO ==========
     institution = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, max_length=200)
-    degree = models.CharField(max_length=100)
+    degree = models.CharField(max_length=100, help_text='Degree or course name')
     field_of_study = models.CharField(max_length=100)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
@@ -312,54 +348,42 @@ class Education(models.Model):
     is_current = models.BooleanField(default=False)
 
     # ===== NEW LEARNING JOURNEY FIELDS =====
-    # LEARNING JOURNEY ENHANCEMENTS to capture certs, ongoing learning
-    # Course metrics
-    content_hours = models.FloatField(null=True, blank=True, help_text="Total course content hours")
-    has_certificate = models.BooleanField(default=False, help_text="Certificate or completion credential earned")
-    instructor = models.CharField(max_length=100, blank=True, help_text="Primary instructor or course creator")
-    platform_url = models.URLField(blank=True, help_text="Link to course if available")
 
-    # Learning difficulty and outcomes
-    difficulty_level = models.IntegerField(
-        choices=[
-            (1, 'Beginner'),
-            (2, 'Intermediate'),
-            (3, 'Advanced'),
-            (4, 'Expert')
-        ],
-        default=2,
-        help_text='Course difficulty level'
-    )
-
-    learning_intensity = models.CharField(
-        max_length=20,
-        choices=[
-            ('light', 'Light (<10 hrs/month)'),
-            ('moderate', 'Moderate (10-20 hrs/month)'),
-            ('intensive', 'Intensive (>20 hrs/month)'),
-        ],
-        default='moderate',
-        help_text='Learning time commitment'
-    )
-
-    # ===== LEARNING JOURNEY RELATIONSHIPS =====
-
-    # Skills learned/improved in this course (works w existing skill model)
+    learning_type = models.CharField(max_length=20, choices=LEARNING_TYPE_CHOICES, default='formal_degree')
+    platform = models.CharField(max_length=100, blank=True, help_text="e.g., 'edX HarvardX', 'Udemy', 'University of Alabama'")
+    certification_url = models.URLField(blank=True, help_text='Link to certificate or completion proof')
+    hours_completed = models.IntegerField(default=0, help_text="Total hours of instruction/study")
+    
+    # ========== SKILL CONNECTIONS ==========
     skills_learned = models.ManyToManyField(
-        'Skill',
-        through='EducationSkillDevelopment',
-        related_name='learned_in_courses',
+        "Skill",
+        through="EducationSkillDevelopment",
+        related_name="learned_through_education",
         blank=True,
-        help_text='Skills developed through this education'
+        help_text="Skills developed through this education",
     )
 
-    # Technologies covered in course (Works with existing Technology model)
-    technologies_covered = models.ManyToManyField(
-        'projects.Technology',
-        through='EducationTechnologyCoverage',
-        related_name='covered_in_courses',
+    # ========== PORTFOLIO INTEGRATION ==========
+
+    related_systems = models.ManyToManyField(
+        "projects.SystemModule",
         blank=True,
-        help_text='Technologies learned or used in this course'
+        related_name="education_background",
+        help_text="Projects/Systems that applied knowledge from this education",
+    )
+
+    # ========== LEARNING METRICS ==========
+
+    learning_intensity = models.IntegerField(
+        choices=[(i, f'Level {i}') for i in range(1, 6)],
+        default=3,
+        help_text='Learning intensity/difficulty (1=Easy, 5=Very Intense)'
+    )
+
+    career_relevance = models.IntegerField(
+        choices=[(i, f'{i} stars') for i in range(1, 6)],
+        default=4,
+        help_text='Relevance to software development career (1-5 stars)'
     )
 
     class Meta:
@@ -374,33 +398,113 @@ class Education(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(f"{self.degree} {self.institution}")
         super().save(*args, **kwargs)
 
     # ===== ENHANCED LEARNING JOURNEY METHODS =====
 
-    def get_learning_duration_months(self):
+    def get_duration_months(self):
         """Calculate learning duration in months"""
-        if self.end_date and self.start_date:
-            delta = self.end_date - self.start_date
-            return round(delta.days / 30.44, 1)
-        return None
+        if not self.end_date or not self.start_date:
+            return None
+        return (self.end_date.year - self.start_date.year) * 12 + (self.end_date.month - self.start_date.month)
     
-    def get_learning_velocity(self):
-        """Calculate skills learned per month"""
-        duration = self.get_learning_duration_months()
-        if duration and duration > 0:
-            skills_count = self.skills_learned.count()
-            return round(skills_count / duration, 1)
-        return None
+    def get_skills_gained_count(self):
+        """Get count of skills learned"""
+        return self.skills_learned.count()
     
-    def get_primary_technologies(self):
-        """Get top 3 technologies covered"""
-        return self.technologies_covered.all()[:3]
+    def get_projects_applied_count(self):
+        """Get count of projects/systems that applied this education"""
+        return self.related_systems.count()
     
-    def get_skill_categories_covered(self):
-        """Get unique skill categories from this education"""
-        return self.skills_learned.values_list('category', flat=True).distinct()
+    def get_learning_summary(self):
+        """Get comprehensive learning summary"""
+        return {
+            'education_type': self.get_learning_type_display(),
+            'platform': self.platform,
+            'duration_months': self.get_duration_months(),
+            'skills_gained': self.get_skills_gained_count(),
+            'projects_applied': self.get_projects_applied_count(),
+            'hours_completed': self.hours_completed,
+            'career_relevance': self.career_relevance,
+            'has_certificate': bool(self.certification_url),
+            'is_current': self.is_current,
+        }
+
+
+class EducationSkillDevelopment(models.Model):
+    """Through model for Education ↔ Skill relationship w learning context"""
+
+    LEARNING_FOCUS_CHOICES = [
+        ('introduction', 'First Introduction'),
+        ('foundation', 'Foundation Building'),
+        ('practical', 'Practical Application'),
+        ('advanced', 'Advanced Concepts'),
+        ('mastery', 'Mastery Level'),
+    ]
+    
+    IMPORTANCE_CHOICES = [
+        (1, 'Minor Topic'),
+        (2, 'Supporting Skill'),
+        (3, 'Core Curriculum'),
+        (4, 'Primary Focus'),
+    ]
+
+    education = models.ForeignKey(Education, on_delete=models.CASCADE)
+    skill = models.ForeignKey('Skill', on_delete=models.CASCADE)
+
+    # Learning progression in this education
+    proficiency_before = models.IntegerField(
+        choices=[(i, i) for i in range(0, 6)],
+        default=0,
+        help_text="Skill level before this course (0-5)"
+    )
+
+    proficiency_after = models.IntegerField(
+        choices=[(i, i) for i in range(1, 6)],
+        default=1,
+        help_text="Skill level after this course (1-5)",
+    )
+
+    # Learning context
+    learning_focus = models.CharField(
+        max_length=20,
+        choices=LEARNING_FOCUS_CHOICES,
+        default='foundation',
+        help_text='Type of learning focus for this skill'
+    )
+
+    # Importance in course curriculum
+    importance_level = models.IntegerField(
+        choices=IMPORTANCE_CHOICES,
+        default=3,
+        help_text='How central was this skill to the course'
+    )
+
+    learning_notes = models.TextField(blank=True, help_text='Specific learning outcomes or notes')
+
+    class Meta:
+        unique_together = ('education', 'skill')
+        verbose_name = 'Education Skill Development'
+    
+    def __str__(self):
+        return f"{self.skill.name} in {self.education.degree}"
+    
+    def get_skill_improvement(self):
+        """Calculate proficiency gained"""
+        return self.proficiency_after - self.proficiency_before
+    
+    def get_improvement_color(self):
+        """Color based on improvement level"""
+        improvement = self.get_skill_improvement()
+        if improvement >= 3:
+            return "#4CAF50"  # Green - Major improvement
+        elif improvement >= 2:
+            return "#2196F3"  # Blue - Good improvement
+        elif improvement >= 1:
+            return "#FF9800"  # Orange - Some improvement
+        else:
+            return "#9E9E9E"  # Gray - Minimal improvement
 
 
 class Experience(models.Model):
@@ -526,22 +630,32 @@ class SocialLink(models.Model):
 
 
 class PortfolioAnalytics(models.Model):
-    """Daily portfolio performance and visitor analytics."""
+    """
+    Enhanced Portfolio Analytics with Learning Journey Focus
+    Combines visitor metrics with learning progression tracking
+    """
     # Date tracking
     date = models.DateField(unique=True)
 
-    # Visitor metrics
+    # ========== LEARNING JOURNEY METRICS ==========
+    learning_hours_logged = models.FloatField(default=0.0, help_text='Hours spent learning/coding this day')
+    datalog_entries_written = models.IntegerField(default=0, help_text='Learning documentation entries created')
+    skills_practiced = models.IntegerField(default=0, help_text='Number of skills actively practiced')
+    projects_worked_on = models.IntegerField(default=0, help_text='Number of projects/systems worked on')
+    milestones_achieved = models.IntegerField(default=0, help_text='Learning milestones reached this day')
+
+    # ========== VISITOR ENGAGEMENT METRICS ==========
     unique_visitors = models.IntegerField(default=0)
     page_views = models.IntegerField(default=0)
-    bounce_rate = models.FloatField(default=0.0, help_text="Percentage of single-page sessions")
-    avg_session_duration = models.IntegerField(default=0, help_text="Average session duration in seconds")
 
     # Content engagement metrics
     datalog_views = models.IntegerField(default=0)
     system_views = models.IntegerField(default=0)
     contact_form_submissions = models.IntegerField(default=0)
     github_clicks = models.IntegerField(default=0)
+    resume_downloads = models.IntegerField(default=0)
 
+    # ========== CONTENT PERFORMANCE ==========
     # Top performing content
     top_datalog = models.ForeignKey('blog.Post', null=True, blank=True, on_delete=models.SET_NULL, related_name='analytics_days_as_top')
     top_system = models.ForeignKey('projects.SystemModule', null=True, blank=True, on_delete=models.SET_NULL, related_name='analytics_days_as_top')
@@ -550,8 +664,12 @@ class PortfolioAnalytics(models.Model):
     top_country = models.CharField(max_length=50, blank=True)
     top_city = models.CharField(max_length=50, blank=True)
 
+    # ========== VISITOR CONTEXT ==========
     # Referrer Data
     top_referrer = models.CharField(max_length=200, blank=True)
+    job_board_visits = models.IntegerField(default=0, help_text='Visits from job boards/career sites')
+    bounce_rate = models.FloatField(default=0.0, help_text="Percentage of single-page sessions")
+    avg_session_duration = models.IntegerField(default=0, help_text="Average session duration in seconds")
     organic_search_percentage = models.FloatField(default=0.0)
 
     class Meta:
@@ -559,7 +677,7 @@ class PortfolioAnalytics(models.Model):
         verbose_name_plural = "Portfolio Analytics"
 
     def __str__(self):
-        return f"Analytics for {self.date} ({self.unique_visitors} visitors)"
+        return f"Analytics for {self.date} ({self.unique_visitors} visitors, {self.learning_hours_logged}h learning)"
 
     def get_absolute_url(self):
         return reverse("core:analytics_detail", args=[self.date])
@@ -582,3 +700,234 @@ class PortfolioAnalytics(models.Model):
         if self.contact_form_submissions > 0:
             base_score += 25
         return base_score
+
+    # ========== ENHANCED LEARNING METHODS ==========
+
+    def learning_engagement_score(self):
+        """Calculate daily learning engagement (0-100)"""
+        score = 0
+        # 2+ hr learning
+        if self.learning_hours_logged >= 2:
+            score += 25
+        # Documented learning
+        if self.datalog_entries_written > 0:
+            score += 25
+        # Multiple skills practiced
+        if self.skills_practiced >= 2:
+            score += 25
+        # Applied learning
+        if self.projects_worked_on > 0:
+            score += 25
+        return score
+
+    def hiring_interest_score(self):
+        """Calculate hiring manager interest (0-100)"""
+        if self.unique_visitors == 0:
+            return 0
+        
+        score = 0
+        if self.resume_downloads > 0:
+            # Strong interest indicator
+            score += 40
+        if self.contact_form_submissions > 0:
+            # Very strong interest
+            score += 40
+        if (self.datalog_views + self.system_views) >= self.unique_visitors:
+            # Explored portfolio depth
+            score += 20
+        return min(100, score)
+    
+    @classmethod
+    def get_learning_summary(cls, days=30):
+        """Get learning summary for specified period"""
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=days)
+
+        analytics = cls.objects.filter(date__range=[start_date, end_date])
+
+        return {
+            'total_learning_hours': analytics.aggregate(Sum('learning_hours_logged'))['learning_hours_logged__sum'] or 0,
+            'total_entries_written': analytics.aggregate(Sum('datalog_entries_written'))['datalog_entries_written__sum'] or 0,
+            'total_skills_practiced': analytics.aggregate(Sum('skills_practiced'))['skills_practiced__sum'] or 0,
+            'total_projects_worked': analytics.aggregate(Sum('projects_worked_on'))['projects_worked_on__sum'] or 0,
+            'total_milestones': analytics.aggregate(Sum('milestones_achieved'))['milestones_achieved__sum'] or 0,
+            'avg_daily_hours': analytics.aggregate(Avg('learning_hours_logged'))['learning_hours_logged__avg'] or 0,
+            'days_active': analytics.filter(learning_hours_logged__gt=0).count(),
+            'consistency_rate': (analytics.filter(learning_hours_logged__gt=0).count() / days) * 100 if days > 0 else 0,
+        }
+
+
+# ======================================
+# ENHANCED LEARNING JOURNEY MANAGER
+# ======================================
+
+
+class LearningJourneyManager:
+    """
+    Manager class for generating dynamic learning journey data
+    Replaces hardcoded HomeView context with model-driven data
+    """
+
+    @staticmethod
+    def get_journey_overview():
+        """Get comprehensive learning journey overview"""
+
+        # Find earliest learning date
+        earliest_system = SystemModule.objects.filter(start_date__isnull=False).order_by('start_date').first()
+        earliest_education = Education.objects.filter(learning_type__in=['online_course', 'certification']).order_by('start_date').first()
+
+        start_date = None
+        if earliest_system and earliest_education:
+            start_date = min(earliest_system.start_date, earliest_education.start_date)
+        elif earliest_system:
+            start_date = earliest_system.start_date
+        elif earliest_education:
+            start_date = earliest_education.start_date
+        
+        if start_date:
+            duration = relativedelta(date.today(), start_date)
+            duration_text = f"{duration.years}+ Years" if duration.years > 0 else f"{duration.months} Months"
+        else:
+            duration_text = "2+ Years"  # Fallback
+        
+        return {
+            'start_date': start_date.strftime("%B %Y") if start_date else "August 2022",
+            'duration_years': duration_text,
+            'courses_completed': Education.objects.filter(
+                learning_type__in=['online_course', 'certification'],
+                end_date__isnul=False
+            ).count(),
+            'learning_hours': PortfolioAnalytics.get_learning_summary(days=365)['total_learning_hours'],
+            'certificates_earned': Education.objects.filter(certiificate_url__isnull=False).exclude(certificate_url='').count(),
+            'systems_built': SystemModule.objects.filter(status__in=['deployed', 'published']).count(),
+            'skills_mastered': Skill.objects.filter(proficiency__gte=4).count(),
+            'current_projects': SystemModule.objects.filter(status='in_development').count(),
+        }
+    
+    @staticmethod
+    def get_learning_highlights():
+        """Generate learning highlights from Education model"""
+        highlights = []
+
+        # Get featured education entries
+        education_entries = Education.objects.filter(
+            learning_type__in=['online_course', 'certification'],
+            career_relevance__gte=4
+        ).order_by('-career_relevance', '-end_date')[:6]
+
+        color_cycle = ["teal", "coral", "lavender", "mint", "yellow", "navy"]
+
+        for i, edu in enumerate(education_entries):
+            highlights.append({
+                'title': edu.degree,
+                'platform': edu.platform or edu.institution,
+                'icon': 'fas fa-university' if edu.learning_type == 'formal_degree' else 'fas fa-certificate',
+                'color': color_cycle[i % len(color_cycle)],
+                'description': edu.description or f"Developed {edu.get_skills_gained_count()} technical skills",
+                'badge': 'Completed' if edu.end_date else 'In Progress',
+                'skills_count': edu.get_skills_gained_count(),
+                'hours': edu.hours_completed,
+                'certificate_url': edu.certification_url,
+            })
+        
+        return highlights
+
+    @staticmethod
+    def get_skill_progression():
+        """Generate skill progression timeline"""
+
+        # Get skills w progression data
+        skills_with_gains = Skill.objects.filter(
+            project_gains__isnull=False
+        ).distinct().annotate(
+            systems_count=Count('project_gains'),
+            avg_proficiency=Avg('project_gains__proficiency_gained')
+        ).order_by('-systems_count', '-avg_proficiency')[:8]
+
+        progression = []
+        for skill in skills_with_gains:
+            skill_gains = SystemSkillGain.objects.filter(skill=skill).order_by('created_at')
+
+            progression.append({
+                'skill_name': skill.name,
+                'category': skill.get_category_display(),
+                'current_proficiency': skill.proficiency,
+                'systems_using': skill.get_systems_count(),
+                'learning_velocity': skill.get_learning_velocity(),
+                'mastery_level': skill.get_mastery_level(),
+                'color': skill.color,
+                'icon': skill.icon,
+                'timeline': [
+                    {
+                        'system': gain.system.title,
+                        'proficiency_gained': gain.get_proficiency_gained_display(),
+                        'date': gain.created_at,
+                        'learning_context': gain.how_learned,
+                    }
+                    for gain in skill_gains[:3]  # Latest 3 gains
+                ]
+            })
+        return progression
+    
+    @staticmethod
+    def get_learning_timeline():
+        """Generate chronological learning timeline"""
+        timeline_events = []
+
+        # Add education milestones
+        for edu in Education.objects.filter(end_date__isnull=False).order_by('-end_date')[:5]:
+            timeline_events.append({
+                'date': edu.end_date,
+                'type': 'education',
+                'title': f"Completed {edu.degree}",
+                'description': f"From {edu.platform or edu.institution}",
+                'icon': 'fas fa-graduation_cap',
+                'color': 'teal',
+                'skills_gained': edu.get_skills_gained_count(),
+            })
+        
+        # Add learning milestones
+        for milestone in LearningMilestone.objects.order_by('-date_achieved')[:8]:
+            timeline_events.append({
+                'date': milestone.date_achieved.date(),
+                'type': 'milestone',
+                'title': milestone.title,
+                'description': milestone.description[:100] + "..." if len(milestone.description) > 100 else milestone.description,
+                'icon': 'fas fa-trophy' if milestone.milestone_type == 'breakthrough' else 'fas fa-star',
+                'color': 'coral',
+                'difficulty': milestone.difficulty_level,
+                'confidence_boost': milestone.confidence_boost,
+            })
+        
+        # Sort by date (most recent first)
+        timeline_events.sort(key=lambda x: x['date'], reverse=True)
+
+        return timeline_events[:10]
+    
+    @staticmethod
+    def get_featured_systems():
+        """Get featured projects/systems for learning showcase"""
+
+        featured_systems = SystemModule.objects.filter(
+            portfolio_ready=True,
+            status__in=['deployed', 'published']
+        ).select_related('system_type').prefetch_related('skills_developed')[:4]
+
+        systems = []
+        for system in featured_systems:
+            learning_stats = system.get_development_stats_for_learning()
+
+            systems.append({
+                'title': system.title,
+                'slug': system.slug,
+                'description': system.excerpt,
+                'learning_stage': system.get_learning_stage_display(),
+                'skills_gained': system.get_skills_summary(),
+                'complexity_score': learning_stats['complexity_score'],
+                'portfolio_ready': system.portfolio_ready,
+                'system_type': system.system_type.name if system.system_type else 'Project',
+                'technologies': [tech.name for tech in system.technologies.all()[:4]],
+                'learning_velocity': learning_stats['learning_velocity'],
+                'completion_percent': learning_stats['completion_percent'],
+            })
+        return systems
