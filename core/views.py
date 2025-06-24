@@ -302,7 +302,7 @@ class DeveloperProfileView(TemplateView):
         context["experiences"] = Experience.objects.all().order_by('-end_date', '-start_date')
 
         # Social/Network links
-        context["social_links"] = SocialLink.objects.filter(is_active=True).order_by('display_order')
+        context["social_links"] = SocialLink.objects.all().order_by('display_order')
 
         # Dynamic Portfolio Metrics using LearningJourneyManager
         journey_manager = LearningJourneyManager()
