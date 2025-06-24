@@ -48,11 +48,12 @@ class Skill(models.Model):
     """Dev skills with proficiency values for visualization."""
 
     CATEGORY_CHOICES = (
-        ("languages", "Programming Languages"),
-        ("frameworks", "Frameworks & Libraries"),
-        ("tools", "Tools & Technologies"),
-        ("databases", "Databases"),
-        ("other", "Other Skills"),
+        ("language", "Programming Language"),
+        ("framework", "Framework/Library"),
+        ("tool", "Development Tool"),
+        ("database", "Database"),
+        ('soft_skill', 'Soft Skill'),
+        ("other", "Other"),
     )
 
     name = models.CharField(max_length=50)
