@@ -287,7 +287,7 @@ class Command(BaseCommand):
         output.append(f"Learning Duration: {overview.get('duration_years', 'N/A')}")
         output.append(f"Total Learning Hours: {overview.get('learning_hours', 0)}")
         output.append(f"Courses Completed: {overview.get('courses_completed', 0)}")
-        output.append(f"Projects Built: {overview.get('projects_built', 0)}")
+        output.append(f"Projects Built: {overview.get('systems_built', 0)}")
         output.append(f"Skills Mastered: {overview.get('skills_mastered', 0)}")
         output.append("")
         
