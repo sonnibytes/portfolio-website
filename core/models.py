@@ -853,10 +853,10 @@ class LearningJourneyManager:
             'duration_years': duration_text,
             'courses_completed': Education.objects.filter(
                 learning_type__in=['online_course', 'certification'],
-                end_date__isnul=False
+                end_date__isnull=False
             ).count(),
             'learning_hours': PortfolioAnalytics.get_learning_summary(days=365)['total_learning_hours'],
-            'certificates_earned': Education.objects.filter(certiificate_url__isnull=False).exclude(certificate_url='').count(),
+            'certificates_earned': Education.objects.filter(certification_url__isnull=False).exclude(certification_url='').count(),
             'systems_built': SystemModule.objects.filter(status__in=['deployed', 'published']).count(),
             'skills_mastered': Skill.objects.filter(proficiency__gte=4).count(),
             'current_projects': SystemModule.objects.filter(status='in_development').count(),
@@ -885,7 +885,7 @@ class LearningJourneyManager:
                 'badge': 'Completed' if edu.end_date else 'In Progress',
                 'skills_count': edu.get_skills_gained_count(),
                 'hours': edu.hours_completed,
-                'certificate_url': edu.certification_url,
+                'certification_url': edu.certification_url,
             })
         
         return highlights

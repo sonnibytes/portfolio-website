@@ -161,7 +161,7 @@ class HomeView(TemplateView):
         recent_activity = []
 
         # Recent milestones
-        recent_milestones = LearningMilestone.objectcs.order_by('-date_achieved')[:3]
+        recent_milestones = LearningMilestone.objects.order_by('-date_achieved')[:3]
         for milestone in recent_milestones:
             recent_activity.append({
                 'type': 'milestone',
