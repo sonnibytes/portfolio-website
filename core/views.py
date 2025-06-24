@@ -13,17 +13,17 @@ from django.conf import settings
 import os
 import calendar
 
-from .models import CorePage, Skill, Education, Experience, SocialLink, Contact
+from .models import CorePage, Skill, Education, Experience, SocialLink, Contact, LearningJourneyManager, PortfolioAnalytics
 from .forms import ContactForm
 from blog.models import Post, Category
-from projects.models import SystemModule, Technology
+from projects.models import SystemModule, Technology, LearningMilestone
 from datetime import timedelta
 
 
 class HomeView(TemplateView):
     """
-    Enhanced Home Page - Learning Journey Showcase
-    Highlights 2+ year learning progression from EHS Compliance to Software Development
+    Enhanced Home Page - Dynamic Learning Journey Showcase
+    Uses model relationships instead of hardcoded data
     """
 
     template_name = "core/index.html"
@@ -31,228 +31,120 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # LEARNING JOURNEY HERO METRICS
-        context["learning_journey"] = {
-            "start_date": "August 2022",
-            "duration_years": "2.5+ Years",
-            "courses_completed": 9,
-            "learning_hours": "460+",
-            "certificates_earned": 6,
-            "projects_built": "100+",
-            "platforms_used": 5,
-        }
+        # ========== DYNAMIC LEARNING JOURNEY METRICS ==========
+        journey_manager = LearningJourneyManager()
+        context["learning_journey"] = journey_manager.get_journey_overview()
 
-        # LEARNING HIGHLIGHTS & ACHIEVEMENTS
-        context["learning_highlights"] = [
-            {
-                "title": "Harvard CS50 Python",
-                "platform": "edX HarvardX",
-                "icon": "fas fa-university",
-                "color": "teal",
-                "description": "Academic programming foundation",
-                "badge": "Academic Excellence",
-            },
-            {
-                "title": "100 Days of Code",
-                "platform": "Udemy",
-                "icon": "fas fa-fire",
-                "color": "coral",
-                "description": "100 projects completed (Sept 2024)",
-                "badge": "Recent Achievement",
-            },
-            {
-                "title": "Data Science Bootcamp",
-                "platform": "Udemy",
-                "icon": "fas fa-chart-line",
-                "color": "lavender",
-                "description": "ML, TensorFlow, Scikit-Learn",
-                "badge": "Advanced Skills",
-            },
-            {
-                "title": "LLM Engineering",
-                "platform": "Udemy",
-                "icon": "fas fa-robot",
-                "color": "mint",
-                "description": "Currently learning cutting-edge AI",
-                "badge": "In Progress",
-            },
-        ]
+        # ========== DYNAMIC LEARNING HIGHLIGHTS ==========
+        context["learning_highlights"] = journey_manager.get_learning_highlights()
 
-        # FEATURED PROJECT SHOWCASES
-        context['featured_projects'] = [
-            {
-                'title': 'AURA Portfolio',
-                'subtitle': 'Django Multi-App Architecture',
-                'description': 'Sophisticated portfolio with admin system, DataLogs, and Systems management. Demonstrates full-stack Django development with PostgreSQL, unified design system, and professional UI/UX.',
-                'technologies': ['Django', 'PostgreSQL', 'JavaScript', 'CSS3', 'Admin System'],
-                'live_url': '',  # Add when deployed
-                'github_url': 'https://github.com/yourusername/portfolio-project',  # Update with your repo
-                'learning_focus': 'Advanced Django architecture and professional web development'
-            },
-            {
-                'title': 'myRise Learning Tracker',
-                'subtitle': 'Flask Independent Project',
-                'description': 'Self-directed Flask web application for tracking learning resources, links, libraries, and APIs. Built to solve personal learning organization needs, demonstrating independent problem-solving and full-stack development.',
-                'technologies': ['Flask', 'SQLite', 'Python', 'HTML/CSS', 'API Integration'],
-                'live_url': '',  # Add when deployed
-                'github_url': 'https://github.com/yourusername/my-learning',  # Update with your repo
-                'learning_focus': 'Independent project development and Flask mastery'
-            },
-            {
-                'title': 'API Integration Collection',
-                'subtitle': 'REST API Mastery Showcase',
-                'description': 'Diverse collection of API integration projects including GitHub data, Spotify playlist builder, weather tracking, ISS location, and flight deals. Demonstrates API consumption and integration skills.',
-                'technologies': ['Python', 'REST APIs', 'JSON', 'Requests', 'OAuth'],
-                'live_url': '',
-                'github_url': '',  # Add your API projects repo
-                'learning_focus': 'API integration and external service communication'
-            }
-        ]
+        # ========== DYNAMIC SKILL PROGRESSION ==========
+        context["skill_progression"] = journey_manager.get_skill_progression()
 
-        # TECHNICAL SKILLS PROGRESSION
-        context["skill_progression"] = {
-            "confident_professional": [
-                {"name": "Python", "months_experience": 30, "color": "#3776ab"},
-                {
-                    "name": "Algorithm Development",
-                    "months_experience": 24,
-                    "color": "#ff6b35",
-                },
-                {"name": "Flask", "months_experience": 18, "color": "#000000"},
-                {
-                    "name": "API Integration",
-                    "months_experience": 20,
-                    "color": "#4caf50",
-                },
-            ],
-            "strong_growing": [
-                {"name": "Django", "months_experience": 12, "color": "#092e20"},
-                {"name": "Data Science", "months_experience": 15, "color": "#ff9800"},
-                {"name": "PostgreSQL", "months_experience": 10, "color": "#336791"},
-                {"name": "Linux/Ubuntu", "months_experience": 18, "color": "#e95420"},
-            ],
-            "active_learning": [
-                {"name": "LLM Engineering", "months_experience": 2, "color": "#9c27b0"},
-                {
-                    "name": "Machine Learning",
-                    "months_experience": 8,
-                    "color": "#ff5722",
-                },
-                {"name": "TensorFlow", "months_experience": 6, "color": "#ff6f00"},
-                {"name": "Rust (Next)", "months_experience": 0, "color": "#ce422b"},
-            ],
-        }
+        # ========== DYNAMIC LEARNING TIMELINE ==========
+        context["learning_timeline"] = journey_manager.get_learning_timeline()
 
-        # LEARNING TIMELINE DATA
-        context["learning_timeline"] = [
-            {
-                "date": "Aug 2022",
-                "title": "Business Analytics Foundation",
-                "description": "Started with data analysis using Excel, SQL, and Tableau",
-                "color": "navy",
-                "icon": "fas fa-chart-bar",
-            },
-            {
-                "date": "Dec 2022",
-                "title": "Harvard CS50 Python",
-                "description": "Academic programming foundation and computer science principles",
-                "color": "teal",
-                "icon": "fas fa-university",
-            },
-            {
-                "date": "Mar 2023",
-                "title": "Web Development & Linux",
-                "description": "Django framework and Linux system administration",
-                "color": "lavender",
-                "icon": "fas fa-globe",
-            },
-            {
-                "date": "Jun 2023",
-                "title": "Data Science Mastery",
-                "description": "NumPy, Pandas, Machine Learning, TensorFlow",
-                "color": "coral",
-                "icon": "fas fa-brain",
-            },
-            {
-                "date": "Mar 2024",
-                "title": "100 Days of Code Challenge",
-                "description": "100 diverse Python projects over 6 months",
-                "color": "mint",
-                "icon": "fas fa-fire",
-            },
-            {
-                "date": "Current",
-                "title": "LLM Engineering & Portfolio",
-                "description": "Building sophisticated applications while learning AI",
-                "color": "yellow",
-                "icon": "fas fa-rocket",
-            },
-        ]
+        # ========== DYNAMIC FEATURED SYSTEMS/PROJECTS ==========
+        context["featured_systems"] = journey_manager.get_featured_systems()
 
-        # PORTFOLIO INTEGRATION - Real Data
-        try:
-            # Systems showcase
-            featured_systems = (
-                SystemModule.objects.filter(status__in=["deployed", "published"])
-                .select_related("system_type")
-                .prefetch_related("technologies")[:3]
-            )
-            context["portfolio_systems"] = featured_systems
+        # ========== CURRENT LEARNING STATUS (DYNAMIC) ==========
+        # Get current learning from ongoing education
+        current_education = Education.objects.filter(is_current=True).first()
+        current_projects = SystemModule.objects.filter(status="in_development")
 
-            # DataLogs for learning documentation
-            recent_datalogs = Post.objects.filter(status="published").order_by(
-                "-published_date"
-            )[:3]
-            context["recent_datalogs"] = recent_datalogs
-
-            # Technology stats
-            context["portfolio_stats"] = {
-                "total_systems": SystemModule.objects.count(),
-                "total_technologies": Technology.objects.count(),
-                "total_datalogs": Post.objects.filter(status="published").count(),
-                "learning_entries_planned": 15,  # Backlog you mentioned
-            }
-
-        except Exception:
-            # Fallback for development
-            context["portfolio_stats"] = {
-                "total_systems": 8,
-                "total_technologies": 12,
-                "total_datalogs": 0,
-                "learning_entries_planned": 15,
-            }
-
-        # CURRENT LEARNING STATUS
         context["current_status"] = {
             "availability": "Seeking first professional tech role",
-            "current_learning": "LLM Engineering with Udemy",
-            "next_goal": "Rust development for high-performance applications",
-            "location": "Remote or Alabama-based opportunities",
+            "current_learning": current_education.degree
+            if current_education
+            else "Advanced Django Development",
+            "learning_platform": current_education.platform
+            if current_education
+            else "Self-Directed",
+            "current_projects": current_projects.count(),
+            "next_goal": self.get_next_learning_goal(),
+            "location": "Remote or North Carolina-based opportunities (open to relocation)",
             "transition_stage": "Ready for entry-level Python development role",
         }
 
-        # CALL-TO-ACTION DATA
+        # ========== DYNAMIC PORTFOLIO METRICS ==========
+
+        # PORTFOLIO INTEGRATION - Real Data
+        try:
+            context['portfolio_metrics'] = {
+                'learning_duration': context['learning_journey']['duration_years'],
+                'total_systems': SystemModule.objects.filter(
+                    status__in=['deployed', 'published']
+                ).count(),
+                'portfolio_ready_systems': SystemModule.objects.filter(portfolio_ready=True).count(),
+                'total_technologies': Technology.objects.count(),
+                'skills_mastered': Skill.objects.filter(proficiency__gte=4).count(),
+                'total_datalogs': Post.objects.filter(status='published').count(),
+                'learning_milestones': LearningMilestone.objects.count(),
+                'courses_completed': context['learning_journey']['courses_completed'],
+                'learning_hours': context['learning_journey']['learning_hours'],
+                'certificates_earned': context['learning_journey']['certificates_earned'],
+            }
+
+            # Featured systems (dynamic)
+            featured_systems = SystemModule.objects.filter(
+                featured=True,
+                status__in=["deployed", "published"]
+            ).select_related("system_type").prefetch_related("technologies")[:3]
+            
+            if not featured_systems.exists():
+                # Fallback to top portfolio-ready systems
+                featured_systems = SystemModule.objects.filter(
+                    portfolio_ready=True,
+                    status__in=["deployed", "published"]
+                ).select_related("system_type").prefetch_related("technologies")[:3]
+            
+            context["portfolio_systems"] = featured_systems
+
+            # Recent learning documentation (dynamic)
+            recent_datalogs = Post.objects.filter(
+                status="published"
+            ).select_related("category").order_by("-published_date")[:3]
+            context["recent_datalogs"] = recent_datalogs
+        
+        except Exception as e:
+            # Fallback for development or missing data
+            context['portfolio_metrics'] = {
+                'learning_duration': '2+ Years',
+                'total_systems': 8,
+                'portfolio_ready_systems': 3,
+                'total_technologies': 12,
+                'skills_mastered': 8,
+                'total_datalogs': 15,
+                'learning_milestones': 12,
+                'courses_completed': 6,
+                'learning_hours': 400,
+                'certificates_earned': 4,
+            }
+        # ========== DYNAMIC CALL-TO-ACTION SECTIONS ==========
         context["cta_sections"] = [
             {
                 "title": "Explore My Projects",
-                "description": "See the progression from simple scripts to complex applications",
+                "description": f"See {context['portfolio_metrics']['total_systems']} projects showing skill progression",
                 "url": "/projects/",
                 "icon": "fas fa-folder-open",
                 "color": "teal",
+                "metric": f"{context['portfolio_metrics']['portfolio_ready_systems']} portfolio-ready",
             },
             {
                 "title": "Read Learning Journey",
-                "description": "Technical insights and learning documentation",
+                "description": f"{context['portfolio_metrics']['total_datalogs']} technical insights and learning documentation",
                 "url": "/blog/",
                 "icon": "fas fa-book-open",
                 "color": "lavender",
+                "metric": "Technical writing",
             },
             {
                 "title": "Download Resume",
-                "description": "Professional credentials and experience details",
+                "description": "Professional credentials and learning progression details",
                 "url": "/resume/download/",
                 "icon": "fas fa-download",
                 "color": "coral",
+                "metric": "Always current",
             },
             {
                 "title": "Let's Connect",
@@ -260,21 +152,115 @@ class HomeView(TemplateView):
                 "url": "/communication/",
                 "icon": "fas fa-envelope",
                 "color": "mint",
+                "metric": "Quick response",
             },
         ]
 
-        # META DATA FOR SEO
+        # ========== RECENT LEARNING ACTIVITY ==========
+        # Get recent learning activity from multiple sources
+        recent_activity = []
+
+        # Recent milestones
+        recent_milestones = LearningMilestone.objectcs.order_by('-date_achieved')[:3]
+        for milestone in recent_milestones:
+            recent_activity.append({
+                'type': 'milestone',
+                'title': milestone.title,
+                'date': milestone.date_achieved,
+                'description': milestone.description[:80] + "..." if len(milestone.description) > 80 else milestone.description,
+                'icon': 'fas fa-trophy',
+                'color': 'coral',
+            })
+        
+        # Recent systems
+        recent_systems = SystemModule.objects.filter(
+            status__in=["deployed", "published"]
+        ).order_by("-created_at")[:2]
+        for system in recent_systems:
+            recent_activity.append(
+                {
+                    "type": "system",
+                    "title": f"Completed {system.title}",
+                    "date": system.created_at,
+                    "description": system.excerpt[:80] + "..."
+                    if system.excerpt and len(system.excerpt) > 80
+                    else system.excerpt or "Project completion",
+                    "icon": "fas fa-code",
+                    "color": "teal",
+                }
+            )
+        
+        # Sort by date and take top 4
+        recent_activity.sort(key=lambda x: x['date'], reverse=True)
+        context['recent_activity'] = recent_activity[:4]
+
+        # ========== LEARNING ANALYTICS ==========
+        # Get recent learning analytics
+        analytics_summary = PortfolioAnalytics.get_learning_summary(days=30)
+        context['learning_analytics'] = {
+            'monthly_learning_hours': analytics_summary['total_learning_hours'],
+            'consistency_rate': round(analytics_summary['consistency_rate'], 1),
+            'avg_daily_hours': round(analytics_summary['avg_daily_hours'], 1),
+            'learning_streak': self.get_current_learning_streak(),
+        }
+
+        # ========== META DATA FOR SEO (DYNAMIC) ==========
+        skills_list = ", ".join(
+            [skill.name for skill in Skill.objects.filter(is_featured=True)[:6]]
+        )
+
         context["page_title"] = (
-            "Python Developer & Algorithm Enthusiast - Learning Journey Portfolio"
+            f"Python Developer & {Skill.objects.filter(category='language').count()}+ Languages - Learning Journey Portfolio"
         )
         context["page_description"] = (
-            "Self-taught Python developer with 2+ years intensive learning. Harvard CS50, 100 Days of Code completed, building complex applications. Ready for professional development role."
+            f"Self-taught developer with {context['learning_journey']['duration_years']} intensive learning. "
+            f"{context['portfolio_metrics']['courses_completed']} courses completed, "
+            f"{context['portfolio_metrics']['total_systems']} projects built. "
+            f"Skills: {skills_list}. Ready for professional development role."
         )
         context["page_keywords"] = (
-            "Python Developer, Self-Taught Programmer, Algorithm Development, Django, Flask, Data Science, Machine Learning, Career Transition"
+            f"Python Developer, Self-Taught Programmer, {skills_list}, "
+            "Algorithm Development, Django, Career Transition, Portfolio Projects"
         )
 
         return context
+    
+    def get_next_learning_goal(self):
+        """Determine next learning goal from current education or default"""
+        current_education = Education.objects.filter(is_current=True).first()
+        if current_education:
+            return f"Complete {current_education.degree}"
+        
+        # Check for skills marked as currently learning
+        learning_skills = Skill.objects.filter(is_currently_learning=True)
+        if learning_skills.exists():
+            return f"Master {learning_skills.first().name}"
+        
+        return "Advanced Python & API Development"
+    
+    def get_current_learning_streak(self):
+        """Calculate current learning streak from analytics"""
+        try:
+            # Get recent analytics entries
+            recent_analytics = PortfolioAnalytics.objects.filter(
+                learning_hours_logged__gt=0
+            ).order_by('-date')[:30]
+
+            if not recent_analytics.exists():
+                return 0
+            
+            # Count consecutive days of learning
+            streak = 0
+            current_date = timezone.now().date()
+
+            for analytics in recent_analytics:
+                if analytics.date == current_date - timedelta(days=streak):
+                    streak += 1
+                else:
+                    break
+            return streak
+        except:
+            return 0
 
 
 class DeveloperProfileView(TemplateView):
