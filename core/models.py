@@ -572,6 +572,7 @@ class Experience(models.Model):
     company = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, max_length=200)
     position = models.CharField(max_length=100)
+    location = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField()
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
