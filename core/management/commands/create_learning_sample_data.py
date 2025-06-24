@@ -449,7 +449,7 @@ class Command(BaseCommand):
                                     "proficiency_before": prof_before,
                                     "proficiency_after": prof_after,
                                     "learning_focus": focus,
-                                    "importance_in_curriculum": importance,
+                                    "importance_level": importance,
                                     "learning_notes": f"Developed through {education.degree} coursework and projects.",
                                 },
                             )
