@@ -8,9 +8,11 @@ Self-taught Python developer with 2+ years intensive learning. 460+ hours formal
 {% endblock %}
 
 {% block core_css %}
-<link rel="stylesheet" href="{% static 'css/components/aura-shared.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/home.css' %}">
+
+
 <style>
-    .learning-hero {
+    {% comment %} .learning-hero {
         background: var(--gradient-glass);
         border: 1px solid rgba(100, 181, 246, 0.2);
         border-radius: var(--border-radius-xl);
@@ -324,7 +326,7 @@ Self-taught Python developer with 2+ years intensive learning. 460+ hours formal
         .timeline-item::before { 
             left: -19px; 
         }
-    }
+    } {% endcomment %}
 </style>
 {% endblock %}
 
@@ -348,119 +350,207 @@ Self-taught Python developer with 2+ years intensive learning. 460+ hours formal
                 </div>
                 <div class="hero-stat">
                     <span class="hero-stat-value">{{ learning_journey.learning_hours }}+</span>
-                    <span class="hero-stat-label">Formal Learning Hours</span>
+              <span class="hero-stat-label">Learning Hours</span>
                 </div>
                 <div class="hero-stat">
                     <span class="hero-stat-value">{{ learning_journey.certificates_earned }}</span>
                     <span class="hero-stat-label">Certificates Earned</span>
                 </div>
                 <div class="hero-stat">
-                    <span class="hero-stat-value">{{ learning_journey.projects_built }}+</span>
+                    <span class="hero-stat-value">{{ learning_journey.systems_built }}+</span>
                     <span class="hero-stat-label">Projects Built</span>
                 </div>
                 <div class="hero-stat">
-                    <span class="hero-stat-value">{{ learning_journey.platforms_used }}</span>
-                    <span class="hero-stat-label">Learning Platforms</span>
+              <span class="hero-stat-value">{{ learning_journey.courses_completed }}</span>
+              <span class="hero-stat-label">Courses Completed</span>
                 </div>
             </div>
             
+      <!-- FIXED: Use dynamic CTA sections -->
             <div class="cta-buttons">
-                <a href="{% url 'projects:system_list' %}" class="cta-btn primary">
-                    <i class="fas fa-rocket"></i>
-                    Explore My Projects
+          {% for cta in cta_sections %}
+          <a href="{{ cta.url }}" class="cta-btn {% if forloop.first %}primary{% else %}secondary{% endif %}">
+              <i class="{{ cta.icon }}"></i>
+              {{ cta.title }}
                 </a>
-                <a href="{% url 'blog:post_list' %}" class="cta-btn secondary">
-                    <i class="fas fa-journal-whills"></i>
-                    Read Learning Journey
-                </a>
-                <a href="{% url 'core:about' %}" class="cta-btn secondary">
-                    <i class="fas fa-user-astronaut"></i>
-                    Developer Profile
-                </a>
+          {% endfor %}
             </div>
         </div>
     </section>
 
-    <!-- Learning Achievements Section -->
+<!-- ========== LEARNING ACHIEVEMENTS SECTION (NEW) ========== -->
+<div class="unified-dashboard-container coral mb-4">
+  <div class="unified-container-header">
+      <h2 class="unified-container-title">
+          <i class="fas fa-graduation-cap"></i>
+          Learning Achievements
+      </h2>
+      <p style="color: rgba(255,255,255,0.7); margin: 0;">
+          Key milestones and certifications in my learning journey
+      </p>
+  </div>
+  
+  <div class="learning-highlights-grid">
+      {% for highlight in learning_highlights %}
+      <div class="highlight-card {{ highlight.color }}">
+          <div class="highlight-header">
+              <i class="{{ highlight.icon }}"></i>
+              <h3>{{ highlight.title }}</h3>
+          </div>
+          <p class="highlight-platform">{{ highlight.platform }}</p>
+          <p class="highlight-description">{{ highlight.description }}</p>
+          {% if highlight.certificate_url %}
+              <a href="{{ highlight.certificate_url }}" class="highlight-cert-link" target="_blank" rel="noopener">
+                  <i class="fas fa-certificate"></i> View Certificate
+              </a>
+          {% endif %}
+          <div class="highlight-stats">
+              <span class="stat">{{ highlight.skills_count }} skills</span>
+              <span class="stat">{{ highlight.hours }} hours</span>
+              <span class="stat badge">{{ highlight.badge }}</span>
+          </div>
+      </div>
+      {% endfor %}
+  </div>
+</div>
+
+<!-- ========== SKILL PROGRESSION SECTION (NEW) ========== -->
     <div class="unified-dashboard-container teal mb-4">
         <div class="unified-container-header">
             <h2 class="unified-container-title">
-                <i class="fas fa-trophy"></i>
-                Learning Achievements & Milestones
+          <i class="fas fa-chart-line"></i>
+          Skill Development Progression
             </h2>
             <p style="color: rgba(255,255,255,0.7); margin: 0;">
-                Major learning accomplishments demonstrating consistent growth and technical advancement
+          Technical skills gained through structured learning and project work
             </p>
         </div>
         
-        <div class="learning-highlights-grid features-grid">
-            {% for highlight in learning_highlights %}
-            <div class="feature-card">
-                <div class="highlight-badge {{ highlight.badge|lower|cut:' ' }}">{{ highlight.badge }}</div>
-                <div class="feature-header">
-                    <div class="feature-icon">
-                        <i class="{{ highlight.icon }}"></i>
+  <div class="skill-progression-grid">
+      {% for skill_data in skill_progression %}
+      <div class="skill-progression-card">
+          <div class="skill-header">
+              <div class="skill-icon" style="color: {{ skill_data.color }};">
+                  <i class="{{ skill_data.icon|default:'fas fa-code' }}"></i>
                     </div>
-                    <div>
-                        <h4 class="feature-title">{{ highlight.title }}</h4>
-                        <p style="color: #90a4ae; margin: 0; font-size: 0.9rem;">{{ highlight.platform }}</p>
+              <div class="skill-info">
+                  <h4 class="skill-name">{{ skill_data.skill_name }}</h4>
+                  <span class="skill-category">{{ skill_data.category }}</span>
                     </div>
                 </div>
-                <p class="feature-description">{{ highlight.description }}</p>
+          
+          <div class="skill-metrics">
+              <div class="skill-metric">
+                  <span class="metric-label">Proficiency</span>
+                  <div class="proficiency-bar">
+                      <div class="proficiency-fill" style="width: {{ skill_data.current_proficiency|mul:20 }}%; background: {{ skill_data.color }};"></div>
+                  </div>
+                  <span class="metric-value">{{ skill_data.mastery_level }}</span>
+              </div>
+              
+              <div class="skill-metric">
+                  <span class="metric-label">Projects Using</span>
+                  <span class="metric-value">{{ skill_data.systems_using }}</span>
+              </div>
+              
+              <div class="skill-metric">
+                  <span class="metric-label">Learning Velocity</span>
+                  <span class="metric-value">{{ skill_data.learning_velocity|floatformat:1 }}/month</span>
+              </div>
+          </div>
+          
+          <!-- Learning Timeline for this skill -->
+          {% if skill_data.timeline %}
+          <div class="skill-timeline">
+              <h5 class="timeline-title">Learning Progression:</h5>
+              {% for event in skill_data.timeline %}
+              <div class="timeline-event">
+                  <span class="event-date">{{ event.date|date:"M 'y" }}</span>
+                  <span class="event-system">{{ event.system }}</span>
+                  <span class="event-proficiency">{{ event.proficiency_gained }}</span>
+              </div>
+              {% endfor %}
+          </div>
+          {% endif %}
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Featured Projects Showcase -->
-    <div class="unified-dashboard-container navy mb-4">
+<!-- ========== FEATURED PROJECTS SECTION (FIXED) ========== -->
+<div class="unified-dashboard-container mint mb-4">
         <div class="unified-container-header">
             <h2 class="unified-container-title">
-                <i class="fas fa-star"></i>
-                Featured Project Showcases
+          <i class="fas fa-rocket"></i>
+          Featured Projects
             </h2>
             <p style="color: rgba(255,255,255,0.7); margin: 0;">
-                Primary demonstrations of technical growth and independent development capabilities
+          Portfolio-ready projects demonstrating progressive skill development
             </p>
         </div>
         
-        <div class="project-showcases features-grid">
-            {% for project in featured_projects %}
-            <div class="feature-card">
-                <div class="feature-header">
-                    <div class="feature-icon">
-                        <i class="fas fa-rocket"></i>
-                    </div>
-                    <div>
-                        <h3 class="feature-title">{{ project.title }}</h3>
-                        <p class="project-subtitle">{{ project.subtitle }}</p>
+  <div class="project-showcases">
+      {% for system in featured_systems %}
+      <div class="project-showcase-card">
+          <div class="project-header">
+              <h3 class="project-title">{{ system.title }}</h3>
+              <div class="project-meta">
+                  <span class="project-stage stage-{{ system.learning_stage }}">
+                      {{ system.learning_stage|title }}
+                  </span>
+                  {% if system.portfolio_ready %}
+                  <span class="portfolio-ready-badge">
+                      <i class="fas fa-check-circle"></i> Portfolio Ready
+                  </span>
+                  {% endif %}
                     </div>
                 </div>
                 
-                <p class="feature-description">{{ project.description }}</p>
+          <p class="project-description">{{ system.description }}</p>
                 
-                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-xs); margin: var(--spacing-md) 0;">
-                    {% for tech in project.technologies %}
-                    <span class="tech-tag">{{ tech }}</span>
+          <!-- Technologies used -->
+          <div class="project-technologies">
+              {% for tech in system.technologies.all %}
+              <span class="tech-tag">{{ tech.name }}</span>
                     {% endfor %}
                 </div>
                 
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    {% if project.live_url %}
-                    <a href="{{ project.live_url }}" class="action-btn primary">
+          <!-- Project links -->
+          <div class="project-actions">
+              {% if system.live_url %}
+              <a href="{{ system.live_url }}" class="action-btn primary" target="_blank" rel="noopener">
                         <i class="fas fa-external-link-alt"></i> Live Demo
                     </a>
                     {% endif %}
-                    {% if project.github_url %}
-                    <a href="{{ project.github_url }}" class="action-btn secondary">
+              {% if system.github_url %}
+              <a href="{{ system.github_url }}" class="action-btn secondary" target="_blank" rel="noopener">
                         <i class="fab fa-github"></i> Source Code
                     </a>
                     {% endif %}
+              <a href="{% url 'projects:system_detail' system.slug %}" class="action-btn tertiary">
+                  <i class="fas fa-info-circle"></i> Details
+              </a>
                 </div>
                 
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <p style="color: #4ecdc4; font-size: 0.9rem; margin: 0;">
-                        <i class="fas fa-lightbulb"></i> {{ project.learning_focus }}
+          <!-- Learning context -->
+          <div class="project-learning-context">
+              <div class="learning-metrics">
+                  <span class="learning-metric">
+                      <i class="fas fa-brain"></i>
+                      {{ system.skills_summary }}
+                  </span>
+                  <span class="learning-metric">
+                      <i class="fas fa-clock"></i>
+                      {{ system.completion_percent|floatformat:0 }}% Complete
+                  </span>
+                  <span class="learning-metric">
+                      <i class="fas fa-chart-line"></i>
+                      {{ system.learning_velocity|floatformat:1 }} skills/month
+                  </span>
+              </div>
+              <p class="learning-focus">
+                  <i class="fas fa-lightbulb"></i>
+                  <strong>Learning Focus:</strong> {{ system.get_learning_stage_display }}
                     </p>
                 </div>
             </div>
@@ -468,7 +558,7 @@ Self-taught Python developer with 2+ years intensive learning. 460+ hours formal
         </div>
     </div>
 
-    <!-- Learning Timeline -->
+<!-- ========== LEARNING TIMELINE SECTION (FIXED) ========== -->
     <div class="unified-dashboard-container lavender mb-4">
         <div class="unified-container-header">
             <h2 class="unified-container-title">
@@ -476,82 +566,89 @@ Self-taught Python developer with 2+ years intensive learning. 460+ hours formal
                 Learning Journey Timeline
             </h2>
             <p style="color: rgba(255,255,255,0.7); margin: 0;">
-                Progression from business analytics to sophisticated software development over 2+ years
+          Chronological progression from EHS compliance to software development over {{ learning_journey.duration_years }}
             </p>
         </div>
         
         <div class="timeline-container">
             <div class="timeline-line"></div>
-            {% for milestone in learning_timeline %}
+      {% for event in learning_timeline %}
             <div class="timeline-item">
-                <div class="timeline-date">{{ milestone.date }}</div>
+          <div class="timeline-date">{{ event.date|date:"M Y" }}</div>
                 <h4 class="timeline-title">
-                    <i class="{{ milestone.icon }}" style="color: var(--color-{{ milestone.color }}); margin-right: 8px;"></i>
-                    {{ milestone.title }}
+              <i class="{{ event.icon|default:'fas fa-star' }}" style="color: var(--color-{{ event.color|default:'teal' }}); margin-right: 8px;"></i>
+              {{ event.title }}
                 </h4>
-                <p class="timeline-description">{{ milestone.description }}</p>
+          <p class="timeline-description">{{ event.description }}</p>
+          
+          <!-- Additional context for different event types -->
+          {% if event.type == 'education_complete' %}
+              <div class="timeline-context education">
+                  <i class="fas fa-graduation-cap"></i>
+                  <span>Course completed: {{ event.source }}</span>
+              </div>
+          {% elif event.type == 'milestone' %}
+              <div class="timeline-context milestone">
+                  <i class="fas fa-trophy"></i>
+                  <span>Difficulty: {{ event.difficulty }}/5 | Confidence boost: {{ event.confidence_boost }}/5</span>
+              </div>
+          {% endif %}
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Current Focus & Next Steps -->
-    <div class="unified-dashboard-container coral mb-4">
+<!-- ========== CURRENT STATUS SECTION (NEW) ========== -->
+<div class="unified-dashboard-container yellow mb-4">
         <div class="unified-container-header">
             <h2 class="unified-container-title">
-                <i class="fas fa-compass"></i>
-                Current Focus & What's Next
+          <i class="fas fa-satellite-dish"></i>
+          Current Learning Status
             </h2>
-            <p style="color: rgba(255,255,255,0.7); margin: 0;">
-                Ready for professional role while continuing to learn and grow
-            </p>
         </div>
         
-        <div class="grid-2-col">
-            <div class="feature-card">
-                <div class="feature-header">
-                    <div class="feature-icon">
-                        <i class="fas fa-code"></i>
+  <div class="current-status-grid">
+      <div class="status-item">
+          <div class="status-icon">
+              <i class="fas fa-book-open"></i>
                     </div>
-                    <h4 class="feature-title">Current Expertise</h4>
+          <div class="status-content">
+              <h4>Currently Learning</h4>
+              <p>{{ current_status.current_learning }}</p>
+              <span class="status-platform">{{ current_status.learning_platform }}</span>
                 </div>
-                <ul style="color: #b0bec5; line-height: 1.8; margin: 0; padding-left: 20px;">
-                    <li>Python Development & Algorithms</li>
-                    <li>Django & Flask Web Frameworks</li>
-                    <li>Database Design & PostgreSQL</li>
-                    <li>API Development & Integration</li>
-                    <li>Data Analysis with Pandas/NumPy</li>
-                    <li>Git Version Control</li>
-                </ul>
             </div>
             
-            <div class="feature-card">
-                <div class="feature-header">
-                    <div class="feature-icon">
-                        <i class="fas fa-seedling"></i>
+      <div class="status-item">
+          <div class="status-icon">
+              <i class="fas fa-target"></i>
                     </div>
-                    <h4 class="feature-title">Actively Learning</h4>
+          <div class="status-content">
+              <h4>Next Goal</h4>
+              <p>{{ current_status.next_goal }}</p>
                 </div>
-                <ul style="color: #b0bec5; line-height: 1.8; margin: 0; padding-left: 20px;">
-                    <li>LLM Engineering & AI Integration</li>
-                    <li>Advanced Algorithm Implementation</li>
-                    <li>React & Frontend Frameworks</li>
-                    <li>Professional Development Practices</li>
-                    <li>Testing & Quality Assurance</li>
-                    <li>Cloud Deployment & DevOps</li>
-                </ul>
+      </div>
+      
+      <div class="status-item">
+          <div class="status-icon">
+              <i class="fas fa-briefcase"></i>
+          </div>
+          <div class="status-content">
+              <h4>Availability</h4>
+              <p>{{ current_status.availability }}</p>
+              <span class="status-location">{{ current_status.location }}</span>
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 30px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="color: #4ecdc4; font-size: 1.1rem; margin-bottom: 20px;">
-                <i class="fas fa-handshake"></i>
-                Ready to bring analytical thinking, learning agility, and Python passion to your team
-            </p>
-            <a href="{% url 'core:contact' %}" class="action-btn primary">
-                <i class="fas fa-rocket"></i>
-                Let's Connect
-            </a>
+      <div class="status-item">
+          <div class="status-icon">
+              <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="status-content">
+              <h4>Learning Analytics</h4>
+              <p>{{ learning_analytics.monthly_learning_hours|floatformat:1 }}h this month</p>
+              <span class="analytics-detail">{{ learning_analytics.consistency_rate|floatformat:1 }}% consistency</span>
+          </div>
         </div>
     </div>
 </div>
