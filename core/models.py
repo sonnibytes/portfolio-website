@@ -320,9 +320,67 @@ class Skill(models.Model):
             ],
             'learning_breakthroughs': self.get_breakthrough_moments()[:2],
         }
+
+    def get_education_sources(self):
+        """Get education sources where this skill was learned"""
+        return self.learned_through_education.all()
     
-    # Dynamically add attribute to model class after its initial definition
-    Skill.add_to_class('get_learning_journey_summary', get_learning_journey_summary)
+    def get_project_application(self):
+        """Get projects/systems where this skill was applied"""
+        return [gain.system for gain in self.project_gains.all()]
+    
+    def get_learning_timeline_events(self):
+        """Get chronological learning events for this skill"""
+        events = []
+
+        # Education events
+        for edu in self.get_education_sources():
+            events.append({
+                'date': edu.start_date,
+                'type': 'education_start',
+                'title': f"Started learning in {edu.degree}",
+                'source': edu.platform or edu.institution,
+            })
+            if edu.end_date:
+                events.append({
+                    'date': edu.end_date,
+                    'type': 'education_complete',
+                    'title': f"Completed {edu.degree}",
+                    'source': edu.platform or edu.institution,
+                })
+        
+        # Project applications
+        for gain in self.project_gains.all():
+            events.append({
+                'date': gain.created_at.date(),
+                'type': 'project_application',
+                'title': f"Applied in {gain.system.title}",
+                'proficiency': gain.get_proficiency_gained_display(),
+            })
+        
+        # Sort chronologically
+        events.sort(key=lambda x: x['date'])
+        return events
+    
+    def get_mastery_progression_score(self):
+        """Calculate mastery progression over time"""
+        timeline = self.get_learning_timeline_events()
+        if not timeline:
+            return 0
+        
+        # Calculate progression based on timeline density and variety
+        education_events = [e for e in timeline if 'education' in e['type']]
+        project_events = [e for e in timeline if e['type'] == 'project_application']
+
+        score = 0
+        # Education foundation
+        score += min(30, len(education_events) * 10)
+        # Project/System Experience
+        score += min(50, len(project_events) * 5)
+        # Current proficiency
+        score += min(20, self.proficiency * 4)
+
+        return min(100, score)
 
 
 class Education(models.Model):
