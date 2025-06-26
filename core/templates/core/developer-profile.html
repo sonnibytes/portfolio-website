@@ -1,47 +1,51 @@
 <!----
  * AURA Portfolio - Developer Profile/Resume Template
  * Advanced User Repository & Archive
- * Version: 2.0.1 - Optimized for Component Architecture
+ * Version: 3.0.1 - Optimized for Component Architecture
 ---->
-
-{% extends "base.html" %}
+<!-- core/templates/core/developer-profile.html - Enhanced with Dynamic Learning Journey -->
+{% extends "core/core_base.html" %}
 {% load static %}
-{% load core_tags %}
+{% load aura_filters %}
+{% load aura_components %}
 
 {% block title %}Developer Profile | AURA{% endblock %}
-{% block meta_description %}Comprehensive developer profile showcasing Python expertise, ML systems, and technical capabilities through the AURA advanced user repository interface.{% endblock %}
+{% block meta_description %}Comprehensive developer profile showcasing Python expertise, learning progression, and technical capabilities through {{ learning_progression.total_skills }} skills and {{ portfolio_metrics.total_systems }} projects.{% endblock %}
 
-{% block extra_css %}
+{% block core_css %}
 <link rel="stylesheet" href="{% static 'core/css/about.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/home.css' %}">
 {% endblock %}
 
-{% block body_class %}developer-profile-page{% endblock %}
+{% block core_content %}
 
-{% block content %}
-<!-- Profile Header Section -->
+<!-- ========== PROFILE HEADER SECTION ========== -->
 <section class="profile-header-section">
-    <div class="container">
-        <div class="glass-card profile-header-card">
+    <div class="unified-dashboard-container teal">
+        <div class="profile-header-content">
             <div class="row align-items-center">
                 <div class="col-lg-3 col-md-4">
                     <div class="profile-image-container">
                         <div class="profile-image-frame">
-                            <img src="{% static 'images/profile.jpg' %}" alt="Sonni Gunnels" class="profile-image">
+                            <img src="{% static 'images/profile.jpg' %}" alt="Developer Profile" class="profile-image">
                             <div class="image-scan-overlay scanning-horizontal"></div>
                         </div>
                         <div class="profile-status-indicator">
                             <div class="status-indicator operational pulse-effect"></div>
-                            <span class="status-text">ONLINE</span>
+                            <span class="status-text">AVAILABLE</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-9 col-md-8">
-                    <div class="profile-header-content">
+                    <div class="profile-header-details">
                         <h1 class="profile-name display-title">
-                            SONNI GUNNELS
+                            PYTHON DEVELOPER
                         </h1>
-                        <div class="profile-title system-text">Python Developer & ML Engineer</div>
+                        <div class="profile-title system-text">
+                            Self-Taught • {{ portfolio_metrics.learning_years }} Learning Journey • EHS → Tech Transition
+                        </div>
                         
+                        <!-- Dynamic Learning Metrics -->
                         <div class="profile-meta-grid">
                             <div class="profile-meta-item">
                                 <div class="meta-icon"><i class="fas fa-map-marker-alt"></i></div>
@@ -51,28 +55,43 @@
                                 </div>
                             </div>
                             <div class="profile-meta-item">
-                                <div class="meta-icon"><i class="fas fa-microchip"></i></div>
+                                <div class="meta-icon"><i class="fas fa-brain"></i></div>
                                 <div class="meta-content">
-                                    <div class="meta-label">Active Systems</div>
+                                    <div class="meta-label">Skills Mastered</div>
+                                    <div class="meta-value">{{ portfolio_metrics.skills_mastered }}</div>
+                                </div>
+                            </div>
+                            <div class="profile-meta-item">
+                                <div class="meta-icon"><i class="fas fa-project-diagram"></i></div>
+                                <div class="meta-content">
+                                    <div class="meta-label">Projects Built</div>
                                     <div class="meta-value">{{ portfolio_metrics.total_systems }}</div>
+                                </div>
+                            </div>
+                            <div class="profile-meta-item">
+                                <div class="meta-icon"><i class="fas fa-certificate"></i></div>
+                                <div class="meta-content">
+                                    <div class="meta-label">Certificates</div>
+                                    <div class="meta-value">{{ portfolio_metrics.certificates_earned }}</div>
+                                </div>
+                            </div>
+                            <div class="profile-meta-item">
+                                <div class="meta-icon"><i class="fas fa-clock"></i></div>
+                                <div class="meta-content">
+                                    <div class="meta-label">Learning Hours</div>
+                                    <div class="meta-value">{{ portfolio_metrics.learning_hours }}+</div>
                                 </div>
                             </div>
                             <div class="profile-meta-item">
                                 <div class="meta-icon"><i class="fas fa-database"></i></div>
                                 <div class="meta-content">
-                                    <div class="meta-label">Data Logs</div>
+                                    <div class="meta-label">DataLogs</div>
                                     <div class="meta-value">{{ portfolio_metrics.total_logs_count }}</div>
-                                </div>
-                            </div>
-                            <div class="profile-meta-item">
-                                <div class="meta-icon"><i class="fas fa-calendar-alt"></i></div>
-                                <div class="meta-content">
-                                    <div class="meta-label">Experience</div>
-                                    <div class="meta-value">{{ portfolio_metrics.coding_years }}+ Years</div>
                                 </div>
                             </div>
                         </div>
                         
+                        <!-- Action Buttons -->
                         <div class="profile-actions">
                             <a href="{% url 'core:contact' %}" class="btn btn-primary">
                                 <i class="fas fa-satellite-dish me-2"></i> Initialize Contact
@@ -90,6 +109,9 @@
                                     </a>
                                 </div>
                             </div>
+                            <a href="{% url 'projects:system_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-folder-open me-2"></i> View Projects
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -98,105 +120,72 @@
     </div>
 </section>
 
-<!-- Portfolio Overview Section -->
+<!-- ========== PROFESSIONAL SUMMARY ========== -->
 <section class="profile-overview-section">
-    <div class="container">
+<div class="unified-dashboard-container navy">
+    <div class="unified-container-header">
+        <h2 class="unified-container-title">
+            <i class="fas fa-user-astronaut"></i>
+            Professional Summary
+        </h2>
+        <p class="container-subtitle">
+            Career transition story: From EHS compliance to software development
+        </p>
+    </div>
+    
+    <div class="summary-content">
         <div class="row">
-            <!-- Professional Summary -->
             <div class="col-lg-8">
-                <div class="glass-card profile-bio-card">
-                    <div class="card-header">
-                        <h2 class="card-title">
-                            <i class="fas fa-user-astronaut me-2"></i> Developer Profile
-                        </h2>
-                    </div>
-                    <div class="card-content">
-                        <p>As a Python developer with a focus on machine learning and data science, I specialize in building intelligent systems that transform complex data into actionable insights. My expertise spans the full development lifecycle, from data pipeline architecture to model deployment and monitoring.</p>
-                        
-                        <p>I'm passionate about creating scalable solutions that solve real-world problems through the intersection of software engineering and artificial intelligence. Each system in my repository represents a unique approach to technical challenges, emphasizing both performance and maintainability.</p>
-                        
-                        <p>AURA represents my journey through advanced development practices, showcasing systems that demonstrate proficiency in Python ecosystem tools, machine learning frameworks, and modern software architecture patterns.</p>
-                        
-                        <!-- Recent Activity Timeline -->
-                        <div class="recent-activity-section">
-                            <h3 class="activity-title">
-                                <i class="fas fa-clock me-2"></i> Recent Activity
-                            </h3>
-                            <div class="activity-timeline">
-                                {% for system in recent_systems %}
-                                <div class="activity-item">
-                                    <div class="activity-icon system">
-                                        <i class="fas fa-rocket"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">{{ system.title }}</div>
-                                        <div class="activity-description">System {{ system.get_status_display|lower }}</div>
-                                        <div class="activity-time">{{ system.created_at|timesince }} ago</div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                                
-                                {% for post in recent_posts %}
-                                <div class="activity-item">
-                                    <div class="activity-icon log">
-                                        <i class="fas fa-file-alt"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">{{ post.title }}</div>
-                                        <div class="activity-description">DataLog entry published</div>
-                                        <div class="activity-time">{{ post.published_date|timesince }} ago</div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
+                <div class="summary-text">
+                    <p class="lead">
+                        Self-taught Python developer with <strong>{{ portfolio_metrics.learning_years }}</strong> years of intensive learning 
+                        and <strong>{{ portfolio_metrics.total_systems }}+ projects</strong> demonstrating progressive skill development. 
+                        Transitioned from Environmental Health & Safety to software development through structured self-directed learning.
+                    </p>
+                    
+                    <p>
+                        <strong>Technical Focus:</strong> Full-stack web development with Django, Python automation, 
+                        database design, and API development. Currently expanding into AI/ML engineering and modern JavaScript frameworks.
+                    </p>
+                    
+                    <p>
+                        <strong>Learning Approach:</strong> Systematic skill building through 
+                        <strong>{{ portfolio_metrics.certificates_earned }} completed courses</strong>, 
+                        hands-on project development, and comprehensive documentation of the learning process through technical writing.
+                    </p>
+                    
+                    <p>
+                        <strong>Professional Readiness:</strong> {{ learning_progression.portfolio_ready_projects }} portfolio-ready projects 
+                        showcasing production-level code quality, professional development practices, and real-world problem-solving capabilities.
+                    </p>
                 </div>
             </div>
             
-            <!-- Portfolio Metrics -->
             <div class="col-lg-4">
-                <div class="glass-card stats-card">
-                    <div class="card-header">
-                        <h2 class="card-title">
-                            <i class="fas fa-chart-line me-2"></i> Portfolio Metrics
-                        </h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="stat-item">
-                            <div class="stat-value hud-data-counter" data-target="{{ portfolio_metrics.systems_completed }}">0</div>
-                            <div class="stat-label">Deployed Systems</div>
-                            <div class="stat-icon"><i class="fas fa-rocket"></i></div>
+                <div class="transition-timeline">
+                    <h4><i class="fas fa-route"></i> Career Transition</h4>
+                    <div class="transition-steps">
+                        <div class="transition-step">
+                            <span class="step-date">2018-2022</span>
+                            <span class="step-title">EHS Specialist</span>
+                            <span class="step-description">Data analysis, process optimization, compliance systems</span>
                         </div>
-                        
-                        <div class="stat-item">
-                            <div class="stat-value hud-data-counter" data-target="{{ portfolio_metrics.systems_in_progress }}">0</div>
-                            <div class="stat-label">In Development</div>
-                            <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                        <div class="transition-step">
+                            <span class="step-date">2022-2023</span>
+                            <span class="step-title">Learning Foundation</span>
+                            <span class="step-description">CS50, Python bootcamp, Django fundamentals</span>
                         </div>
-                        
-                        <div class="stat-item">
-                            <div class="stat-value">{{ portfolio_metrics.languages_used }}</div>
-                            <div class="stat-label">Technologies</div>
-                            <div class="stat-icon"><i class="fas fa-code"></i></div>
-                        </div>
-                        
-                        <div class="stat-item">
-                            <div class="stat-value">{{ portfolio_metrics.github_repos }}</div>
-                            <div class="stat-label">GitHub Repos</div>
-                            <div class="stat-icon"><i class="fab fa-github"></i></div>
-                        </div>
-                        
-                        <div class="stat-item">
-                            <div class="stat-value">{{ portfolio_metrics.lines_of_code|floatformat:0 }}</div>
-                            <div class="stat-label">Lines of Code</div>
-                            <div class="stat-icon"><i class="fas fa-terminal"></i></div>
+                        <div class="transition-step active">
+                            <span class="step-date">2024-Present</span>
+                            <span class="step-title">Professional Development</span>
+                            <span class="step-description">Advanced projects, AI/ML, job-ready portfolio</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 </section>
 
 <!-- Core Expertise Section -->
@@ -259,571 +248,414 @@
     </div>
 </section>
 
-<!-- Skills Dashboard Section -->
-<section class="skills-dashboard-section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Technical Proficiency Matrix</h2>
-            <p class="section-subtitle">Comprehensive skill assessment across technology domains</p>
-        </div>
-        
-        <div class="row">
-            <!-- Technology Stack Overview -->
-            <div class="col-lg-6">
-                <div class="glass-card tech-breakdown-card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-layer-group me-2"></i> Technology Stack
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        {% for category, data in skill_categories.items %}
-                        <div class="tech-category">
-                            <div class="tech-category-header">
-                                <h4 class="tech-category-title">{{ data.label }}</h4>
-                                <div class="tech-category-count">{{ data.skills.count }} skills</div>
-                            </div>
-                            <div class="tech-category-skills">
-                                {% for skill in data.skills|slice:":6" %}
-                                <div class="skill-indicator">
-                                    <div class="skill-name">{{ skill.name }}</div>
-                                    <div class="skill-level">
-                                        <div class="skill-level-bar">
-                                            <div class="skill-level-fill" style="width: {{ skill.proficiency }}%"></div>
-                                        </div>
-                                        <div class="skill-level-text">{{ skill.proficiency }}/5</div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% empty %}
-                        <!-- Fallback for empty skills -->
-                        <div class="tech-category">
-                            <div class="tech-category-header">
-                                <h4 class="tech-category-title">Programming Languages</h4>
-                                <div class="tech-category-count">4 skills</div>
-                            </div>
-                            <div class="tech-category-skills">
-                                <div class="skill-indicator">
-                                    <div class="skill-name">Python</div>
-                                    <div class="skill-level">
-                                        <div class="skill-level-bar">
-                                            <div class="skill-level-fill" style="width: 100%"></div>
-                                        </div>
-                                        <div class="skill-level-text">5/5</div>
-                                    </div>
-                                </div>
-                                <div class="skill-indicator">
-                                    <div class="skill-name">JavaScript</div>
-                                    <div class="skill-level">
-                                        <div class="skill-level-bar">
-                                            <div class="skill-level-fill" style="width: 80%"></div>
-                                        </div>
-                                        <div class="skill-level-text">4/5</div>
-                                    </div>
-                                </div>
-                                <div class="skill-indicator">
-                                    <div class="skill-name">SQL</div>
-                                    <div class="skill-level">
-                                        <div class="skill-level-bar">
-                                            <div class="skill-level-fill" style="width: 80%"></div>
-                                        </div>
-                                        <div class="skill-level-text">4/5</div>
-                                    </div>
-                                </div>
-                                <div class="skill-indicator">
-                                    <div class="skill-name">Bash</div>
-                                    <div class="skill-level">
-                                        <div class="skill-level-bar">
-                                            <div class="skill-level-fill" style="width: 60%"></div>
-                                        </div>
-                                        <div class="skill-level-text">3/5</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Skills Radar Chart -->
-            <div class="col-lg-6">
-                <div class="glass-card skill-radar-card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-radar me-2"></i> Skill Distribution
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="skill-radar-container">
-                            <div class="radar-chart" 
-                                 data-values="95,85,88,82,85,78" 
-                                 data-labels="Python,Machine Learning,Data Analysis,System Design,API Development,Cloud Platforms"
-                                 data-max="100">
-                                <!-- Radar chart will be rendered here via JavaScript -->
-                            </div>
-                        </div>
-                        
-                        <!-- Technology Categories Breakdown -->
-                        <div class="tech-category-overview">
-                            {% for category, data in tech_by_category.items %}
-                            <div class="category-overview-item">
-                                <div class="category-label">{{ data.label }}</div>
-                                <div class="category-tech-list">
-                                    {% for tech in data.technologies|slice:":4" %}
-                                    <span class="mini-tech-tag">{{ tech.name }}</span>
-                                    {% endfor %}
-                                    {% if data.technologies.count > 4 %}
-                                    <span class="tech-count">+{{ data.technologies.count|add:"-4" }} more</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- Experience Timeline Section -->
-<section class="experience-timeline-section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Professional Timeline</h2>
-            <p class="section-subtitle">Career progression and system development history</p>
-        </div>
-        
-        <div class="timeline-container">
-            {% for experience in experiences %}
-            <div class="timeline-item {% cycle 'left' 'right' %}">
-                <div class="timeline-content glass-card">
-                    <div class="timeline-header">
-                        <h3 class="timeline-title">{{ experience.position }}</h3>
-                        <div class="timeline-company">{{ experience.company }}</div>
-                        <div class="timeline-date">
-                            {{ experience.start_date|date:"M Y" }} — 
-                            {% if experience.is_current %}Present{% else %}{{ experience.end_date|date:"M Y" }}{% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="timeline-description">
-                        {{ experience.description|linebreaks }}
-                    </div>
-                    
-                    {% if experience.technologies %}
-                    <div class="timeline-tech">
-                        <div class="tech-label">Technologies:</div>
-                        <div class="tech-tags">
-                            {% for tech in experience.get_technologies_list %}
-                            <span class="tech-tag">{{ tech }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
+<!-- ========== TECHNICAL SKILLS SECTION ========== -->
+{% if skill_categories %}
+<section class="skills-dashboard-section">
+    <div class="section-header">
+        <h2 class="section-title">Technical Skills & Proficiencies</h2>
+        <p class="section-subtitle">Comprehensive skill assessment across technology domains</p>
+    </div>
+<div class="unified-dashboard-container coral">
+    <div class="unified-container-header">
+        <h2 class="unified-container-title">
+            <i class="fas fa-cogs"></i>
+            Technical Skills & Proficiencies
+        </h2>
+        <p class="container-subtitle">
+            {{ learning_progression.total_skills }} skills across {{ learning_progression.skill_categories }} categories with documented learning progression
+        </p>
+    </div>
+    
+    <div class="skills-overview-grid">
+        {% for category, data in skill_categories.items %}
+        <div class="skill-category-section tech-category">
+            <div class="category-header tech-category-header">
+                <h3 class="category-title tech-category-title">
+                    {% comment %} <i class="fas fa-layer-group"></i> {% endcomment %}
+                    {{ data.label }}
+                </h3>
+                <div class="category-stats">
+                    <span class="stat mastered">{{ data.mastery_count }} mastered</span>
+                    {% if data.learning_count %}
+                    <span class="stat learning">{{ data.learning_count }} learning</span>
                     {% endif %}
                 </div>
             </div>
-            {% empty %}
-            <!-- Fallback experience items -->
-            <div class="timeline-item left">
-                <div class="timeline-content glass-card">
-                    <div class="timeline-header">
-                        <h3 class="timeline-title">Python Developer</h3>
-                        <div class="timeline-company">Current Focus</div>
-                        <div class="timeline-date">2022 — Present</div>
-                    </div>
-                    <div class="timeline-description">
-                        <p>Developing machine learning systems and data engineering pipelines. Focus on building scalable Python applications with advanced analytics capabilities and automated deployment processes.</p>
-                    </div>
-                    <div class="timeline-tech">
-                        <div class="tech-label">Technologies:</div>
-                        <div class="tech-tags">
-                            <span class="tech-tag">Python</span>
-                            <span class="tech-tag">TensorFlow</span>
-                            <span class="tech-tag">Django</span>
-                            <span class="tech-tag">PostgreSQL</span>
-                            <span class="tech-tag">Docker</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
             
-            <div class="timeline-item right">
-                <div class="timeline-content glass-card">
-                    <div class="timeline-header">
-                        <h3 class="timeline-title">Data Analyst</h3>
-                        <div class="timeline-company">Previous Experience</div>
-                        <div class="timeline-date">2021 — 2022</div>
-                    </div>
-                    <div class="timeline-description">
-                        <p>Analyzed complex datasets and built reporting systems. Developed automated data processing workflows and created interactive dashboards for business intelligence.</p>
-                    </div>
-                    <div class="timeline-tech">
-                        <div class="tech-label">Technologies:</div>
-                        <div class="tech-tags">
-                            <span class="tech-tag">Python</span>
-                            <span class="tech-tag">Pandas</span>
-                            <span class="tech-tag">SQL</span>
-                            <span class="tech-tag">Tableau</span>
+            <div class="skills-grid tech-category-skills">
+                {% for skill in data.skills %}
+                <div class="skill-item skill-level-{{ skill.proficiency }}">
+                    <div class="skill-header">
+                        <div class="skill-icon" style="color: {{ skill.color }};">
+                            <i class="{{ skill.icon|default:'fas fa-code' }}"></i>
                         </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<!-- Education Section -->
-<section class="education-section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Educational Background</h2>
-            <p class="section-subtitle">Academic foundation and continuous learning</p>
-        </div>
-        
-        <div class="education-grid">
-            {% for edu in education %}
-            <div class="glass-card education-card">
-                <div class="education-header">
-                    <div class="education-icon">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div class="education-meta">
-                        <div class="education-dates">
-                            {{ edu.start_date|date:"Y" }} — {% if edu.is_current %}Present{% else %}{{ edu.end_date|date:"Y" }}{% endif %}
-                        </div>
-                        <div class="education-status">
-                            {% if edu.is_current %}
-                            <div class="status-indicator warning"></div>
-                            <span>In Progress</span>
-                            {% else %}
-                            <div class="status-indicator operational"></div>
-                            <span>Completed</span>
+                        <div class="skill-info">
+                            <h4 class="skill-name">{{ skill.name }}</h4>
+                            {% if skill.is_featured %}
+                            <span class="skill-badge featured">Featured</span>
+                            {% endif %}
+                            {% if skill.is_currently_learning %}
+                            <span class="skill-badge learning">Learning</span>
                             {% endif %}
                         </div>
                     </div>
-                </div>
-                
-                <div class="education-content">
-                    <h3 class="education-degree">{{ edu.degree }}</h3>
-                    <div class="education-field">{{ edu.field_of_study }}</div>
-                    <div class="education-institution">{{ edu.institution }}</div>
                     
-                    {% if edu.description %}
-                    <div class="education-description">
-                        {{ edu.description }}
+                    <div class="skill-proficiency">
+                        <div class="proficiency-bar">
+                            <div class="proficiency-fill" 
+                                 style="width: {{ skill.proficiency|mul:20 }}%; background: {{ skill.color }};"></div>
+                        </div>
+                        <div class="proficiency-details">
+                            <span class="proficiency-level">{{ skill.get_mastery_level }}</span>
+                            <span class="proficiency-value">{{ skill.proficiency }}/5</span>
+                        </div>
+                    </div>
+                    
+                    {% if skill.years_experience %}
+                    <div class="skill-experience">
+                        <i class="fas fa-clock"></i>
+                        {{ skill.years_experience|floatformat:1 }} years experience
                     </div>
                     {% endif %}
                 </div>
+                {% endfor %}
             </div>
-            {% empty %}
-            <!-- Fallback education -->
-            <div class="glass-card education-card">
-                <div class="education-header">
-                    <div class="education-icon">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</section>
+{% endif %}
+
+<!-- ========== EDUCATION & LEARNING JOURNEY ========== -->
+{% if education_enhanced %}
+<div class="unified-dashboard-container lavender">
+    <div class="unified-container-header">
+        <h2 class="unified-container-title">
+            <i class="fas fa-graduation-cap"></i>
+            Education & Learning Journey
+        </h2>
+        <p class="container-subtitle">
+            Structured learning through courses, certifications, and self-directed study
+        </p>
+    </div>
+    
+    <div class="education-timeline">
+        {% for edu_data in education_enhanced %}
+        {% with education=edu_data.education summary=edu_data.summary skills=edu_data.skills_gained %}
+        <div class="education-entry">
+            <div class="education-header">
+                <div class="education-type type-{{ education.learning_type }}">
+                    <i class="fas fa-{% if education.learning_type == 'online_course' %}laptop-code{% elif education.learning_type == 'certification' %}certificate{% else %}university{% endif %}"></i>
+                </div>
+                <div class="education-info">
+                    <h3 class="education-title">{{ education.degree }}</h3>
                     <div class="education-meta">
-                        <div class="education-dates">2018 — 2022</div>
-                        <div class="education-status">
-                            <div class="status-indicator operational"></div>
-                            <span>Completed</span>
-                        </div>
+                        <span class="institution">{{ education.platform|default:education.institution }}</span>
+                        <span class="duration">
+                            {{ education.start_date|date:"M Y" }} - 
+                            {% if education.end_date %}{{ education.end_date|date:"M Y" }}{% else %}Present{% endif %}
+                        </span>
                     </div>
                 </div>
                 
-                <div class="education-content">
-                    <h3 class="education-degree">Bachelor of Science</h3>
-                    <div class="education-field">Computer Science</div>
-                    <div class="education-institution">University of Alabama at Birmingham</div>
-                    
-                    <div class="education-description">
-                        Focus on software engineering, data structures, and machine learning fundamentals.
-                    </div>
+                <div class="education-stats">
+                    {% if summary.hours_completed %}
+                    <span class="stat">{{ summary.hours_completed }}h</span>
+                    {% endif %}
+                    {% if summary.skills_gained %}
+                    <span class="stat">{{ summary.skills_gained }} skills</span>
+                    {% endif %}
+                    {% if education.certificate_url %}
+                    <a href="{{ education.certificate_url }}" class="cert-link" target="_blank" rel="noopener">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                    {% endif %}
                 </div>
+            </div>
+            
+            {% if education.description %}
+            <div class="education-description">
+                {{ education.description }}
+            </div>
+            {% endif %}
+            
+            {% if skills %}
+            <div class="education-skills">
+                <h5>Skills Developed:</h5>
+                <div class="skills-tags">
+                    {% for skill in skills %}
+                    <span class="skill-tag" style="border-color: {{ skill.color }};">
+                        {{ skill.name }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ========== PROFESSIONAL EXPERIENCE ========== -->
+{% if experiences %}
+<div class="unified-dashboard-container mint">
+    <div class="unified-container-header">
+        <h2 class="unified-container-title">
+            <i class="fas fa-briefcase"></i>
+            Professional Experience
+        </h2>
+        <p class="container-subtitle">
+            Career progression and transferable skills from EHS to software development
+        </p>
+    </div>
+    
+    <div class="experience-timeline">
+        {% for experience in experiences %}
+        <div class="experience-entry">
+            <div class="experience-header">
+                <div class="experience-dates">
+                    <span class="start-date">{{ experience.start_date|date:"M Y" }}</span>
+                    <span class="date-separator">—</span>
+                    <span class="end-date">
+                        {% if experience.end_date %}{{ experience.end_date|date:"M Y" }}{% else %}Present{% endif %}
+                    </span>
+                    {% if experience.is_current %}
+                    <span class="current-badge">Current</span>
+                    {% endif %}
+                </div>
+                
+                <div class="experience-info">
+                    <h3 class="experience-title">{{ experience.position }}</h3>
+                    <div class="experience-company">{{ experience.company }}</div>
+                    <div class="experience-location">{{ experience.location }}</div>
+                </div>
+            </div>
+            
+            <div class="experience-description">
+                {{ experience.description|linebreaks }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ========== PROJECT PORTFOLIO OVERVIEW ========== -->
+<div class="unified-dashboard-container yellow">
+    <div class="unified-container-header">
+        <h2 class="unified-container-title">
+            <i class="fas fa-rocket"></i>
+            Project Portfolio Overview
+        </h2>
+        <p class="container-subtitle">
+            {{ portfolio_metrics.total_systems }} projects demonstrating progressive skill development and technical growth
+        </p>
+    </div>
+    
+    <div class="portfolio-overview-grid">
+        <div class="portfolio-stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ learning_progression.portfolio_ready_projects }}</span>
+                <span class="stat-label">Portfolio Ready</span>
+            </div>
+        </div>
+        
+        <div class="portfolio-stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-code-branch"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ portfolio_metrics.total_systems }}</span>
+                <span class="stat-label">Total Projects</span>
+            </div>
+        </div>
+        
+        <div class="portfolio-stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-tools"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ portfolio_metrics.technologies_mastered }}</span>
+                <span class="stat-label">Technologies Used</span>
+            </div>
+        </div>
+        
+        <div class="portfolio-stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ learning_progression.learning_milestones }}</span>
+                <span class="stat-label">Learning Milestones</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Projects Preview -->
+    {% if recent_systems %}
+    <div class="recent-projects-preview">
+        <h3><i class="fas fa-clock"></i> Recent Projects</h3>
+        <div class="projects-preview-grid">
+            {% for system in recent_systems %}
+            <div class="project-preview-card">
+                <h4>{{ system.title }}</h4>
+                <p>{{ system.excerpt|truncatewords:15 }}</p>
+                {% if system.system_type %}
+                <span class="project-type">{{ system.system_type.name }}</span>
+                {% endif %}
+                <a href="{% url 'projects:system_detail' system.slug %}" class="project-link">
+                    View Details <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
             {% endfor %}
         </div>
     </div>
-</section>
+    {% endif %}
+</div>
 
-<!-- Connect Section -->
-<section class="connect-section">
-    <div class="container">
-        <div class="glass-card connect-card">
-            <div class="section-header text-center">
-                <h2 class="section-title">Establish Connection</h2>
-                <p class="section-subtitle">Ready to collaborate on your next technical challenge?</p>
-            </div>
-            
-            <div class="connect-options">
-                <div class="connect-option">
-                    <div class="connect-icon">
-                        <i class="fas fa-satellite-dish"></i>
+<!-- ========== TECHNOLOGY BREAKDOWN ========== -->
+{% if tech_by_category %}
+<div class="unified-dashboard-container gunmetal">
+    <div class="unified-container-header">
+        <h2 class="unified-container-title">
+            <i class="fas fa-layer-group"></i>
+            Technology Stack & Tools
+        </h2>
+        <p class="container-subtitle">
+            Comprehensive breakdown of technologies, frameworks, and tools mastered
+        </p>
+    </div>
+    
+    <div class="technology-breakdown">
+        {% for category, data in tech_by_category.items %}
+        <div class="tech-category-section">
+            <h3 class="tech-category-title">{{ data.label }}</h3>
+            <div class="tech-grid">
+                {% for tech in data.technologies %}
+                <div class="tech-item">
+                    <div class="tech-icon" style="color: {{ tech.color }};">
+                        <i class="{{ tech.icon|default:'fas fa-code' }}"></i>
                     </div>
-                    <h3 class="connect-title">Direct Communication</h3>
-                    <p class="connect-description">Initialize direct contact for project discussions and collaboration opportunities.</p>
-                    <a href="{% url 'core:contact' %}" class="btn btn-primary">Open Channel</a>
-                </div>
-                
-                <div class="connect-option">
-                    <div class="connect-icon">
-                        <i class="fab fa-github"></i>
+                    <div class="tech-info">
+                        <span class="tech-name">{{ tech.name }}</span>
+                        {% if tech.system_count %}
+                        <span class="tech-usage">{{ tech.system_count }} projects</span>
+                        {% endif %}
                     </div>
-                    <h3 class="connect-title">Code Repository</h3>
-                    <p class="connect-description">Explore source code, contributions, and technical implementations.</p>
-                    <a href="https://github.com/ksg-dev" target="_blank" class="btn btn-outline">View GitHub</a>
                 </div>
-                
-                <div class="connect-option">
-                    <div class="connect-icon">
-                        <i class="fab fa-linkedin"></i>
-                    </div>
-                    <h3 class="connect-title">Professional Network</h3>
-                    <p class="connect-description">Connect for professional networking and career opportunities.</p>
-                    <a href="https://linkedin.com/in/sonni-gunnels" target="_blank" class="btn btn-outline">Connect</a>
-                </div>
-            </div>
-            
-            <!-- Resume Download Section -->
-            <div class="resume-download-section">
-                <div class="resume-download-header">
-                    <h3 class="download-title">
-                        <i class="fas fa-file-download me-2"></i>
-                        Resume & Documentation
-                    </h3>
-                    <p class="download-description">
-                        Download comprehensive professional documentation in multiple formats.
-                    </p>
-                </div>
-                
-                <div class="download-options-grid">
-                    <a href="{% url 'core:resume_download_format' format='pdf' %}" class="download-card">
-                        <div class="download-icon">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <div class="download-info">
-                            <div class="download-format">PDF Resume</div>
-                            <div class="download-desc">Standard format for applications</div>
-                        </div>
-                    </a>
-                    
-                    <a href="{% url 'core:resume_download_format' format='json' %}" class="download-card">
-                        <div class="download-icon">
-                            <i class="fas fa-file-code"></i>
-                        </div>
-                        <div class="download-info">
-                            <div class="download-format">JSON Resume</div>
-                            <div class="download-desc">Machine-readable format</div>
-                        </div>
-                    </a>
-                </div>
+                {% endfor %}
             </div>
         </div>
+        {% endfor %}
     </div>
-</section>
+</div>
+{% endif %}
+
+<!-- ========== SOCIAL LINKS & CONTACT ========== -->
+{% if social_links %}
+<div class="unified-dashboard-container navy">
+    <div class="unified-container-header">
+        <h2 class="unified-container-title">
+            <i class="fas fa-network-wired"></i>
+            Professional Networks
+        </h2>
+        <p class="container-subtitle">
+            Connect with me across professional platforms and view my code
+        </p>
+    </div>
+    
+    <div class="social-links-grid">
+        {% for link in social_links %}
+        <a href="{{ link.url }}" class="social-link-card" target="_blank" rel="noopener">
+            <div class="social-icon">
+                <i class="{{ link.icon }}"></i>
+            </div>
+            <div class="social-info">
+                <span class="social-name">{{ link.name }}</span>
+                {% if link.handle %}
+                <span class="social-handle">{{ link.handle }}</span>
+                {% endif %}
+            </div>
+            <div class="social-arrow">
+                <i class="fas fa-external-link-alt"></i>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'core/js/home.js' %}"></script>
+{% block core_js %}
+<script src="{% static 'core/js/about.js' %}"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize number counters
-    initHUDDataCounters();
+    // Initialize profile animations
+    initProfileAnimations();
     
-    // Initialize radar chart
-    initRadarChart();
-    
-    // Initialize skill level animations
-    initSkillLevelAnimations();
-    
-    // Initialize timeline animations
-    initTimelineAnimations();
-    
-    // Initialize download tooltips
-    initDownloadTooltips();
-});
-
-function initHUDDataCounters() {
-    const counters = document.querySelectorAll('.hud-data-counter');
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const counter = entry.target;
-                const target = parseInt(counter.dataset.target, 10) || 0;
-                const duration = 2000;
-                const step = target / (duration / 16);
-                let current = 0;
-                
-                const updateCounter = () => {
-                    current += step;
-                    if (current < target) {
-                        counter.textContent = Math.floor(current);
-                        requestAnimationFrame(updateCounter);
-                    } else {
-                        counter.textContent = target;
-                    }
-                };
-                
-                updateCounter();
-                observer.unobserve(counter);
-            }
-        });
-    }, { threshold: 0.5 });
-    
-    counters.forEach(counter => observer.observe(counter));
-}
-
-function initRadarChart() {
-    const radarChart = document.querySelector('.radar-chart');
-    
-    if (!radarChart) return;
-    
-    const values = radarChart.dataset.values.split(',').map(val => parseFloat(val));
-    const labels = radarChart.dataset.labels.split(',');
-    const maxValue = parseFloat(radarChart.dataset.max || '100');
-    
-    // Create SVG element
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.setAttribute('viewBox', '0 0 400 400');
-    
-    const centerX = 200;
-    const centerY = 200;
-    const radius = 150;
-    
-    // Create radar rings
-    for (let r = 1; r <= 5; r++) {
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('cx', centerX);
-        circle.setAttribute('cy', centerY);
-        circle.setAttribute('r', (radius * r) / 5);
-        circle.setAttribute('fill', 'none');
-        circle.setAttribute('stroke', 'rgba(38, 198, 218, 0.1)');
-        circle.setAttribute('stroke-width', '1');
-        svg.appendChild(circle);
-    }
-    
-    // Create axes and labels
-    const numAxes = labels.length;
-    for (let i = 0; i < numAxes; i++) {
-        const angle = (Math.PI * 2 * i) / numAxes - Math.PI / 2;
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
-        
-        // Axis line
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', centerX);
-        line.setAttribute('y1', centerY);
-        line.setAttribute('x2', x);
-        line.setAttribute('y2', y);
-        line.setAttribute('stroke', 'rgba(38, 198, 218, 0.2)');
-        line.setAttribute('stroke-width', '1');
-        svg.appendChild(line);
-        
-        // Label
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        const labelX = centerX + (radius + 20) * Math.cos(angle);
-        const labelY = centerY + (radius + 20) * Math.sin(angle);
-        text.setAttribute('x', labelX);
-        text.setAttribute('y', labelY);
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('dominant-baseline', 'middle');
-        text.setAttribute('fill', '#e8eaf6');
-        text.setAttribute('font-size', '11');
-        text.setAttribute('font-family', 'Rajdhani, sans-serif');
-        text.textContent = labels[i];
-        svg.appendChild(text);
-    }
-    
-    // Create data polygon
-    const polygonPoints = [];
-    for (let i = 0; i < numAxes; i++) {
-        const angle = (Math.PI * 2 * i) / numAxes - Math.PI / 2;
-        const value = values[i];
-        const ratio = value / maxValue;
-        const radian = ratio * radius;
-        
-        const x = centerX + radian * Math.cos(angle);
-        const y = centerY + radian * Math.sin(angle);
-        polygonPoints.push(`${x},${y}`);
-        
-        // Data point
-        const point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        point.setAttribute('cx', x);
-        point.setAttribute('cy', y);
-        point.setAttribute('r', '4');
-        point.setAttribute('fill', '#26c6da');
-        svg.appendChild(point);
-    }
-    
-    // Data polygon
-    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    polygon.setAttribute('points', polygonPoints.join(' '));
-    polygon.setAttribute('fill', 'rgba(38, 198, 218, 0.2)');
-    polygon.setAttribute('stroke', '#26c6da');
-    polygon.setAttribute('stroke-width', '2');
-    svg.insertBefore(polygon, svg.firstChild);
-    
-    radarChart.appendChild(svg);
-}
-
-function initSkillLevelAnimations() {
-    const skillLevels = document.querySelectorAll('.skill-level-fill');
-    
+    // Animate skill proficiency bars
+    const skillBars = document.querySelectorAll('.proficiency-fill');
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const fill = entry.target;
                 const width = fill.style.width;
                 fill.style.width = '0%';
-                fill.style.transition = 'width 1s ease-out';
-                
                 setTimeout(() => {
+                    fill.style.transition = 'width 1s ease-out';
                     fill.style.width = width;
                 }, 100);
-                
-                observer.unobserve(fill);
             }
         });
-    }, { threshold: 0.2 });
+    }, { threshold: 0.1 });
     
-    skillLevels.forEach(level => observer.observe(level));
-}
+    skillBars.forEach(bar => observer.observe(bar));
+    
+    // Initialize any charts or data visualizations
+    if (typeof initTechRadarChart === 'function') {
+        initTechRadarChart();
+    }
+});
 
-function initTimelineAnimations() {
-    const timelineItems = document.querySelectorAll('.timeline-item');
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animate-in');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.2 });
-    
-    timelineItems.forEach(item => observer.observe(item));
-}
-
-function initDownloadTooltips() {
-    const downloadOptions = document.querySelectorAll('.download-option');
-    
-    downloadOptions.forEach(option => {
-        option.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px) scale(1.1)';
-        });
-        
-        option.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-        });
+function initProfileAnimations() {
+    // Stagger animations for cards
+    const cards = document.querySelectorAll('.skill-item, .education-entry, .experience-entry');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in-up');
     });
+    
+    // Animate profile metrics
+    const metrics = document.querySelectorAll('.stat-value');
+    metrics.forEach(metric => {
+        if (!isNaN(metric.textContent)) {
+            animateMetric(metric);
+        }
+    });
+}
+
+function animateMetric(element) {
+    const target = parseInt(element.textContent);
+    let current = 0;
+    const increment = target / 30;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            current = target;
+            clearInterval(timer);
+        }
+        element.textContent = Math.floor(current) + (element.textContent.includes('+') ? '+' : '');
+    }, 50);
 }
 </script>
 {% endblock %}
