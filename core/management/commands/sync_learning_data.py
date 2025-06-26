@@ -127,6 +127,7 @@ class Command(BaseCommand):
         self.stdout.write("Syncing skill relationships...")
 
         connections_made = 0
+        categories_synced = 0
 
         # Auto-connect skills to technologies where names match
         for skill in Skill.objects.all():
@@ -143,6 +144,41 @@ class Command(BaseCommand):
                     connections_made += 1
                     self.stdout.write(
                         f"  Connected {skill.name} to {matching_tech.name}"
+                    )
+
+        # NEW ENHANCEMENT: Sync categories from related technologies to skills
+        for skill in Skill.objects.filter(related_technology__isnull=False):
+            # Check if skill needs category update
+            should_update_category = (
+                not skill.category  # No category set
+                or skill.category == "other"  # Default/generic category
+            )
+
+            if should_update_category and skill.related_technology.category:
+                # Map technology categories to skill categories
+                tech_to_skill_category_map = {
+                    "language": "language",
+                    "framework": "framework",
+                    "database": "database",
+                    "cloud": "tool",  # Cloud services mapped to tools
+                    "tool": "tool",
+                    "other": "other",
+                }
+
+                tech_category = skill.related_technology.category
+                new_skill_category = tech_to_skill_category_map.get(
+                    tech_category, "other"
+                )
+
+                if new_skill_category != skill.category:
+                    old_category = (
+                        skill.get_category_display() if skill.category else "None"
+                    )
+                    skill.category = new_skill_category
+                    skill.save()
+                    categories_synced += 1
+                    self.stdout.write(
+                        f"  Updated {skill.name} category: {old_category} → {skill.get_category_display()}"
                     )
 
         # Auto-create education-skill relationships for programming courses
@@ -172,6 +208,7 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f"Skill relationships synced: {connections_made} tech connections, "
+                f"{categories_synced} categories synced, "
                 f"{education_skills_created} education-skill connections"
             )
         )
@@ -240,35 +277,39 @@ class Command(BaseCommand):
             "python": "Python",
             "django": "Django",
             "javascript": "JavaScript",
-            "html": "HTML/CSS",
-            "css": "HTML/CSS",
-            "git": "Git/GitHub",
-            "sql": "SQL",
-            "database": "Database Design",
-            "api": "API Development",
-            "web": "Web Development",
             "react": "React",
+            "html": "HTML",
+            "css": "CSS",
+            "sql": "SQL",
+            "postgresql": "PostgreSQL",
+            "git": "Git",
+            "github": "GitHub",
+            "linux": "Linux",
+            "docker": "Docker",
+            "api": "REST API",
+            "bootstrap": "Bootstrap",
+            "jquery": "jQuery",
             "node": "Node.js",
-            "flask": "Flask",
-            "data": "Data Science",
-            "machine learning": "Machine Learning",
-            "algorithms": "Algorithms",
+            "express": "Express.js",
+            "mongodb": "MongoDB",
+            "mysql": "MySQL",
+            "aws": "AWS",
+            "azure": "Azure",
+            "gcp": "Google Cloud",
         }
 
-        content_text = f"{education.degree} {education.description} {education.field_of_study}".lower()
+        # Check course title and description for relevant keywords
+        text_to_search = f"{education.degree} {education.description}".lower()
 
         for keyword, skill_name in keyword_skill_map.items():
-            if keyword in content_text:
-                # Try to find exact match first
-                skill = Skill.objects.filter(name__iexact=skill_name).first()
-                if not skill:
-                    # Try partial match
-                    skill = Skill.objects.filter(name__icontains=skill_name).first()
-
-                if skill and skill not in relevant_skills:
+            if keyword in text_to_search:
+                try:
+                    skill = Skill.objects.get(name__iexact=skill_name)
                     relevant_skills.append(skill)
+                except Skill.DoesNotExist:
+                    continue
 
-        return relevant_skills[:5]  # Limit to 5 most relevant
+        return relevant_skills
 
     def estimate_daily_learning_hours(self, date_obj):
         """Estimate learning hours for a given date (placeholder for real tracking)"""

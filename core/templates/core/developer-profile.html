@@ -258,10 +258,10 @@
     </div>
 <div class="unified-dashboard-container coral">
     <div class="unified-container-header">
-        <h2 class="unified-container-title">
+        <h3 class="unified-container-title">
             <i class="fas fa-cogs"></i>
-            Technical Skills & Proficiencies
-        </h2>
+            Technology Stack
+        </h3>
         <p class="container-subtitle">
             {{ learning_progression.total_skills }} skills across {{ learning_progression.skill_categories }} categories with documented learning progression
         </p>
@@ -269,24 +269,24 @@
     
     <div class="skills-overview-grid">
         {% for category, data in skill_categories.items %}
-        <div class="skill-category-section tech-category">
-            <div class="category-header tech-category-header">
-                <h3 class="category-title tech-category-title">
+        <div class="tech-category skill-category-section">
+            <div class="tech-category-header category-header">
+                <h3 class="tech-category-title category-title">
                     {% comment %} <i class="fas fa-layer-group"></i> {% endcomment %}
                     {{ data.label }}
                 </h3>
                 <div class="category-stats">
-                    <span class="stat mastered">{{ data.mastery_count }} mastered</span>
-                    {% if data.learning_count %}
+                    <span class="stat mastered tech-category-count">{{ data.skills.count }} skill{{ data.skills.count|pluralize}}</span>
+                    {% comment %} {% if data.learning_count %}
                     <span class="stat learning">{{ data.learning_count }} learning</span>
-                    {% endif %}
+                    {% endif %} {% endcomment %}
                 </div>
             </div>
             
-            <div class="skills-grid tech-category-skills">
+            <div class="tech-category-skills">
                 {% for skill in data.skills %}
-                <div class="skill-item skill-level-{{ skill.proficiency }}">
-                    <div class="skill-header">
+                <div class="skill-item skill-level-{{ skill.proficiency }} skill-indicator row">
+                    <div class="skill-header col">
                         <div class="skill-icon" style="color: {{ skill.color }};">
                             <i class="{{ skill.icon|default:'fas fa-code' }}"></i>
                         </div>
@@ -301,23 +301,20 @@
                         </div>
                     </div>
                     
-                    <div class="skill-proficiency">
-                        <div class="proficiency-bar">
-                            <div class="proficiency-fill" 
+                    <div class="skill-proficiency skill-level col">
+                        <div class="proficiency-bar skill-level-bar">
+                            <div class="proficiency-fill skill-level-fill" 
                                  style="width: {{ skill.proficiency|mul:20 }}%; background: {{ skill.color }};"></div>
-                        </div>
-                        <div class="proficiency-details">
-                            <span class="proficiency-level">{{ skill.get_mastery_level }}</span>
-                            <span class="proficiency-value">{{ skill.proficiency }}/5</span>
-                        </div>
+                        </div> 
+                            <div class="skill-level-text">{{ skill.proficiency }}/5</div>
                     </div>
                     
-                    {% if skill.years_experience %}
+                    {% comment %} {% if skill.years_experience %}
                     <div class="skill-experience">
                         <i class="fas fa-clock"></i>
                         {{ skill.years_experience|floatformat:1 }} years experience
                     </div>
-                    {% endif %}
+                    {% endif %} {% endcomment %}
                 </div>
                 {% endfor %}
             </div>
