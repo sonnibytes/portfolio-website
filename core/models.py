@@ -53,6 +53,12 @@ class Skill(models.Model):
         ("tool", "Development Tool"),
         ("database", "Database"),
         ('soft_skill', 'Soft Skill'),
+        ('api', 'API Design/Development'),
+        ('data', 'Data Engineering'),
+        ('system', 'System Design/Development'),
+        ('ml', 'Machine Learning'),
+        ('ui', 'UX/UI & Design'),
+        ('ai', 'AI'),
         ("other", "Other"),
     )
 

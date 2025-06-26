@@ -198,7 +198,7 @@ class Command(BaseCommand):
                         "proficiency_before": 0,
                         "proficiency_after": 3,
                         "learning_focus": "foundation",
-                        "importance_in_curriculum": 3,
+                        "importance_level": 3,
                     },
                 )
                 if created:
