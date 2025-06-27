@@ -1,7 +1,7 @@
 from django.views.generic import TemplateView, DetailView, FormView, ListView
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpResponseNotFound, HttpResponseServerError, HttpResponseForbidden
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
@@ -712,3 +712,35 @@ class SystemMetricsAPIView(TemplateView):
         }
 
         return JsonResponse(metrics)
+
+
+# ======================  CUSTOM ERROR VIEWS ==================
+
+
+def custom_404_view(request, exception):
+    """Custom 404 error page with AURA theme"""
+    context = {
+        'request_path': request.path,
+        'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+        'timestamp': timezone.now(),
+    }
+    return HttpResponseNotFound(render(request, 'errors/404.html', context).content)
+
+
+def custom_500_view(request):
+    """Custom 500 error page w AURA theme"""
+    context = {
+        'request_path': request.path,
+        'timestamp': timezone.now(),
+    }
+    return HttpResponseServerError(render(request, 'errors/500.html', context).content)
+
+
+def custom_403_view(request, exception):
+    """Custom 403 error page w AURA theme"""
+    context = {
+        'request_path': request.path,
+        'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+        'timestamp': timezone.now(),
+    }
+    return HttpResponseForbidden(render(request, 'errors/403.html', context).content)
