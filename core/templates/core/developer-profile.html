@@ -15,7 +15,7 @@
 {% block core_css %}
 <link rel="stylesheet" href="{% static 'core/css/about.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/home.css' %}">
-<link rel="stylesheet" href="{% static 'css/components/aura-shared.css' %}">
+{% comment %} <link rel="stylesheet" href="{% static 'css/components/aura-shared.css' %}"> {% endcomment %}
 <link rel="stylesheet" href="{% static 'core/css/dev-profile.css' %}">
 {% endblock %}
 
@@ -192,20 +192,30 @@
                 
                 <div class="skills-grid">
                     {% for skill in data.skills %}
-                    <div class="skill-item">
+                    <div class="skill-item skill-level-{{ skill.proficiency }} skill-indicator row">
                         <div class="skill-info">
-                            <span class="skill-name">{{ skill.name }}</span>
-                            <span class="skill-level">{{ skill.proficiency_level|title }}</span>
-                        </div>
-                        <div class="skill-progress">
-                            <div class="progress-bar" style="width: {{ skill.proficiency_percentage }}%; background-color: {{ skill.color }};"></div>
-                        </div>
-                        {% if skill.is_currently_learning %}
+                            <span class="skill-name"><i class="{{ skill.icon|default:'fas fa-code' }}"></i> {{ skill.name }}</span>
+                            
+                            {% if skill.is_currently_learning %}
                         <div class="learning-indicator">
                             <i class="fas fa-book-open"></i>
                             <span>Currently Learning</span>
                         </div>
+                        {% comment %} <span class="skill-level">{{ skill.proficiency }}/5</span> {% endcomment %}
                         {% endif %}
+                            
+                        </div>
+                        <div class="skill-progress">
+                            <div class="progress-bar" style="width: {{ skill.proficiency|mul:20 }}%; background-color: {{ skill.color }};"></div>
+                            
+                        </div>
+                        
+                        {% comment %} {% if skill.is_currently_learning %}
+                        <div class="learning-indicator">
+                            <i class="fas fa-book-open"></i>
+                            <span>Currently Learning</span>
+                        </div>
+                        {% endif %} {% endcomment %}
                     </div>
                     {% endfor %}
                 </div>
