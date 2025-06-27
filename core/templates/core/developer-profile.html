@@ -15,7 +15,7 @@
 {% block core_css %}
 <link rel="stylesheet" href="{% static 'core/css/about.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/home.css' %}">
-{% comment %} <link rel="stylesheet" href="{% static 'css/components/aura-shared.css' %}"> {% endcomment %}
+<link rel="stylesheet" href="{% static 'css/components/aura-shared.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/dev-profile.css' %}">
 {% endblock %}
 
@@ -39,7 +39,7 @@
                 <div class="col-lg-3 col-md-4">
                     <div class="profile-image-container">
                         <div class="profile-image-frame">
-                            <img src="{% static 'images/profile.jpg' %}" alt="Developer Profile" class="profile-image">
+                            <img src="{% static 'images/profile/profile-img.png' %}" alt="Developer Profile" class="profile-image">
                             <div class="image-scan-overlay scanning-horizontal"></div>
                         </div>
                         <div class="profile-status-indicator">
@@ -98,8 +98,12 @@
 
 <!-- ========== CORE EXPERTISE AREAS ========== -->
 <section class="expertise-section">
-    <div class="unified-dashboard-container coral">
-        <div class="unified-container-header">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Core Expertise</h2>
+            <p class="section-subtitle">Technical capabilities developed through hands-on learning and progressive project development</p>
+        </div>
+        {% comment %} <div class="unified-container-header">
             <h2 class="unified-container-title">
                 <i class="fas fa-brain"></i>
                 Core Development Expertise
@@ -107,7 +111,7 @@
             <p class="container-subtitle">
                 Technical capabilities developed through hands-on learning and progressive project development
             </p>
-        </div>
+        </div> {% endcomment %}
         
         <div class="expertise-grid">
             <div class="expertise-card glass-card">
@@ -164,8 +168,13 @@
 <!-- ========== TECHNICAL SKILLS SECTION ========== -->
 {% if skill_categories %}
 <section class="skills-dashboard-section">
-    <div class="unified-dashboard-container lavender">
-        <div class="unified-container-header">
+    {% comment %} <div class="container"> {% endcomment %}
+    <div class="section-header">
+        <h2 class="section-title">Technical Skills & Proficiencies</h2>
+        <p class="section-subtitle">Comprehensive skill assessment across technology domains</p>
+    </div>
+   <div class="unified-dashboard-container lavender">
+         {% comment %} <div class="unified-container-header">
             <h2 class="unified-container-title">
                 <i class="fas fa-cogs"></i>
                 Technical Skills & Learning Progression
@@ -173,9 +182,9 @@
             <p class="container-subtitle">
                 {{ learning_progression.total_skills }} skills across {{ learning_progression.skill_categories }} categories with documented learning progression
             </p>
-        </div>
+        </div> {% endcomment %}
         
-        <div class="skills-overview-grid">
+        <div class="skills-overview-grid grid-2-col">
             {% for category, data in skill_categories.items %}
             <div class="skill-category-section">
                 <div class="category-header">
@@ -191,23 +200,25 @@
                 </div>
                 
                 <div class="skills-grid">
-                    {% for skill in data.skills %}
-                    <div class="skill-item skill-level-{{ skill.proficiency }} skill-indicator row">
+                    {% for skill in data.skills|slice:":5" %}
+                    <div class="skill-item skill-level-{{ skill.proficiency }} skill-indicator">
                         <div class="skill-info">
                             <span class="skill-name"><i class="{{ skill.icon|default:'fas fa-code' }}"></i> {{ skill.name }}</span>
                             
-                            {% if skill.is_currently_learning %}
+                            {% comment %} {% if skill.is_currently_learning %}
                         <div class="learning-indicator">
                             <i class="fas fa-book-open"></i>
                             <span>Currently Learning</span>
                         </div>
-                        {% comment %} <span class="skill-level">{{ skill.proficiency }}/5</span> {% endcomment %}
-                        {% endif %}
+                        <span class="skill-level">{{ skill.proficiency }}/5</span>
+                        {% endif %} {% endcomment %}
                             
                         </div>
-                        <div class="skill-progress">
-                            <div class="progress-bar" style="width: {{ skill.proficiency|mul:20 }}%; background-color: {{ skill.color }};"></div>
-                            
+                        <div class="skill-level">
+                            <div class="skill-progress">
+                                <div class="progress-bar" style="width: {{ skill.proficiency|mul:20 }}%; background-color: {{ skill.color }};"></div>
+                            </div>
+                            <div class="skill-level-text">{{ skill.proficiency }}/5</div>
                         </div>
                         
                         {% comment %} {% if skill.is_currently_learning %}
