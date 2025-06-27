@@ -1,0 +1,512 @@
+<!-- templates/404.html - AURA System Component Not Found -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Not Found | AURA System</title>
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- AURA Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@100;200;300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --color-bg-primary: #070712;
+            --color-bg-secondary: #0d0d1f;
+            --color-teal: #26c6da;
+            --color-coral: #ff8a80;
+            --color-yellow: #fff59d;
+            --color-mint: #a5d6a7;
+            --color-text: #ffffff;
+            --color-text-secondary: #e8eaf6;
+            --color-text-tertiary: #b0bec5;
+            --font-heading: 'Orbitron', sans-serif;
+            --font-body: 'Rajdhani', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            --border-radius-lg: 12px;
+            --border-radius-md: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 138, 128, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(38, 198, 218, 0.04) 0%, transparent 50%),
+                var(--color-bg-primary);
+            color: var(--color-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .error-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .system-diagnostic {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .system-diagnostic::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-coral), var(--color-yellow), var(--color-coral));
+            animation: alertPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .diagnostic-header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .system-title {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            color: var(--color-coral);
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .error-code {
+            font-family: var(--font-code);
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .diagnostic-body {
+            padding: 2rem;
+        }
+
+        .error-display {
+            background: rgba(7, 7, 18, 0.8);
+            border: 1px solid rgba(255, 138, 128, 0.3);
+            border-radius: var(--border-radius-md);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            font-family: var(--font-code);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .error-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 138, 128, 0.1), transparent);
+            animation: diagnosticScan 3s ease-in-out infinite;
+        }
+
+        @keyframes diagnosticScan {
+            0% { left: -100%; }
+            50% { left: 100%; }
+            100% { left: -100%; }
+        }
+
+        .error-title {
+            color: var(--color-coral);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-title i {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .error-details {
+            color: var(--color-text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-line {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .error-label {
+            color: var(--color-teal);
+            min-width: 120px;
+            font-weight: 600;
+        }
+
+        .error-value {
+            color: var(--color-text);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-offline {
+            background: rgba(255, 138, 128, 0.2);
+            color: var(--color-coral);
+            border: 1px solid rgba(255, 138, 128, 0.4);
+        }
+
+        .status-resolving {
+            background: rgba(255, 245, 157, 0.2);
+            color: var(--color-yellow);
+            border: 1px solid rgba(255, 245, 157, 0.4);
+        }
+
+        .system-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .action-panel {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--border-radius-md);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .action-panel:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(38, 198, 218, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .action-title {
+            font-family: var(--font-heading);
+            color: var(--color-teal);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-description {
+            color: var(--color-text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(38, 198, 218, 0.1);
+            border: 1px solid var(--color-teal);
+            border-radius: var(--border-radius-md);
+            color: var(--color-teal);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .action-button:hover {
+            background: rgba(38, 198, 218, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(38, 198, 218, 0.3);
+        }
+
+        .system-status {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius-md);
+        }
+
+        .status-title {
+            font-family: var(--font-heading);
+            color: var(--color-text);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--border-radius-md);
+        }
+
+        .status-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-icon.operational {
+            color: var(--color-mint);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-icon.offline {
+            color: var(--color-coral);
+        }
+
+        .status-label {
+            font-size: 0.8rem;
+            color: var(--color-text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .diagnostic-footer {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            color: var(--color-text-tertiary);
+            text-align: center;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 1rem;
+            }
+            
+            .diagnostic-header,
+            .diagnostic-body {
+                padding: 1.5rem;
+            }
+            
+            .system-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .error-line {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="system-diagnostic">
+            <div class="diagnostic-header">
+                <h1 class="system-title">AURA System Diagnostic</h1>
+                <div class="error-code">ERROR_CODE: AUR-404 | TIMESTAMP: <span id="timestamp"></span></div>
+            </div>
+            
+            <div class="diagnostic-body">
+                <div class="error-display">
+                    <div class="error-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        COMPONENT_NOT_FOUND
+                    </div>
+                    
+                    <div class="error-details">
+                        <div class="error-line">
+                            <span class="error-label">► System Module:</span>
+                            <span class="error-value status-indicator status-offline">
+                                <i class="fas fa-times-circle"></i>
+                                OFFLINE
+                            </span>
+                        </div>
+                        
+                        <div class="error-line">
+                            <span class="error-label">► Request Path:</span>
+                            <span class="error-value">{{ request.path }}</span>
+                        </div>
+                        
+                        <div class="error-line">
+                            <span class="error-label">► Status:</span>
+                            <span class="error-value">Component relocated or archived</span>
+                        </div>
+                        
+                        <div class="error-line">
+                            <span class="error-label">► Resolution:</span>
+                            <span class="error-value status-indicator status-resolving">
+                                <i class="fas fa-sync fa-spin"></i>
+                                AUTO-RESOLVING
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="system-actions">
+                    <div class="action-panel">
+                        <div class="action-title">
+                            <i class="fas fa-home"></i>
+                            Return to Base
+                        </div>
+                        <div class="action-description">
+                            Navigate back to the main AURA system dashboard where all components are operational.
+                        </div>
+                        <a href="/" class="action-button">
+                            <i class="fas fa-arrow-left"></i>
+                            Main Dashboard
+                        </a>
+                    </div>
+                    
+                    <div class="action-panel">
+                        <div class="action-title">
+                            <i class="fas fa-code"></i>
+                            System Modules
+                        </div>
+                        <div class="action-description">
+                            Access the project systems interface to explore available development modules.
+                        </div>
+                        <a href="/systems/" class="action-button">
+                            <i class="fas fa-database"></i>
+                            View Systems
+                        </a>
+                    </div>
+                    
+                    <div class="action-panel">
+                        <div class="action-title">
+                            <i class="fas fa-file-alt"></i>
+                            Data Logs
+                        </div>
+                        <div class="action-description">
+                            Review development logs and technical documentation entries.
+                        </div>
+                        <a href="/datalogs/" class="action-button">
+                            <i class="fas fa-list"></i>
+                            Access Logs
+                        </a>
+                    </div>
+                    
+                    <div class="action-panel">
+                        <div class="action-title">
+                            <i class="fas fa-satellite-dish"></i>
+                            Communication
+                        </div>
+                        <div class="action-description">
+                            Report this issue through the secure communication terminal.
+                        </div>
+                        <a href="/communication/" class="action-button">
+                            <i class="fas fa-envelope"></i>
+                            Contact Admin
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="system-status">
+                    <div class="status-title">Alternative System Components</div>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="status-icon operational">
+                                <i class="fas fa-server"></i>
+                            </div>
+                            <div class="status-label">Main Server</div>
+                        </div>
+                        
+                        <div class="status-item">
+                            <div class="status-icon operational">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="status-label">Database</div>
+                        </div>
+                        
+                        <div class="status-item">
+                            <div class="status-icon operational">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="status-label">Security</div>
+                        </div>
+                        
+                        <div class="status-item">
+                            <div class="status-icon operational">
+                                <i class="fas fa-satellite-dish"></i>
+                            </div>
+                            <div class="status-label">Communication</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="diagnostic-footer">
+                AURA Advanced User Repository & Archive | Diagnostic Protocol v2.1.4
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update timestamp
+            function updateTimestamp() {
+                const now = new Date();
+                const timestamp = now.toISOString().replace('T', ' ').split('.')[0] + ' UTC';
+                document.getElementById('timestamp').textContent = timestamp;
+            }
+            
+            updateTimestamp();
+            setInterval(updateTimestamp, 1000);
+            
+            // Add entrance animation
+            const diagnostic = document.querySelector('.system-diagnostic');
+            diagnostic.style.opacity = '0';
+            diagnostic.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                diagnostic.style.transition = 'all 0.8s ease-out';
+                diagnostic.style.opacity = '1';
+                diagnostic.style.transform = 'translateY(0)';
+            }, 200);
+        });
+    </script>
+</body>
+</html>
