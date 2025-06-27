@@ -849,6 +849,78 @@ class SystemModule(models.Model):
                 self.last_commit_date and self.last_commit_date >= timezone.now() - timedelta(days=30)
             ),
         }
+    
+    # Additional Learning Enhancements
+    def get_learning_impact_score(self):
+        # Calculate the learning impact of this system
+        score = 0
+        
+        # Skills gained weight
+        skills_count = self.skills_developed.count()
+        score += min(40, skills_count * 8)
+        
+        # Complexity and learning stage
+        if self.learning_stage in ['independent', 'refactoring', 'teaching']:
+            score += 20
+        elif self.learning_stage in ['guided']:
+            score += 10
+        
+        # Portfolio readiness
+        if self.portfolio_ready:
+            score += 20
+        
+        # Milestones achieved
+        milestones_count = self.milestones.count()
+        score += min(20, milestones_count * 5)
+        
+        return min(100, score)
+
+    def get_skill_development_summary(self):
+        # Get summary of skill development from this system
+        skill_gains = self.skill_gains.all()
+        
+        return {
+            'total_skills': skill_gains.count(),
+            'new_skills': skill_gains.filter(proficiency_gained=1).count(),
+            'improved_skills': skill_gains.filter(proficiency_gained__gte=2).count(),
+            'mastered_skills': skill_gains.filter(proficiency_gained__gte=4).count(),
+            'skill_categories': skill_gains.values_list(
+                'skill__category', flat=True
+            ).distinct().count(),
+            'learning_breakthroughs': skill_gains.filter(
+                how_learned__isnull=False
+            ).exclude(how_learned='').count(),
+        }
+
+    def get_learning_recommendations(self):
+        # Get recommendations for improving learning value
+        recommendations = []
+        
+        if not self.portfolio_ready and self.completion_percent >= 80:
+            recommendations.append({
+                'type': 'portfolio_ready',
+                'title': 'Consider marking as portfolio-ready',
+                'description': 'This system is nearly complete and could showcase your skills',
+                'priority': 'high',
+            })
+        
+        if self.skills_developed.count() < 2:
+            recommendations.append({
+                'type': 'skill_tracking',
+                'title': 'Add skill connections',
+                'description': 'Document what skills you developed or improved',
+                'priority': 'medium',
+            })
+        
+        if not self.milestones.exists():
+            recommendations.append({
+                'type': 'milestone_tracking',
+                'title': 'Add learning milestones',
+                'description': 'Document breakthrough moments and achievements',
+                'priority': 'medium',
+            })
+        
+        return recommendations
 
     # ================= TEMPLATE PROPERTIES =================
     @property

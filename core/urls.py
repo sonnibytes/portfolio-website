@@ -25,4 +25,8 @@ urlpatterns = [
     # Dynamic page from database
     path('page/<slug:slug>/', views.CorePageView.as_view(), name='page'),
 
+    # Temp to test error pages
+    path('test-500/', views.test_500, name='test_500'),
+    path('test-403/', views.test_403, name='test_403'),
+
 ]

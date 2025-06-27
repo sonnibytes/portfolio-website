@@ -1,548 +1,708 @@
-<!----
- * AURA Portfolio - Home Template
- * Advanced User Repository & Archive
- * Version: 2.0.1 - Optimized for Component Architecture
----->
+{% extends "core/core_base.html" %}
+{% load aura_filters aura_components static %}
 
+{% block core_title %}Learning Journey Showcase{% endblock %}
 
-{% extends "base.html" %}
-{% load static %}
-
-{% block title %}AURA | Advanced User Repository & Archive{% endblock %}
-{% block meta_description %}AURA - Advanced User Repository & Archive showcasing Python development, machine learning systems, and data engineering solutions.{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'core/css/home.css' %}">
+{% block meta_description %}
+Self-taught Python developer with 2+ years intensive learning. 460+ hours formal education, 6 certificates, 100+ projects. Specializing in Django, Flask, algorithms, and data science.
 {% endblock %}
 
-{% block body_class %}aura-homepage{% endblock %}
+{% block core_css %}
+<link rel="stylesheet" href="{% static 'core/css/home.css' %}">
 
-{% block loading_screen %}
-<!-- AURA Loading Screen (3-Phase Animation) -->
-{% comment %} <div class="loading-screen" id="loadingScreen">
-    <div class="loading-container" id="loadingContainer">
-        <div class="aura-logo">AURA</div>
-        <div class="aura-subtitle">ADVANCED USER REPOSITORY & ARCHIVE</div>
-        <div class="loading-progress">
-            <div class="progress-bar"></div>
-        </div>
-        <div class="loading-text">Initializing systems...</div>
-    </div>
+
+<style>
+    {% comment %} .learning-hero {
+        background: var(--gradient-glass);
+        border: 1px solid rgba(100, 181, 246, 0.2);
+        border-radius: var(--border-radius-xl);
+        padding: var(--spacing-xxl) var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
     
-    <div class="welcome-screen" id="welcomeScreen">
-        <div class="welcome-message">WELCOME TO AURA</div>
-    </div>
-</div> {% endcomment %}
+    .learning-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(100,181,246,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        opacity: 0.3;
+        z-index: 1;
+    }
+    
+    .learning-hero-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .hero-title {
+        font-family: var(--font-heading);
+        font-size: 3.2rem;
+        font-weight: 700;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: var(--spacing-md);
+        line-height: 1.2;
+        letter-spacing: 0.2em;
+    }
+    
+    .hero-subtitle {
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        color: var(--color-text-secondary);
+        margin-bottom: var(--spacing-lg);
+        font-weight: 300;
+        letter-spacing: 0.1em;
+    }
+    
+    .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-xl);
+    }
+    
+    .hero-stat {
+        background: var(--gradient-glass);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-md) var(--spacing-sm);
+        backdrop-filter: blur(10px);
+        transition: var(--transition-normal);
+    }
+    
+    .hero-stat:hover {
+        transform: translateY(-3px);
+        border-color: var(--color-teal);
+        box-shadow: var(--shadow-glow-teal);
+    }
+    
+    .hero-stat-value {
+        font-family: var(--font-heading);
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--color-teal);
+        display: block;
+    }
+    
+    .hero-stat-label {
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        color: var(--color-text-tertiary);
+        margin-top: var(--spacing-xs);
+    }
+    
+    .cta-buttons {
+        display: flex;
+        gap: var(--spacing-md);
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: var(--spacing-xl);
+    }
+    
+    .cta-btn {
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-radius: var(--border-radius-lg);
+        text-decoration: none;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: var(--transition-normal);
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        letter-spacing: 0.05em;
+    }
+    
+    .cta-btn.primary {
+        background: linear-gradient(45deg, var(--color-teal), var(--color-lavender));
+        color: var(--color-text);
+    }
+    
+    .cta-btn.secondary {
+        background: rgba(179, 157, 219, 0.2);
+        color: var(--color-lavender);
+        border: 1px solid rgba(179, 157, 219, 0.3);
+    }
+    
+    .cta-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .learning-highlights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .highlight-card {
+        background: var(--gradient-glass);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        backdrop-filter: blur(10px);
+        transition: var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .highlight-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--color-teal);
+        box-shadow: var(--shadow-glow-teal);
+    }
+    
+    .highlight-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .highlight-badge.academic { background: linear-gradient(45deg, #64b5f6, #1976d2); }
+    .highlight-badge.recent { background: linear-gradient(45deg, #ff6b6b, #ee5a24); }
+    .highlight-badge.advanced { background: linear-gradient(45deg, #b39ddb, #7b1fa2); }
+    .highlight-badge.progress { background: linear-gradient(45deg, #4ecdc4, #00695c); }
+    
+    .project-showcases {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .project-card {
+        background: var(--gradient-glass);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-lg);
+        backdrop-filter: blur(10px);
+        transition: var(--transition-normal);
+        position: relative;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--color-teal);
+        box-shadow: var(--shadow-glow-teal);
+    }
+    
+    .project-title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-teal);
+        margin-bottom: var(--spacing-xs);
+        letter-spacing: 0.1em;
+    }
+    
+    .project-subtitle {
+        color: var(--color-lavender);
+        font-family: var(--font-display);
+        font-weight: 500;
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .tech-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+        margin: var(--spacing-md) 0;
+    }
+    
+    .tech-tag {
+        background: rgba(38, 198, 218, 0.2);
+        color: var(--color-teal);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: 20px;
+        font-family: var(--font-body);
+        font-size: 0.8rem;
+        font-weight: 500;
+        border: 1px solid rgba(38, 198, 218, 0.3);
+        letter-spacing: 0.05em;
+    }
+    
+    .timeline-container {
+        position: relative;
+        padding-left: var(--spacing-xl);
+    }
+    
+    .timeline-line {
+        position: absolute;
+        left: var(--spacing-md);
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--gradient-primary);
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: var(--spacing-lg);
+        background: var(--gradient-glass);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-md);
+        backdrop-filter: blur(10px);
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -31px;
+        top: var(--spacing-md);
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--color-teal);
+        border: 3px solid var(--color-bg-primary);
+    }
+    
+    .timeline-date {
+        color: var(--color-teal);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin-bottom: var(--spacing-xs);
+        letter-spacing: 0.1em;
+    }
+    
+    .timeline-title {
+        color: var(--color-text);
+        font-family: var(--font-display);
+        font-weight: 600;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .timeline-description {
+        color: var(--color-text-tertiary);
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title { 
+            font-size: 2.5rem; 
+        }
+        .hero-subtitle { 
+            font-size: 1.2rem; 
+        }
+        .learning-hero { 
+            padding: var(--spacing-xl) var(--spacing-lg); 
+        }
+        .hero-stats { 
+            grid-template-columns: repeat(2, 1fr); 
+        }
+        .cta-buttons { 
+            flex-direction: column; 
+            align-items: center; 
+        }
+        .project-showcases { 
+            grid-template-columns: 1fr; 
+        }
+        .timeline-container { 
+            padding-left: var(--spacing-lg); 
+        }
+        .timeline-line { 
+            left: var(--spacing-sm); 
+        }
+        .timeline-item::before { 
+            left: -19px; 
+        }
+    } {% endcomment %}
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Dashboard Section -->
-<section class="hero-dashboard">
-    <div class="container">
-        <!-- Main Welcome Panel -->
-        <div class="glass-card hero-welcome-panel">
-            <h1 class="hero-title">[ AURA SYSTEM ONLINE ]</h1>
-            <p class="hero-subtitle">ADVANCED USER REPOSITORY & ARCHIVE</p>
-            <div class="hero-description">
-                Welcome to my development universe. Explore Python systems, machine learning implementations, 
-                and data engineering solutions through an advanced HUD interface designed for seamless navigation 
-                and comprehensive project analysis.
-            </div>
-            
-            <div class="system-status-display">
-                <div class="status-metric">
-                    <div class="status-metric-icon">
-                        <i class="fas fa-server"></i>
-                    </div>
-                    <div class="status-metric-content">
-                        <span class="status-metric-value">{{ total_systems|default:"12" }}</span>
-                        <span class="status-metric-label">Active Systems</span>
-                    </div>
-                </div>
-                <div class="status-metric">
-                    <div class="status-metric-icon">
-                        <i class="fas fa-database"></i>
-                    </div>
-                    <div class="status-metric-content">
-                        <span class="status-metric-value">{{ total_logs|default:"24" }}</span>
-                        <span class="status-metric-label">DataLog Entries</span>
-                    </div>
-                </div>
-                <div class="status-metric">
-                    <div class="status-metric-icon">
-                        <i class="fas fa-code-branch"></i>
-                    </div>
-                    <div class="status-metric-content">
-                        <span class="status-metric-value">{{ technologies_count|default:"15" }}</span>
-                        <span class="status-metric-label">Technologies</span>
-                    </div>
-                </div>
-                <div class="status-metric">
-                    <div class="status-metric-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="status-metric-content">
-                        <span class="status-metric-value">99.7%</span>
-                        <span class="status-metric-label">System Uptime</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Quick Stats Section -->
-<section class="quick-stats-section">
-    <div class="container">
-        <div class="quick-stats-grid">
-            <div class="glass-card quick-stat-card teal">
-                <div class="quick-stat-icon">
-                    <i class="fas fa-rocket"></i>
-                </div>
-                <span class="quick-stat-value hud-data-counter" data-target="{{ deployed_systems|default:'8' }}">0</span>
-                <div class="quick-stat-label">Deployed Systems</div>
-                <div class="quick-stat-trend trend-up">
-                    <i class="fas fa-arrow-up"></i> +2 this month
-                </div>
-            </div>
-            
-            <div class="glass-card quick-stat-card lavender">
-                <div class="quick-stat-icon">
-                    <i class="fas fa-cogs"></i>
-                </div>
-                <span class="quick-stat-value hud-data-counter" data-target="{{ in_development|default:'3' }}">0</span>
-                <div class="quick-stat-label">In Development</div>
-                <div class="quick-stat-trend trend-neutral">
-                    <i class="fas fa-minus"></i> Stable
-                </div>
-            </div>
-            
-            <div class="glass-card quick-stat-card coral">
-                <div class="quick-stat-icon">
-                    <i class="fas fa-brain"></i>
-                </div>
-                <span class="quick-stat-value hud-data-counter" data-target="{{ ml_projects|default:'5' }}">0</span>
-                <div class="quick-stat-label">ML Projects</div>
-                <div class="quick-stat-trend trend-up">
-                    <i class="fas fa-arrow-up"></i> +1 this week
-                </div>
-            </div>
-            
-            <div class="glass-card quick-stat-card mint">
-                <div class="quick-stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <span class="quick-stat-value hud-data-counter" data-target="{{ recent_logs|default:'12' }}">0</span>
-                <div class="quick-stat-label">Recent Logs</div>
-                <div class="quick-stat-trend trend-up">
-                    <i class="fas fa-arrow-up"></i> +3 this week
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Featured Systems Section -->
-<section class="featured-systems-section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Featured Systems</h2>
-            <p class="section-subtitle">Advanced Python implementations and machine learning solutions</p>
-        </div>
-        
-        <div class="featured-systems-grid">
-            {% for system in featured_projects %}
-            <div class="glass-card system-card">
-                <div class="system-card-header">
-                    <div class="system-badge">{{ system.system_id|default:"SYS-001" }}</div>
-                    <div class="system-status">
-                        <div class="status-indicator operational"></div>
-                        <span>{{ system.get_status_display|default:"Deployed" }}</span>
-                    </div>
-                </div>
-                
-                {% if system.thumbnail %}
-                <div class="system-image">
-                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
-                </div>
-                {% else %}
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-project-diagram"></i>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <div class="system-card-content">
-                    <h3 class="system-title">{{ system.title }}</h3>
-                    <p class="system-description">{{ system.excerpt|default:system.description|truncatewords:20 }}</p>
-                    
-                    <div class="system-metrics">
-                        <div class="system-metric">
-                            <span class="system-metric-value">{{ system.completion_percent|default:"100" }}%</span>
-                            <span class="system-metric-label">Complete</span>
-                        </div>
-                        <div class="system-metric">
-                            <span class="system-metric-value">{{ system.complexity|default:"3" }}/5</span>
-                            <span class="system-metric-label">Complexity</span>
-                        </div>
-                        <div class="system-metric">
-                            <span class="system-metric-value">{{ system.technologies.count|default:"4" }}</span>
-                            <span class="system-metric-label">Tech Stack</span>
-                        </div>
-                    </div>
-                    
-                    <div class="system-tech-stack">
-                        {% for tech in system.technologies.all|slice:":4" %}
-                        <span class="tech-tag">{{ tech.name }}</span>
-                        {% empty %}
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">Django</span>
-                        <span class="tech-tag">PostgreSQL</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <div class="system-card-footer">
-                    <a href="{% if system %}{% url 'projects:system_detail' slug=system.slug %}{% else %}#{% endif %}" class="system-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        View System
-                    </a>
-                </div>
-            </div>
-            {% empty %}
-            <!-- Fallback featured systems -->
-            <div class="glass-card system-card">
-                <div class="system-card-header">
-                    <div class="system-badge">SYS-001</div>
-                    <div class="system-status">
-                        <div class="status-indicator operational"></div>
-                        <span>Deployed</span>
-                    </div>
-                </div>
-                
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                </div>
-                
-                <div class="system-card-content">
-                    <h3 class="system-title">ML Classification System</h3>
-                    <p class="system-description">Advanced machine learning pipeline for data classification with real-time prediction capabilities and automated model optimization.</p>
-                    
-                    <div class="system-metrics">
-                        <div class="system-metric">
-                            <span class="system-metric-value">100%</span>
-                            <span class="system-metric-label">Complete</span>
-                        </div>
-                        <div class="system-metric">
-                            <span class="system-metric-value">4/5</span>
-                            <span class="system-metric-label">Complexity</span>
-                        </div>
-                        <div class="system-metric">
-                            <span class="system-metric-value">6</span>
-                            <span class="system-metric-label">Tech Stack</span>
-                        </div>
-                    </div>
-                    
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">TensorFlow</span>
-                        <span class="tech-tag">FastAPI</span>
-                        <span class="tech-tag">Docker</span>
-                    </div>
-                </div>
-                
-                <div class="system-card-footer">
-                    <a href="{% url 'projects:system_list' %}" class="system-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        View System
-                    </a>
-                </div>
-            </div>
-            
-            <div class="glass-card system-card">
-                <div class="system-card-header">
-                    <div class="system-badge">SYS-002</div>
-                    <div class="system-status">
-                        <div class="status-indicator operational"></div>
-                        <span>Deployed</span>
-                    </div>
-                </div>
-                
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-database"></i>
-                    </div>
-                </div>
-                
-                <div class="system-card-content">
-                    <h3 class="system-title">Data Pipeline Engine</h3>
-                    <p class="system-description">Scalable data processing pipeline with automated ETL operations, real-time monitoring, and intelligent error recovery mechanisms.</p>
-                    
-                    <div class="system-metrics">
-                        <div class="system-metric">
-                            <span class="system-metric-value">95%</span>
-                            <span class="system-metric-label">Complete</span>
-                        </div>
-                        <div class="system-metric">
-                            <span class="system-metric-value">3/5</span>
-                            <span class="system-metric-label">Complexity</span>
-                        </div>
-                        <div class="system-metric">
-                            <span class="system-metric-value">5</span>
-                            <span class="system-metric-label">Tech Stack</span>
-                        </div>
-                    </div>
-                    
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">Apache Airflow</span>
-                        <span class="tech-tag">PostgreSQL</span>
-                        <span class="tech-tag">Redis</span>
-                    </div>
-                </div>
-                
-                <div class="system-card-footer">
-                    <a href="{% url 'projects:system_list' %}" class="system-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        View System
-                    </a>
-                </div>
-            </div>
-            
-            <div class="glass-card system-card">
-                <div class="system-card-header">
-                    <div class="system-badge">SYS-003</div>
-                    <div class="system-status">
-                        <div class="status-indicator warning"></div>
-                        <span>In Development</span>
-                    </div>
-                </div>
-                
-                <div class="system-image">
-                    <div class="system-image-placeholder">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                </div>
-                
-                <div class="system-card-content">
-                    <h3 class="system-title">Analytics Dashboard</h3>
-                    <p class="system-description">Real-time analytics platform with interactive visualizations, automated reporting, and predictive insights for business intelligence.</p>
-                    
-                    <div class="system-metrics">
-                        <div class="system-metric">
-                            <span class="system-metric-value">75%</span>
-                            <span class="system-metric-label">Complete</span>
-                        </div>
-                        <div class="system-metric">
-                            <span class="system-metric-value">3/5</span>
-                            <span class="system-metric-label">Complexity</span>
-                        </div>
-                        <div class="system-metric">
-                            <span class="system-metric-value">4</span>
-                            <span class="system-metric-label">Tech Stack</span>
-                        </div>
-                    </div>
-                    
-                    <div class="system-tech-stack">
-                        <span class="tech-tag">Django</span>
-                        <span class="tech-tag">Chart.js</span>
-                        <span class="tech-tag">Celery</span>
-                        <span class="tech-tag">WebSocket</span>
-                    </div>
-                </div>
-                
-                <div class="system-card-footer">
-                    <a href="{% url 'projects:system_list' %}" class="system-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        View System
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <div class="text-center mt-lg">
-            <a href="{% url 'projects:system_list' %}" class="btn btn-primary">
-                <i class="fas fa-database me-2"></i>
-                Explore All Systems
-            </a>
-        </div>
-    </div>
-</section>
-
-<!-- Recent DataLogs Section -->
-<section class="recent-devlogs-section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Recent DataLogs</h2>
-            <p class="section-subtitle">Development insights and technical documentation entries</p>
-        </div>
-        
-        <div class="devlogs-grid">
-            {% for post in latest_posts %}
-            <div class="glass-card datalog-card">
-                <div class="datalog-card-header">
-                    <div class="category-badge">{{ post.category.code|default:"LOG" }}</div>
-                    <div class="datalog-category">{{ post.category.name|default:"Development" }}</div>
-                </div>
-                
-                <div class="datalog-card-content">
-                    <h3 class="datalog-title">{{ post.title }}</h3>
-                    <p class="datalog-excerpt">{{ post.excerpt|default:post.content|truncatewords:15 }}</p>
-                    
-                    <div class="datalog-meta">
-                        <span class="datalog-date">{{ post.published_date|date:"M d, Y" }}</span>
-                        <span class="datalog-reading-time">{{ post.reading_time|default:"3" }} min read</span>
-                    </div>
-                    
-                    <a href="{% url 'blog:post_detail' slug=post.slug %}" class="datalog-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        Read Entry
-                    </a>
-                </div>
-            </div>
-            {% empty %}
-            <!-- Fallback datalog entries -->
-            <div class="glass-card datalog-card">
-                <div class="datalog-card-header">
-                    <div class="category-badge">ML</div>
-                    <div class="datalog-category">Machine Learning</div>
-                </div>
-                
-                <div class="datalog-card-content">
-                    <h3 class="datalog-title">Building Scalable ML Pipelines</h3>
-                    <p class="datalog-excerpt">Exploring best practices for creating production-ready machine learning pipelines with automated testing and deployment.</p>
-                    
-                    <div class="datalog-meta">
-                        <span class="datalog-date">Nov 15, 2024</span>
-                        <span class="datalog-reading-time">5 min read</span>
-                    </div>
-                    
-                    <a href="{% url 'blog:post_list' %}" class="datalog-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        Read Entry
-                    </a>
-                </div>
-            </div>
-            
-            <div class="glass-card datalog-card">
-                <div class="datalog-card-header">
-                    <div class="category-badge">DA</div>
-                    <div class="datalog-category">Data Analysis</div>
-                </div>
-                
-                <div class="datalog-card-content">
-                    <h3 class="datalog-title">Advanced Data Visualization Techniques</h3>
-                    <p class="datalog-excerpt">Creating interactive dashboards with Python and exploring modern visualization libraries for better data storytelling.</p>
-                    
-                    <div class="datalog-meta">
-                        <span class="datalog-date">Nov 12, 2024</span>
-                        <span class="datalog-reading-time">4 min read</span>
-                    </div>
-                    
-                    <a href="{% url 'blog:post_list' %}" class="datalog-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        Read Entry
-                    </a>
-                </div>
-            </div>
-            
-            <div class="glass-card datalog-card">
-                <div class="datalog-card-header">
-                    <div class="category-badge">SYS</div>
-                    <div class="datalog-category">System Architecture</div>
-                </div>
-                
-                <div class="datalog-card-content">
-                    <h3 class="datalog-title">Microservices with FastAPI</h3>
-                    <p class="datalog-excerpt">Building high-performance microservices architecture using FastAPI, Docker, and modern deployment strategies.</p>
-                    
-                    <div class="datalog-meta">
-                        <span class="datalog-date">Nov 08, 2024</span>
-                        <span class="datalog-reading-time">6 min read</span>
-                    </div>
-                    
-                    <a href="{% url 'blog:post_list' %}" class="datalog-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        Read Entry
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <div class="text-center mt-lg">
-            <a href="{% url 'blog:post_list' %}" class="btn btn-outline">
-                <i class="fas fa-list me-2"></i>
-                View All DataLogs
-            </a>
-        </div>
-    </div>
-</section>
-
-<!-- Call to Action Section -->
-<section class="cta-section">
-    <div class="container">
-        <div class="glass-card cta-container">
-            <h2 class="cta-title">Initialize Connection Protocol</h2>
-            <p class="cta-subtitle">
-                Ready to collaborate on innovative Python solutions? Let's connect and build something remarkable together.
+<div class="container-fluid core-interface-container container">
+    <!-- Learning Journey Hero Section -->
+    <section class="learning-hero">
+        <div class="learning-hero-content">
+            <h1 class="hero-title">Python Developer & Algorithm Enthusiast</h1>
+            <p class="hero-subtitle">
+                EHS Compliance → Software Development | {{ learning_journey.duration_years }} Intensive Learning Journey
+            </p>
+            <p style="color: #90a4ae; font-size: 1.1rem; margin-bottom: 20px;">
+                From basic scripts to sophisticated web applications and algorithmic problem-solving
             </p>
             
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <span class="hero-stat-value">{{ learning_journey.duration_years }}</span>
+                    <span class="hero-stat-label">Learning Journey</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value">{{ learning_journey.learning_hours }}+</span>
+              <span class="hero-stat-label">Learning Hours</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value">{{ learning_journey.certificates_earned }}</span>
+                    <span class="hero-stat-label">Certificates Earned</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value">{{ learning_journey.systems_built }}+</span>
+                    <span class="hero-stat-label">Projects Built</span>
+                </div>
+                <div class="hero-stat">
+              <span class="hero-stat-value">{{ learning_journey.courses_completed }}</span>
+              <span class="hero-stat-label">Courses Completed</span>
+                </div>
+            </div>
+            
+      <!-- FIXED: Use dynamic CTA sections -->
             <div class="cta-buttons">
-                <a href="{% url 'core:contact' %}" class="btn btn-primary">
-                    <i class="fas fa-satellite-dish me-2"></i>
-                    Open Communication Channel
+          {% for cta in cta_sections %}
+          <a href="{{ cta.url }}" class="cta-btn {% if forloop.first %}primary{% else %}secondary{% endif %}">
+              <i class="{{ cta.icon }}"></i>
+              {{ cta.title }}
                 </a>
-                <a href="{% url 'core:about' %}" class="btn btn-outline">
-                    <i class="fas fa-user-astronaut me-2"></i>
-                    View Developer Profile
-                </a>
+          {% endfor %}
             </div>
         </div>
+    </section>
+
+<!-- ========== LEARNING ACHIEVEMENTS SECTION (NEW) ========== -->
+<div class="unified-dashboard-container coral mb-4">
+  <div class="unified-container-header">
+      <h2 class="unified-container-title">
+          <i class="fas fa-graduation-cap"></i>
+          Learning Achievements
+      </h2>
+      <p style="color: rgba(255,255,255,0.7); margin: 0;">
+          Key milestones and certifications in my learning journey
+      </p>
+  </div>
+  
+  <div class="learning-highlights-grid">
+      {% for highlight in learning_highlights %}
+      <div class="highlight-card {{ highlight.color }}">
+          <div class="highlight-header">
+              <i class="{{ highlight.icon }}"></i>
+              <h3>{{ highlight.title }}</h3>
+          </div>
+          <p class="highlight-platform">{{ highlight.platform }}</p>
+          <p class="highlight-description">{{ highlight.description }}</p>
+          {% if highlight.certificate_url %}
+              <a href="{{ highlight.certificate_url }}" class="highlight-cert-link" target="_blank" rel="noopener">
+                  <i class="fas fa-certificate"></i> View Certificate
+              </a>
+          {% endif %}
+          <div class="highlight-stats">
+              <span class="stat">{{ highlight.skills_count }} skills</span>
+              <span class="stat">{{ highlight.hours }} hours</span>
+              <span class="stat badge">{{ highlight.badge }}</span>
+          </div>
+      </div>
+      {% endfor %}
+  </div>
+</div>
+
+<!-- ========== SKILL PROGRESSION SECTION (NEW) ========== -->
+    <div class="unified-dashboard-container teal mb-4">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title">
+          <i class="fas fa-chart-line"></i>
+          Skill Development Progression
+            </h2>
+            <p style="color: rgba(255,255,255,0.7); margin: 0;">
+          Technical skills gained through structured learning and project work
+            </p>
+        </div>
+        
+  <div class="skill-progression-grid">
+      {% for skill_data in skill_progression %}
+      <div class="skill-progression-card">
+          <div class="skill-header">
+              <div class="skill-icon" style="color: {{ skill_data.color }};">
+                  <i class="{{ skill_data.icon|default:'fas fa-code' }}"></i>
+                    </div>
+              <div class="skill-info">
+                  <h4 class="skill-name">{{ skill_data.skill_name }}</h4>
+                  <span class="skill-category">{{ skill_data.category }}</span>
+                    </div>
+                </div>
+          
+          <div class="skill-metrics">
+              <div class="skill-metric">
+                  <span class="metric-label">Proficiency</span>
+                  <div class="proficiency-bar">
+                      <div class="proficiency-fill" style="width: {{ skill_data.current_proficiency|mul:20 }}%; background: {{ skill_data.color }};"></div>
+                  </div>
+                  <span class="metric-value">{{ skill_data.mastery_level }}</span>
+              </div>
+              
+              <div class="skill-metric">
+                  <span class="metric-label">Projects Using</span>
+                  <span class="metric-value">{{ skill_data.systems_using }}</span>
+              </div>
+              
+              <div class="skill-metric">
+                  <span class="metric-label">Learning Velocity</span>
+                  <span class="metric-value">{{ skill_data.learning_velocity|floatformat:1 }}/month</span>
+              </div>
+          </div>
+          
+          <!-- Learning Timeline for this skill -->
+          {% if skill_data.timeline %}
+          <div class="skill-timeline">
+              <h5 class="timeline-title">Learning Progression:</h5>
+              {% for event in skill_data.timeline %}
+              <div class="timeline-event">
+                  <span class="event-date">{{ event.date|date:"M 'y" }}</span>
+                  <span class="event-system">{{ event.system }}</span>
+                  <span class="event-proficiency">{{ event.proficiency_gained }}</span>
+              </div>
+              {% endfor %}
+          </div>
+          {% endif %}
+            </div>
+            {% endfor %}
+        </div>
     </div>
-</section>
+
+<!-- ========== FEATURED PROJECTS SECTION (FIXED) ========== -->
+<div class="unified-dashboard-container mint mb-4">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title">
+          <i class="fas fa-rocket"></i>
+          Featured Projects
+            </h2>
+            <p style="color: rgba(255,255,255,0.7); margin: 0;">
+          Portfolio-ready projects demonstrating progressive skill development
+            </p>
+        </div>
+        
+  <div class="project-showcases">
+      {% for system in featured_systems %}
+      <div class="project-showcase-card">
+          <div class="project-header">
+              <h3 class="project-title">{{ system.title }}</h3>
+              <div class="project-meta">
+                  <span class="project-stage stage-{{ system.learning_stage }}">
+                      {{ system.learning_stage|title }}
+                  </span>
+                  {% if system.portfolio_ready %}
+                  <span class="portfolio-ready-badge">
+                      <i class="fas fa-check-circle"></i> Portfolio Ready
+                  </span>
+                  {% endif %}
+                    </div>
+                </div>
+                
+          <p class="project-description">{{ system.description }}</p>
+                
+          <!-- Technologies used -->
+          <div class="project-technologies">
+              {% for tech in system.technologies.all %}
+              <span class="tech-tag">{{ tech.name }}</span>
+                    {% endfor %}
+                </div>
+                
+          <!-- Project links -->
+          <div class="project-actions">
+              {% if system.live_url %}
+              <a href="{{ system.live_url }}" class="action-btn primary" target="_blank" rel="noopener">
+                        <i class="fas fa-external-link-alt"></i> Live Demo
+                    </a>
+                    {% endif %}
+              {% if system.github_url %}
+              <a href="{{ system.github_url }}" class="action-btn secondary" target="_blank" rel="noopener">
+                        <i class="fab fa-github"></i> Source Code
+                    </a>
+                    {% endif %}
+              <a href="{% url 'projects:system_detail' system.slug %}" class="action-btn tertiary">
+                  <i class="fas fa-info-circle"></i> Details
+              </a>
+                </div>
+                
+          <!-- Learning context -->
+          <div class="project-learning-context">
+              <div class="learning-metrics">
+                  <span class="learning-metric">
+                      <i class="fas fa-brain"></i>
+                      {{ system.skills_summary }}
+                  </span>
+                  <span class="learning-metric">
+                      <i class="fas fa-clock"></i>
+                      {{ system.completion_percent|floatformat:0 }}% Complete
+                  </span>
+                  <span class="learning-metric">
+                      <i class="fas fa-chart-line"></i>
+                      {{ system.learning_velocity|floatformat:1 }} skills/month
+                  </span>
+              </div>
+              <p class="learning-focus">
+                  <i class="fas fa-lightbulb"></i>
+                  <strong>Learning Focus:</strong> {{ system.get_learning_stage_display }}
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+<!-- ========== LEARNING TIMELINE SECTION (FIXED) ========== -->
+    <div class="unified-dashboard-container lavender mb-4">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title">
+                <i class="fas fa-route"></i>
+                Learning Journey Timeline
+            </h2>
+            <p style="color: rgba(255,255,255,0.7); margin: 0;">
+          Chronological progression from EHS compliance to software development over {{ learning_journey.duration_years }}
+            </p>
+        </div>
+        
+        <div class="timeline-container">
+            <div class="timeline-line"></div>
+      {% for event in learning_timeline %}
+            <div class="timeline-item">
+          <div class="timeline-date">{{ event.date|date:"M Y" }}</div>
+                <h4 class="timeline-title">
+              <i class="{{ event.icon|default:'fas fa-star' }}" style="color: var(--color-{{ event.color|default:'teal' }}); margin-right: 8px;"></i>
+              {{ event.title }}
+                </h4>
+          <p class="timeline-description">{{ event.description }}</p>
+          
+          <!-- Additional context for different event types -->
+          {% if event.type == 'education_complete' %}
+              <div class="timeline-context education">
+                  <i class="fas fa-graduation-cap"></i>
+                  <span>Course completed: {{ event.source }}</span>
+              </div>
+          {% elif event.type == 'milestone' %}
+              <div class="timeline-context milestone">
+                  <i class="fas fa-trophy"></i>
+                  <span>Difficulty: {{ event.difficulty }}/5 | Confidence boost: {{ event.confidence_boost }}/5</span>
+              </div>
+          {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+<!-- ========== CURRENT STATUS SECTION (NEW) ========== -->
+<div class="unified-dashboard-container yellow mb-4">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title">
+          <i class="fas fa-satellite-dish"></i>
+          Current Learning Status
+            </h2>
+        </div>
+        
+  <div class="current-status-grid">
+      <div class="status-item">
+          <div class="status-icon">
+              <i class="fas fa-book-open"></i>
+                    </div>
+          <div class="status-content">
+              <h4>Currently Learning</h4>
+              <p>{{ current_status.current_learning }}</p>
+              <span class="status-platform">{{ current_status.learning_platform }}</span>
+                </div>
+            </div>
+            
+      <div class="status-item">
+          <div class="status-icon">
+              <i class="fas fa-target"></i>
+                    </div>
+          <div class="status-content">
+              <h4>Next Goal</h4>
+              <p>{{ current_status.next_goal }}</p>
+                </div>
+      </div>
+      
+      <div class="status-item">
+          <div class="status-icon">
+              <i class="fas fa-briefcase"></i>
+          </div>
+          <div class="status-content">
+              <h4>Availability</h4>
+              <p>{{ current_status.availability }}</p>
+              <span class="status-location">{{ current_status.location }}</span>
+            </div>
+        </div>
+        
+      <div class="status-item">
+          <div class="status-icon">
+              <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="status-content">
+              <h4>Learning Analytics</h4>
+              <p>{{ learning_analytics.monthly_learning_hours|floatformat:1 }}h this month</p>
+              <span class="analytics-detail">{{ learning_analytics.consistency_rate|floatformat:1 }}% consistency</span>
+          </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize loading sequence
-    if (typeof initLoadingSequence === 'function') {
-        initLoadingSequence();
-    }
+    // Animate hero stats on page load
+    const heroStats = document.querySelectorAll('.hero-stat');
+    heroStats.forEach((stat, index) => {
+        stat.style.opacity = '0';
+        stat.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            stat.style.transition = 'all 0.6s ease';
+            stat.style.opacity = '1';
+            stat.style.transform = 'translateY(0)';
+        }, 200 + (index * 100));
+    });
     
-    // Initialize HUD data counters
-    if (typeof initHUDDataCounters === 'function') {
-        initHUDDataCounters();
-    }
+    // Animate timeline items on scroll
+    const timelineItems = document.querySelectorAll('.timeline-item');
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
     
-    // Add interactive effects to system cards
-    const systemCards = document.querySelectorAll('.system-card');
-    systemCards.forEach(card => {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.transform = 'translateX(0)';
+                entry.target.style.opacity = '1';
+            }
+        });
+    }, observerOptions);
+    
+    timelineItems.forEach((item, index) => {
+        item.style.transform = 'translateX(-30px)';
+        item.style.opacity = '0';
+        item.style.transition = `all 0.6s ease ${index * 0.1}s`;
+        observer.observe(item);
+    });
+    
+    // Add smooth hover effects for project cards
+    const projectCards = document.querySelectorAll('.project-card');
+    projectCards.forEach(card => {
         card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-10px) scale(1.02)';
+            this.style.transform = 'translateY(-8px) scale(1.02)';
         });
         
         card.addEventListener('mouseleave', function() {
             this.style.transform = 'translateY(0) scale(1)';
         });
-    });
-    
-    // Add staggered animation to cards
-    const allCards = document.querySelectorAll('.quick-stat-card, .system-card, .datalog-card');
-    allCards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        
-        setTimeout(() => {
-            card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 100 + 1000); // Start after loading sequence
     });
 });
 </script>

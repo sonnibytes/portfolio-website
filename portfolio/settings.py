@@ -29,7 +29,10 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]
 
 
 # Application definition
@@ -55,6 +58,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "core.middleware.MaintenanceModeMiddleware",  # Custom maintenance mode
 ]
 
 ROOT_URLCONF = "portfolio.urls"
@@ -142,8 +146,200 @@ STATICFILES_DIRS = [
 MEDIA_ROOT = BASE_DIR / "uploads"
 MEDIA_URL = "/files/"
 
+# Use WhiteNoise for serving static files in production (recommended)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Add WhiteNoise to middleware (add after SecurityMiddleware)
+# 'whitenoise.middleware.WhiteNoiseMiddleware',
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ========== CREATE LOGS DIRECTORY ==========
+# Create logs directory if it doesn't exist
+LOGS_DIR = BASE_DIR / "logs"
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
+
+# ========== SIMPLE LOGGING CONFIGURATION ==========
+# Start with this simple version, then use enhanced later
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'django.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# ========== LOGGING CONFIGURATION ==========
+# Enhanced logging for error tracking
+"""
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'aura_system.log',
+            'formatter': 'aura_format',
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'aura_errors.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'aura_format',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'aura': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+"""
+
+
+
+
+# ========== SECURITY SETTINGS ==========
+# Enhanced security for production deployment w notes for reference
+
+# Enables browser's built-in XSS (Cross-Site Scripting) Protection
+# Adds X-XSS-Protection: 1; mode=block header
+# Protect against malicious js injection
+SECURE_BROWSER_XSS_FILTER = True
+
+# Adds X-Content-Type-Options: nosniff header
+# Prevents browsers from guessing file types
+# Stops browsers from executing .txt files as js
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Prevents site from being embedded in iframes
+# Protects against clickjacking attacks
+# Options 'DENY' 'SAMEORIGIN' or 'ALLOW-FROM uri'
+X_FRAME_OPTIONS = 'DENY'
+
+# HTTPS Security (HSTS)
+# Forces browsers to use HTTPS for site
+# Prevents downgrade attacks
+# 31536000 = 1 year in seconds - if statement means only enable in prod
+# Prevents HTTPS issues during local development
+
+# How long browsers remember to use HTTPS
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+# Apply to all subdomains too
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# Submit to browser preload lists for extra security
+SECURE_HSTS_PRELOAD = True
+
+
+# ========== EMAIL CONFIGURATION FOR ERROR REPORTING ==========
+# Configure email for error notifications (can uncomment when applies, see if DEBUG config in settings prod breakdown doc)
+# Development
+#EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+"""
+ADMINS = [
+    ('AURA Admin', 'admin@your-domain.com'),
+]
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'my-smtp-server.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'my-email@domain.com'
+EMAIL_HOST_PASSWORD = 'put-env-ref-to-password-here'
+
+# Send error emails to admins
+SERVER_EMAIL = 'aura-system@your-domain.com'
+DEFAULT_FROM_EMAIL = 'AURA System <noreply@your-domain.com>'
+"""
+
+
+# ========== PERFORMANCE SETTINGS ==========
+# Cache configuration for better error page performance (see prod config options in settings prod breakdown doc)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'aura-cache',
+        'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
+# Session Configuration
+# HTTPS only in prod
+SESSION_COOKIE_SECURE = not DEBUG
+# No js access
+SESSION_COOKIE_HTTPONLY = True
+# CSRF protection
+SESSION_COOKIE_SAMESITE = 'Lax'
+# Expire when browser closes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# CSRF Protection
+# HTTPS only in prod
+CSRF_COOKIE_SECURE = not DEBUG
+# No js access
+CSRF_COOKIE_HTTPONLY = True
+# Additional CSRF protection
+CSRF_COOKIE_SAMESITE = 'Lax'

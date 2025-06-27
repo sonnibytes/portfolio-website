@@ -1,0 +1,664 @@
+<!-- templates/maintenance.html - AURA System Maintenance & Upgrades -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Maintenance | AURA</title>
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- AURA Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@100;200;300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --color-bg-primary: #070712;
+            --color-bg-secondary: #0d0d1f;
+            --color-teal: #26c6da;
+            --color-coral: #ff8a80;
+            --color-yellow: #fff59d;
+            --color-mint: #a5d6a7;
+            --color-lavender: #b39ddb;
+            --color-text: #ffffff;
+            --color-text-secondary: #e8eaf6;
+            --color-text-tertiary: #b0bec5;
+            --font-heading: 'Orbitron', sans-serif;
+            --font-body: 'Rajdhani', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            --border-radius-lg: 12px;
+            --border-radius-md: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: 
+                radial-gradient(circle at 30% 70%, rgba(179, 157, 219, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(38, 198, 218, 0.03) 0%, transparent 50%),
+                var(--color-bg-primary);
+            color: var(--color-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .maintenance-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .upgrade-system {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(179, 157, 219, 0.3);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .upgrade-system::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-teal), var(--color-lavender), var(--color-mint));
+            animation: upgradeProgress 8s ease-in-out infinite;
+        }
+
+        @keyframes upgradeProgress {
+            0%, 100% { background-position: 0% 0%; }
+            50% { background-position: 100% 0%; }
+        }
+
+        .maintenance-header {
+            background: rgba(179, 157, 219, 0.08);
+            padding: 2rem;
+            border-bottom: 1px solid rgba(179, 157, 219, 0.2);
+            text-align: center;
+            position: relative;
+        }
+
+        .maintenance-header::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150px;
+            height: 150px;
+            border: 1px solid rgba(179, 157, 219, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: maintenanceOrbit 6s linear infinite;
+        }
+
+        @keyframes maintenanceOrbit {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .maintenance-icon {
+            font-size: 4rem;
+            color: var(--color-lavender);
+            margin-bottom: 1rem;
+            animation: maintenanceFloat 3s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes maintenanceFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .maintenance-title {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            color: var(--color-lavender);
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 2;
+        }
+
+        .maintenance-code {
+            font-family: var(--font-code);
+            color: var(--color-text-secondary);
+            font-size: 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .maintenance-body {
+            padding: 2rem;
+        }
+
+        .upgrade-status {
+            background: rgba(7, 7, 18, 0.8);
+            border: 1px solid rgba(179, 157, 219, 0.3);
+            border-radius: var(--border-radius-md);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            font-family: var(--font-code);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upgrade-status::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(179, 157, 219, 0.1), transparent);
+            animation: upgradeScan 4s ease-in-out infinite;
+        }
+
+        @keyframes upgradeScan {
+            0% { left: -100%; }
+            50% { left: 100%; }
+            100% { left: -100%; }
+        }
+
+        .status-title {
+            color: var(--color-lavender);
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .status-details {
+            color: var(--color-text-secondary);
+            line-height: 2;
+            margin-bottom: 2rem;
+        }
+
+        .status-line {
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-label {
+            color: var(--color-teal);
+            min-width: 140px;
+            font-weight: 600;
+        }
+
+        .status-value {
+            color: var(--color-text);
+        }
+
+        .status-upgrading {
+            background: rgba(179, 157, 219, 0.2);
+            color: var(--color-lavender);
+            border: 1px solid rgba(179, 157, 219, 0.5);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            animation: upgradePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes upgradePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .progress-container {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--border-radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-title {
+            font-family: var(--font-heading);
+            color: var(--color-text);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-teal), var(--color-lavender));
+            border-radius: 4px;
+            animation: progressUpdate 3s ease-in-out infinite;
+            width: 67%; /* Current progress */
+        }
+
+        @keyframes progressUpdate {
+            0%, 100% { width: 67%; }
+            50% { width: 71%; }
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            color: var(--color-text-tertiary);
+        }
+
+        .eta-display {
+            color: var(--color-mint);
+            font-weight: 600;
+        }
+
+        .maintenance-phases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .phase-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--border-radius-md);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .phase-item.active {
+            border-color: var(--color-lavender);
+            background: rgba(179, 157, 219, 0.05);
+        }
+
+        .phase-item.completed {
+            border-color: var(--color-mint);
+            background: rgba(165, 214, 167, 0.05);
+        }
+
+        .phase-item.pending {
+            border-color: rgba(255, 255, 255, 0.1);
+            opacity: 0.6;
+        }
+
+        .phase-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .phase-item.completed .phase-icon {
+            color: var(--color-mint);
+        }
+
+        .phase-item.active .phase-icon {
+            color: var(--color-lavender);
+            animation: activePhase 2s ease-in-out infinite;
+        }
+
+        .phase-item.pending .phase-icon {
+            color: var(--color-text-tertiary);
+        }
+
+        @keyframes activePhase {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        .phase-title {
+            font-family: var(--font-heading);
+            color: var(--color-text);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .phase-description {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .alternative-access {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius-md);
+        }
+
+        .access-title {
+            font-family: var(--font-heading);
+            color: var(--color-text);
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .access-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .access-item {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--border-radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .access-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(38, 198, 218, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .access-icon {
+            font-size: 2rem;
+            color: var(--color-teal);
+            margin-bottom: 1rem;
+        }
+
+        .access-label {
+            font-family: var(--font-heading);
+            color: var(--color-text);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .access-link {
+            color: var(--color-teal);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .access-link:hover {
+            color: var(--color-coral);
+        }
+
+        .maintenance-footer {
+            background: rgba(179, 157, 219, 0.08);
+            padding: 1.5rem 2rem;
+            border-top: 1px solid rgba(179, 157, 219, 0.2);
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            color: var(--color-text-tertiary);
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .maintenance-container {
+                padding: 1rem;
+            }
+            
+            .maintenance-header,
+            .maintenance-body {
+                padding: 1.5rem;
+            }
+            
+            .maintenance-phases {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-line {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+            
+            .maintenance-title {
+                font-size: 1.5rem;
+            }
+            
+            .maintenance-icon {
+                font-size: 3rem;
+            }
+            
+            .access-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="maintenance-container">
+        <div class="upgrade-system">
+            <div class="maintenance-header">
+                <div class="maintenance-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h1 class="maintenance-title">System Upgrade in Progress</h1>
+                <div class="maintenance-code">UPGRADE_ID: AUR-MAINT-2024 | VERSION: 2.1.4 → 2.2.0 | TIME: <span id="timestamp"></span></div>
+            </div>
+            
+            <div class="maintenance-body">
+                <div class="upgrade-status">
+                    <div class="status-title">
+                        <i class="fas fa-upload"></i>
+                        SYSTEM_ENHANCEMENT_PROTOCOL
+                    </div>
+                    
+                    <div class="status-details">
+                        <div class="status-line">
+                            <span class="status-label">► Upgrade Type:</span>
+                            <span class="status-value">Scheduled maintenance</span>
+                        </div>
+                        
+                        <div class="status-line">
+                            <span class="status-label">► Current Phase:</span>
+                            <span class="status-value status-upgrading">
+                                COMPONENT OPTIMIZATION
+                            </span>
+                        </div>
+                        
+                        <div class="status-line">
+                            <span class="status-label">► Services Status:</span>
+                            <span class="status-value">Read-only mode active</span>
+                        </div>
+                        
+                        <div class="status-line">
+                            <span class="status-label">► Estimated Completion:</span>
+                            <span class="status-value">
+                                <span class="eta-display" id="completion-time">2:47:32</span>
+                            </span>
+                        </div>
+                        
+                        <div class="status-line">
+                            <span class="status-label">► Next Update:</span>
+                            <span class="status-value">Enhanced performance & security</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-title">
+                        <i class="fas fa-tasks"></i>
+                        Upgrade Progress
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span>67% Complete</span>
+                        <span class="eta-display">ETA: <span id="eta-countdown">2h 47m</span></span>
+                    </div>
+                </div>
+                
+                <div class="maintenance-phases">
+                    <div class="phase-item completed">
+                        <div class="phase-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="phase-title">Database Optimization</div>
+                        <div class="phase-description">Schema updates and performance tuning completed successfully.</div>
+                    </div>
+                    
+                    <div class="phase-item completed">
+                        <div class="phase-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="phase-title">Security Enhancements</div>
+                        <div class="phase-description">Updated security protocols and vulnerability patches applied.</div>
+                    </div>
+                    
+                    <div class="phase-item active">
+                        <div class="phase-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="phase-title">Component Updates</div>
+                        <div class="phase-description">Updating system components and optimizing performance metrics.</div>
+                    </div>
+                    
+                    <div class="phase-item pending">
+                        <div class="phase-icon">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div class="phase-title">System Restart</div>
+                        <div class="phase-description">Final restart and verification of all upgraded components.</div>
+                    </div>
+                </div>
+                
+                <div class="alternative-access">
+                    <div class="access-title">
+                        <i class="fas fa-link"></i>
+                        Available Services (Read-Only)
+                    </div>
+                    <div class="access-grid">
+                        <div class="access-item">
+                            <div class="access-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="access-label">Developer Profile</div>
+                            <a href="/developer-profile/" class="access-link">View Profile</a>
+                        </div>
+                        
+                        <div class="access-item">
+                            <div class="access-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="access-label">Documentation</div>
+                            <a href="/datalogs/" class="access-link">Read Logs</a>
+                        </div>
+                        
+                        <div class="access-item">
+                            <div class="access-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div class="access-label">Resume</div>
+                            <a href="/developer-profile/#resume" class="access-link">Download</a>
+                        </div>
+                        
+                        <div class="access-item">
+                            <div class="access-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="access-label">Status Updates</div>
+                            <a href="#" class="access-link" onclick="location.reload()">Refresh Status</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="maintenance-footer">
+                AURA System Upgrade | Scheduled maintenance window | Services will resume automatically upon completion
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let etaHours = 2;
+            let etaMinutes = 47;
+            let etaSeconds = 32;
+            
+            // Update timestamp
+            function updateTimestamp() {
+                const now = new Date();
+                const timestamp = now.toISOString().replace('T', ' ').split('.')[0] + ' UTC';
+                document.getElementById('timestamp').textContent = timestamp;
+            }
+            
+            // Update ETA countdown
+            function updateEta() {
+                if (etaSeconds > 0) {
+                    etaSeconds--;
+                } else if (etaMinutes > 0) {
+                    etaMinutes--;
+                    etaSeconds = 59;
+                } else if (etaHours > 0) {
+                    etaHours--;
+                    etaMinutes = 59;
+                    etaSeconds = 59;
+                }
+                
+                const completionTime = `${etaHours}:${etaMinutes.toString().padStart(2, '0')}:${etaSeconds.toString().padStart(2, '0')}`;
+                const etaCountdown = `${etaHours}h ${etaMinutes}m`;
+                
+                document.getElementById('completion-time').textContent = completionTime;
+                document.getElementById('eta-countdown').textContent = etaCountdown;
+                
+                // When countdown reaches zero, simulate completion
+                if (etaHours === 0 && etaMinutes === 0 && etaSeconds === 0) {
+                    simulateCompletion();
+                }
+            }
+            
+            function simulateCompletion() {
+                // This would redirect to the main site
+                alert('System upgrade completed! Redirecting to main site...');
+                window.location.href = '/';
+            }
+            
+            updateTimestamp();
+            setInterval(updateTimestamp, 1000);
+            setInterval(updateEta, 1000);
+            
+            // Add entrance animation
+            const upgrade = document.querySelector('.upgrade-system');
+            upgrade.style.opacity = '0';
+            upgrade.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                upgrade.style.transition = 'all 0.8s ease-out';
+                upgrade.style.opacity = '1';
+                upgrade.style.transform = 'translateY(0)';
+            }, 200);
+        });
+    </script>
+</body>
+</html>

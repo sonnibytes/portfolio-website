@@ -1,7 +1,7 @@
 from django.views.generic import TemplateView, DetailView, FormView, ListView
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpResponseNotFound, HttpResponseServerError, HttpResponseForbidden
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
@@ -11,170 +11,348 @@ from django.db.models import Count, Avg, Q
 from django.template.loader import render_to_string
 from django.conf import settings
 import os
+import calendar
 
-from .models import CorePage, Skill, Education, Experience, SocialLink, Contact
+from .models import CorePage, Skill, Education, Experience, SocialLink, Contact, LearningJourneyManager, PortfolioAnalytics
 from .forms import ContactForm
 from blog.models import Post, Category
-from projects.models import SystemModule, Technology
+from projects.models import SystemModule, Technology, LearningMilestone
 from datetime import timedelta
 
 
 class HomeView(TemplateView):
-    """AURA Home/Dashboard View with comprehensive system metrics."""
-    template_name = 'core/index.html'
+    """
+    Enhanced Home Page - Dynamic Learning Journey Showcase
+    Uses model relationships instead of hardcoded data
+    """
+
+    template_name = "core/index.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # AURA System Metrics
-        context['total_systems'] = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).count() or 12
+        # ========== DYNAMIC LEARNING JOURNEY METRICS ==========
+        journey_manager = LearningJourneyManager()
+        context["learning_journey"] = journey_manager.get_journey_overview()
 
-        context['total_logs'] = Post.objects.filter(
-            status='published'
-        ).count() or 24
+        # ========== DYNAMIC LEARNING HIGHLIGHTS ==========
+        context["learning_highlights"] = journey_manager.get_learning_highlights()
 
-        context['technologies_count'] = Technology.objects.count() or 15
+        # ========== DYNAMIC SKILL PROGRESSION ==========
+        context["skill_progression"] = journey_manager.get_skill_progression()
 
-        # Featured Systems (limit 3 for homepage)
-        context['featured_projects'] = SystemModule.objects.filter(
-            featured=True,
-            status__in=['deployed', 'published']
-        ).select_related('system_type').prefetch_related(
-            'technologies').order_by('-created_at')[:3]
+        # ========== DYNAMIC LEARNING TIMELINE ==========
+        context["learning_timeline"] = journey_manager.get_learning_timeline()
 
-        # Latest DataLogs (limit 3 for homepage)
-        context['latest_posts'] = Post.objects.filter(
-            status='published'
-        ).select_related('category').order_by('-published_date')[:3]
+        # ========== DYNAMIC FEATURED SYSTEMS/PROJECTS ==========
+        context["featured_systems"] = journey_manager.get_featured_systems()
 
-        # Quick Stats for Dashboard Cards
-        context['deployed_systems'] = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).count() or 8
+        # ========== CURRENT LEARNING STATUS (DYNAMIC) ==========
+        # Get current learning from ongoing education
+        current_education = Education.objects.filter(is_current=True).first()
+        current_projects = SystemModule.objects.filter(status="in_development")
 
-        context['in_development'] = SystemModule.objects.filter(
-            status='in_development'
-        ).count() or 3
-
-        context['ml_projects'] = SystemModule.objects.filter(
-            Q(title__icontains='ML') |
-            Q(title__icontains='Machine Learning') |
-            Q(description__icontains='machine learning') |
-            Q(description__icontains='neural') |
-            Q(technologies__name__icontains='TensorFlow') |
-            Q(technologies__name__icontains='PyTorch')
-        ).distinct().count() or 5
-
-        context['recent_logs'] = Post.objects.filter(
-            status='published',
-            published_date__gte=timezone.now() - timedelta(days=30)
-        ).count() or 12
-
-        # System Status Metrics for HUD displays
-        context['system_metrics'] = {
-            'uptime': '99.7%',
-            'response_time': '142ms',
-            'security_level': 'AES-256',
-            'active_connections': '1,247',
-            'total_deployments': SystemModule.objects.filter(
-                status='deployed').count(),
-            'avg_completion': SystemModule.objects.aggregate(
-                avg=Avg('completion_percent')
-            )['avg'] or 85.0,
+        context["current_status"] = {
+            "availability": "Seeking first professional tech role",
+            "current_learning": current_education.degree
+            if current_education
+            else "Advanced Django Development",
+            "learning_platform": current_education.platform
+            if current_education
+            else "Self-Directed",
+            "current_projects": current_projects.count(),
+            "next_goal": self.get_next_learning_goal(),
+            "location": "Remote or North Carolina-based opportunities (open to relocation)",
+            "transition_stage": "Ready for entry-level Python development role",
         }
 
-        # Categories for navigation
-        context['categories'] = Category.objects.all()[:5]
+        # ========== DYNAMIC PORTFOLIO METRICS ==========
 
-        # Additional metrics for status display
-        context['systems_tested'] = SystemModule.objects.filter(
-            status='testing'
-        ).count() or 2
+        # PORTFOLIO INTEGRATION - Real Data
+        try:
+            context['portfolio_metrics'] = {
+                'learning_duration': context['learning_journey']['duration_years'],
+                'total_systems': SystemModule.objects.filter(
+                    status__in=['deployed', 'published']
+                ).count(),
+                'portfolio_ready_systems': SystemModule.objects.filter(portfolio_ready=True).count(),
+                'total_technologies': Technology.objects.count(),
+                'skills_mastered': Skill.objects.filter(proficiency__gte=4).count(),
+                'total_datalogs': Post.objects.filter(status='published').count(),
+                'learning_milestones': LearningMilestone.objects.count(),
+                'courses_completed': context['learning_journey']['courses_completed'],
+                'learning_hours': context['learning_journey']['learning_hours'],
+                'certificates_earned': context['learning_journey']['certificates_earned'],
+            }
 
-        # TODO: Get from GitHub API
-        context['lines_of_code'] = 50000
-        # TODO: Get from GitHub API
-        context['commits_this_month'] = 127
+            # Featured systems (dynamic)
+            featured_systems = SystemModule.objects.filter(
+                featured=True,
+                status__in=["deployed", "published"]
+            ).select_related("system_type").prefetch_related("technologies")[:3]
+            
+            if not featured_systems.exists():
+                # Fallback to top portfolio-ready systems
+                featured_systems = SystemModule.objects.filter(
+                    portfolio_ready=True,
+                    status__in=["deployed", "published"]
+                ).select_related("system_type").prefetch_related("technologies")[:3]
+            
+            context["portfolio_systems"] = featured_systems
+
+            # Recent learning documentation (dynamic)
+            recent_datalogs = Post.objects.filter(
+                status="published"
+            ).select_related("category").order_by("-published_date")[:3]
+            context["recent_datalogs"] = recent_datalogs
+        
+        except Exception as e:
+            # Fallback for development or missing data
+            context['portfolio_metrics'] = {
+                'learning_duration': '2+ Years',
+                'total_systems': 8,
+                'portfolio_ready_systems': 3,
+                'total_technologies': 12,
+                'skills_mastered': 8,
+                'total_datalogs': 15,
+                'learning_milestones': 12,
+                'courses_completed': 6,
+                'learning_hours': 400,
+                'certificates_earned': 4,
+            }
+        # ========== DYNAMIC CALL-TO-ACTION SECTIONS ==========
+        context["cta_sections"] = [
+            {
+                "title": "Explore My Projects",
+                "description": f"See {context['portfolio_metrics']['total_systems']} projects showing skill progression",
+                "url": "/projects/",
+                "icon": "fas fa-folder-open",
+                "color": "teal",
+                "metric": f"{context['portfolio_metrics']['portfolio_ready_systems']} portfolio-ready",
+            },
+            {
+                "title": "Read Learning Journey",
+                "description": f"{context['portfolio_metrics']['total_datalogs']} technical insights and learning documentation",
+                "url": "/blog/",
+                "icon": "fas fa-book-open",
+                "color": "lavender",
+                "metric": "Technical writing",
+            },
+            {
+                "title": "Download Resume",
+                "description": "Professional credentials and learning progression details",
+                "url": "/resume/download/",
+                "icon": "fas fa-download",
+                "color": "coral",
+                "metric": "Always current",
+            },
+            {
+                "title": "Let's Connect",
+                "description": "Discuss opportunities and collaboration",
+                "url": "/communication/",
+                "icon": "fas fa-envelope",
+                "color": "mint",
+                "metric": "Quick response",
+            },
+        ]
+
+        # ========== RECENT LEARNING ACTIVITY ==========
+        # Get recent learning activity from multiple sources
+        recent_activity = []
+
+        # Recent milestones
+        recent_milestones = LearningMilestone.objects.order_by('-date_achieved')[:3]
+        for milestone in recent_milestones:
+            recent_activity.append({
+                'type': 'milestone',
+                'title': milestone.title,
+                'date': milestone.date_achieved,
+                'description': milestone.description[:80] + "..." if len(milestone.description) > 80 else milestone.description,
+                'icon': 'fas fa-trophy',
+                'color': 'coral',
+            })
+        
+        # Recent systems
+        recent_systems = SystemModule.objects.filter(
+            status__in=["deployed", "published"]
+        ).order_by("-created_at")[:2]
+        for system in recent_systems:
+            recent_activity.append(
+                {
+                    "type": "system",
+                    "title": f"Completed {system.title}",
+                    "date": system.created_at,
+                    "description": system.excerpt[:80] + "..."
+                    if system.excerpt and len(system.excerpt) > 80
+                    else system.excerpt or "Project completion",
+                    "icon": "fas fa-code",
+                    "color": "teal",
+                }
+            )
+        
+        # Sort by date and take top 4
+        recent_activity.sort(key=lambda x: x['date'], reverse=True)
+        context['recent_activity'] = recent_activity[:4]
+
+        # ========== LEARNING ANALYTICS ==========
+        # Get recent learning analytics
+        analytics_summary = PortfolioAnalytics.get_learning_summary(days=30)
+        context['learning_analytics'] = {
+            'monthly_learning_hours': analytics_summary['total_learning_hours'],
+            'consistency_rate': round(analytics_summary['consistency_rate'], 1),
+            'avg_daily_hours': round(analytics_summary['avg_daily_hours'], 1),
+            'learning_streak': self.get_current_learning_streak(),
+        }
+
+        # ========== META DATA FOR SEO (DYNAMIC) ==========
+        skills_list = ", ".join(
+            [skill.name for skill in Skill.objects.filter(is_featured=True)[:6]]
+        )
+
+        context["page_title"] = (
+            f"Python Developer & {Skill.objects.filter(category='language').count()}+ Languages - Learning Journey Portfolio"
+        )
+        context["page_description"] = (
+            f"Self-taught developer with {context['learning_journey']['duration_years']} intensive learning. "
+            f"{context['portfolio_metrics']['courses_completed']} courses completed, "
+            f"{context['portfolio_metrics']['total_systems']} projects built. "
+            f"Skills: {skills_list}. Ready for professional development role."
+        )
+        context["page_keywords"] = (
+            f"Python Developer, Self-Taught Programmer, {skills_list}, "
+            "Algorithm Development, Django, Career Transition, Portfolio Projects"
+        )
 
         return context
+    
+    def get_next_learning_goal(self):
+        """Determine next learning goal from current education or default"""
+        current_education = Education.objects.filter(is_current=True).first()
+        if current_education:
+            return f"Complete {current_education.degree}"
+        
+        # Check for skills marked as currently learning
+        learning_skills = Skill.objects.filter(is_currently_learning=True)
+        if learning_skills.exists():
+            return f"Master {learning_skills.first().name}"
+        
+        return "Advanced Python & API Development"
+    
+    def get_current_learning_streak(self):
+        """Calculate current learning streak from analytics"""
+        try:
+            # Get recent analytics entries
+            recent_analytics = PortfolioAnalytics.objects.filter(
+                learning_hours_logged__gt=0
+            ).order_by('-date')[:30]
+
+            if not recent_analytics.exists():
+                return 0
+            
+            # Count consecutive days of learning
+            streak = 0
+            current_date = timezone.now().date()
+
+            for analytics in recent_analytics:
+                if analytics.date == current_date - timedelta(days=streak):
+                    streak += 1
+                else:
+                    break
+            return streak
+        except:
+            return 0
 
 
 class DeveloperProfileView(TemplateView):
     """
-    Comprehensive AURA Developer Profile with integrated resume functionality.
-    Combines profile display with downloadable resume generation.
+    Enhanced Developer Profile with Dynamic Learning Journey
     """
     template_name = 'core/developer-profile.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Skills grouped by category
+        # Dynamic Skills by category
         skill_categories = {}
         for category, label in Skill.CATEGORY_CHOICES:
-            skills = Skill.objects.filter(
-                category=category).order_by("display_order")
+            skills = Skill.objects.filter(category=category).order_by(
+                "-proficiency", "name"
+            )
             if skills.exists():
-                skill_categories[category] = {"label": label, "skills": skills}
+                skill_categories[category] = {
+                    "label": label,
+                    "skills": skills,
+                    "mastery_count": skills.filter(proficiency__gte=4).count(),
+                    "learning_count": skills.filter(is_currently_learning=True).count(),
+                }
         context["skill_categories"] = skill_categories
 
-        # Education background
-        context["education"] = Education.objects.all()
+        # Educational background w learning context
+        education_with_skills = []
+        for edu in Education.objects.all().order_by('-end_date'):
+            education_with_skills.append({
+                'education': edu,
+                'summary': edu.get_learning_summary(),
+                # Top 5 skills
+                'skills_gained': edu.skills_learned.all()[:5],
+            })
+        context['education_enhanced'] = education_with_skills
 
         # Professional experience
-        context["experiences"] = Experience.objects.all()
+        context["experiences"] = Experience.objects.all().order_by('-end_date', '-start_date')
 
         # Social/Network links
-        context["social_links"] = SocialLink.objects.all()
+        context["social_links"] = SocialLink.objects.all().order_by('display_order')
 
-        # Portfolio & System Metrics
+        # Dynamic Portfolio Metrics using LearningJourneyManager
+        journey_manager = LearningJourneyManager()
+        learning_overview = journey_manager.get_journey_overview()
+
         context["portfolio_metrics"] = {
-            "total_systems": SystemModule.objects.filter(
-                status__in=["deployed", "published"]
-            ).count()
-            or 12,
-            "systems_completed": SystemModule.objects.filter(
-                status="deployed").count()
-            or 8,
-            "systems_in_progress": SystemModule.objects.filter(
-                status="in_development"
-            ).count()
-            or 3,
-            "total_logs_count": Post.objects.filter(
-                status="published").count() or 24,
-            "technologies_mastered": Technology.objects.count() or 15,
-            "languages_used": Technology.objects.filter(
-                category="language").count()
-            or 8,
-            "coding_years": 3,
-            # TODO: Get from GitHub API
-            "github_repos": 25,
-            # TODO: Can get from GitHub API
-            "lines_of_code": 50000,
-            # TODO: Get from GitHub API
-            "contributions_this_year": 284,
+            'total_systems': learning_overview['systems_built'],
+            'systems_completed': SystemModule.objects.deployed().count(),
+            'systems_in_progress': learning_overview['current_projects'],
+            'total_logs_count': Post.objects.filter(status='published').count(),
+            'technologies_mastered': Technology.objects.count(),
+            'languages_used': Technology.objects.filter(category='language').count(),
+            'learning_years': learning_overview['duration_years'],
+            'skills_mastered': learning_overview['skills_mastered'],
+            'certificates_earned': learning_overview['certificates_earned'],
+            'learning_hours': learning_overview['learning_hours'],
         }
 
-        # Recent Activity for timeline
-        context['recent_systems'] = SystemModule.objects.filter(
-            status__in=['deployed', 'published']
-        ).order_by('-created_at')[:3]
+        # Recent Activity Timeline (dynamic)
+        context["recent_systems"] = SystemModule.objects.filter(
+            status__in=["deployed", "published"]
+        ).select_related('system_type').order_by("-created_at")[:3]
 
-        context['recent_posts'] = Post.objects.filter(
-            status='published'
-        ).order_by('-published_date')[:3]
+        context["recent_posts"] = Post.objects.filter(status="published").order_by(
+            "-published_date"
+        )[:3]
 
-        # Tech Breakdown
-        context['tech_by_category'] = {}
+        # Technology breakdown by category (dynamic)
+        context["tech_by_category"] = {}
         for category, label in Technology.CATEGORY_CHOICES:
-            techs = Technology.objects.filter(category=category)
+            techs = (
+                Technology.objects.filter(category=category)
+                .annotate(system_count=Count("systems"))
+                .order_by("-system_count")
+            )
             if techs.exists():
-                context['tech_by_category'][category] = {
-                    'label': label,
-                    'technologies': techs[:8]
+                context["tech_by_category"][category] = {
+                    "label": label,
+                    "technologies": techs[:8],  # Top 8 most used
                 }
+
+        # Learning progression summary
+        context["learning_progression"] = {
+            'skills_categories': len(skill_categories),
+            'total_skills': Skill.objects.count(),
+            'mastered_skills': Skill.objects.filter(proficiency__gte=4).count(),
+            'learning_skills': Skill.objects.filter(is_currently_learning=True).count(),
+            'portfolio_ready_projects': SystemModule.objects.filter(portfolio_ready=True).count(),
+            'learning_milestones': LearningMilestone.objects.count(),
+        }
 
         return context
 
@@ -534,3 +712,47 @@ class SystemMetricsAPIView(TemplateView):
         }
 
         return JsonResponse(metrics)
+
+
+# ======================  CUSTOM ERROR VIEWS ==================
+
+
+def custom_404_view(request, exception):
+    """Custom 404 error page with AURA theme"""
+    context = {
+        'request_path': request.path,
+        'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+        'timestamp': timezone.now(),
+    }
+    return HttpResponseNotFound(render(request, 'errors/404.html', context).content)
+
+
+def custom_500_view(request):
+    """Custom 500 error page w AURA theme"""
+    context = {
+        'request_path': request.path,
+        'timestamp': timezone.now(),
+    }
+    return HttpResponseServerError(render(request, 'errors/500.html', context).content)
+
+
+def custom_403_view(request, exception):
+    """Custom 403 error page w AURA theme"""
+    context = {
+        'request_path': request.path,
+        'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+        'timestamp': timezone.now(),
+    }
+    return HttpResponseForbidden(render(request, 'errors/403.html', context).content)
+
+
+# Temp views to test error pages
+def test_500(request):
+    raise Exception("Test 500 error")
+
+
+from django.core.exceptions import PermissionDenied
+
+
+def test_403(request):
+    raise PermissionDenied("Test 403 Error")
