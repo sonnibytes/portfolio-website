@@ -27,9 +27,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]
 
 
 # Application definition
@@ -155,8 +158,57 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ========== CREATE LOGS DIRECTORY ==========
+# Create logs directory if it doesn't exist
+LOGS_DIR = BASE_DIR / "logs"
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
+
+# ========== SIMPLE LOGGING CONFIGURATION ==========
+# Start with this simple version, then use enhanced later
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'django.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
 # ========== LOGGING CONFIGURATION ==========
 # Enhanced logging for error tracking
+"""
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -202,11 +254,9 @@ LOGGING = {
         },
     },
 }
+"""
 
-# Create logs directory
-LOGS_DIR = BASE_DIR / 'logs'
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
+
 
 
 # ========== SECURITY SETTINGS ==========
@@ -244,7 +294,7 @@ SECURE_HSTS_PRELOAD = True
 # ========== EMAIL CONFIGURATION FOR ERROR REPORTING ==========
 # Configure email for error notifications (can uncomment when applies, see if DEBUG config in settings prod breakdown doc)
 # Development
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+#EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 """
 ADMINS = [
     ('AURA Admin', 'admin@your-domain.com'),
@@ -267,7 +317,7 @@ DEFAULT_FROM_EMAIL = 'AURA System <noreply@your-domain.com>'
 # Cache configuration for better error page performance (see prod config options in settings prod breakdown doc)
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locem.LocMemCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'aura-cache',
         'TIMEOUT': 300,  # 5 minutes
         'OPTIONS': {

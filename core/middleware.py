@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.conf import settings
 
 
-class MaintenanceMiddleware:
+class MaintenanceModeMiddleware:
     """
     Middleware to enable maintenance mode by creating a maintenance file.
     """

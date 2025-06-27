@@ -744,3 +744,15 @@ def custom_403_view(request, exception):
         'timestamp': timezone.now(),
     }
     return HttpResponseForbidden(render(request, 'errors/403.html', context).content)
+
+
+# Temp views to test error pages
+def test_500(request):
+    raise Exception("Test 500 error")
+
+
+from django.core.exceptions import PermissionDenied
+
+
+def test_403(request):
+    raise PermissionDenied("Test 403 Error")
