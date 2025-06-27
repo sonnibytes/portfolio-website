@@ -300,7 +300,8 @@ class ContactAdmin(admin.ModelAdmin):
                 color = "#ffbd2e"
             else:
                 color = "#ff8a80"
-            return format_html('<span style="color: {};">{:.1f}h</span>', color, hours)
+            formatted_hours = "{:.1f}".format(hours)
+            return format_html('<span style="color: {};">{}h</span>', color, formatted_hours)
         return "-"
 
     response_time_display.short_description = "Response Time"

@@ -663,7 +663,7 @@ class Contact(models.Model):
     def response_time_hours(self):
         """Calculate hours between submission and response"""
         if self.response_date and self.created_at:
-            delta = self.response_date = self.created_at
+            delta = self.response_date - self.created_at
             return delta.total_seconds() / 3600
         return None
 
