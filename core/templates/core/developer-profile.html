@@ -418,10 +418,14 @@
 {% endif %}
 
 <!-- ========== EDUCATION & LEARNING JOURNEY ========== -->
-{% if educations %}
+{% if education_enhanced %}
 <section class="education-section">
+    <div class="section-header">
+        <h2 class="section-title">Learning Journey & Education</h2>
+        <p class="section-subtitle">Formal and self-directed learning experiences supporting technical development</p>
+    </div>
     <div class="unified-dashboard-container yellow">
-        <div class="unified-container-header">
+        {% comment %} <div class="unified-container-header">
             <h2 class="unified-container-title">
                 <i class="fas fa-graduation-cap"></i>
                 Learning Journey & Education
@@ -429,18 +433,25 @@
             <p class="container-subtitle">
                 Formal and self-directed learning experiences supporting technical development
             </p>
-        </div>
+        </div> {% endcomment %}
         
         <div class="education-grid">
-            {% for education in educations %}
-            {% with summary=education.get_summary %}
+            {% for education in education_enhanced %}
+            {% with summary=education.summary education=education.education skills=education.skills_gained %}
             <div class="education-entry glass-card">
                 <div class="education-header">
                     <h3 class="education-title">{{ education.degree }}</h3>
                     <div class="education-institution">{{ education.institution }}</div>
+                    
                     <div class="education-dates">
                         {{ education.start_date|date:"Y" }}{% if education.end_date %} - {{ education.end_date|date:"Y" }}{% else %} - Present{% endif %}
                     </div>
+                    {% comment %} {% if education.course_url %} {% endcomment %}
+                    <a href="{{ education.course_url }}" class="course-link" target="_blank" rel="noopener">
+                        View Course
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                    {% comment %} {% endif %} {% endcomment %}
                 </div>
                 
                 <div class="education-summary">
@@ -452,6 +463,7 @@
                     {% endif %}
                     {% if education.certificate_url %}
                     <a href="{{ education.certificate_url }}" class="cert-link" target="_blank" rel="noopener">
+                        View Certificate
                         <i class="fas fa-external-link-alt"></i>
                     </a>
                     {% endif %}
