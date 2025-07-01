@@ -3098,7 +3098,7 @@ class FeaturedSystemsView(ListView):
             latest=Max('created_at')
         )
 
-        if dates['earliest'] and fates['latest']:
+        if dates['earliest'] and dates['latest']:
             span = dates['latest'] - dates['earliest']
             months = span.days // 30
             return f"{months} months" if months > 0 else "Recent work"
