@@ -2713,37 +2713,126 @@ class TechnologyDetailView(DetailView):
         ).exclude(id=technology.id).annotate(project_count=Count('systems')).filter(project_count__gt=0)[:4]
 
 
-# ===================== ENHANCED FEATURE VIEWS =====================
+# ===================== ENHANCED SYSTEM TYPE VIEWS =====================
 
 
-class FeaturedSystemsView(ListView):
-    """Featured systems using new manager methods."""
-
-    template_name = "projects/featured_systems.html"
-    context_object_name = "systems"
+class SystemTypesOverviewView(ListView):
+    """
+    System Types Overview - Shows all system types with learning progression
+    Similar to technologies overview but focused on project types/categories
+    """
+    model = SystemType
+    template_name = "projects/system_types_overview.html"
+    context_object_name = "system_types"
 
     def get_queryset(self):
-        # Use new featured() method
-        return SystemModule.objects.featured().select_related("system_type")
-
+        """Get system types w learning-focused annotations."""
+        return SystemType.objects.annotate(
+            # Learning-focused metrics for each system type
+            total_systems=Count('systems'),
+            completed_systems=Count('systems', filter=Q(systems__status__in=['deployed', 'published'])),
+            learning_systems=Count('systems', filter=Q(systems__status='in_development')),
+            featured_systems=Count('systems', filter=Q(systems__featured=True)),
+            avg_completion=Avg('systems__completion_percent'),
+            avg_complexity=Avg('systems__complexity'),  # Avg complexity as skill progression indicator
+            latest_project=Max('systems__created_at'),  # Most recent work in this type
+        ).filter(
+            total_systems__gt=0  # Only show types w actual projects
+        ).order_by('display_order', 'name')
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Stats using new manager methods
-        context.update(
-            {
-                "total_featured": SystemModule.objects.featured().count(),
-                "featured_deployed": SystemModule.objects.featured().deployed().count(),
-                "featured_in_dev": SystemModule.objects.featured()
-                .in_development()
-                .count(),
-            }
-        )
+        # Learning journey overview stats
+        all_systems = SystemModule.objects.all()
+        all_types = SystemType.objects.filter(systems__isnull=False).distinct()
+
+        context.update({
+            'page_title': 'Project Types Overview',
+            'page_subtitle': 'Exploring different types of systems and applications in my learning journey',
+
+            # Learning Journey Metrics
+            'total_project_types': all_types.count(),
+            'total_systems_built': all_systems.count(),
+            'types_in_progress': all_types.filter(
+                systems__status='in_development'
+            ).distinct().count(),
+            'advanced_project_types': all_types.annotate(
+                avg_complexity=Avg('systems__complexity')
+            ).filter(avg_complexity__gte=3.5).count(),
+
+            # System type insights
+            'type_insights': self.get_type_insights(),
+
+            # Complexity progression across types
+            'complexity_distribution': self.get_complexity_distribution(),
+        })
 
         return context
+    
+    def get_type_insights(self):
+        """Generate insights about project type progression."""
+        insights = []
 
+        # Find most developed project type
+        top_type = SystemType.objects.annotate(
+            system_count=Count('systems'),
+            completion_avg=Avg('systems__completion_percent')
+        ).filter(system_count__gt=0).order_by('-system_count', '-completion_percent').first()
 
-# ===================== TECHNOLOGY AND TYPE VIEWS =====================
+        if top_type:
+            insights.append({
+                'type': 'primary_focus',
+                'title': f'Primary Focus: {top_type.name}',
+                'description': f'{top_type.system_count} projects built',
+                'icon': top_type.icon.replace('fa-', '') if top_type.icon else 'star',
+                'color': 'teal'
+            })
+        
+        # Find newest project type (most recent learning)
+        newest_type = SystemType.objects.filter(
+            systems__isnull=False
+        ).annotate(latest_project=Max('systems__created_at')).order_by('-latest_project').first()
+
+        if newest_type:
+            insights.append({
+                'type': 'latest_exploration',
+                'title': f'Latest Exploration: {newest_type.name}',
+                'description': 'Most recently explored project type',
+                'icon': newest_type.icon.replace('fa-', '') if newest_type.icon else 'seedling',
+                'color': 'mint'
+            })
+        
+        # Find most complex project type
+        complex_type = SystemType.objects.annotate(
+            avg_complexity=Avg('systems__complexity')
+        ).filter(systems__isnull=False).order_by('-avg_complexity').first()
+
+        if complex_type and complex_type.avg_complexity >= 3.5:
+            insights.append({
+                'type': 'advanced_work',
+                'title': f'Advanced Work: {complex_type.name}',
+                'description': f'Average Complexity: {complex_type.avg_complexity:.1f}/5',
+                'icon': complex_type.icon.replace('fa-', '') if complex_type.icon else 'chart-line',
+                'color': 'lavender'
+            })
+        return insights
+    
+    def get_complexity_distribution(self):
+        """Get complexity distribution across all project types."""
+        distribution = {
+            'basic': SystemModule.objects.filter(complexity__lte=2).count(),
+            'intermediate': SystemModule.objects.filter(complexity=3).count(),
+            'advanced': SystemModule.objects.filter(complexity__gte=4).count(),
+        }
+
+        total = sum(distribution.values())
+        if total > 0:
+            distribution['basic_percent'] = round((distribution['basic'] / total) * 100, 1)
+            distribution['intermediate_percent'] = round((distribution['intermediate'] / total) * 100, 1)
+            distribution['advanced_percent'] = round((distribution['advanced'] / total) * 100, 1)
+        
+        return distribution
 
 
 class SystemTypeDetailView(DetailView):
@@ -2778,6 +2867,35 @@ class SystemTypeDetailView(DetailView):
 
         return context
 
+
+# ===================== ENHANCED FEATURE VIEWS =====================
+
+
+class FeaturedSystemsView(ListView):
+    """Featured systems using new manager methods."""
+
+    template_name = "projects/featured_systems.html"
+    context_object_name = "systems"
+
+    def get_queryset(self):
+        # Use new featured() method
+        return SystemModule.objects.featured().select_related("system_type")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Stats using new manager methods
+        context.update(
+            {
+                "total_featured": SystemModule.objects.featured().count(),
+                "featured_deployed": SystemModule.objects.featured().deployed().count(),
+                "featured_in_dev": SystemModule.objects.featured()
+                .in_development()
+                .count(),
+            }
+        )
+
+        return context
 
 
 
