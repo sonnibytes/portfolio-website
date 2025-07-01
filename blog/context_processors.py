@@ -9,9 +9,12 @@ def blog_context(request):
     """
     categories = Category.objects.all()
     total_logs = Post.objects.filter(status='published').count()
+    tags_count = Tag.objects.count()
     return {
         "categories": categories,
         "total_logs_count": total_logs,
+        "categories_count": categories.count(),
+        "tags_count": tags_count,
         "links": [
             {
                 "label": "All Logs",
@@ -19,19 +22,18 @@ def blog_context(request):
                 "badge": total_logs
             },
             {
-                "label": "Categories",
-                "id": "catDrop",
-                "dropdown": [
-                    {"label": cat.name, "href": reverse("blog:category", args=[cat.slug])} for cat in categories
-                ]
-            },
-            {
                 "label": "Archive",
                 "href": reverse("blog:archive")
             },
             {
                 "label": "Tags",
-                "href": reverse("blog:tag_list")
+                "href": reverse("blog:tag_list"),
+                "badge": tags_count
+            },
+            {
+                "label": "Categories",
+                "href": reverse("blog:categories_overview"),
+                "badge": categories.count()
             },
         ],
         "datalogs_stats": {

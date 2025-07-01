@@ -2340,97 +2340,669 @@ class EnhancedSystemListView(ListView):
 
 # ===================== ENHANCED SYSTEM TYPE VIEWS =====================
 
-class SystemTypeOverviewView(ListView):
+# class SystemTypeOverviewView(ListView):
+#     """
+#     Global System Type Overview - Shows all systems grouped by type
+#     This view renders when no specific system type is selected
+#     """
+#     model = SystemType
+#     template_name = "projects/system_type_overview.html"
+#     context_object_name = "system_types"
+
+#     def get_queryset(self):
+#         return SystemType.objects.prefetch_related(
+#             "systems__technologies"
+#         ).annotate(
+#             systems_count=Count('systems', filter=Q(systems__status='published')),
+#             deployed_count=Count('systems', filter=Q(systems__status='deployed')),
+#             avg_completion=Avg('systems__completion_percent')
+#         ).order_by('display_order')
+    
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+
+#         # Global stats using enhanced manager methods
+#         all_systems = SystemModule.objects.all()
+
+#         context.update({
+#             'page_title': 'System Types Overview',
+#             'total_systems': all_systems.count(),
+#             'total_deployed': all_systems.deployed().count(),
+#             'total_featured': all_systems.featured().count(),
+#             'total_in_development': all_systems.in_development().count(),
+
+#             # Performance distribution
+#             'performance_distribution': self.get_performance_distribution(),
+
+#             # Technology distribution across all types
+#             'top_technologies': Technology.objects.annotate(
+#                 systems_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+#             ).order_by('-systems_count')[:8],
+
+#             # Recent activity
+#             'recently_updated': all_systems.recently_updated(7).select_related('system_type')[:5],
+
+#             # Type analytics
+#             'type_analytics': self.get_type_analytics(),
+#         })
+
+#         return context
+
+#     def get_performance_distribution(self):
+#         """Get performance score distribution across all systems."""
+#         systems = SystemModule.objects.with_performance_data()
+
+#         return {
+#             'excellent': systems.filter(performance_score__gte=90).count(),
+#             'good': systems.filter(performance_score__range=[70, 89]).count(),
+#             'fair': systems.filter(performance_score__range=[50, 69]).count(),
+#             'poor': systems.filter(performance_score__lt=50).count(),
+#         }
+
+#     def get_type_analytics(self):
+#         """Get analytics for each system type."""
+#         type_data = []
+
+#         for system_type in self.get_queryset():
+#             type_systems = SystemModule.objects.filter(system_type=system_type)
+
+#             # Calculate health score based on deployment ratio and completion
+#             deployed_ratio = type_systems.deployed().count() / max(type_systems.count(), 1)
+#             avg_completion = type_systems.aggregate(avg=Avg('completion_percent'))['avg'] or 0
+#             health_score = (deployed_ratio * 50) + (avg_completion * 0.5)
+
+#             type_data.append({
+#                 'type': system_type,
+#                 'systems_count': type_systems.count(),
+#                 'deployed_count': type_systems.deployed().count(),
+#                 'featured_count': type_systems.featured().count(),
+#                 'avg_completion': avg_completion,
+#                 'health_score': min(100, health_score),
+#                 'top_technologies': Technology.objects.filter(
+#                     systems__system_type=system_type
+#                 ).annotate(
+#                     count=Count('systems')
+#                 ).order_by('-count')[:3]
+#             })
+
+
+# ===================== ENHANCED TECHNOLOGY VIEWS =====================
+
+
+class TechnologiesOverviewView(ListView):
     """
-    Global System Type Overview - Shows all systems grouped by type
-    This view renders when no specific system type is selected
+    Technologies Overview - Shows all technologies with learning progression
+    Similar to datalogs tag_list.html structure but learning-focused
     """
-    model = SystemType
-    template_name = "projects/system_type_overview.html"
-    context_object_name = "system_types"
+    model = Technology
+    template_name = "projects/technologies_overview.html"
+    context_object_name = "technologies"
 
     def get_queryset(self):
-        return SystemType.objects.prefetch_related(
-            "systems__technologies"
-        ).annotate(
-            systems_count=Count('systems', filter=Q(systems__status='published')),
-            deployed_count=Count('systems', filter=Q(systems__status='deployed')),
-            avg_completion=Avg('systems__completion_percent')
-        ).order_by('display_order')
+        """Get technologies w learning-focused annotations."""
+        return Technology.objects.annotate(
+            # Learning focused metrics instead of enterprise metrics
+            total_projects=Count('systems'),
+            completed_projects=Count('systems', filter=Q(systems__status__in=['deployed', 'published'])),
+            learning_projects=Count('systems', filter=Q(systems__status='in_development')),
+            featured_projects=Count('systems', filter=Q(systems__featured=True)),
+            avg_complexity=Avg('systems__completion_percent'),  # May change this to avg_completion?
+            skill_level=Avg('systems__complexity'),  # Avg complexity as skill indicator
+        ).filter(
+            total_projects__gt=0  # Only show technologies actually used
+        ).order_by('category', '-total_projects')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Global stats using enhanced manager methods
+        # Learning journey overview stats
         all_systems = SystemModule.objects.all()
+        all_technologies = Technology.objects.filter(systems__isnull=False).distinct()
 
         context.update({
-            'page_title': 'System Types Overview',
-            'total_systems': all_systems.count(),
-            'total_deployed': all_systems.deployed().count(),
-            'total_featured': all_systems.featured().count(),
-            'total_in_development': all_systems.in_development().count(),
+            'page_title': 'Technology Skills Overview',
+            'page_subtitle': 'Learning progression across technologies in my development journey',
 
-            # Performance distribution
-            'performance_distribution': self.get_performance_distribution(),
+            # Learning Journey Metrics
+            'total_technologies_learned': all_technologies.count(),
+            'total_projects_built': all_systems.count(),
+            'technologies_in_progress': all_technologies.filter(
+                systems__status='in_development'
+            ).distinct().count(),
+            'advanced_technologies': all_technologies.annotate(
+                avg_complexity=Avg('systems__complexity')
+            ).filter(avg_complexity__gte=3.5).count(),
 
-            # Technology distribution across all types
-            'top_technologies': Technology.objects.annotate(
-                systems_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-            ).order_by('-systems_count')[:8],
+            # Technology categories for navigation (like category hexagons)
+            'technology_categories': self.get_technology_categories(),
 
-            # Recent activity
-            'recently_updated': all_systems.recently_updated(7).select_related('system_type')[:5],
-
-            # Type analytics
-            'type_analytics': self.get_type_analytics(),
+            # Learning progression insights
+            'learning_insights': self.get_learning_insights(),
         })
 
         return context
+    
+    def get_technology_categories(self):
+        """Get technology categories w stats - like category hexagons"""
+        categories = []
 
-    def get_performance_distribution(self):
-        """Get performance score distribution across all systems."""
-        systems = SystemModule.objects.with_performance_data()
+        for category_code, category_name in Technology.CATEGORY_CHOICES:
+            category_techs = Technology.objects.filter(category=category_code)
+            if category_techs.exists():
+                # Calculate category learning metrics
+                total_projects = SystemModule.objects.filter(
+                    technologies__category=category_code
+                ).distinct().count()
 
-        return {
-            'excellent': systems.filter(performance_score__gte=90).count(),
-            'good': systems.filter(performance_score__range=[70, 89]).count(),
-            'fair': systems.filter(performance_score__range=[50, 69]).count(),
-            'poor': systems.filter(performance_score__lt=50).count(),
+                avg_skill_level = category_techs.annotate(
+                    avg_complexity=Avg('systems__complexity')
+                ).aggregate(
+                    overall_avg=Avg('avg_complexity')
+                )['overall_avg'] or 0
+
+                categories.append({
+                    'code': category_code,
+                    'name': category_name,
+                    'color': self.get_category_color(category_code),
+                    'icon': self.get_category_icon(category_code),
+                    'tech_count': category_techs.count(),
+                    'project_count': total_projects,
+                    'skill_level': round(avg_skill_level, 1),
+                })
+        return categories
+    
+    def get_category_color(self, category):
+        """Get color for each technology category."""
+        colors = {
+            "language": "#ff8a80",  # Coral for languages
+            "framework": "#b39ddb",  # Lavender for frameworks
+            "database": "#26c6da",  # Teal for databases
+            "cloud": "#fff59d",  # Yellow for cloud
+            "tool": "#a5d6a7",  # Mint for tools
+            "other": "#90a4ae",  # Gunmetal for other
         }
+        return colors.get(category, "#90a4ae")
+    
+    def get_category_icon(self, category):
+        """Get icon for each tech category."""
+        icons = {
+            "language": "code",
+            "framework": "layer-group",
+            "database": "database",
+            "cloud": "cloud",
+            "tool": "tools",
+            "other": "cog",
+        }
+        return icons.get(category, "cog")
+    
+    def get_learning_insights(self):
+        """Generate learning progression insights."""
+        insights = []
 
-    def get_type_analytics(self):
-        """Get analytics for each system type."""
-        type_data = []
+        # Find most used technology
+        top_tech = Technology.objects.annotate(
+            project_count=Count('systems')
+        ).order_by('-project_count').first()
 
-        for system_type in self.get_queryset():
-            type_systems = SystemModule.objects.filter(system_type=system_type)
+        if top_tech:
+            insights.append({
+                'type': 'primary_skill',
+                'title': f'Primary Technology: {top_tech.name}',
+                'description': f'Used in {top_tech.project_count} projects',
+                'icon': 'star',
+                'color': 'teal'
+            })
+        
+        # Find newest technology (most recent project)
+        newest_tech = Technology.objects.filter(
+            systems__isnull=False
+        ).annotate(
+            latest_project=Max('systems__created_at')
+        ).order_by('-latest_project').first()
 
-            # Calculate health score based on deployment ratio and completion
-            deployed_ratio = type_systems.deployed().count() / max(type_systems.count(), 1)
-            avg_completion = type_systems.aggregate(avg=Avg('completion_percent'))['avg'] or 0
-            health_score = (deployed_ratio * 50) + (avg_completion * 0.5)
-
-            type_data.append({
-                'type': system_type,
-                'systems_count': type_systems.count(),
-                'deployed_count': type_systems.deployed().count(),
-                'featured_count': type_systems.featured().count(),
-                'avg_completion': avg_completion,
-                'health_score': min(100, health_score),
-                'top_technologies': Technology.objects.filter(
-                    systems__system_type=system_type
-                ).annotate(
-                    count=Count('systems')
-                ).order_by('-count')[:3]
+        if newest_tech:
+            insights.append({
+                'type': 'latest_learning',
+                'title': f'Latest Skill: {newest_tech.name}',
+                'description': 'Most recently explored technology',
+                'icon': 'seedling',
+                'color': 'mint'
             })
 
+        # Find complexity progression
+        advanced_count = Technology.objects.annotate(
+            avg_complexity=Avg('systems__complexity')
+        ).filter(avg_complexity__gte=4).count()
+
+        if advanced_count > 0:
+            insights.append({
+                'type': 'skill_growth',
+                'title': f'{advanced_count} Advanced Technologies',
+                'description': 'Demonstrating progression to complex implementations',
+                'icon': 'chart-line',
+                'color': 'lavender'
+            })
+        return insights
 
 
+class TechnologyDetailView(DetailView):
+    """
+    Enhanced Technology Detail - Shows learning progression with this technology
+    Similar to datalogs tag.html but learning-focused, shows filtered systems
+    """
+
+    model = Technology
+    template_name = "projects/technology_detail.html"
+    context_object_name = "technology"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        technology = self.object
+
+        # Get systems using this technology w learning focus
+        tech_systems = SystemModule.objects.filter(technologies=technology).select_related(
+            'system_type', 'author'
+        ).prefetch_related('technologies')
+
+        # Learning progression: order by complexity and date to show growth
+        context["systems"] = tech_systems.order_by('complexity', 'created_at')
+
+        # Learning-focused stats (not enterprise metrics)
+        context.update({
+            'page_title': f'{technology.name} - Learning Journey',
+            'page_subtitle': f'Projects and progression using {technology.name}',
+
+            # Learning Journey Stats
+            'total_projects': tech_systems.count(),
+            'completed_projects': tech_systems.filter(status__in=['deployed', 'published']).count(),
+            'learning_projects': tech_systems.filter(status='in_development').count(),
+            'featured_projects': tech_systems.filter(featured=True).count(),
+
+            # Skill progression metrics
+            'skill_progression': self.get_skill_progression(tech_systems),
+            'learning_timeline': self.get_learning_timeline(tech_systems),
+            'complexity_progression': self.get_complexity_progression(tech_systems),
+
+            # Related learning (DataLogs integration)
+            'related_datalogs': self.get_related_datalogs(technology),
+
+            # Technology context
+            'technology_category': technology.get_category_display(),
+            'similar_technologies': self.get_similar_technologies(technology),
+        })
+
+        return context
+    
+    def get_skill_progression(self, systems):
+        """Calculate skill level progression w this technology."""
+        if not systems.exists():
+            return {'level': 'Beginner', 'description': 'Getting started'}
+        
+        avg_complexity = systems.aggregate(avg=Avg('complexity'))['avg'] or 1
+        project_count = systems.count()
+        completion_rate = (systems.filter(
+            status__in=['deployed', 'published']
+        ).count() / project_count) * 100 if project_count > 0 else 0
+
+        # Determine skill level based on complexity and experience
+        if avg_complexity >= 4 and project_count >= 3:
+            level = 'Advanced'
+            description = f'Confident with complex implementation ({project_count} projects)'
+        elif avg_complexity >= 3 and project_count >= 2:
+            level = 'Intermediate'
+            description = f'Growing proficiency through practice ({project_count} projects)'
+        else:
+            level = 'Learning'
+            description = f'Building foundational skills ({project_count} project{"s" if project_count > 1 else ""})'
+        return {
+            'level': level,
+            'description': description,
+            'avg_complexity': round(avg_complexity, 1),
+            'project_count': project_count,
+            'completion_rate': round(completion_rate, 1),
+        }
+    
+    def get_learning_timeline(self, systems):
+        """Create a learning timeline for this technology."""
+        timeline_items = []
+
+        for system in systems.order_by('created_at'):
+            timeline_items.append({
+                'date': system.created_at,
+                'title': system.title,
+                'type': 'project',
+                'complexity': system.complexity,
+                'status': system.status,
+                'description': system.excerpt or f'{system.get_complexity_display()} {system.system_type.name if system.system_type else "project"}',
+                'url': system.get_absolute_url(),
+            })
+        return timeline_items
+    
+    def get_complexity_progression(self, systems):
+        """Show how complexity has grown over time."""
+        progression = []
+
+        for system in systems.order_by('created_at'):
+            progression.append({
+                'title': system.title,
+                'complexity': system.complexity,
+                'complexity_display': system.get_complexity_display(),
+                'date': system.created_at,
+                'completion': system.completion_percent,
+            })
+        return progression
+    
+    def get_related_datalogs(self, technology):
+        """Find DataLogs related to this technology."""
+        # Import here to avoid circular imports
+        # from blog.models import Post
+
+        # Search for posts that mention this tech
+        related_posts = Post.objects.filter(
+            Q(title__icontains=technology.name) |
+            Q(content__icontains=technology.name) |
+            Q(tags__name__icontains=technology.name)
+        ).filter(status='published').distinct()[:5]
+
+        return related_posts
+    
+    def get_similar_technologies(self, technology):
+        """Find similar technologies in same category."""
+        return Technology.objects.filter(
+            category=technology.category
+        ).exclude(id=technology.id).annotate(project_count=Count('systems')).filter(project_count__gt=0)[:4]
 
 
+# ===================== ENHANCED SYSTEM TYPE VIEWS =====================
 
 
+class SystemTypesOverviewView(ListView):
+    """
+    System Types Overview - Shows all system types with learning progression
+    Similar to technologies overview but focused on project types/categories
+    """
+    model = SystemType
+    template_name = "projects/system_types_overview.html"
+    context_object_name = "system_types"
+
+    def get_queryset(self):
+        """Get system types w learning-focused annotations."""
+        return SystemType.objects.annotate(
+            # Learning-focused metrics for each system type
+            total_systems=Count('systems'),
+            completed_systems=Count('systems', filter=Q(systems__status__in=['deployed', 'published'])),
+            learning_systems=Count('systems', filter=Q(systems__status='in_development')),
+            featured_systems=Count('systems', filter=Q(systems__featured=True)),
+            avg_completion=Avg('systems__completion_percent'),
+            avg_complexity=Avg('systems__complexity'),  # Avg complexity as skill progression indicator
+            latest_project=Max('systems__created_at'),  # Most recent work in this type
+        ).filter(
+            total_systems__gt=0  # Only show types w actual projects
+        ).order_by('display_order', 'name')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Learning journey overview stats
+        all_systems = SystemModule.objects.all()
+        all_types = SystemType.objects.filter(systems__isnull=False).distinct()
+
+        context.update({
+            'page_title': 'Project Types Overview',
+            'page_subtitle': 'Exploring different types of systems and applications in my learning journey',
+
+            # Learning Journey Metrics
+            'total_project_types': all_types.count(),
+            'total_systems_built': all_systems.count(),
+            'types_in_progress': all_types.filter(
+                systems__status='in_development'
+            ).distinct().count(),
+            'advanced_project_types': all_types.annotate(
+                avg_complexity=Avg('systems__complexity')
+            ).filter(avg_complexity__gte=3.5).count(),
+
+            # System type insights
+            'type_insights': self.get_type_insights(),
+
+            # Complexity progression across types
+            'complexity_distribution': self.get_complexity_distribution(),
+        })
+
+        return context
+    
+    def get_type_insights(self):
+        """Generate insights about project type progression."""
+        insights = []
+
+        # Find most developed project type
+        top_type = SystemType.objects.annotate(
+            system_count=Count('systems'),
+            completion_avg=Avg('systems__completion_percent')
+        ).filter(system_count__gt=0).order_by('-system_count', '-completion_avg').first()
+
+        if top_type:
+            insights.append({
+                'type': 'primary_focus',
+                'title': f'Primary Focus: {top_type.name}',
+                'description': f'{top_type.system_count} projects built',
+                'icon': top_type.icon if top_type.icon else 'fa-star',
+                'color': 'teal'
+            })
+        
+        # Find newest project type (most recent learning)
+        newest_type = SystemType.objects.filter(
+            systems__isnull=False
+        ).annotate(latest_project=Max('systems__created_at')).order_by('-latest_project').first()
+
+        if newest_type:
+            insights.append({
+                'type': 'latest_exploration',
+                'title': f'Latest Exploration: {newest_type.name}',
+                'description': 'Most recently explored project type',
+                'icon': newest_type.icon if newest_type.icon else 'fa-seedling',
+                'color': 'mint'
+            })
+        
+        # Find most complex project type
+        complex_type = SystemType.objects.annotate(
+            avg_complexity=Avg('systems__complexity')
+        ).filter(systems__isnull=False).order_by('-avg_complexity').first()
+
+        if complex_type and complex_type.avg_complexity >= 3.5:
+            insights.append({
+                'type': 'advanced_work',
+                'title': f'Advanced Work: {complex_type.name}',
+                'description': f'Average Complexity: {complex_type.avg_complexity:.1f}/5',
+                'icon': complex_type.icon if complex_type.icon else 'fa-chart-line',
+                'color': 'lavender'
+            })
+        return insights
+    
+    def get_complexity_distribution(self):
+        """Get complexity distribution across all project types."""
+        distribution = {
+            'basic': SystemModule.objects.filter(complexity__lte=2).count(),
+            'intermediate': SystemModule.objects.filter(complexity=3).count(),
+            'advanced': SystemModule.objects.filter(complexity__gte=4).count(),
+        }
+
+        total = sum(distribution.values())
+        if total > 0:
+            distribution['basic_percent'] = round((distribution['basic'] / total) * 100, 1)
+            distribution['intermediate_percent'] = round((distribution['intermediate'] / total) * 100, 1)
+            distribution['advanced_percent'] = round((distribution['advanced'] / total) * 100, 1)
+        
+        return distribution
+
+
+class SystemTypeDetailView(DetailView):
+    """
+    Enhanced System Type Detail - Shows learning progression within this project type
+    Similar to technology detail but focused on systems of a specific type
+    """
+
+    model = SystemType
+    template_name = "projects/system_type.html"
+    context_object_name = "system_type"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        system_type = self.object
+
+        # Get systems of this type w learning focus
+        type_systems = SystemModule.objects.filter(system_type=system_type).select_related(
+            'author'
+        ).prefetch_related('technologies')
+
+        # Learning progressionL order by complexity and date to show growth
+        context["systems"] = type_systems.order_by('complexity', 'created_at')
+
+        # Learning focused stats (not enterprise metrics)
+        context.update({
+            'page_title': f'{system_type.name} - Project Portfolio',
+            'page_subtitle': f'My learning journey building {system_type.name.lower()} systems',
+
+            # Learning Journey Stats
+            'total_systems': type_systems.count(),
+            'completed_systems': type_systems.filter(status__in=['deployed', 'published']).count(),
+            'learning_systems': type_systems.filter(status='in_development').count(),
+            'featured_systems': type_systems.filter(featured=True).count(),
+
+            # Skill progression metrics
+            'skill_progression': self.get_skill_progression(type_systems),
+            'learning_timeline': self.get_learning_timeline(type_systems),
+            'complexity_progression': self.get_complexity_progression(type_systems),
+            'technology_usage': self.get_technology_usage(type_systems),
+
+            # Related learning (DataLogs integration)
+            'related_datalogs': self.get_related_datalogs(system_type),
+
+            # System type context
+            'similar_types': self.get_similar_types(system_type),
+        })
+
+        return context
+    
+    def get_skill_progression(self, systems):
+        """Calculate skill level progression within this project type."""
+        if not systems.exists():
+            return {'level': 'Getting Started', 'description': 'Beginning exploration'}
+        
+        avg_complexity = systems.aggregate(avg=Avg('complexity'))['avg'] or 1
+        project_count = systems.count()
+        completion_rate = (systems.filter(
+            status__in=['deployed', 'published']
+        ).count() / project_count) * 100 if project_count > 0 else 0
+
+        # Determine skill level based on complexity and experience
+        if avg_complexity >= 4 and project_count >= 3:
+            level = 'Advanced'
+            description = f"Sophisticated {self.object.name.lower()} implementations ({project_count} projects)"
+        elif avg_complexity >= 3 or project_count >= 2:
+            level = "Intermediate"
+            description = f"Growing expertise in {self.object.name.lower()} development ({project_count} projects)"
+        else:
+            level = "Learning"
+            description = f"Building foundational {self.object.name.lower()} skills ({project_count} project{'s' if project_count > 1 else ''})"
+
+        return {
+            "level": level,
+            "description": description,
+            "avg_complexity": round(avg_complexity, 1),
+            "project_count": project_count,
+            "completion_rate": round(completion_rate, 1),
+        }
+    
+    def get_learning_timeline(self, systems):
+        """Create a learning timeline for this project type."""
+        timeline_items = []
+
+        for system in systems.order_by('created_at'):
+            timeline_items.append({
+                'date': system.created_at,
+                'title': system.title,
+                'type': 'project',
+                'complexity': system.complexity,
+                'status': system.status,
+                'description': system.excerpt or f'{system.get_complexity_display()} {self.object.name.lower()} project',
+                'url': system.get_absolute_url(),
+                'technologies': list(system.technologies.all()[:3]),  # Top 3 technologies
+            })
+        return timeline_items
+    
+    def get_complexity_progression(self, systems):
+        """Show how complexity has grown over time within this type."""
+        progression = []
+        
+        for system in systems.order_by('created_at'):
+            progression.append({
+                'title': system.title,
+                'complexity': system.complexity,
+                'complexity_display': system.get_complexity_display(),
+                'date': system.created_at,
+                'completion': system.completion_percent,
+                'featured': system.featured,
+            })
+        
+        return progression
+    
+    def get_technology_usage(self, systems):
+        """Get technology usage stats within this project type."""
+        from collections import Counter
+        
+        # Get all technologies used in this project type
+        tech_usage = Counter()
+        for system in systems:
+            for tech in system.technologies.all():
+                tech_usage[tech] += 1
+        
+        # Convert to list with percentages
+        total_systems = systems.count()
+        usage_stats = []
+        
+        for tech, count in tech_usage.most_common():
+            percentage = (count / total_systems) * 100 if total_systems > 0 else 0
+            usage_stats.append({
+                'technology': tech,
+                'count': count,
+                'percentage': round(percentage, 1),
+            })
+        
+        return usage_stats[:8]  # Top 8 technologies
+    
+    def get_related_datalogs(self, system_type):
+        """Find DataLogs related to this system type."""
+        # Import here to avoid circular imports
+        from blog.models import Post
+        
+        # Search for posts that mention this system type
+        related_posts = Post.objects.filter(
+            Q(title__icontains=system_type.name) |
+            Q(content__icontains=system_type.name) |
+            Q(tags__name__icontains=system_type.name)
+        ).filter(status='published').distinct()[:5]
+        
+        return related_posts
+    
+    def get_similar_types(self, system_type):
+        """Find other system types with similar complexity or technology usage."""
+        # Get other system types with similar average complexity
+        current_complexity = SystemModule.objects.filter(
+            system_type=system_type
+        ).aggregate(avg=Avg('complexity'))['avg'] or 0
+        
+        similar_types = SystemType.objects.exclude(
+            id=system_type.id
+        ).annotate(
+            system_count=Count('systems'),
+            avg_complexity=Avg('systems__complexity')
+        ).filter(
+            system_count__gt=0,
+            avg_complexity__gte=current_complexity - 0.5,
+            avg_complexity__lte=current_complexity + 0.5
+        )[:4]
+        
+        return similar_types
 
 
 # ===================== ENHANCED FEATURE VIEWS =====================
@@ -2463,68 +3035,6 @@ class FeaturedSystemsView(ListView):
         return context
 
 
-# ===================== TECHNOLOGY AND TYPE VIEWS =====================
-
-
-class SystemTypeDetailView(DetailView):
-    """Enhanced system type view using new manager methods."""
-
-    model = SystemType
-    template_name = "projects/system_type.html"
-    context_object_name = "system_type"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        system_type = self.object
-
-        # Systems in this type using new manager methods
-        context["systems"] = SystemModule.objects.filter(
-            system_type=system_type
-        ).deployed()  # Use our new deployed() method
-
-        # Stats using new manager methods
-        type_systems = SystemModule.objects.filter(system_type=system_type)
-        context.update(
-            {
-                "total_systems": type_systems.count(),
-                "deployed_systems": type_systems.deployed().count(),
-                "featured_systems": type_systems.featured().count(),
-                "avg_completion": type_systems.aggregate(avg=Avg("completion_percent"))[
-                    "avg"
-                ]
-                or 0,
-            }
-        )
-
-        return context
-
-
-class TechnologyDetailView(DetailView):
-    """Enhanced technology view using new manager methods."""
-
-    model = Technology
-    template_name = "projects/technology_detail.html"
-    context_object_name = "technology"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        technology = self.object
-
-        # Systems using this tech - use new manager methods
-        tech_systems = SystemModule.objects.filter(technologies=technology)
-        context["systems"] = tech_systems.deployed()  # Only show deployed
-
-        # Stats using new manager methods
-        context.update(
-            {
-                "total_systems": tech_systems.count(),
-                "deployed_systems": tech_systems.deployed().count(),
-                "featured_systems": tech_systems.featured().count(),
-                "in_development": tech_systems.in_development().count(),
-            }
-        )
-
-        return context
 
 
 # ===================== API ENDPOINTS =====================
@@ -2553,124 +3063,3 @@ def dashboard_api(request):
         }
     )
 
-# ===================== ADMIN/MANAGEMENT VIEWS (AS-IS WILL NEED UPDATING WHEN USE) =====================
-
-
-class SystemModuleCreateView(LoginRequiredMixin, CreateView):
-    """Create a new system module."""
-
-    model = SystemModule
-    template_name = "projects/admin/system_form.html"
-    fields = [
-        "title",
-        "subtitle",
-        "system_type",
-        "description",
-        "features_overview",
-        "technical_details",
-        "complexity",
-        "priority",
-        "status",
-        "featured",
-        "technologies",
-        "github_url",
-        "live_url",
-        "demo_url",
-        "thumbnail",
-        "banner_image",
-        "start_date",
-        "end_date",
-    ]
-
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        messages.success(
-            self.request, f"System '{form.instance.title}' created successfully!"
-        )
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = "Create New System"
-        context["submit_text"] = "Create System"
-        return context
-
-
-class SystemModuleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """Update an existing system module."""
-
-    model = SystemModule
-    template_name = "projects/admin/system_form.html"
-    fields = [
-        "title",
-        "subtitle",
-        "system_type",
-        "description",
-        "features_overview",
-        "technical_details",
-        "challenges",
-        "future_enhancements",
-        "complexity",
-        "priority",
-        "status",
-        "featured",
-        "technologies",
-        "github_url",
-        "live_url",
-        "demo_url",
-        "documentation_url",
-        "completion_percent",
-        "performance_score",
-        "uptime_percentage",
-        "thumbnail",
-        "banner_image",
-        "featured_image",
-        "architecture_diagram",
-        "start_date",
-        "end_date",
-        "deployment_date",
-    ]
-
-    def test_func(self):
-        system = self.get_object()
-        return self.request.user == system.author or self.request.user.is_staff
-
-    def form_valid(self, form):
-        messages.success(
-            self.request, f"System '{form.instance.title}' updated successfully!"
-        )
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = f"Edit System: {self.object.title}"
-        context["submit_text"] = "Update System"
-        return context
-
-
-class SystemModuleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    """Delete a system module."""
-
-    model = SystemModule
-    template_name = "projects/admin/system_confirm_delete.html"
-    success_url = reverse_lazy("projects:system_list")
-
-    def test_func(self):
-        system = self.get_object()
-        return self.request.user == system.author or self.request.user.is_staff
-
-    def delete(self, request, *args, **kwargs):
-        system = self.get_object()
-        messages.success(request, f"System '{system.title}' deleted successfully!")
-        return super().delete(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = f"Delete System: {self.object.title}"
-
-        # Get related data that will be affected
-        context["related_logs"] = self.object.get_related_logs()
-        context["related_features"] = self.object.features.count()
-        context["related_images"] = self.object.images.count()
-
-        return context
