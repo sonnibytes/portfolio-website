@@ -2580,7 +2580,7 @@ class TechnologiesOverviewView(ListView):
                 'title': f'{advanced_count} Advanced Technologies',
                 'description': 'Demonstrating progression to complex implementations',
                 'icon': 'chart-line',
-                'color': 'purple'
+                'color': 'lavender'
             })
         return insights
 
