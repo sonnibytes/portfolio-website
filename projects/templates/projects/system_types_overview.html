@@ -1,0 +1,419 @@
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+{% load system_tags %}
+
+{% block systems_title %}Project Types{% endblock %}
+
+{% block systems_css %}
+<style>
+    /* System Types Overview Styles - Following technology pattern */
+    .system-types-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+    }
+
+    .system-type-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg, 12px);
+        padding: var(--spacing-lg, 1.5rem);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .system-type-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .system-type-card:hover::before {
+        width: 8px;
+    }
+
+    .system-type-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .system-type-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-lg, 1.5rem);
+    }
+
+    .system-type-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: var(--border-radius-lg, 12px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-bg-primary);
+        font-size: 1.8rem;
+        font-weight: bold;
+        position: relative;
+    }
+
+    .system-type-icon::after {
+        content: attr(data-code);
+        position: absolute;
+        bottom: -5px;
+        right: -5px;
+        background: var(--color-bg-primary);
+        color: var(--system-type-color);
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 2px 4px;
+        border-radius: var(--border-radius-sm, 4px);
+        border: 1px solid var(--system-type-color);
+    }
+
+    .system-type-info h3 {
+        margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+        color: var(--color-text);
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    .system-type-description {
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+        margin-bottom: var(--spacing-lg, 1.5rem);
+        font-size: 0.9rem;
+    }
+
+    .system-type-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm, 0.75rem);
+        margin-bottom: var(--spacing-lg, 1.5rem);
+    }
+
+    .type-stat {
+        text-align: center;
+        padding: var(--spacing-md, 1rem);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+    }
+
+    .type-stat-value {
+        display: block;
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: var(--spacing-xs, 0.5rem);
+    }
+
+    .type-stat-label {
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .system-type-progression {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--spacing-md, 1rem);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+        margin-bottom: var(--spacing-lg, 1.5rem);
+    }
+
+    .progression-text {
+        font-size: 0.9rem;
+        color: var(--color-text-secondary);
+    }
+
+    .complexity-indicator {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs, 0.5rem);
+    }
+
+    .complexity-dots {
+        display: flex;
+        gap: 3px;
+    }
+
+    .complexity-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .complexity-dot.active {
+        /* Color set inline via template filter */
+    }
+
+    .system-type-actions {
+        display: flex;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+
+    .type-action-btn {
+        flex: 1;
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        border-radius: var(--border-radius-md, 8px);
+        text-decoration: none;
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .type-action-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Complexity Distribution Chart */
+    .complexity-chart {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+        padding: var(--spacing-lg, 1.5rem);
+    }
+
+    .complexity-bar {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+
+    .complexity-label {
+        width: 100px;
+        font-size: 0.9rem;
+        color: var(--color-text-secondary);
+    }
+
+    .complexity-progress {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .complexity-fill {
+        height: 100%;
+        transition: width 0.6s ease;
+    }
+
+    .complexity-percent {
+        width: 40px;
+        text-align: right;
+        font-size: 0.9rem;
+        color: var(--color-text-secondary);
+        font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .system-types-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .system-type-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block systems_content %}
+<div class="systems-content-container">
+    
+    <!-- Page Header with Learning Journey Stats -->
+    <div class="unified-dashboard-container teal">
+        <div class="unified-container-header">
+            <h1 class="unified-container-title">
+                <i class="fas fa-layer-group" style="margin-right: var(--spacing-md, 1rem); color: var(--color-teal);"></i>
+                Project Types Overview
+            </h1>
+            <p class="unified-container-subtitle">{{ page_subtitle }}</p>
+        </div>
+        
+        <!-- Learning Journey Quick Stats -->
+        <div class="dashboard-grid grid-4-col">
+            <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                <span class="metric-value" style="font-size: 2.5rem; color: var(--color-teal);">{{ total_project_types }}</span>
+                <span class="metric-label">Project Types</span>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                <span class="metric-value" style="font-size: 2.5rem; color: var(--color-teal);">{{ total_systems_built }}</span>
+                <span class="metric-label">Systems Built</span>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                <span class="metric-value" style="font-size: 2.5rem; color: var(--color-teal);">{{ advanced_project_types }}</span>
+                <span class="metric-label">Advanced Types</span>
+            </div>
+            <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                <span class="metric-value" style="font-size: 2.5rem; color: var(--color-teal);">{{ types_in_progress }}</span>
+                <span class="metric-label">Currently Developing</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Learning Insights -->
+    {% if type_insights %}
+    <div class="unified-dashboard-container lavender">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title" style="font-size: 1.8rem;">
+                <i class="fas fa-lightbulb" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-lavender);"></i>
+                Project Type Insights
+            </h2>
+            <p class="unified-container-subtitle">Key patterns in my development focus and progression</p>
+        </div>
+        
+        <div class="dashboard-grid grid-3-col">
+            {% for insight in type_insights %}
+            <div style="display: flex; align-items: center; gap: var(--spacing-md, 1rem); padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
+                <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--color-{{ insight.color }}); display: flex; align-items: center; justify-content: center; color: var(--color-bg-primary); font-size: 1.3rem; flex-shrink: 0;">
+                    <i class="fas fa-{{ insight.icon }}"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 var(--spacing-xs, 0.5rem) 0; color: var(--color-text); font-size: 1.1rem;">{{ insight.title }}</h4>
+                    <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.9rem;">{{ insight.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Complexity Distribution -->
+    {% if complexity_distribution %}
+    <div class="unified-dashboard-container navy">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title" style="font-size: 1.8rem;">
+                <i class="fas fa-chart-bar" style="margin-right: var(--spacing-sm, 0.75rem); color: #5c6bc0;"></i>
+                Complexity Progression
+            </h2>
+            <p class="unified-container-subtitle">Distribution of project complexity across my portfolio</p>
+        </div>
+        
+        <div class="complexity-chart">
+            <div class="complexity-bar">
+                <span class="complexity-label">Basic (1-2)</span>
+                <div class="complexity-progress">
+                    <div class="complexity-fill" style="width: {{ complexity_distribution.basic_percent }}%; background: var(--color-mint);"></div>
+                </div>
+                <span class="complexity-percent">{{ complexity_distribution.basic_percent }}%</span>
+            </div>
+            <div class="complexity-bar">
+                <span class="complexity-label">Intermediate (3)</span>
+                <div class="complexity-progress">
+                    <div class="complexity-fill" style="width: {{ complexity_distribution.intermediate_percent }}%; background: var(--color-yellow);"></div>
+                </div>
+                <span class="complexity-percent">{{ complexity_distribution.intermediate_percent }}%</span>
+            </div>
+            <div class="complexity-bar">
+                <span class="complexity-label">Advanced (4-5)</span>
+                <div class="complexity-progress">
+                    <div class="complexity-fill" style="width: {{ complexity_distribution.advanced_percent }}%; background: var(--color-coral);"></div>
+                </div>
+                <span class="complexity-percent">{{ complexity_distribution.advanced_percent }}%</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- System Types Grid -->
+    <div class="unified-dashboard-container gunmetal">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title" style="font-size: 1.8rem;">
+                <i class="fas fa-th-large" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-gunmetal);"></i>
+                Project Types Portfolio
+            </h2>
+            <p class="unified-container-subtitle">Explore projects organized by system type and purpose</p>
+        </div>
+        
+        <div class="system-types-grid">
+            {% for system_type in system_types %}
+            <div class="system-type-card" style="--system-type-color: {{ system_type.color|lighten_if_dark }}; --system-type-readable: {{ system_type.color|readable_color }};" data-type="{{ system_type.slug }}">
+                <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: {{ system_type.color|readable_color }};"></div>
+                
+                <!-- System Type Header -->
+                <div class="system-type-header">
+                    <div class="system-type-icon" style="background: {{ system_type.color|readable_color }};" data-code="{{ system_type.code }}">
+                        {% if system_type.icon %}
+                            <i class="{{ system_type.icon }}"></i>
+                        {% else %}
+                            {{ system_type.name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="system-type-info">
+                        <h3>{{ system_type.name }}</h3>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                {% if system_type.description %}
+                <div class="system-type-description">
+                    {{ system_type.description|truncatewords:25 }}
+                </div>
+                {% endif %}
+
+                <!-- Learning Stats -->
+                <div class="system-type-stats">
+                    <div class="type-stat">
+                        <span class="type-stat-value" style="color: {{ system_type.color|readable_color }};">{{ system_type.total_systems }}</span>
+                        <span class="type-stat-label">Projects</span>
+                    </div>
+                    <div class="type-stat">
+                        <span class="type-stat-value" style="color: {{ system_type.color|readable_color }};">{{ system_type.avg_complexity|floatformat:1 }}/5</span>
+                        <span class="type-stat-label">Avg Complexity</span>
+                    </div>
+                </div>
+
+                <!-- Complexity Progression -->
+                <div class="system-type-progression">
+                    <span class="progression-text">
+                        {% if system_type.avg_complexity >= 4 %}Advanced Implementation
+                        {% elif system_type.avg_complexity >= 3 %}Intermediate Proficiency
+                        {% elif system_type.avg_complexity >= 2 %}Learning & Building
+                        {% else %}Getting Started
+                        {% endif %}
+                    </span>
+                    <div class="complexity-indicator">
+                        <div class="complexity-dots">
+                            {% for i in "12345" %}
+                            <div class="complexity-dot {% if system_type.avg_complexity >= i|add:0 %}active{% endif %}" style="{% if system_type.avg_complexity >= i|add:0 %}background: {{ system_type.color|readable_color }};{% endif %}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="system-type-actions">
+                    <a href="{% url 'projects:system_type' system_type.slug %}" class="type-action-btn" style="background: rgba({{ system_type.color|readable_color|hex_to_rgb }}, 0.1); border: 1px solid rgba({{ system_type.color|readable_color|hex_to_rgb }}, 0.3); color: {{ system_type.color|readable_color }};">
+                        <i class="fas fa-eye" style="margin-right: var(--spacing-xs, 0.5rem);"></i>
+                        View Projects ({{ system_type.total_systems }})
+                    </a>
+                    {% if system_type.featured_systems > 0 %}
+                    <a href="{% url 'projects:system_type' system_type.slug %}#featured" class="type-action-btn" style="background: rgba({{ system_type.color|readable_color|hex_to_rgb }}, 0.1); border: 1px solid rgba({{ system_type.color|readable_color|hex_to_rgb }}, 0.3); color: {{ system_type.color|readable_color }};">
+                        <i class="fas fa-star" style="margin-right: var(--spacing-xs, 0.5rem);"></i>
+                        Featured ({{ system_type.featured_systems }})
+                    </a>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
