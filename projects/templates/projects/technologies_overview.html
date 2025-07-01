@@ -1,0 +1,488 @@
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+{% load system_tags %}
+
+{% block systems_title %}Technology Skills{% endblock %}
+
+{% block systems_css %}
+<style>
+    /* Technology Categories Hexagon Navigation - Like DataLogs Categories */
+    .tech-categories-nav {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg, 12px);
+        padding: var(--spacing-xl, 2rem);
+        margin-bottom: var(--spacing-xl, 2rem);
+    }
+
+    .tech-categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+        margin-top: var(--spacing-lg, 1.5rem);
+    }
+
+    .tech-category-hexagon {
+        position: relative;
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: var(--border-radius-lg, 12px);
+        padding: var(--spacing-lg, 1.5rem);
+        cursor: pointer;
+        transition: all 0.4s ease;
+        text-decoration: none;
+        color: var(--color-text);
+        overflow: hidden;
+    }
+
+    .tech-category-hexagon::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, var(--category-color, var(--color-teal)), transparent);
+        opacity: 0.1;
+        transition: opacity 0.3s ease;
+    }
+
+    .tech-category-hexagon:hover::before {
+        opacity: 0.2;
+    }
+
+    .tech-category-hexagon:hover {
+        transform: translateY(-4px);
+        border-color: var(--category-color, var(--color-teal));
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .tech-category-icon {
+        font-size: 2.5rem;
+        margin-bottom: var(--spacing-md, 1rem);
+        color: var(--category-color, var(--color-teal));
+    }
+
+    .tech-category-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm, 0.75rem);
+        text-align: center;
+    }
+
+    .tech-category-stats {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-xs, 0.5rem);
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--color-text-secondary);
+    }
+
+    /* Technology Grid */
+    .technologies-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+    }
+
+    .technology-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-lg, 12px);
+        padding: var(--spacing-lg, 1.5rem);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .technology-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--tech-color, var(--color-teal));
+        transition: width 0.3s ease;
+    }
+
+    .technology-card:hover::before {
+        width: 8px;
+    }
+
+    .technology-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .technology-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md, 1rem);
+        margin-bottom: var(--spacing-lg, 1.5rem);
+    }
+
+    .technology-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--border-radius-md, 8px);
+        background: var(--tech-color, var(--color-teal));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-bg-primary);
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .technology-info h3 {
+        margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+        color: var(--color-text);
+        font-size: 1.2rem;
+    }
+
+    .technology-category-badge {
+        display: inline-block;
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
+        color: var(--tech-color, var(--color-teal));
+        border-radius: var(--border-radius-sm, 4px);
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .technology-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm, 0.75rem);
+        margin-bottom: var(--spacing-lg, 1.5rem);
+    }
+
+    .tech-stat {
+        text-align: center;
+        padding: var(--spacing-sm, 0.75rem);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+    }
+
+    .tech-stat-value {
+        display: block;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--tech-color, var(--color-teal));
+        margin-bottom: var(--spacing-xs, 0.5rem);
+    }
+
+    .tech-stat-label {
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .technology-skill-level {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--spacing-sm, 0.75rem);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+
+    .skill-level-text {
+        font-size: 0.9rem;
+        color: var(--color-text-secondary);
+    }
+
+    .skill-level-indicator {
+        display: flex;
+        gap: var(--spacing-xs, 0.5rem);
+    }
+
+    .skill-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .skill-dot.active {
+        background: var(--tech-color, var(--color-teal));
+    }
+
+    .technology-description {
+        color: var(--color-text-secondary);
+        line-height: 1.6;
+        margin-bottom: var(--spacing-lg, 1.5rem);
+    }
+
+    .technology-actions {
+        display: flex;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+
+    .tech-action-btn {
+        flex: 1;
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.1);
+        border: 1px solid rgba(var(--tech-color-rgb, 38, 198, 218), 0.3);
+        color: var(--tech-color, var(--color-teal));
+        border-radius: var(--border-radius-md, 8px);
+        text-decoration: none;
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .tech-action-btn:hover {
+        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
+        transform: translateY(-1px);
+    }
+
+    /* Learning Insights Panel */
+    .learning-insights {
+        background: linear-gradient(135deg, rgba(179, 157, 219, 0.1), rgba(38, 198, 218, 0.05));
+        border: 1px solid rgba(179, 157, 219, 0.2);
+        border-radius: var(--border-radius-lg, 12px);
+        padding: var(--spacing-xl, 2rem);
+        margin-bottom: var(--spacing-xl, 2rem);
+    }
+
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+    }
+
+    .insight-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md, 1rem);
+        padding: var(--spacing-md, 1rem);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+    }
+
+    .insight-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--insight-color, var(--color-teal));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-bg-primary);
+        font-size: 1.2rem;
+    }
+
+    .insight-content h4 {
+        margin: 0 0 var(--spacing-xs, 0.5rem) 0;
+        color: var(--color-text);
+        font-size: 1rem;
+    }
+
+    .insight-content p {
+        margin: 0;
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .tech-categories-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+        
+        .technologies-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .technology-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block systems_content %}
+<div class="systems-content-container">
+    
+    <!-- Page Header with Learning Journey Stats -->
+    {% dashboard_panel style="hero" color="teal" %}
+        <div class="hero-content-grid">
+            <div class="hero-main">
+                <h1 class="hero-title">
+                    <i class="fas fa-code hero-icon"></i>
+                    Technology Skills Overview
+                </h1>
+                <p class="hero-subtitle">{{ page_subtitle }}</p>
+                
+                <!-- Learning Journey Quick Stats -->
+                <div class="hero-stats-grid">
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">{{ total_technologies_learned }}</span>
+                        <span class="hero-stat-label">Technologies Learned</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">{{ total_projects_built }}</span>
+                        <span class="hero-stat-label">Projects Built</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">{{ advanced_technologies }}</span>
+                        <span class="hero-stat-label">Advanced Skills</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="hero-stat-value">{{ technologies_in_progress }}</span>
+                        <span class="hero-stat-label">Currently Learning</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% enddashboard_panel %}
+
+    <!-- Learning Insights -->
+    {% if learning_insights %}
+    <div class="learning-insights">
+        <h2 style="margin: 0 0 var(--spacing-lg, 1.5rem) 0; color: var(--color-text);">
+            <i class="fas fa-lightbulb" style="color: var(--color-lavender); margin-right: var(--spacing-sm, 0.75rem);"></i>
+            Learning Journey Insights
+        </h2>
+        <div class="insights-grid">
+            {% for insight in learning_insights %}
+            <div class="insight-item">
+                <div class="insight-icon" style="--insight-color: var(--color-{{ insight.color }});">
+                    <i class="fas fa-{{ insight.icon }}"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>{{ insight.title }}</h4>
+                    <p>{{ insight.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Technology Categories Navigation (Like DataLogs Category Hexagons) -->
+    {% if technology_categories %}
+    <div class="tech-categories-nav">
+        <h2 style="margin: 0 0 var(--spacing-sm, 0.75rem) 0; color: var(--color-text);">
+            <i class="fas fa-layer-group" style="color: var(--color-teal); margin-right: var(--spacing-sm, 0.75rem);"></i>
+            Technology Categories
+        </h2>
+        <p style="margin: 0; color: var(--color-text-secondary);">Explore my skills across different technology areas</p>
+        
+        <div class="tech-categories-grid">
+            {% for category in technology_categories %}
+            <a href="#{{ category.code }}" class="tech-category-hexagon" 
+               style="--category-color: {{ category.color }};">
+                <i class="fas fa-{{ category.icon }} tech-category-icon"></i>
+                <div class="tech-category-name">{{ category.name }}</div>
+                <div class="tech-category-stats">
+                    <span>{{ category.tech_count }} Technologies</span>
+                    <span>{{ category.project_count }} Projects</span>
+                    <span>Skill Level: {{ category.skill_level }}/5</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Technologies Grid -->
+    {% for category in technology_categories %}
+    <section id="{{ category.code }}" style="margin-bottom: var(--spacing-xl, 2rem);">
+        <h2 style="color: {{ category.color }}; margin-bottom: var(--spacing-lg, 1.5rem);">
+            <i class="fas fa-{{ category.icon }}" style="margin-right: var(--spacing-sm, 0.75rem);"></i>
+            {{ category.name }}
+        </h2>
+        
+        <div class="technologies-grid">
+            {% for technology in technologies %}
+            {% if technology.category == category.code %}
+            <div class="technology-card" style="--tech-color: {{ technology.color }}; --tech-color-rgb: {{ technology.color|hex_to_rgb }};">
+                
+                <!-- Technology Header -->
+                <div class="technology-header">
+                    <div class="technology-icon">
+                        {% if technology.icon %}
+                            <i class="{{ technology.icon }}"></i>
+                        {% else %}
+                            {{ technology.name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="technology-info">
+                        <h3>{{ technology.name }}</h3>
+                        <span class="technology-category-badge">{{ technology.get_category_display }}</span>
+                    </div>
+                </div>
+
+                <!-- Learning Stats -->
+                <div class="technology-stats">
+                    <div class="tech-stat">
+                        <span class="tech-stat-value">{{ technology.total_projects }}</span>
+                        <span class="tech-stat-label">Projects</span>
+                    </div>
+                    <div class="tech-stat">
+                        <span class="tech-stat-value">{{ technology.skill_level|floatformat:1 }}/5</span>
+                        <span class="tech-stat-label">Skill Level</span>
+                    </div>
+                </div>
+
+                <!-- Skill Level Indicator -->
+                <div class="technology-skill-level">
+                    <span class="skill-level-text">
+                        {% if technology.skill_level >= 4 %}Advanced
+                        {% elif technology.skill_level >= 3 %}Intermediate
+                        {% elif technology.skill_level >= 2 %}Learning
+                        {% else %}Beginner
+                        {% endif %}
+                    </span>
+                    <div class="skill-level-indicator">
+                        {% for i in "12345" %}
+                        <div class="skill-dot {% if technology.skill_level >= i|add:0 %}active{% endif %}"></div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Description -->
+                {% if technology.description %}
+                <div class="technology-description">
+                    {{ technology.description|truncatewords:20 }}
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="technology-actions">
+                    <a href="{% url 'projects:technology_detail' technology.slug %}" class="tech-action-btn">
+                        <i class="fas fa-eye" style="margin-right: var(--spacing-xs, 0.5rem);"></i>
+                        View Projects
+                    </a>
+                    {% if technology.featured_projects > 0 %}
+                    <a href="{% url 'projects:technology_detail' technology.slug %}#featured" class="tech-action-btn">
+                        <i class="fas fa-star" style="margin-right: var(--spacing-xs, 0.5rem);"></i>
+                        Featured ({{ technology.featured_projects }})
+                    </a>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+
+</div>
+{% endblock %}
