@@ -2585,8 +2585,132 @@ class TechnologiesOverviewView(ListView):
         return insights
 
 
+class TechnologyDetailView(DetailView):
+    """
+    Enhanced Technology Detail - Shows learning progression with this technology
+    Similar to datalogs tag.html but learning-focused, shows filtered systems
+    """
 
+    model = Technology
+    template_name = "projects/technology_detail.html"
+    context_object_name = "technology"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        technology = self.object
+
+        # Get systems using this technology w learning focus
+        tech_systems = SystemModule.objects.filter(technologies=technology).select_related(
+            'system_type', 'author'
+        ).prefetch_related('technologies')
+
+        # Learning progression: order by complexity and date to show growth
+        context["systems"] = tech_systems.order_by('complexity', 'created_at')
+
+        # Learning-focused stats (not enterprise metrics)
+        context.update({
+            'page_title': f'{technology.name} - Learning Journey',
+            'page_subtitle': f'Projects and progression using {technology.name}',
+
+            # Learning Journey Stats
+            'total_projects': tech_systems.count(),
+            'completed_projects': tech_systems.filter(status__in=['deployed', 'published']).count(),
+            'learning_projects': tech_systems.filter(status='in_development').count(),
+            'featured_projects': tech_systems.filter(featured=True).count(),
+
+            # Skill progression metrics
+            'skill_progression': self.get_skill_progression(tech_systems),
+            'learning_timeline': self.get_learning_timeline(tech_systems),
+            'complexity_progression': self.get_complexity_progression(tech_systems),
+
+            # Related learning (DataLogs integration)
+            'related_datalogs': self.get_related_datalogs(technology),
+
+            # Technology context
+            'technology_category': technology.get_category_display(),
+            'similar_technologies': self.get_similar_technologies(technology),
+        })
+
+        return context
+    
+    def get_skill_progression(self, systems):
+        """Calculate skill level progression w this technology."""
+        if not systems.exists():
+            return {'level': 'Beginner', 'description': 'Getting started'}
+        
+        avg_complexity = systems.aggregate(avg=Avg('complexity'))['avg'] or 1
+        project_count = systems.count()
+        completion_rate = (systems.filter(
+            status__in=['deployed', 'published']
+        ).count() / project_count) * 100 if project_count > 0 else 0
+
+        # Determine skill level based on complexity and experience
+        if avg_complexity >= 4 and project_count >= 3:
+            level = 'Advanced'
+            description = f'Confident with complex implementation ({project_count} projects)'
+        elif avg_complexity >= 3 and project_count >= 2:
+            level = 'Intermediate'
+            description = f'Growing proficiency through practice ({project_count} projects)'
+        else:
+            level = 'Learning'
+            description = f'Building foundational skills ({project_count} project{"s" if project_count > 1 else ""})'
+        return {
+            'level': level,
+            'description': description,
+            'avg_complexity': round(avg_complexity, 1),
+            'project_count': project_count,
+            'completion_rate': round(completion_rate, 1),
+        }
+    
+    def get_learning_timeline(self, systems):
+        """Create a learning timeline for this technology."""
+        timeline_items = []
+
+        for system in systems.order_by('created_at'):
+            timeline_items.append({
+                'date': system.created_at,
+                'title': system.title,
+                'type': 'project',
+                'complexity': system.complexity,
+                'status': system.status,
+                'description': system.excerpt or f'{system.get_complexity_display()} {system.system_type.name if system.system_type else "project"}',
+                'url': system.get_absolute_url(),
+            })
+        return timeline_items
+    
+    def get_complexity_progression(self, systems):
+        """Show how complexity has grown over time."""
+        progression = []
+
+        for system in systems.order_by('created_at'):
+            progression.append({
+                'title': system.title,
+                'complexity': system.complexity,
+                'complexity_display': system.get_complexity_display(),
+                'date': system.created_at,
+                'completion': system.completion_percent,
+            })
+        return progression
+    
+    def get_related_datalogs(self, technology):
+        """Find DataLogs related to this technology."""
+        # Import here to avoid circular imports
+        # from blog.models import Post
+
+        # Search for posts that mention this tech
+        related_posts = Post.objects.filter(
+            Q(title__icontains=technology.name) |
+            Q(content__icontains=technology.name) |
+            Q(tags__name__icontains=technology.name)
+        ).filter(status='published').distinct()[:5]
+
+        return related_posts
+    
+    def get_similar_technologies(self, technology):
+        """Find similar technologies in same category."""
+        return Technology.objects.filter(
+            category=technology.category
+        ).exclude(id=technology.id).annotate(project_count=Count('systems')).filter(project_count__gt=0)[:4]
 
 
 # ===================== ENHANCED FEATURE VIEWS =====================
@@ -2655,32 +2779,7 @@ class SystemTypeDetailView(DetailView):
         return context
 
 
-class TechnologyDetailView(DetailView):
-    """Enhanced technology view using new manager methods."""
 
-    model = Technology
-    template_name = "projects/technology_detail.html"
-    context_object_name = "technology"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        technology = self.object
-
-        # Systems using this tech - use new manager methods
-        tech_systems = SystemModule.objects.filter(technologies=technology)
-        context["systems"] = tech_systems.deployed()  # Only show deployed
-
-        # Stats using new manager methods
-        context.update(
-            {
-                "total_systems": tech_systems.count(),
-                "deployed_systems": tech_systems.deployed().count(),
-                "featured_systems": tech_systems.featured().count(),
-                "in_development": tech_systems.in_development().count(),
-            }
-        )
-
-        return context
 
 
 # ===================== API ENDPOINTS =====================
