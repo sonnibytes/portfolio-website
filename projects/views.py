@@ -3005,36 +3005,287 @@ class SystemTypeDetailView(DetailView):
         return similar_types
 
 
-# ===================== ENHANCED FEATURE VIEWS =====================
+# ===================== ENHANCED FEATURED SYSTEMS VIEW =====================
 
 
 class FeaturedSystemsView(ListView):
-    """Featured systems using new manager methods."""
-
+    """
+    Featured Systems Portfolio Showcase - Recruiter-focused presentation
+    Highlights best projects with learning progression and skill demonstration
+    """
+    model = SystemModule
     template_name = "projects/featured_systems.html"
-    context_object_name = "systems"
+    context_object_name = "featured_systems"
+    paginate_by = 12
 
     def get_queryset(self):
-        # Use new featured() method
-        return SystemModule.objects.featured().select_related("system_type")
+        """Get featured systems w learning progression focus."""
+        # Get featured systems w optimized queries
+        queryset = SystemModule.objects.featured().select_related("system_type", 'author').prefetch_related(
+            'technologies', 'features'
+        )
+
+        # Apply sorting based on URL params
+        sort_by = self.request.GET.get('sort', 'complexity')
+
+        if sort_by == 'complexity':
+            # Show learning progression: simple to complex
+            queryset = queryset.order_by('complexity', 'created_at')
+        elif sort_by == 'recent':
+            queryset = queryset.order_by('-created_at')
+        elif sort_by == 'completion':
+            queryset = queryset.order_by('-completion_percent', '-created_at')
+        elif sort_by == 'technology':
+            # Group by primary technology
+            queryset = queryset.order_by('system_type__name', 'complexity')
+        else:
+            # Default: complexity progression
+            queryset = queryset.order_by('complexity', 'created_at')
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Get all featured systems for analytics
+        all_featured = SystemModule.objects.featured()
+
         # Stats using new manager methods
-        context.update(
-            {
-                "total_featured": SystemModule.objects.featured().count(),
-                "featured_deployed": SystemModule.objects.featured().deployed().count(),
-                "featured_in_dev": SystemModule.objects.featured()
-                .in_development()
-                .count(),
-            }
-        )
+        context.update({
+            'page_title': 'Featured Project Portfolio',
+            'page_subtitle': 'Showcasing my best work and learning progression across 2+ years of development',
+
+            # Learning Journey Portfolio Stats
+            'portfolio_stats': self.get_portfolio_stats(all_featured),
+
+            # Skill Progression Analysis
+            'skill_progression': self.get_skill_progression_analysis(all_featured),
+
+            # Technology Mastery Breakdown
+            'technology_mastery': self.get_technology_mastery(all_featured),
+
+            # Learning Journey Insights
+            'learning_insights': self.get_learning_insights(all_featured),
+
+            # Filter/Sort Options
+            'current_sort': self.request.GET.get('sort', 'complexity'),
+            'available_sorts': self.get_available_sorts(),
+
+            # Complexity Distribution for Featured Projects
+            'complexity_distribution': self.get_complexity_distribution(all_featured),
+        })
 
         return context
+    
+    def get_portfolio_stats(self, featured_systems):
+        """Get portfolio-level stats for featured projects."""
+        if not featured_systems.exists():
+            return {}
+        
+        return {
+            'total_featured': featured_systems.count(),
+            'completed_projects': featured_systems.filter(status__in=['deployed', 'published']).count(),
+            'avg_complexity': round(featured_systems.aggregate(avg=Avg('complexity'))['avg'] or 0, 1),
+            'technologies_used': featured_systems.values('technologies').distinct().count(),
+            'avg_completion': round(featured_systems.aggregate(avg=Avg('completion_percent'))['avg'] or 0, 1),
+            'project_types': featured_systems.values('system_type').distinct().count(),
+            'development_span': self.get_development_span(featured_systems),
+        }
+    
+    def get_development_span(self, systems):
+        """Calculate timespan of featured projects development."""
+        dates = systems.aggregate(
+            earliest=Min('created_at'),
+            latest=Max('created_at')
+        )
 
+        if dates['earliest'] and dates['latest']:
+            span = dates['latest'] - dates['earliest']
+            months = span.days // 30
+            return f"{months} months" if months > 0 else "Recent work"
+        
+        return "Continuous Improvement"
+    
+    def get_skill_progression_analysis(self, featured_systems):
+        """Analyze skill progression across featured projects."""
+        if not featured_systems.exists():
+            return {}
+        
+        # Complexity progression over time
+        systems_by_date = featured_systems.order_by('created_at')
+        
+        progression = []
+        for system in systems_by_date:
+            progression.append({
+                'title': system.title,
+                'date': system.created_at,
+                'complexity': system.complexity,
+                'technologies': list(system.technologies.all()[:2]),  # Primary technologies
+            })
+        
+        # Learning velocity (projects per complexity level)
+        complexity_counts = featured_systems.values('complexity').annotate(
+            count=Count('id')
+        ).order_by('complexity')
+        
+        return {
+            'progression_timeline': progression[:8],  # Recent 8 projects
+            'complexity_evolution': list(complexity_counts),
+            'skill_growth_indicators': self.get_skill_growth_indicators(featured_systems),
+        }
+    
+    def get_skill_growth_indicators(self, systems):
+        """Calculate indicators of learning and skill growth."""
+        indicators = []
+        
+        # Complexity progression
+        early_projects = systems.order_by('created_at')[:3]
+        recent_projects = systems.order_by('-created_at')[:3]
+        
+        if early_projects.exists() and recent_projects.exists():
+            early_avg = early_projects.aggregate(avg=Avg('complexity'))['avg'] or 0
+            recent_avg = recent_projects.aggregate(avg=Avg('complexity'))['avg'] or 0
+            
+            if recent_avg > early_avg:
+                improvement = round((recent_avg - early_avg), 1)
+                indicators.append({
+                    'type': 'complexity_growth',
+                    'title': 'Complexity Progression',
+                    'description': f'Average complexity increased by {improvement} points',
+                    'icon': 'chart-line',
+                    'color': 'mint'
+                })
+        
+        # Technology diversity
+        tech_count = systems.values('technologies').distinct().count()
+        if tech_count >= 5:
+            indicators.append({
+                'type': 'tech_diversity',
+                'title': 'Technology Breadth',
+                'description': f'Demonstrated proficiency across {tech_count} technologies',
+                'icon': 'layer-group',
+                'color': 'coral'
+            })
+        
+        # Project completion rate
+        completion_rate = (systems.filter(
+            status__in=['deployed', 'published']
+        ).count() / systems.count()) * 100 if systems.count() > 0 else 0
+        
+        if completion_rate >= 80:
+            indicators.append({
+                'type': 'completion_rate',
+                'title': 'High Completion Rate',
+                'description': f'{completion_rate:.0f}% of featured projects completed',
+                'icon': 'check-circle',
+                'color': 'teal'
+            })
+        
+        return indicators
+    
+    def get_technology_mastery(self, featured_systems):
+        """Analyze technology usage and mastery across featured projects."""
+        # Count technology usage
+        tech_usage = Counter()
+        tech_complexity = {}
+        
+        for system in featured_systems:
+            for tech in system.technologies.all():
+                tech_usage[tech] += 1
+                # Track highest complexity achieved with each technology
+                if tech not in tech_complexity or system.complexity > tech_complexity[tech]:
+                    tech_complexity[tech] = system.complexity
+        
+        # Convert to list with mastery indicators
+        mastery_breakdown = []
+        for tech, usage_count in tech_usage.most_common():
+            max_complexity = tech_complexity.get(tech, 1)
+            
+            # Determine mastery level
+            if max_complexity >= 4 and usage_count >= 3:
+                mastery = 'Advanced'
+                color = 'coral'
+            elif max_complexity >= 3 or usage_count >= 2:
+                mastery = 'Intermediate'
+                color = 'teal'
+            else:
+                mastery = 'Learning'
+                color = 'yellow'
+            
+            mastery_breakdown.append({
+                'technology': tech,
+                'usage_count': usage_count,
+                'max_complexity': max_complexity,
+                'mastery_level': mastery,
+                'mastery_color': color,
+                'percentage': round((usage_count / featured_systems.count()) * 100, 1)
+            })
 
+        return mastery_breakdown[:8]  # Top 8 technologies
+    
+    def get_learning_insights(self, featured_systems):
+        """Generate insights about the learning journey from featured projects."""
+        insights = []
+        
+        # Most complex project
+        most_complex = featured_systems.order_by('-complexity').first()
+        if most_complex and most_complex.complexity >= 4:
+            insights.append({
+                'type': 'technical_achievement',
+                'title': f'Advanced Implementation: {most_complex.title}',
+                'description': f'Complexity Level {most_complex.complexity}/5 - Demonstrates sophisticated technical skills',
+                'icon': 'trophy',
+                'color': 'coral',
+                'project_url': most_complex.get_absolute_url()
+            })
+        
+        # Technology breadth
+        unique_techs = featured_systems.values('technologies__name').distinct().count()
+        if unique_techs >= 6:
+            insights.append({
+                'type': 'technology_breadth',
+                'title': 'Full-Stack Proficiency',
+                'description': f'Featured projects span {unique_techs} different technologies',
+                'icon': 'code',
+                'color': 'teal'
+            })
+        
+        # Learning timeline
+        project_span = self.get_development_span(featured_systems)
+        if '>' in str(project_span) or 'month' in str(project_span):
+            insights.append({
+                'type': 'consistent_growth',
+                'title': 'Consistent Development',
+                'description': f'Continuous skill building over {project_span}',
+                'icon': 'seedling',
+                'color': 'mint'
+            })
+        
+        return insights
+    
+    def get_available_sorts(self):
+        """Get available sorting options for the portfolio."""
+        return [
+            {'key': 'complexity', 'label': 'Learning Progression (Simple → Complex)', 'icon': 'chart-line'},
+            {'key': 'recent', 'label': 'Most Recent First', 'icon': 'clock'},
+            {'key': 'completion', 'label': 'Completion Rate', 'icon': 'check-circle'},
+            {'key': 'technology', 'label': 'By Technology Type', 'icon': 'layer-group'},
+        ]
+    
+    def get_complexity_distribution(self, featured_systems):
+        """Get complexity distribution for visualization."""
+        distribution = {}
+        for i in range(1, 6):
+            count = featured_systems.filter(complexity=i).count()
+            distribution[f'level_{i}'] = {
+                'count': count,
+                'percentage': round((count / featured_systems.count()) * 100, 1) if featured_systems.count() > 0 else 0,
+                'label': {
+                    1: 'Basic', 2: 'Intermediate', 3: 'Advanced', 
+                    4: 'Complex', 5: 'Expert'
+                }.get(i, 'Unknown')
+            }
+        
+        return distribution
 
 
 # ===================== API ENDPOINTS =====================

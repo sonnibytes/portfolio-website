@@ -1,0 +1,620 @@
+{% extends "projects/systems_base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+{% load system_tags %}
+
+{% block systems_title %}Featured Project Portfolio{% endblock %}
+
+{% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+{% comment %} <link rel="stylesheet" href="{% static 'core/css/about.css' %}"> {% endcomment %}
+
+<style>
+    /* Featured Systems Portfolio Styles */
+    {% comment %} .featured-systems-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: var(--spacing-xl, 2rem);
+    } {% endcomment %}
+
+    .featured-system-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-xl, 16px);
+        padding: var(--spacing-xl, 2rem);
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .featured-system-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 6px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--system-color, var(--color-coral)), transparent);
+        transition: width 0.3s ease;
+    }
+
+    .featured-system-card:hover::before {
+        width: 10px;
+    }
+
+    .featured-system-card:hover {
+        transform: translateY(-6px);
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.4),
+            0 0 40px rgba(var(--system-color-rgb, 255, 138, 128), 0.15);
+    }
+
+    .featured-badge {
+        position: absolute;
+        top: var(--spacing-lg, 1.5rem);
+        right: var(--spacing-lg, 1.5rem);
+        background: var(--color-coral);
+        color: var(--color-bg-primary);
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+        border-radius: var(--border-radius-lg, 12px);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .system-header {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--spacing-lg, 1.5rem);
+        margin-bottom: var(--spacing-xl, 2rem);
+    }
+
+    .system-type-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: var(--border-radius-lg, 12px);
+        background: var(--system-color, var(--color-coral));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-bg-primary);
+        font-size: 1.8rem;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+
+    .system-info h3 {
+        margin: 0 0 var(--spacing-sm, 0.75rem) 0;
+        color: var(--color-text);
+        font-size: 1.4rem;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .system-info h3 a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .system-info h3 a:hover {
+        color: var(--system-color, var(--color-coral));
+    }
+
+    .system-type-label {
+        display: inline-block;
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+        background: rgba(var(--system-color-rgb, 255, 138, 128), 0.2);
+        color: var(--system-color, var(--color-coral));
+        border-radius: var(--border-radius-sm, 4px);
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .system-description {
+        color: var(--color-text-secondary);
+        line-height: 1.6;
+        margin-bottom: var(--spacing-xl, 2rem);
+        font-size: 1rem;
+    }
+
+    .system-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        {% comment %} gap: var(--spacing-lg, 1.5rem); {% endcomment %}
+        margin-bottom: var(--spacing-xl, 2rem);
+    }
+
+    .system-metric {
+        text-align: center;
+        padding: var(--spacing-md, 1rem);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+    }
+
+    .metric-value {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: 600;
+        {% comment %} color: var(--system-color, var(--color-coral)); {% endcomment %}
+        margin-bottom: var(--spacing-xs, 0.5rem);
+        font-family: var(--font-heading);
+    }
+
+    .metric-label {
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .system-technologies {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm, 0.75rem);
+        margin-bottom: var(--spacing-xl, 2rem);
+    }
+
+    .tech-badge {
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--color-text);
+        border-radius: var(--border-radius-sm, 4px);
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .tech-badge.primary {
+        background: var(--system-color, var(--color-coral));
+        color: var(--color-bg-primary);
+    }
+
+    .system-actions {
+        display: flex;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+
+    .system-action-btn {
+        flex: 1;
+        padding: var(--spacing-md, 1rem);
+        background: rgba(var(--system-color-rgb, 255, 138, 128), 0.15);
+        border: 1px solid rgba(var(--system-color-rgb, 255, 138, 128), 0.3);
+        color: var(--system-color, var(--color-coral));
+        border-radius: var(--border-radius-md, 8px);
+        text-decoration: none;
+        text-align: center;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .system-action-btn:hover {
+        background: rgba(var(--system-color-rgb, 255, 138, 128), 0.25);
+        transform: translateY(-2px);
+    }
+
+    /* Portfolio Insights */
+    .portfolio-insights {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+    }
+
+    .insight-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-lg, 12px);
+        padding: var(--spacing-xl, 2rem);
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .insight-card:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .insight-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--insight-color, var(--color-coral));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-bg-primary);
+        font-size: 1.8rem;
+        margin: 0 auto var(--spacing-lg, 1.5rem);
+    }
+
+    .insight-title {
+        color: var(--color-text);
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm, 0.75rem);
+    }
+
+    .insight-description {
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+    }
+
+    /* Technology Mastery Grid */
+    .tech-mastery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+    }
+
+    .tech-mastery-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+        padding: var(--spacing-lg, 1.5rem);
+        border-left: 4px solid var(--tech-color, var(--color-teal));
+    }
+
+    .tech-mastery-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+
+    .tech-name {
+        color: var(--color-text);
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .mastery-badge {
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+        border-radius: var(--border-radius-sm, 4px);
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .mastery-advanced {
+        background: rgba(255, 138, 128, 0.2);
+        color: var(--color-coral);
+    }
+
+    .mastery-intermediate {
+        background: rgba(38, 198, 218, 0.2);
+        color: var(--color-teal);
+    }
+
+    .mastery-learning {
+        background: rgba(255, 245, 157, 0.2);
+        color: var(--color-yellow);
+    }
+
+    .tech-usage-stats {
+        display: flex;
+        justify-content: space-between;
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    /* Sort Controls */
+    .portfolio-controls {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-lg, 1.5rem);
+        margin-bottom: var(--spacing-xl, 2rem);
+        flex-wrap: wrap;
+    }
+
+    .sort-controls {
+        display: flex;
+        gap: var(--spacing-sm, 0.75rem);
+        flex-wrap: wrap;
+    }
+
+    .sort-btn {
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--color-text-secondary);
+        border-radius: var(--border-radius-md, 8px);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs, 0.5rem);
+    }
+
+    .sort-btn.active {
+        background: var(--color-coral);
+        color: var(--color-bg-primary);
+        border-color: var(--color-coral);
+    }
+
+    .sort-btn:hover {
+        background: rgba(255, 138, 128, 0.2);
+        color: var(--color-coral);
+        border-color: rgba(255, 138, 128, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .featured-systems-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .system-metrics {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .portfolio-insights {
+            grid-template-columns: 1fr;
+        }
+        
+        .tech-mastery-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block systems_content %}
+<div class="systems-content-container container">
+    
+    <!-- Portfolio Hero Section -->
+    {% comment %} <div class="unified-dashboard-container coral"> {% endcomment %}
+    <section class="overview-section">
+    <div class="container">
+        <div class="overview-header">
+            <div class="overview-title-section" style="flex: 1;">
+            <h1 class="overview-title">Featured Projects</h1>
+            <p class="overview-subtitle">{{ page_subtitle }}</p>
+            </div>
+        </div>
+        {% comment %} <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-star" style="margin-right: var(--spacing-md, 1rem); color: var(--color-coral);"></i>
+                Featured Projects
+            </h1>
+            <p class="overview-subtitle">{{ page_subtitle }}</p>
+        </div> {% endcomment %}
+        
+        <!-- Portfolio Overview Stats -->
+        {% if portfolio_stats %}
+        <div class="dashboard-grid grid-4-col metrics-overview">
+            <div class="metric-card unified-dashboard-container yellow">
+            {% comment %} <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);"> {% endcomment %}
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ portfolio_stats.total_featured }}</span>
+                <span class="metric-label">Featured Projects</span>
+            </div>
+            <div class="metric-card unified-dashboard-container coral">
+            {% comment %} <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);"> {% endcomment %}
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-ranking-star"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ portfolio_stats.avg_complexity }}/5</span>
+                <span class="metric-label">Avg Complexity</span>
+            </div>
+            <div class="metric-card unified-dashboard-container lavender">
+            {% comment %} <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);"> {% endcomment %}
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-cogs"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ portfolio_stats.technologies_used }}</span>
+                <span class="metric-label">Technologies</span>
+            </div>
+            <div class="metric-card unified-dashboard-container mint">
+            {% comment %} <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);"> {% endcomment %}
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-timeline"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ portfolio_stats.development_span }}</span>
+                <span class="metric-label">Development Span</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+    <!-- Learning Journey Insights -->
+    {% if learning_insights %}
+    <div class="section-container">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-lightbulb"></i>
+                    Portfolio Highlights</h2>
+                {% comment %} <p class="section-subtitle">Key achievements and learning milestones from my featured projects</p> {% endcomment %}
+            </div>
+            {% comment %} <div class="unified-dashboard-container lavender">
+            <div class="unified-container-header">
+                <h2 class="unified-container-title" style="font-size: 1.8rem;">
+                    <i class="fas fa-lightbulb" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-lavender);"></i>
+                    Portfolio Highlights
+                </h2>
+                <p class="unified-container-subtitle">Key achievements and learning milestones from my featured projects</p>
+            </div> {% endcomment %}
+            
+            <div class="portfolio-insights">
+                {% for insight in learning_insights %}
+                <div class="insight-card">
+                    <div class="insight-icon" style="--insight-color: var(--color-{{ insight.color }});">
+                        <i class="fas fa-{{ insight.icon }}"></i>
+                    </div>
+                    <h3 class="insight-title">{{ insight.title }}</h3>
+                    <p class="insight-description">{{ insight.description }}</p>
+                    {% if insight.project_url %}
+                    <a href="{{ insight.project_url }}" style="color: var(--color-{{ insight.color }}); text-decoration: none; font-weight: 500; margin-top: var(--spacing-sm, 0.75rem); display: inline-block;">
+                        View Project →
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Technology Mastery Breakdown -->
+    {% if technology_mastery %}
+    <div="section-container">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-code"></i>
+                Technology Mastery</h2>
+            </div>
+    {% comment %} <div class="unified-dashboard-container teal">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title" style="font-size: 1.8rem;">
+                <i class="fas fa-code" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-teal);"></i>
+                Technology Mastery
+            </h2>
+            <p class="unified-container-subtitle">Skill progression and proficiency across featured project technologies</p>
+        </div> {% endcomment %}
+        
+        <div class="tech-mastery-grid">
+            {% for tech in technology_mastery %}
+            <div class="tech-mastery-item" style="--tech-color: {{ tech.technology.color|readable_color }}; border-left-color: {{ tech.technology.color|readable_color }};">
+                <div class="tech-mastery-header">
+                    <span class="tech-name">{{ tech.technology.name }}</span>
+                    <span class="mastery-badge mastery-{{ tech.mastery_level|lower }}">{{ tech.mastery_level }}</span>
+                </div>
+                <div class="tech-usage-stats">
+                    <span>{{ tech.usage_count }} project{{ tech.usage_count|pluralize }}</span>
+                    <span>Max complexity: {{ tech.max_complexity }}/5</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+    {% endif %}
+
+    <!-- Portfolio Controls -->
+     <div class="section-container container">
+    <div class="unified-container">
+        <div class="unified-container-header">
+            <h2 class="unified-container-title" style="font-size: 1.8rem;">
+                <i class="fas fa-th-large" style="margin-right: var(--spacing-sm, 0.75rem); color: #5c6bc0;"></i>
+                Featured Projects Showcase
+            </h2>
+            <p class="unified-container-subtitle">Explore my best work organized by learning progression and complexity</p>
+        </div>
+        
+        <!-- Sort Controls -->
+        <div class="portfolio-controls">
+            <span style="color: var(--color-text-secondary); font-weight: 500;">Sort by:</span>
+            <div class="sort-controls">
+                {% for sort_option in available_sorts %}
+                <a href="?sort={{ sort_option.key }}" class="sort-btn {% if current_sort == sort_option.key %}active{% endif %}">
+                    <i class="fas fa-{{ sort_option.icon }}"></i>
+                    {{ sort_option.label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Featured Systems Grid -->
+        {% if featured_systems %}
+        <div class="featured-systems-grid">
+            {% for system in featured_systems %}
+            <div class="featured-system-card" style="--system-color: {{ system.system_type.color|readable_color|default:'var(--color-coral)' }}; --system-color-rgb: {{ system.system_type.color|readable_color|hex_to_rgb|default:'255, 138, 128' }};" onclick="window.location.href='{{ system.get_absolute_url }}'">
+                
+                {% comment %} <div class="featured-badge">Featured</div> {% endcomment %}
+                
+                <!-- System Header -->
+                <div class="system-header">
+                    <div class="system-type-icon">
+                        {% if system.system_type.icon %}
+                            <i class="{{ system.system_type.icon }}"></i>
+                        {% elif system.system_type %}
+                            {{ system.system_type.name|first|upper }}
+                        {% else %}
+                            <i class="fas fa-cube"></i>
+                        {% endif %}
+                    </div>
+                    <div class="system-info">
+                        <h3><a href="{{ system.get_absolute_url }}">{{ system.title }}</a></h3>
+                        
+                    </div>
+                </div>
+                {% if system.system_type %}
+                    <p class="system-card-subtitle">
+                        <i class="fas fa-{{ system.system_type.icon|default:'apps' }}"></i> 
+                        {{ system.system_type.name }}
+                    </p>
+                {% endif %}
+
+                <!-- System Description -->
+                {% if system.excerpt %}
+                <div class="system-description">
+                    {{ system.excerpt }}
+                </div>
+                {% endif %}
+
+                <!-- System Metrics -->
+                <div class="system-metrics">
+                    <div class="system-metric">
+                        <span class="metric-value">{{ system.complexity }}/5</span>
+                        <span class="metric-label">Complexity</span>
+                    </div>
+                    <div class="system-metric">
+                        <span class="metric-value">{{ system.completion_percent|default:100 }}%</span>
+                        <span class="metric-label">Complete</span>
+                    </div>
+                    <div class="system-metric">
+                        <span class="metric-value">{{ system.technologies.count }}</span>
+                        <span class="metric-label">Technologies</span>
+                    </div>
+                </div>
+
+                <!-- Technologies -->
+                <div class="system-technologies">
+                    {% for tech in system.technologies.all %}
+                    <span class="tech-badge {% if forloop.first %}primary{% endif %}">{{ tech.name }}</span>
+                    {% endfor %}
+                </div>
+
+                <!-- Actions -->
+                <div class="system-actions">
+                    <a href="{{ system.get_absolute_url }}" class="system-action-btn">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    {% if system.github_url %}
+                    <a href="{{ system.github_url }}" target="_blank" class="system-action-btn">
+                        <i class="fab fa-github"></i> Source Code
+                    </a>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: var(--spacing-xl, 2rem); color: var(--color-text-secondary);">
+            <i class="fas fa-star" style="font-size: 3rem; margin-bottom: var(--spacing-lg, 1.5rem); opacity: 0.5;"></i>
+            <p>No featured systems found. Mark some projects as featured to showcase your best work!</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+</div>
+{% endblock %}
