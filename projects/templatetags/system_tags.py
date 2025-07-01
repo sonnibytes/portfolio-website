@@ -11,6 +11,7 @@ from markdownx.utils import markdownify as md
 from django.utils.text import slugify
 from django.template.loader import render_to_string
 import re
+import colorsys
 
 
 register = template.Library()
@@ -71,6 +72,101 @@ def hex_to_rgb(hex_color):
         return f"{r}, {g}, {b}"
     except ValueError:
         return "38, 198, 218"  # Default teal RGB
+
+
+# Usage in templates:
+# Original color: {{ technology.color }}
+# Lightened version: {{ technology.color|lighten_if_dark }}
+# Readable text version: {{ technology.color|readable_color }}
+# RGB values: {{ technology.color|hex_to_rgb }}
+# Check if dark: {% if technology.color|is_dark_color %}...{% endif %}
+
+@register.filter
+def lighten_if_dark(hex_color, lightness_threshold=0.4):
+    """
+    Check if a hex color is too dark for readability on dark background.
+    If too dark, return a lightened version. If light enough, return original.
+
+    lightness_threshold: 0.0 (black) to 1.0 (white), default 0.4 (40%)
+    """
+    if not hex_color or not hex_color.startswith("#"):
+        return "#26c6da"  # Default teal
+
+    # Remove # and handle 3-digit hex
+    hex_color = hex_color.lstrip("#")
+    if len(hex_color) == 3:
+        hex_color = "".join([c * 2 for c in hex_color])
+
+    if len(hex_color) != 6:
+        return "#26c6da"  # Default teal
+
+    try:
+        # Convert hex to RGB (0-255)
+        r = int(hex_color[0:2], 16) / 255.0
+        g = int(hex_color[2:4], 16) / 255.0
+        b = int(hex_color[4:6], 16) / 255.0
+
+        # Convert RGB to HSL
+        h, l, s = colorsys.rgb_to_hls(r, g, b)
+
+        # If lightness is below threshold, lighten it
+        if l < lightness_threshold:
+            # Increase lightness to make it more readable
+            # We want it bright enough to read, but not washed out
+            new_lightness = max(
+                0.6, lightness_threshold + 0.2
+            )  # At least 60% lightness
+
+            # Convert back to RGB
+            new_r, new_g, new_b = colorsys.hls_to_rgb(h, new_lightness, s)
+
+            # Convert to hex
+            new_hex = "#{:02x}{:02x}{:02x}".format(
+                int(new_r * 255), int(new_g * 255), int(new_b * 255)
+            )
+            return new_hex
+        else:
+            # Color is light enough, return original
+            return f"#{hex_color}"
+
+    except (ValueError, OverflowError):
+        return "#26c6da"  # Default teal on any error
+
+
+@register.filter
+def readable_color(hex_color):
+    """
+    Return a readable version of a color for text/stats display.
+    This is a more aggressive lightening specifically for text readability.
+    """
+    return lighten_if_dark(hex_color, lightness_threshold=0.3)
+
+
+@register.filter
+def is_dark_color(hex_color, threshold=0.4):
+    """
+    Check if a color is considered "dark" (returns True/False).
+    Useful for conditional styling in templates.
+    """
+    if not hex_color or not hex_color.startswith("#"):
+        return False
+
+    hex_color = hex_color.lstrip("#")
+    if len(hex_color) == 3:
+        hex_color = "".join([c * 2 for c in hex_color])
+
+    if len(hex_color) != 6:
+        return False
+
+    try:
+        r = int(hex_color[0:2], 16) / 255.0
+        g = int(hex_color[2:4], 16) / 255.0
+        b = int(hex_color[4:6], 16) / 255.0
+
+        h, l, s = colorsys.rgb_to_hls(r, g, b)
+        return l < threshold
+    except (ValueError, OverflowError):
+        return False
 
 
 # =========== Markdown (Markdownx - bs4) Filter  =========== #

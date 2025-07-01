@@ -135,7 +135,6 @@
         width: 48px;
         height: 48px;
         border-radius: var(--border-radius-md, 8px);
-        background: var(--tech-color, var(--color-teal));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -153,8 +152,6 @@
     .technology-category-badge {
         display: inline-block;
         padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
-        color: var(--tech-color, var(--color-teal));
         border-radius: var(--border-radius-sm, 4px);
         font-size: 0.8rem;
         font-weight: 500;
@@ -178,7 +175,6 @@
         display: block;
         font-size: 1.4rem;
         font-weight: 600;
-        color: var(--tech-color, var(--color-teal));
         margin-bottom: var(--spacing-xs, 0.5rem);
     }
 
@@ -217,7 +213,7 @@
     }
 
     .skill-dot.active {
-        background: var(--tech-color, var(--color-teal));
+        /* Color set inline via template filter */
     }
 
     .technology-description {
@@ -234,9 +230,6 @@
     .tech-action-btn {
         flex: 1;
         padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.1);
-        border: 1px solid rgba(var(--tech-color-rgb, 38, 198, 218), 0.3);
-        /*color: var(--tech-color, var(--color-teal));*/
         border-radius: var(--border-radius-md, 8px);
         text-decoration: none;
         text-align: center;
@@ -246,7 +239,6 @@
     }
 
     .tech-action-btn:hover {
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
         transform: translateY(-1px);
     }
 
@@ -348,7 +340,7 @@
         <div class="tech-categories-grid">
             {% for category in technology_categories %}
             <a href="#{{ category.code }}" class="tech-category-hexagon" 
-               style="--category-color: {{ category.color }};">
+               style="--category-color: {{ category.color|lighten_if_dark }};">
                 <i class="fas fa-{{ category.icon }} tech-category-icon"></i>
                 <div class="tech-category-name">{{ category.name }}</div>
                 <div class="tech-category-stats">
@@ -373,11 +365,11 @@
         <div class="technologies-grid">
             {% for technology in technologies %}
             {% if technology.category == category.code %}
-            <div class="technology-card" style="--tech-color: {{ technology.color }}; --tech-color-rgb: {{ technology.color|hex_to_rgb }};">
+            <div class="technology-card" style="--tech-color: {{ technology.color|lighten_if_dark }}; --tech-color-rgb: {{ technology.color|lighten_if_dark|hex_to_rgb }}; --tech-readable-color: {{ technology.color|readable_color }};">
                 
                 <!-- Technology Header -->
                 <div class="technology-header">
-                    <div class="technology-icon">
+                    <div class="technology-icon" style="background: {{ technology.color|readable_color }};">
                         {% if technology.icon %}
                             <i class="{{ technology.icon }}"></i>
                         {% else %}
@@ -386,18 +378,18 @@
                     </div>
                     <div class="technology-info">
                         <h3>{{ technology.name }}</h3>
-                        <span class="technology-category-badge">{{ technology.get_category_display }}</span>
+                        <span class="technology-category-badge" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.2); color: {{ technology.color|readable_color }};">{{ technology.get_category_display }}</span>
                     </div>
                 </div>
 
                 <!-- Learning Stats -->
                 <div class="technology-stats">
                     <div class="tech-stat">
-                        <span class="tech-stat-value">{{ technology.total_projects }}</span>
+                        <span class="tech-stat-value" style="color: {{ technology.color|readable_color }};">{{ technology.total_projects }}</span>
                         <span class="tech-stat-label">Projects</span>
                     </div>
                     <div class="tech-stat">
-                        <span class="tech-stat-value">{{ technology.skill_level|floatformat:1 }}/5</span>
+                        <span class="tech-stat-value" style="color: {{ technology.color|readable_color }};">{{ technology.skill_level|floatformat:1 }}/5</span>
                         <span class="tech-stat-label">Skill Level</span>
                     </div>
                 </div>
@@ -413,7 +405,7 @@
                     </span>
                     <div class="skill-level-indicator">
                         {% for i in "12345" %}
-                        <div class="skill-dot {% if technology.skill_level >= i|add:0 %}active{% endif %}"></div>
+                        <div class="skill-dot {% if technology.skill_level >= i|add:0 %}active{% endif %}" style="{% if technology.skill_level >= i|add:0 %}background: {{ technology.color|readable_color }};{% endif %}"></div>
                         {% endfor %}
                     </div>
                 </div>
@@ -427,12 +419,12 @@
 
                 <!-- Actions -->
                 <div class="technology-actions">
-                    <a href="{% url 'projects:technology_detail' technology.slug %}" class="tech-action-btn">
+                    <a href="{% url 'projects:technology_detail' technology.slug %}" class="tech-action-btn" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.1); border-color: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.3); color: {{ technology.color|readable_color }};">
                         <i class="fas fa-eye" style="margin-right: var(--spacing-xs, 0.5rem);"></i>
                         View Projects
                     </a>
                     {% if technology.featured_projects > 0 %}
-                    <a href="{% url 'projects:technology_detail' technology.slug %}#featured" class="tech-action-btn">
+                    <a href="{% url 'projects:technology_detail' technology.slug %}#featured" class="tech-action-btn" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.1); border-color: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.3); color: {{ technology.color|readable_color }};">
                         <i class="fas fa-star" style="margin-right: var(--spacing-xs, 0.5rem);"></i>
                         Featured ({{ technology.featured_projects }})
                     </a>
