@@ -2836,7 +2836,10 @@ class SystemTypesOverviewView(ListView):
 
 
 class SystemTypeDetailView(DetailView):
-    """Enhanced system type view using new manager methods."""
+    """
+    Enhanced System Type Detail - Shows learning progression within this project type
+    Similar to technology detail but focused on systems of a specific type
+    """
 
     model = SystemType
     template_name = "projects/system_type.html"
@@ -2846,26 +2849,160 @@ class SystemTypeDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         system_type = self.object
 
-        # Systems in this type using new manager methods
-        context["systems"] = SystemModule.objects.filter(
-            system_type=system_type
-        ).deployed()  # Use our new deployed() method
+        # Get systems of this type w learning focus
+        type_systems = SystemModule.objects.filter(system_type=system_type).select_related(
+            'author'
+        ).prefetch_related('technologies')
 
-        # Stats using new manager methods
-        type_systems = SystemModule.objects.filter(system_type=system_type)
-        context.update(
-            {
-                "total_systems": type_systems.count(),
-                "deployed_systems": type_systems.deployed().count(),
-                "featured_systems": type_systems.featured().count(),
-                "avg_completion": type_systems.aggregate(avg=Avg("completion_percent"))[
-                    "avg"
-                ]
-                or 0,
-            }
-        )
+        # Learning progressionL order by complexity and date to show growth
+        context["systems"] = type_systems.order_by('complexity', 'created_at')
+
+        # Learning focused stats (not enterprise metrics)
+        context.update({
+            'page_title': f'{system_type.name} - Project Portfolio',
+            'page_subtitle': f'My learning journey building {system_type.name.lower()} systems',
+
+            # Learning Journey Stats
+            'total_systems': type_systems.count(),
+            'completed_systems': type_systems.filter(status__in=['deployed', 'published']).count(),
+            'learning_systems': type_systems.filter(status='in_development').count(),
+            'featured_systems': type_systems.filter(featured=True).count(),
+
+            # Skill progression metrics
+            'skill_progression': self.get_skill_progression(type_systems),
+            'learning_timeline': self.get_learning_timeline(type_systems),
+            'complexity_progression': self.get_complexity_progression(type_systems),
+            'technology_usage': self.get_technology_usage(type_systems),
+
+            # Related learning (DataLogs integration)
+            'related_datalogs': self.get_related_datalogs(system_type),
+
+            # System type context
+            'similar_types': self.get_similar_types(system_type),
+        })
 
         return context
+    
+    def get_skill_progression(self, systems):
+        """Calculate skill level progression within this project type."""
+        if not systems.exists():
+            return {'level': 'Getting Started', 'description': 'Beginning exploration'}
+        
+        avg_complexity = systems.aggregate(avg=Avg('complexity'))['avg'] or 1
+        project_count = systems.count()
+        completion_rate = (systems.filter(
+            status__in=['deployed', 'published']
+        ).count() / project_count) * 100 if project_count > 0 else 0
+
+        # Determine skill level based on complexity and experience
+        if avg_complexity >= 4 and project_count >= 3:
+            level = 'Advanced'
+            description = f"Sophisticated {self.object.name.lower()} implementations ({project_count} projects)"
+        elif avg_complexity >= 3 or project_count >= 2:
+            level = "Intermediate"
+            description = f"Growing expertise in {self.object.name.lower()} development ({project_count} projects)"
+        else:
+            level = "Learning"
+            description = f"Building foundational {self.object.name.lower()} skills ({project_count} project{'s' if project_count > 1 else ''})"
+
+        return {
+            "level": level,
+            "description": description,
+            "avg_complexity": round(avg_complexity, 1),
+            "project_count": project_count,
+            "completion_rate": round(completion_rate, 1),
+        }
+    
+    def get_learning_timeline(self, systems):
+        """Create a learning timeline for this project type."""
+        timeline_items = []
+
+        for system in systems.order_by('created_at'):
+            timeline_items.append({
+                'date': system.created_at,
+                'title': system.title,
+                'type': 'project',
+                'complexity': system.complexity,
+                'status': system.status,
+                'description': system.excerpt or f'{system.get_complexity_display()} {self.object.name.lower()} project',
+                'url': system.get_absolute_url(),
+                'technologies': list(system.technologies.all()[:3]),  # Top 3 technologies
+            })
+        return timeline_items
+    
+    def get_complexity_progression(self, systems):
+        """Show how complexity has grown over time within this type."""
+        progression = []
+        
+        for system in systems.order_by('created_at'):
+            progression.append({
+                'title': system.title,
+                'complexity': system.complexity,
+                'complexity_display': system.get_complexity_display(),
+                'date': system.created_at,
+                'completion': system.completion_percent,
+                'featured': system.featured,
+            })
+        
+        return progression
+    
+    def get_technology_usage(self, systems):
+        """Get technology usage stats within this project type."""
+        from collections import Counter
+        
+        # Get all technologies used in this project type
+        tech_usage = Counter()
+        for system in systems:
+            for tech in system.technologies.all():
+                tech_usage[tech] += 1
+        
+        # Convert to list with percentages
+        total_systems = systems.count()
+        usage_stats = []
+        
+        for tech, count in tech_usage.most_common():
+            percentage = (count / total_systems) * 100 if total_systems > 0 else 0
+            usage_stats.append({
+                'technology': tech,
+                'count': count,
+                'percentage': round(percentage, 1),
+            })
+        
+        return usage_stats[:8]  # Top 8 technologies
+    
+    def get_related_datalogs(self, system_type):
+        """Find DataLogs related to this system type."""
+        # Import here to avoid circular imports
+        from blog.models import Post
+        
+        # Search for posts that mention this system type
+        related_posts = Post.objects.filter(
+            Q(title__icontains=system_type.name) |
+            Q(content__icontains=system_type.name) |
+            Q(tags__name__icontains=system_type.name)
+        ).filter(status='published').distinct()[:5]
+        
+        return related_posts
+    
+    def get_similar_types(self, system_type):
+        """Find other system types with similar complexity or technology usage."""
+        # Get other system types with similar average complexity
+        current_complexity = SystemModule.objects.filter(
+            system_type=system_type
+        ).aggregate(avg=Avg('complexity'))['avg'] or 0
+        
+        similar_types = SystemType.objects.exclude(
+            id=system_type.id
+        ).annotate(
+            system_count=Count('systems'),
+            avg_complexity=Avg('systems__complexity')
+        ).filter(
+            system_count__gt=0,
+            avg_complexity__gte=current_complexity - 0.5,
+            avg_complexity__lte=current_complexity + 0.5
+        )[:4]
+        
+        return similar_types
 
 
 # ===================== ENHANCED FEATURE VIEWS =====================
