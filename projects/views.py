@@ -2426,7 +2426,163 @@ class SystemTypeOverviewView(ListView):
             })
 
 
+# ===================== ENHANCED TECHNOLOGY VIEWS =====================
 
+
+class TechnologiesOverviewView(ListView):
+    """
+    Technologies Overview - Shows all technologies with learning progression
+    Similar to datalogs tag_list.html structure but learning-focused
+    """
+    model = Technology
+    template_name = "projects/technologies_overview.html"
+    context_object_name = "technologies"
+
+    def get_queryset(self):
+        """Get technologies w learning-focused annotations."""
+        return Technology.objects.annotate(
+            # Learning focused metrics instead of enterprise metrics
+            total_projects=Count('systems'),
+            completed_projects=Count('systems', filter=Q(systems__status__in=['deployed', 'published'])),
+            learning_projects=Count('systems', filter=Q(systems__status='in_development')),
+            featured_projects=Count('systems', filter=Q(systems__featured=True)),
+            avg_complexity=Avg('systems__completion_percent'),  # May change this to avg_completion?
+            skill_level=Avg('systems__complexity'),  # Avg complexity as skill indicator
+        ).filter(
+            total_projects__gt=0  # Only show technologies actually used
+        ).order_by('category', '-total_projects')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Learning journey overview stats
+        all_systems = SystemModule.objects.all()
+        all_technologies = Technology.objects.filter(systems__isnull=False).distinct()
+
+        context.update({
+            'page_title': 'Technology Skills Overview',
+            'page_subtitle': 'Learning progression across technologies in my development journey',
+
+            # Learning Journey Metrics
+            'total_technologies_learned': all_technologies.count(),
+            'total_projects_built': all_systems.count(),
+            'technologies_in_progress': all_technologies.filter(
+                systems__status='in_development'
+            ).distinct().count(),
+            'advanced_technologies': all_technologies.annotate(
+                avg_complexity=Avg('systems__complexity')
+            ).filter(avg_complexity__gte=3.5).count(),
+
+            # Technology categories for navigation (like category hexagons)
+            'technology_categories': self.get_technology_categories(),
+
+            # Learning progression insights
+            'learning_insights': self.get_learning_insights(),
+        })
+
+        return context
+    
+    def get_technology_categories(self):
+        """Get technology categories w stats - like category hexagons"""
+        categories = []
+
+        for category_code, category_name in Technology.CATEGORY_CHOICES:
+            category_techs = Technology.objects.filter(category=category_code)
+            if category_techs.exists():
+                # Calculate category learning metrics
+                total_projects = SystemModule.objects.filter(
+                    technologies__category=category_code
+                ).distinct().count()
+
+                avg_skill_level = category_techs.annotate(
+                    avg_complexity=Avg('systems__complexity')
+                ).aggregate(
+                    overall_avg=Avg('avg_complexity')
+                )['overall_avg'] or 0
+
+                categories.append({
+                    'code': category_code,
+                    'name': category_name,
+                    'color': self.get_category_color(category_code),
+                    'icon': self.get_category_icon(category_code),
+                    'tech_count': category_techs.count(),
+                    'project_count': total_projects,
+                    'skill_level': round(avg_skill_level, 1),
+                })
+        return categories
+    
+    def get_category_color(self, category):
+        """Get color for each technology category."""
+        colors = {
+            "language": "#ff8a80",  # Coral for languages
+            "framework": "#b39ddb",  # Lavender for frameworks
+            "database": "#26c6da",  # Teal for databases
+            "cloud": "#fff59d",  # Yellow for cloud
+            "tool": "#a5d6a7",  # Mint for tools
+            "other": "#90a4ae",  # Gunmetal for other
+        }
+        return colors.get(category, "#90a4ae")
+    
+    def get_category_icon(self, category):
+        """Get icon for each tech category."""
+        icons = {
+            "language": "code",
+            "framework": "layer-group",
+            "database": "database",
+            "cloud": "cloud",
+            "tool": "tools",
+            "other": "cog",
+        }
+        return icons.get(category, "cog")
+    
+    def get_learning_insights(self):
+        """Generate learning progression insights."""
+        insights = []
+
+        # Find most used technology
+        top_tech = Technology.objects.annotate(
+            project_count=Count('systems')
+        ).order_by('-project_count').first()
+
+        if top_tech:
+            insights.append({
+                'type': 'primary_skill',
+                'title': f'Primary Technology: {top_tech.name}',
+                'description': f'Used in {top_tech.project_count} projects',
+                'icon': 'star',
+                'color': 'teal'
+            })
+        
+        # Find newest technology (most recent project)
+        newest_tech = Technology.objects.filter(
+            systems__isnull=False
+        ).annotate(
+            latest_project=Max('systems__created_at')
+        ).order_by('-latest_project').first()
+
+        if newest_tech:
+            insights.append({
+                'type': 'latest_learning',
+                'title': f'Latest Skill: {newest_tech.name}',
+                'description': 'Most recently explored technology',
+                'icon': 'seedling',
+                'color': 'mint'
+            })
+
+        # Find complexity progression
+        advanced_count = Technology.objects.annotate(
+            avg_complexity=Avg('systems__complexity')
+        ).filter(avg_complexity__gte=4).count()
+
+        if advanced_count > 0:
+            insights.append({
+                'type': 'skill_growth',
+                'title': f'{advanced_count} Advanced Technologies',
+                'description': 'Demonstrating progression to complex implementations',
+                'icon': 'chart-line',
+                'color': 'purple'
+            })
+        return insights
 
 
 
@@ -2553,124 +2709,3 @@ def dashboard_api(request):
         }
     )
 
-# ===================== ADMIN/MANAGEMENT VIEWS (AS-IS WILL NEED UPDATING WHEN USE) =====================
-
-
-class SystemModuleCreateView(LoginRequiredMixin, CreateView):
-    """Create a new system module."""
-
-    model = SystemModule
-    template_name = "projects/admin/system_form.html"
-    fields = [
-        "title",
-        "subtitle",
-        "system_type",
-        "description",
-        "features_overview",
-        "technical_details",
-        "complexity",
-        "priority",
-        "status",
-        "featured",
-        "technologies",
-        "github_url",
-        "live_url",
-        "demo_url",
-        "thumbnail",
-        "banner_image",
-        "start_date",
-        "end_date",
-    ]
-
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        messages.success(
-            self.request, f"System '{form.instance.title}' created successfully!"
-        )
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = "Create New System"
-        context["submit_text"] = "Create System"
-        return context
-
-
-class SystemModuleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """Update an existing system module."""
-
-    model = SystemModule
-    template_name = "projects/admin/system_form.html"
-    fields = [
-        "title",
-        "subtitle",
-        "system_type",
-        "description",
-        "features_overview",
-        "technical_details",
-        "challenges",
-        "future_enhancements",
-        "complexity",
-        "priority",
-        "status",
-        "featured",
-        "technologies",
-        "github_url",
-        "live_url",
-        "demo_url",
-        "documentation_url",
-        "completion_percent",
-        "performance_score",
-        "uptime_percentage",
-        "thumbnail",
-        "banner_image",
-        "featured_image",
-        "architecture_diagram",
-        "start_date",
-        "end_date",
-        "deployment_date",
-    ]
-
-    def test_func(self):
-        system = self.get_object()
-        return self.request.user == system.author or self.request.user.is_staff
-
-    def form_valid(self, form):
-        messages.success(
-            self.request, f"System '{form.instance.title}' updated successfully!"
-        )
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = f"Edit System: {self.object.title}"
-        context["submit_text"] = "Update System"
-        return context
-
-
-class SystemModuleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    """Delete a system module."""
-
-    model = SystemModule
-    template_name = "projects/admin/system_confirm_delete.html"
-    success_url = reverse_lazy("projects:system_list")
-
-    def test_func(self):
-        system = self.get_object()
-        return self.request.user == system.author or self.request.user.is_staff
-
-    def delete(self, request, *args, **kwargs):
-        system = self.get_object()
-        messages.success(request, f"System '{system.title}' deleted successfully!")
-        return super().delete(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = f"Delete System: {self.object.title}"
-
-        # Get related data that will be affected
-        context["related_logs"] = self.object.get_related_logs()
-        context["related_features"] = self.object.features.count()
-        context["related_images"] = self.object.images.count()
-
-        return context
