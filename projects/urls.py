@@ -19,6 +19,7 @@ urlpatterns = [
     # path("systems/<slug:slug>/delete/", views.SystemModuleDeleteView.as_view(), name="system_delete"),
 
     # System type and technology views
+    path("types/", views.SystemTypesOverviewView.as_view(), name="system_types_overview"),
     path("types/<slug:slug>/", views.SystemTypeDetailView.as_view(), name="system_type"),
     path("technologies/", views.TechnologiesOverviewView.as_view(), name="technologies_overview"),
     path("technologies/<slug:slug>/", views.TechnologyDetailView.as_view(), name="technology_detail"),

@@ -2340,90 +2340,90 @@ class EnhancedSystemListView(ListView):
 
 # ===================== ENHANCED SYSTEM TYPE VIEWS =====================
 
-class SystemTypeOverviewView(ListView):
-    """
-    Global System Type Overview - Shows all systems grouped by type
-    This view renders when no specific system type is selected
-    """
-    model = SystemType
-    template_name = "projects/system_type_overview.html"
-    context_object_name = "system_types"
+# class SystemTypeOverviewView(ListView):
+#     """
+#     Global System Type Overview - Shows all systems grouped by type
+#     This view renders when no specific system type is selected
+#     """
+#     model = SystemType
+#     template_name = "projects/system_type_overview.html"
+#     context_object_name = "system_types"
 
-    def get_queryset(self):
-        return SystemType.objects.prefetch_related(
-            "systems__technologies"
-        ).annotate(
-            systems_count=Count('systems', filter=Q(systems__status='published')),
-            deployed_count=Count('systems', filter=Q(systems__status='deployed')),
-            avg_completion=Avg('systems__completion_percent')
-        ).order_by('display_order')
+#     def get_queryset(self):
+#         return SystemType.objects.prefetch_related(
+#             "systems__technologies"
+#         ).annotate(
+#             systems_count=Count('systems', filter=Q(systems__status='published')),
+#             deployed_count=Count('systems', filter=Q(systems__status='deployed')),
+#             avg_completion=Avg('systems__completion_percent')
+#         ).order_by('display_order')
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
 
-        # Global stats using enhanced manager methods
-        all_systems = SystemModule.objects.all()
+#         # Global stats using enhanced manager methods
+#         all_systems = SystemModule.objects.all()
 
-        context.update({
-            'page_title': 'System Types Overview',
-            'total_systems': all_systems.count(),
-            'total_deployed': all_systems.deployed().count(),
-            'total_featured': all_systems.featured().count(),
-            'total_in_development': all_systems.in_development().count(),
+#         context.update({
+#             'page_title': 'System Types Overview',
+#             'total_systems': all_systems.count(),
+#             'total_deployed': all_systems.deployed().count(),
+#             'total_featured': all_systems.featured().count(),
+#             'total_in_development': all_systems.in_development().count(),
 
-            # Performance distribution
-            'performance_distribution': self.get_performance_distribution(),
+#             # Performance distribution
+#             'performance_distribution': self.get_performance_distribution(),
 
-            # Technology distribution across all types
-            'top_technologies': Technology.objects.annotate(
-                systems_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
-            ).order_by('-systems_count')[:8],
+#             # Technology distribution across all types
+#             'top_technologies': Technology.objects.annotate(
+#                 systems_count=Count('systems', filter=Q(systems__status__in=['deployed', 'published']))
+#             ).order_by('-systems_count')[:8],
 
-            # Recent activity
-            'recently_updated': all_systems.recently_updated(7).select_related('system_type')[:5],
+#             # Recent activity
+#             'recently_updated': all_systems.recently_updated(7).select_related('system_type')[:5],
 
-            # Type analytics
-            'type_analytics': self.get_type_analytics(),
-        })
+#             # Type analytics
+#             'type_analytics': self.get_type_analytics(),
+#         })
 
-        return context
+#         return context
 
-    def get_performance_distribution(self):
-        """Get performance score distribution across all systems."""
-        systems = SystemModule.objects.with_performance_data()
+#     def get_performance_distribution(self):
+#         """Get performance score distribution across all systems."""
+#         systems = SystemModule.objects.with_performance_data()
 
-        return {
-            'excellent': systems.filter(performance_score__gte=90).count(),
-            'good': systems.filter(performance_score__range=[70, 89]).count(),
-            'fair': systems.filter(performance_score__range=[50, 69]).count(),
-            'poor': systems.filter(performance_score__lt=50).count(),
-        }
+#         return {
+#             'excellent': systems.filter(performance_score__gte=90).count(),
+#             'good': systems.filter(performance_score__range=[70, 89]).count(),
+#             'fair': systems.filter(performance_score__range=[50, 69]).count(),
+#             'poor': systems.filter(performance_score__lt=50).count(),
+#         }
 
-    def get_type_analytics(self):
-        """Get analytics for each system type."""
-        type_data = []
+#     def get_type_analytics(self):
+#         """Get analytics for each system type."""
+#         type_data = []
 
-        for system_type in self.get_queryset():
-            type_systems = SystemModule.objects.filter(system_type=system_type)
+#         for system_type in self.get_queryset():
+#             type_systems = SystemModule.objects.filter(system_type=system_type)
 
-            # Calculate health score based on deployment ratio and completion
-            deployed_ratio = type_systems.deployed().count() / max(type_systems.count(), 1)
-            avg_completion = type_systems.aggregate(avg=Avg('completion_percent'))['avg'] or 0
-            health_score = (deployed_ratio * 50) + (avg_completion * 0.5)
+#             # Calculate health score based on deployment ratio and completion
+#             deployed_ratio = type_systems.deployed().count() / max(type_systems.count(), 1)
+#             avg_completion = type_systems.aggregate(avg=Avg('completion_percent'))['avg'] or 0
+#             health_score = (deployed_ratio * 50) + (avg_completion * 0.5)
 
-            type_data.append({
-                'type': system_type,
-                'systems_count': type_systems.count(),
-                'deployed_count': type_systems.deployed().count(),
-                'featured_count': type_systems.featured().count(),
-                'avg_completion': avg_completion,
-                'health_score': min(100, health_score),
-                'top_technologies': Technology.objects.filter(
-                    systems__system_type=system_type
-                ).annotate(
-                    count=Count('systems')
-                ).order_by('-count')[:3]
-            })
+#             type_data.append({
+#                 'type': system_type,
+#                 'systems_count': type_systems.count(),
+#                 'deployed_count': type_systems.deployed().count(),
+#                 'featured_count': type_systems.featured().count(),
+#                 'avg_completion': avg_completion,
+#                 'health_score': min(100, health_score),
+#                 'top_technologies': Technology.objects.filter(
+#                     systems__system_type=system_type
+#                 ).annotate(
+#                     count=Count('systems')
+#                 ).order_by('-count')[:3]
+#             })
 
 
 # ===================== ENHANCED TECHNOLOGY VIEWS =====================
@@ -2778,14 +2778,14 @@ class SystemTypesOverviewView(ListView):
         top_type = SystemType.objects.annotate(
             system_count=Count('systems'),
             completion_avg=Avg('systems__completion_percent')
-        ).filter(system_count__gt=0).order_by('-system_count', '-completion_percent').first()
+        ).filter(system_count__gt=0).order_by('-system_count', '-completion_avg').first()
 
         if top_type:
             insights.append({
                 'type': 'primary_focus',
                 'title': f'Primary Focus: {top_type.name}',
                 'description': f'{top_type.system_count} projects built',
-                'icon': top_type.icon.replace('fa-', '') if top_type.icon else 'star',
+                'icon': top_type.icon if top_type.icon else 'fa-star',
                 'color': 'teal'
             })
         
@@ -2799,7 +2799,7 @@ class SystemTypesOverviewView(ListView):
                 'type': 'latest_exploration',
                 'title': f'Latest Exploration: {newest_type.name}',
                 'description': 'Most recently explored project type',
-                'icon': newest_type.icon.replace('fa-', '') if newest_type.icon else 'seedling',
+                'icon': newest_type.icon if newest_type.icon else 'fa-seedling',
                 'color': 'mint'
             })
         
@@ -2813,7 +2813,7 @@ class SystemTypesOverviewView(ListView):
                 'type': 'advanced_work',
                 'title': f'Advanced Work: {complex_type.name}',
                 'description': f'Average Complexity: {complex_type.avg_complexity:.1f}/5',
-                'icon': complex_type.icon.replace('fa-', '') if complex_type.icon else 'chart-line',
+                'icon': complex_type.icon if complex_type.icon else 'fa-chart-line',
                 'color': 'lavender'
             })
         return insights
