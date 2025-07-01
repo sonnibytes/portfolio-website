@@ -12,11 +12,11 @@
 
 <style>
     /* Featured Systems Portfolio Styles */
-    .featured-systems-grid {
+    {% comment %} .featured-systems-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
         gap: var(--spacing-xl, 2rem);
-    }
+    } {% endcomment %}
 
     .featured-system-card {
         background: rgba(255, 255, 255, 0.03);
@@ -127,7 +127,7 @@
     .system-metrics {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: var(--spacing-lg, 1.5rem);
+        {% comment %} gap: var(--spacing-lg, 1.5rem); {% endcomment %}
         margin-bottom: var(--spacing-xl, 2rem);
     }
 
@@ -508,7 +508,8 @@
     {% endif %}
 
     <!-- Portfolio Controls -->
-    <div class="unified-dashboard-container navy">
+     <div class="section-container container">
+    <div class="unified-container">
         <div class="unified-container-header">
             <h2 class="unified-container-title" style="font-size: 1.8rem;">
                 <i class="fas fa-th-large" style="margin-right: var(--spacing-sm, 0.75rem); color: #5c6bc0;"></i>
@@ -536,7 +537,7 @@
             {% for system in featured_systems %}
             <div class="featured-system-card" style="--system-color: {{ system.system_type.color|readable_color|default:'var(--color-coral)' }}; --system-color-rgb: {{ system.system_type.color|readable_color|hex_to_rgb|default:'255, 138, 128' }};" onclick="window.location.href='{{ system.get_absolute_url }}'">
                 
-                <div class="featured-badge">Featured</div>
+                {% comment %} <div class="featured-badge">Featured</div> {% endcomment %}
                 
                 <!-- System Header -->
                 <div class="system-header">
@@ -551,11 +552,15 @@
                     </div>
                     <div class="system-info">
                         <h3><a href="{{ system.get_absolute_url }}">{{ system.title }}</a></h3>
-                        {% if system.system_type %}
-                        <span class="system-type-label">{{ system.system_type.name }}</span>
-                        {% endif %}
+                        
                     </div>
                 </div>
+                {% if system.system_type %}
+                    <p class="system-card-subtitle">
+                        <i class="fas fa-{{ system.system_type.icon|default:'apps' }}"></i> 
+                        {{ system.system_type.name }}
+                    </p>
+                {% endif %}
 
                 <!-- System Description -->
                 {% if system.excerpt %}
@@ -610,5 +615,6 @@
         {% endif %}
     </div>
 
+</div>
 </div>
 {% endblock %}
