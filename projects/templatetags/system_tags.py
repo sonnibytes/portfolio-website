@@ -52,17 +52,27 @@ def system_metrics_json(system):
 
 @register.filter
 def hex_to_rgb(hex_color):
-    """Convert hex color to RGB values for CSS variables"""
+    """Convert hex color to RGB values for CSS custom properties."""
     if not hex_color or not hex_color.startswith("#"):
-        return "0, 240, 255"  # Default teal
+        return "38, 198, 218"  # Default teal RGB
 
     hex_color = hex_color.lstrip("#")
+
+    if len(hex_color) == 3:
+        hex_color = "".join([c * 2 for c in hex_color])
+
+    if len(hex_color) != 6:
+        return "38, 198, 218"  # Default teal RGB
+
     try:
-        rgb = tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
-        return f"{rgb[0]}, {rgb[1]}, {rgb[2]}"
-    except:
-        return "0, 240, 255"  # Default teal
- 
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        return f"{r}, {g}, {b}"
+    except ValueError:
+        return "38, 198, 218"  # Default teal RGB
+
+
 # =========== Markdown (Markdownx - bs4) Filter  =========== #
 
 

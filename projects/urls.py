@@ -20,6 +20,7 @@ urlpatterns = [
 
     # System type and technology views
     path("types/<slug:slug>/", views.SystemTypeDetailView.as_view(), name="system_type"),
+    path("technologies/", views.TechnologiesOverviewView.as_view(), name="technologies_overview"),
     path("technologies/<slug:slug>/", views.TechnologyDetailView.as_view(), name="technology_detail"),
 
     # Showcase and presentation views
