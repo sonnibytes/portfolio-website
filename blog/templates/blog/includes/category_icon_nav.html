@@ -1,0 +1,334 @@
+<!----
+ * SIMPLIFIED VERSION OF: blog/templates/blog/includes/category_hexagon_nav.html
+ * Updated to use metric icons instead of hexagons
+---->
+
+
+{% load aura_filters %}
+{% load datalog_tags %}
+
+<div class="category-hexagon-navigation {{ style|default:'full' }}-style">
+    
+    {% if style == 'full' %}
+    <!-- FULL STYLE - Your existing functionality with new styling -->
+    <div class="hex-nav-container unified-glass">
+        
+        <!-- Header with scroll controls (moved from template tag) -->
+        <div class="hex-nav-header">
+            <div class="hex-nav-title">
+                <i class="fas fa-icons"></i>
+                <span>Categories</span>
+            </div>
+            <div class="hex-scroll-controls">
+                <button class="hex-scroll-btn hex-scroll-left" id="categoryScrollLeft">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="hex-scroll-btn hex-scroll-right" id="categoryScrollRight">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Categories grid -->
+        <div class="hex-categories-grid" id="categoriesGrid">
+            
+            <!-- All categories option -->
+            {% if show_all %}
+            <div class="hex-category-item {% if not current_category %}active{% endif %}">
+                <a href="{% url 'blog:post_list' %}" class="hex-link">
+                    {% category_hexagon_single category=None size="md" show_label=True special_type="all" %}
+                    <span class="hex-count">{{ total_posts|format_number }}</span>
+                </a>
+            </div>
+            {% endif %}
+            
+            <!-- Category items using your existing single hexagon -->
+            {% for category in categories %}
+            <div class="hex-category-item {% if current_category.slug == category.slug %}active{% endif %}">
+                <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
+                    {% category_hexagon_single category=category size="md" show_label=True %}
+                    <span class="hex-count">{{ category.post_count|format_number }}</span>
+                </a>
+            </div>
+            {% endfor %}
+            
+        </div>
+        
+    </div>
+    
+    {% elif style == 'compact' %}
+    <!-- COMPACT STYLE -->
+    <div class="hex-nav-container unified-glass compact">
+        <div class="hex-categories-grid compact">
+            {% if show_all %}
+            <div class="hex-category-item compact {% if not current_category %}active{% endif %}">
+                <a href="{% url 'blog:post_list' %}" class="hex-link">
+                    {% category_hexagon_single category=None size="sm" show_label=False special_type="all" %}
+                </a>
+            </div>
+            {% endif %}
+            
+            {% for category in categories %}
+            <div class="hex-category-item compact {% if current_category.slug == category.slug %}active{% endif %}">
+                <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
+                    {% category_hexagon_single category=category size="sm" show_label=False %}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% elif style == 'minimal' %}
+    <!-- MINIMAL STYLE -->
+    <div class="hex-nav-container minimal">
+        <div class="hex-categories-grid minimal">
+            {% if show_all %}
+            <div class="hex-category-item minimal {% if not current_category %}active{% endif %}">
+                <a href="{% url 'blog:post_list' %}" class="hex-link">
+                    {% category_hexagon_single category=None size="xs" show_label=False special_type="all" %}
+                </a>
+            </div>
+            {% endif %}
+            
+            {% for category in categories %}
+            <div class="hex-category-item minimal {% if current_category.slug == category.slug %}active{% endif %}">
+                <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
+                    {% category_hexagon_single category=category size="xs" show_label=False %}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- DEFAULT/FILTER STYLE -->
+    <div class="hex-nav-container filter">
+        <div class="hex-categories-grid filter">
+            {% for category in categories %}
+            <div class="hex-category-item filter {% if current_category.slug == category.slug %}active{% endif %}">
+                <button class="hex-filter-btn" data-category="{{ category.slug }}">
+                    {% category_hexagon_single category=category size="sm" show_label=True %}
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% endif %}
+    
+</div>
+
+<style>
+/* ========== UNIFIED HEXAGON NAVIGATION STYLES ========== */
+.category-hexagon-navigation {
+    width: 100%;
+    margin: var(--spacing-lg) 0;
+}
+
+.hex-nav-container.unified-glass {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(10px);
+}
+
+.hex-nav-container.compact {
+    padding: var(--spacing-md);
+    background: rgba(179, 157, 219, 0.03);
+    border-color: rgba(179, 157, 219, 0.1);
+}
+
+.hex-nav-container.minimal {
+    padding: var(--spacing-sm);
+    background: none;
+    border: none;
+}
+
+.hex-nav-container.filter {
+    padding: var(--spacing-md);
+    background: rgba(38, 198, 218, 0.03);
+    border-color: rgba(38, 198, 218, 0.1);
+}
+
+.hex-nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.hex-nav-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-lavender);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hex-scroll-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.hex-scroll-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: 50%;
+    color: var(--color-lavender);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hex-scroll-btn:hover:not(:disabled) {
+    background: rgba(179, 157, 219, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(179, 157, 219, 0.3);
+}
+
+.hex-scroll-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.hex-categories-grid {
+    display: flex;
+    gap: var(--spacing-lg);
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    padding: var(--spacing-sm) 0;
+}
+
+.hex-categories-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.hex-categories-grid.compact {
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.hex-categories-grid.minimal {
+    gap: var(--spacing-sm);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.hex-categories-grid.filter {
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.hex-category-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+    transition: all var(--transition-normal);
+}
+
+.hex-category-item.compact {
+    gap: var(--spacing-xs);
+}
+
+.hex-category-item.minimal {
+    gap: 0;
+}
+
+.hex-link,
+.hex-filter-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: inherit;
+    text-decoration: none;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.hex-link:hover,
+.hex-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateY(-2px);
+}
+
+.hex-count {
+    font-family: var(--font-code);
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    margin-top: 0.2rem;
+}
+
+.hex-category-item.active .hex-count {
+    color: var(--color-text-secondary);
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 767px) {
+    .hex-nav-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .hex-categories-grid {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<script>
+// Enhanced navigation with scroll controls
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollContainer = document.getElementById('categoriesGrid');
+    const leftBtn = document.getElementById('categoryScrollLeft');
+    const rightBtn = document.getElementById('categoryScrollRight');
+    
+    if (scrollContainer && leftBtn && rightBtn) {
+        leftBtn.addEventListener('click', () => {
+            scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+        });
+        
+        rightBtn.addEventListener('click', () => {
+            scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+        });
+        
+        function updateButtons() {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+            leftBtn.disabled = scrollLeft <= 0;
+            rightBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 1;
+        }
+        
+        scrollContainer.addEventListener('scroll', updateButtons);
+        window.addEventListener('resize', updateButtons);
+        setTimeout(updateButtons, 100);
+    }
+    
+    // Filter button functionality
+    document.querySelectorAll('.hex-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const category = this.dataset.category;
+            // Add your filter logic here
+            console.log('Filter by category:', category);
+        });
+    });
+});
+</script>
