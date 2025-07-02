@@ -25,7 +25,7 @@ from .models import SystemModule, SystemType, Technology, SystemFeature, SystemM
 from blog.models import Post, SystemLogEntry
 from core.models import Skill, PortfolioAnalytics
 
-
+## REPLACED BY IMPROVED HOME VIEW
 # Should replace all dashboards....and act as landing page
 # Should replace LearningJourneyDashboardView and EnhancedDashboardView
 class PortfolioLandingDashboardView(TemplateView):
@@ -617,9 +617,9 @@ class EnhancedLearningSystemListView(ListView):
 
     def get_queryset(self):
         """Enhanced query with learning-focused optimizations"""
-        # Start with optimized base query for learning data
+        # Start with optimized base query for learning data (exclude drafts, archived)
         queryset = (
-            SystemModule.objects.select_related("system_type", "author")
+            SystemModule.objects.exclude(status__in=['draft', 'archived']).select_related("system_type", "author")
             .prefetch_related(
                 "technologies",
                 "skills_developed",  # Important for learning cards

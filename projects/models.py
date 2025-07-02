@@ -1225,7 +1225,7 @@ class SystemSkillGain(models.Model):
             4: "Gained Confidence",
             5: "Teaching Level"
         }
-        return display_map.get(self.proficiency_gained, "Unknokwn")
+        return display_map.get(self.proficiency_gained, "Unknown")
 
     def get_proficiency_color(self):
         """Color for proficiency level badges"""
