@@ -8,8 +8,6 @@
 {% load datalog_tags %}
 
 <div class="category-hexagon-navigation {{ style|default:'full' }}-style">
-    
-    {% if style == 'full' %}
     <!-- FULL STYLE - Your existing functionality with new styling -->
     <div class="hex-nav-container unified-glass">
         
@@ -19,34 +17,32 @@
                 <i class="fas fa-icons"></i>
                 <span>Categories</span>
             </div>
-            <div class="hex-scroll-controls">
+            {% comment %} <div class="hex-scroll-controls">
                 <button class="hex-scroll-btn hex-scroll-left" id="categoryScrollLeft">
                     <i class="fas fa-chevron-left"></i>
                 </button>
                 <button class="hex-scroll-btn hex-scroll-right" id="categoryScrollRight">
                     <i class="fas fa-chevron-right"></i>
                 </button>
-            </div>
+            </div> {% endcomment %}
         </div>
         
         <!-- Categories grid -->
-        <div class="hex-categories-grid" id="categoriesGrid">
+        <div class="metrics-overview hex-categories-grid" id="categoriesGrid">
             
             <!-- All categories option -->
-            {% if show_all %}
             <div class="hex-category-item {% if not current_category %}active{% endif %}">
                 <a href="{% url 'blog:post_list' %}" class="hex-link">
-                    {% category_hexagon_single category=None size="md" show_label=True special_type="all" %}
-                    <span class="hex-count">{{ total_posts|format_number }}</span>
+                    {% include 'blog/includes/category_icon_single.html' with category=None size="md" show_label=True special_type="all" %}
+                    <span class="metric-value">{{ total_posts|format_number }}</span>
                 </a>
             </div>
-            {% endif %}
             
             <!-- Category items using your existing single hexagon -->
             {% for category in categories %}
             <div class="hex-category-item {% if current_category.slug == category.slug %}active{% endif %}">
                 <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
-                    {% category_hexagon_single category=category size="md" show_label=True %}
+                    {% include 'blog/includes/category_icon_single.html' with category=category size="md" show_label=True %}
                     <span class="hex-count">{{ category.post_count|format_number }}</span>
                 </a>
             </div>
@@ -56,70 +52,88 @@
         
     </div>
     
-    {% elif style == 'compact' %}
-    <!-- COMPACT STYLE -->
-    <div class="hex-nav-container unified-glass compact">
-        <div class="hex-categories-grid compact">
-            {% if show_all %}
-            <div class="hex-category-item compact {% if not current_category %}active{% endif %}">
-                <a href="{% url 'blog:post_list' %}" class="hex-link">
-                    {% category_hexagon_single category=None size="sm" show_label=False special_type="all" %}
-                </a>
-            </div>
-            {% endif %}
-            
-            {% for category in categories %}
-            <div class="hex-category-item compact {% if current_category.slug == category.slug %}active{% endif %}">
-                <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
-                    {% category_hexagon_single category=category size="sm" show_label=False %}
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    
-    {% elif style == 'minimal' %}
-    <!-- MINIMAL STYLE -->
-    <div class="hex-nav-container minimal">
-        <div class="hex-categories-grid minimal">
-            {% if show_all %}
-            <div class="hex-category-item minimal {% if not current_category %}active{% endif %}">
-                <a href="{% url 'blog:post_list' %}" class="hex-link">
-                    {% category_hexagon_single category=None size="xs" show_label=False special_type="all" %}
-                </a>
-            </div>
-            {% endif %}
-            
-            {% for category in categories %}
-            <div class="hex-category-item minimal {% if current_category.slug == category.slug %}active{% endif %}">
-                <a href="{% url 'blog:category' slug=category.slug %}" class="hex-link">
-                    {% category_hexagon_single category=category size="xs" show_label=False %}
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    
-    {% else %}
-    <!-- DEFAULT/FILTER STYLE -->
-    <div class="hex-nav-container filter">
-        <div class="hex-categories-grid filter">
-            {% for category in categories %}
-            <div class="hex-category-item filter {% if current_category.slug == category.slug %}active{% endif %}">
-                <button class="hex-filter-btn" data-category="{{ category.slug }}">
-                    {% category_hexagon_single category=category size="sm" show_label=True %}
-                </button>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    
-    {% endif %}
-    
 </div>
 
 <style>
 /* ========== UNIFIED HEXAGON NAVIGATION STYLES ========== */
+/* ========== METRIC DISPLAYS ========== */
+.metrics-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    margin-top: var(--spacing-xl);
+  }
+
+  .metric-card {
+    background: var(--gradient-glass), rgba(13, 13, 31, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-xl);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(20px);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+  }
+
+  .metric-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--color-teal);
+    opacity: 0.8;
+    border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+  }
+
+.metric-value {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--container-category-color, var(--color-teal));
+    line-height: 1;
+    display: block;
+    margin-bottom: var(--spacing-sm, 0.75rem);
+    font-family: var(--font-heading);
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+.metric-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--container-category-color, var(--color-teal));
+    box-shadow: 0 0 15px rgba(38, 198, 218, 0.3);
+}
+
+.metric-card {
+    margin-bottom: var(--spacing-md);
+}
+
+.metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .category-hexagon-navigation {
     width: 100%;
     margin: var(--spacing-lg) 0;
