@@ -20,6 +20,103 @@ from projects.models import SystemModule, Technology, LearningMilestone
 from datetime import timedelta
 
 
+# Adding for ref - want to pull some things into current home view
+class OldHomeView(TemplateView):
+    """AURA Home/Dashboard View with comprehensive system metrics."""
+
+    template_name = "core/backup/archived_index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # AURA System Metrics
+        context["total_systems"] = (
+            SystemModule.objects.filter(status__in=["deployed", "published"]).count()
+            or 12
+        )
+
+        context["total_logs"] = Post.objects.filter(status="published").count() or 24
+
+        context["technologies_count"] = Technology.objects.count() or 15
+
+        # Featured Systems (limit 3 for homepage)
+        context["featured_projects"] = (
+            SystemModule.objects.filter(
+                featured=True, status__in=["deployed", "published"]
+            )
+            .select_related("system_type")
+            .prefetch_related("technologies")
+            .order_by("-created_at")[:3]
+        )
+
+        # Latest DataLogs (limit 3 for homepage)
+        context["latest_posts"] = (
+            Post.objects.filter(status="published")
+            .select_related("category")
+            .order_by("-published_date")[:3]
+        )
+
+        # Quick Stats for Dashboard Cards
+        context["deployed_systems"] = (
+            SystemModule.objects.filter(status__in=["deployed", "published"]).count()
+            or 8
+        )
+
+        context["in_development"] = (
+            SystemModule.objects.filter(status="in_development").count() or 3
+        )
+
+        context["ml_projects"] = (
+            SystemModule.objects.filter(
+                Q(title__icontains="ML")
+                | Q(title__icontains="Machine Learning")
+                | Q(description__icontains="machine learning")
+                | Q(description__icontains="neural")
+                | Q(technologies__name__icontains="TensorFlow")
+                | Q(technologies__name__icontains="PyTorch")
+            )
+            .distinct()
+            .count()
+            or 5
+        )
+
+        context["recent_logs"] = (
+            Post.objects.filter(
+                status="published",
+                published_date__gte=timezone.now() - timedelta(days=30),
+            ).count()
+            or 12
+        )
+
+        # System Status Metrics for HUD displays
+        context["system_metrics"] = {
+            "uptime": "99.7%",
+            "response_time": "142ms",
+            "security_level": "AES-256",
+            "active_connections": "1,247",
+            "total_deployments": SystemModule.objects.filter(status="deployed").count(),
+            "avg_completion": SystemModule.objects.aggregate(
+                avg=Avg("completion_percent")
+            )["avg"]
+            or 85.0,
+        }
+
+        # Categories for navigation
+        context["categories"] = Category.objects.all()[:5]
+
+        # Additional metrics for status display
+        context["systems_tested"] = (
+            SystemModule.objects.filter(status="testing").count() or 2
+        )
+
+        # TODO: Get from GitHub API
+        context["lines_of_code"] = 50000
+        # TODO: Get from GitHub API
+        context["commits_this_month"] = 127
+
+        return context
+
+
 class HomeView(TemplateView):
     """
     Enhanced Home Page - Dynamic Learning Journey Showcase
@@ -125,7 +222,7 @@ class HomeView(TemplateView):
             {
                 "title": "Explore My Projects",
                 "description": f"See {context['portfolio_metrics']['total_systems']} projects showing skill progression",
-                "url": "/projects/",
+                "url": "/systems/",
                 "icon": "fas fa-folder-open",
                 "color": "teal",
                 "metric": f"{context['portfolio_metrics']['portfolio_ready_systems']} portfolio-ready",
@@ -133,7 +230,7 @@ class HomeView(TemplateView):
             {
                 "title": "Read Learning Journey",
                 "description": f"{context['portfolio_metrics']['total_datalogs']} technical insights and learning documentation",
-                "url": "/blog/",
+                "url": "/datalogs/",
                 "icon": "fas fa-book-open",
                 "color": "lavender",
                 "metric": "Technical writing",
@@ -141,7 +238,7 @@ class HomeView(TemplateView):
             {
                 "title": "Download Resume",
                 "description": "Professional credentials and learning progression details",
-                "url": "/resume/download/",
+                "url": "/developer-profile/",
                 "icon": "fas fa-download",
                 "color": "coral",
                 "metric": "Always current",
