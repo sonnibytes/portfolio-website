@@ -158,7 +158,7 @@
                     <div class="system-badge">{{ system.system_id|default:"SYS-001" }}</div>
                     <div class="system-status">
                         <div class="status-indicator operational"></div>
-                        <span>{{ system.get_status_display|default:"Deployed" }}</span>
+                        <span>{{ system.get_status_display|default:"Published" }}</span>
                     </div>
                 </div>
                 
@@ -175,40 +175,134 @@
                 {% endif %}
                 
                 <div class="system-card-content">
+                    <div class="system-header">
                     <h3 class="system-title">{{ system.title }}</h3>
+                    {% if system.system_type %}
+                        <p class="system-card-subtitle">
+                            <i class="fas fa-{{ system.system_type.icon|default:'apps' }}"></i> 
+                            {{ system.system_type.name }}
+                        </p>
+                    {% endif %}
+                    <!-- Learning Stage Badge -->
+                    <div class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
+                        {{ system.get_learning_stage_display }}
+                    </div>
+                </div>
+
                     <p class="system-description">{{ system.excerpt|default:system.description|truncatewords:20 }}</p>
                     
                     <div class="system-metrics">
-                        <div class="system-metric">
+                        {% comment %} <div class="system-metric">
                             <span class="system-metric-value">{{ system.completion_percent|default:"100" }}%</span>
                             <span class="system-metric-label">Complete</span>
-                        </div>
+                        </div> {% endcomment %}
                         <div class="system-metric">
                             <span class="system-metric-value">{{ system.complexity|default:"3" }}/5</span>
                             <span class="system-metric-label">Complexity</span>
                         </div>
                         <div class="system-metric">
+                            <span class="system-metric-value">
+                                {% if system.actual_dev_hours %}
+                                    {{ system.actual_dev_hours }}h
+                                {% elif system.estimated_dev_hours %}
+                                    ~{{ system.estimated_dev_hours }}h
+                                {% else %}
+                                    0h
+                                {% endif %}
+                            </span>
+                            <span class="system-metric-label">Time Invested</span>
+                        </div>
+                        {% comment %} <div class="system-metric">
                             <span class="system-metric-value">{{ system.technologies.count|default:"4" }}</span>
                             <span class="system-metric-label">Tech Stack</span>
+                        </div> {% endcomment %}
+                    </div>
+
+                    <!-- Technology Stack -->
+                    <div class="tech-stack-container">
+                        <div class="metric-label" style="padding-top: 1rem; padding-bottom: 0.5rem;">
+                            Tech Stack
+                        </div>
+                        <div class="system-tech-stack">
+                            {% for tech in system.technologies.all|slice:":4" %}
+                            <span class="tech-tag">{{ tech.name }}</span>
+                            {% empty %}
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">Django</span>
+                            <span class="tech-tag">PostgreSQL</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- Skills Pills -->
+                    {% if system.skills_developed.all %}
+                    
+                    <div class="skills-pills-container">
+                        <div class="metric-label" style="padding-top: 1rem; padding-bottom: 0.5rem;">
+                            Skills
+                        </div>
+                        <div class="skills-pills">
+                        {% for skill in system.skills_developed.all|slice:":4" %}
+                        <span class="skill-pill">{{ skill.name }}</span>
+                        {% endfor %}
+                        {% if system.skills_developed.count > 4 %}
+                        <span class="skill-pill more">+{{ system.skills_developed.count|add:"-4" }} more</span>
+                        {% endif %}
+                        </div>
+                        
+                    </div>
+                    
+                    {% endif %}
+                </div>
+
+                {% comment %} <div class="system-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>{{ system.updated_at|date:"M d, Y" }}</span>
+                    </div>
+                    {% if system.github_url %}
+                                <div class="github-info">
+                    <div class="meta-item">
+                        <i class="fab fa-github"></i>
+                                        <span>{{ system.commit_count|default:0 }} commit{{ system.commit_count|pluralize }}</span>
+                                    </div>
+                                    {% if system.last_commit_date %}
+                                    <div class="meta-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Last commit {{ system.last_commit_date|timesince }} ago</span>
+                                    </div>
+                                    {% endif %}
+                    </div>
+                    {% endif %}
+                </div> {% endcomment %}
+                
+                <div class="system-card-footer">
+                    <div class="learning-progress progress-section">
+                        <div class="progress-info">
+                            <span>Progress</span>
+                            <span>{{ system.completion_percent|default:0 }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill learning-progress-{{ system.learning_stage }}" 
+                                 style="width: {{ system.completion_percent|default:0 }}%;"></div>
                         </div>
                     </div>
                     
-                    <div class="system-tech-stack">
-                        {% for tech in system.technologies.all|slice:":4" %}
-                        <span class="tech-tag">{{ tech.name }}</span>
-                        {% empty %}
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">Django</span>
-                        <span class="tech-tag">PostgreSQL</span>
-                        {% endfor %}
+                    <div class="system-actions">
+                        <a href="{{ system.get_absolute_url }}" title="View System Details" class="action-btn">
+                            <i class="fas fa-eye"></i>
+                            <span>View</span>
+                        </a>
+                        {% if system.github_url %}
+                        <a href="{{ system.github_url }}" target="_blank" title="View on GitHub" class="action-btn">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        {% endif %}
+                        {% if system.live_url %}
+                        <a href="{{ system.live_url }}" target="_blank" title="View Demo/Live" class="action-btn">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        {% endif %}
                     </div>
-                </div>
-                
-                <div class="system-card-footer">
-                    <a href="{% if system %}{% url 'projects:system_detail' slug=system.slug %}{% else %}#{% endif %}" class="system-link">
-                        <i class="fas fa-external-link-alt"></i>
-                        View System
-                    </a>
                 </div>
             </div>
             {% empty %}
