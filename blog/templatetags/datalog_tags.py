@@ -316,17 +316,17 @@ def total_reading_time(posts):
     return total
 
 
-@register.inclusion_tag("blog/includes/category_hexagon_single.html")
-def category_hexagon_single(category, size="md", show_label=True):
-    """
-    Render a single category hexagon.
-    Usage: {% category_hexagon_single category size="sm" show_label=False %}
-    """
-    return {
-        "category": category,
-        "size": size,
-        "show_label": show_label,
-    }
+# @register.inclusion_tag("blog/includes/category_hexagon_single.html")
+# def category_hexagon_single(category, size="md", show_label=True):
+#     """
+#     Render a single category hexagon.
+#     Usage: {% category_hexagon_single category size="sm" show_label=False %}
+#     """
+#     return {
+#         "category": category,
+#         "size": size,
+#         "show_label": show_label,
+#     }
 
 
 # ========== DATALOG TEMPLATE TAGS ==========

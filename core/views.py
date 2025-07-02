@@ -23,7 +23,7 @@ from datetime import timedelta
 class HomeView(TemplateView):
     """AURA Home/Dashboard View updated with learning-focused metrics."""
 
-    template_name = "core/backup/archived_index.html"
+    template_name = "core/index.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
