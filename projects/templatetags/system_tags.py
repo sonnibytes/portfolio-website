@@ -502,3 +502,19 @@ def panel_color_var(color):
     }
 
     return color_vars.get(color, "var(--color-teal)")
+
+@register.filter
+def get_status_indicator(status):
+    """
+    Return css class from hud-elements for color of status indicator
+    Usage: {{ system.status|get_status_indicator }}
+    """
+    stat = {
+        "draft": "inactive",
+        "in_development": "warning",
+        "testing": "error",
+        "deployed": "operational",
+        "published": "info",
+        "archived": "inactive",
+    }
+    return stat.get(status, "operational")

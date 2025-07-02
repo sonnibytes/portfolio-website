@@ -29,7 +29,4 @@ urlpatterns = [
     path('test-500/', views.test_500, name='test_500'),
     path('test-403/', views.test_403, name='test_403'),
 
-    # Old HomeView for ref 
-    path('old/', views.OldHomeView.as_view(), name='old_home'),
-
 ]

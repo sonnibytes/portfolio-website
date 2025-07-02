@@ -7,6 +7,7 @@
 
 {% extends "base.html" %}
 {% load static %}
+{% load system_tags %}
 
 {% block title %}AURA | Advanced User Repository & Archive{% endblock %}
 {% block meta_description %}AURA - Advanced User Repository & Archive showcasing Python development, machine learning systems, and data engineering solutions.{% endblock %}
@@ -100,7 +101,7 @@
                 <div class="quick-stat-icon">
                     <i class="fas fa-rocket"></i>
                 </div>
-                <span class="quick-stat-value hud-data-counter" data-target="{{ total_systems|default:'8' }}">{{ total_systems|default:'8' }}</span>
+                <span class="quick-stat-value hud-data-counter" data-target="{{ active_systems|default:'8' }}">{{ total_systems|default:'8' }}</span>
                 <div class="quick-stat-label">Active Systems</div>
                 <div class="quick-stat-trend trend-up">
                     <i class="fas fa-arrow-up"></i> +2 this month
@@ -111,7 +112,7 @@
                 <div class="quick-stat-icon">
                     <i class="fas fa-route"></i>
                 </div>
-                <span class="quick-stat-value hud-data-counter" data-target="{{ in_development|default:'5' }}">0</span>
+                <span class="quick-stat-value hud-data-counter" data-target="{{ in_development|default:'5' }}">{{ in_development|default:'5' }}</span>
                 <div class="quick-stat-label">In Development</div>
                 <div class="quick-stat-trend trend-up">
                     <i class="fas fa-arrow-up"></i> +1 this week
@@ -147,17 +148,17 @@
 <section class="featured-systems-section">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">Featured Systems</h2>
+            <h2 class="section-title">Featured Systems TOTAL: {{ featured_systems|length }}</h2>
             <p class="section-subtitle">Advanced Python implementations and machine learning solutions</p>
         </div>
         
         <div class="featured-systems-grid">
-            {% for system in featured_projects %}
+            {% for system in featured_systems %}
             <div class="glass-card system-card">
                 <div class="system-card-header">
                     <div class="system-badge">{{ system.system_id|default:"SYS-001" }}</div>
                     <div class="system-status">
-                        <div class="status-indicator operational"></div>
+                        <div class="status-indicator {{ system.status|get_status_indicator }}"></div>
                         <span>{{ system.get_status_display|default:"Published" }}</span>
                     </div>
                 </div>
