@@ -7,7 +7,9 @@ from .models import (
     SystemFeature,
     SystemImage,
     SystemMetric,
-    SystemDependency
+    SystemDependency,
+    GitHubRepository,
+    GitHubLanguage
 )
 
 
@@ -367,6 +369,71 @@ class SystemMetricAdmin(admin.ModelAdmin):
     search_fields = ("metric_name", "system__title")
     readonly_fields = ("created_at",)
     ordering = ("-created_at",)
+
+
+@admin.register(GitHubRepository)
+class GitHubRepositoryAdmin(admin.ModelAdmin):
+    list_display = [
+        "name",
+        "language",
+        "stars_count",
+        "forks_count",
+        "is_private",
+        "is_active",
+        "last_synced",
+    ]
+    list_filter = ["language", "is_private", "is_fork", "is_archived", "last_synced"]
+    search_fields = ["name", "full_name", "description"]
+    readonly_fields = [
+        "github_id",
+        "github_created_at",
+        "github_updated_at",
+        "last_synced",
+    ]
+
+    fieldsets = (
+        (
+            "Basic Information",
+            {"fields": ("name", "full_name", "description", "related_system")},
+        ),
+        ("GitHub Data", {"fields": ("github_id", "html_url", "clone_url", "homepage")}),
+        (
+            "Statistics",
+            {
+                "fields": (
+                    "stars_count",
+                    "forks_count",
+                    "watchers_count",
+                    "size",
+                    "language",
+                )
+            },
+        ),
+        ("Flags", {"fields": ("is_private", "is_fork", "is_archived")}),
+        (
+            "Timestamps",
+            {
+                "fields": ("github_created_at", "github_updated_at", "last_synced"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    def is_active(self, obj):
+        return obj.is_recently_active
+
+    is_active.boolean = True
+    is_active.short_description = "Recently Active"
+
+
+class GitHubLanguageInline(admin.TabularInline):
+    model = GitHubLanguage
+    extra = 0
+    readonly_fields = ["language", "bytes_count", "percentage"]
+
+
+# Update GitHubRepositoryAdmin to include inline
+GitHubRepositoryAdmin.inlines = [GitHubLanguageInline]
 
 
 # Customize admin site

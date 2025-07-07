@@ -123,14 +123,14 @@ class GitHubAPIService:
     
     def get_repositories(self, username: Optional[str] = None,
                          sort: str = 'updated', per_page: int = 30) -> List[Dict]:
-        """Get repositories with sorting and pagination."""
+        """Get repositories with sorting and pagination. Updated to get all for authenticated user, not just public"""
         username = username or self.username
         params = {
             'sort': sort,
             'per_page': per_page,
             'type': 'owner'  # Only repos owned by user
         }
-        return self._make_request(f"users/{username}/repos", params)
+        return self._make_request("user/repos", params)
     
     def get_repository_details(self, username: str, repo_name: str) -> Dict:
         """Get detailed info about specific repo"""
@@ -140,13 +140,13 @@ class GitHubAPIService:
         """Get programming languages used in repo"""
         return self._make_request(f"repos/{username}/{repo_name}/languages")
     
-    def get_repository_commits(self, username: str, repo_name: str, 
+    def get_repository_commits(self, username: str, repo_name: str,
                                since: Optional[str] = None, per_page: int = 10) -> List[Dict]:
         """Get recent commits for a repo"""
         params = {'per_page': per_page}
         if since:
             params['since'] = since
-        return self._make_request(f"repose/{username}/{repo_name}/commits", params)
+        return self._make_request(f"repos/{username}/{repo_name}/commits", params)
     
     def get_user_stats(self, username: Optional[str] = None) -> Dict:
         """
