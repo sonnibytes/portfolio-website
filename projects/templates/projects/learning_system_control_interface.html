@@ -676,13 +676,20 @@
                                 </div>
                             </div>
 
-                            <div style="margin-bottom: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
-                                    <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Project Progress</span>
-                                    <span style="font-size: 0.8rem; color: var(--color-teal);">{{ panel_data.system_metrics.completion_percent }}%</span>
+                            <div style="margin-bottom: 1.5rem;" class="system-progress-container">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Progress</span>
+                                    <span style="font-size: 0.8rem; color: var(--color-teal);">
+                                        {{ panel_data.system_metrics.completion_percent }}%
+                                    </span>
                                 </div>
-                                <div class="progress-bar" style="height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden;">
-                                    <div class="progress-fill" style="height: 100%; background: var(--color-teal); width: {{ panel_data.system_metrics.completion_percent }}%; transition: width 1.5s ease;"></div>
+                                
+                                <div class="progress-bar" 
+                                     style="height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; --progress-value: {{ panel_data.system_metrics.completion_percent }}%;">
+                                    <div class="progress-fill" 
+                                         style="height: 100%; background: var(--color-teal); width: {{ panel_data.system_metrics.completion_percent }}%; border-radius: 4px; transition: width 1.5s ease;"
+                                         data-progress="{{ panel_data.system_metrics.completion_percent }}">
+                                    </div>
                                 </div>
                             </div>
 
@@ -1768,21 +1775,54 @@
 <script src="{% static 'projects/js/dashboard_panel.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize the unified dashboard manager
-        const manager = new UnifiedDashboardManager();
+        console.log('🎛️ Learning System Control Interface loaded');
         
-        // Add smooth transitions between panels
+        // Initialize the unified dashboard manager with enhanced panel switching
+        let manager;
+        try {
+            manager = new UnifiedDashboardManager();
+            
+            // Store reference globally for debugging
+            window.systemDashboard = manager;
+            
+        } catch (error) {
+            console.error('❌ Error initializing dashboard manager:', error);
+        }
+        
+        // Enhanced panel switching logic
         const panelLinks = document.querySelectorAll('.control-panel-link');
+        const panelContainer = document.querySelector('.panel-content-container');
+        
         panelLinks.forEach(link => {
             link.addEventListener('click', function(e) {
+                console.log('🎯 Panel switch initiated:', this.textContent.trim());
+                
                 // Remove active class from all panels
                 panelLinks.forEach(l => l.classList.remove('active'));
+                
                 // Add active class to clicked panel
                 this.classList.add('active');
+                
+                // If manager exists, handle the panel switch
+                if (manager && typeof manager.handlePanelSwitch === 'function') {
+                    // Small delay to let the panel content update
+                    setTimeout(() => {
+                        manager.handlePanelSwitch();
+                    }, 100);
+                } else {
+                    // Fallback: restore metric values manually
+                    console.log('🔄 Fallback: Restoring metric values manually');
+                    const metrics = document.querySelectorAll('.metric-value-large, .learning-metric-value, .metric-value');
+                    metrics.forEach(metric => {
+                        if (metric.dataset.originalValue) {
+                            metric.textContent = metric.dataset.originalValue;
+                        }
+                    });
+                }
             });
         });
         
-        // Animate skill pills with staggered entrance
+        // Animate skill pills with staggered entrance (UNCHANGED)
         const skillPills = document.querySelectorAll('.skill-pill');
         const observerOptions = {
             threshold: 0.1,
@@ -1808,63 +1848,24 @@
             pillObserver.observe(pill);
         });
         
-        // Animate timeline events with sequential entrance
-        const timelineEvents = document.querySelectorAll('.timeline-event');
-        timelineEvents.forEach((event, index) => {
-            event.style.opacity = '0';
-            event.style.transform = 'translateX(-30px)';
-            event.style.transition = 'all 0.6s ease';
-            
-            setTimeout(() => {
-                event.style.opacity = '1';
-                event.style.transform = 'translateX(0)';
-            }, index * 150);
-        });
-        
-        // Animate learning metric cards
-        const metricCards = document.querySelectorAll('.learning-metric-card');
-        metricCards.forEach((card, index) => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            card.style.transition = 'all 0.5s ease';
-            
-            setTimeout(() => {
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, index * 100);
-        });
-        
-        // Add hover effects to assessment criteria
-        const criteriaItems = document.querySelectorAll('.criteria-item');
-        criteriaItems.forEach(item => {
-            item.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateX(5px)';
-                this.style.background = 'rgba(255, 255, 255, 0.08)';
+        // Debug helper function
+        window.debugMetrics = function() {
+            const metrics = document.querySelectorAll('.metric-value-large, .learning-metric-value, .metric-value');
+            console.log('📊 Current metric states:');
+            metrics.forEach((metric, index) => {
+                console.log(`  Metric ${index}:`, {
+                    current: metric.textContent,
+                    original: metric.dataset.originalValue,
+                    numeric: metric.dataset.numericValue,
+                    animated: metric.dataset.animated,
+                    animating: metric.dataset.animating
+                });
             });
-            
-            item.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateX(0)';
-                this.style.background = 'rgba(255, 255, 255, 0.05)';
-            });
-        });
+        };
         
-        // System color variants based on status
-        const controlLayout = document.querySelector('.control-interface-layout');
-        if (controlLayout) {
-            const systemStatus = '{{ system.status }}';
-            const statusColors = {
-                'deployed': { rgb: '76, 175, 80', color: 'var(--color-mint)' },
-                'in_development': { rgb: '255, 193, 7', color: 'var(--color-yellow)' },
-                'testing': { rgb: '255, 138, 128', color: 'var(--color-coral)' },
-                'draft': { rgb: '179, 157, 219', color: 'var(--color-lavender)' }
-            };
-            
-            if (statusColors[systemStatus]) {
-                controlLayout.style.setProperty('--system-color-rgb', statusColors[systemStatus].rgb);
-                controlLayout.style.setProperty('--system-color', statusColors[systemStatus].color);
-            }
-        }
+        console.log('✅ Panel switching and metric preservation setup complete');
+        console.log('💡 Debug tip: Run debugMetrics() in console to check metric states');
     });
-</script>
+    </script>
 {% endblock %}
                 
