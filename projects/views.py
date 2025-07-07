@@ -3,8 +3,10 @@ Super simplified for new panel and model methods testing.
 NOTE TO FUTURE ME: See archived_system_view.py in scratch or previous commits for all previous views.
 """
 
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
+from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render
@@ -15,11 +17,14 @@ from django.db.models.functions import TruncMonth, Extract
 from django.http import JsonResponse
 from django.utils import timezone
 from django.core.cache import cache
+from django.core.management import call_command
 
 import re
 from datetime import timedelta, datetime, date
 import random
 from collections import Counter, defaultdict
+from io import StringIO
+import json
 
 from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage, SystemSkillGain, LearningMilestone, GitHubRepository, GitHubLanguage
 from core.services.github_api import GitHubAPIService, GitHubAPIError
@@ -3404,3 +3409,65 @@ class GitHubIntegrationView(TemplateView):
         except GitHubAPIError:
             # Fallback to local data
             return GitHubRepository.objects.order_by('-github_updated_at')[:5]
+
+# =================================
+# DJANGO GITHUB SYNC VIEW FOR AJAX
+# =================================
+
+@method_decorator(csrf_exempt, name='dispatch')
+class GitHubSyncView(LoginRequiredMixin, View):
+    """AJAX endpoint for GitHub data sync"""
+
+    def post(self, request, *args, **kwargs):
+        """Handle GitHub sync requests."""
+        try:
+            data = json.loads(request.body)
+            force = data.get('force', False)
+
+            # Capture management command output
+            out = StringIO()
+
+            # Run sync command
+            call_command(
+                'sync_github_data',
+                stdout=out,
+                force=force
+            )
+
+            output = out.getvalue()
+
+            return JsonResponse({
+                'success': True,
+                'message': 'GitHub data synchronized successfully',
+                'output': output
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e),
+            }, status=500)
+    
+    def get(self, request, *args, **kwargs):
+        """Check for updates without syncing."""
+        check_only = request.GET.get('check_only', False)
+
+        if check_only:
+            # Quick check logic here
+            # Compare last sync time w GitHub API rate limit reset
+            has_updates = self.check_for_updates()
+
+            return JsonResponse({
+                'has_updates': has_updates
+            })
+        
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    
+    def check_for_updates(self):
+        """Check if there are potential updates available."""
+        # Simple check based on last sync time
+        last_repo = GitHubRepository.objects.order_by('-last_synced').first()
+        if not last_repo:
+            return True
+        
+        # If last sync was more than 1hr ago, suggest update
+        return last_repo.last_synced < timezone.now() - timedelta(hours=1)
