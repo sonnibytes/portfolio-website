@@ -1,435 +1,531 @@
-/* 
- * Fixed Dashboard CSS - Proper Variable Scope
- * Key fix: Define variables higher in the hierarchy
- */
+/* GitHub Integration Styles - AURA Theme */
+.github-integration-container {
+  padding: 2rem;
+  background: var(--color-dark-bg);
+  min-height: 100vh;
+}
 
-/* ========== ROOT VARIABLE DEFINITIONS ========== */
-:root {
-    /* Default system colors - always available */
-    --default-system-rgb: 0, 240, 255;
-    --default-system-color: var(--color-teal);
-    
-    /* Panel variant colors - define once, use everywhere */
-    --metrics-rgb: 179, 157, 219;
-    --metrics-color: var(--color-lavender);
-    
-    --technology-rgb: 255, 138, 128;
-    --technology-color: var(--color-coral);
-    
-    --activity-rgb: 76, 175, 80;
-    --activity-color: var(--color-success);
-    
-    --performance-rgb: 33, 150, 243;
-    --performance-color: var(--color-info);
-  }
-  
-  /* ========== BASE DASHBOARD PANEL ========== */
-  .dashboard-panel {
-    /* Set default variables that ALL children inherit */
-    --system-category-rgb: var(--default-system-rgb);
-    --system-category-color: var(--default-system-color);
-    
-    background: 
-      var(--gradient-glass),
-      rgba(var(--system-category-rgb), 0.08);
-    border: 1px solid rgba(var(--system-category-rgb), 0.25);
-    border-radius: var(--border-radius-xl, 16px);
-    backdrop-filter: blur(20px);
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      0 0 20px rgba(var(--system-category-rgb), 0.1);
-    overflow: hidden;
-    position: relative;
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    margin-bottom: var(--spacing-xl, 2rem);
-  }
-  
-  .dashboard-panel:hover {
-    transform: translateY(-3px);
-    box-shadow: 
-      0 12px 40px rgba(0, 0, 0, 0.4),
-      0 0 30px rgba(var(--system-category-rgb), 0.15);
-  }
-  
-  .dashboard-panel::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(
-      90deg,
-      var(--system-category-color),
-      var(--color-coral),
-      var(--color-lavender)
-    );
-    opacity: 0.8;
-  }
-  
-  /* ========== PANEL VARIANTS - Override variables ========== */
-  .dashboard-panel.panel-metrics {
-    --system-category-rgb: var(--metrics-rgb);
-    --system-category-color: var(--metrics-color);
-  }
-  
-  .dashboard-panel.panel-technology {
-    --system-category-rgb: var(--technology-rgb);
-    --system-category-color: var(--technology-color);
-  }
-  
-  .dashboard-panel.panel-activity {
-    --system-category-rgb: var(--activity-rgb);
-    --system-category-color: var(--activity-color);
-  }
-  
-  .dashboard-panel.panel-performance {
-    --system-category-rgb: var(--performance-rgb);
-    --system-category-color: var(--performance-color);
-  }
-  
-  /* ========== CHILD ELEMENTS - Now inherit properly ========== */
-  .panel-header {
-    padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
-    text-align: center;
-    position: relative;
-    z-index: 1;
-    
-    /* Uses inherited --system-category-rgb */
-    background: linear-gradient(
-      180deg,
-      rgba(var(--system-category-rgb), 0.04) 0%,
-      rgba(var(--system-category-rgb), 0.02) 50%,
-      transparent 100%
-    );
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-  
-  .panel-title {
-    font-family: var(--font-heading);
-    font-size: 1.4rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    /* Uses inherited --system-category-color */
-    color: var(--system-category-color);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-  
-  .panel-content {
-    padding: var(--spacing-lg);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    z-index: 1;
-  }
-  
-  /* ========== TECH ITEMS - Inherit from parent panel ========== */
-  .tech-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    flex: 1;
-  }
-  
-  .tech-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-md);
-    /* Uses inherited variables from parent .dashboard-panel */
-    background: rgba(var(--system-category-rgb), 0.05);
-    border: 1px solid rgba(var(--system-category-rgb), 0.1);
-    border-left: 3px solid var(--system-category-color);
-    transition: all var(--transition-fast);
-  }
-  
-  .tech-item:hover {
-    background: rgba(var(--system-category-rgb), 0.12);
-    transform: translateX(4px);
-    border-left-color: var(--system-category-color);
-  }
-  
-  .tech-name {
-    font-weight: 500;
-    color: var(--color-text);
-  }
-  
-  .tech-count {
-    font-family: var(--font-code);
-    font-size: 0.9rem;
-    /* Uses inherited color */
-    color: var(--system-category-color);
-    font-weight: 600;
-  }
-  
-  /* ========== HEALTH ITEMS - Same pattern ========== */
-  .health-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
-    flex: 1;
-  }
-  
-  .health-item {
-    text-align: center;
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius-lg);
-    /* Inherits from parent panel */
-    background: rgba(var(--system-category-rgb), 0.05);
-    border: 1px solid rgba(var(--system-category-rgb), 0.08);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    transition: all var(--transition-fast);
-  }
-  
-  .health-item:hover {
-    /* Uses inherited variables */
-    background: rgba(var(--system-category-rgb), 0.12);
-    transform: translateY(-2px);
-  }
-  
-  .health-value {
-    font-family: var(--font-heading);
-    font-size: 1.8rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    line-height: 1;
-  }
-  
-  .health-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--color-text-secondary);
-  }
-  
-  /* ========== METRIC CARDS - Keep original styling ========== */
-  .metrics-overview {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-xl);
-  }
-  
-  .metric-card {
-    background: var(--gradient-glass), rgba(13, 13, 31, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--border-radius-xl);
-    padding: var(--spacing-lg);
-    backdrop-filter: blur(20px);
-    transition: all var(--transition-normal);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 140px;
-  }
-  
-  .metric-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--color-teal);
-    opacity: 0.8;
-    border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
-  }
-  
-  .metric-card.metric-development::before {
-    background: var(--color-yellow);
-  }
-  
-  .metric-card.metric-testing::before {
-    background: var(--color-coral);
-  }
-  
-  .metric-card.metric-completion::before {
-    background: var(--color-lavender);
-  }
-  
-  /* ========== DASHBOARD HERO ========== */
-  .dashboard-hero {
-    background: var(--gradient-glass), rgba(0, 240, 255, 0.08);
-    border: 1px solid rgba(0, 240, 255, 0.25);
-    border-radius: var(--border-radius-xl, 16px);
-    padding: 2.5rem;
-    margin-bottom: 2.5rem;
-    backdrop-filter: blur(20px);
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.3), 
-      0 0 20px rgba(0, 240, 255, 0.1);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-  
-  .dashboard-hero::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(
-      90deg,
-      var(--color-teal),
-      var(--color-coral),
-      var(--color-lavender)
-    );
-    opacity: 0.8;
-  }
-  
-  .dashboard-hero:hover {
-    transform: translateY(-3px);
-    box-shadow: 
-      0 12px 40px rgba(0, 0, 0, 0.4), 
-      0 0 30px rgba(0, 240, 255, 0.15);
-  }
-  
-  /* ========== LAYOUT GRIDS ========== */
-  .dashboard-main-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
-  }
-  
-  .dashboard-left-column {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xl);
-  }
-  
-  .dashboard-right-column {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xl);
-  }
-  
-  /* ========== ACTIVITY TIMELINE ========== */
-  .activity-timeline {
-    max-height: 280px;
-    overflow-y: auto;
-    flex: 1;
-  }
-  
-  .activity-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-sm) 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all var(--transition-fast);
-  }
-  
-  .activity-item:hover {
-    /* Uses parent panel's inherited variables */
-    background: rgba(var(--system-category-rgb, 76, 175, 80), 0.05);
-    margin: 0 calc(-1 * var(--spacing-lg));
-    padding-left: var(--spacing-lg);
-    padding-right: var(--spacing-lg);
-    border-radius: var(--border-radius-md);
-  }
-  
-  .activity-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Uses inherited color */
-    color: var(--system-category-color, var(--color-success));
-    font-size: 0.9rem;
-    flex-shrink: 0;
-  }
-  
-  /* ========== RECENT SYSTEMS LIST ========== */
-  .recent-systems-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-    flex: 1;
-  }
-  
-  .recent-system-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-lg);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all var(--transition-fast);
-  }
-  
-  .recent-system-item:hover {
-    /* Could inherit from parent if needed */
-    background: rgba(0, 240, 255, 0.08);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* ========== RESPONSIVE ========== */
-  @media (max-width: 1200px) {
-    .dashboard-main-grid {
+/* Integration Status Panel */
+.integration-status-panel {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(179, 157, 219, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid var(--color-lavender);
+}
+
+.status-text {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.error-details {
+  color: var(--color-error);
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0 0;
+}
+
+/* GitHub Stats Grid */
+.github-stats-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+@media (max-width: 768px) {
+  .github-stats-grid {
       grid-template-columns: 1fr;
-      gap: var(--spacing-lg);
-    }
-    
-    .metrics-overview {
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: var(--spacing-md);
-    }
   }
-  
-  @media (max-width: 768px) {
-    .dashboard-hero {
-      padding: var(--spacing-xl);
-      margin-bottom: var(--spacing-xl);
-    }
-    
-    .metrics-overview {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .health-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .panel-header {
-      padding: var(--spacing-lg);
-    }
-    
-    .panel-content {
-      padding: var(--spacing-md);
-    }
-  }
-  
-  /* ========== DEBUG HELPER (Remove after testing) ========== */
-  /* Uncomment to see which elements can't find variables */
-  /*
-  .debug-variables * {
-    background: rgba(255, 0, 0, 0.1) !important;
-  }
-  
-  .debug-variables *:has(var(--system-category-rgb)) {
-    background: rgba(0, 255, 0, 0.1) !important;
-  }
-  */
+}
+
+/* Repository Overview Card */
+.github-overview .metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.activity-indicator {
+  margin-top: 1rem;
+}
+
+.activity-indicator label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-primary);
+}
+
+.activity-indicator small {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  display: block;
+}
+
+/* Engagement Metrics */
+.engagement-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.metric-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.metric-row:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.metric-icon {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  min-width: 80px;
+}
+
+.metric-label {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Language Breakdown */
+.language-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.language-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.language-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.language-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.repo-count {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.language-size {
+  color: var(--color-teal);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Recent Repositories Grid */
+.repositories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.repository-card {
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.repository-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(179, 157, 219, 0.3);
+}
+
+/* Repository Header */
+.repo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.repo-name {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.repo-name a {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.repo-name a:hover {
+  color: var(--color-teal);
+}
+
+.private-badge {
+  background: var(--color-orange);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.system-link {
+  color: var(--color-lavender);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.system-link:hover {
+  color: var(--color-text-primary);
+}
+
+/* Repository Description */
+.repo-description {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+/* Repository Stats */
+.repo-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.stat-item i {
+  font-size: 0.8rem;
+}
+
+.language-tag {
+  background: rgba(179, 157, 219, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: var(--color-lavender);
+}
+
+/* Repository Meta */
+.repo-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.activity-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.7rem;
+}
+
+.activity-badge.active {
+  background: var(--color-teal);
+  color: white;
+}
+
+/* Repository Languages Bar */
+.repo-languages {
+  height: 4px;
+  display: flex;
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lang-bar {
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+/* Activity Timeline */
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.activity-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--color-teal);
+  transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.activity-icon {
+  color: var(--color-teal);
+  font-size: 1.2rem;
+  padding-top: 0.2rem;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.3rem;
+}
+
+.fork-badge {
+  background: var(--color-orange);
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+}
+
+.activity-description {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.activity-time {
+  color: var(--color-text-tertiary);
+  font-size: 0.8rem;
+}
+
+/* Sync Controls */
+.sync-panel {
+  padding: 1.5rem;
+}
+
+.sync-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.sync-status {
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  min-height: 20px;
+}
+
+.sync-status.loading {
+  background: rgba(0, 212, 170, 0.2);
+  color: var(--color-teal);
+}
+
+.sync-status.success {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.sync-status.error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.sync-info {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.sync-info p {
+  margin: 0.3rem 0;
+}
+
+/* Button Styles */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--color-teal);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #00b894;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Notification System */
+.sync-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 4px solid var(--color-teal);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
+  max-width: 400px;
+}
+
+.sync-notification.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.sync-notification.success {
+  border-left-color: #4caf50;
+}
+
+.sync-notification.error {
+  border-left-color: #f44336;
+}
+
+.sync-notification.info {
+  border-left-color: var(--color-teal);
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+}
+
+.notification-content i {
+  font-size: 1.2rem;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.notification-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Loading states for buttons */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn:disabled:hover {
+  background: var(--color-teal);
+  transform: none !important;
+}
+
+/* Enhanced sync status styling */
+.sync-status {
+  min-height: 24px;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sync-status.loading::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid var(--color-teal);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.sync-status.success::before {
+  content: '\f00c';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  color: #4caf50;
+}
+
+.sync-status.error::before {
+  content: '\f071';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  color: #f44336;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

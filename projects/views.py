@@ -3344,7 +3344,10 @@ class GitHubIntegrationView(TemplateView):
             # GitHub stats
             github_stats = self.get_github_stats(local_repos)
 
-            # Recent Activity
+            # Get sync info
+            sync_info = self.get_sync_info(local_repos)
+
+            # Recent Activity (from API if needed)
             recent_activity = self.get_recent_activity(github_service)
 
             context.update({
@@ -3353,12 +3356,14 @@ class GitHubIntegrationView(TemplateView):
                 'top_languages': self.get_top_languages(local_repos),
                 'recent_activity': recent_activity,
                 'integration_status': 'active',
+                'sync_info': sync_info,  # Add sync info
             })
         except GitHubAPIError as e:
             context.update({
                 'integration_status': 'error',
                 'error_message': str(e),
                 'github_stats': {},
+                'sync_info': self.get_sync_info([]),  # Empty sync info for error state
             })
         return context
     
@@ -3400,6 +3405,76 @@ class GitHubIntegrationView(TemplateView):
 
         return lang_stats
     
+    def get_sync_info(self, repositories):
+        """Get synchronization info for display."""
+        if not repositories:
+            return {
+                'last_sync': None,
+                'last_sync_display': 'Never',
+                'next_sync_hours': 24,
+                'next_sync_display': 'In 24 hours',
+                'total_repos_synced': 0,
+            }
+        
+        # Get the most recently synced repo
+        if hasattr(repositories, 'order_by'):
+            # Queryset
+            most_recent = repositories.order_by('-last_synced').first()
+        else:
+            # List
+            most_recent = max(repositories, key=lambda r: r.last_synced) if repositories else None
+        
+        if not most_recent or not most_recent.last_synced:
+            return {
+                "last_sync": None,
+                "last_sync_display": "Never",
+                "next_sync_hours": 24,
+                "next_sync_display": "In 24 hours",
+                "total_repos_synced": 0,
+            }
+        
+        last_sync = most_recent.last_synced
+
+        # Calculate next sync time (1hr from last sync)
+        next_sync = last_sync + timedelta(hours=1)
+        now = timezone.now()
+
+        if next_sync <= now:
+            next_sync_display = 'Available Now'
+            hours_until_next = 0
+        else:
+            time_until_next = next_sync - now
+            hours_until_next = time_until_next.total_seconds() / 3600
+
+            if hours_until_next < 1:
+                minutes = int(time_until_next.total_seconds() / 60)
+                next_sync_display = f'In {minutes} minutes'
+            else:
+                next_sync_display = f'In {hours_until_next:.1f} hours'
+        
+        # Format last sync time
+        time_since_sync = now - last_sync
+        if time_since_sync.total_seconds() < 60:
+            last_sync_display = 'Just now'
+        elif time_since_sync.total_seconds() < 3600:
+            minutes_ago = int(time_since_sync.total_seconds() / 60)
+            last_sync_display = f'{minutes_ago} minutes ago'
+        elif time_since_sync.days == 0:
+            hours_ago = int(time_since_sync.total_seconds() / 3600)
+            last_sync_display = f'{hours_ago} hours ago'
+        elif time_since_sync.days == 1:
+            last_sync_display = '1 day ago'
+        else:
+            last_sync_display = f'{time_since_sync.days} days ago'
+        
+        return {
+            'last_sync': last_sync,
+            'last_sync_display': last_sync_display,
+            'next_sync_hours': hours_until_next,
+            'next_sync_display': next_sync_display,
+            'total_repos_synced': len(repositories) if hasattr(repositories, '__len__') else repositories.count(),
+        }
+    
     def get_recent_activity(self, github_service):
         """Get recent activity from GitHub API (cached)."""
         try:
@@ -3437,16 +3512,105 @@ class GitHubSyncView(LoginRequiredMixin, View):
 
             output = out.getvalue()
 
+            # Get updated sync info
+            repos = GitHubRepository.objects.all()
+
+            # Calculate updated stats
+            sync_info = self.get_sync_info(repos)
+            stats = self.get_updated_stats(repos)
+
             return JsonResponse({
                 'success': True,
                 'message': 'GitHub data synchronized successfully',
-                'output': output
+                'output': output,
+                'sync_info': sync_info,
+                'stats': stats
             })
         except Exception as e:
             return JsonResponse({
                 'success': False,
                 'error': str(e),
             }, status=500)
+        
+    def get_sync_info(self, repositories):
+        """Get sync info for AJAX response."""
+        if not repositories.exists():
+            return {
+                'last_sync_display': 'Never',
+                'next_sync_display': 'In 24 hours',
+                'total_repos_synced': 0,
+            }
+        
+        most_recent = repositories.order_by('-last_synced').first()
+
+        if not most_recent or not most_recent.last_synced:
+            return {
+                'last_sync_display': 'Never',
+                'next_sync_display': 'In 24 hours',
+                'total_repos_synced': repositories.count(),
+            }
+        
+        last_sync = most_recent.last_synced
+        next_sync = last_sync + timedelta(hours=1)
+        now = timezone.now()
+
+        # Calculate displays
+        if next_sync <= now:
+            next_sync_display = 'Available Now'
+        else:
+            time_until_next = next_sync - now
+            hours_until_next = time_until_next.total_seconds() / 3600
+
+            if hours_until_next < 1:
+                minutes = int(time_until_next.total_seconds() / 60)
+                next_sync_display = f'In {minutes} minutes'
+            else:
+                next_sync_display = f'In {hours_until_next:.1f} hours'
+        
+        time_since_sync = now - last_sync
+        if time_since_sync.total_seconds() < 60:
+            last_sync_display = 'Just now'
+        elif time_since_sync.total_seconds() < 3600:
+            minutes_ago = int(time_since_sync.total_seconds() / 60)
+            last_sync_display = f'{minutes_ago} minutes ago'
+        else:
+            hours_ago = int(time_since_sync.total_seconds() / 3600)
+            last_sync_display = f'{hours_ago} hours ago'
+        
+        return {
+            'last_sync_display': last_sync_display,
+            'next_sync_display': next_sync_display,
+            'total_repos_synced': repositories.count(),
+        }
+    
+    def get_updated_stats(self, repositories):
+        """Get updated stats for AJAX response."""
+        total_repos = repositories.count()
+
+        if total_repos == 0:
+            return {
+                'total_repositories': 0,
+                'total_stars': 0,
+                'total_forks': 0,
+                'active_repositories': 0
+            }
+        
+        # Aggregate statistics
+        stats = repositories.aggregate(
+            total_stars=Sum('stars_count'),
+            total_forks=Sum('forks_count')
+        )
+
+        # Active repos (updated in last 6 mo)
+        six_months_ago = timezone.now() - timedelta(days=180)
+        active_repos = repositories.filter(github_updated_at__gte=six_months_ago).count()
+
+        return {
+            'total_repositories': total_repos,
+            'total_stars': stats['total_stars'] or 0,
+            'total_forks': stats['total_forks'] or 0,
+            'active_repositories': active_repos,
+        }
     
     def get(self, request, *args, **kwargs):
         """Check for updates without syncing."""

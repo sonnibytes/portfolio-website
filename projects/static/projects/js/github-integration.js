@@ -118,12 +118,24 @@ class GitHubIntegration {
             
             if (response.ok) {
                 this.updateSyncStatus('success', data.message || 'Sync completed successfully');
-                this.updateLastSyncTime();
                 
-                // Optionally reload page or update data
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+                // Update sync information if provided
+                if (data.sync_info) {
+                    this.updateSyncInfo(data.sync_info);
+                }
+                
+                // Update repository counts if provided
+                if (data.stats) {
+                    this.updateStats(data.stats);
+                }
+                
+                // Show success notification
+                this.showNotification('GitHub data synchronized successfully!', 'success');
+                
+                // Optionally refresh specific sections instead of full page reload
+                // Uncomment the line below if you want to reload the page
+                // setTimeout(() => { window.location.reload(); }, 3000);
+                
             } else {
                 throw new Error(data.error || 'Sync failed');
             }
@@ -131,6 +143,7 @@ class GitHubIntegration {
         } catch (error) {
             console.error('GitHub sync error:', error);
             this.updateSyncStatus('error', `Sync failed: ${error.message}`);
+            this.showNotification(`Sync failed: ${error.message}`, 'error');
         } finally {
             // Re-enable buttons
             if (syncButton) syncButton.disabled = false;
@@ -146,11 +159,117 @@ class GitHubIntegration {
         }
     }
     
+    updateSyncInfo(syncInfo) {
+        // Update last sync time
+        const lastSyncElement = document.getElementById('last-sync-time');
+        if (lastSyncElement && syncInfo.last_sync_display) {
+            lastSyncElement.textContent = syncInfo.last_sync_display;
+        }
+        
+        // Update next sync time
+        const nextSyncElement = document.getElementById('next-sync-time');
+        if (nextSyncElement && syncInfo.next_sync_display) {
+            nextSyncElement.textContent = syncInfo.next_sync_display;
+        }
+        
+        // Update repos synced count
+        const reposSyncedElement = document.getElementById('repos-synced');
+        if (reposSyncedElement && syncInfo.total_repos_synced !== undefined) {
+            reposSyncedElement.textContent = syncInfo.total_repos_synced;
+        }
+    }
+    
+    updateStats(stats) {
+        // Update various stats on the page
+        const statsToUpdate = [
+            { id: 'total-repos', value: stats.total_repositories },
+            { id: 'total-stars', value: stats.total_stars },
+            { id: 'total-forks', value: stats.total_forks },
+            { id: 'active-repos', value: stats.active_repositories }
+        ];
+        
+        statsToUpdate.forEach(stat => {
+            const element = document.getElementById(stat.id);
+            if (element && stat.value !== undefined) {
+                // Animate the number change
+                this.animateNumberChange(element, stat.value);
+            }
+        });
+    }
+    
+    animateNumberChange(element, newValue) {
+        const currentValue = parseInt(element.textContent.replace(/[^\d]/g, '')) || 0;
+        const difference = newValue - currentValue;
+        const duration = 1000; // 1 second
+        const steps = 30;
+        const stepValue = difference / steps;
+        const stepTime = duration / steps;
+        
+        let current = currentValue;
+        const timer = setInterval(() => {
+            current += stepValue;
+            if ((stepValue > 0 && current >= newValue) || (stepValue < 0 && current <= newValue)) {
+                current = newValue;
+                clearInterval(timer);
+            }
+            
+            // Format the number and update display
+            const formatted = this.formatNumber(Math.round(current));
+            element.textContent = formatted;
+        }, stepTime);
+    }
+    
+    formatNumber(num) {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
+    }
+    
+    showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.sync-notification');
+        existingNotifications.forEach(notification => notification.remove());
+        
+        // Create new notification
+        const notification = document.createElement('div');
+        notification.className = `sync-notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }, 5000);
+    }
+    
     updateLastSyncTime() {
+        // Legacy method - now handled by updateSyncInfo
         const lastSyncElement = document.getElementById('last-sync-time');
         if (lastSyncElement) {
-            const now = new Date();
-            lastSyncElement.textContent = now.toLocaleString();
+            lastSyncElement.textContent = 'Just now';
         }
     }
     
