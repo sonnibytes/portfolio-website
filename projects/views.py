@@ -2462,6 +2462,7 @@ class TechnologiesOverviewView(ListView):
         context.update({
             'page_title': 'Technology Skills Overview',
             'page_subtitle': 'Learning progression across technologies in my development journey',
+            'show_breadcrumbs': True,
 
             # Learning Journey Metrics
             'total_technologies_learned': all_technologies.count(),
@@ -2611,6 +2612,7 @@ class TechnologyDetailView(DetailView):
         context.update({
             'page_title': f'{technology.name} - Learning Journey',
             'page_subtitle': f'Projects and progression using {technology.name}',
+            'show_breadcrumbs': True,
 
             # Learning Journey Stats
             'total_projects': tech_systems.count(),
