@@ -68,7 +68,8 @@ class GitHubRepository(models.Model):
 
 class GitHubLanguage(models.Model):
     """Model to store programming language usage across repositories."""
-    # TODO: Change language to link to technologies that are languages
+    # TODO: Change language to link to technologies that are languages - 
+    # TODO: actually will need to use a junction model to link so commands can update w api data w/o affecting tech entries
 
     repository = models.ForeignKey(GitHubRepository, on_delete=models.CASCADE, related_name='languages')
     language = models.CharField(max_length=50)
