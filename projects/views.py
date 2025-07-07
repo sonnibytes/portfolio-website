@@ -21,7 +21,8 @@ from datetime import timedelta, datetime, date
 import random
 from collections import Counter, defaultdict
 
-from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage, SystemSkillGain, LearningMilestone
+from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage, SystemSkillGain, LearningMilestone, GitHubRepository, GitHubLanguage
+from core.services.github_api import GitHubAPIService, GitHubAPIError
 from blog.models import Post, SystemLogEntry
 from core.models import Skill, PortfolioAnalytics
 
@@ -3318,3 +3319,88 @@ def dashboard_api(request):
         }
     )
 
+# ======================  GITHUB DATA VIEWS ==================
+
+
+class GitHubIntegrationView(TemplateView):
+    """View to display GitHub integration data w AURA theming."""
+    template_name = 'projects/github_integration.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get GitHub service
+        github_service = GitHubAPIService()
+
+        try:
+            # Local repository data (fast)
+            local_repos = GitHubRepository.objects.select_related().prefetch_related('languages')
+
+            # GitHub stats
+            github_stats = self.get_github_stats(local_repos)
+
+            # Recent Activity
+            recent_activity = self.get_recent_activity(github_service)
+
+            context.update({
+                'github_stats': github_stats,
+                'recent_repos': local_repos.filter(is_archive=False)[:6],
+                'top_languages': self.get_top_languages(local_repos),
+                'recent_activity': recent_activity,
+                'integration_status': 'active',
+            })
+        except GitHubAPIError as e:
+            context.update({
+                'integration_status': 'error',
+                'error_message': str(e),
+                'github_stats': {},
+            })
+        return context
+    
+    def get_github_stats(self, repositories):
+        """Calculate GitHub statistics from local data."""
+        total_repos = repositories.count()
+        public_repos = repositories.filter(is_private=False).count()
+
+        # Aggregate statistics
+        stats = repositories.aggregate(
+            total_stars=Sum('stars_count'),
+            total_forks=Sum('forks_count'),
+            total_size=Sum('size')
+        )
+
+        # Active repos (updated in last 6 months)
+        six_months_ago = timezone.now() - timedelta(days=180)
+        active_repos = repositories.filter(github_updated_at__gte=six_months_ago).count()
+
+        return {
+            'total_repositories': total_repos,
+            'public_repositories': public_repos,
+            'private_repositories': total_repos - public_repos,
+            'total_stars': stats['total_stars'] or 0,
+            'total_forks': stats['total_forks'] or 0,
+            'total_size_mb': round((stats['total_size'] or 0) / 1024, 2),
+            'active_repositories': active_repos,
+            'activity_percentage': round((active_repos / total_repos * 100), 1) if total_repos > 0 else 0,
+        }
+    
+    def get_top_languages(self, repositories):
+        """Get top programming langs across all repos."""
+        lang_stats = GitHubLanguage.objects.filter(
+            repository__in=repositories
+        ).values('language').annotate(
+            total_bytes=Sum('bytes_count'),
+            repo_count=Count('repository', distinct=True)
+        ).order_by('-total_bytes')[:10]
+
+        return lang_stats
+    
+    def get_recent_activity(self, github_service):
+        """Get recent activity from GitHub API (cached)."""
+        try:
+            # This will be cached by service
+            repos = github_service.get_repositories(sort='updated', per_page=5)
+            return repos
+        except GitHubAPIError:
+            # Fallback to local data
+            return GitHubRepository.objects.order_by('-github_updated_at')[:5]
