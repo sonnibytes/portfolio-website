@@ -7,6 +7,9 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 import time
 
+import hashlib
+from urllib.parse import urlencode
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,6 +46,32 @@ class GitHubAPIService:
             headers['Authorization'] = f'token {self.token}'
         
         return headers
+    
+    def _create_cache_key(self, endpoint: str, params: Optional[Dict] = None) -> str:
+        """
+        Create a cache-safe key for memcached compatibility.
+        Memcached keys must be under 250 chars and can only contain A-Z, a-z, 0-9, -, _
+        """
+        # Clean the endpoint - remove leading slashes and replace special chars
+        clean_endpoint = endpoint.strip('/').replace('/', '_').replace('-', '_')
+
+        # Create a hash of params if they exist
+        if params:
+            # Sort params for consistent hashing
+            sorted_params = sorted(params.items())
+            param_string = urlencode(sorted_params)
+            param_hash = hashlib.md5(param_string.encode()).hexdigest()[:8]
+            cache_key = f"github_api_{clean_endpoint}_{param_hash}"
+        else:
+            cache_key = f"github_api_{clean_endpoint}"
+        
+        # Ensure key is under 250 chars and contains only valid chars
+        # Leave some margin
+        if len(cache_key) > 240:
+            # If too long, hash entire thing
+            cache_key = f"github_api_{hashlib.md5(cache_key.encode()).hexdigest()}"
+        
+        return cache_key
 
     def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Dict:
         """
@@ -50,8 +79,8 @@ class GitHubAPIService:
 
         NOTE TO SELF: Key diff from Flask: Django has built-in caching framework.
         """
-        # Create cache key
-        cache_key = f"github_api:{endpoint}:{str(params)}"
+        # Create cache-safe key
+        cache_key = self._create_cache_key(endpoint, params)
 
         # Try to get from cache first
         cached_result = cache.get(cache_key)
