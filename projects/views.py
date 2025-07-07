@@ -2750,6 +2750,7 @@ class SystemTypesOverviewView(ListView):
         context.update({
             'page_title': 'Project Types Overview',
             'page_subtitle': 'Exploring different types of systems and applications in my learning journey',
+            'show_breadcrumbs': True,
 
             # Learning Journey Metrics
             'total_project_types': all_types.count(),
@@ -2861,6 +2862,7 @@ class SystemTypeDetailView(DetailView):
         context.update({
             'page_title': f'{system_type.name} - Project Portfolio',
             'page_subtitle': f'My learning journey building {system_type.name.lower()} systems',
+            'show_breadcrumbs': True,
 
             # Learning Journey Stats
             'total_systems': type_systems.count(),
