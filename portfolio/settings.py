@@ -34,6 +34,15 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
 ]
 
+# GITHUB API CONFIG
+GITHUB_API_CONFIG = {
+    'BASE_URL': 'https://api.github.com',
+    'TOKEN': os.environ["GITHUB_TOKEN"],
+    'USERNAME': os.environ["GITHUB_USERNAME"],
+    'TIMEOUT': 30,
+    'CACHE_TIMEOUT': 3600,  # 1hr
+}
+
 
 # Application definition
 
