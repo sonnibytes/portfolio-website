@@ -2462,6 +2462,7 @@ class TechnologiesOverviewView(ListView):
         context.update({
             'page_title': 'Technology Skills Overview',
             'page_subtitle': 'Learning progression across technologies in my development journey',
+            'show_breadcrumbs': True,
 
             # Learning Journey Metrics
             'total_technologies_learned': all_technologies.count(),
@@ -2611,6 +2612,7 @@ class TechnologyDetailView(DetailView):
         context.update({
             'page_title': f'{technology.name} - Learning Journey',
             'page_subtitle': f'Projects and progression using {technology.name}',
+            'show_breadcrumbs': True,
 
             # Learning Journey Stats
             'total_projects': tech_systems.count(),
@@ -2750,6 +2752,7 @@ class SystemTypesOverviewView(ListView):
         context.update({
             'page_title': 'Project Types Overview',
             'page_subtitle': 'Exploring different types of systems and applications in my learning journey',
+            'show_breadcrumbs': True,
 
             # Learning Journey Metrics
             'total_project_types': all_types.count(),
@@ -2861,6 +2864,7 @@ class SystemTypeDetailView(DetailView):
         context.update({
             'page_title': f'{system_type.name} - Project Portfolio',
             'page_subtitle': f'My learning journey building {system_type.name.lower()} systems',
+            'show_breadcrumbs': True,
 
             # Learning Journey Stats
             'total_systems': type_systems.count(),

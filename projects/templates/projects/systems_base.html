@@ -157,6 +157,45 @@
 </nav>
 {% endblock %}
 
+{% block breadcrumbs %}
+{% if show_breadcrumbs %}
+<div class="container">
+    <nav class="datalogs-breadcrumbs">
+        <div class="breadcrumb-container">
+            <a href="{% url 'core:home' %}" class="breadcrumb-item">
+                <i class="fas fa-home"></i>
+                <span>AURA</span>
+            </a>
+            <i class="fas fa-chevron-right breadcrumb-separator"></i>
+            <a href="{% url 'projects:system_list' %}" class="breadcrumb-item">
+                <i class="fas fa-database"></i>
+                <span>Systems</span>
+            </a>
+            {% block systems_breadcrumbs %}{% endblock %}
+        </div>
+        
+        {% comment %} <!-- Optional Category/Status Indicators -->
+        {% if current_post %}
+        <div class="breadcrumb-status">
+            <div class="status-indicator {{ current_post.status|default:'published' }}"></div>
+            <span class="status-text">{{ current_post.get_status_display|upper|default:"PUBLISHED" }}</span>
+            {% if current_post.category %}
+            <span class="category-code">{{ current_post.category.code }}</span>
+            {% endif %}
+        </div>
+        {% elif current_category %}
+        <div class="breadcrumb-status">
+            <div class="category-indicator" style="color: {{ current_category.color }};">
+                <span class="category-code">{{ current_category.code }}</span>
+            </div>
+            <span class="status-text">{{ current_category.name|upper }}</span>
+        </div>
+        {% endif %} {% endcomment %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <!-- Systems Interface Container -->
 <div class="systems-interface-container">
