@@ -71,7 +71,7 @@ class GitHubLanguage(models.Model):
     # TODO: Change language to link to technologies that are languages
 
     repository = models.ForeignKey(GitHubRepository, on_delete=models.CASCADE, related_name='languages')
-    language = models.Charfield(max_length=50)
+    language = models.CharField(max_length=50)
     bytes_count = models.BigIntegerField()
     percentage = models.FloatField()  # Percentage of total repo size
 
