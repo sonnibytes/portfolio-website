@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load static %}
+{% load aura_filters %}
+{% load aura_components %}
+
+{% block title %}GitHub Integration - AURA Systems{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'projects/css/github-integration.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="github-integration-container">
+    <!-- Header Section with AURA Styling -->
+    <div class="aura-section-header">
+        {% section_header title="GitHub Repository Integration" subtitle="Live development metrics and project synchronization" icon="fab fa-github" %}
+        
+        <!-- Integration Status Indicator -->
+        <div class="integration-status-panel">
+            {% if integration_status == 'active' %}
+                {% status_indicator "operational" size="lg" with_text=True %}
+                <span class="status-text">API Connection Active</span>
+            {% elif integration_status == 'error' %}
+                {% status_indicator "error" size="lg" with_text=True %}
+                <span class="status-text">Connection Error</span>
+                <p class="error-details">{{ error_message }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- GitHub Statistics Dashboard -->
+    {% if github_stats %}
+    <div class="github-stats-grid">
+        <!-- Repository Overview Card -->
+        <div class="glass-card github-overview">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line"></i> Repository Overview</h3>
+            </div>
+            <div class="metrics-grid">
+                {% metric_card github_stats.total_repositories "Total Repos" icon="fas fa-folder" color="teal" %}
+                {% metric_card github_stats.public_repositories "Public" icon="fas fa-globe" color="green" %}
+                {% metric_card github_stats.private_repositories "Private" icon="fas fa-lock" color="orange" %}
+                {% metric_card github_stats.active_repositories "Active" icon="fas fa-code-branch" color="lavender" %}
+            </div>
+            
+            <!-- Activity Progress Bar -->
+            <div class="activity-indicator">
+                <label>Repository Activity Rate</label>
+                {% progress_bar github_stats.activity_percentage 100 color="teal" show_text=True %}
+                <small>{{ github_stats.activity_percentage }}% of repositories updated in last 6 months</small>
+            </div>
+        </div>
+
+        <!-- Engagement Metrics Card -->
+        <div class="glass-card github-engagement">
+            <div class="card-header">
+                <h3><i class="fas fa-users"></i> Community Engagement</h3>
+            </div>
+            <div class="engagement-metrics">
+                <div class="metric-row">
+                    <span class="metric-icon"><i class="fas fa-star" style="color: #ffd700;"></i></span>
+                    <span class="metric-value">{{ github_stats.total_stars|format_number }}</span>
+                    <span class="metric-label">Total Stars</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-icon"><i class="fas fa-code-branch" style="color: #00d4aa;"></i></span>
+                    <span class="metric-value">{{ github_stats.total_forks|format_number }}</span>
+                    <span class="metric-label">Total Forks</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-icon"><i class="fas fa-hdd" style="color: #b39ddb;"></i></span>
+                    <span class="metric-value">{{ github_stats.total_size_mb }} MB</span>
+                    <span class="metric-label">Total Code Size</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Languages Card -->
+        <div class="glass-card language-breakdown">
+            <div class="card-header">
+                <h3><i class="fas fa-code"></i> Language Distribution</h3>
+            </div>
+            <div class="language-list">
+                {% for lang in top_languages|slice:":8" %}
+                <div class="language-item">
+                    <div class="language-info">
+                        {% tech_badge lang.language color="#3776ab" %}
+                        <span class="repo-count">{{ lang.repo_count }} repos</span>
+                    </div>
+                    <div class="language-size">
+                        {{ lang.total_bytes|format_number }} bytes
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Repositories Section -->
+    {% if recent_repos %}
+    <div class="recent-repositories-section">
+        <h2 class="section-title">
+            <i class="fas fa-clock"></i> Recent Projects
+            <span class="section-subtitle">Latest repository activity</span>
+        </h2>
+        
+        <div class="repositories-grid">
+            {% for repo in recent_repos %}
+            <div class="repository-card glass-card">
+                <div class="repo-header">
+                    <h4 class="repo-name">
+                        <a href="{{ repo.html_url }}" target="_blank" rel="noopener">
+                            {{ repo.name }}
+                        </a>
+                        {% if repo.is_private %}
+                            <span class="private-badge">PRIVATE</span>
+                        {% endif %}
+                    </h4>
+                    {% if repo.related_system %}
+                        <a href="{% url 'projects:system_detail' repo.related_system.slug %}" class="system-link">
+                            <i class="fas fa-link"></i> {{ repo.related_system.name }}
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="repo-description">
+                    {{ repo.description|default:"No description available"|truncatewords:15 }}
+                </div>
+                
+                <div class="repo-stats">
+                    <span class="stat-item">
+                        <i class="fas fa-star"></i> {{ repo.stars_count }}
+                    </span>
+                    <span class="stat-item">
+                        <i class="fas fa-code-branch"></i> {{ repo.forks_count }}
+                    </span>
+                    {% if repo.language %}
+                        <span class="stat-item language-tag">
+                            <i class="fas fa-code"></i> {{ repo.language }}
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="repo-meta">
+                    <span class="update-time">
+                        Updated {{ repo.github_updated_at|time_since_published }}
+                    </span>
+                    {% if repo.is_recently_active %}
+                        <span class="activity-badge active">ACTIVE</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Language breakdown for this repo -->
+                {% if repo.languages.exists %}
+                <div class="repo-languages">
+                    {% for lang in repo.languages.all|slice:":5" %}
+                        <div class="lang-bar" style="width: {{ lang.percentage }}%; background-color: {% cycle '#3776ab' '#00d4aa' '#ffd700' '#ff6b6b' '#b39ddb' %}"></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity Feed -->
+    {% if recent_activity %}
+    <div class="activity-feed-section">
+        <h2 class="section-title">
+            <i class="fas fa-activity"></i> Recent Activity
+            <span class="section-subtitle">Latest GitHub updates</span>
+        </h2>
+        
+        <div class="activity-timeline">
+            {% for activity in recent_activity|slice:":10" %}
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="fas fa-git-alt"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">
+                        <strong>{{ activity.name }}</strong>
+                        {% if activity.fork %}
+                            <span class="fork-badge">FORK</span>
+                        {% endif %}
+                    </div>
+                    <div class="activity-description">
+                        {{ activity.description|default:"Repository updated"|truncatewords:12 }}
+                    </div>
+                    <div class="activity-time">
+                        {{ activity.updated_at|time_since_published }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Sync Controls (for authenticated users) -->
+    {% if user.is_staff %}
+    <div class="sync-controls-section">
+        <div class="glass-card sync-panel">
+            <div class="card-header">
+                <h3><i class="fas fa-sync-alt"></i> Data Synchronization</h3>
+            </div>
+            <div class="sync-controls">
+                <button id="sync-github-data" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Sync GitHub Data
+                </button>
+                <button id="force-sync" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> Force Full Sync
+                </button>
+                <div class="sync-status" id="sync-status"></div>
+            </div>
+            <div class="sync-info">
+                <p>Last sync: <span id="last-sync-time">{{ github_stats.last_sync|default:"Never" }}</span></p>
+                <p>Next automatic sync: <span id="next-sync-time">In {{ github_stats.next_sync_hours|default:"24" }} hours</span></p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'projects/js/github-integration.js' %}"></script>
+<script>
+    // Initialize GitHub integration features
+    document.addEventListener('DOMContentLoaded', function() {
+        const githubIntegration = new GitHubIntegration({
+            syncUrl: '{% url "projects:github_sync" %}',
+            csrfToken: '{{ csrf_token }}'
+        });
+    });
+</script>
+{% endblock %}
