@@ -573,3 +573,104 @@
   --system-category-rgb: 158, 158, 158;
   --system-category-color: var(--color-muted);
 }
+
+/* Fixed Progress Bar Styles - Add to your CSS */
+/* Replace or add these styles to prevent progress bar resetting */
+
+.system-progress-container {
+  margin: var(--spacing-md) 0;
+}
+
+.system-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.system-progress-label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.system-progress-value {
+  font-family: var(--font-code);
+  font-size: 0.8rem;
+  color: var(--color-coral);
+  font-weight: 600;
+}
+
+/* FIXED: Stable progress bar that doesn't reset */
+.system-progress-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.system-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-teal), #4fd1c7);
+  border-radius: 4px;
+  position: relative;
+  /* REMOVED: transition that was causing reset */
+  /* transition: width 1.5s ease; */
+  /* ADDED: Stable width maintenance */
+  transition: none;
+}
+
+/* FIXED: Controlled animation only on initial load */
+.system-progress-fill.animate-on-load {
+  animation: progressLoadAnimation 2s ease-out forwards;
+}
+
+@keyframes progressLoadAnimation {
+  from {
+      width: 0%;
+  }
+  to {
+      width: var(--target-width);
+  }
+}
+
+/* FIXED: Subtle scan effect that doesn't interfere with width */
+.system-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.2) 50%, 
+      transparent 100%);
+  /* MODIFIED: Slower, less disruptive animation */
+  animation: progressScanSubtle 3s linear infinite;
+  /* ADDED: Only show scan on hover */
+  opacity: 0;
+}
+
+.system-progress-container:hover .system-progress-fill::after {
+  opacity: 1;
+}
+
+@keyframes progressScanSubtle {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ADDED: Progress bar states */
+.system-progress-fill[data-loaded="true"] {
+  /* Ensure the width is maintained after loading */
+  transition: none !important;
+}
+
+/* ADDED: Prevent layout shifts */
+.progress-bar {
+  min-height: 8px;
+  width: 100%;
+}
