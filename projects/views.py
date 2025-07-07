@@ -3349,7 +3349,7 @@ class GitHubIntegrationView(TemplateView):
 
             context.update({
                 'github_stats': github_stats,
-                'recent_repos': local_repos.filter(is_archive=False)[:6],
+                'recent_repos': local_repos.filter(is_archived=False)[:6],
                 'top_languages': self.get_top_languages(local_repos),
                 'recent_activity': recent_activity,
                 'integration_status': 'active',
@@ -3413,6 +3413,7 @@ class GitHubIntegrationView(TemplateView):
 # =================================
 # DJANGO GITHUB SYNC VIEW FOR AJAX
 # =================================
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class GitHubSyncView(LoginRequiredMixin, View):
