@@ -18,6 +18,71 @@ Connected to Blog via SystemLogEntry
 """
 
 
+class GitHubRepository(models.Model):
+    """Model to store GitHub repository data locally."""
+
+    # Basic repo info
+    github_id = models.BigIntegerField(unique=True)
+    name = models.CharField(max_length=100)
+    full_name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+
+    # URLs and Links
+    html_url = models.URLField()
+    clone_url = models.URLField()
+    homepage = models.URLField(blank=True, null=True)
+
+    # Repository stats
+    stars_count = models.IntegerField(default=0)
+    forks_count = models.IntegerField(default=0)
+    watchers_count = models.IntegerField(default=0)
+    size = models.IntegerField(default=0)  # size in KB
+
+    # Repository metadata
+    language = models.CharField(max_length=50, blank=True, null=True)
+    is_private = models.BooleanField(default=False)
+    is_fork = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
+
+    # Timestamps
+    github_created_at = models.DateTimeField()
+    github_updated_at = models.DateTimeField()
+    last_synced = models.DateTimeField(auto_now=True)
+
+    # Integration w existing SystemModule
+    related_system = models.ForeignKey('SystemModule', on_delete=models.SET_NULL, null=True, blank=True, related_name='github_repositories')
+
+    class Meta:
+        ordering = ['-github_updated_at']
+        verbose_name = 'GitHub Repository'
+        verbose_name_plural = 'GitHub Repositories'
+    
+    def __str__(self):
+        return self.full_name
+    
+    @property
+    def is_recently_active(self):
+        """Check if repo was updated in last 30 days."""
+        return self.github_updated_at >= timezone.now() - timedelta(days=30)
+
+
+class GitHubLanguage(models.Model):
+    """Model to store programming language usage across repositories."""
+    # TODO: Change language to link to technologies that are languages
+
+    repository = models.ForeignKey(GitHubRepository, on_delete=models.CASCADE, related_name='languages')
+    language = models.Charfield(max_length=50)
+    bytes_count = models.BigIntegerField()
+    percentage = models.FloatField()  # Percentage of total repo size
+
+    class Meta:
+        unique_together = ['repository', 'language']
+        ordering = ['-bytes_count']
+    
+    def __str__(self):
+        return f"{self.repository.name} - {self.language} ({self.percentage:.1f}%)"
+
+
 class SystemModuleQuerySet(models.QuerySet):
     """Custom queryset for SystemModule w useful filters."""
 
