@@ -1,0 +1,578 @@
+<!-- projects/templates/projects/components/github_repo_card.html -->
+<div class="github-repo-card" data-repo-id="{{ repo.id }}">
+    <div class="repo-header">
+        <div class="repo-title">
+            <a href="{{ repo.html_url }}" target="_blank" class="repo-name">
+                <i class="fab fa-github"></i>
+                {{ repo.name }}
+            </a>
+            {% if repo.is_private %}
+                <span class="repo-badge private">
+                    <i class="fas fa-lock"></i> Private
+                </span>
+            {% endif %}
+            {% if repo.is_fork %}
+                <span class="repo-badge fork">
+                    <i class="fas fa-code-branch"></i> Fork
+                </span>
+            {% endif %}
+        </div>
+        
+        <div class="repo-meta">
+            <div class="repo-stats">
+                {% if repo.stars_count > 0 %}
+                <span class="stat-item">
+                    <i class="fas fa-star"></i> {{ repo.stars_count }}
+                </span>
+                {% endif %}
+                {% if repo.forks_count > 0 %}
+                <span class="stat-item">
+                    <i class="fas fa-code-branch"></i> {{ repo.forks_count }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="activity-indicator">
+                {% if repo.is_commit_active %}
+                    <span class="activity-badge active">
+                        <i class="fas fa-circle"></i> Active
+                    </span>
+                {% elif repo.is_recently_active %}
+                    <span class="activity-badge recent">
+                        <i class="fas fa-circle"></i> Recent
+                    </span>
+                {% else %}
+                    <span class="activity-badge inactive">
+                        <i class="fas fa-circle"></i> Quiet
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if repo.description %}
+    <div class="repo-description">
+        {{ repo.description|truncatewords:20 }}
+    </div>
+    {% endif %}
+
+    <!-- Language breakdown -->
+    {% if repo.languages.exists %}
+    <div class="language-breakdown">
+        <div class="language-bar">
+            {% for lang in repo.languages.all|slice:":5" %}
+                <div class="lang-segment" 
+                     style="width: {{ lang.percentage }}%; background-color: {{ lang.language|language_color }};"
+                     title="{{ lang.language }}: {{ lang.percentage|floatformat:1 }}%">
+                </div>
+            {% endfor %}
+        </div>
+        <div class="language-labels">
+            {% for lang in repo.languages.all|slice:":3" %}
+                <span class="lang-label" style="color: {{ lang.language|language_color }};">
+                    {{ lang.language }} {{ lang.percentage|floatformat:1 }}%
+                </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Basic commit info -->
+    <div class="commit-summary">
+        <div class="commit-stats">
+            <div class="stat-group">
+                <div class="stat-value">{{ repo.total_commits }}</div>
+                <div class="stat-label">Total Commits</div>
+            </div>
+            <div class="stat-group">
+                <div class="stat-value">{{ repo.commits_last_30_days }}</div>
+                <div class="stat-label">Last 30 Days</div>
+            </div>
+            {% if repo.last_commit_date %}
+            <div class="stat-group">
+                <div class="stat-value">{{ repo.days_since_last_commit }}</div>
+                <div class="stat-label">Days Ago</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if repo.last_commit_message %}
+        <div class="last-commit">
+            <div class="commit-message">
+                "{{ repo.last_commit_message|truncatewords:8 }}"
+            </div>
+            <div class="commit-time">
+                {{ repo.last_commit_date|timesince }} ago
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Enhanced weekly data (if available) -->
+    {% if show_weekly and weekly_summary %}
+    <div class="weekly-summary">
+        <div class="summary-header">
+            <h4><i class="fas fa-chart-line"></i> Weekly Analysis</h4>
+            <span class="trend-badge {{ weekly_summary.trend }}">
+                {% if weekly_summary.trend == 'increasing' %}
+                    <i class="fas fa-trending-up"></i> Trending Up
+                {% elif weekly_summary.trend == 'decreasing' %}
+                    <i class="fas fa-trending-down"></i> Trending Down
+                {% elif weekly_summary.trend == 'stable' %}
+                    <i class="fas fa-minus"></i> Stable
+                {% else %}
+                    <i class="fas fa-question"></i> Analyzing
+                {% endif %}
+            </span>
+        </div>
+        
+        <div class="weekly-metrics">
+            <div class="metric-item">
+                <span class="metric-value">{{ weekly_summary.avg_commits_per_week }}</span>
+                <span class="metric-label">Avg/Week</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-value">{{ weekly_summary.total_weeks }}</span>
+                <span class="metric-label">Weeks Tracked</span>
+            </div>
+            {% if weekly_summary.most_active_week %}
+            <div class="metric-item">
+                <span class="metric-value">{{ weekly_summary.most_active_week.commit_count }}</span>
+                <span class="metric-label">Peak Week</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Monthly data (if available) -->
+    {% if show_weekly and monthly_summary %}
+    <div class="monthly-summary">
+        <div class="summary-header">
+            <h4><i class="fas fa-calendar-alt"></i> Monthly Trend</h4>
+            <span class="trend-badge {{ monthly_summary.monthly_trend }}">
+                {% if monthly_summary.monthly_trend == 'increasing' %}
+                    <i class="fas fa-arrow-up"></i> Growing
+                {% elif monthly_summary.monthly_trend == 'decreasing' %}
+                    <i class="fas fa-arrow-down"></i> Declining
+                {% else %}
+                    <i class="fas fa-equals"></i> Steady
+                {% endif %}
+            </span>
+        </div>
+        
+        <div class="monthly-metrics">
+            <div class="metric-item">
+                <span class="metric-value">{{ monthly_summary.avg_commits_per_month }}</span>
+                <span class="metric-label">Avg/Month</span>
+            </div>
+            {% if monthly_summary.most_active_month %}
+            <div class="metric-item">
+                <span class="metric-value">{{ monthly_summary.most_active_month.total_commits }}</span>
+                <span class="metric-label">Peak Month</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- System linkage -->
+    {% if repo.related_system %}
+    <div class="system-link">
+        <a href="{% url 'projects:system_detail' repo.related_system.slug %}" class="system-badge">
+            <i class="fas fa-link"></i>
+            {{ repo.related_system.name }}
+        </a>
+    </div>
+    {% endif %}
+    
+    <div class="repo-footer">
+        <div class="update-time">
+            Updated {{ repo.github_updated_at|timesince }} ago
+        </div>
+        {% if repo.enable_detailed_tracking %}
+        <div class="tracking-indicator">
+            <i class="fas fa-chart-area"></i> Enhanced Tracking
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Enhanced GitHub Repo Card Styles -->
+<style>
+.github-repo-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+    border: 1px solid rgba(51, 65, 85, 0.4);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.github-repo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #7c3aed, #10b981, #3b82f6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.github-repo-card:hover {
+    border-color: rgba(124, 58, 237, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(124, 58, 237, 0.15);
+}
+
+.github-repo-card:hover::before {
+    opacity: 1;
+}
+
+.repo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.repo-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.repo-name {
+    color: #f0f6fc;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s ease;
+}
+
+.repo-name:hover {
+    color: #7c3aed;
+}
+
+.repo-name i {
+    font-size: 1rem;
+}
+
+.repo-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.repo-badge.private {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.repo-badge.fork {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.repo-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.repo-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.stat-item {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.activity-badge {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.activity-badge.active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.activity-badge.recent {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.activity-badge.inactive {
+    background: rgba(100, 116, 139, 0.2);
+    color: #64748b;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.activity-badge i {
+    font-size: 0.6rem;
+}
+
+.repo-description {
+    color: #94a3b8;
+    margin-bottom: 16px;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+
+.language-breakdown {
+    margin-bottom: 16px;
+}
+
+.language-bar {
+    height: 6px;
+    background: rgba(51, 65, 85, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.lang-segment {
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.language-labels {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.lang-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.commit-summary {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(51, 65, 85, 0.2);
+}
+
+.commit-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.stat-group {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #7c3aed;
+    margin-bottom: 2px;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.last-commit {
+    border-top: 1px solid rgba(51, 65, 85, 0.3);
+    padding-top: 12px;
+}
+
+.commit-message {
+    color: #f0f6fc;
+    font-style: italic;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+}
+
+.commit-time {
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.weekly-summary,
+.monthly-summary {
+    background: rgba(124, 58, 237, 0.1);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.summary-header h4 {
+    color: #f0f6fc;
+    font-size: 0.9rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.trend-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.trend-badge.increasing {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.trend-badge.decreasing {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.trend-badge.stable {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.weekly-metrics,
+.monthly-metrics {
+    display: flex;
+    gap: 16px;
+}
+
+.metric-item {
+    text-align: center;
+    flex: 1;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #7c3aed;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.system-link {
+    margin-bottom: 12px;
+}
+
+.system-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 16px;
+    color: #10b981;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.system-badge:hover {
+    background: rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.5);
+    color: #10b981;
+}
+
+.repo-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #64748b;
+    border-top: 1px solid rgba(51, 65, 85, 0.2);
+    padding-top: 12px;
+}
+
+.tracking-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #7c3aed;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .repo-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .repo-meta {
+        align-items: flex-start;
+        width: 100%;
+    }
+    
+    .commit-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+    
+    .weekly-metrics,
+    .monthly-metrics {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .repo-footer {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+}
+</style>

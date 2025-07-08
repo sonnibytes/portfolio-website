@@ -1,0 +1,91 @@
+<!-- Create this as projects/templates/projects/github_test.html for testing -->
+{% extends "base.html" %}
+{% load github_tags %}
+
+{% block title %}GitHub Integration Test{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>GitHub Integration Test</h1>
+    
+    <!-- Test 1: Basic template tags are working -->
+    <div class="test-section">
+        <h2>Test 1: Basic Template Tags</h2>
+        {% for repo in test_repos %}
+            <div class="test-repo">
+                <h3>{{ repo.name }}</h3>
+                <p>Language: {{ repo.language|language_color }}</p>
+                <p>Size: {{ repo.size|format_repo_size }}</p>
+                <p>Active: {{ repo.github_updated_at|is_active_repo }}</p>
+                <p>Commit Badge: {{ repo.commit_frequency_rating|commit_frequency_badge }}</p>
+                <p>Last Commit: {{ repo.last_commit_date|days_since_commit }}</p>
+                
+                <!-- Test language bar -->
+                {% repo_language_bar repo %}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Test 2: Weekly tracking (if available) -->
+    <div class="test-section">
+        <h2>Test 2: Weekly Tracking</h2>
+        {% if repos_with_tracking %}
+            <p>Found {{ repos_with_tracking.count }} repos with weekly tracking</p>
+            
+            <!-- Test weekly activity summary -->
+            {% weekly_activity_summary repos_with_tracking as weekly_stats %}
+            {% if weekly_stats %}
+                <div class="weekly-stats">
+                    <p>Total recent commits: {{ weekly_stats.total_recent_commits }}</p>
+                    <p>Avg per week: {{ weekly_stats.avg_commits_per_week }}</p>
+                    <p>Tracked repos: {{ weekly_stats.total_tracked_repos }}</p>
+                </div>
+            {% endif %}
+            
+            <!-- Test weekly panel -->
+            {% github_weekly_panel panel_style="component" %}
+            
+            <!-- Test enhanced repo cards -->
+            {% for repo in repos_with_tracking|slice:":2" %}
+                {% github_repo_card repo=repo show_weekly_summary=True %}
+            {% endfor %}
+            
+        {% else %}
+            <p>No repositories with weekly tracking found.</p>
+            <p>Run: <code>python manage.py sync_github_data --weekly-only</code></p>
+        {% endif %}
+    </div>
+    
+    <!-- Test 3: All repos basic cards -->
+    <div class="test-section">
+        <h2>Test 3: All Repository Cards</h2>
+        {% for repo in all_repos|slice:":3" %}
+            {% github_repo_card repo=repo show_weekly_summary=False %}
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.test-section {
+    margin: 30px 0;
+    padding: 20px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.5);
+}
+
+.test-repo {
+    margin: 15px 0;
+    padding: 15px;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 6px;
+}
+
+.weekly-stats {
+    background: rgba(124, 58, 237, 0.1);
+    padding: 15px;
+    border-radius: 6px;
+    margin: 15px 0;
+}
+</style>
+{% endblock %}
