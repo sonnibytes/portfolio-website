@@ -8,6 +8,7 @@ import re
 import calendar
 from bs4 import BeautifulSoup
 from datetime import date, timedelta, datetime
+from collections import defaultdict
 from django.db.models import Avg, Count, Sum, Q
 from django.utils import timezone
 
@@ -199,7 +200,7 @@ class GitHubRepositoryManager(models.Manager):
 
 
 class GitHubRepository(models.Model):
-    """Model to store GitHub repository data locally."""
+    """Model to store GitHub repository data locally with enhanced commit tracking."""
 
     # Basic repo info
     github_id = models.BigIntegerField(unique=True)
@@ -232,20 +233,35 @@ class GitHubRepository(models.Model):
     # Integration w existing SystemModule
     related_system = models.ForeignKey('SystemModule', on_delete=models.SET_NULL, null=True, blank=True, related_name='github_repositories')
 
-    # Commit tracking fields
+    # ===== EXISTING COMMIT SUMMARY FIELDS (KEEP - SERVE DIFFERENT PURPOSE) =====
+    # These provide quick stats without needing to aggregate weekly data
     total_commits = models.IntegerField(default=0, help_text='Total commits in repository')
     last_commit_date = models.DateTimeField(null=True, blank=True, help_text='Date of most recent commit')
     last_commit_sha = models.CharField(max_length=40, blank=True, help_text='SHA of most recent commit')
     last_commit_message = models.TextField(blank=True, help_text='Message of the most recent commit')
 
-    # Commit activity metrics
+    # Commit activity metrics (Quick overview stats)
     commits_last_30_days = models.IntegerField(default=0, help_text="Commits in last 30 days")
     commits_last_year = models.IntegerField(default=0, help_text="Commits in last year")
     avg_commits_per_month = models.FloatField(default=0.0, help_text="Average commits per month")
     
-    # Commit sync metadata
+    # Commit Overview sync metadata
     commits_last_synced = models.DateTimeField(null=True, blank=True, help_text="When commit data was last synced")
     commit_sync_page = models.IntegerField(default=1, help_text="Last synced page for pagination")
+
+    # ===== NEW WEEKLY TRACKING FIELDS (ADD THESE) =====
+    # Enhanced tracking for system-linked repositories
+    commit_weeks_last_synced = models.DateTimeField(null=True, blank=True, help_text="When weekly commit data last synced")
+
+    # ETag for GitHub stattistic endpoint (conditional requests)
+    stats_etag = models.CharField(max_length=64, blank=True, help_text="ETag for GitHub stats API conditional requests")
+
+    # Flag to enable detailed tracking (auto-enabled for system-linked repos)
+    enable_detailed_tracking = models.BooleanField(default=False, help_text="Enable weekly commit tracking (auto-enabled for system-linked repos)")
+
+
+    # ===== CUSTOM MANAGER =====
+    objects = GitHubRepositoryManager()
 
     class Meta:
         ordering = ['-github_updated_at']
@@ -307,6 +323,136 @@ class GitHubRepository(models.Model):
             last_commit = f"{months} month{'s' if months > 1 else ''} ago"
         
         return f"{self.total_commits} commits, last {last_commit}"
+    
+    # ===== NEW ENHANCED METHODS (Added w Weekly Commit model) =====
+    def should_track_detailed_commits(self):
+        """Determine if this repo should have detailed weekly tracking."""
+        return (
+            self.related_system is not None and
+            not self.is_archived and
+            not self.is_fork
+        )
+    
+    def get_weekly_commit_data(self, weeks_back=12):
+        """Get weekly commit data for last N weeks."""
+        return self.commit_weeks.order_by('-year', '-week')[:weeks_back]
+    
+    def get_monthly_commit_data(self, months_back=6):
+        """Get monthly commit summaries for the last N months."""
+        # Get all weeks from the last N months
+        recent_weeks = self.commit_weeks.order_by('-year', '-month', '-week')
+
+        # Group by year-month
+        monthly_data = defaultdict(list)
+        for week in recent_weeks:
+            month_key = f"{week.year}-{week.month:02d}"
+            monthly_data[month_key].append(week)
+        
+        # Convert to monthly summaries
+        monthly_summaries = []
+        for month_key in sorted(monthly_data.keys(), reverse=True)[:months_back]:
+            weeks = monthly_data[month_key]
+            if weeks:
+                total_commits = sum(w.commit_count for w in weeks)
+                first_week = weeks[0]  # For month metadata
+
+                monthly_summaries.append({
+                    'year': first_week.year,
+                    'month': first_week.month,
+                    'month_name': first_week.month_name,
+                    'total_commits': total_commits,
+                    'week_count': len(weeks),
+                    'avg_commits_per_week': round(total_commits / len(weeks), 1),
+                    'most_active_week': max(weeks, key=lambda w: w.commit_count)
+                })
+        
+        return monthly_summaries
+    
+    def get_commit_trend(self, weeks=4):
+        """Get commit trend over recent weeks."""
+        recent_weeks = self.commit_weeks.order_by('-year', '-week')[:weeks]
+        if not recent_weeks:
+            return "no-data"
+        
+        commits = [w.commit_count for w in recent_weeks]
+        if len(commits) < 2:
+            return "Insufficient-data"
+        
+        # Simple trend calculation
+        first_half = sum(commits[:len(commits) // 2])
+        second_half = sum(commits[len(commits) // 2:])
+
+        if second_half > first_half * 1.2:
+            return "increasing"
+        elif second_half < first_half * 0.8:
+            return "decreasing"
+        else:
+            return "stable"
+    
+    def get_monthly_trend(self, months=3):
+        """Get commit trend over recent months."""
+        monthly_data = self.get_monthly_commit_data(months_back=months)
+        if len(monthly_data) < 2:
+            return "Insufficient-data"
+        
+        # Compare first half to second half of months
+        commits = [month['total_commits'] for month in monthly_data]
+        first_half = sum(commits[:len(commits) // 2])
+        second_half = sum(commits[len(commits) // 2:])
+
+        if second_half > first_half * 1.3:
+            return "increasing"
+        elif second_half < first_half * 0.7:
+            return "decreasing"
+        else:
+            return "stable"
+    
+    def get_weekly_commit_summary(self):
+        """Get a summary of weekly commit activity."""
+        weeks = self.commit_weeks.all()
+        if not weeks:
+            return {
+                'total_weeks': 0,
+                'avg_commits_per_week': 0,
+                'most_active_week': None,
+                'recent_activity': 'No data'
+            }
+        
+        total_commits = sum(w.commit_count for w in weeks)
+        most_active = max(weeks, key=lambda w: w.commit_count)
+
+        return {
+            'total_weeks': weeks.count(),
+            'avg_commits_per_week': round(total_commits / weeks.count(), 1),
+            'most_active_week': most_active,
+            'trend': self.get_commit_trend(),
+            'total_commits_tracked': total_commits
+        }
+    
+    def get_monthly_commit_summary(self):
+        """Get a summary of monthly commit activity."""
+        monthly_data = self.get_monthly_commit_data(months_back=12)
+        if not monthly_data:
+            return {
+                'total_months': 0,
+                'avg_commits_per_month': 0,
+                'most_active_month': None,
+                'monthly_trend': 'no-data'
+            }
+        
+        total_commits = sum(month['total_commits'] for month in monthly_data)
+        most_active = max(monthly_data, key=lambda m: m['total_commits'])
+
+        return {
+            'total_months': len(monthly_data),
+            'avg_commits_per_month': round(total_commits / len(monthly_data), 1),
+            'most_active_month': most_active,
+            'monthly_trend': self.get_monthly_trend(),
+            'total_commits_tracked': total_commits
+        }
+
+
+
 
 
 class GitHubLanguage(models.Model):
