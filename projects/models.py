@@ -56,6 +56,7 @@ class GitHubRepository(models.Model):
     total_commits = models.IntegerField(default=0, help_text='Total commits in repository')
     last_commit_date = models.DateTimeField(null=True, blank=True, help_text='Date of most recent commit')
     last_commit_sha = models.CharField(max_length=40, blank=True, help_text='SHA of most recent commit')
+    last_commit_message = models.TextField(blank=True, help_text='Message of the most recent commit')
 
     # Commit activity metrics
     commits_last_30_days = models.IntegerField(default=0, help_text="Commits in last 30 days")
@@ -1110,7 +1111,36 @@ class SystemModule(models.Model):
             'commit_frequency_rating': frequency_rating
         }
     
-    def get_development_timeline
+    def get_development_timeline(self):
+        """Get development timeline data for charts/graphs."""
+        repos = self.github_repositories.all()
+
+        # This could be expanded to create monthly/weekly commit data
+        # For now, return basic timeline info
+        timeline_data = []
+
+        for repo in repos:
+            if repo.last_commit_date:
+                timeline_data.append({
+                    'date': repo.last_commit_date,
+                    'repo_name': repo.name,
+                    'commits': repo.total_commits,
+                    'message': repo.last_commit_message[:50] + '...' if len(repo.last_commit_message) > 50 else repo.last_commit_message
+                })
+        
+        # Sort by date
+        timeline_data.sort(key=lambda x: x['date'], reverse=True)
+
+        return timeline_data[:10]  # return last 10 events
+    
+    @property
+    def commit_summary(self):
+        """Get a brief commit summary for display."""
+        stats = self.get_commit_stats()
+        if stats['total_commits'] == 0:
+            return "No development activity tracked"
+        
+        return f"{stats['total_commits']} commits across {stats['repository_count']} repo(s)"
 
     # ================= TEMPLATE PROPERTIES =================
     @property
