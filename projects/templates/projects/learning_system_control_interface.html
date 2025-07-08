@@ -440,6 +440,29 @@
         color: var(--color-coral);
     }
 
+    /* GitHub Integration Enhancements */
+    .github-commit-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.5rem;
+        background: rgba(0, 212, 170, 0.2);
+        color: var(--color-teal);
+        border: 1px solid var(--color-teal);
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .development-status-mini {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+        justify-content: space-evenly;
+    }
+
     /* Responsive Design */
     @media (max-width: 1200px) {
         .control-interface-layout {
@@ -515,12 +538,10 @@
 
     <!-- Control Interface Layout - IDENTICAL STRUCTURE -->
      <div class="system-control-main">
-    {% comment %} <div class="container" style="padding: var(--spacing-xl, 2rem) 0;"> {% endcomment %}
         <div class="control-interface-layout status-{{ system.status }}">
             
             <!-- Control Sidebar - IDENTICAL STRUCTURE -->
             <aside class="control-sidebar">
-
                 <!-- System Header -->
                 <div class="system-header-panel">
                     <div class="system-status-indicator">
@@ -563,8 +584,29 @@
                             <div class="quick-stat-label">Milestones</div>
                         </div>
                     </div>
+            
+
+                <!-- GITHUB INTEGRATION: Real Development Status -->
+                {% with commit_stats=system.get_commit_stats %}
+                {% if commit_stats.total_commits > 0 %}
+                <div class="development-status-mini">
+                    
+                    <span class="quick-stat-label"><i class="fab fa-github"></i> Recent Commit Activity</span>
+                    {% if commit_stats.last_commit_date %}
+                        <span class="github-commit-badge">
+                            
+                            {{ commit_stats.last_commit_date|days_since_commit }}
+                        </span>
+                    {% endif %}
+                    {% comment %} <div class="status-dot {% if commit_stats.commits_last_30_days > 0 %}active{% elif commit_stats.last_commit_date %}recent{% else %}inactive{% endif %}"></div>
+                    <span>{{ commit_stats.total_commits|format_commit_count }} commits</span> {% endcomment %}
+                    
+                </div>
+                {% endif %}
+                {% endwith %}
                 </div>
 
+            <!-- Control Panel Navigation - ORIGINAL STRUCTURE -->
                 <nav class="control-panels-nav">
                     <h3 class="nav-section-title">Control Panel</h3>
                         {% comment %} <p class="nav-description">Navigate through different aspects of this system's learning journey and development progression.</p> {% endcomment %}
@@ -618,7 +660,7 @@
                         <!-- System Status & Metrics -->
                         <div class="unified-dashboard-container teal">
                             <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">System Status</h3>
+                            <h3 style="margin-bottom: 1.5rem;">System Development Metrics</h3>
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                                 <div class="learning-metric-card">
@@ -632,6 +674,19 @@
                                         {{ panel_data.system_metrics.complexity }}
                                     </div>
                                     <div class="metric-label-large">Complexity</div>
+                                </div>
+                                
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-teal);">
+                                        {{ panel_data.development_stats.total_commits }}
+                                    </div>
+                                    <div class="metric-label-large">Total Commits</div>
+                                </div>
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-teal);">
+                                        {{ panel_data.development_stats.commits_last_30_days }}
+                                    </div>
+                                    <div class="metric-label-large">Commits This Month</div>
                                 </div>
                             </div>
 

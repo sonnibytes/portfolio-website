@@ -726,6 +726,8 @@ class SystemModule(models.Model):
 
     def get_dashboard_metrics(self):
         """Get all metrics for dashboard display in one call."""
+        commit_stats = self.get_commit_stats()
+
         return {
             'basic_info': {
                 'system_id': self.system_id,
@@ -750,7 +752,8 @@ class SystemModule(models.Model):
             },
             'development': {
                 'code_lines': self.code_lines,
-                'commit_count': self.commit_count,
+                # Updated to use GitHub data
+                'commit_count': commit_stats['total_commits'],
                 'hours_variance': self.hours_variance(),
                 'completion_trend': self.completion_trend(),
             },
@@ -884,7 +887,9 @@ class SystemModule(models.Model):
         return min(score, 100)
 
     def get_development_stats_for_learning(self):
-        """Learning-focused stats using existing fields"""
+        """Learning-focused stats using existing fields w github data enhancements"""
+        commit_stats = self.get_commit_stats()
+
         return {
             # Use existing time tracking
             'estimated_hours': self.estimated_dev_hours or 0,
@@ -893,8 +898,16 @@ class SystemModule(models.Model):
 
             # Use existing code metrics
             'lines_of_code': self.code_lines,
-            'commits': self.commit_count,
-            'last_commit': self.last_commit_date,
+            # Updating to use GitHub data
+            'commits': commit_stats['total_commits'],
+            'last_commit': commit_stats['last_commit_date'],
+            'commits_30_days': commit_stats['commits_last_30_days'],
+            'commits_year': commit_stats['commits_last_year'],
+            'repository_count': commit_stats['repository_count'],
+            'active_repo_count': commit_stats['active_repo_count'],
+            'avg_commits_per_month': commit_stats['avg_commits_per_month'],
+            'most_active_repo': commit_stats['most_active_repo'],
+            'commit_frequency_rating': commit_stats['commit_frequency_rating'],
 
             # New learning metrics
             'skills_count': self.skills_developed.count(),
@@ -967,16 +980,16 @@ class SystemModule(models.Model):
         return self.get_related_logs().exists()
 
     def get_github_metrics_summary(self):
-        """GitHub activity summary using existing fields"""
+        """GitHub activity summary using existing fields *Updated w GH Data"""
+        commit_stats = self.get_commit_stats()
         return {
             'repository_url': self.github_url,
-            'commits': self.commit_count,
+            # Updated to use GH data
+            'commits': commit_stats['total_commits'],
             'lines_of_code': self.code_lines,
-            'last_activity': self.last_commit_date,
+            'last_activity': commit_stats['last_commit_date'],
             'has_repo': bool(self.github_url),
-            'active_development': bool(
-                self.last_commit_date and self.last_commit_date >= timezone.now() - timedelta(days=30)
-            ),
+            'active_development': commit_stats['commits_last_30_days'] > 0,
         }
     
     # Additional Learning Enhancements
@@ -1064,6 +1077,7 @@ class SystemModule(models.Model):
                 'commits_last_30_days': 0,
                 'commits_last_year': 0,
                 'repository_count': 0,
+                'avg_commits_per_month': 0,
                 'active_repo_count': 0,
                 'most_active_repo': None,
                 'commit_frequency_rating': 1

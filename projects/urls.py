@@ -8,9 +8,9 @@ urlpatterns = [
 
   
     path("systems/", views.EnhancedLearningSystemListView.as_view(), name="system_list"),
-    # path("systems/<slug:slug>/", views.LearningSystemControlInterfaceView.as_view(), name="system_detail"),
+    path("systems/<slug:slug>/", views.LearningSystemControlInterfaceView.as_view(), name="system_detail"),
     # Testing new interface w GitHub Data
-    path("systems/<slug:slug>/", views.SystemControlInterfaceView.as_view(), name="system_detail"),
+    path("test/<slug:slug>/", views.SystemControlInterfaceView.as_view(), name="system_detail_test"),
 
     # path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
 
