@@ -7,7 +7,7 @@ from markdownx.utils import markdownify
 import re
 from bs4 import BeautifulSoup
 from datetime import date, timedelta
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Sum
 from django.utils import timezone
 
 
@@ -52,6 +52,20 @@ class GitHubRepository(models.Model):
     # Integration w existing SystemModule
     related_system = models.ForeignKey('SystemModule', on_delete=models.SET_NULL, null=True, blank=True, related_name='github_repositories')
 
+    # Commit tracking fields
+    total_commits = models.IntegerField(default=0, help_text='Total commits in repository')
+    last_commit_date = models.DateTimeField(null=True, blank=True, help_text='Date of most recent commit')
+    last_commit_sha = models.CharField(max_length=40, blank=True, help_text='SHA of most recent commit')
+
+    # Commit activity metrics
+    commits_last_30_days = models.IntegerField(default=0, help_text="Commits in last 30 days")
+    commits_last_year = models.IntegerField(default=0, help_text="Commits in last year")
+    avg_commits_per_month = models.FloatField(default=0.0, help_text="Average commits per month")
+    
+    # Commit sync metadata
+    commits_last_synced = models.DateTimeField(null=True, blank=True, help_text="When commit data was last synced")
+    commit_sync_page = models.IntegerField(default=1, help_text="Last synced page for pagination")
+
     class Meta:
         ordering = ['-github_updated_at']
         verbose_name = 'GitHub Repository'
@@ -64,6 +78,54 @@ class GitHubRepository(models.Model):
     def is_recently_active(self):
         """Check if repo was updated in last 30 days."""
         return self.github_updated_at >= timezone.now() - timedelta(days=30)
+
+    @property
+    def is_commit_active(self):
+        """Check if repo had commits in last 30 days."""
+        return self.commits_last_30_days > 0
+    
+    @property
+    def commit_frequency_rating(self):
+        """Get a rating for commit frequency (1-5 scale)."""
+        if self.commits_last_30_days >= 20:
+            return 5  # Very active
+        elif self.commits_last_30_days >= 10:
+            return 4  # Active
+        elif self.commits_last_30_days >= 5:
+            return 3  # Moderate
+        elif self.commits_last_30_days >= 1:
+            return 2  # Low
+        else:
+            return 1  # Inactive
+    
+    @property
+    def days_since_last_commit(self):
+        """Calculate days since last commit."""
+        if not self.last_commit_date:
+            return None
+        return (timezone.now() - self.last_commit_date).days
+    
+    def get_commit_summary(self):
+        """Get human-readable commit summary."""
+        if not self.last_commit_date:
+            return "No commits tracked"
+        
+        days_ago = self.days_since_last_commit
+
+        if days_ago == 0:
+            last_commit = 'today'
+        elif days_ago == 1:
+            last_commit = 'yesterday'
+        elif days_ago < 7:
+            last_commit = f'{days_ago} days ago'
+        elif days_ago < 30:
+            weeks = days_ago // 7
+            last_commit = f'{weeks} week{"s" if weeks > 1 else ""} ago'
+        else:
+            months = days_ago // 30
+            last_commit = f"{months} month{'s' if months > 1 else ''} ago"
+        
+        return f"{self.total_commits} commits, last {last_commit}"
 
 
 class GitHubLanguage(models.Model):
@@ -987,6 +1049,68 @@ class SystemModule(models.Model):
             })
         
         return recommendations
+    
+    # ================= Commit stats from GitHubRepository Data =================
+
+    def get_commit_stats(self):
+        """Get aggregated commit stats from related GitHub repositories."""
+        repos = self.github_repositories.all()
+
+        if not repos.exists():
+            return {
+                'total_commits': 0,
+                'last_commit_date': None,
+                'commits_last_30_days': 0,
+                'commits_last_year': 0,
+                'repository_count': 0,
+                'active_repo_count': 0,
+                'most_active_repo': None,
+                'commit_frequency_rating': 1
+            }
+        
+        # Aggregate commit data
+        total_commits = repos.aggregate(Sum('total_commits'))['total_commits__sum'] or 0
+        commits_30_days = repos.aggregate(Sum('commits_last_30_days'))['commits_last_30_days__sum'] or 0
+        commits_year = repos.aggregate(Sum('commits_last_year'))['commits_last_year__sum'] or 0
+
+        # Find most recent commit across all repos
+        most_recent_repo = repos.filter(last_commit_date__isnull=False).order_by('-last_commit_date').first()
+        last_commit_date = most_recent_repo.last_commit_date if most_recent_repo else None
+
+        # Find most active repo
+        most_active_repo = repos.order_by('-commits_last_30_days').first()
+
+        # Count active repositories
+        active_repo_count = repos.filter(commits_last_30_days__gt=0).count()
+
+        # Calculate avg commits per month across all repos
+        avg_commits = repos.aggregate(Avg('avg_commits_per_month'))['avg_commits_per_month__avg'] or 0.0
+
+        # Calculate overall activity rating
+        if commits_30_days >= 50:
+            frequency_rating = 5
+        elif commits_30_days >= 25:
+            frequency_rating = 4
+        elif commits_30_days >= 10:
+            frequency_rating = 3
+        elif commits_30_days >= 1:
+            frequency_rating = 2
+        else:
+            frequency_rating = 1
+        
+        return {
+            'total_commits': total_commits,
+            'last_commit_date': last_commit_date,
+            'commits_last_30_days': commits_30_days,
+            'commits_last_year': commits_year,
+            'repository_count': repos.count(),
+            'active_repo_count': active_repo_count,
+            'avg_commits_per_month': round(avg_commits, 1),
+            'most_active_repo': most_active_repo,
+            'commit_frequency_rating': frequency_rating
+        }
+    
+    def get_development_timeline
 
     # ================= TEMPLATE PROPERTIES =================
     @property
