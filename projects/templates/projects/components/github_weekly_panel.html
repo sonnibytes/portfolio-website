@@ -45,15 +45,32 @@
                     <h4>Weekly Commit Activity</h4>
                     <div class="chart-controls">
                         <button class="chart-toggle active" data-chart="weekly">Weekly</button>
+                        {% if chart_data.monthly_labels %}
                         <button class="chart-toggle" data-chart="monthly">Monthly</button>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="chart-wrapper">
+                    <!-- Fixed JSON data handling -->
                     <canvas id="weeklyCommitsChart-{{ repo_name|slugify }}" 
-                            class="commit-chart" 
-                            data-chart-data="{{ chart_data|escape }}">
+                            class="commit-chart">
                     </canvas>
+                    
+                    <!-- Store chart data safely in a script tag -->
+                    <script type="application/json" id="chartData-{{ repo_name|slugify }}">
+                        {
+                            "labels": {{ chart_data.labels|safe }},
+                            "weekly": {{ chart_data.weekly|safe }},
+                            "monthly_labels": {{ chart_data.monthly_labels|safe }},
+                            "monthly": {{ chart_data.monthly|safe }}
+                        }
+                    </script>
                 </div>
+            </div>
+            {% else %}
+            <div class="no-chart-data">
+                <p>📊 Chart data not available</p>
+                <p>Debug: Labels={{ chart_data.labels|length }}, Weekly={{ chart_data.weekly|length }}</p>
             </div>
             {% endif %}
 
@@ -64,12 +81,12 @@
                     {% for week in weekly_data|slice:":6" %}
                     <div class="activity-item {% if week.is_current_week %}current-week{% endif %}">
                         <div class="week-info">
-                            <div class="week-label">{{ week.get_week_label }}</div>
+                            <div class="week-label">{{ week|get_week_label }}</div>
                             <div class="week-date">{{ week.week_start_date|date:"M d" }} - {{ week.week_end_date|date:"M d" }}</div>
                         </div>
                         <div class="commit-info">
-                            <div class="commit-count {{ week.commit_count|yesno:'active,inactive,inactive' }}">
-                                {{ week.commit_count|format_commit_count }}
+                            <div class="commit-count {{ week.commit_count|commits_activity_class }}">
+                                {{ week.commit_count|format_commit_count_enhanced }}
                             </div>
                             {% if week.commit_count > 0 %}
                             <div class="commit-bar">
@@ -275,6 +292,14 @@
     height: 100%;
 }
 
+.no-chart-data {
+    text-align: center;
+    padding: 40px;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 8px;
+    color: #94a3b8;
+}
+
 .weekly-activity-list,
 .monthly-summary {
     margin-bottom: 20px;
@@ -347,8 +372,16 @@
     font-size: 0.9rem;
 }
 
-.commit-count.active {
+.commit-count.very-active {
     color: #10b981;
+}
+
+.commit-count.active {
+    color: #3b82f6;
+}
+
+.commit-count.moderate {
+    color: #f59e0b;
 }
 
 .commit-count.inactive {

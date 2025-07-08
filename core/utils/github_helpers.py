@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from typing import Dict, List, Optional
 import re
-
+import json
 
 class GitHubDataProcessor:
     """Utility class for processing GitHub data."""
@@ -131,9 +131,14 @@ class GitHubDataProcessor:
     
     @staticmethod
     def prepare_weekly_chart_data(weekly_data, monthly_data=None):
-        """Prepare data for Chart.js weekly/monthly visualization."""
+        """Prepare data for Chart.js weekly/monthly visualization with proper JSON serialization."""
         if not weekly_data:
-            return {'labels': [], 'weekly': [], 'monthly_labels': [], 'monthly': []}
+            return {
+                'labels': json.dumps([]),
+                'weekly': json.dumps([]),
+                'monthly_labels': json.dumps([]),
+                'monthly': json.dumps([])
+            }
         
         # Weekly chart data (last 12 weeks)
         weekly_labels = []
@@ -165,11 +170,12 @@ class GitHubDataProcessor:
                     monthly_labels.append(f"{month.month_name[:3]} {month.year}")
                     monthly_commits.append(getattr(month, 'total_commits', 0))
         
+        # Return JSON-serialized data ready for template use
         return {
-            'labels': list(reversed(weekly_labels)),  # Oldest to newest for chart
-            'weekly': list(reversed(weekly_commits)),
-            'monthly_labels': list(reversed(monthly_labels)),
-            'monthly': list(reversed(monthly_commits))
+            'labels': json.dumps(list(reversed(weekly_labels))),  # Oldest to newest for chart
+            'weekly': json.dumps(list(reversed(weekly_commits))),
+            'monthly_labels': json.dumps(list(reversed(monthly_labels))),
+            'monthly': json.dumps(list(reversed(monthly_commits)))
         }
 
     @staticmethod

@@ -1,0 +1,94 @@
+<!-- Create this as projects/templates/projects/chartjs_test.html -->
+{% extends "base.html" %}
+
+{% block title %}Chart.js Test{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Chart.js Test</h1>
+    
+    <div style="background: rgba(30, 41, 59, 0.8); padding: 20px; border-radius: 12px; margin: 20px 0;">
+        <h2>Chart.js Status Check</h2>
+        <p id="chartjs-status">Checking Chart.js...</p>
+        <p id="version-info"></p>
+    </div>
+    
+    <div style="background: rgba(30, 41, 59, 0.8); padding: 20px; border-radius: 12px; margin: 20px 0;">
+        <h2>Simple Test Chart</h2>
+        <div style="height: 300px; position: relative;">
+            <canvas id="test-chart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusEl = document.getElementById('chartjs-status');
+    const versionEl = document.getElementById('version-info');
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart !== 'undefined') {
+        statusEl.innerHTML = '✅ Chart.js loaded successfully!';
+        statusEl.style.color = '#10b981';
+        
+        versionEl.innerHTML = `Version: ${Chart.version || 'Unknown'}`;
+        versionEl.style.color = '#94a3b8';
+        
+        // Create a simple test chart
+        createTestChart();
+    } else {
+        statusEl.innerHTML = '❌ Chart.js failed to load';
+        statusEl.style.color = '#ef4444';
+    }
+});
+
+function createTestChart() {
+    const ctx = document.getElementById('test-chart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+            datasets: [{
+                label: 'Test Commits',
+                data: [5, 12, 8, 15, 10, 20],
+                borderColor: '#7c3aed',
+                backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#7c3aed',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(148, 163, 184, 0.2)' },
+                    ticks: { color: '#94a3b8' }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(148, 163, 184, 0.2)' },
+                    ticks: { 
+                        color: '#94a3b8',
+                        stepSize: 5
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('✅ Test chart created successfully');
+}
+</script>
+{% endblock %}

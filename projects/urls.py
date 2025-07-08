@@ -1,5 +1,6 @@
 from django.urls import path, include
 from . import views
+from django.views.generic import TemplateView
 
 app_name = 'projects'
 
@@ -33,6 +34,7 @@ urlpatterns = [
     path('github/', views.GitHubIntegrationView.as_view(), name='github_integration'),
     path('github/sync/', views.GitHubSyncView.as_view(), name='github_sync'),
     path('github/test/', views.GitHubIntegrationTestView.as_view(), name='github_test'),
+    path('chartjs-test/', TemplateView.as_view(template_name='projects/chartjs_test.html'), name='chartjs_test'),
     # path('github/repository/<str:repo_name>/', views.GitHubRepositoryDetailView.as_view(), name='github_repo_detail'),
 
 
