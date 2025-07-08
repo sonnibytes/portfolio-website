@@ -317,9 +317,57 @@ class Command(BaseCommand):
             # Get existing system-linked repos to update
             existing_repos = GitHubRepository.objects.with_detailed_tracking()
             
+            synced_count = 0
+            weekly_sync_count = 0
+            
             for repo in existing_repos:
-                # Update basic repo data and sync weekly commits
-                self.sync_single_repository_full(github_service, username, repo, force_update)
+                try:
+                    self.stdout.write(f'  → Syncing system repo: {repo.name}...')
+                    
+                    # Get fresh data from GitHub API for this repo
+                    repo_data = github_service.get_repository_details(username, repo.name)
+                    
+                    # Update basic repository data
+                    repo.description = repo_data.get('description', '')
+                    repo.stars_count = repo_data['stargazers_count']
+                    repo.forks_count = repo_data['forks_count']
+                    repo.watchers_count = repo_data['watchers_count']
+                    repo.size = repo_data['size']
+                    repo.language = repo_data.get('language', '')
+                    repo.is_private = repo_data['private']
+                    repo.is_archived = repo_data['archived']
+                    repo.github_updated_at = repo_data['updated_at']
+                    repo.save()
+                    
+                    synced_count += 1
+                    self.stdout.write('    ✓ Updated basic repo data')
+                    
+                    # Sync commits and weekly data
+                    commit_success = self.sync_repository_commits(
+                        github_service, username, repo.name, repo
+                    )
+                    
+                    if commit_success:
+                        # Sync weekly data
+                        weekly_success = self.sync_repository_weekly_data(
+                            github_service, username, repo.name, repo
+                        )
+                        if weekly_success:
+                            weekly_sync_count += 1
+                    
+                except Exception as e:
+                    self.stdout.write(
+                        self.style.WARNING(f'    ! Failed to sync {repo.name}: {e}')
+                    )
+            
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'System repos sync completed:\n'
+                    f'  ✓ {synced_count} repositories updated\n'
+                    f'  ✓ {weekly_sync_count} with weekly data synced'
+                )
+            )
+            return
         else:
             # Original full sync logic with enhancements
             self.stdout.write(f'Syncing GitHub data for user: {username}')
