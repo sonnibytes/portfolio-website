@@ -8,7 +8,7 @@ import re
 import calendar
 from bs4 import BeautifulSoup
 from datetime import date, timedelta, datetime
-from django.db.models import Avg, Count, Sum
+from django.db.models import Avg, Count, Sum, Q
 from django.utils import timezone
 
 
@@ -182,6 +182,20 @@ class GitHubCommitWeek(models.Model):
             'months_included': sorted(months_in_quarter),
             'avg_commits_per_week': round(total_commits / weeks_in_quarter.count(), 1) if weeks_in_quarter else 0
         }
+
+
+# Enhanced GitHubRepository model methods
+class GitHubRepositoryManager(models.Manager):
+    def with_detailed_tracking(self):
+        """Get repositories that have detailed weekly commit tracking."""
+        return self.filter(related_system__isnull=False, is_archived=False, is_fork=False)
+    
+    def needs_weekly_sync(self, hours_threshold=24)
+        """Get repos that week weekly commit data sync."""
+        cutoff = timezone.now() - timedelta(hours=hours_threshold)
+        return self.with_detailed_tracking().filter(
+            Q(commit_weeks_last_synced__isnull=True) | Q(commit_weeks_last_synced__lt=cutoff)
+        )
 
 
 class GitHubRepository(models.Model):
