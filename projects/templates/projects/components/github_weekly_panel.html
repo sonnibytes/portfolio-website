@@ -1,0 +1,465 @@
+<!-- projects/templates/projects/components/github_weekly_panel.html -->
+<div class="dashboard-panel github-weekly-panel {{ panel_style }}-panel" data-panel-type="github-weekly">
+    <div class="panel-header">
+        <div class="panel-title">
+            <i class="fab fa-github"></i>
+            <span>{{ title }}</span>
+        </div>
+        <div class="panel-controls">
+            <button class="panel-toggle" title="Toggle view">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+            <div class="trend-indicator {{ metrics.trend_color }}">
+                <i class="{{ metrics.trend_icon }}"></i>
+                <span class="trend-text">{{ metrics.trend|title }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-content">
+        {% if metrics.total_weeks_tracked > 0 %}
+            <!-- Quick Metrics Row -->
+            <div class="metrics-row">
+                <div class="metric-item">
+                    <div class="metric-value">{{ metrics.recent_commits }}</div>
+                    <div class="metric-label">Last 4 Weeks</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">{{ metrics.total_weeks_tracked }}</div>
+                    <div class="metric-label">Weeks Tracked</div>
+                </div>
+                {% if metrics.most_active_week %}
+                <div class="metric-item">
+                    <div class="metric-value">{{ metrics.most_active_week.commit_count }}</div>
+                    <div class="metric-label">Peak Week</div>
+                    <div class="metric-note">{{ metrics.most_active_week.get_week_label }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Weekly Activity Chart -->
+            {% if chart_data.labels %}
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h4>Weekly Commit Activity</h4>
+                    <div class="chart-controls">
+                        <button class="chart-toggle active" data-chart="weekly">Weekly</button>
+                        <button class="chart-toggle" data-chart="monthly">Monthly</button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="weeklyCommitsChart-{{ repo_name|slugify }}" 
+                            class="commit-chart" 
+                            data-chart-data="{{ chart_data|escape }}">
+                    </canvas>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Weekly Activity List -->
+            <div class="weekly-activity-list">
+                <h4>Recent Activity</h4>
+                <div class="activity-items">
+                    {% for week in weekly_data|slice:":6" %}
+                    <div class="activity-item {% if week.is_current_week %}current-week{% endif %}">
+                        <div class="week-info">
+                            <div class="week-label">{{ week.get_week_label }}</div>
+                            <div class="week-date">{{ week.week_start_date|date:"M d" }} - {{ week.week_end_date|date:"M d" }}</div>
+                        </div>
+                        <div class="commit-info">
+                            <div class="commit-count {{ week.commit_count|yesno:'active,inactive,inactive' }}">
+                                {{ week.commit_count|format_commit_count }}
+                            </div>
+                            {% if week.commit_count > 0 %}
+                            <div class="commit-bar">
+                                {% with max_commits=20 %}
+                                <div class="bar-fill" style="width: {% widthratio week.commit_count max_commits 100 %}%"></div>
+                                {% endwith %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Monthly Summary (if available) -->
+            {% if monthly_data %}
+            <div class="monthly-summary">
+                <h4>Monthly Summary</h4>
+                <div class="monthly-items">
+                    {% for month in monthly_data|slice:":3" %}
+                    <div class="monthly-item">
+                        <div class="month-label">{{ month.month_name }} {{ month.year }}</div>
+                        <div class="month-stats">
+                            <span class="total-commits">{{ month.total_commits }} commits</span>
+                            <span class="avg-weekly">{{ month.avg_commits_per_week }}/week avg</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- No Data State -->
+            <div class="no-data-state">
+                <div class="no-data-icon">
+                    <i class="fab fa-github"></i>
+                </div>
+                <div class="no-data-message">
+                    <h4>No Weekly Data Available</h4>
+                    <p>Link repositories to systems and run the weekly sync to see detailed commit analytics.</p>
+                    {% if user.is_staff %}
+                    <div class="sync-suggestion">
+                        <code>python manage.py sync_github_data --weekly-only</code>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Enhanced GitHub Weekly Panel Styles -->
+<style>
+.github-weekly-panel {
+    background: linear-gradient(135deg, rgba(36, 41, 46, 0.95), rgba(13, 17, 23, 0.95));
+    border: 1px solid rgba(48, 54, 61, 0.8);
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+}
+
+.github-weekly-panel .panel-header {
+    background: linear-gradient(90deg, rgba(33, 38, 45, 0.9), rgba(22, 27, 34, 0.9));
+    border-bottom: 1px solid rgba(48, 54, 61, 0.6);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.github-weekly-panel .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    color: #f0f6fc;
+    font-size: 1.1rem;
+}
+
+.github-weekly-panel .panel-title i {
+    color: #7c3aed;
+    font-size: 1.2rem;
+}
+
+.github-weekly-panel .panel-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.trend-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.trend-indicator.success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.trend-indicator.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.trend-indicator.info {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.metric-item {
+    text-align: center;
+    padding: 16px;
+    background: rgba(30, 41, 59, 0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+.metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #7c3aed;
+    margin-bottom: 4px;
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.metric-note {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.chart-container {
+    margin-bottom: 24px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.chart-header h4 {
+    color: #f0f6fc;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.chart-toggle {
+    padding: 6px 12px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(51, 65, 85, 0.4);
+    color: #94a3b8;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chart-toggle.active,
+.chart-toggle:hover {
+    background: rgba(124, 58, 237, 0.2);
+    border-color: rgba(124, 58, 237, 0.4);
+    color: #7c3aed;
+}
+
+.chart-wrapper {
+    height: 200px;
+    position: relative;
+}
+
+.commit-chart {
+    width: 100%;
+    height: 100%;
+}
+
+.weekly-activity-list,
+.monthly-summary {
+    margin-bottom: 20px;
+}
+
+.weekly-activity-list h4,
+.monthly-summary h4 {
+    color: #f0f6fc;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.activity-items,
+.monthly-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(51, 65, 85, 0.2);
+    transition: all 0.2s ease;
+}
+
+.activity-item.current-week {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.3);
+}
+
+.activity-item:hover {
+    background: rgba(30, 41, 59, 0.5);
+    border-color: rgba(51, 65, 85, 0.4);
+}
+
+.week-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.week-label {
+    font-weight: 600;
+    color: #f0f6fc;
+    font-size: 0.9rem;
+}
+
+.week-date {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.commit-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.commit-count {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.commit-count.active {
+    color: #10b981;
+}
+
+.commit-count.inactive {
+    color: #64748b;
+}
+
+.commit-bar {
+    width: 60px;
+    height: 4px;
+    background: rgba(51, 65, 85, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #10b981);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.monthly-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 6px;
+    border: 1px solid rgba(51, 65, 85, 0.2);
+}
+
+.month-label {
+    font-weight: 600;
+    color: #f0f6fc;
+    font-size: 0.9rem;
+}
+
+.month-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.total-commits {
+    font-weight: 600;
+    color: #7c3aed;
+    font-size: 0.9rem;
+}
+
+.avg-weekly {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.no-data-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+}
+
+.no-data-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.no-data-message h4 {
+    color: #f0f6fc;
+    margin-bottom: 8px;
+}
+
+.no-data-message p {
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.sync-suggestion {
+    background: rgba(30, 41, 59, 0.6);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(51, 65, 85, 0.4);
+    display: inline-block;
+}
+
+.sync-suggestion code {
+    color: #7c3aed;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .activity-item,
+    .monthly-item {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .commit-info,
+    .month-stats {
+        align-items: center;
+    }
+}
+</style>
