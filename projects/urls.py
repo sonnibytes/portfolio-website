@@ -10,7 +10,7 @@ urlpatterns = [
     path("systems/", views.EnhancedLearningSystemListView.as_view(), name="system_list"),
     path("systems/<slug:slug>/", views.LearningSystemControlInterfaceView.as_view(), name="system_detail"),
     # Testing new interface w GitHub Data
-    path("test/<slug:slug>/", views.SystemControlInterfaceView.as_view(), name="system_detail_test"),
+    # path("test/<slug:slug>/", views.SystemControlInterfaceView.as_view(), name="system_detail_test"),
 
     # path("systems/dashboard/", views.SystemsDashboardView.as_view(), name="systems_dashboard"),
 
@@ -36,7 +36,7 @@ urlpatterns = [
 
 
     # Dashboard views to dial in for later enhancement
-    path("dashboard/", views.EnhancedSystemsDashboardView.as_view(), name="systems_dashboard"),
-    path("learning/", views.LearningJourneyDashboardView.as_view(), name="learning_dashboard"),
-    path("landing/", views.PortfolioLandingDashboardView.as_view(), name="landing_dashboard"),
+    # path("dashboard/", views.EnhancedSystemsDashboardView.as_view(), name="systems_dashboard"),
+    # path("learning/", views.LearningJourneyDashboardView.as_view(), name="learning_dashboard"),
+    # path("landing/", views.PortfolioLandingDashboardView.as_view(), name="landing_dashboard"),
 ]

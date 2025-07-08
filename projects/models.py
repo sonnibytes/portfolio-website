@@ -191,7 +191,7 @@ class GitHubRepositoryManager(models.Manager):
         """Get repositories that have detailed weekly commit tracking."""
         return self.filter(related_system__isnull=False, is_archived=False, is_fork=False)
     
-    def needs_weekly_sync(self, hours_threshold=24)
+    def needs_weekly_sync(self, hours_threshold=24):
         """Get repos that week weekly commit data sync."""
         cutoff = timezone.now() - timedelta(hours=hours_threshold)
         return self.with_detailed_tracking().filter(
@@ -258,7 +258,6 @@ class GitHubRepository(models.Model):
 
     # Flag to enable detailed tracking (auto-enabled for system-linked repos)
     enable_detailed_tracking = models.BooleanField(default=False, help_text="Enable weekly commit tracking (auto-enabled for system-linked repos)")
-
 
     # ===== CUSTOM MANAGER =====
     objects = GitHubRepositoryManager()
@@ -450,9 +449,6 @@ class GitHubRepository(models.Model):
             'monthly_trend': self.get_monthly_trend(),
             'total_commits_tracked': total_commits
         }
-
-
-
 
 
 class GitHubLanguage(models.Model):
