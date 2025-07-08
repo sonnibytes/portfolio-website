@@ -3134,3 +3134,27 @@ class GitHubSyncView(LoginRequiredMixin, View):
         
         # If last sync was more than 1hr ago, suggest update
         return last_repo.last_synced < timezone.now() - timedelta(hours=1)
+
+
+# ============ GITHUB TEST VIEW ====================
+class GitHubIntegrationTestView(TemplateView):
+    """Test view for GitHub integration functionality."""
+
+    template_name = "projects/github_test.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get some test repositories
+        all_repos = GitHubRepository.objects.all()[:10]
+        repos_with_tracking = GitHubRepository.objects.with_detailed_tracking()
+
+        context.update(
+            {
+                "test_repos": all_repos[:3],  # First 3 for basic testing
+                "all_repos": all_repos,
+                "repos_with_tracking": repos_with_tracking,
+            }
+        )
+
+        return context

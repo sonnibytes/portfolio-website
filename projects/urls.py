@@ -32,6 +32,7 @@ urlpatterns = [
     # GitHub Integration URLs
     path('github/', views.GitHubIntegrationView.as_view(), name='github_integration'),
     path('github/sync/', views.GitHubSyncView.as_view(), name='github_sync'),
+    path('github/test/', views.GitHubIntegrationTestView.as_view(), name='github_test'),
     # path('github/repository/<str:repo_name>/', views.GitHubRepositoryDetailView.as_view(), name='github_repo_detail'),
 
 
