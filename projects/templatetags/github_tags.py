@@ -86,7 +86,7 @@ def days_since_commit(commit_date):
         return f"{months} month{'s' if months > 1 else ''} ago"
 
 
-@register.inclusion_tag
+@register.inclusion_tag('projects/components/commit_summary.html')
 def commit_summary_card(system_module):
     """Render commit summary card for a system module."""
     commit_stats = system_module.get_commit_stats()

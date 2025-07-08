@@ -3,6 +3,7 @@
 {% load aura_filters %}
 {% load aura_components %}
 {% load system_tags %}
+{% load github_tags %}
 
 
 {% block systems_title %}{{ system.title }} - Learning Control{% endblock %}
@@ -1167,6 +1168,61 @@
                             </div>
                         </div>
 
+                        <!-- Add this section to display commit data for a system -->
+                        <div class="system-development-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-code-branch"></i> Development Activity
+                            </h3>
+                            
+                            <!-- Commit Summary Card -->
+                            {% commit_summary_card object %}
+                            
+                            <!-- Development Timeline -->
+                            {% with timeline=object.get_development_timeline %}
+                                {% if timeline %}
+                                <div class="development-timeline">
+                                    <h4>Recent Development Activity</h4>
+                                    <div class="timeline-container">
+                                        {% for event in timeline %}
+                                        <div class="timeline-event">
+                                            <div class="event-date">
+                                                {{ event.date|days_since_commit }}
+                                            </div>
+                                            <div class="event-content">
+                                                <div class="event-repo">{{ event.repo_name }}</div>
+                                                <div class="event-message">{{ event.message }}</div>
+                                                <div class="event-stats">{{ event.commits }} total commits</div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                            
+                            <!-- Related Repositories -->
+                            {% if object.github_repositories.exists %}
+                            <div class="related-repositories">
+                                <h4>Connected Repositories</h4>
+                                <div class="repo-list">
+                                    {% for repo in object.github_repositories.all %}
+                                    <div class="repo-item">
+                                        <div class="repo-info">
+                                            <a href="{{ repo.html_url }}" target="_blank" class="repo-link">
+                                                <i class="fab fa-github"></i> {{ repo.name }}
+                                            </a>
+                                            <span class="repo-summary">{{ repo.get_commit_summary }}</span>
+                                        </div>
+                                        <div class="repo-activity">
+                                            {{ repo.commit_frequency_rating|commit_frequency_badge }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% comment %} End added commit section  {% endcomment %}
                     </div>
 
                     {% elif active_panel == 'skills' %}
