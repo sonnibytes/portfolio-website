@@ -21,7 +21,7 @@ from collections import Counter, defaultdict
 from io import StringIO
 import json
 
-from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage, SystemSkillGain, LearningMilestone, GitHubRepository, GitHubLanguage
+from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage, SystemSkillGain, LearningMilestone, GitHubRepository, GitHubLanguage, GitHubCommitWeek, GitHubRepositoryManager
 from core.services.github_api import GitHubAPIService, GitHubAPIError
 from blog.models import Post, SystemLogEntry
 from core.models import Skill, PortfolioAnalytics
@@ -2848,22 +2848,125 @@ class GitHubIntegrationView(TemplateView):
             # Recent Activity (from API if needed)
             recent_activity = self.get_recent_activity(github_service)
 
-            context.update({
-                'github_stats': github_stats,
-                'recent_repos': local_repos.filter(is_archived=False)[:6],
-                'top_languages': self.get_top_languages(local_repos),
-                'recent_activity': recent_activity,
-                'integration_status': 'active',
-                'sync_info': sync_info,  # Add sync info
-            })
+            # NEW: Enhanced repositories with weekly tracking
+            repos_with_tracking = GitHubRepository.objects.with_detailed_tracking()
+            
+            # NEW: Weekly tracking statistics
+            weekly_stats = self.get_weekly_tracking_stats(repos_with_tracking)
+            
+            # NEW: Recent weekly activity across all tracked repos
+            recent_weekly_activity = self.get_recent_weekly_activity(repos_with_tracking)
+            
+            # NEW: Monthly trends
+            monthly_trends = self.get_monthly_trends(repos_with_tracking)
+
+            context.update(
+                {
+                    "github_stats": github_stats,
+                    "recent_repos": local_repos.filter(is_archived=False)[:6],
+                    "top_languages": self.get_top_languages(local_repos),
+                    "recent_activity": recent_activity,
+                    "integration_status": "active",
+                    "sync_info": sync_info,  # Add sync info
+                    # NEW: Weekly tracking context
+                    "repos_with_tracking": repos_with_tracking,
+                    "weekly_stats": weekly_stats,
+                    "recent_weekly_activity": recent_weekly_activity,
+                    "monthly_trends": monthly_trends,
+                    "show_weekly_panels": repos_with_tracking.count() > 0,
+                    "sync_url": True,  # Flag for JavaScript initialization
+                }
+            )
         except GitHubAPIError as e:
             context.update({
                 'integration_status': 'error',
                 'error_message': str(e),
                 'github_stats': {},
                 'sync_info': self.get_sync_info([]),  # Empty sync info for error state
+                'show_weekly_panels': False,
+                'repos_with_tracking': GitHubRepository.objects.none(),
             })
         return context
+    
+    def get_weekly_tracking_stats(self, repos_with_tracking):
+        """Get overview stats for weekly tracking."""
+        
+        if not repos_with_tracking.exists():
+            return None
+        
+        # Get recent weekly data (last 4 weeks)
+        recent_weeks = GitHubCommitWeek.objects.filter(
+            repository__in=repos_with_tracking
+        ).order_by('-year', '-week')[:4]
+        
+        if not recent_weeks:
+            return None
+        
+        # Calculate stats
+        total_recent_commits = sum(week.commit_count for week in recent_weeks)
+        avg_commits_per_week = total_recent_commits / 4 if recent_weeks else 0
+        
+        # Most active repo this month
+        current_month = timezone.now().month
+        current_year = timezone.now().year
+        
+        most_active_repo = GitHubCommitWeek.objects.filter(
+            repository__in=repos_with_tracking,
+            year=current_year,
+            month=current_month
+        ).values('repository__name').annotate(
+            total_commits=Sum('commit_count')
+        ).order_by('-total_commits').first()
+        
+        return {
+            'total_tracked_repos': repos_with_tracking.count(),
+            'total_recent_commits': total_recent_commits,
+            'avg_commits_per_week': round(avg_commits_per_week, 1),
+            'most_active_repo': most_active_repo,
+            'tracking_active': True
+        }
+
+    def get_recent_weekly_activity(self, repos_with_tracking):
+        """Get recent weekly activity for timeline."""
+        
+        recent_weeks = GitHubCommitWeek.objects.filter(
+            repository__in=repos_with_tracking
+        ).select_related('repository').order_by('-year', '-week')[:12]
+        
+        # Group by week for aggregated view
+        weekly_totals = defaultdict(lambda: {'commit_count': 0, 'repos_active': 0, 'week_info': None})
+        
+        for week in recent_weeks:
+            week_key = f"{week.year}-W{week.week:02d}"
+            weekly_totals[week_key]['commit_count'] += week.commit_count
+            if week.commit_count > 0:
+                weekly_totals[week_key]['repos_active'] += 1
+            if not weekly_totals[week_key]['week_info']:
+                weekly_totals[week_key]['week_info'] = week
+        
+        return [
+            {
+                'week_label': data['week_info'].get_week_label(),
+                'week_start': data['week_info'].week_start_date,
+                'total_commits': data['commit_count'],
+                'repos_active': data['repos_active'],
+                'week_info': data['week_info']
+            }
+            for data in weekly_totals.values()
+            if data['week_info']
+        ][:8]  # Last 8 weeks
+
+    def get_monthly_trends(self, repos_with_tracking):
+        """Get monthly trends for visualization."""
+        
+        monthly_data = GitHubCommitWeek.objects.filter(
+            repository__in=repos_with_tracking
+        ).values('year', 'month', 'month_name').annotate(
+            total_commits=Sum('commit_count'),
+            repos_count=Count('repository', distinct=True)
+        ).order_by('-year', '-month')[:6]
+        
+        return list(monthly_data)
     
     def get_github_stats(self, repositories):
         """Calculate GitHub statistics from local data."""

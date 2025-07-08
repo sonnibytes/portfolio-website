@@ -8,6 +8,329 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'projects/css/github-integration.css' %}">
+<style>
+    .github-analytics-section {
+        margin: 50px 0;
+        padding: 40px 0;
+        border-top: 2px solid rgba(124, 58, 237, 0.3);
+        position: relative;
+    }
+    
+    .github-analytics-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #7c3aed, transparent);
+    }
+    
+    .section-header {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+    
+    .section-header h2 {
+        font-size: 2.5rem;
+        color: #f0f6fc;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+    }
+    
+    .section-header p {
+        color: #94a3b8;
+        font-size: 1.2rem;
+        margin-bottom: 32px;
+    }
+    
+    .quick-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .stat-item {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(51, 65, 85, 0.4);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-item:hover {
+        border-color: rgba(124, 58, 237, 0.6);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.2);
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #7c3aed;
+        margin-bottom: 6px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .main-analytics-panel {
+        margin: 50px 0;
+    }
+    
+    .top-repos-section {
+        margin: 50px 0;
+    }
+    
+    .top-repos-section h3 {
+        color: #f0f6fc;
+        margin-bottom: 30px;
+        font-size: 1.8rem;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    
+    .repo-analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+    
+    .enhanced-repos-section {
+        margin: 50px 0;
+    }
+    
+    .enhanced-repos-section h3 {
+        color: #f0f6fc;
+        margin-bottom: 30px;
+        font-size: 1.8rem;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    
+    .enhanced-repo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 25px;
+    }
+    
+    .dev-timeline-section {
+        margin: 50px 0;
+    }
+    
+    .dev-timeline-section h3 {
+        color: #f0f6fc;
+        margin-bottom: 30px;
+        font-size: 1.8rem;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    
+    .timeline-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    
+    .timeline-item {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(51, 65, 85, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .timeline-item.active {
+        border-color: rgba(16, 185, 129, 0.5);
+        background: rgba(16, 185, 129, 0.05);
+    }
+    
+    .timeline-item.quiet {
+        opacity: 0.7;
+    }
+    
+    .timeline-item:hover {
+        transform: translateY(-2px);
+        border-color: rgba(124, 58, 237, 0.5);
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.15);
+    }
+    
+    .timeline-marker {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(124, 58, 237, 0.2);
+        border: 2px solid rgba(124, 58, 237, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #7c3aed;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .timeline-item.active .timeline-marker {
+        background: rgba(16, 185, 129, 0.2);
+        border-color: rgba(16, 185, 129, 0.5);
+        color: #10b981;
+    }
+    
+    .timeline-content {
+        flex: 1;
+    }
+    
+    .timeline-week {
+        font-weight: 600;
+        color: #f0f6fc;
+        margin-bottom: 4px;
+        font-size: 1rem;
+    }
+    
+    .timeline-date {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin-bottom: 6px;
+    }
+    
+    .timeline-stats {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .commits {
+        color: #10b981;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .repos {
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+    
+    .no-activity {
+        color: #64748b;
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+    
+    .analytics-setup-section {
+        margin: 50px 0;
+        padding: 60px 40px;
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(16, 185, 129, 0.05));
+        border: 1px solid rgba(124, 58, 237, 0.2);
+        border-radius: 20px;
+        text-align: center;
+    }
+    
+    .setup-icon {
+        font-size: 4rem;
+        color: #7c3aed;
+        margin-bottom: 24px;
+        opacity: 0.8;
+    }
+    
+    .setup-content h3 {
+        color: #f0f6fc;
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
+    
+    .setup-content p {
+        color: #94a3b8;
+        font-size: 1.1rem;
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+    
+    .setup-features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        max-width: 900px;
+        margin: 0 auto 32px auto;
+    }
+    
+    .feature-item {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(51, 65, 85, 0.4);
+        border-radius: 10px;
+        padding: 20px;
+        color: #f0f6fc;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .feature-item:hover {
+        border-color: rgba(124, 58, 237, 0.6);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.2);
+    }
+    
+    .setup-note {
+        color: #7c3aed !important;
+        font-weight: 500;
+        font-size: 1rem !important;
+    }
+    
+    @media (max-width: 768px) {
+        .quick-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .repo-analytics-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .enhanced-repo-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .timeline-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .setup-features {
+            grid-template-columns: 1fr;
+        }
+        
+        .section-header h2 {
+            font-size: 2rem;
+        }
+        
+        .timeline-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 12px;
+        }
+    }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -257,6 +580,122 @@
         </div>
     </div>
     {% endif %}
+    <!-- Enhanced GitHub Analytics Section -->
+    {% if show_weekly_panels %}
+    <div class="github-analytics-section">
+        <div class="section-header">
+            <h2>📊 Development Analytics</h2>
+            <p>Weekly commit tracking and development insights</p>
+            
+            <!-- Quick Stats Overview -->
+            {% if weekly_stats %}
+            <div class="quick-stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">{{ weekly_stats.total_tracked_repos }}</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ weekly_stats.total_recent_commits }}</div>
+                    <div class="stat-label">Recent Commits</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ weekly_stats.avg_commits_per_week }}</div>
+                    <div class="stat-label">Avg/Week</div>
+                </div>
+                {% if weekly_stats.most_active_repo %}
+                <div class="stat-item">
+                    <div class="stat-value">{{ weekly_stats.most_active_repo.repository__name|truncatechars:12 }}</div>
+                    <div class="stat-label">Most Active</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Overall Development Activity Panel -->
+        <div class="main-analytics-panel">
+            {% github_weekly_panel panel_style="dashboard" %}
+        </div>
+        
+        <!-- Top Active Projects -->
+        {% if repos_with_tracking.count > 1 %}
+        <div class="top-repos-section">
+            <h3>🏆 Most Active Projects</h3>
+            <div class="repo-analytics-grid">
+                {% for repo in repos_with_tracking|slice:":3" %}
+                    {% github_weekly_panel repo=repo weeks_back=12 panel_style="component" %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Enhanced Repository Cards -->
+        <div class="enhanced-repos-section">
+            <h3>📈 Repository Development Insights</h3>
+            <div class="enhanced-repo-grid">
+                {% for repo in repos_with_tracking %}
+                    {% github_repo_card repo=repo show_weekly_summary=True %}
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Development Timeline -->
+        {% if recent_weekly_activity %}
+        <div class="dev-timeline-section">
+            <h3>🕒 Recent Development Timeline</h3>
+            <div class="timeline-grid">
+                {% for week in recent_weekly_activity|slice:":8" %}
+                <div class="timeline-item {% if week.total_commits > 0 %}active{% else %}quiet{% endif %}">
+                    <div class="timeline-marker">
+                        {% if week.total_commits > 15 %}
+                            <i class="fas fa-fire" title="High Activity"></i>
+                        {% elif week.total_commits > 5 %}
+                            <i class="fas fa-code" title="Active"></i>
+                        {% elif week.total_commits > 0 %}
+                            <i class="fas fa-circle" title="Some Activity"></i>
+                        {% else %}
+                            <i class="far fa-circle" title="Quiet"></i>
+                        {% endif %}
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">{{ week.week_label }}</div>
+                        <div class="timeline-date">{{ week.week_start|date:"M d" }}</div>
+                        <div class="timeline-stats">
+                            {% if week.total_commits > 0 %}
+                                <span class="commits">{{ week.total_commits }} commits</span>
+                                <span class="repos">{{ week.repos_active }} repos</span>
+                            {% else %}
+                                <span class="no-activity">Quiet week</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <!-- Setup prompt for visitors when no weekly tracking -->
+    <div class="analytics-setup-section">
+        <div class="setup-content">
+            <div class="setup-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>🚀 Advanced Development Analytics</h3>
+            <p>This portfolio features detailed commit analytics and development insights for active projects.</p>
+            <div class="setup-features">
+                <div class="feature-item">📊 Weekly commit tracking</div>
+                <div class="feature-item">📈 Development trend analysis</div>
+                <div class="feature-item">🎯 Project activity insights</div>
+                <div class="feature-item">⚡ Real-time GitHub integration</div>
+            </div>
+            <p class="setup-note">Analytics automatically enabled for linked repositories.</p>
+        </div>
+    </div>
+    {% endif %}
+    </div>
 
     <!-- Sync Controls (for authenticated users) -->
     {% if user.is_staff %}
@@ -286,14 +725,157 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Your existing GitHub integration JavaScript -->
 <script src="{% static 'projects/js/github-integration.js' %}"></script>
+
+<!-- GitHub Charts JavaScript -->
+<script src="{% static 'projects/js/github-charts.js' %}"></script>
+
 <script>
-    // Initialize GitHub integration features
-    document.addEventListener('DOMContentLoaded', function() {
-        const githubIntegration = new GitHubIntegration({
+// Enhanced GitHub Integration with Charts
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing Enhanced GitHub Integration...');
+    
+    // Initialize existing GitHub integration if it exists
+    {% if sync_url %}
+    if (typeof GitHubIntegrationManager !== 'undefined') {
+        window.githubIntegration = new GitHubIntegrationManager({
             syncUrl: '{% url "projects:github_sync" %}',
             csrfToken: '{{ csrf_token }}'
         });
+        console.log('✅ GitHub Integration Manager initialized');
+    }
+    {% endif %}
+    
+    // Initialize GitHub Charts Manager
+    if (typeof Chart !== 'undefined' && typeof GitHubChartsManager !== 'undefined') {
+        try {
+            // Check if we have any chart elements on the page
+            const chartElements = document.querySelectorAll('.commit-chart');
+            
+            if (chartElements.length > 0) {
+                window.githubCharts = new GitHubChartsManager();
+                console.log(`✅ GitHub Charts initialized - ${chartElements.length} charts found`);
+                
+                // Debug chart creation after a brief delay
+                setTimeout(() => {
+                    const chartsCreated = window.githubCharts ? window.githubCharts.getChartCount() : 0;
+                    console.log(`📊 Charts created: ${chartsCreated}/${chartElements.length}`);
+                    
+                    if (chartsCreated === 0 && chartElements.length > 0) {
+                        console.warn('⚠️ Charts found but not created - debugging...');
+                        if (window.githubCharts && typeof window.githubCharts.debugChartData === 'function') {
+                            window.githubCharts.debugChartData();
+                        }
+                    }
+                }, 1500);
+            } else {
+                console.log('ℹ️ No chart elements found on page');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error initializing GitHub charts:', error);
+        }
+    } else {
+        if (typeof Chart === 'undefined') {
+            console.warn('⚠️ Chart.js not loaded - charts will not work');
+        }
+        if (typeof GitHubChartsManager === 'undefined') {
+            console.warn('⚠️ GitHubChartsManager not loaded');
+        }
+    }
+    
+    // Enhanced sync functionality with chart refresh
+    const syncButtons = document.querySelectorAll('#sync-github-data, #force-sync');
+    syncButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Add chart refresh after sync completes
+            setTimeout(() => {
+                if (window.githubCharts && typeof window.githubCharts.refreshAllCharts === 'function') {
+                    window.githubCharts.refreshAllCharts();
+                    console.log('🔄 Charts refreshed after sync');
+                }
+            }, 2000);
+        });
     });
+    
+    // Smooth scroll to analytics section
+    const analyticsSection = document.querySelector('.github-analytics-section');
+    if (analyticsSection) {
+        // Add a subtle entrance animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+        
+        analyticsSection.style.opacity = '0';
+        analyticsSection.style.transform = 'translateY(20px)';
+        analyticsSection.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        
+        observer.observe(analyticsSection);
+    }
+    
+    // Add interactive hover effects to stat items
+    const statItems = document.querySelectorAll('.stat-item');
+    statItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.background = 'rgba(124, 58, 237, 0.15)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.background = 'rgba(30, 41, 59, 0.6)';
+        });
+    });
+    
+    // Add click-to-scroll functionality for timeline items
+    const timelineItems = document.querySelectorAll('.timeline-item');
+    timelineItems.forEach((item, index) => {
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', function() {
+            // Add a subtle pulse effect
+            this.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                this.style.transform = 'translateY(-2px)';
+            }, 150);
+        });
+    });
+    
+    console.log('🚀 Enhanced GitHub Integration fully loaded');
+});
+
+// Global function to manually refresh charts (useful for debugging)
+window.refreshGitHubCharts = function() {
+    if (window.githubCharts && typeof window.githubCharts.refreshAllCharts === 'function') {
+        window.githubCharts.refreshAllCharts();
+        console.log('🔄 Charts manually refreshed');
+    } else {
+        console.warn('⚠️ No GitHub charts manager found');
+    }
+};
+
+// Global function to debug chart status
+window.debugGitHubCharts = function() {
+    console.log('=== GitHub Charts Debug Info ===');
+    console.log('Chart.js available:', typeof Chart !== 'undefined');
+    console.log('GitHubChartsManager available:', typeof GitHubChartsManager !== 'undefined');
+    console.log('Charts manager instance:', !!window.githubCharts);
+    
+    const chartElements = document.querySelectorAll('.commit-chart');
+    console.log('Chart elements found:', chartElements.length);
+    
+    const jsonScripts = document.querySelectorAll('script[type="application/json"]');
+    console.log('JSON data scripts:', jsonScripts.length);
+    
+    if (window.githubCharts) {
+        console.log('Charts created:', window.githubCharts.getChartCount());
+        if (typeof window.githubCharts.debugChartData === 'function') {
+            window.githubCharts.debugChartData();
+        }
+    }
+};
 </script>
 {% endblock %}
