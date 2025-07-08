@@ -215,7 +215,7 @@ class GitHubAPIService:
         latest_commit = recent_commits[0]
         last_commit_date = latest_commit['commit']['author']['date']
         last_commit_sha = latest_commit['sha']
-        last_commit_message = last_commit['commit']['message']
+        last_commit_message = latest_commit['commit']['message']
 
         # Calculate time-based commit counts
         now = datetime.now()
