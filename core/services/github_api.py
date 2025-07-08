@@ -6,6 +6,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from datetime import datetime, timedelta
 import time
+import json
 
 import hashlib
 from urllib.parse import urlencode
@@ -310,3 +311,248 @@ class GitHubAPIService:
         except GitHubAPIError as e:
             logger.error(f"Failed to sync commits for {repo_name}: {e}")
             return {}
+        
+    # ======== DETAILED COMMIT ACTIVITY ===========
+    def get_repository_commit_activity(self, username: str, repo_name: str,
+                                       etag: Optional[str] = None) -> Dict:
+        """
+        Get weekly commit activity using GitHub's commit activity endpoint.
+        This endpoint provides commit counts for each week of the last year.
+        
+        Returns data in format:
+        [
+            {
+                "week": 1302998400,  # Unix timestamp of week start
+                "total": 11,         # Total commits
+                "days": [0,3,2,2,1,0,3]  # Commits per day (Sun-Sat)
+            }
+        ]
+        """
+        # Use conditional request with ETag if provided
+        headers = self._get_headers()
+        if etag:
+            headers['If-None-Match'] = etag
+        
+        endpoint = f"repos/{username}/{repo_name}/stats/commit_activity"
+        
+        try:
+            url = f"{self.base_url}/{endpoint.lstrip('/')}"
+            response = requests.get(url, headers=headers, timeout=self.timeout)
+            
+            # Handle 304 Not Modified - no changes since last request
+            if response.status_code == 304:
+                logger.info(f"No changes in commit activity for {repo_name} (304)")
+                return {
+                    'status': 'not_modified',
+                    'etag': etag,
+                    'data': []
+                }
+            
+            # Handle 202 Accepted - GitHub is computing stats
+            if response.status_code == 202:
+                logger.info(f"GitHub computing stats for {repo_name} (202)")
+                return {
+                    'status': 'computing',
+                    'retry_after': 5,  # Seconds to wait before retry
+                    'data': []
+                }
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            # Get ETag for future conditional requests
+            new_etag = response.headers.get('ETag', '')
+            
+            return {
+                'status': 'success',
+                'etag': new_etag,
+                'data': data
+            }
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"GitHub commit activity request failed: {e}")
+            raise GitHubAPIError(f"Commit activity request failed: {e}")
+
+    def get_repository_weekly_commits(self, username: str, repo_name: str,
+                                      weeks_back: int = 52) -> List[Dict]:
+        """
+        Get weekly commit data in a more digestible format.
+        Converts GitHub's commit activity data to weekly summaries.
+        """
+        activity_data = self.get_repository_commit_activity(username, repo_name)
+        
+        if activity_data['status'] != 'success':
+            return []
+        
+        weekly_commits = []
+        for week_data in activity_data['data']:
+            # Convert Unix timestamp to datetime
+            week_start = datetime.fromtimestamp(week_data['week'])
+            year, week_num, _ = week_start.isocalendar()
+            
+            weekly_commits.append({
+                'year': year,
+                'week': week_num,
+                'week_start': week_start.date(),
+                'week_end': (week_start + timedelta(days=6)).date(),
+                'commit_count': week_data['total'],
+                'daily_commits': week_data['days'],  # [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+            })
+        
+        # Sort by most recent first and limit to requested weeks
+        weekly_commits.sort(key=lambda x: (x['year'], x['week']), reverse=True)
+        return weekly_commits[:weeks_back]
+
+    def sync_repository_weekly_commits(self, username: str, repo_name: str,
+                                       etag: Optional[str] = None) -> Dict:
+        """
+        Sync weekly commit data for a specific repository.
+        Returns weekly data along with metadata for database storage.
+        """
+        try:
+            logger.info(f"Syncing weekly commits for {username}/{repo_name}")
+            
+            # Get commit activity data
+            activity_response = self.get_repository_commit_activity(username, repo_name, etag)
+            
+            # Handle different response statuses
+            if activity_response['status'] == 'not_modified':
+                return {
+                    'status': 'not_modified',
+                    'etag': activity_response['etag'],
+                    'weeks_updated': 0
+                }
+            
+            if activity_response['status'] == 'computing':
+                return {
+                    'status': 'computing',
+                    'retry_after': activity_response['retry_after']
+                }
+            
+            # Process successful response
+            weekly_data = []
+            for week_data in activity_response['data']:
+                week_start = datetime.fromtimestamp(week_data['week'])
+                year, week_num, _ = week_start.isocalendar()
+                
+                weekly_data.append({
+                    'year': year,
+                    'week': week_num,
+                    'week_start_date': week_start.date(),
+                    'week_end_date': (week_start + timedelta(days=6)).date(),
+                    'commit_count': week_data['total'],
+                    'daily_breakdown': week_data['days'],
+                    # Calculate additional metrics
+                    'lines_added': 0,     # Would need separate API calls for this
+                    'lines_deleted': 0,
+                    'files_changed': 0,
+                })
+            
+            return {
+                'status': 'success',
+                'etag': activity_response['etag'],
+                'weekly_data': weekly_data,
+                'weeks_updated': len(weekly_data),
+                'last_sync': timezone.now().isoformat()
+            }
+            
+        except GitHubAPIError as e:
+            logger.error(f"Failed to sync weekly commits for {repo_name}: {e}")
+            return {
+                'status': 'error',
+                'error': str(e)
+            }
+
+    def get_enhanced_repository_stats(self, username: str, repo_name: str) -> Dict:
+        """
+        Get comprehensive repository statistics including weekly data.
+        Combines multiple GitHub API endpoints efficiently.
+        """
+        try:
+            stats = {}
+            
+            # Basic repository info
+            repo_info = self.get_repository_details(username, repo_name)
+            stats['repository'] = repo_info
+            
+            # Commit activity (weekly)
+            weekly_commits = self.get_repository_weekly_commits(username, repo_name)
+            stats['weekly_commits'] = weekly_commits
+            
+            # Calculate derived metrics
+            if weekly_commits:
+                total_commits_year = sum(week['commit_count'] for week in weekly_commits)
+                active_weeks = len([w for w in weekly_commits if w['commit_count'] > 0])
+                avg_commits_per_week = total_commits_year / len(weekly_commits) if weekly_commits else 0
+                
+                # Recent activity (last 4 weeks)
+                recent_commits = sum(week['commit_count'] for week in weekly_commits[:4])
+                
+                stats['derived_metrics'] = {
+                    'total_commits_last_year': total_commits_year,
+                    'active_weeks_last_year': active_weeks,
+                    'avg_commits_per_week': round(avg_commits_per_week, 2),
+                    'commits_last_4_weeks': recent_commits,
+                    'activity_consistency': round(active_weeks / len(weekly_commits) * 100, 1) if weekly_commits else 0
+                }
+            
+            return stats
+            
+        except GitHubAPIError as e:
+            logger.error(f"Failed to get enhanced stats for {repo_name}: {e}")
+            return {}
+
+    def bulk_sync_weekly_commits(self, username: str, repo_names: List[str],
+                                 delay_between_requests: float = 0.5) -> Dict:
+        """
+        Efficiently sync weekly commit data for multiple repositories.
+        Includes delays to respect rate limits and handles GitHub's async stats computation.
+        """
+        results = {
+            'successful': [],
+            'failed': [],
+            'computing': [],
+            'not_modified': []
+        }
+        
+        for i, repo_name in enumerate(repo_names):
+            try:
+                logger.info(f"Syncing weekly commits {i + 1}/{len(repo_names)}: {repo_name}")
+                
+                # Get any existing ETag from database
+                # This would be passed in from the calling code
+                etag = None  # Would come from GitHubRepository.stats_etag
+                
+                result = self.sync_repository_weekly_commits(username, repo_name, etag)
+                
+                if result['status'] == 'success':
+                    results['successful'].append({
+                        'repo': repo_name,
+                        'weeks_updated': result['weeks_updated'],
+                        'etag': result['etag']
+                    })
+                elif result['status'] == 'computing':
+                    results['computing'].append(repo_name)
+                elif result['status'] == 'not_modified':
+                    results['not_modified'].append(repo_name)
+                else:
+                    results['failed'].append({
+                        'repo': repo_name,
+                        'error': result.get('error', 'Unknown error')
+                    })
+                
+                # Delay between requests to be nice to GitHub's API
+                if i < len(repo_names) - 1:  # Don't delay after the last request
+                    time.sleep(delay_between_requests)
+                    
+            except Exception as e:
+                logger.error(f"Unexpected error syncing {repo_name}: {e}")
+                results['failed'].append({
+                    'repo': repo_name,
+                    'error': str(e)
+                })
+        
+        logger.info(f"Bulk sync completed: {len(results['successful'])} successful, "
+                    f"{len(results['failed'])} failed, {len(results['computing'])} computing")
+        
+        return results
