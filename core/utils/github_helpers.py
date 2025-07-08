@@ -78,14 +78,38 @@ class GitHubDataProcessor:
         return filtered_topics[:5]  # Limit to 5 most relevant topics
 
     @staticmethod
-    def is_active_repository(updated_at: str, threshold_days: int = 90) -> bool:
+    def is_active_repository(updated_at, threshold_days: int = 90) -> bool:
         """Check if repository is considered active."""
-        try:
-            update_date = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
-            threshold = timezone.now() - timedelta(days=threshold_days)
-            return update_date >= threshold
-        except (ValueError, AttributeError):
+        if not updated_at:
             return False
+        
+        # Handle different input types
+        if isinstance(updated_at, str):
+            # Parse string datetime
+            try:
+                if updated_at.endswith('Z'):
+                    # GitHub API format
+                    updated_date = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+                else:
+                    # Try parsing as ISO format
+                    updated_date = datetime.fromisoformat(updated_at)
+            except ValueError:
+                # If parsing fails, assume it's not active
+                return False
+        else:
+            # Assume it's already a datetime object (from Django)
+            updated_date = updated_at
+        
+        # Make sure we're comparing timezone-aware datetimes
+        if updated_date.tzinfo is None:
+            # If naive datetime, assume UTC
+            updated_date = updated_date.replace(tzinfo=timezone.utc)
+        
+        # Calculate days since update
+        now = timezone.now()
+        days_since_update = (now - updated_date).days
+        
+        return days_since_update <= threshold_days
 
     @staticmethod
     def generate_repo_summary(repo_data: Dict) -> str:

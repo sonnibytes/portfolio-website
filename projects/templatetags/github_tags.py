@@ -24,8 +24,15 @@ def format_repo_size(size_kb):
 
 @register.filter
 def is_active_repo(updated_at):
-    """Check if repo is active."""
-    return GitHubDataProcessor.is_active_repository(updated_at)
+    """Check if repo is active - safe version."""
+    try:
+        return GitHubDataProcessor.is_active_repository(updated_at)
+    except (ValueError, TypeError, AttributeError) as e:
+        # If any error occurs, assume not active and log for debugging
+        print(
+            f"Error checking repo activity: {e}, updated_at: {updated_at}, type: {type(updated_at)}"
+        )
+        return False
 
 
 @register.filter
