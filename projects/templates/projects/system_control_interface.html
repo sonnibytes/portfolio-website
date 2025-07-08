@@ -5,34 +5,24 @@
 {% load system_tags %}
 {% load github_tags %}
 
-
-{% block systems_title %}{{ system.title }} - Learning Control{% endblock %}
+{% block systems_title %}{{ system.name }} - Learning Control Interface{% endblock %}
 
 {% block systems_css %}
-<link rel="stylesheet" href="{% static 'projects/css/github-integration.css' %}">
-<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/systems-dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/system-interface.css' %}">
+<link rel="stylesheet" href="{% static 'projects/css/github-integration.css' %}">
 
 <style>
-    /* IDENTICAL STYLING TO ORIGINAL system_control_interface.html */
-    /* Learning-specific additions at the bottom */
-    
+    /* MAINTAIN ORIGINAL HUD LAYOUT */
     .system-control-main {
         width: 100%;
         max-width: none;
         padding: 0;
     }
 
-    /* ===== PANEL CONTENT STYLES ===== */
-    .panel-content-container {
-        position: relative;
-    }
-
-    /* ===== LEARNING-SPECIFIC ADDITIONS ===== */
-    
-    /* Learning Stage Badges */
+    /* Learning-specific additions */
     .learning-stage-badge {
         display: inline-block;
         padding: 0.4rem 1rem;
@@ -80,378 +70,65 @@
         border-color: #FFD54F; 
     }
 
-    /* Portfolio Ready Indicators */
     .portfolio-ready-indicator {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.3rem 0.8rem;
+        border-radius: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         display: inline-block;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 500;
     }
     
     .portfolio-ready-yes {
-        color: var(--color-success);
+        color: #4CAF50;
     }
     
     .portfolio-ready-no {
-        color: var(--color-warning);
+        color: #FF9800;
     }
 
-    /* Skill Pills */
-    .skill-pill {
-        display: inline-block;
-        padding: 0.3rem 0.8rem;
-        margin: 0.2rem;
-        background: rgba(100, 181, 246, 0.15);
-        color: var(--color-info);
-        border-radius: 15px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        border: 1px solid rgba(100, 181, 246, 0.3);
-    }
-
-    /* Learning Metrics Cards */
-    .learning-metric-card {
-        background: rgba(255, 255, 255, 0.05);
+    /* GitHub Integration Enhancements */
+    .github-commit-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.5rem;
+        background: rgba(0, 212, 170, 0.2);
+        color: var(--color-teal);
+        border: 1px solid var(--color-teal);
         border-radius: 12px;
-        padding: 1.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
-        text-align: center;
+        font-size: 0.75rem;
+        font-weight: 600;
     }
 
-    .learning-metric-card:hover {
-        background: rgba(255, 255, 255, 0.08);
-        transform: translateY(-2px);
-    }
-
-    .metric-value-large {
-        font-size: 2.1rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-
-    .metric-label-large {
-        color: var(--color-text-secondary);
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Timeline Events */
-    .timeline-event {
+    .development-status-mini {
         display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 8px;
-        border-left: 4px solid var(--color-teal);
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+        justify-content: space-evenly;
     }
 
-    .timeline-icon {
-        width: 40px;
-        height: 40px;
+    .status-dot {
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        flex-shrink: 0;
     }
 
-    .timeline-icon.milestone-breakthrough { 
-        background: rgba(186, 104, 200, 0.2); 
-        color: var(--color-purple); 
-    }
-    
-    .timeline-icon.milestone-completion { 
-        background: rgba(76, 175, 80, 0.2); 
-        color: var(--color-success); 
-    }
-    
-    .timeline-icon.milestone-first_time { 
-        background: rgba(255, 213, 79, 0.2); 
-        color: var(--color-yellow); 
-    }
+    .status-dot.active { background: var(--color-teal); }
+    .status-dot.recent { background: var(--color-orange); }
+    .status-dot.inactive { background: var(--color-text-tertiary); }
 
-    .timeline-content {
-        flex: 1;
-    }
-
-    .timeline-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-    }
-
-    .timeline-title {
-        margin: 0;
-        color: var(--color-text-primary);
-        font-size: 1.1rem;
-        font-weight: 600;
-    }
-
-    .timeline-date {
-        font-size: 0.8rem;
-        color: var(--color-text-secondary);
-    }
-
-    .timeline-description {
-        margin: 0;
-        color: var(--color-text-secondary);
-        line-height: 1.5;
-    }
-
-    /* Skill Progression Items */
-    .skill-progression-item {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .skill-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-    }
-
-    .skill-name {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: var(--color-info);
-    }
-
-    .mastery-level {
-        padding: 0.3rem 0.8rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-
-    .mastery-beginner { 
-        background: rgba(255, 183, 77, 0.2); 
-        color: #FFB74D; 
-    }
-    
-    .mastery-intermediate { 
-        background: rgba(100, 181, 246, 0.2); 
-        color: #64B5F6; 
-    }
-    
-    .mastery-advanced { 
-        background: rgba(76, 175, 80, 0.2); 
-        color: #4CAF50; 
-    }
-    
-    .mastery-expert { 
-        background: rgba(255, 213, 79, 0.2); 
-        color: #FFD54F; 
-    }
-
-    /* Portfolio Assessment */
-    .assessment-criteria {
-        display: grid;
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .criteria-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .criteria-score {
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-
-    .score-excellent { color: var(--color-success); }
-    .score-good { color: var(--color-info); }
-    .score-fair { color: var(--color-warning); }
-    .score-poor { color: var(--color-danger); }
-
-    .recommendation-card {
-        background: rgba(255, 245, 157, 0.1);
-        border: 1px solid rgba(255, 245, 157, 0.3);
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .recommendation-priority-high {
-        border-left: 4px solid var(--color-danger);
-    }
-
-    .recommendation-priority-medium {
-        border-left: 4px solid var(--color-warning);
-    }
-
-    /* DataLogs Panel Specific */
-    .datalog-item {
-        padding: var(--spacing-lg, 1.5rem);
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: var(--border-radius-md, 8px);
-        margin-bottom: var(--spacing-lg, 1.5rem);
-        border-left: 3px solid var(--color-lavender);
-    }
-
-    .datalog-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-md, 1rem);
-    }
-
-    .datalog-header h4 {
-        margin: 0;
-        color: var(--color-text);
-    }
-
-    .datalog-header h4 a {
-        color: var(--color-lavender);
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-
-    .datalog-header h4 a:hover {
-        color: var(--color-text);
-    }
-
-    .datalog-date {
-        color: var(--color-text-secondary);
-        font-size: 0.8rem;
-        font-family: var(--font-code);
-    }
-
-    .datalog-excerpt {
-        color: var(--color-text-secondary);
-        line-height: 1.5;
-        margin-bottom: var(--spacing-md, 1rem);
-    }
-
-    .datalog-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--spacing-md, 1rem);
-    }
-
-    .connection-type {
-        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-        background: rgba(179, 157, 219, 0.2);
-        color: var(--color-lavender);
-        border-radius: var(--border-radius-sm, 4px);
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        font-weight: 600;
-    }
-
-    .datalog-tags {
-        display: flex;
-        gap: var(--spacing-xs, 0.5rem);
-    }
-
-    .tag {
-        padding: var(--spacing-xs, 0.5rem);
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--color-text-secondary);
-        border-radius: var(--border-radius-sm, 4px);
-        font-size: 0.7rem;
-    }
-
-    .datalog-actions {
-        display: flex;
-        gap: var(--spacing-sm, 0.75rem);
-    }
-
-    .datalog-action {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xs, 0.5rem);
-        padding: var(--spacing-sm, 0.75rem);
-        background: rgba(179, 157, 219, 0.1);
-        color: var(--color-lavender);
-        text-decoration: none;
-        border-radius: var(--border-radius-sm, 4px);
-        font-size: 0.8rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .datalog-action:hover {
-        background: rgba(179, 157, 219, 0.2);
-        color: var(--color-lavender);
-        transform: translateY(-1px);
-    }
-
-    /* Technology Panel Specific */
-    .tech-analysis-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: var(--spacing-lg, 1.5rem);
-    }
-
-    .tech-analysis-card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 138, 128, 0.2);
-        border-radius: var(--border-radius-lg, 12px);
-        padding: var(--spacing-lg, 1.5rem);
-        transition: all 0.3s ease;
-    }
-
-    .tech-analysis-card:hover {
-        background: rgba(255, 138, 128, 0.1);
-        border-color: rgba(255, 138, 128, 0.4);
-        transform: translateY(-2px);
-    }
-
-    .tech-card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--spacing-md, 1rem);
-    }
-
-    .tech-name {
-        font-weight: 600;
-        color: var(--color-coral);
-        font-size: 1.1rem;
-    }
-
-    .tech-usage-count {
-        font-family: var(--font-code);
-        font-size: 0.8rem;
-        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-        background: rgba(255, 138, 128, 0.2);
-        border-radius: var(--border-radius-full, 50px);
-        color: var(--color-coral);
-    }
-
-    /* Responsive Design */
+    /* Responsive Design - KEEP ORIGINAL */
     @media (max-width: 1200px) {
         .control-interface-layout {
             grid-template-columns: 250px 1fr;
         }
-
         .panel-content-grid.grid-2-col {
             grid-template-columns: 1fr;
-        }
-
-        .system-quick-stats {
-            grid-template-columns: repeat(2, 1fr);
         }
     }
 
@@ -460,413 +137,346 @@
             grid-template-columns: 1fr;
             grid-template-rows: auto 1fr;
         }
-
         .control-sidebar {
             border-right: none;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             overflow-x: auto;
         }
-
         .control-panels-nav {
-            padding: var(--spacing-md, 1rem);
+            padding: 1rem;
         }
-
         .control-panel-nav {
             flex-direction: row;
             overflow-x: auto;
-            gap: var(--spacing-sm, 0.75rem);
+            gap: 0.75rem;
         }
-
         .control-panel-link {
             flex-shrink: 0;
             min-width: 200px;
-        }
-
-        .system-quick-stats {
-            grid-template-columns: repeat(2, 1fr);
         }
     }
 
     @media (max-width: 767px) {
         .control-content-area {
-            padding: var(--spacing-lg, 1.5rem);
+            padding: 1.5rem;
         }
-
         .panel-title {
             font-size: 1.5rem;
             flex-direction: column;
             text-align: center;
-            gap: var(--spacing-sm, 0.75rem);
+            gap: 0.75rem;
         }
-
-        .tech-analysis-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .system-quick-stats {
-            grid-template-columns: 1fr;
-        }
-
     }
 </style>
 {% endblock %}
 
 {% block systems_content %}
-{% comment %}<div class="system-control-main">
-
-    <!-- System Header Section - IDENTICAL STRUCTURE -->
-    <section class="system-header-section">
-         ----- REWORKING FOR SIDE PANEL ------  {% endcomment %}
+<!-- Control Interface Layout - MAINTAIN ORIGINAL STRUCTURE -->
+<div class="system-control-main">
+    <div class="control-interface-layout status-{{ system.status }}">
         
-
-                {% comment %} <!-- System Hero -->
-                <div class="system-hero">
-                    <div class="system-basic-info">
-                        <h1>{{ system.title }}</h1>
-                        <p class="system-subtitle">{{ system.brief_description|default:"Learning-focused system analysis and development progression tracking." }}</p>
-                        
-                        <!-- Learning Stage Badge -->
-                        
-                    </div>
-
-                    
-                </div> {% endcomment %}
-
-                {% comment %} <!-- Quick Learning Stats - ADAPTED FROM ORIGINAL -->
-                <div class="system-quick-stats">
-                    <div class="quick-stat">
-                        <div class="stat-value">{{ system.skills_developed.count }}</div>
-                        <div class="stat-label">Skills Gained</div>
-                    </div>
-                    <div class="quick-stat">
-                        <div class="stat-value">{{ system.completion_percent|floatformat:0 }}%</div>
-                        <div class="stat-label">Complete</div>
-                    </div>
-                    <div class="quick-stat">
-                        <div class="stat-value">{{ system.actual_dev_hours|default:"--" }}</div>
-                        <div class="stat-label">Hours Invested</div>
-                    </div>
-                    <div class="quick-stat">
-                        <div class="stat-value">{{ system.milestones.count }}</div>
-                        <div class="stat-label">Milestones</div>
-                    </div>
-                </div> 
-
-            </div>
-        </div>
-    </section>{% endcomment %}
-
-    <!-- Control Interface Layout - IDENTICAL STRUCTURE -->
-     <div class="system-control-main">
-    {% comment %} <div class="container" style="padding: var(--spacing-xl, 2rem) 0;"> {% endcomment %}
-        <div class="control-interface-layout status-{{ system.status }}">
-            
-            <!-- Control Sidebar - IDENTICAL STRUCTURE -->
-            <aside class="control-sidebar">
-
-                <!-- System Header -->
-                <div class="system-header-panel">
-                    <div class="system-status-indicator">
-                        <i class="fas fa-{{ system.system_type.icon|default:'cube' }}"></i>
-                        <span>{{ system.get_status_display }}</span>
-                    </div>
-                    
+        <!-- Control Sidebar - ORIGINAL STRUCTURE WITH GITHUB DATA -->
+        <aside class="control-sidebar">
+            <!-- System Header -->
+            <div class="system-header-panel">
+                <div class="system-status-indicator">
+                    <i class="fas fa-{{ system.system_type.icon|default:'cube' }}"></i>
+                    <span>{{ system.get_status_display }}</span>
+                </div>
                 
-                    <h1 class="system-title-header">{{ system.title }}</h1>
-                        {% if system.system_type %}
-                        <p class="system-subtitle-header">{{ system.system_type.name }} System</p>
-                        {% endif %}
-        
-                    <div style="margin-bottom: 1.5rem;">
-                        <span class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
-                            {{ system.get_learning_stage_display }}
-                        </span>
-                        <span class="portfolio-ready-indicator {% if system.portfolio_ready %}portfolio-ready-yes{% else %}portfolio-ready-no{% endif %}" style="margin-left: 1rem;">
-                            <i class="fas {% if system.portfolio_ready %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
-                            {% if system.portfolio_ready %}Portfolio Ready{% else %}In Progress{% endif %}
-                        </span>
-                    </div>
-        
-                    <!-- Quick Learning Stats - ADAPTED FROM ORIGINAL -->
-                    <div class="system-quick-stats">
-                        <div class="quick-stat-item">
-                            <div class="quick-stat-value">{{ system.skills_developed.count }}</div>
-                            <div class="quick-stat-label">Skills Gained</div>
-                        </div>
-                        <div class="quick-stat-item">
-                            <div class="quick-stat-value">{{ system.completion_percent|floatformat:0 }}%</div>
-                            <div class="quick-stat-label">Complete</div>
-                        </div>
-                        <div class="quick-stat-item">
-                            <div class="quick-stat-value">{{ system.actual_dev_hours|default:"--" }}</div>
-                            <div class="quick-stat-label">Hours Invested</div>
-                        </div>
-                        <div class="quick-stat-item">
-                            <div class="quick-stat-value">{{ system.milestones.count }}</div>
-                            <div class="quick-stat-label">Milestones</div>
-                        </div>
-                    </div>
+            
+                <h1 class="system-title-header">{{ system.title }}</h1>
+                    {% if system.system_type %}
+                    <p class="system-subtitle-header">{{ system.system_type.name }} System</p>
+                    {% endif %}
+    
+                <div style="margin-bottom: 1.5rem;">
+                    <span class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
+                        {{ system.get_learning_stage_display }}
+                    </span>
+                    {% comment %} <span class="portfolio-ready-indicator {% if system.portfolio_ready %}portfolio-ready-yes{% else %}portfolio-ready-no{% endif %}" style="margin-left: 1rem;">
+                        <i class="fas {% if system.portfolio_ready %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+                        {% if system.portfolio_ready %}Portfolio Ready{% else %}In Progress{% endif %}
+                    </span> {% endcomment %}
                 </div>
 
-                <nav class="control-panels-nav">
-                    <h3 class="nav-section-title">Control Panel</h3>
-                        {% comment %} <p class="nav-description">Navigate through different aspects of this system's learning journey and development progression.</p> {% endcomment %}
-                   
-                    
-                    <div class="control-panel-nav">
-                        {% for panel in control_panels %}
-                        <a href="?panel={{ panel.id }}" 
-                           class="control-panel-link {% if panel.id == active_panel %}active{% endif %}">
-                            <div class="panel-link-icon">
-                                <i class="fas fa-{{ panel.icon }}"></i>
-                            </div>
-                            <div class="panel-link-content">
-                                <div class="panel-link-name">{{ panel.name }}</div>
-                                <div class="panel-link-desc">{{ panel.description }}</div>
-                            </div>
-                            {% if panel.count is not None %}
-                            <div class="panel-link-count">{{ panel.count }}</div>
-                            {% endif %}
-                        </a>
-                        {% endfor %}
+                <!-- Quick Learning Stats - ADAPTED FROM ORIGINAL -->
+                <div class="system-quick-stats">
+                    <div class="quick-stat-item">
+                        <div class="quick-stat-value">{{ system.skills_developed.count }}</div>
+                        <div class="quick-stat-label">Skills Gained</div>
                     </div>
-                </nav>
-            </aside>
+                    <div class="quick-stat-item">
+                        <div class="quick-stat-value">{{ system.completion_percent|floatformat:0 }}%</div>
+                        <div class="quick-stat-label">Complete</div>
+                    </div>
+                    <div class="quick-stat-item">
+                        <div class="quick-stat-value">{{ system.actual_dev_hours|default:"--" }}</div>
+                        <div class="quick-stat-label">Hours Invested</div>
+                    </div>
+                    <div class="quick-stat-item">
+                        <div class="quick-stat-value">{{ system.milestones.count }}</div>
+                        <div class="quick-stat-label">Milestones</div>
+                    </div>
+                </div>
+            
 
-            <!-- Main Control Content - IDENTICAL STRUCTURE -->
-            <main class="control-content-area">
+                <!-- GITHUB INTEGRATION: Real Development Status -->
+                {% with commit_stats=system.get_commit_stats %}
+                {% if commit_stats.total_commits > 0 %}
+                <div class="development-status-mini">
+                    
+                    <span class="quick-stat-label"><i class="fab fa-github"></i> Recent Commit Activity</span>
+                    {% if commit_stats.last_commit_date %}
+                        <span class="github-commit-badge">
+                            
+                            {{ commit_stats.last_commit_date|days_since_commit }}
+                        </span>
+                    {% endif %}
+                    {% comment %} <div class="status-dot {% if commit_stats.commits_last_30_days > 0 %}active{% elif commit_stats.last_commit_date %}recent{% else %}inactive{% endif %}"></div>
+                    <span>{{ commit_stats.total_commits|format_commit_count }} commits</span> {% endcomment %}
+                    
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
 
-                <!-- Panel Header - IDENTICAL STRUCTURE -->
-                <header class="control-content-header">
+            <!-- Control Panel Navigation - ORIGINAL STRUCTURE -->
+            <nav class="control-panels-nav">
+                <h3 class="nav-section-title">Control Panel</h3>
+                    {% comment %} <p class="nav-description">Navigate through different aspects of this system's learning journey and development progression.</p> {% endcomment %}
+               
+                
+                <div class="control-panel-nav">
                     {% for panel in control_panels %}
-                    {% if panel.id == active_panel %}
-                    <h2 class="panel-title">
-                        <div class="panel-title-icon">
+                    <a href="?panel={{ panel.id }}" 
+                       class="control-panel-link {% if panel.id == active_panel %}active{% endif %}">
+                        <div class="panel-link-icon">
                             <i class="fas fa-{{ panel.icon }}"></i>
                         </div>
-                        {{ panel.name }}
-                    </h2>
-                    <p class="panel-description">{{ panel.description }}</p>
-                    {% endif %}
+                        <div class="panel-link-content">
+                            <div class="panel-link-name">{{ panel.name }}</div>
+                            <div class="panel-link-desc">{{ panel.description }}</div>
+                        </div>
+                        {% if panel.count is not None %}
+                        <div class="panel-link-count">{{ panel.count }}</div>
+                        {% endif %}
+                    </a>
                     {% endfor %}
-                </header>
+                </div>
+            </nav>
+        </aside>
 
-                <!-- Dynamic Panel Content - SYSTEM INFO + LEARNING DATA -->
-                <div class="panel-content-container">
+        <!-- Main Control Content - ORIGINAL STRUCTURE WITH GITHUB DATA -->
+        <main class="control-content-area">
+            <!-- Panel Header - IDENTICAL STRUCTURE -->
+            <header class="control-content-header">
+                {% for panel in control_panels %}
+                {% if panel.id == active_panel %}
+                <h2 class="panel-title">
+                    <div class="panel-title-icon">
+                        <i class="fas fa-{{ panel.icon }}"></i>
+                    </div>
+                    {{ panel.name }}
+                </h2>
+                <p class="panel-description">{{ panel.description }}</p>
+                {% endif %}
+                {% endfor %}
+            </header>
 
-                    {% if active_panel == 'overview' %}
-                    <!-- System Overview Panel - TECHNICAL SYSTEM INFO -->
-                    <div class="panel-content-grid grid-2-col">
-
-                        <!-- System Status & Metrics -->
-                        <div class="unified-dashboard-container teal">
-                            <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">System Status</h3>
+            <!-- Dynamic Panel Content -->
+            <div class="panel-content-container">
+                {% if active_panel == 'overview' %}
+                <!-- OVERVIEW PANEL: Real GitHub Integration -->
+                <div id="overview-panel" class="panel-content-grid grid-2-col">
+                    
+                    <!-- GITHUB DEVELOPMENT METRICS -->
+                    <div class="unified-dashboard-container teal">
+                        <div class="unified-container-header">
+                            <h3 style="margin-bottom: 1.5rem;">
+                                Real Development Metrics
+                                <span style="font-size: 0.7rem; color: var(--color-text-secondary); font-weight: normal; margin-left: 0.5rem;">Live GitHub Data</span>
+                            </h3>
+                        </div>
+                        
+                        {% with commit_stats=system.get_commit_stats %}
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-teal);">
+                                    {{ commit_stats.total_commits|format_commit_count }}
+                                </div>
+                                <div class="metric-label-large">Total Commits</div>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-teal);">
-                                        {{ panel_data.system_metrics.completion_percent|floatformat:0 }}%
-                                    </div>
-                                    <div class="metric-label-large">Complete</div>
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-orange);">
+                                    {{ commit_stats.commits_last_30_days }}
                                 </div>
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-teal);">
-                                        {{ panel_data.system_metrics.complexity }}
-                                    </div>
-                                    <div class="metric-label-large">Complexity</div>
-                                </div>
-                            </div>
-
-                            <div style="margin-bottom: 1.5rem;" class="system-progress-container">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                    <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Progress</span>
-                                    <span style="font-size: 0.8rem; color: var(--color-teal);">
-                                        {{ panel_data.system_metrics.completion_percent }}%
-                                    </span>
-                                </div>
-                                
-                                <div class="progress-bar" 
-                                     style="height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; --progress-value: {{ panel_data.system_metrics.completion_percent }}%;">
-                                    <div class="progress-fill" 
-                                         style="height: 100%; background: var(--color-teal); width: {{ panel_data.system_metrics.completion_percent }}%; border-radius: 4px; transition: width 1.5s ease;"
-                                         data-progress="{{ panel_data.system_metrics.completion_percent }}">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Status</div>
-                                    <div class="system-status-badge status-{{ panel_data.system_metrics.status }}" style="padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;">
-                                        {{ panel_data.system_metrics.status_display }}
-                                    </div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Priority</div>
-                                    <div class="priority-indicator" style="color: var(--color-warning); font-weight: 600;">
-                                        {{ panel_data.system_metrics.priority|default:"Normal" }}
-                                    </div>
-                                </div>
+                                <div class="metric-label-large">This Month</div>
                             </div>
                         </div>
 
-                        <!-- Technology Stack -->
-                        <div class="unified-dashboard-container coral">
-                            <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">Technology Stack</h3>
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Development Activity</span>
+                                <span style="font-size: 0.8rem; color: var(--color-teal); font-weight: 600;">
+                                    {{ commit_stats.commit_frequency_rating|commit_frequency_badge }}
+                                </span>
                             </div>
-                            
-                            <div class="learning-metric-card" style="margin-bottom: 1.5rem;">
-                                <div class="metric-value-large" style="color: var(--color-coral);">
-                                    {{ panel_data.technology_summary.total_count }}
-                                </div>
-                                <div class="metric-label-large">Technologies</div>
+                            {% if commit_stats.repository_count > 0 %}
+                            <div style="background: rgba(255, 255, 255, 0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="background: var(--color-teal); height: 100%; width: {{ commit_stats.active_repo_count|mul:100|div:commit_stats.repository_count }}%; transition: width 1s ease;"></div>
                             </div>
-                            
-                            <div style="margin-bottom: 1.5rem;">
-                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">Primary Technologies</div>
-                                <div class="tech-pills" style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
-                                    {% for tech in panel_data.technology_summary.technologies %}
-                                    <span class="skill-pill" style="background: rgba(255, 138, 128, 0.15); color: var(--color-coral); border-color: rgba(255, 138, 128, 0.3);">
-                                        {{ tech.name }}
-                                    </span>
-                                    {% empty %}
-                                    <span style="color: var(--color-text-secondary); font-style: italic;">No technologies documented</span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            
-                            {% if panel_data.technology_summary.primary_languages %}
-                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                                <div style="font-size: 0.9rem; font-weight: 600; color: var(--color-coral); margin-bottom: 0.5rem;">
-                                    Primary Languages
-                                </div>
-                                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
-                                    {% for lang in panel_data.technology_summary.primary_languages %}{{ lang.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                                </div>
-                            </div>
+                            <small style="color: var(--color-text-secondary); margin-top: 0.5rem; display: block;">
+                                {{ commit_stats.active_repo_count }}/{{ commit_stats.repository_count }} repositories active
+                            </small>
                             {% endif %}
                         </div>
 
-                        <!-- Development Statistics -->
-                        <div class="unified-dashboard-container mint">
-                            <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">Development Stats</h3>
+                        {% if commit_stats.last_commit_date %}
+                        <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Last Development Activity</div>
+                            <div style="color: var(--color-teal); font-weight: 600;">
+                                {{ commit_stats.last_commit_date|days_since_commit }}
                             </div>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-mint);">
-                                        {{ panel_data.development_stats.commit_count|default:"0" }}
-                                    </div>
-                                    <div class="metric-label-large">Commits</div>
-                                </div>
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-mint);">
-                                        {{ panel_data.development_stats.lines_of_code|default:"0" }}
-                                    </div>
-                                    <div class="metric-label-large">Lines of Code</div>
-                                </div>
-                            </div>
-                            
-                            <div style="margin-bottom: 1rem;">
-                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Time Investment</div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--color-mint);">Est: {{ panel_data.development_stats.estimated_hours|default:"--" }}h</span>
-                                    <span style="color: var(--color-mint);">Actual: {{ panel_data.development_stats.actual_hours|default:"--" }}h</span>
-                                </div>
-                            </div>
-                            
-                            {% if panel_data.development_stats.last_commit %}
-                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Last Commit</div>
-                                <div style="color: var(--color-mint); font-weight: 600;">
-                                    {{ panel_data.development_stats.last_commit|date:"M d, Y" }}
-                                </div>
+                            {% if commit_stats.most_active_repo %}
+                            <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-top: 0.25rem;">
+                                in {{ commit_stats.most_active_repo.name }}
                             </div>
                             {% endif %}
                         </div>
-
-                        <!-- Recent Activity Feed -->
-                        <div class="unified-dashboard-container purple">
-                            <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">Recent Activity</h3>
-                            </div>
-                            
-                            {% if panel_data.recent_activity %}
-                            <div class="activity-feed" style="max-height: 400px; overflow-y: auto;">
-                                {% for activity in panel_data.recent_activity %}
-                                <div class="activity-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.03); border-radius: 8px; margin-bottom: 0.75rem;">
-                                    <div class="activity-icon" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(179, 157, 219, 0.2);">
-                                        <i class="fas fa-{{ activity.icon }}" style="color: var(--color-purple); font-size: 0.9rem;"></i>
-                                    </div>
-                                    <div class="activity-content" style="flex: 1;">
-                                        <div style="font-size: 0.9rem; color: var(--color-text-primary); margin-bottom: 0.25rem;">{{ activity.description }}</div>
-                                        <div style="font-size: 0.7rem; color: var(--color-text-secondary);">{{ activity.date|date:"M d, Y" }}</div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">
-                                <i class="fas fa-history" style="font-size: 2rem; opacity: 0.3; margin-bottom: 1rem;"></i>
-                                <p>No recent activity recorded</p>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- System Health & Quick Links -->
-                        <div class="unified-dashboard-container yellow">
-                            <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">System Health & Links</h3>
-                            </div>
-                            
-                            <div style="margin-bottom: 1.5rem;">
-                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">System Health</div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fas fa-{% if panel_data.system_health.deployment_ready %}check-circle{% else %}clock{% endif %}" style="color: {% if panel_data.system_health.deployment_ready %}var(--color-success){% else %}var(--color-warning){% endif %};"></i>
-                                        <span style="font-size: 0.8rem;">Deployment</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fas fa-{% if panel_data.system_health.has_documentation %}file-text{% else %}file{% endif %}" style="color: {% if panel_data.system_health.has_documentation %}var(--color-success){% else %}var(--color-warning){% endif %};"></i>
-                                        <span style="font-size: 0.8rem;">Documentation</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fas fa-{% if panel_data.system_health.has_features %}list{% else %}list-ul{% endif %}" style="color: {% if panel_data.system_health.has_features %}var(--color-success){% else %}var(--color-warning){% endif %};"></i>
-                                        <span style="font-size: 0.8rem;">Features</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                {% if panel_data.quick_links.github_url %}
-                                <a href="{{ panel_data.quick_links.github_url }}" target="_blank" class="quick-link" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: var(--color-text-primary); text-decoration: none; transition: all 0.3s ease;">
-                                    <i class="fab fa-github" style="color: var(--color-yellow);"></i>
-                                    <span>View Source Code</span>
-                                </a>
-                                {% endif %}
-                                
-                                {% if panel_data.quick_links.live_url %}
-                                <a href="{{ panel_data.quick_links.live_url }}" target="_blank" class="quick-link" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: var(--color-text-primary); text-decoration: none; transition: all 0.3s ease;">
-                                    <i class="fas fa-external-link-alt" style="color: var(--color-yellow);"></i>
-                                    <span>Live Demo</span>
-                                </a>
-                                {% endif %}
-                                
-                                {% if panel_data.quick_links.documentation_url %}
-                                <a href="{{ panel_data.quick_links.documentation_url }}" target="_blank" class="quick-link" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: var(--color-text-primary); text-decoration: none; transition: all 0.3s ease;">
-                                    <i class="fas fa-book" style="color: var(--color-yellow);"></i>
-                                    <span>Documentation</span>
-                                </a>
-                                {% endif %}
+                        {% else %}
+                        <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="color: var(--color-text-secondary);">
+                                <i class="fas fa-info-circle"></i>
+                                No GitHub activity tracked yet
                             </div>
                         </div>
-
+                        {% endif %}
+                        {% endwith %}
                     </div>
 
-                    {% elif active_panel == 'details' %}
+                    <!-- LEARNING PROGRESS -->
+                    <div class="unified-dashboard-container purple">
+                        <div class="unified-container-header">
+                            <h3 style="margin-bottom: 1.5rem;">Learning Progress</h3>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-lavender);">
+                                    {{ system.skills_developed.count }}
+                                </div>
+                                <div class="metric-label-large">Skills Gained</div>
+                            </div>
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-lavender);">
+                                    {{ system.milestones.count }}
+                                </div>
+                                <div class="metric-label-large">Milestones</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Completion Progress</span>
+                                <span style="font-size: 0.8rem; color: var(--color-lavender); font-weight: 600;">{{ system.completion_percent|floatformat:0 }}%</span>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="background: var(--color-lavender); height: 100%; width: {{ system.completion_percent }}%; transition: width 1s ease;"></div>
+                            </div>
+                        </div>
+
+                        {% if system.estimated_dev_hours or system.actual_dev_hours %}
+                        <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Time Investment</div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--color-lavender);">Est: {{ system.estimated_dev_hours|default:"--" }}h</span>
+                                <span style="color: var(--color-lavender);">Actual: {{ system.actual_dev_hours|default:"--" }}h</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- REAL RECENT ACTIVITY -->
+                    <div class="unified-dashboard-container mint">
+                        <div class="unified-container-header">
+                            <h3 style="margin-bottom: 1.5rem;">
+                                Recent Activity
+                                <span style="font-size: 0.7rem; color: var(--color-text-secondary); font-weight: normal; margin-left: 0.5rem;">GitHub + Learning Data</span>
+                            </h3>
+                        </div>
+                        
+                        {% with recent_activity=panel_data.overview.real_recent_activity %}
+                        {% if recent_activity %}
+                        <div class="activity-feed" style="max-height: 400px; overflow-y: auto;">
+                            {% for activity in recent_activity|slice:":6" %}
+                            <div class="activity-item {{ activity.type }}" style="display: flex; gap: 1rem; padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px; border-left: 3px solid var(--color-{{ activity.color }});">
+                                <div class="activity-icon" style="padding-top: 0.2rem;">
+                                    <i class="fas fa-{{ activity.icon }}" style="color: var(--color-{{ activity.color }});"></i>
+                                </div>
+                                <div class="activity-content" style="flex: 1; min-width: 0;">
+                                    <div class="activity-description" style="font-weight: 600; margin-bottom: 0.25rem; color: var(--color-text-primary);">
+                                        {{ activity.description }}
+                                    </div>
+                                    {% if activity.detail %}
+                                    <div class="activity-detail" style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                        {{ activity.detail }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="activity-time" style="font-size: 0.8rem; color: var(--color-text-tertiary);">
+                                        {{ activity.date|time_since_published }}
+                                    </div>
+                                    
+                                    {% if activity.type == 'commit' and activity.repo_url %}
+                                    <a href="{{ activity.repo_url }}" target="_blank" style="color: var(--color-teal); text-decoration: none; font-size: 0.8rem; margin-top: 0.25rem; display: inline-block;">
+                                        <i class="fab fa-github"></i> View Repository
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">
+                            <i class="fas fa-clock" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            <span>No recent activity tracked</span>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <!-- CONNECTED REPOSITORIES -->
+                    {% if system.github_repositories.exists %}
+                    <div class="unified-dashboard-container coral">
+                        <div class="unified-container-header">
+                            <h3 style="margin-bottom: 1.5rem;">Connected Repositories</h3>
+                        </div>
+                        
+                        {% for repo in system.github_repositories.all|slice:":4" %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px;">
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 0.25rem;">
+                                    <a href="{{ repo.html_url }}" target="_blank" style="color: var(--color-text-primary); text-decoration: none;">
+                                        <i class="fab fa-github"></i> {{ repo.name }}
+                                    </a>
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
+                                    {{ repo.total_commits|format_commit_count }} commits
+                                    {% if repo.commits_last_30_days > 0 %}
+                                        • {{ repo.commits_last_30_days }} this month
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                {{ repo.commit_frequency_rating|commit_frequency_badge }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% elif active_panel == 'details' %}
                     <!-- System Details Panel - MARKDOWN CONTENT & TECHNICAL SPECS -->
                     <div class="panel-content-grid grid-1-col">
 
@@ -1827,102 +1437,73 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-{{ block.super }}
-<script src="{% static 'projects/js/dashboard_panel.js' %}"></script>
+{% block systems_js %}
+<script src="{% static 'projects/js/dashboard_panels.js' %}"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🎛️ Learning System Control Interface loaded');
-        
-        // Initialize the unified dashboard manager with enhanced panel switching
-        let manager;
-        try {
-            manager = new UnifiedDashboardManager();
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize control panel navigation (ORIGINAL FUNCTIONALITY)
+    const panelLinks = document.querySelectorAll('.control-panel-link');
+    const panelContents = document.querySelectorAll('[id$="-panel"]');
+    const panelTitle = document.querySelector('.panel-title');
+    const panelDescription = document.querySelector('.panel-description');
+    
+    // Panel data for updating header
+    const panelData = {
+        {% for panel in control_panels %}
+        '{{ panel.id }}': {
+            name: '{{ panel.name }}',
+            description: '{{ panel.description }}',
+            icon: '{{ panel.icon }}'
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    // Set initial active panel
+    if (panelLinks.length > 0) {
+        panelLinks[0].classList.add('active');
+    }
+    
+    panelLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const panelId = this.dataset.panel;
             
-            // Store reference globally for debugging
-            window.systemDashboard = manager;
+            // Update active link
+            panelLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
             
-        } catch (error) {
-            console.error('❌ Error initializing dashboard manager:', error);
-        }
-        
-        // Enhanced panel switching logic
-        const panelLinks = document.querySelectorAll('.control-panel-link');
-        const panelContainer = document.querySelector('.panel-content-container');
-        
-        panelLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                console.log('🎯 Panel switch initiated:', this.textContent.trim());
-                
-                // Remove active class from all panels
-                panelLinks.forEach(l => l.classList.remove('active'));
-                
-                // Add active class to clicked panel
-                this.classList.add('active');
-                
-                // If manager exists, handle the panel switch
-                if (manager && typeof manager.handlePanelSwitch === 'function') {
-                    // Small delay to let the panel content update
-                    setTimeout(() => {
-                        manager.handlePanelSwitch();
-                    }, 100);
-                } else {
-                    // Fallback: restore metric values manually
-                    console.log('🔄 Fallback: Restoring metric values manually');
-                    const metrics = document.querySelectorAll('.metric-value-large, .learning-metric-value, .metric-value');
-                    metrics.forEach(metric => {
-                        if (metric.dataset.originalValue) {
-                            metric.textContent = metric.dataset.originalValue;
-                        }
-                    });
-                }
+            // Show corresponding panel
+            panelContents.forEach(panel => {
+                panel.style.display = 'none';
             });
+            
+            const targetPanel = document.getElementById(panelId + '-panel');
+            if (targetPanel) {
+                targetPanel.style.display = 'grid';
+            }
+            
+            // Update header
+            if (panelData[panelId]) {
+                const data = panelData[panelId];
+                panelTitle.innerHTML = `
+                    <div class="panel-title-icon">
+                        <i class="fas fa-${data.icon}"></i>
+                    </div>
+                    ${data.name}
+                `;
+                panelDescription.textContent = data.description;
+            }
         });
-        
-        // Animate skill pills with staggered entrance (UNCHANGED)
-        const skillPills = document.querySelectorAll('.skill-pill');
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-        
-        const pillObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '0';
-                    entry.target.style.transform = 'translateY(20px)';
-                    entry.target.style.transition = 'all 0.4s ease';
-                    
-                    setTimeout(() => {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }, Math.random() * 200);
-                }
-            });
-        }, observerOptions);
-        
-        skillPills.forEach(pill => {
-            pillObserver.observe(pill);
-        });
-        
-        // Debug helper function
-        window.debugMetrics = function() {
-            const metrics = document.querySelectorAll('.metric-value-large, .learning-metric-value, .metric-value');
-            console.log('📊 Current metric states:');
-            metrics.forEach((metric, index) => {
-                console.log(`  Metric ${index}:`, {
-                    current: metric.textContent,
-                    original: metric.dataset.originalValue,
-                    numeric: metric.dataset.numericValue,
-                    animated: metric.dataset.animated,
-                    animating: metric.dataset.animating
-                });
-            });
-        };
-        
-        console.log('✅ Panel switching and metric preservation setup complete');
-        console.log('💡 Debug tip: Run debugMetrics() in console to check metric states');
     });
-    </script>
+    
+    // GitHub-specific interactions
+    const repoLinks = document.querySelectorAll('a[href*="github.com"]');
+    repoLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Analytics tracking could go here
+            console.log('Repository accessed:', this.href);
+        });
+    });
+});
+</script>
 {% endblock %}
-                
