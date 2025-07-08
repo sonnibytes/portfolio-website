@@ -104,3 +104,124 @@ class GitHubDataProcessor:
             popularity = "emerging"
 
         return f"{name} is a {popularity} {language} project with {stars} stars and {forks} forks."
+    
+    @staticmethod
+    def prepare_weekly_chart_data(weekly_data, monthly_data=None):
+        """Prepare data for Chart.js weekly/monthly visualization."""
+        if not weekly_data:
+            return {'labels': [], 'weekly': [], 'monthly_labels': [], 'monthly': []}
+        
+        # Weekly chart data (last 12 weeks)
+        weekly_labels = []
+        weekly_commits = []
+        
+        for week in weekly_data:
+            week_label = f"W{week.week}"
+            if hasattr(week, 'is_current_week') and week.is_current_week:
+                week_label += " (Current)"
+            elif hasattr(week, 'get_week_label'):
+                week_label_text = week.get_week_label()
+                if week_label_text == "Last week":
+                    week_label += " (Last)"
+            
+            weekly_labels.append(week_label)
+            weekly_commits.append(week.commit_count)
+        
+        # Monthly chart data
+        monthly_labels = []
+        monthly_commits = []
+        
+        if monthly_data:
+            for month in monthly_data:
+                if isinstance(month, dict):
+                    monthly_labels.append(f"{month['month_name'][:3]} {month['year']}")
+                    monthly_commits.append(month['total_commits'])
+                else:
+                    # Handle model instances
+                    monthly_labels.append(f"{month.month_name[:3]} {month.year}")
+                    monthly_commits.append(getattr(month, 'total_commits', 0))
+        
+        return {
+            'labels': list(reversed(weekly_labels)),  # Oldest to newest for chart
+            'weekly': list(reversed(weekly_commits)),
+            'monthly_labels': list(reversed(monthly_labels)),
+            'monthly': list(reversed(monthly_commits))
+        }
+
+    @staticmethod
+    def calculate_commit_trend(weekly_data, weeks=4):
+        """Calculate commit trend from weekly data."""
+        if not weekly_data or len(weekly_data) < 2:
+            return "insufficient-data"
+        
+        recent_weeks = list(weekly_data)[:weeks]
+        commits = [week.commit_count for week in recent_weeks]
+        
+        if len(commits) < 2:
+            return "insufficient-data"
+        
+        # Simple trend calculation
+        first_half = sum(commits[:len(commits)//2])
+        second_half = sum(commits[len(commits)//2:])
+        
+        if second_half > first_half * 1.2:
+            return "increasing"
+        elif second_half < first_half * 0.8:
+            return "decreasing"
+        else:
+            return "stable"
+
+    @staticmethod
+    def get_trend_icon_and_color(trend):
+        """Get icon and color for commit trend."""
+        trend_mapping = {
+            'increasing': {'icon': 'fas fa-trending-up', 'color': 'success'},
+            'decreasing': {'icon': 'fas fa-trending-down', 'color': 'warning'},
+            'stable': {'icon': 'fas fa-minus', 'color': 'info'},
+            'insufficient-data': {'icon': 'fas fa-question', 'color': 'secondary'},
+            'no-data': {'icon': 'fas fa-question', 'color': 'secondary'}
+        }
+        return trend_mapping.get(trend, trend_mapping['no-data'])
+
+    @staticmethod
+    def format_weekly_metrics(weekly_data):
+        """Format weekly data for display metrics."""
+        if not weekly_data:
+            return {
+                'recent_commits': 0,
+                'total_weeks_tracked': 0,
+                'avg_commits_per_week': 0,
+                'most_active_week': None
+            }
+        
+        # Recent commits (last 4 weeks)
+        recent_4_weeks = list(weekly_data)[:4]
+        recent_commits = sum(week.commit_count for week in recent_4_weeks)
+        
+        # Total tracked weeks
+        total_weeks = len(weekly_data)
+        
+        # Average commits per week
+        total_commits = sum(week.commit_count for week in weekly_data)
+        avg_commits_per_week = round(total_commits / total_weeks, 1) if total_weeks > 0 else 0
+        
+        # Most active week
+        most_active_week = max(weekly_data, key=lambda w: w.commit_count) if weekly_data else None
+        
+        return {
+            'recent_commits': recent_commits,
+            'total_weeks_tracked': total_weeks,
+            'avg_commits_per_week': avg_commits_per_week,
+            'most_active_week': most_active_week
+        }
+
+    @staticmethod
+    def get_chart_color_for_trend(trend):
+        """Get chart color based on trend."""
+        colors = {
+            'increasing': '#10b981',  # Green
+            'stable': '#3b82f6',      # Blue  
+            'decreasing': '#f59e0b',  # Orange
+            'no-data': '#6b7280'      # Gray
+        }
+        return colors.get(trend, '#6b7280')
