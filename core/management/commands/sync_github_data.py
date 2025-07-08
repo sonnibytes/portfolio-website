@@ -220,6 +220,12 @@ class Command(BaseCommand):
                     weeks_created += 1
                 elif created:
                     weeks_created += 1
+
+        # NEW: Update summary metrics from accurate weekly data
+        if weeks_created > 0:  # Only if we actually stored new data
+            summary_updated = repository.update_summary_from_weekly_data()
+            if summary_updated:
+                self.stdout.write(f"        ✓ Updated summary metrics from weekly data")
         
         return weeks_created
     
@@ -515,7 +521,7 @@ class Command(BaseCommand):
                 weeks_stored = self.store_weekly_commit_data(github_repo, result['weekly_data'])
                 
                 self.stdout.write(
-                    f'        ✓ {weeks_stored} weeks of data'
+                    f"        ✓ {weeks_stored} weeks of data, summary metrics updated"
                 )
                 return True
             elif result['status'] == 'computing':

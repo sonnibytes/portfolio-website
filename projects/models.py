@@ -449,6 +449,90 @@ class GitHubRepository(models.Model):
             'monthly_trend': self.get_monthly_trend(),
             'total_commits_tracked': total_commits
         }
+    
+    def update_summary_from_weekly_data(self):
+        """
+        Update basic commit summary fields using accurate weekly data.
+        Call this after weekly sync to get real numbers instead of estimates.
+        """
+        if not self.enable_detailed_tracking:
+            return False
+        
+        # Get all weekly commit data for this repo
+        weekly_data = self.commit_weeks.all()
+        
+        if not weekly_data:
+            return False
+        
+        # Calculate accurate total commits from weekly data
+        total_commits = sum(week.commit_count for week in weekly_data)
+        
+        # Calculate commits in last 30 days (approximately last 4-5 weeks)
+        recent_weeks = weekly_data.order_by('-year', '-week')[:5]  # Last 5 weeks to cover 30+ days
+        commits_last_30_days = sum(week.commit_count for week in recent_weeks)
+        
+        # Calculate commits in last year (all our data since we only store 52 weeks max)
+        commits_last_year = total_commits
+        
+        # Calculate average commits per month from weekly data
+        weeks_count = weekly_data.count()
+        if weeks_count > 0:
+            avg_commits_per_week = total_commits / weeks_count
+            avg_commits_per_month = avg_commits_per_week * 4.33  # Average weeks per month
+        else:
+            avg_commits_per_month = 0.0
+        
+        # Update the summary fields with accurate data
+        self.total_commits = total_commits
+        self.commits_last_30_days = commits_last_30_days
+        self.commits_last_year = commits_last_year
+        self.avg_commits_per_month = round(avg_commits_per_month, 2)
+        
+        # Save the updated summary
+        self.save(update_fields=[
+            'total_commits', 
+            'commits_last_30_days', 
+            'commits_last_year', 
+            'avg_commits_per_month'
+        ])
+        
+        return True
+
+    def get_accurate_vs_estimated_comparison(self):
+        """
+        Compare estimated vs accurate commit data for debugging.
+        Useful to see how far off the estimates were.
+        """
+        if not self.enable_detailed_tracking:
+            return None
+        
+        # Store current (estimated) values
+        estimated_total = self.total_commits
+        estimated_30_days = self.commits_last_30_days
+        
+        # Calculate accurate values from weekly data
+        weekly_data = self.commit_weeks.all()
+        if not weekly_data:
+            return None
+        
+        accurate_total = sum(week.commit_count for week in weekly_data)
+        recent_weeks = weekly_data.order_by('-year', '-week')[:5]
+        accurate_30_days = sum(week.commit_count for week in recent_weeks)
+        
+        return {
+            'estimated': {
+                'total': estimated_total,
+                'last_30_days': estimated_30_days
+            },
+            'accurate': {
+                'total': accurate_total,
+                'last_30_days': accurate_30_days
+            },
+            'difference': {
+                'total': accurate_total - estimated_total,
+                'last_30_days': accurate_30_days - estimated_30_days
+            }
+        }
 
 
 class GitHubLanguage(models.Model):
