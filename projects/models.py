@@ -5,8 +5,9 @@ from django.contrib.auth.models import User
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 import re
+import calendar
 from bs4 import BeautifulSoup
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from django.db.models import Avg, Count, Sum
 from django.utils import timezone
 
@@ -16,6 +17,171 @@ ENHANCED SYSTEM ARCHITECTURE MODELS
 System Type > System Module > System Features/Images
 Connected to Blog via SystemLogEntry
 """
+
+class GitHubCommitWeek(models.Model):
+    """
+    Weekly commit tracking for detailed analysis.
+    Only populated for repos linked to systems.
+    """
+    repository = models.ForeignKey('GitHubRepository', on_delete=models.CASCADE, related_name='commit_weeks')
+
+    # Week identification (using iso week)
+    year = models.IntegerField(help_text="ISO year (YYYY)")
+    week = models.IntegerField(help_text="ISO week number (1-53)")
+
+    # Month metadata for easier querying and aggregation
+    month = models.IntegerField(help_text="Month Number (1-2) of week start date")
+    month_name = models.CharField(max_length=10, help_text="Month Name (e.g. January)")
+    quarter = models.IntegerField(help_text="Quarter (1-4) for reporting")
+
+    # Week metadata for easier querying
+    week_start_date = models.DateField(help_text="Monday of this week")
+    week_end_date = models.DateField(help_text="Sunday of this week")
+
+    # Commit data
+    commit_count = models.IntegerField(default=0, help_text="Commits in this week")
+
+    # Optional detailed data (if we want to include)
+    lines_added = models.IntegerField(default=0, blank=True)
+    lines_deleted = models.IntegerField(default=0, blank=True)
+    files_changed = models.IntegerField(default=0, blank=True)
+
+    # Sync metadata
+    last_synced = models.DateTimeField(auto_now=True)
+    github_etag = models.CharField(max_length=64, blank=True, help_text="ETag for conditional requests")
+
+    class Meta:
+        unique_together = ['repository', 'year', 'week']
+        ordering = ['-year', '-week']
+        indexes = [
+            models.Index(fields=['repository', 'year', 'week']),
+            # Monthly queries
+            models.Index(fields=['repository', 'year', 'month']),
+            # Quarterly queries
+            models.Index(fields=['repository', 'quarter', 'year']),
+            models.Index(fields=['week_start_date']),
+            # Cross repo monthly analysis
+            models.Index(fields=['month', 'year']),
+        ]
+    
+    def __str__(self):
+        return f"{self.repository.name} - {self.year}W{self.week:02d} ({self.commit_count} commits)"
+    
+    @classmethod
+    def get_iso_week_dates(cls, year, week):
+        """Get start and end dates for an ISO week."""
+        # January 4th is always in week 1
+        jan4 = datetime(year, 1, 4)
+        week_start = jan4 - timedelta(days=jan4.weekday()) + timedelta(weeks=week - 1)
+        week_end = week_start + timedelta(days=6)
+        return week_start.date(), week_end.date()
+    
+    @classmethod
+    def create_from_iso_week(cls, repository, year, week, commit_count, **kwargs):
+        """Create a commit week entry from ISO year/week with month metadata."""
+        start_date, end_date = cls.get_iso_week_dates(year, week)
+
+        # Calculate month metadata based on week start date (Monday)
+        month = start_date.month
+        month_name = start_date.strftime('%B')
+        quarter = (month - 1) // 3 + 1
+
+        return cls.objects.create(
+            repository=repository,
+            year=year,
+            week=week,
+            month=month,
+            month_name=month_name,
+            quarter=quarter,
+            week_start_date=start_date,
+            week_end_date=end_date,
+            commit_count=commit_count,
+            **kwargs
+        )
+    
+    @property
+    def is_current_week(self):
+        """Check if this is the current week."""
+        now = datetime.now()
+        current_year, current_week, _ = now.isocalendar()
+        return self.year == current_year and self.week == current_week
+    
+    def get_week_label(self):
+        """Get human-readable week label."""
+        if self.is_current_week:
+            return "This week"
+        
+        # Check if it's recent
+        now = datetime.now()
+        week_start = self.week_start_date
+        days_ago = (now.date() - week_start).days
+
+        if days_ago <= 7:
+            return "Last week"
+        elif days_ago <= 14:
+            return "2 weeks ago"
+        elif days_ago <= 30:
+            weeks_ago = days_ago // 7
+            return f"{weeks_ago} weeks ago"
+        else:
+            return f"{week_start.strftime('%b %d, %Y')}"
+    
+    def get_month_label(self):
+        """Get human-readable month label for this week."""
+        return f"{self.month_name} {self.year}"
+    
+    @classmethod
+    def get_monthly_summary(cls, repository, year, month):
+        """Get commit summary for a specific month."""
+        weeks_in_month = cls.objects.filter(repository=repository, year=year, month=month)
+
+        if not weeks_in_month:
+            return {
+                'month': month,
+                'month_name': '',
+                'total_commits': 0,
+                'weeks_count': 0,
+                'avg_commits_per_week': 0
+            }
+        
+        total_commits = sum(week.commit_count for week in weeks_in_month)
+        weeks_count = weeks_in_month.count()
+
+        return {
+            'month': month,
+            'month_name': weeks_in_month.first().month_name,
+            'year': year,
+            'total_commits': total_commits,
+            'weeks_count': weeks_count,
+            'avg_commits_per_week': round(total_commits / weeks_count, 1) if weeks_count > 0 else 0,
+            'most_active_week': max(weeks_in_month, key=lambda w: w.commit_count) if weeks_in_month else None
+        }
+    
+    @classmethod
+    def get_quarterly_summary(cls, repository, year, quarter):
+        """Get commit summary for a specific quarter."""
+        weeks_in_quarter = cls.objects.filter(repository=repository, year=year, quarter=quarter)
+
+        if not weeks_in_quarter:
+            return {
+                'quarter': quarter,
+                'year': year,
+                'total_commits': 0,
+                'weeks_count': 0,
+                'months_included': []
+            }
+        
+        total_commits = sum(week.commit_count for week in weeks_in_quarter)
+        months_in_quarter = list(set(week.month for week in weeks_in_quarter))
+
+        return {
+            'quarter': quarter,
+            'year': year,
+            'total_commits': total_commits,
+            'weeks_count': weeks_in_quarter.count(),
+            'months_included': sorted(months_in_quarter),
+            'avg_commits_per_week': round(total_commits / weeks_in_quarter.count(), 1) if weeks_in_quarter else 0
+        }
 
 
 class GitHubRepository(models.Model):
