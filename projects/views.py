@@ -433,6 +433,7 @@ class EnhancedLearningSystemListView(ListView):
                 "available_filters": self.get_current_filters(),
                 "active_filters": self.get_active_learning_filters(),
                 "learning_stage_filters": self.get_learning_filter_options(),
+                "github_activity": self.get_simple_github_distribution(),
 
                 "skills_stats": self.get_skills_statistics(),
                 "portfolio_stats": self.get_portfolio_readiness_stats(),
@@ -598,6 +599,31 @@ class EnhancedLearningSystemListView(ListView):
             'low': activity_counts['low'],
             'inactive': activity_counts['inactive'],
             "activity_counts": activity_counts,
+        }
+    
+    def get_simple_github_distribution(self):
+        """
+        Get counts of simple github activity for filter count badges.
+        Can better integrate filter w get_github_activity_stats later.
+        """
+        all_systems = SystemModule.objects.exclude(status__in=['draft', 'archived'])
+        if not all_systems.exists():
+            return {
+                'very_active': 0,
+                'active': 0,
+                'inactive': 0
+            }
+        
+        very_active = all_systems.filter(github_repositories__commits_last_30_days__gte=20).count()
+        active = all_systems.filter(github_repositories__commits_last_30_days__gte=5).count()
+        inactive = all_systems.filter(
+            Q(github_repositories__commits_last_30_days=0) |
+            Q(github_repositories__isnull=True)).count()
+        
+        return {
+            'very_active': very_active,
+            'active': active,
+            'inactive': inactive
         }
 
     def get_system_activity_level(self, system):
