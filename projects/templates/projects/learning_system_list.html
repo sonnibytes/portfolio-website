@@ -326,22 +326,7 @@
     box-shadow: 0 0 20px rgba(76, 175, 80, 0.1);
 }
 
-.system-card.portfolio-ready::after {
-    content: '✓';
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 24px;
-    height: 24px;
-    background: var(--color-success);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: bold;
-}
+
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
@@ -559,6 +544,133 @@
     background-color: #9E9E9E;
     color: white;
 }
+
+/* Complexity Badge Changes */
+/* Complexity Indicator Styles */
+.complexity-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.complexity-bars {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+}
+
+.complexity-bar {
+    width: 3px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 1px;
+    transition: all 0.3s ease;
+}
+
+.complexity-bar:nth-child(1) { height: 6px; }
+.complexity-bar:nth-child(2) { height: 8px; }
+.complexity-bar:nth-child(3) { height: 10px; }
+.complexity-bar:nth-child(4) { height: 12px; }
+.complexity-bar:nth-child(5) { height: 14px; }
+
+.complexity-bar.filled {
+    background: linear-gradient(180deg, var(--color-teal), var(--color-teal-dark, #2c9a9a));
+    box-shadow: 0 0 4px rgba(64, 224, 208, 0.3);
+}
+
+/* Different colors based on complexity level */
+.complexity-indicator[title*="1/10"] .complexity-bar.filled,
+.complexity-indicator[title*="2/10"] .complexity-bar.filled {
+    background: linear-gradient(180deg, var(--color-success), #4caf50);
+}
+
+.complexity-indicator[title*="3/10"] .complexity-bar.filled,
+.complexity-indicator[title*="4/10"] .complexity-bar.filled,
+.complexity-indicator[title*="5/10"] .complexity-bar.filled {
+    background: linear-gradient(180deg, var(--color-warning), #ff9800);
+}
+
+.complexity-indicator[title*="6/10"] .complexity-bar.filled,
+.complexity-indicator[title*="7/10"] .complexity-bar.filled {
+    background: linear-gradient(180deg, var(--color-teal), #26c6da);
+}
+
+.complexity-indicator[title*="8/10"] .complexity-bar.filled,
+.complexity-indicator[title*="9/10"] .complexity-bar.filled,
+.complexity-indicator[title*="10/10"] .complexity-bar.filled {
+    background: linear-gradient(180deg, var(--color-purple), #9c27b0);
+}
+
+.complexity-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+/* Portfolio Corner Badge - small and unobtrusive */
+.portfolio-corner-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #ffd700, #ffb300);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    z-index: 2;
+}
+
+.portfolio-corner-badge i {
+    margin: 0;
+}
+
+/* Hover effects */
+.system-card:hover .complexity-indicator {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.system-card:hover .complexity-bar.filled {
+    box-shadow: 0 0 6px rgba(64, 224, 208, 0.5);
+    transform: scaleY(1.1);
+}
+
+.system-card:hover .portfolio-corner-badge {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+/* Animation for bars on load */
+@keyframes fillBar {
+    from {
+        transform: scaleY(0);
+    }
+    to {
+        transform: scaleY(1);
+    }
+}
+
+.complexity-bar.filled {
+    animation: fillBar 0.6s ease-out forwards;
+    transform-origin: bottom;
+}
+
+.complexity-bar.filled:nth-child(1) { animation-delay: 0.1s; }
+.complexity-bar.filled:nth-child(2) { animation-delay: 0.2s; }
+.complexity-bar.filled:nth-child(3) { animation-delay: 0.3s; }
+.complexity-bar.filled:nth-child(4) { animation-delay: 0.4s; }
+.complexity-bar.filled:nth-child(5) { animation-delay: 0.5s; }
 
 </style>
 {% endblock %}
@@ -978,16 +1090,28 @@
                     {{ system.get_learning_stage_display }}
                 </div> {% endcomment %}
 
-                <!-- GitHub Activity Indicator -->
+                {% comment %} <!-- GitHub Activity Indicator -->
                 {% if system.commit_stats.repository_count > 0 %}
                 <span class="activity-indicator" 
                     style="background-color: {{ system.github_activity_level.color }}"
                     title="{{ system.github_activity_level.label }}">
                     <i class="fab fa-github"></i>
                 </span>
-                {% endif %}
+                {% endif %} {% endcomment %}
+
+                <!-- Complexity Indicator (replaces portfolio-ready badge) -->
+                <div class="complexity-indicator" title="Complexity: {{ system.complexity }}/10">
+                    <div class="complexity-bars">
+                        {% with complexity=system.complexity|default:5 %}
+                        {% for i in "12345" %}
+                            <div class="complexity-bar {% if complexity >= forloop.counter %}filled{% endif %}"></div>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <span class="complexity-label">{{ system.complexity|default:5 }}/10</span>
+                </div>
                 
-                <!-- Portfolio Ready Indicator -->
+                {% comment %} <!-- Portfolio Ready Indicator -->
                 {% if system.portfolio_ready %}
                 <div class="portfolio-ready-badge">
                     <i class="fas fa-check-circle"></i>
@@ -998,7 +1122,7 @@
                     <i class="fas fa-clock"></i>
                     <span>In Progress</span>
                 </div>
-                {% endif %}
+                {% endif %} {% endcomment %}
             </div>
             
             <h3 class="system-card-title">{{ system.title }}</h3>
@@ -1048,8 +1172,8 @@
             
             <!-- Complexity Score (Now with Real GitHub Data) -->
             <div class="metric-item">
-                <span class="metric-value">{{ system.real_complexity_score }}/15</span>
-                <span class="metric-label">Complexity</span>
+                <span class="metric-value">{{ system.real_complexity_score }}/20</span>
+                <span class="metric-label">Complexity Score</span>
             </div>
         </div>
 
@@ -1131,8 +1255,8 @@
 
             <!-- Complexity Score (Now with Real GitHub Data) -->
             <div class="metric-item">
-                <span class="metric-value">{{ system.real_complexity_score }}/15</span>
-                <span class="metric-label">Complexity</span>
+                <span class="metric-value">{{ system.real_complexity_score }}/20</span>
+                <span class="metric-label">Complexity Score</span>
             </div>
 
         </div>

@@ -647,48 +647,49 @@ class EnhancedLearningSystemListView(ListView):
         else:
             return {'level': 'inactive', 'color': '#9E9E9E', 'label': 'Inactive'}
 
-    def calculate_real_complexity_score(self, system):
-        """
-        UPDATED: Calculate complexity score using real GitHub data
-        instead of static sample data
-        """
-        commit_stats = system.get_commit_stats()
+    # Using model method for enhanced complexity score
+    # def calculate_real_complexity_score(self, system):
+    #     """
+    #     UPDATED: Calculate complexity score using real GitHub data
+    #     instead of static sample data
+    #     """
+    #     commit_stats = system.get_commit_stats()
 
-        # Base complexity from system attributes
-        base_score = system.complexity or 5
+    #     # Base complexity from system attributes
+    #     base_score = system.complexity or 5
 
-        # Adjust based on real GitHub activity
-        total_commits = commit_stats.get("total_commits", 0)
-        repo_count = commit_stats.get("repository_count", 0)
+    #     # Adjust based on real GitHub activity
+    #     total_commits = commit_stats.get("total_commits", 0)
+    #     repo_count = commit_stats.get("repository_count", 0)
 
-        # Commit complexity factor (more commits = more complex)
-        if total_commits >= 100:
-            commit_factor = 3
-        elif total_commits >= 50:
-            commit_factor = 2
-        elif total_commits >= 20:
-            commit_factor = 1
-        else:
-            commit_factor = 0
+    #     # Commit complexity factor (more commits = more complex)
+    #     if total_commits >= 100:
+    #         commit_factor = 3
+    #     elif total_commits >= 50:
+    #         commit_factor = 2
+    #     elif total_commits >= 20:
+    #         commit_factor = 1
+    #     else:
+    #         commit_factor = 0
 
-        # Repository complexity factor (multiple repos = more complex)
-        repo_factor = min(repo_count, 3)  # Cap at 3
+    #     # Repository complexity factor (multiple repos = more complex)
+    #     repo_factor = min(repo_count, 3)  # Cap at 3
 
-        # Learning stage factor
-        stage_factors = {
-            "tutorial": 0,
-            "guided": 1,
-            "independent": 2,
-            "refactoring": 3,
-            "contributing": 4,
-            "teaching": 5,
-        }
-        stage_factor = stage_factors.get(system.learning_stage, 2)
+    #     # Learning stage factor
+    #     stage_factors = {
+    #         "tutorial": 0,
+    #         "guided": 1,
+    #         "independent": 2,
+    #         "refactoring": 3,
+    #         "contributing": 4,
+    #         "teaching": 5,
+    #     }
+    #     stage_factor = stage_factors.get(system.learning_stage, 2)
 
-        # Calculate final score
-        final_score = base_score + commit_factor + repo_factor + stage_factor
+    #     # Calculate final score
+    #     final_score = base_score + commit_factor + repo_factor + stage_factor
 
-        return min(final_score, 15)  # Cap at 15
+    #     return min(final_score, 15)  # Cap at 15
 
     def get_development_consistency(self, commit_stats):
         """Enhanced: Calculate development consistency using weekly data"""
