@@ -409,10 +409,14 @@ class EnhancedLearningSystemListView(ListView):
             {
                 "learning_stage_distribution": self.get_learning_stage_distribution(),
                 "skills_filter_list": self.get_skills_filter_list(),
+                "skills_stats": self.get_skills_statistics(),
                 "portfolio_stats": self.get_portfolio_readiness_stats(),
                 "github_activity_stats": self.get_github_activity_stats(),  # NEW
                 "time_investment_distribution": self.get_time_investment_distribution(),
                 "current_filters": self.get_current_filters(),
+
+                # Quick Stats for header
+                'quick_stats': self.get_learning_quick_stats(),
             }
         )
 
@@ -457,13 +461,10 @@ class EnhancedLearningSystemListView(ListView):
             },
             'milestones': {
                 'total_milestones': system.milestones.count(),
-                'first_time': system.milestones.filter(milestone_type='first_time').count(),
-                'breakthroughs': system.milestones.filter(milestone_type='breakthrough').count(),
+                'major_milestones': system.milestones.filter(milestone_type__in=['first_time', 'breakthrough']).count(),
             }
         }
 
-
-    
     def get_github_activity_stats(self):
         """Enhanced: Get GitHub activity distribution using enhanced commit data"""
         
@@ -789,7 +790,10 @@ class EnhancedLearningSystemListView(ListView):
 
     def get_learning_quick_stats(self):
         """Quick stats for header using learning metrics"""
-        total_systems = SystemModule.objects.count()
+        # Exclude drafts, archived
+        total_systems = SystemModule.objects.exclude(
+            status__in=['draft', 'archived']
+        ).count()
 
         return {
             'total_systems': total_systems,

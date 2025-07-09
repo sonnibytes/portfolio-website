@@ -454,6 +454,17 @@
     margin: 1rem 0;
 }
 
+.github-metrics h4 {
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.07em;
+    padding-bottom: var(--spacing-sm);
+}
+
+.development-trend {
+    font-size: 1rem;
+}
+
 .metrics-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -587,13 +598,13 @@
                             <i class="fa-solid fa-award"></i>
                         </div>
                     </div>
-                    <div class="metric-value" data-target="{{ skills_stats.total_skills }}">{{ skills_stats.total_skills }}</div>
+                    <div class="metric-value" data-target="{{ quick_stats.skills_gained_count }}">{{ quick_stats.skills_gained_count }}</div>
                     <div class="metric-label">Skills Gained</div>
                 </div>
             </div>
             
             
-            <!-- Skills Gained -->
+            <!-- Portfolio Ready -->
             <div class="metric-card unified-dashboard-container coral">
                 <div class="metric-content">
                     <div class="metric-header">
@@ -601,13 +612,13 @@
                             <i class="fa-solid fa-clipboard-check"></i>
                         </div>
                     </div>
-                    <div class="metric-value" data-target="{{ portfolio_stats.ready }}">{{ portfolio_stats.ready }}</div>
+                    <div class="metric-value" data-target="{{ quick_stats.portfolio_ready_count }}">{{ quick_stats.portfolio_ready_count }}</div>
                     <div class="metric-label">Portfolio Ready</div>
                 </div>
             </div>
                 
 
-            <!-- Skills Gained -->
+            <!-- Time Invested -->
             <div class="metric-card unified-dashboard-container mint">
                 <div class="metric-content">
                     <div class="metric-header">
@@ -615,12 +626,12 @@
                             <i class="fa-solid fa-stopwatch"></i>
                         </div>
                     </div>
-                    <div class="metric-value" data-target="{{ time_investment_stats.total_hours|floatformat:0 }}">{{ time_investment_stats.total_hours|floatformat:0 }}h</div>
-                    <div class="metric-label">Time Invested</div>
+                    <div class="metric-value" data-target="{{ time_investment_distribution.total_hours|floatformat:0 }}">{{ time_investment_distribution.total_hours|floatformat:0 }}h</div>
+                    <div class="metric-label">Time Invested - hrs</div>
                 </div>
             </div>
 
-            <!-- Skills Gained -->
+            <!-- Recent Milestones -->
             <div class="metric-card unified-dashboard-container lavender">
                 <div class="metric-content">
                     <div class="metric-header">
@@ -628,7 +639,7 @@
                             <i class="fa-solid fa-trophy"></i>
                         </div>
                     </div>
-                    <div class="metric-value" data-target="{{ recent_milestones|length }}">{{ recent_milestones|length }}</div>
+                    <div class="metric-value" data-target="{{ quick_stats.recent_milestones_count }}">{{ quick_stats.recent_milestones_count }}</div>
                     <div class="metric-label">Recent Milestones</div>
                 </div>
             </div>
@@ -1024,7 +1035,7 @@
         </div>
         {% endif %}
 
-        <!-- Last Commit Info (Real Data) -->
+        {% comment %} <!-- Last Commit Info (Real Data) -->
         {% if system.commit_stats.last_commit_date %}
         <div class="last-commit">
             <small class="text-muted">
@@ -1035,7 +1046,7 @@
                 {% endif %}
             </small>
         </div>
-        {% endif %}
+        {% endif %} {% endcomment %}
 
         {% else %}
         <!-- No GitHub Data -->
@@ -1061,12 +1072,9 @@
             </div>
             <div class="metric-item">
                 {% if system.skill_summary.flags.has_milestones %}
-                    {% if system.skill_summary.milestones.first_time  %}
-                    <span class="metric-value">{{ system.skill_summary.milestones.first_time }}</span>
-                    <span class="metric-label">First Time Milestones</span>
-                    {% elif system.skill_summary.milestones.breakthroughs %}
-                    <span class="metric-value">{{ system.skill_summary.milestones.breakthroughs }}</span>
-                    <span class="metric-label">Breakthroughs</span>
+                    {% if system.skill_summary.milestones.major_milestones  %}
+                    <span class="metric-value">{{ system.skill_summary.milestones.major_milestones }}</span>
+                    <span class="metric-label">Major Milestones</span>
                     {% else %}
                     <span class="metric-value">{{ system.skill_summary.milestones.total_milestones }}</span>
                     <span class="metric-label">Milestones</span>
@@ -1086,11 +1094,6 @@
                 </span>
                 <span class="metric-label">Time Invested</span>
             </div>
-
-            {% comment %} <div class="metric-item">
-                            <span class="metric-value">{{ system.complexity|default:0 }}/5</span>
-                <span class="metric-label">Complexity</span>
-            </div> {% endcomment %}
 
             <!-- Complexity Score (Now with Real GitHub Data) -->
             <div class="metric-item">
@@ -1156,27 +1159,31 @@
         </div>
     
 
-    <div class="system-meta">
-        <div class="meta-item">
-            <i class="fas fa-calendar-alt"></i>
-            <span>{{ system.updated_at|date:"M d, Y" }}</span>
-        </div>
-        {% if system.github_url %}
-                    <div class="github-info">
-        <div class="meta-item">
-            <i class="fab fa-github"></i>
-                            <span>{{ system.commit_count|default:0 }} commit{{ system.commit_count|pluralize }}</span>
-                        </div>
-                        {% if system.last_commit_date %}
-                        <div class="meta-item">
-                            <i class="fas fa-clock"></i>
-                            <span>Last commit {{ system.last_commit_date|timesince }} ago</span>
-                        </div>
+        <div class="system-meta">
+            <div class="meta-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Last Updated: {{ system.updated_at|date:"M d, Y" }}</span>
+            </div>
+            <!-- Last Commit Info (Real Data) -->
+            {% if system.github_url %}
+            <div class="github-info">
+                <div class="meta-item">
+                    <i class="fab fa-github"></i>
+                    <span>{{ system.commit_stats.total_commits|default:0 }} commit{{ system.commit_stats.total_commits|pluralize }}</span>
+                </div>
+                {% if system.commit_stats.last_commit_date %}
+                    <div class="meta-item">
+                        <i class="fas fa-clock"></i>
+                        Last commit: {{ system.commit_stats.last_commit_date|timesince }} ago
+                        {% if system.commit_stats.most_active_repo %}
+                        in {{ system.commit_stats.most_active_repo.name }}
                         {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
-</div>
 
 <!-- Card Footer -->
 <footer class="system-card-footer">
