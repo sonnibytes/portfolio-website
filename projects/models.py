@@ -1626,6 +1626,327 @@ class SystemModule(models.Model):
                 }
         return stats
 
+    # Testing additional methods for system list w GH data
+
+    def _safe_days_since(self, date_or_datetime):
+        """
+        Safely calculate days since a date or datetime object.
+        Handles both date and datetime objects correctly.
+        """
+        if not date_or_datetime:
+            return None
+        
+        # Get today as a date
+        today = timezone.now().date()
+        
+        # Convert input to date if it's a datetime
+        if hasattr(date_or_datetime, 'date'):
+            target_date = date_or_datetime.date()
+        else:
+            target_date = date_or_datetime
+        
+        return (today - target_date).days
+
+    def get_enhanced_commit_stats(self):
+        """
+        Enhanced version of get_commit_stats that includes weekly data analysis
+        """
+        basic_stats = self.get_commit_stats()  # Use existing method
+
+        # Add weekly analysis if available
+        repos = self.github_repositories.all()
+
+        if repos.exists():
+            # Get recent weekly data (last 12 weeks)
+            twelve_weeks_ago = timezone.now().date() - timedelta(weeks=12)
+
+            recent_weeks = GitHubCommitWeek.objects.filter(
+                repository__in=repos, week_start_date__gte=twelve_weeks_ago
+            ).order_by("-year", "-week")
+
+            if recent_weeks.exists():
+                # Calculate weekly metrics
+                total_weeks = recent_weeks.count()
+                active_weeks = recent_weeks.filter(commit_count__gt=0).count()
+                avg_commits_per_week = (
+                    recent_weeks.aggregate(avg=models.Avg("commit_count"))["avg"] or 0
+                )
+
+                # Weekly consistency
+                consistency_score = (
+                    (active_weeks / total_weeks * 100) if total_weeks > 0 else 0
+                )
+
+                # Recent trend (compare last 4 weeks to previous 8 weeks)
+                last_4_weeks = recent_weeks[:4]
+                previous_8_weeks = recent_weeks[4:12]
+
+                recent_avg = (
+                    last_4_weeks.aggregate(avg=models.Avg("commit_count"))["avg"] or 0
+                )
+
+                previous_avg = (
+                    previous_8_weeks.aggregate(avg=models.Avg("commit_count"))["avg"] or 0
+                )
+
+                if previous_avg > 0:
+                    trend_percentage = ((recent_avg - previous_avg) / previous_avg) * 100
+                else:
+                    trend_percentage = 0 if recent_avg == 0 else 100
+
+                # Add weekly analysis to basic stats
+                basic_stats.update(
+                    {
+                        "weekly_analysis": {
+                            "total_weeks_tracked": total_weeks,
+                            "active_weeks": active_weeks,
+                            "avg_commits_per_week": round(avg_commits_per_week, 1),
+                            "consistency_score": round(consistency_score, 1),
+                            "recent_trend": {
+                                "percentage": round(trend_percentage, 1),
+                                "direction": "up"
+                                if trend_percentage > 5
+                                else "down"
+                                if trend_percentage < -5
+                                else "stable",
+                                "recent_avg": round(recent_avg, 1),
+                                "previous_avg": round(previous_avg, 1),
+                            },
+                        }
+                    }
+                )
+
+        return basic_stats
+
+    def get_learning_velocity_with_github(self):
+        """
+        Enhanced learning velocity calculation that factors in GitHub activity
+        """
+        # Base learning velocity (skills per month)
+        base_velocity = self.get_learning_velocity()
+
+        # Get GitHub activity factor
+        commit_stats = self.get_commit_stats()
+        commits_per_month = commit_stats.get("avg_commits_per_month", 0)
+
+        # GitHub activity multiplier (more commits = higher learning velocity indicator)
+        if commits_per_month >= 20:
+            github_factor = 1.3  # 30% boost for high activity
+        elif commits_per_month >= 10:
+            github_factor = 1.2  # 20% boost for good activity
+        elif commits_per_month >= 5:
+            github_factor = 1.1  # 10% boost for moderate activity
+        else:
+            github_factor = 1.0  # No change for low/no activity
+
+        enhanced_velocity = base_velocity * github_factor
+
+        return {
+            "base_velocity": base_velocity,
+            "github_factor": github_factor,
+            "enhanced_velocity": round(enhanced_velocity, 2),
+            "commits_per_month": commits_per_month,
+        }
+
+    def get_complexity_evolution_score_with_github(self):
+        """
+        UPDATED: Complexity evolution that uses real GitHub data instead of static
+        """
+        commit_stats = self.get_commit_stats()
+
+        # Base factors
+        base_complexity = self.complexity or 5
+        skills_factor = min(self.skills_developed.count(), 5)  # Cap at 5
+
+        # GitHub complexity factors (using real data)
+        total_commits = commit_stats.get("total_commits", 0)
+        repo_count = commit_stats.get("repository_count", 0)
+        avg_commits_month = commit_stats.get("avg_commits_per_month", 0)
+
+        # Commit volume factor
+        if total_commits >= 150:
+            commit_factor = 4
+        elif total_commits >= 100:
+            commit_factor = 3
+        elif total_commits >= 50:
+            commit_factor = 2
+        elif total_commits >= 20:
+            commit_factor = 1
+        else:
+            commit_factor = 0
+
+        # Repository complexity (multiple repos indicate more complex project structure)
+        repo_factor = min(repo_count, 3)  # Cap at 3
+
+        # Development consistency factor (regular commits = higher complexity projects)
+        if avg_commits_month >= 15:
+            consistency_factor = 2
+        elif avg_commits_month >= 8:
+            consistency_factor = 1
+        else:
+            consistency_factor = 0
+
+        # Learning stage progression factor
+        stage_factors = {
+            "tutorial": 0,
+            "guided": 1,
+            "independent": 2,
+            "refactoring": 3,
+            "contributing": 4,
+            "teaching": 5,
+        }
+        stage_factor = stage_factors.get(self.learning_stage, 2)
+
+        # Calculate final score
+        total_score = (
+            base_complexity
+            + skills_factor
+            + commit_factor
+            + repo_factor
+            + consistency_factor
+            + stage_factor
+        )
+
+        return min(total_score, 20)  # Cap at 20 for ultra-complex projects
+
+    def get_portfolio_readiness_score_with_github(self):
+        """
+        Enhanced portfolio readiness that factors in GitHub activity
+        """
+        # Base readiness score
+        base_score = self.get_portfolio_readiness_score()
+
+        commit_stats = self.get_commit_stats()
+
+        # GitHub readiness factors
+        github_bonus = 0
+
+        # Recent activity bonus (shows project is actively maintained)
+        commits_30_days = commit_stats.get("commits_last_30_days", 0)
+        if commits_30_days >= 5:
+            github_bonus += 10
+        elif commits_30_days >= 1:
+            github_bonus += 5
+
+        # Total commits bonus (shows substantial work)
+        total_commits = commit_stats.get("total_commits", 0)
+        if total_commits >= 100:
+            github_bonus += 15
+        elif total_commits >= 50:
+            github_bonus += 10
+        elif total_commits >= 20:
+            github_bonus += 5
+
+        # Repository count bonus (multiple repos show broader skills)
+        repo_count = commit_stats.get("repository_count", 0)
+        if repo_count >= 3:
+            github_bonus += 10
+        elif repo_count >= 2:
+            github_bonus += 5
+
+        # Last commit recency (projects with recent commits are more portfolio-ready)
+        last_commit_date = commit_stats.get('last_commit_date')
+        days_since = self._safe_days_since(last_commit_date)
+    
+        if days_since is not None:
+            if days_since <= 30:
+                github_bonus += 10
+            elif days_since <= 90:
+                github_bonus += 5
+        
+        enhanced_score = min(base_score + github_bonus, 100)  # Cap at 100%
+
+        return {
+            "base_score": base_score,
+            "github_bonus": github_bonus,
+            "enhanced_score": enhanced_score,
+            "factors": {
+                "recent_activity": commits_30_days,
+                "total_commits": total_commits,
+                "repo_count": repo_count,
+                "last_commit_days": days_since
+            },
+        }
+
+    def get_development_timeline_with_commits(self):
+        """
+        Enhanced development timeline that includes real commit activity
+        """
+        timeline = []
+
+        # Add learning milestones
+        milestones = self.milestones.order_by("-date_achieved")[:5]
+        for milestone in milestones:
+            timeline.append(
+                {
+                    "type": "milestone",
+                    "date": milestone.date_achieved.date(),
+                    "title": milestone.title,
+                    "description": milestone.description,
+                    "confidence": milestone.confidence_boost,
+                }
+            )
+
+        # Add significant commit activity (using GitHubCommitWeek data)
+        repos = self.github_repositories.all()
+        if repos.exists():
+            # Get weeks with significant activity (>= 10 commits)
+            significant_weeks = GitHubCommitWeek.objects.filter(
+                repository__in=repos, commit_count__gte=10
+            ).order_by("-year", "-week")[:5]
+
+            for week in significant_weeks:
+                timeline.append(
+                    {
+                        "type": "development_sprint",
+                        "date": week.week_start_date,
+                        "title": f"Development Sprint - {week.commit_count} commits",
+                        "description": f"High activity week in {week.repository.name}",
+                        "repo": week.repository.name,
+                        "commit_count": week.commit_count,
+                    }
+                )
+
+        # Sort combined timeline by date
+        timeline.sort(key=lambda x: x["date"], reverse=True)
+
+        return timeline[:10]  # Return top 10 events
+
+    def get_learning_stage_color_with_activity(self):
+        """
+        Enhanced learning stage color that considers GitHub activity
+        """
+        base_color = self.get_learning_stage_color()
+
+        commit_stats = self.get_commit_stats()
+        commits_30_days = commit_stats.get("commits_last_30_days", 0)
+
+        # Modify color intensity based on recent activity
+        if commits_30_days >= 10:
+            # High activity - use brighter/more intense colors
+            color_map = {
+                "#FFB74D": "#FF9800",  # tutorial -> brighter orange
+                "#81C784": "#4CAF50",  # guided -> brighter green
+                "#64B5F6": "#2196F3",  # independent -> brighter blue
+                "#BA68C8": "#9C27B0",  # refactoring -> brighter purple
+                "#4FC3F7": "#00BCD4",  # contributing -> brighter cyan
+                "#FFD54F": "#FFC107",  # teaching -> brighter yellow
+            }
+            return color_map.get(base_color, base_color)
+        elif commits_30_days == 0:
+            # No activity - use muted colors
+            color_map = {
+                "#FFB74D": "#FFCC80",  # tutorial -> muted orange
+                "#81C784": "#A5D6A7",  # guided -> muted green
+                "#64B5F6": "#90CAF9",  # independent -> muted blue
+                "#BA68C8": "#CE93D8",  # refactoring -> muted purple
+                "#4FC3F7": "#80DEEA",  # contributing -> muted cyan
+                "#FFD54F": "#FFF176",  # teaching -> muted yellow
+            }
+            return color_map.get(base_color, base_color)
+
+        return base_color  # Normal activity - keep original color
+
 
 class SystemImage(models.Model):
     """Additional images for a system (gallery, screenshots, etc)."""

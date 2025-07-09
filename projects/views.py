@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy, reverse
 
 from django.db.models import Count, Avg, Q, Sum, Max, Min, F, Case, When, Value, IntegerField, CharField
-from django.db.models.functions import TruncMonth, Extract
+from django.db.models.functions import TruncMonth, Extract, Coalesce
 from django.http import JsonResponse
 from django.utils import timezone
 from django.core.cache import cache
@@ -273,15 +273,13 @@ class LearningJourneyDashboardView(TemplateView):
 
 class EnhancedLearningSystemListView(ListView):
     """
-    Learning-Focused System List - Transform existing system list to showcase
-    learning progression instead of performance metrics.
-
-    Features:
+    Learning-Focused System List - Updated to use real GitHub commit data
+    instead of static sample data. Features:
     - Learning stage filtering (tutorial → independent → teaching)
     - Skills gained filtering and display
     - Portfolio readiness indicators
     - Time investment tracking
-    - Learning velocity calculations
+    - Real GitHub commit metrics and activity
     """
 
     model = SystemModule
@@ -291,15 +289,19 @@ class EnhancedLearningSystemListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        """Enhanced query with learning-focused optimizations"""
+        """Enhanced query with learning-focused optimizations and real GitHub data"""
         # Start with optimized base query for learning data (exclude drafts, archived)
         queryset = (
-            SystemModule.objects.exclude(status__in=['draft', 'archived']).select_related("system_type", "author")
+            SystemModule.objects.exclude(status__in=["draft", "archived"])
+            .select_related("system_type", "author")
             .prefetch_related(
                 "technologies",
                 "skills_developed",  # Important for learning cards
                 "milestones",  # For recent achievements
                 "skill_gains__skill",  # For skill gain details
+                # NEW: GitHub Repository data w commit info
+                "github_repositories",
+                "github_repositories__languages",
             )
             .order_by("-updated_at")
         )
@@ -335,6 +337,23 @@ class EnhancedLearningSystemListView(ListView):
         if tech_filter:
             queryset = queryset.filter(technologies__slug=tech_filter)
 
+        # GITHUB ACTIVITY FILTERING (NEW - using real commit data)
+        activity_filter = self.request.GET.get("activity_level")
+        if activity_filter:
+            if activity_filter == "very_active":  # 20+ commits last 30 days
+                queryset = queryset.filter(
+                    github_repositories__commits_last_30_days__gte=20
+                ).distinct()
+            elif activity_filter == "active":  # 5+ commits last 30 days
+                queryset = queryset.filter(
+                    github_repositories__commits_last_30_days__gte=5
+                ).distinct()
+            elif activity_filter == "inactive":  # 0 commits last 30 days
+                queryset = queryset.filter(
+                    Q(github_repositories__commits_last_30_days=0)
+                    | Q(github_repositories__isnull=True)
+                ).distinct()
+
         # Search across learning-relevant fields
         search = self.request.GET.get("search")
         if search:
@@ -345,109 +364,293 @@ class EnhancedLearningSystemListView(ListView):
                 | Q(technologies__name__icontains=search)
             ).distinct()
 
-        # LEARNING-FOCUSED ORDERING
-        order = self.request.GET.get("order", "recent")
-        if order == "recent":
-            queryset = queryset.order_by("-updated_at")
-        elif order == "learning_velocity":
-            # Order by skills gained per month (calculated on-the-fly)
+        # SORTING OPTIONS WITH REAL GITHUB DATA
+        sort_by = self.request.GET.get("sort", "recent_activity")
+
+        if sort_by == "learning_velocity":
+            # Sort by skills gained per month (for enhanced sorting, could use
+            # the enhanced_learning_velocity in post-processing, but for DB efficiency
+            # we use skills count as proxy here)
             queryset = queryset.annotate(
                 skills_count=Count("skills_developed")
             ).order_by("-skills_count")
-        elif order == "complexity_evolution":
-            # Order by complexity progression
-            queryset = queryset.order_by("-complexity", "-updated_at")
-        elif order == "portfolio_readiness":
-            # Portfolio ready items first
-            queryset = queryset.order_by("-portfolio_ready", "-updated_at")
-        elif order == "time_investment":
-            # Use actual_dev_hours w fallback to estimated_dev_hours
+
+        elif sort_by == "github_activity":
+            # Sort by recent GitHub activity (real data)
+            queryset = queryset.order_by("-github_repositories__commits_last_30_days")
+
+        elif sort_by == "portfolio_readiness":
+            # Sort by portfolio readiness first, then by completion (enhanced scoring available)
+            queryset = queryset.order_by("-portfolio_ready", "-completion_percent")
+
+        elif sort_by == "complexity_evolution":
+            # Sort by complexity score (enhanced complexity calculation happens
+            # in post-processing for each system, but base complexity used for DB sorting)
+            queryset = queryset.order_by("-complexity")
+
+        elif sort_by == "time_investment":
+            # Sort by actual development hours
+            queryset = queryset.order_by("-actual_dev_hours")
+
+        else:  # default: recent_activity
+            # Sort by most recent GitHub activity or system updates
             queryset = queryset.order_by(
-                F('actual_dev_hours').desc(nulls_last=True),
-                F('estimated_dev_hours').desc(nulls_last=True),
-                "-updated_at"
+                "-github_repositories__last_commit_date", "-updated_at"
             )
-        elif order == "learning_stage":
-            # Custom ordering by learning stage progression
-            stage_order = Case(
-                When(learning_stage='tutorial', then=Value(1)),
-                When(learning_stage='guided', then=Value(2)),
-                When(learning_stage='independent', then=Value(3)),
-                When(learning_stage='refactoring', then=Value(4)),
-                When(learning_stage='contributing', then=Value(5)),
-                When(learning_stage='teaching', then=Value(6)),
-                default=Value(0),
-                output_field=IntegerField(),
-            )
-            queryset = queryset.order_by(stage_order=stage_order).order_by('-stage_order', '-updated_at')
 
         return queryset
 
     def get_context_data(self, **kwargs):
-        """Enhanced context with learning-focused metrics and filters"""
+        """Enhanced context with learning metrics using real GitHub data"""
         context = super().get_context_data(**kwargs)
 
-        # LEARNING METRICS FOR SIDEBAR (replaces performance metrics)
+        # Add learning-focused sidebar data
         context.update(
             {
-                # Learning stage distribution
-                "learning_stage_stats": self.get_learning_stage_distribution(),
-
-                # Portfolio readiness stats
+                "learning_stage_distribution": self.get_learning_stage_distribution(),
+                "skills_filter_list": self.get_skills_filter_list(),
                 "portfolio_stats": self.get_portfolio_readiness_stats(),
-
-                # Skills statistics
-                "skills_stats": self.get_skills_statistics(),
-
-                # Time investment breakdown
-                "time_investment_stats": self.get_time_investment_stats(),
-
-                # Technology mastery (enhanced with learning context)
-                "tech_mastery": self.get_technology_mastery(),
-
-                # Available filter options
-                "available_skills": self.get_available_skills(),
-                "available_learning_stages": SystemModule.LEARNING_STAGE_CHOICES,
-
-                # Current filters for display
-                "active_filters": self.get_active_learning_filters(),
-
-                # Recent learning activity
-                "recent_milestones": LearningMilestone.objects.select_related(
-                    'system', 'related_skill'
-                ).order_by("-date_achieved")[:5],
-
-                # Quick stats for header (learning-focused)
-                'quick_stats': self.get_learning_quick_stats(),
+                "github_activity_stats": self.get_github_activity_stats(),  # NEW
+                "time_investment_distribution": self.get_time_investment_distribution(),
+                "current_filters": self.get_current_filters(),
             }
         )
 
+        # Enhance each system with real GitHub commit data for template
+        for system in context['systems']:
+            # Use ENHANCED methods instead of basic ones
+            system.commit_stats = system.get_enhanced_commit_stats()  # NEW enhanced method
+            system.github_activity_level = self.get_system_activity_level(system)
+            system.real_complexity_score = system.get_complexity_evolution_score_with_github()  # NEW enhanced method
+            
+            # Add enhanced learning metrics for template use
+            system.enhanced_learning_velocity = system.get_learning_velocity_with_github()
+            system.enhanced_portfolio_readiness = system.get_portfolio_readiness_score_with_github()
+            system.development_timeline = system.get_development_timeline_with_commits()
+            system.learning_stage_color_with_activity = system.get_learning_stage_color_with_activity()
+        
         return context
-
-    def get_learning_stage_distribution(self):
-        """Get count of systems by learning stage"""
-        distribution = {}
-        for stage_code, stage_name in SystemModule.LEARNING_STAGE_CHOICES:
-            count = SystemModule.objects.filter(learning_stage=stage_code).count()
-            distribution[stage_code] = {
-                "name": stage_name,
-                "count": count,
-                "color": self.get_learning_stage_color(stage_code),
+    
+    def get_github_activity_stats(self):
+        """Enhanced: Get GitHub activity distribution using enhanced commit data"""
+        
+        # Get all systems with GitHub repositories
+        systems_with_repos = SystemModule.objects.filter(
+            github_repositories__isnull=False
+        ).distinct()
+        
+        if not systems_with_repos.exists():
+            return {
+                "total_systems": 0,
+                "active_systems": 0,
+                "activity_levels": []
             }
-        return distribution
 
-    def get_portfolio_readiness_stats(self):
-        """Get portfolio readiness breakdown"""
-        total_systems = SystemModule.objects.count()
-        ready_count = SystemModule.objects.filter(portfolio_ready=True).count()
+        # Count systems by enhanced activity level (using enhanced analysis)
+        activity_counts = {'very_active': 0, 'active': 0, 'moderate': 0, 'low': 0, 'inactive': 0}
+        
+        for system in systems_with_repos:
+            activity_level = self.get_system_activity_level(system)
+            level = activity_level['level']
+            if level in activity_counts:
+                activity_counts[level] += 1
 
         return {
-            "ready": ready_count,
-            "in_progress": total_systems - ready_count,
-            "total": total_systems,
-            "ready_percentage": round(
-                (ready_count / total_systems * 100) if total_systems > 0 else 0, 1
-            ),
+            "total_systems": systems_with_repos.count(),
+            "active_systems": activity_counts['very_active'] + activity_counts['active'],
+            "activity_levels": [
+                {"level": "very_active", "count": activity_counts['very_active'], "color": "#4CAF50"},
+                {"level": "active", "count": activity_counts['active'], "color": "#8BC34A"},
+                {"level": "moderate", "count": activity_counts['moderate'], "color": "#FFC107"},
+                {"level": "low", "count": activity_counts['low'], "color": "#FF9800"},
+                {"level": "inactive", "count": activity_counts['inactive'], "color": "#9E9E9E"},
+            ]
+        }
+
+    def get_system_activity_level(self, system):
+        """NEW: Calculate activity level using real GitHub data"""
+        commit_stats = system.get_commit_stats()
+        commits_30_days = commit_stats.get('commits_last_30_days', 0)
+        
+        # Consider weekly consistency for more nuanced activity levels
+        weekly_analysis = commit_stats.get('weekly_analysis', {})
+        consistency_score = weekly_analysis.get('consistency_score', 0)
+        
+        if commits_30_days >= 20 and consistency_score >= 60:
+            return {'level': 'very_active', 'color': '#4CAF50', 'label': 'Very Active'}
+        elif commits_30_days >= 20 or (commits_30_days >= 10 and consistency_score >= 70):
+            return {'level': 'active', 'color': '#8BC34A', 'label': 'Active'}
+        elif commits_30_days >= 5 or (commits_30_days >= 1 and consistency_score >= 50):
+            return {'level': 'moderate', 'color': '#FFC107', 'label': 'Moderate'}
+        elif commits_30_days >= 1:
+            return {'level': 'low', 'color': '#FF9800', 'label': 'Low Activity'}
+        else:
+            return {'level': 'inactive', 'color': '#9E9E9E', 'label': 'Inactive'}
+
+    def calculate_real_complexity_score(self, system):
+        """
+        UPDATED: Calculate complexity score using real GitHub data
+        instead of static sample data
+        """
+        commit_stats = system.get_commit_stats()
+
+        # Base complexity from system attributes
+        base_score = system.complexity or 5
+
+        # Adjust based on real GitHub activity
+        total_commits = commit_stats.get("total_commits", 0)
+        repo_count = commit_stats.get("repository_count", 0)
+
+        # Commit complexity factor (more commits = more complex)
+        if total_commits >= 100:
+            commit_factor = 3
+        elif total_commits >= 50:
+            commit_factor = 2
+        elif total_commits >= 20:
+            commit_factor = 1
+        else:
+            commit_factor = 0
+
+        # Repository complexity factor (multiple repos = more complex)
+        repo_factor = min(repo_count, 3)  # Cap at 3
+
+        # Learning stage factor
+        stage_factors = {
+            "tutorial": 0,
+            "guided": 1,
+            "independent": 2,
+            "refactoring": 3,
+            "contributing": 4,
+            "teaching": 5,
+        }
+        stage_factor = stage_factors.get(system.learning_stage, 2)
+
+        # Calculate final score
+        final_score = base_score + commit_factor + repo_factor + stage_factor
+
+        return min(final_score, 15)  # Cap at 15
+
+    def get_development_consistency(self, commit_stats):
+        """Enhanced: Calculate development consistency using weekly data"""
+        # Use weekly analysis if available (from enhanced commit stats)
+        weekly_analysis = commit_stats.get('weekly_analysis', {})
+        
+        if weekly_analysis:
+            consistency_score = weekly_analysis.get('consistency_score', 0)
+            
+            if consistency_score >= 80:
+                return {'level': 'very_consistent', 'score': consistency_score, 'color': '#4CAF50'}
+            elif consistency_score >= 60:
+                return {'level': 'consistent', 'score': consistency_score, 'color': '#8BC34A'}
+            elif consistency_score >= 40:
+                return {'level': 'moderate', 'score': consistency_score, 'color': '#FFC107'}
+            elif consistency_score >= 20:
+                return {'level': 'inconsistent', 'score': consistency_score, 'color': '#FF9800'}
+            else:
+                return {'level': 'very_inconsistent', 'score': consistency_score, 'color': '#F44336'}
+        
+        # Fallback to basic calculation if weekly data not available
+        commits_30_days = commit_stats.get('commits_last_30_days', 0)
+        avg_commits_month = commit_stats.get('avg_commits_per_month', 0)
+        
+        if avg_commits_month > 0:
+            consistency = min((commits_30_days / max(avg_commits_month, 1)) * 100, 100)
+            
+            if consistency >= 80:
+                return {'level': 'consistent', 'score': consistency, 'color': '#4CAF50'}
+            elif consistency >= 60:
+                return {'level': 'moderate', 'score': consistency, 'color': '#FFC107'}
+            else:
+                return {'level': 'inconsistent', 'score': consistency, 'color': '#FF9800'}
+        
+        return {'level': 'no_data', 'score': 0, 'color': '#9E9E9E'}
+
+    def calculate_development_span(self, commit_stats):
+        """Enhanced: Calculate development span using enhanced GitHub data"""
+        last_commit_date = commit_stats.get("last_commit_date")
+
+        if not last_commit_date:
+            return 0
+
+        # Use weekly analysis data if available for more accurate span calculation
+        weekly_analysis = commit_stats.get("weekly_analysis", {})
+        if weekly_analysis:
+            total_weeks = weekly_analysis.get("total_weeks_tracked", 0)
+            active_weeks = weekly_analysis.get("active_weeks", 0)
+
+            if total_weeks > 0:
+                # Convert weeks to months
+                estimated_months = total_weeks / 4.33  # Average weeks per month
+                return round(estimated_months, 1)
+
+        # Fallback to basic calculation
+        total_commits = commit_stats.get("total_commits", 0)
+        avg_per_month = commit_stats.get("avg_commits_per_month", 1)
+
+        if avg_per_month > 0:
+            estimated_months = total_commits / avg_per_month
+            return round(estimated_months, 1)
+
+        return 0
+
+    def get_learning_stage_distribution(self):
+        """Distribution of projects/systems by learning stage"""
+        stages = (
+            SystemModule.objects.values("learning_stage")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        stage_data = []
+        for stage in stages:
+            stage_data.append(
+                {
+                    "stage": stage["learning_stage"],
+                    "stage_display": dict(SystemModule.LEARNING_STAGE_CHOICES).get(
+                        stage["learning_stage"], stage["learning_stage"]
+                    ),
+                    "count": stage["count"],
+                    "color": {
+                        "tutorial": "#FFB74D",
+                        "guided": "#81C784",
+                        "independent": "#64B5F6",
+                        "refactoring": "#BA68C8",
+                        "contributing": "#4FC3F7",
+                        "teaching": "#FFD54F",
+                    }.get(stage["learning_stage"], "#64B5F6"),
+                }
+            )
+
+        return stage_data
+    
+    def get_skills_filter_list(self):
+        """Available skills for filtering"""
+        return Skill.objects.filter(
+            project_gains__isnull=False
+        ).distinct().order_by('name')
+
+    def get_portfolio_readiness_stats(self):
+        """Portfolio readiness statistics"""
+        all_systems = SystemModule.objects.exclude(status="draft")
+
+        if not all_systems.exists():
+            return {
+                "ready_count": 0,
+                "total_count": 0,
+                "ready_percentage": 0,
+                "needs_work": [],
+            }
+
+        ready_count = all_systems.filter(portfolio_ready=True).count()
+        total_count = all_systems.count()
+
+        return {
+            "ready_count": ready_count,
+            "total_count": total_count,
+            "ready_percentage": round((ready_count / total_count) * 100, 1),
+            "needs_work": all_systems.filter(
+                portfolio_ready=False, status__in=["deployed", "published"]
+            )[:3],
         }
 
     def get_skills_statistics(self):
@@ -469,7 +672,7 @@ class EnhancedLearningSystemListView(ListView):
             "avg_skills_per_system": round(total_skill_gains / max(total_systems, 1), 1)
         }
 
-    def get_time_investment_stats(self):
+    def get_time_investment_distribution(self):
         """Get time investment distribution"""
         # Use actual_dev_hours primarily, w estimated as fallback
         systems_with_actual_time = SystemModule.objects.exclude(actual_dev_hours__isnull=True)
@@ -539,51 +742,17 @@ class EnhancedLearningSystemListView(ListView):
             .order_by("name")
         )
 
-    def get_active_learning_filters(self):
-        """Get currently active learning-focused filters"""
-        filters = {}
-
-        if self.request.GET.get("learning_stage"):
-            stage_code = self.request.GET.get("learning_stage")
-            stage_name = dict(SystemModule.LEARNING_STAGE_CHOICES).get(
-                stage_code, stage_code
-            )
-            filters["Learning Stage"] = stage_name
-
-        if self.request.GET.get("portfolio_ready"):
-            ready_map = {"ready": "Portfolio Ready", "in_progress": "In Progress"}
-            filters["Portfolio Status"] = ready_map.get(
-                self.request.GET.get("portfolio_ready")
-            )
-
-        if self.request.GET.get("skill"):
-            try:
-                skill = Skill.objects.get(slug=self.request.GET.get("skill"))
-                filters["Skill"] = skill.name
-            except:
-                pass
-
-        if self.request.GET.get("time_investment"):
-            time_map = {
-                "short": "Short (<20h)",
-                "medium": "Medium (20-50h)",
-                "long": "Long (50h+)",
-            }
-            filters["Time Investment"] = time_map.get(
-                self.request.GET.get("time_investment")
-            )
-
-        if self.request.GET.get("tech"):
-            try:
-                tech = Technology.objects.get(slug=self.request.GET.get("tech"))
-                filters["Technology"] = tech.name
-            except:
-                pass
-
-        if self.request.GET.get("search"):
-            filters["Search"] = self.request.GET.get("search")
-
-        return filters
+    def get_current_filters(self):
+        """Current filter values for template"""
+        return {
+            "learning_stage": self.request.GET.get("learning_stage", ""),
+            "portfolio_ready": self.request.GET.get("portfolio_ready", ""),
+            "skill": self.request.GET.get("skill", ""),
+            "time_investment": self.request.GET.get("time_investment", ""),
+            "activity_level": self.request.GET.get("activity_level", ""),  # NEW
+            "technology": self.request.GET.get("technology", ""),
+            "sort": self.request.GET.get("sort", "recent_activity"),
+        }
 
     def get_learning_quick_stats(self):
         """Quick stats for header using learning metrics"""
@@ -634,17 +803,20 @@ class LearningSystemControlInterfaceView(DetailView):
     def get_queryset(self):
         # Optimized for learning data
         return SystemModule.objects.select_related(
-            'system_type', 'author'
+            "system_type", "author"
         ).prefetch_related(
-            'technologies',
-            'skills_developed',
-            'skill_gains__skill',   # For detailed skill progression
-            'milestones',           # For learning timeline
-            'features',
-            'dependencies',
-            'log_entries__post',    # DataLogs integration
-            'log_entries__post__category',
-            'log_entries__post__tags'
+            "technologies",
+            "skills_developed",
+            "skill_gains__skill",  # For detailed skill progression
+            "milestones",  # For learning timeline
+            "features",
+            "dependencies",
+            "log_entries__post",  # DataLogs integration
+            "log_entries__post__category",
+            "log_entries__post__tags",
+            # NEW: GitHub Repository data w commit info
+            "github_repositories",
+            "github_repositories__languages",
         )
 
     def get_context_data(self, **kwargs):

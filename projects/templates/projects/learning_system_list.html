@@ -445,6 +445,110 @@
         grid-template-columns: 1fr;
     }
 }
+
+{% comment %} NEW STYLES FOR TESTING  {% endcomment %}
+.github-metrics {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.metric-item {
+    text-align: center;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.development-trend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.trend-indicator.trend-up {
+    color: #4CAF50;
+}
+
+.trend-indicator.trend-down {
+    color: #F44336;
+}
+
+.trend-indicator.trend-stable {
+    color: #FFC107;
+}
+
+.activity-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+}
+
+.boost-indicator {
+    color: #4CAF50;
+    margin-left: 0.25rem;
+    font-size: 0.8rem;
+}
+
+.no-github-data {
+    text-align: center;
+    padding: 1rem;
+    color: var(--color-text-secondary);
+}
+
+.status-badge.active {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status-badge.moderate {
+    background-color: #FF9800;
+    color: white;
+}
+
+.status-badge.stable {
+    background-color: #2196F3;
+    color: white;
+}
+
+.status-badge.no-repo {
+    background-color: #9E9E9E;
+    color: white;
+}
+
 </style>
 {% endblock %}
 
@@ -829,6 +933,15 @@
                     <span class="stage-dot"></span>
                     {{ system.get_learning_stage_display }}
                 </div> {% endcomment %}
+
+                <!-- GitHub Activity Indicator -->
+                {% if system.commit_stats.repository_count > 0 %}
+                <span class="activity-indicator" 
+                    style="background-color: {{ system.github_activity_level.color }}"
+                    title="{{ system.github_activity_level.label }}">
+                    <i class="fab fa-github"></i>
+                </span>
+                {% endif %}
                 
                 <!-- Portfolio Ready Indicator -->
                 {% if system.portfolio_ready %}
@@ -863,7 +976,77 @@
             <p class="system-card-excerpt">{{ system.excerpt|truncatewords:25 }}</p>
             {% endif %}
 
-            <!-- Learning Metrics (replaces performance metrics) -->
+             <!-- Real GitHub Metrics (Enhanced) -->
+    <div class="github-metrics">
+        <h4><i class="fab fa-github"></i> Development Activity</h4>
+        
+        {% if system.commit_stats.repository_count > 0 %}
+        <div class="metrics-grid">
+            <!-- Total Commits (Real Data) -->
+            <div class="metric-item">
+                <span class="metric-value">{{ system.commit_stats.total_commits }}</span>
+                <span class="metric-label">Total Commits</span>
+            </div>
+            
+            <!-- Recent Activity (Real Data) -->
+            <div class="metric-item">
+                <span class="metric-value" style="color: {{ system.github_activity_level.color }}">
+                    {{ system.commit_stats.commits_last_30_days }}
+                </span>
+                <span class="metric-label">Commits - 30 days</span>
+            </div>
+            
+            <!-- Repository Count -->
+            <div class="metric-item">
+                <span class="metric-value">{{ system.commit_stats.repository_count }}</span>
+                <span class="metric-label">Repositories</span>
+            </div>
+            
+            <!-- Complexity Score (Now with Real GitHub Data) -->
+            <div class="metric-item">
+                <span class="metric-value">{{ system.real_complexity_score }}/15</span>
+                <span class="metric-label">Complexity</span>
+            </div>
+        </div>
+
+        <!-- Development Trend (if weekly data available) -->
+        {% if system.commit_stats.weekly_analysis %}
+        <div class="development-trend">
+            <span class="trend-label">Recent Trend:</span>
+            <span class="trend-indicator trend-{{ system.commit_stats.weekly_analysis.recent_trend.direction }}">
+                {% if system.commit_stats.weekly_analysis.recent_trend.direction == 'up' %}
+                    <i class="fas fa-arrow-up"></i> {{ system.commit_stats.weekly_analysis.recent_trend.percentage|floatformat:0 }}%
+                {% elif system.commit_stats.weekly_analysis.recent_trend.direction == 'down' %}
+                    <i class="fas fa-arrow-down"></i> {{ system.commit_stats.weekly_analysis.recent_trend.percentage|floatformat:0 }}%
+                {% else %}
+                    <i class="fas fa-minus"></i> Stable
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+
+        <!-- Last Commit Info (Real Data) -->
+        {% if system.commit_stats.last_commit_date %}
+        <div class="last-commit">
+            <small class="text-muted">
+                <i class="fas fa-clock"></i>
+                Last commit: {{ system.commit_stats.last_commit_date|timesince }} ago
+                {% if system.commit_stats.most_active_repo %}
+                in {{ system.commit_stats.most_active_repo.name }}
+                {% endif %}
+            </small>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- No GitHub Data -->
+        <div class="no-github-data">
+            <i class="fas fa-info-circle"></i>
+            <small class="text-muted">No GitHub repositories linked</small>
+        </div>
+        {% endif %}
+    </div>
+            {% comment %} <!-- Learning Metrics (replaces performance metrics) -->
             <div class="system-card-metrics learning-metrics">
                 <div class="metric-item">
                     <span class="metric-value">{{ system.skills_developed.count }}</span>
@@ -885,7 +1068,7 @@
                                 <span class="metric-value">{{ system.complexity|default:0 }}/5</span>
                     <span class="metric-label">Complexity</span>
                 </div>
-            </div>
+            </div> {% endcomment %}
 
             <!-- Skills Pills -->
             {% if system.skills_developed.all %}
