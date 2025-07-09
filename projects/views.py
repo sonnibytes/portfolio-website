@@ -590,7 +590,14 @@ class EnhancedLearningSystemListView(ListView):
                 {"level": "moderate", "count": activity_counts['moderate'], "color": "#FFC107"},
                 {"level": "low", "count": activity_counts['low'], "color": "#FF9800"},
                 {"level": "inactive", "count": activity_counts['inactive'], "color": "#9E9E9E"},
-            ]
+            ],
+            # Adding simple counts for filter badges
+            "very_active": activity_counts['very_active'],
+            'active': activity_counts['active'],
+            'moderate': activity_counts['moderate'],
+            'low': activity_counts['low'],
+            'inactive': activity_counts['inactive'],
+            "activity_counts": activity_counts,
         }
 
     def get_system_activity_level(self, system):
@@ -762,16 +769,19 @@ class EnhancedLearningSystemListView(ListView):
         if not all_systems.exists():
             return {
                 "ready_count": 0,
+                "in_progress": 0,
                 "total_count": 0,
                 "ready_percentage": 0,
                 "needs_work": [],
             }
 
         ready_count = all_systems.filter(portfolio_ready=True).count()
+        in_progress_count = all_systems.filter(portfolio_ready=False).count()
         total_count = all_systems.count()
 
         return {
             "ready_count": ready_count,
+            "in_progress": in_progress_count,
             "total_count": total_count,
             "ready_percentage": round((ready_count / total_count) * 100, 1),
             "needs_work": all_systems.filter(
