@@ -434,6 +434,7 @@ class EnhancedLearningSystemListView(ListView):
                 "active_filters": self.get_active_learning_filters(),
                 "learning_stage_filters": self.get_learning_filter_options(),
                 "github_activity": self.get_simple_github_distribution(),
+                "tech_mastery": self.get_technology_mastery(),
 
                 "skills_stats": self.get_skills_statistics(),
                 "portfolio_stats": self.get_portfolio_readiness_stats(),
