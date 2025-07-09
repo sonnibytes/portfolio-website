@@ -687,13 +687,13 @@
             </div>
         
             <!-- Learning Stage Filter -->
-            {% comment %}<div class="unified-dashboard-container purple">
+            <div class="unified-dashboard-container purple">
                 <div class="unified-container-header">
                     <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Learning Stages</h4>
                 </div>
                 
                  <div class="filter-options">
-                    {% for stage_code, stage_data in learning_stage_stats.items %}
+                    {% for stage_code, stage_data in learning_stage_filters.items %}
                     <a href="?learning_stage={{ stage_code }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
                        class="filter-option {% if request.GET.learning_stage == stage_code %}active{% endif %}">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -703,7 +703,7 @@
                     </a>
                     {% endfor %}
                 </div>
-            </div> {% endcomment %}
+            </div> 
         
             <!-- Portfolio Readiness Filter -->
             <div class="unified-dashboard-container coral">
@@ -733,14 +733,14 @@
             </div>
         
             <!-- Skills Filter -->
-            {% if available_skills %}
+            {% if skills_filter_list %}
             <div class="unified-dashboard-container lavender">
                 <div class="unified-container-header">
                     <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Skills Developed</h4>
                 </div>
                 
                 <div class="filter-options" style="max-height: 200px; overflow-y: auto;">
-                    {% for skill in available_skills %}
+                    {% for skill in skills_filter_list %}
                     <a href="?skill={{ skill.slug }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
                        class="filter-option {% if request.GET.skill == skill.slug %}active{% endif %}">
                         <span>{{ skill.name }}</span>
@@ -774,6 +774,33 @@
                        class="filter-option {% if request.GET.time_investment == 'long' %}active{% endif %}">
                         <span>Long (50h+)</span>
                         <span class="filter-count">{{ time_investment_stats.long }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- GitHub Activity Filter -->
+            <div class="unified-dashboard-container mint">
+                <div class="unified-container-header">
+                    <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">GitHub Activity</h4>
+                </div>
+                
+                <div class="filter-options">
+                    <a href="?activity_level=very_active{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.activity_level == 'very_active' %}active{% endif %}">
+                        <span>Very Active (&gt;20 commits)</span>
+                        <span class="filter-count">{{ github_activity_stats.very_active }}</span>
+                    </a>
+                    
+                    <a href="?activity_level=active{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.activity_level == 'active' %}active{% endif %}">
+                        <span>Active (&gt;5 commits)</span>
+                        <span class="filter-count">{{ github_activity_stats.active }}</span>
+                    </a>
+                    
+                    <a href="?activity_level=inactive{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
+                       class="filter-option {% if request.GET.activity_level == 'inactive' %}active{% endif %}">
+                        <span>Inactive (&lt;5 commits)</span>
+                        <span class="filter-count">{{ github_activity_stats.inactive }}</span>
                     </a>
                 </div>
             </div>
@@ -872,6 +899,13 @@
                                    class="filter-option {% if request.GET.order == 'complexity_evolution' %}active{% endif %}" 
                                    style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
                                    <span><i class="fas fa-chart-line"></i> Complexity</span>
+                                </a>
+
+                                <!-- GitHub Activity -->
+                                <a href="?order=github_activity{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.learning_stage %}&learning_stage={{ request.GET.learning_stage }}{% endif %}{% if request.GET.portfolio_ready %}&portfolio_ready={{ request.GET.portfolio_ready }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}{% if request.GET.time_investment %}&time_investment={{ request.GET.time_investment }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}" 
+                                   class="filter-option {% if request.GET.order == 'github_activity' %}active{% endif %}" 
+                                   style="padding: var(--spacing-xs, 0.5rem) var(--spacing-md, 1rem);">
+                                   <span><i class="fa-brands fa-github"></i> Activity</span>
                                 </a>
                                 
                                 <!-- Name -->
@@ -1280,7 +1314,7 @@
                     {% endif %}
                 </p>
                 {% if active_filters %}
-                <a href="{% url 'projects:learning_system_list' %}" class="action-btn">
+                <a href="{% url 'projects:system_list' %}" class="action-btn">
                     <i class="fas fa-filter"></i>
                     Clear All Filters
                 </a>

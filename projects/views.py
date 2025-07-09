@@ -365,9 +365,9 @@ class EnhancedLearningSystemListView(ListView):
             ).distinct()
 
         # SORTING OPTIONS WITH REAL GITHUB DATA
-        sort_by = self.request.GET.get("sort", "recent_activity")
+        order = self.request.GET.get("order", "recent_activity")
 
-        if sort_by == "learning_velocity":
+        if order == "learning_velocity":
             # Sort by skills gained per month (for enhanced sorting, could use
             # the enhanced_learning_velocity in post-processing, but for DB efficiency
             # we use skills count as proxy here)
@@ -375,22 +375,40 @@ class EnhancedLearningSystemListView(ListView):
                 skills_count=Count("skills_developed")
             ).order_by("-skills_count")
 
-        elif sort_by == "github_activity":
+        elif order == "github_activity":
             # Sort by recent GitHub activity (real data)
             queryset = queryset.order_by("-github_repositories__commits_last_30_days")
 
-        elif sort_by == "portfolio_readiness":
+        elif order == "portfolio_readiness":
             # Sort by portfolio readiness first, then by completion (enhanced scoring available)
             queryset = queryset.order_by("-portfolio_ready", "-completion_percent")
 
-        elif sort_by == "complexity_evolution":
+        elif order == "complexity_evolution":
             # Sort by complexity score (enhanced complexity calculation happens
             # in post-processing for each system, but base complexity used for DB sorting)
             queryset = queryset.order_by("-complexity")
 
-        elif sort_by == "time_investment":
+        elif order == "time_investment":
             # Sort by actual development hours
             queryset = queryset.order_by("-actual_dev_hours")
+        
+        elif order == "name":
+            # Sort by system name
+            queryset = queryset.order_by('title', '-updated_at')
+        
+        elif order == "learning_stage":
+            # Custom ordering by learning stage progression
+            stage_order = Case(
+                When(learning_stage='tutorial', then=Value(1)),
+                When(learning_stage='guided', then=Value(2)),
+                When(learning_stage='independent', then=Value(3)),
+                When(learning_stage='refactoring', then=Value(4)),
+                When(learning_stage='contributing', then=Value(5)),
+                When(learning_stage='teaching', then=Value(6)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+            queryset = queryset.order_by(stage_order=stage_order).order_by('-stage_order', '-updated_at')
 
         else:  # default: recent_activity
             # Sort by most recent GitHub activity or system updates
@@ -408,12 +426,18 @@ class EnhancedLearningSystemListView(ListView):
         context.update(
             {
                 "learning_stage_distribution": self.get_learning_stage_distribution(),
+                
+                # Filters lists and options
                 "skills_filter_list": self.get_skills_filter_list(),
+                "available_learning_stages": SystemModule.LEARNING_STAGE_CHOICES,
+                "available_filters": self.get_current_filters(),
+                "active_filters": self.get_active_learning_filters(),
+                "learning_stage_filters": self.get_learning_filter_options(),
+
                 "skills_stats": self.get_skills_statistics(),
                 "portfolio_stats": self.get_portfolio_readiness_stats(),
                 "github_activity_stats": self.get_github_activity_stats(),  # NEW
                 "time_investment_distribution": self.get_time_investment_distribution(),
-                "current_filters": self.get_current_filters(),
 
                 # Quick Stats for header
                 'quick_stats': self.get_learning_quick_stats(),
@@ -437,6 +461,74 @@ class EnhancedLearningSystemListView(ListView):
             system.skill_summary = self.get_skill_summary(system)
         
         return context
+    
+    def get_active_learning_filters(self):
+        """Get currently active learning-focused filters"""
+        filters = {}
+
+        if self.request.GET.get("learning_stage"):
+            stage_code = self.request.GET.get("learning_stage")
+            stage_name = dict(SystemModule.LEARNING_STAGE_CHOICES).get(
+                stage_code, stage_code
+            )
+            filters["Learning Stage"] = stage_name
+
+        if self.request.GET.get("portfolio_ready"):
+            ready_map = {"ready": "Portfolio Ready", "in_progress": "In Progress"}
+            filters["Portfolio Status"] = ready_map.get(
+                self.request.GET.get("portfolio_ready")
+            )
+
+        if self.request.GET.get("skill"):
+            try:
+                skill = Skill.objects.get(slug=self.request.GET.get("skill"))
+                filters["Skill"] = skill.name
+            except:
+                pass
+
+        if self.request.GET.get("time_investment"):
+            time_map = {
+                "short": "Short (<20h)",
+                "medium": "Medium (20-50h)",
+                "long": "Long (50h+)",
+            }
+            filters["Time Investment"] = time_map.get(
+                self.request.GET.get("time_investment")
+            )
+
+        if self.request.GET.get("tech"):
+            try:
+                tech = Technology.objects.get(slug=self.request.GET.get("tech"))
+                filters["Technology"] = tech.name
+            except:
+                pass
+
+        if self.request.GET.get("search"):
+            filters["Search"] = self.request.GET.get("search")
+        
+        if self.request.GET.get("activity_level"):
+            activity_map = {
+                "very_active": "Very Active (20+ Commits)",
+                "active": "Active (5+ Commits)",
+                "inactive": "Inactive (<5 Commits)",
+            }
+            filters["Activity Level"] = activity_map.get(
+                self.request.GET.get("activity_level")
+            )
+
+        return filters
+    
+    def get_learning_filter_options(self):
+        """Get count of systems by learning stage"""
+        distribution = {}
+        for stage_code, stage_name in SystemModule.LEARNING_STAGE_CHOICES:
+            count = SystemModule.objects.filter(learning_stage=stage_code).count()
+            distribution[stage_code] = {
+                "name": stage_name,
+                "count": count,
+                "color": self.get_learning_stage_color(stage_code),
+            }
+        return distribution
     
     def get_skill_summary(self, system):
         """Get Skills development summary for system cards with no github data."""
