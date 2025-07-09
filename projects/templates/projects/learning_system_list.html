@@ -599,7 +599,7 @@
                         </div>
                     </div>
                     <div class="metric-value" data-target="{{ quick_stats.skills_gained_count }}">{{ quick_stats.skills_gained_count }}</div>
-                    <div class="metric-label">Skills Gained</div>
+                    <div class="metric-label">Skills Gained {{ quick_stats.skills_gained_count }}</div>
                 </div>
             </div>
             
@@ -613,7 +613,7 @@
                         </div>
                     </div>
                     <div class="metric-value" data-target="{{ quick_stats.portfolio_ready_count }}">{{ quick_stats.portfolio_ready_count }}</div>
-                    <div class="metric-label">Portfolio Ready</div>
+                    <div class="metric-label">Portfolio Ready {{ quick_stats.portfolio_ready_count }}</div>
                 </div>
             </div>
                 
@@ -627,7 +627,7 @@
                         </div>
                     </div>
                     <div class="metric-value" data-target="{{ time_investment_distribution.total_hours|floatformat:0 }}">{{ time_investment_distribution.total_hours|floatformat:0 }}h</div>
-                    <div class="metric-label">Time Invested - hrs</div>
+                    <div class="metric-label">Time Invested - hrs {{ time_investment_distribution.total_hours }}</div>
                 </div>
             </div>
 
@@ -640,7 +640,7 @@
                         </div>
                     </div>
                     <div class="metric-value" data-target="{{ quick_stats.recent_milestones_count }}">{{ quick_stats.recent_milestones_count }}</div>
-                    <div class="metric-label">Recent Milestones</div>
+                    <div class="metric-label">Recent Milestones {{ quick_stats.recent_milestones_count }}</div>
                 </div>
             </div>
         </div>
@@ -1397,23 +1397,102 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initialize metric animations
-    const metricValues = document.querySelectorAll('.metric-value[data-target]');
-    metricValues.forEach(metric => {
-        const target = parseInt(metric.dataset.target);
-        let current = 0;
-        const increment = target / 50;
-        const timer = setInterval(() => {
-            current += increment;
-            if (current >= target) {
-                current = target;
-                clearInterval(timer);
+    // CLEAN SOLUTION: Work with UnifiedDashboardManager instead of against it
+    function initializeMetrics() {
+        // First, prepare our metrics for the dashboard manager
+        const metricValues = document.querySelectorAll('.metric-value[data-target]');
+        
+        metricValues.forEach(metric => {
+            const target = parseInt(metric.dataset.target);
+            if (target && target > 0) {
+                // Set up the metric the way the dashboard manager expects
+                const originalText = metric.textContent.trim();
+                
+                // Store original value if not already stored
+                if (!metric.dataset.originalValue) {
+                    metric.dataset.originalValue = originalText;
+                    metric.dataset.numericValue = target;
+                }
+                
+                // Reset to 0 for animation
+                metric.textContent = '0';
+                
+                console.log(`📊 Prepared metric for animation: ${originalText} (target: ${target})`);
             }
-            metric.textContent = Math.floor(current);
-        }, 30);
-    });
+        });
+        
+        // Now check if UnifiedDashboardManager exists and use it
+        if (window.UnifiedDashboardManager) {
+            console.log('✅ Using UnifiedDashboardManager for animations');
+            
+            // Create or get existing manager instance
+            const manager = new UnifiedDashboardManager();
+            
+            // Let it handle the animations
+            setTimeout(() => {
+                manager.animateMetricCounters();
+            }, 200);
+            
+        } else {
+            console.log('🔄 UnifiedDashboardManager not found, using fallback animation');
+            
+            // Fallback: simple clean animation
+            metricValues.forEach(metric => {
+                const target = parseInt(metric.dataset.target);
+                if (!target || target <= 0) return;
+                
+                let current = 0;
+                const duration = 1500;
+                const startTime = performance.now();
+                
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    
+                    current = Math.floor(eased * target);
+                    
+                    // Handle different display formats
+                    if (metric.dataset.originalValue && metric.dataset.originalValue.includes('h')) {
+                        metric.textContent = current + 'h';
+                    } else {
+                        metric.textContent = current;
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        // Set final value
+                        metric.textContent = metric.dataset.originalValue || target;
+                    }
+                };
+                
+                requestAnimationFrame(animate);
+            });
+        }
+    }
+
+    // Wait for any existing dashboard manager to initialize, then run our setup
+    setTimeout(initializeMetrics, 300);
+
+    // Debug helper
+    window.debugListMetrics = function() {
+        const metrics = document.querySelectorAll('.metric-value[data-target]');
+        console.log('🔍 List Metrics Debug:');
+        console.log('UnifiedDashboardManager available:', !!window.UnifiedDashboardManager);
+        
+        metrics.forEach((metric, index) => {
+            console.log(`  Metric ${index}:`, {
+                current: metric.textContent,
+                target: metric.dataset.target,
+                original: metric.dataset.originalValue,
+                numeric: metric.dataset.numericValue
+            });
+        });
+    };
 
     console.log('🎓 Learning-Enhanced System List loaded successfully!');
+    console.log('💡 Run debugListMetrics() to check metric states');
 });
 </script>
 {% endblock %}
