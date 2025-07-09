@@ -676,24 +676,23 @@
             </div>
         
             <!-- Learning Stage Filter -->
-            <div class="unified-dashboard-container purple">
+            {% comment %}<div class="unified-dashboard-container purple">
                 <div class="unified-container-header">
                     <h4 class="unified-container-title" style="font-size: 1rem; margin-bottom: 0;">Learning Stages</h4>
                 </div>
                 
-                <div class="filter-options">
+                 <div class="filter-options">
                     {% for stage_code, stage_data in learning_stage_stats.items %}
                     <a href="?learning_stage={{ stage_code }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.tech %}&tech={{ request.GET.tech }}{% endif %}{% if request.GET.order %}&order={{ request.GET.order }}{% endif %}" 
                        class="filter-option {% if request.GET.learning_stage == stage_code %}active{% endif %}">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            {% comment %} <span class="learning-stage-dot" style="background: var(--color-{{ stage_data.color }});"></span> {% endcomment %}
                             <span>{{ stage_data.name }}</span>
                         </div>
                         <span class="filter-count">{{ stage_data.count }}</span>
                     </a>
                     {% endfor %}
                 </div>
-            </div>
+            </div> {% endcomment %}
         
             <!-- Portfolio Readiness Filter -->
             <div class="unified-dashboard-container coral">
@@ -1040,35 +1039,72 @@
 
         {% else %}
         <!-- No GitHub Data -->
+        <div class="metrics-grid">
+            <!-- Total Commits (Real Data) -->
+            <div class="metric-item">
+                {% if system.skill_summary.flags.has_proficiency %}
+                    {% if system.skill_summary.skill_proficiency.new_skills  %}
+                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.new_skills }}</span>
+                    <span class="metric-label">Skills Gained</span>
+                    {% elif system.skill_summary.skill_proficiency.improved_skills %}
+                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.improved_skills }}</span>
+                    <span class="metric-label">Skills Improved</span>
+                    {% elif system.skill_summary.skill_proficiency.mastered_skills %}
+                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.mastered_skills }}</span>
+                    <span class="metric-label">Skills Mastered</span>
+                    {% else %}
+                    <span class="metric-value">{{ system.skills_developed.count }}</span>
+                    <span class="metric-label">Skills</span>
+                    {% endif %}
+                {% endif %}
+                
+            </div>
+            <div class="metric-item">
+                {% if system.skill_summary.flags.has_milestones %}
+                    {% if system.skill_summary.milestones.first_time  %}
+                    <span class="metric-value">{{ system.skill_summary.milestones.first_time }}</span>
+                    <span class="metric-label">First Time Milestones</span>
+                    {% elif system.skill_summary.milestones.breakthroughs %}
+                    <span class="metric-value">{{ system.skill_summary.milestones.breakthroughs }}</span>
+                    <span class="metric-label">Breakthroughs</span>
+                    {% else %}
+                    <span class="metric-value">{{ system.skill_summary.milestones.total_milestones }}</span>
+                    <span class="metric-label">Milestones</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div class="metric-item">
+                <span class="metric-value">
+                    {% if system.actual_dev_hours %}
+                        {{ system.actual_dev_hours }}h
+                    {% elif system.estimated_dev_hours %}
+                        ~{{ system.estimated_dev_hours }}h
+                    {% else %}
+                        0h
+                    {% endif %}
+                </span>
+                <span class="metric-label">Time Invested</span>
+            </div>
+
+            {% comment %} <div class="metric-item">
+                            <span class="metric-value">{{ system.complexity|default:0 }}/5</span>
+                <span class="metric-label">Complexity</span>
+            </div> {% endcomment %}
+
+            <!-- Complexity Score (Now with Real GitHub Data) -->
+            <div class="metric-item">
+                <span class="metric-value">{{ system.real_complexity_score }}/15</span>
+                <span class="metric-label">Complexity</span>
+            </div>
+
+        </div>
         <div class="no-github-data">
             <i class="fas fa-info-circle"></i>
-            <small class="text-muted">No GitHub repositories linked</small>
+            <small class="text-muted">Manually tracked data: No GitHub repositories linked</small>
         </div>
         {% endif %}
     </div>
-            {% comment %} <!-- Learning Metrics (replaces performance metrics) -->
-            <div class="system-card-metrics learning-metrics">
-                <div class="metric-item">
-                    <span class="metric-value">{{ system.skills_developed.count }}</span>
-                    <span class="metric-label">Skills Gained</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-value">
-                        {% if system.actual_dev_hours %}
-                            {{ system.actual_dev_hours }}h
-                        {% elif system.estimated_dev_hours %}
-                            ~{{ system.estimated_dev_hours }}h
-                        {% else %}
-                            0h
-                        {% endif %}
-                    </span>
-                    <span class="metric-label">Time Invested</span>
-                </div>
-                <div class="metric-item">
-                                <span class="metric-value">{{ system.complexity|default:0 }}/5</span>
-                    <span class="metric-label">Complexity</span>
-                </div>
-            </div> {% endcomment %}
 
             <!-- Skills Pills -->
             {% if system.skills_developed.all %}

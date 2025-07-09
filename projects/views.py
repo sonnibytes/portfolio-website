@@ -428,8 +428,41 @@ class EnhancedLearningSystemListView(ListView):
             system.enhanced_portfolio_readiness = system.get_portfolio_readiness_score_with_github()
             system.development_timeline = system.get_development_timeline_with_commits()
             system.learning_stage_color_with_activity = system.get_learning_stage_color_with_activity()
+
+            # Skill summary for cards without GH data
+            system.skill_summary = self.get_skill_summary(system)
         
         return context
+    
+    def get_skill_summary(self, system):
+        """Get Skills development summary for system cards with no github data."""
+        skill_summary = system.get_skill_development_summary()
+        # See if new, improved, or mastered skills
+        new_skills = skill_summary.get('new_skills', 0)
+        improved_skills = skill_summary.get('improved_skills', 0)
+        mastered_skills = skill_summary.get('mastered_skills', 0)
+        prof_count = new_skills + improved_skills + mastered_skills
+
+        return {
+            'flags': {
+                'has_skill_gains': bool(system.skill_gains),
+                'has_proficiency': prof_count > 0,
+                'has_milestones': bool(system.milestones),
+            },
+            'skill-proficiency': {
+                'total_skills': skill_summary['total_skills'],
+                'new_skills': skill_summary['new_skills'],
+                'improved_skills': skill_summary['improved_skills'],
+                'mastered_skills': skill_summary['mastered_skills'],
+            },
+            'milestones': {
+                'total_milestones': system.milestones.count(),
+                'first_time': system.milestones.filter(milestone_type='first_time').count(),
+                'breakthroughs': system.milestones.filter(milestone_type='breakthrough').count(),
+            }
+        }
+
+
     
     def get_github_activity_stats(self):
         """Enhanced: Get GitHub activity distribution using enhanced commit data"""
