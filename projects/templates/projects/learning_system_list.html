@@ -326,8 +326,6 @@
     box-shadow: 0 0 20px rgba(76, 175, 80, 0.1);
 }
 
-
-
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .learning-metrics {
@@ -566,7 +564,6 @@
 
 .complexity-bar {
     width: 3px;
-    height: 12px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 1px;
     transition: all 0.3s ease;
@@ -583,27 +580,25 @@
     box-shadow: 0 0 4px rgba(64, 224, 208, 0.3);
 }
 
-/* Different colors based on complexity level */
-.complexity-indicator[title*="1/10"] .complexity-bar.filled,
-.complexity-indicator[title*="2/10"] .complexity-bar.filled {
+/* Different colors based on complexity level (1-5 scale) */
+.complexity-indicator[data-complexity="1"] .complexity-bar.filled {
     background: linear-gradient(180deg, var(--color-success), #4caf50);
 }
 
-.complexity-indicator[title*="3/10"] .complexity-bar.filled,
-.complexity-indicator[title*="4/10"] .complexity-bar.filled,
-.complexity-indicator[title*="5/10"] .complexity-bar.filled {
+.complexity-indicator[data-complexity="2"] .complexity-bar.filled {
     background: linear-gradient(180deg, var(--color-warning), #ff9800);
 }
 
-.complexity-indicator[title*="6/10"] .complexity-bar.filled,
-.complexity-indicator[title*="7/10"] .complexity-bar.filled {
+.complexity-indicator[data-complexity="3"] .complexity-bar.filled {
     background: linear-gradient(180deg, var(--color-teal), #26c6da);
 }
 
-.complexity-indicator[title*="8/10"] .complexity-bar.filled,
-.complexity-indicator[title*="9/10"] .complexity-bar.filled,
-.complexity-indicator[title*="10/10"] .complexity-bar.filled {
+.complexity-indicator[data-complexity="4"] .complexity-bar.filled {
     background: linear-gradient(180deg, var(--color-purple), #9c27b0);
+}
+
+.complexity-indicator[data-complexity="5"] .complexity-bar.filled {
+    background: linear-gradient(180deg, var(--color-coral), #ff5722);
 }
 
 .complexity-label {
@@ -611,28 +606,6 @@
     font-weight: 600;
     color: var(--color-text-secondary);
     white-space: nowrap;
-}
-
-/* Portfolio Corner Badge - small and unobtrusive */
-.portfolio-corner-badge {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(135deg, #ffd700, #ffb300);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    color: #1a1a1a;
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
-    z-index: 2;
-}
-
-.portfolio-corner-badge i {
-    margin: 0;
 }
 
 /* Hover effects */
@@ -644,11 +617,6 @@
 .system-card:hover .complexity-bar.filled {
     box-shadow: 0 0 6px rgba(64, 224, 208, 0.5);
     transform: scaleY(1.1);
-}
-
-.system-card:hover .portfolio-corner-badge {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
 }
 
 /* Animation for bars on load */
@@ -1100,15 +1068,15 @@
                 {% endif %} {% endcomment %}
 
                 <!-- Complexity Indicator (replaces portfolio-ready badge) -->
-                <div class="complexity-indicator" title="Complexity: {{ system.complexity }}/10">
+                <div class="complexity-indicator" title="Complexity: {{ system.complexity|default:1 }}/5" data-complexity="{{ system.complexity|default:1 }}">
                     <div class="complexity-bars">
-                        {% with complexity=system.complexity|default:5 %}
+                        {% with complexity=system.complexity|default:1 %}
                         {% for i in "12345" %}
                             <div class="complexity-bar {% if complexity >= forloop.counter %}filled{% endif %}"></div>
                         {% endfor %}
                         {% endwith %}
                     </div>
-                    <span class="complexity-label">{{ system.complexity|default:5 }}/10</span>
+                    <span class="complexity-label">{{ system.complexity|default:1 }}/5</span>
                 </div>
                 
                 {% comment %} <!-- Portfolio Ready Indicator -->
