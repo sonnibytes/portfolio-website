@@ -761,26 +761,6 @@
                                     </div>
                                     {% endfor %}
                                 </div>
-                                {% comment %} <div class="tech-pills" style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
-                                    {% for tech in panel_data.technology_summary.technologies %}
-                                    <div class="tech-stat" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
-                                        {% comment %} <div class="tech-item" > 
-                                            <div class="tech-icon">
-                                                <i class="fas {{ tech.icon }}" style="color: {{ tech.color }}"></i>
-                                                <span class="tech-name">{{ tech.name }}</span>
-                                                <div style="display: flex; align-items: center; gap: 0.25rem;">
-                                                    <span class="mastery-badge mastery-{{ tech_stat.mastery_level }}">{{ tech_stat.mastery_level }}</span>
-                                                </div>
-                                            </div>
-                                         </div> {% endcomment %}
-                                    </div>
-                                    {% comment %} <span class="skill-pill" style="background: rgba(255, 138, 128, 0.15); color: var(--color-coral); border-color: rgba(255, 138, 128, 0.3);">
-                                        {{ tech.name }}
-                                    </span> 
-                                    {% empty %}
-                                    <span style="color: var(--color-text-secondary); font-style: italic;">No technologies documented</span>
-                                    {% endfor %}
-                                {% comment %} </div> {% endcomment %}
                             </div>
                             
                             {% if panel_data.technology_summary.primary_languages %}
@@ -802,9 +782,10 @@
                             </div>
                             
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                                {% if system.github_repositories.exists %}
                                 <div class="learning-metric-card">
                                     <div class="metric-value-large" style="color: var(--color-mint);">
-                                        {{ panel_data.development_stats.commit_count|default:"0" }}
+                                        {{ panel_data.development_stats.total_commits|default:"0" }}
                                     </div>
                                     <div class="metric-label-large">Commits</div>
                                 </div>
@@ -814,7 +795,35 @@
                                     </div>
                                     <div class="metric-label-large">Lines of Code</div>
                                 </div>
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-mint);">
+                                        {{ panel_data.development_stats.commit_frequency_rating|default:"0" }}
+                                    </div>
+                                    <div class="metric-label-large">Commit Frequency Rating</div>
+                                </div>
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-mint);">
+                                        {{ panel_data.development_stats.commits_last_30_days|default:"0" }}
+                                    </div>
+                                    <div class="metric-label-large">Commits - last 30 days</div>
+                                </div>
+                            
+
+                            {% else %}
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-mint);">
+                                    {{ system.commit_count|default:"0" }}
+                                </div>
+                                <div class="metric-label-large">Commits</div>
                             </div>
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-mint);">
+                                    {{ panel_data.development_stats.lines_of_code|default:"0" }}
+                                </div>
+                                <div class="metric-label-large">Lines of Code</div>
+                            </div>
+                            {% endif %}
+                        </div>
                             
                             <div style="margin-bottom: 1rem;">
                                 <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Time Investment</div>
@@ -824,15 +833,54 @@
                                 </div>
                             </div>
                             
-                            {% if panel_data.development_stats.last_commit %}
+                            {% if panel_data.development_stats.last_commit_date %}
                             <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
                                 <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Last Commit</div>
                                 <div style="color: var(--color-mint); font-weight: 600;">
-                                    {{ panel_data.development_stats.last_commit|date:"M d, Y" }}
+                                    {{ panel_data.development_stats.last_commit_date|date:"M d, Y" }}
                                 </div>
                             </div>
                             {% endif %}
                         </div>
+
+                        <!-- CONNECTED REPOSITORIES -->
+                        
+                        <div class="unified-dashboard-container coral">
+                            <div class="unified-container-header">
+                                <h3 style="margin-bottom: 1.5rem;">Connected Repositories</h3>
+                            </div>
+                            {% if system.github_repositories.exists %}
+                            {% for repo in system.github_repositories.all|slice:":4" %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px;">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">
+                                        <a href="{{ repo.html_url }}" target="_blank" style="color: var(--color-text-primary); text-decoration: none;">
+                                            <i class="fab fa-github"></i> {{ repo.name }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
+                                        {{ repo.total_commits|format_commit_count }} commits
+                                        {% if repo.commits_last_30_days > 0 %}
+                                            • {{ repo.commits_last_30_days }} this month
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div>
+                                    {{ repo.commit_frequency_rating|commit_frequency_badge }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <div style="color: var(--color-text-secondary);">
+                                    <i class="fas fa-info-circle"></i>
+                                    No GitHub activity tracked yet
+                                </div>
+                            </div>
+
+                            {% endif %}
+                        </div>
+                        
 
                         <!-- Recent Activity Feed -->
                         <div class="unified-dashboard-container purple">
