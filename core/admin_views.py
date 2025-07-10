@@ -714,6 +714,9 @@ class EducationListAdminView(BaseAdminListView, BulkActionMixin):
                 "title": "Manage Education",
                 "subtitle": "Learning history and skill development",
                 "learning_types": Education._meta.get_field("learning_type").choices,
+                "current": Education.objects.filter(is_current=True).count(),
+                "certified": Education.objects.filter(certificate_url__isnull=False).count(),
+                "hours_completed": Education.objects.aggregate(hours=Sum('hours_completed'))['hours'] or 0,
             }
         )
         return context

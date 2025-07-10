@@ -1,0 +1,546 @@
+<!-- 
+  * core/templates/core/admin/education_list.html
+  * Education Management Interface
+  * Version 1.0 - Learning Journey Focus with AURA styling
+  -->
+  {% extends 'admin/admin_base.html' %}
+  {% load static %}
+  
+  {% block admin_title %}Manage Education{% endblock %}
+  
+  {% block admin_css %}
+  {{ block.super }}
+  <style>
+  .admin-nav-link.active {
+      background: rgba(var(--emerald-rgb), 0.2);
+      color: var(--emerald);
+  }
+  .education-card {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+  }
+  .education-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+  }
+  .education-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gradient-secondary);
+  }
+  .learning-type-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+  }
+  .formal-degree { background: linear-gradient(45deg, #7c3aed, #a855f7); color: white; }
+  .online-course { background: linear-gradient(45deg, #06b6d4, #0ea5e9); color: white; }
+  .certification { background: linear-gradient(45deg, #059669, #10b981); color: white; }
+  .bootcamp { background: linear-gradient(45deg, #dc2626, #ef4444); color: white; }
+  .self-study { background: linear-gradient(45deg, #d97706, #f59e0b); color: white; }
+  .workshop { background: linear-gradient(45deg, #7c2d12, #ea580c); color: white; }
+  .current-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: linear-gradient(45deg, #22c55e, #16a34a);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+  }
+  .relevance-stars {
+      {% comment %} display: flex; {% endcomment %}
+      gap: 2px;
+  }
+  .star {
+      width: 12px;
+      height: 12px;
+      color: #fbbf24;
+  }
+  .star.empty {
+      color: #374151;
+  }
+  .duration-timeline {
+      background: rgba(255, 255, 255, 0.1);
+      height: 4px;
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+  }
+  .duration-progress {
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+  }
+  .certificate-link {
+      color: #10b981;
+      text-decoration: none;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+  }
+  .certificate-link:hover {
+      color: #059669;
+  }
+  .skill-chip {
+      display: inline-block;
+      background: rgba(52, 211, 153, 0.2);
+      color: #10b981;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      margin: 2px;
+  }
+  .hours-badge {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+  }
+  </style>
+  {% endblock %}
+  
+  {% block admin_content %}
+  <div class="space-y-6">
+      
+      <!-- Page Header -->
+      <div class="flex items-center justify-between">
+          <div>
+              <h1 class="text-2xl font-bold text-white mb-2">
+                  <i class="fas fa-university text-purple-400 mr-3"></i>
+                  Learning Journey
+              </h1>
+              <p class="text-gray-400">{{ subtitle }}</p>
+          </div>
+          <div class="flex items-center space-x-3">
+              <a href="{% url 'aura_admin:education_create' %}" class="btn btn-purple">
+                  <i class="fas fa-plus mr-2"></i>
+                  Add Education
+              </a>
+          </div>
+      </div>
+  
+      <!-- Stats Bar -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="glass-card p-4 text-center border-l-4 border-purple-400">
+              <div class="text-2xl font-bold text-purple-400">{{ total_count }}</div>
+              <div class="text-sm text-gray-400">Total Entries</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-green-400">
+              <div class="text-2xl font-bold text-green-400">
+                  {{ current }}
+              </div>
+              <div class="text-sm text-gray-400">Current</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-blue-400">
+              <div class="text-2xl font-bold text-blue-400">
+                  {{ certified }}
+              </div>
+              <div class="text-sm text-gray-400">Certified</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-yellow-400">
+              <div class="text-2xl font-bold text-yellow-400">
+                  {{ hours_completed }}
+              </div>
+              <div class="text-sm text-gray-400">Learning Hours</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-emerald-400">
+              <div class="text-2xl font-bold text-emerald-400">{{ filtered_count }}</div>
+              <div class="text-sm text-gray-400">Filtered Results</div>
+          </div>
+      </div>
+  
+      <!-- Filters & Search -->
+      <div class="glass-card p-6">
+          <form method="GET" class="space-y-4" id="filterForm">
+              <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                  
+                  <!-- Search -->
+                  <div class="lg:col-span-2">
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Search Education</label>
+                      <div class="relative">
+                          <input 
+                              type="text" 
+                              name="search" 
+                              value="{{ search_query }}"
+                              placeholder="Search institution, degree, platform..." 
+                              class="form-control pl-10"
+                          >
+                          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                      </div>
+                  </div>
+  
+                  <!-- Learning Type Filter -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Learning Type</label>
+                      <select name="learning_type" class="form-control">
+                          <option value="">All Types</option>
+                          {% for value, label in learning_types %}
+                              <option value="{{ value }}" {% if request.GET.learning_type == value %}selected{% endif %}>{{ label }}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+  
+                  <!-- Status Filter -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Status</label>
+                      <select name="status" class="form-control">
+                          <option value="">All Education</option>
+                          <option value="current" {% if request.GET.status == 'current' %}selected{% endif %}>Current Only</option>
+                          <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed Only</option>
+                      </select>
+                  </div>
+  
+                  <!-- Year Filter -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Sort By</label>
+                      <select name="sort" class="form-control">
+                          <option value="">Recent First</option>
+                          <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                          <option value="relevance" {% if request.GET.sort == 'relevance' %}selected{% endif %}>Relevance</option>
+                          <option value="hours" {% if request.GET.sort == 'hours' %}selected{% endif %}>Learning Hours</option>
+                      </select>
+                  </div>
+              </div>
+  
+              <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                      <button type="submit" class="btn btn-purple">
+                          <i class="fas fa-filter mr-2"></i>
+                          Apply Filters
+                      </button>
+                      <a href="{% url 'aura_admin:education_list' %}" class="btn btn-outline">
+                          <i class="fas fa-times mr-2"></i>
+                          Clear
+                      </a>
+                  </div>
+                  
+                  <!-- Bulk Actions -->
+                  <div class="flex items-center space-x-2">
+                      <select id="bulkAction" class="form-control w-auto">
+                          <option value="">Bulk Actions</option>
+                          <option value="mark_current">Mark as Current</option>
+                          <option value="mark_completed">Mark as Completed</option>
+                          <option value="export">Export Selected</option>
+                          <option value="delete">Delete Selected</option>
+                      </select>
+                      <button type="button" id="applyBulkAction" class="btn btn-orange">
+                          Apply
+                      </button>
+                  </div>
+              </div>
+          </form>
+      </div>
+  
+      <!-- Education Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {% if education_entries %}
+              {% for education in education_entries %}
+                  <div class="glass-card education-card p-6 relative">
+                    <div class="card-badges">
+                      <!-- Checkbox for bulk actions -->
+                      <input type="checkbox" class="education-checkbox absolute top-3 left-16 z-10" value="{{ education.pk }}">
+                      
+                      <!-- Current Badge -->
+                      {% if education.is_current %}
+                          <div class="current-badge">
+                              <i class="fas fa-clock mr-1"></i>Current
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Learning Type Badge -->
+                      <div class="learning-type-badge {{ education.learning_type }}">
+                          {% if education.learning_type == 'formal_degree' %}
+                              <i class="fas fa-graduation-cap mr-1"></i>Degree
+                          {% elif education.learning_type == 'online_course' %}
+                              <i class="fas fa-laptop mr-1"></i>Course
+                          {% elif education.learning_type == 'certification' %}
+                              <i class="fas fa-certificate mr-1"></i>Cert
+                          {% elif education.learning_type == 'bootcamp' %}
+                              <i class="fas fa-rocket mr-1"></i>Bootcamp
+                          {% elif education.learning_type == 'self_study' %}
+                              <i class="fas fa-book mr-1"></i>Self Study
+                          {% elif education.learning_type == 'workshop' %}
+                              <i class="fas fa-tools mr-1"></i>Workshop
+                          {% endif %}
+                      </div>
+                    </div>
+                      
+                      <!-- Institution & Platform -->
+                      <div class="mb-4">
+                          <h3 class="text-lg font-bold text-white mb-1">{{ education.degree }}</h3>
+                          <div class="text-purple-400 font-medium mb-1">{{ education.institution }}</div>
+                          {% if education.platform and education.platform != education.institution %}
+                              <div class="text-sm text-gray-400">via {{ education.platform }}</div>
+                          {% endif %}
+                          {% if education.field_of_study %}
+                              <div class="text-sm text-cyan-400">{{ education.field_of_study }}</div>
+                          {% endif %}
+                      </div>
+                      
+                      <!-- Timeline -->
+                      <div class="mb-4">
+                          <div class="flex items-center justify-between mb-2">
+                              <span class="text-sm text-gray-400">Duration</span>
+                              <span class="text-sm text-white">
+                                  {{ education.start_date|date:"M Y" }} - 
+                                  {% if education.end_date %}{{ education.end_date|date:"M Y" }}{% else %}Present{% endif %}
+                              </span>
+                          </div>
+                          {% if education.end_date %}
+                              <div class="duration-timeline">
+                                  <div class="duration-progress" style="width: 100%;"></div>
+                              </div>
+                          {% else %}
+                              <div class="duration-timeline">
+                                  <div class="duration-progress" style="width: 65%;"></div>
+                              </div>
+                          {% endif %}
+                      </div>
+                      
+                      <!-- Key Metrics -->
+                      <div class="grid grid-cols-2 gap-4 mb-4">
+                          <!-- Learning Hours -->
+                          {% if education.hours_completed %}
+                              <div class="text-center">
+                                  <div class="hours-badge">{{ education.hours_completed }}h</div>
+                                  <div class="text-xs text-gray-400 mt-1">Hours</div>
+                              </div>
+                          {% endif %}
+                          
+                          <!-- Career Relevance -->
+                          <div class="text-center">
+                              <div class="relevance-stars mb-1">
+                                  {% for i in "12345" %}
+                                      <i class="fas fa-star star {% if forloop.counter > education.career_relevance %}empty{% endif %}"></i>
+                                  {% endfor %}
+                              </div>
+                              <div class="text-xs text-gray-400">Relevance</div>
+                          </div>
+                      </div>
+                      
+                      <!-- Certificate Link -->
+                      {% if education.certificate_url %}
+                          <div class="mb-4">
+                              <a href="{{ education.certificate_url }}" target="_blank" class="certificate-link">
+                                  <i class="fas fa-external-link-alt"></i>
+                                  View Certificate
+                              </a>
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Connected Skills -->
+                      {% if education.skills_learned.all %}
+                          <div class="mb-4">
+                              <div class="text-xs text-gray-400 mb-2">Skills Learned</div>
+                              <div class="flex flex-wrap">
+                                  {% for skill in education.skills_learned.all|slice:":4" %}
+                                      <span class="skill-chip">{{ skill.name }}</span>
+                                  {% endfor %}
+                                  {% if education.skills_learned.all|length > 4 %}
+                                      <span class="skill-chip">+{{ education.skills_learned.all|length|add:"-4" }} more</span>
+                                  {% endif %}
+                              </div>
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Related Projects -->
+                      {% if education.related_projects.all %}
+                          <div class="mb-4">
+                              <div class="text-xs text-gray-400 mb-2">Applied In Projects</div>
+                              <div class="text-sm">
+                                  {% for project in education.related_projects.all|slice:":2" %}
+                                      <div class="text-cyan-400">{{ project.title }}</div>
+                                  {% endfor %}
+                                  {% if education.related_projects.all|length > 2 %}
+                                      <div class="text-gray-400 text-xs">+{{ education.related_projects.all|length|add:"-2" }} more</div>
+                                  {% endif %}
+                              </div>
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Description Preview -->
+                      {% if education.description %}
+                          <div class="text-sm text-gray-400 mb-4 line-clamp-2">
+                              {{ education.description|truncatechars:100 }}
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Actions -->
+                      <div class="flex items-center justify-between">
+                          <div class="flex items-center space-x-2">
+                              <!-- Learning Intensity Indicator -->
+                              <div class="flex items-center space-x-1" title="Learning Intensity: {{ education.learning_intensity }}/5">
+                                  {% for i in "12345" %}
+                                      <div class="w-2 h-2 rounded-full {% if forloop.counter <= education.learning_intensity %}bg-orange-400{% else %}bg-gray-600{% endif %}"></div>
+                                  {% endfor %}
+                              </div>
+                          </div>
+                          
+                          <!-- Main Actions -->
+                          <div class="flex items-center space-x-1">
+                              <!-- Link to Skills -->
+                              <a href="{% url 'aura_admin:education_skill_list' %}?education={{ education.pk }}" 
+                                 class="btn btn-xs btn-outline" 
+                                 title="Manage Skills">
+                                  <i class="fas fa-link"></i>
+                              </a>
+                              
+                              <a href="{% url 'aura_admin:education_update' education.pk %}" 
+                                 class="btn btn-xs btn-outline" 
+                                 title="Edit Education">
+                                  <i class="fas fa-edit"></i>
+                              </a>
+                              
+                              <a href="{% url 'aura_admin:education_delete' education.pk %}" 
+                                 class="btn btn-xs btn-red" 
+                                 title="Delete Education">
+                                  <i class="fas fa-trash"></i>
+                              </a>
+                          </div>
+                      </div>
+                  </div>
+              {% endfor %}
+          {% else %}
+              <!-- Empty State -->
+              <div class="col-span-full">
+                  <div class="glass-card p-12 text-center">
+                      <div class="text-gray-400">
+                          <i class="fas fa-university text-4xl mb-4"></i>
+                          <h3 class="text-xl font-bold mb-2">No Education Entries Found</h3>
+                          {% if search_query or request.GET.learning_type or request.GET.status %}
+                              <p class="mb-4">No education entries match your current filters.</p>
+                              <a href="{% url 'aura_admin:education_list' %}" class="btn btn-purple">
+                                  <i class="fas fa-times mr-2"></i>
+                                  Clear Filters
+                              </a>
+                          {% else %}
+                              <p class="mb-4">Start documenting your learning journey.</p>
+                              <a href="{% url 'aura_admin:education_create' %}" class="btn btn-purple">
+                                  <i class="fas fa-plus mr-2"></i>
+                                  Add Your First Course
+                              </a>
+                          {% endif %}
+                      </div>
+                  </div>
+              </div>
+          {% endif %}
+      </div>
+  
+      <!-- Pagination -->
+      {% if is_paginated %}
+          <div class="flex justify-center">
+              <nav class="pagination-nav">
+                  <div class="flex items-center space-x-2">
+                      {% if page_obj.has_previous %}
+                          <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.learning_type %}&learning_type={{ request.GET.learning_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-double-left"></i>
+                          </a>
+                          <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.learning_type %}&learning_type={{ request.GET.learning_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-left mr-1"></i>Previous
+                          </a>
+                      {% endif %}
+                      
+                      <span class="px-4 py-2 text-sm text-gray-400">
+                          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                      </span>
+                      
+                      {% if page_obj.has_next %}
+                          <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.learning_type %}&learning_type={{ request.GET.learning_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              Next<i class="fas fa-angle-right ml-1"></i>
+                          </a>
+                          <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.learning_type %}&learning_type={{ request.GET.learning_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-double-right"></i>
+                          </a>
+                      {% endif %}
+                  </div>
+              </nav>
+          </div>
+      {% endif %}
+  
+  </div>
+  
+  <!-- JavaScript for Education Management -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Bulk Actions
+      document.getElementById('applyBulkAction').addEventListener('click', function() {
+          const action = document.getElementById('bulkAction').value;
+          const selectedEducation = Array.from(document.querySelectorAll('.education-checkbox:checked'))
+              .map(cb => cb.value);
+          
+          if (!action) {
+              showNotification('Please select an action', 'warning');
+              return;
+          }
+          
+          if (selectedEducation.length === 0) {
+              showNotification('Please select education entries to perform action on', 'warning');
+              return;
+          }
+          
+          if (action === 'delete' && !confirm('Are you sure you want to delete the selected education entries?')) {
+              return;
+          }
+          
+          // Implement bulk action logic here
+          showNotification(`${action} applied to ${selectedEducation.length} education entries`, 'info');
+      });
+  
+      // Animate duration progress bars
+      setTimeout(() => {
+          document.querySelectorAll('.duration-progress').forEach(bar => {
+              const width = bar.style.width;
+              bar.style.width = '0%';
+              setTimeout(() => {
+                  bar.style.width = width;
+              }, 200);
+          });
+      }, 300);
+  
+      // Certificate link tracking (optional analytics)
+      document.querySelectorAll('.certificate-link').forEach(link => {
+          link.addEventListener('click', function() {
+              // Could track certificate views for analytics
+              console.log('Certificate viewed:', this.href);
+          });
+      });
+  });
+  
+  // Notification helper function
+  function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+          type === 'success' ? 'bg-green-500' :
+          type === 'error' ? 'bg-red-500' :
+          type === 'warning' ? 'bg-yellow-500' :
+          'bg-blue-500'
+      }`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+          notification.remove();
+      }, 3000);
+  }
+  </script>
+  
+  {% endblock %}
