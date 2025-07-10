@@ -888,26 +888,43 @@
                             <h3 style="margin-bottom: 1.5rem;">Recent Activity</h3>
                             </div>
                             
-                            {% if panel_data.recent_activity %}
+                            {% with recent_activity=panel_data.recent_activity %}
+                            {% if recent_activity %}
                             <div class="activity-feed" style="max-height: 400px; overflow-y: auto;">
-                                {% for activity in panel_data.recent_activity %}
-                                <div class="activity-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.03); border-radius: 8px; margin-bottom: 0.75rem;">
-                                    <div class="activity-icon" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(179, 157, 219, 0.2);">
-                                        <i class="fas fa-{{ activity.icon }}" style="color: var(--color-purple); font-size: 0.9rem;"></i>
+                                {% for activity in recent_activity|slice:":6" %}
+                                <div class="activity-item {{ activity.type }}" style="display: flex; gap: 1rem; padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px; border-left: 3px solid var(--color-{{ activity.color }});">
+                                    <div class="activity-icon" style="padding-top: 0.2rem;">
+                                        <i class="fas fa-{{ activity.icon }}" style="color: var(--color-{{ activity.color }});"></i>
                                     </div>
-                                    <div class="activity-content" style="flex: 1;">
-                                        <div style="font-size: 0.9rem; color: var(--color-text-primary); margin-bottom: 0.25rem;">{{ activity.description }}</div>
-                                        <div style="font-size: 0.7rem; color: var(--color-text-secondary);">{{ activity.date|date:"M d, Y" }}</div>
+                                    <div class="activity-content" style="flex: 1; min-width: 0;">
+                                        <div class="activity-description" style="font-weight: 600; margin-bottom: 0.25rem; color: var(--color-text-primary);">
+                                            {{ activity.description }}
+                                        </div>
+                                        {% if activity.detail %}
+                                        <div class="activity-detail" style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                            {{ activity.detail }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="activity-time" style="font-size: 0.8rem; color: var(--color-text-tertiary);">
+                                            {{ activity.date|time_since_published }}
+                                        </div>
+                                        
+                                        {% if activity.type == 'commit' and activity.repo_url %}
+                                        <a href="{{ activity.repo_url }}" target="_blank" style="color: var(--color-teal); text-decoration: none; font-size: 0.8rem; margin-top: 0.25rem; display: inline-block;">
+                                            <i class="fab fa-github"></i> View Repository
+                                        </a>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 {% endfor %}
                             </div>
                             {% else %}
                             <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">
-                                <i class="fas fa-history" style="font-size: 2rem; opacity: 0.3; margin-bottom: 1rem;"></i>
-                                <p>No recent activity recorded</p>
+                                <i class="fas fa-clock" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                                <span>No recent activity tracked</span>
                             </div>
                             {% endif %}
+                            {% endwith %}
                         </div>
 
                         <!-- System Health & Quick Links -->
