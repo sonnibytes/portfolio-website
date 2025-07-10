@@ -915,6 +915,7 @@ class ContactListAdminView(BaseAdminListView, BulkActionMixin):
                     "inquiry_category"
                 ).choices,
                 "priority_levels": Contact._meta.get_field("priority").choices,
+                "unread_count": Contact.objects.filter(is_read=False).count(),
             }
         )
         return context
