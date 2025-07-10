@@ -634,6 +634,9 @@ class SkillListAdminView(BaseAdminListView, BulkActionMixin):
                 "subtitle": "Technical skills and learning progression",
                 "skill_categories": Skill.CATEGORY_CHOICES,
                 "proficiency_levels": [(i, i) for i in range(1, 6)],
+                "featured": Skill.objects.filter(is_featured=True).count(),
+                "is_learning": Skill.objects.filter(is_currently_learning=True).count(),
+                "certified": Skill.objects.filter(is_certified=True).count(),
             }
         )
         return context

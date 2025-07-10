@@ -1,0 +1,528 @@
+<!-- 
+  * core/templates/core/admin/skill_list.html
+  * Skills Management Interface
+  * Version 1.0 - Matches AURA admin styling patterns
+  -->
+  {% extends 'admin/admin_base.html' %}
+  {% load static %}
+  
+  {% block admin_title %}Manage Skills{% endblock %}
+  
+  {% block admin_css %}
+  {{ block.super }}
+  <style>
+  .admin-nav-link.active {
+      background: rgba(var(--emerald-rgb), 0.2);
+      color: var(--emerald);
+  }
+  .skill-card {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+  }
+  .skill-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.15);
+  }
+  .skill-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gradient-primary);
+  }
+  .proficiency-bar {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      height: 8px;
+  }
+  .proficiency-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.3s ease;
+  }
+  .proficiency-1 { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .proficiency-2 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .proficiency-3 { background: linear-gradient(90deg, #eab308, #facc15); }
+  .proficiency-4 { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  .proficiency-5 { background: linear-gradient(90deg, #06b6d4, #0ea5e9); }
+  .featured-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: linear-gradient(45deg, #fbbf24, #f59e0b);
+      color: #000;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+  }
+  .learning-badge {
+      background: linear-gradient(45deg, #06b6d4, #0ea5e9);
+      color: white;
+  }
+  .certified-badge {
+      background: linear-gradient(45deg, #22c55e, #16a34a);
+      color: white;
+  }
+  .skill-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+  }
+  </style>
+  {% endblock %}
+  
+  {% block admin_content %}
+  <div class="space-y-6">
+      
+      <!-- Page Header -->
+      <div class="flex items-center justify-between">
+          <div>
+              <h1 class="text-2xl font-bold text-white mb-2">
+                  <i class="fas fa-brain text-emerald-400 mr-3"></i>
+                  Technical Skills
+              </h1>
+              <p class="text-gray-400">{{ subtitle }}</p>
+          </div>
+          <div class="flex items-center space-x-3">
+              <a href="{% url 'aura_admin:skill_create' %}" class="btn btn-emerald">
+                  <i class="fas fa-plus mr-2"></i>
+                  Add Skill
+              </a>
+          </div>
+      </div>
+  
+      <!-- Stats Bar -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="glass-card p-4 text-center border-l-4 border-emerald-400">
+              <div class="text-2xl font-bold text-emerald-400">{{ total_count }}</div>
+              <div class="text-sm text-gray-400">Total Skills</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-yellow-400">
+              <div class="text-2xl font-bold text-yellow-400">
+                  {{ featured }}
+              </div>
+              <div class="text-sm text-gray-400">Featured</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-blue-400">
+              <div class="text-2xl font-bold text-blue-400">
+                  {{ is_learning }}
+              </div>
+              <div class="text-sm text-gray-400">Learning</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-green-400">
+              <div class="text-2xl font-bold text-green-400">
+                  {{ certified }}
+              </div>
+              <div class="text-sm text-gray-400">Certified</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-cyan-400">
+              <div class="text-2xl font-bold text-cyan-400">{{ filtered_count }}</div>
+              <div class="text-sm text-gray-400">Filtered Results</div>
+          </div>
+      </div>
+  
+      <!-- Filters & Search -->
+      <div class="glass-card p-6">
+          <form method="GET" class="space-y-4" id="filterForm">
+              <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                  
+                  <!-- Search -->
+                  <div class="lg:col-span-2">
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Search Skills</label>
+                      <div class="relative">
+                          <input 
+                              type="text" 
+                              name="search" 
+                              value="{{ search_query }}"
+                              placeholder="Search name, description..." 
+                              class="form-control pl-10"
+                          >
+                          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                      </div>
+                  </div>
+  
+                  <!-- Category Filter -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Category</label>
+                      <select name="category" class="form-control">
+                          <option value="">All Categories</option>
+                          {% for value, label in skill_categories %}
+                              <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+  
+                  <!-- Proficiency Filter -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Proficiency</label>
+                      <select name="proficiency" class="form-control">
+                          <option value="">All Levels</option>
+                          {% for level, _ in proficiency_levels %}
+                              <option value="{{ level }}" {% if request.GET.proficiency == level|stringformat:"s" %}selected{% endif %}>Level {{ level }}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+  
+                  <!-- Learning Status Filter -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Status</label>
+                      <select name="learning_status" class="form-control">
+                          <option value="">All Skills</option>
+                          <option value="featured" {% if request.GET.learning_status == 'featured' %}selected{% endif %}>Featured Only</option>
+                          <option value="currently_learning" {% if request.GET.learning_status == 'currently_learning' %}selected{% endif %}>Currently Learning</option>
+                          <option value="certified" {% if request.GET.learning_status == 'certified' %}selected{% endif %}>Certified Only</option>
+                      </select>
+                  </div>
+              </div>
+  
+              <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                      <button type="submit" class="btn btn-emerald">
+                          <i class="fas fa-filter mr-2"></i>
+                          Apply Filters
+                      </button>
+                      <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-outline">
+                          <i class="fas fa-times mr-2"></i>
+                          Clear
+                      </a>
+                  </div>
+                  
+                  <!-- Bulk Actions -->
+                  <div class="flex items-center space-x-2">
+                      <select id="bulkAction" class="form-control w-auto">
+                          <option value="">Bulk Actions</option>
+                          <option value="feature">Mark as Featured</option>
+                          <option value="unfeature">Remove Featured</option>
+                          <option value="start_learning">Mark as Learning</option>
+                          <option value="stop_learning">Stop Learning</option>
+                          <option value="delete">Delete Selected</option>
+                      </select>
+                      <button type="button" id="applyBulkAction" class="btn btn-orange">
+                          Apply
+                      </button>
+                  </div>
+              </div>
+          </form>
+      </div>
+  
+      <!-- Skills Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {% if skills %}
+              {% for skill in skills %}
+                  <div class="glass-card skill-card p-6 relative">
+                      <!-- Checkbox for bulk actions -->
+                      <input type="checkbox" class="skill-checkbox absolute top-3 left-3 z-10" value="{{ skill.pk }}">
+                      
+                      <!-- Badges -->
+                      {% if skill.is_featured %}
+                          <div class="featured-badge">
+                              <i class="fas fa-star mr-1"></i>Featured
+                          </div>
+                      {% elif skill.is_currently_learning %}
+                          <div class="featured-badge learning-badge">
+                              <i class="fas fa-graduation-cap mr-1"></i>Learning
+                          </div>
+                      {% elif skill.is_certified %}
+                          <div class="featured-badge certified-badge">
+                              <i class="fas fa-certificate mr-1"></i>Certified
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Skill Icon & Name -->
+                      <div class="text-center mb-4">
+                          {% if skill.icon %}
+                              <i class="{{ skill.icon }} skill-icon" style="color: {{ skill.color|default:'#00f0ff' }};"></i>
+                          {% else %}
+                              <div class="skill-icon" style="color: {{ skill.color|default:'#00f0ff' }};">
+                                  <i class="fas fa-code"></i>
+                              </div>
+                          {% endif %}
+                          
+                          <h3 class="text-lg font-bold text-white mb-1">{{ skill.name }}</h3>
+                          
+                          <!-- Category -->
+                          <div class="text-xs text-gray-400 uppercase tracking-wider">
+                              {{ skill.get_category_display }}
+                          </div>
+                      </div>
+                      
+                      <!-- Proficiency Bar -->
+                      <div class="mb-4">
+                          <div class="flex items-center justify-between mb-2">
+                              <span class="text-sm text-gray-400">Proficiency</span>
+                              <span class="text-sm font-bold text-white">{{ skill.proficiency }}/5</span>
+                          </div>
+                          <div class="proficiency-bar">
+                              <div class="proficiency-fill proficiency-{{ skill.proficiency }}" 
+                                   style="width: {{ skill.proficiency|floatformat:0|add:'0'|floatformat:0 }}0%;">
+                              </div>
+                          </div>
+                      </div>
+                      
+                      <!-- Experience -->
+                      {% if skill.years_experience %}
+                          <div class="flex items-center justify-between text-sm mb-3">
+                              <span class="text-gray-400">Experience</span>
+                              <span class="text-emerald-400 font-medium">{{ skill.years_experience }} years</span>
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Technology Link -->
+                      {% if skill.related_technology %}
+                          <div class="flex items-center justify-between text-sm mb-3">
+                              <span class="text-gray-400">Linked to</span>
+                              <span class="text-cyan-400 font-medium">{{ skill.related_technology.name }}</span>
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Last Used -->
+                      {% if skill.last_used %}
+                          <div class="flex items-center justify-between text-sm mb-3">
+                              <span class="text-gray-400">Last Used</span>
+                              <span class="text-purple-400 font-medium">{{ skill.last_used|timesince }} ago</span>
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Description -->
+                      {% if skill.description %}
+                          <div class="text-sm text-gray-400 mb-4 line-clamp-3">
+                              {{ skill.description|truncatechars:120 }}
+                          </div>
+                      {% endif %}
+                      
+                      <!-- Quick Actions -->
+                      <div class="flex items-center justify-between">
+                          <div class="flex items-center space-x-2">
+                              <!-- Featured Toggle -->
+                              <button 
+                                  class="btn btn-xs toggle-featured-btn {% if skill.is_featured %}btn-yellow{% else %}btn-outline{% endif %}" 
+                                  data-skill-id="{{ skill.pk }}"
+                                  title="{% if skill.is_featured %}Remove from Featured{% else %}Mark as Featured{% endif %}"
+                              >
+                                  <i class="fas fa-star"></i>
+                              </button>
+                              
+                              <!-- Learning Toggle -->
+                              <button 
+                                  class="btn btn-xs toggle-learning-btn {% if skill.is_currently_learning %}btn-blue{% else %}btn-outline{% endif %}" 
+                                  data-skill-id="{{ skill.pk }}"
+                                  title="{% if skill.is_currently_learning %}Stop Learning{% else %}Mark as Learning{% endif %}"
+                              >
+                                  <i class="fas fa-graduation-cap"></i>
+                              </button>
+                          </div>
+                          
+                          <!-- Main Actions -->
+                          <div class="flex items-center space-x-1">
+                              <a href="{% url 'aura_admin:skill_update' skill.pk %}" class="btn btn-xs btn-outline" title="Edit Skill">
+                                  <i class="fas fa-edit"></i>
+                              </a>
+                              
+                              <a href="{% url 'aura_admin:skill_delete' skill.pk %}" class="btn btn-xs btn-red" title="Delete Skill">
+                                  <i class="fas fa-trash"></i>
+                              </a>
+                          </div>
+                      </div>
+                  </div>
+              {% endfor %}
+          {% else %}
+              <!-- Empty State -->
+              <div class="col-span-full">
+                  <div class="glass-card p-12 text-center">
+                      <div class="text-gray-400">
+                          <i class="fas fa-brain text-4xl mb-4"></i>
+                          <h3 class="text-xl font-bold mb-2">No Skills Found</h3>
+                          {% if search_query or request.GET.category or request.GET.proficiency or request.GET.learning_status %}
+                              <p class="mb-4">No skills match your current filters.</p>
+                              <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-emerald">
+                                  <i class="fas fa-times mr-2"></i>
+                                  Clear Filters
+                              </a>
+                          {% else %}
+                              <p class="mb-4">Start building your technical skill profile.</p>
+                              <a href="{% url 'aura_admin:skill_create' %}" class="btn btn-emerald">
+                                  <i class="fas fa-plus mr-2"></i>
+                                  Add Your First Skill
+                              </a>
+                          {% endif %}
+                      </div>
+                  </div>
+              </div>
+          {% endif %}
+      </div>
+  
+      <!-- Pagination -->
+      {% if is_paginated %}
+          <div class="flex justify-center">
+              <nav class="pagination-nav">
+                  <div class="flex items-center space-x-2">
+                      {% if page_obj.has_previous %}
+                          <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.proficiency %}&proficiency={{ request.GET.proficiency }}{% endif %}{% if request.GET.learning_status %}&learning_status={{ request.GET.learning_status }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-double-left"></i>
+                          </a>
+                          <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.proficiency %}&proficiency={{ request.GET.proficiency }}{% endif %}{% if request.GET.learning_status %}&learning_status={{ request.GET.learning_status }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-left mr-1"></i>Previous
+                          </a>
+                      {% endif %}
+                      
+                      <span class="px-4 py-2 text-sm text-gray-400">
+                          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                      </span>
+                      
+                      {% if page_obj.has_next %}
+                          <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.proficiency %}&proficiency={{ request.GET.proficiency }}{% endif %}{% if request.GET.learning_status %}&learning_status={{ request.GET.learning_status }}{% endif %}" class="btn btn-xs btn-outline">
+                              Next<i class="fas fa-angle-right ml-1"></i>
+                          </a>
+                          <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.proficiency %}&proficiency={{ request.GET.proficiency }}{% endif %}{% if request.GET.learning_status %}&learning_status={{ request.GET.learning_status }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-double-right"></i>
+                          </a>
+                      {% endif %}
+                  </div>
+              </nav>
+          </div>
+      {% endif %}
+  
+  </div>
+  
+  <!-- AJAX Scripts -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Featured Toggle functionality
+      document.querySelectorAll('.toggle-featured-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+              const skillId = this.dataset.skillId;
+              
+              fetch(`{% url 'aura_admin:skill_toggle_featured' 0 %}`.replace('0', skillId), {
+                  method: 'POST',
+                  headers: {
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                      'Content-Type': 'application/json',
+                  },
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      // Update button appearance
+                      if (data.featured) {
+                          this.className = 'btn btn-xs toggle-featured-btn btn-yellow';
+                          this.title = 'Remove from Featured';
+                      } else {
+                          this.className = 'btn btn-xs toggle-featured-btn btn-outline';
+                          this.title = 'Mark as Featured';
+                      }
+                      
+                      // Update badge if needed
+                      const card = this.closest('.skill-card');
+                      const existingBadge = card.querySelector('.featured-badge');
+                      if (data.featured && !existingBadge) {
+                          const badge = document.createElement('div');
+                          badge.className = 'featured-badge';
+                          badge.innerHTML = '<i class="fas fa-star mr-1"></i>Featured';
+                          card.appendChild(badge);
+                      } else if (!data.featured && existingBadge) {
+                          existingBadge.remove();
+                      }
+                      
+                      showNotification(data.message, 'success');
+                  }
+              })
+              .catch(error => {
+                  showNotification('Error toggling featured status', 'error');
+              });
+          });
+      });
+  
+      // Learning Toggle functionality
+      document.querySelectorAll('.toggle-learning-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+              const skillId = this.dataset.skillId;
+              
+              fetch(`{% url 'aura_admin:skill_toggle_learning' 0 %}`.replace('0', skillId), {
+                  method: 'POST',
+                  headers: {
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                      'Content-Type': 'application/json',
+                  },
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      // Update button appearance
+                      if (data.learning) {
+                          this.className = 'btn btn-xs toggle-learning-btn btn-blue';
+                          this.title = 'Stop Learning';
+                      } else {
+                          this.className = 'btn btn-xs toggle-learning-btn btn-outline';
+                          this.title = 'Mark as Learning';
+                      }
+                      
+                      showNotification(data.message, 'success');
+                  }
+              })
+              .catch(error => {
+                  showNotification('Error toggling learning status', 'error');
+              });
+          });
+      });
+  
+      // Bulk Actions
+      document.getElementById('applyBulkAction').addEventListener('click', function() {
+          const action = document.getElementById('bulkAction').value;
+          const selectedSkills = Array.from(document.querySelectorAll('.skill-checkbox:checked'))
+              .map(cb => cb.value);
+          
+          if (!action) {
+              showNotification('Please select an action', 'warning');
+              return;
+          }
+          
+          if (selectedSkills.length === 0) {
+              showNotification('Please select skills to perform action on', 'warning');
+              return;
+          }
+          
+          if (action === 'delete' && !confirm('Are you sure you want to delete the selected skills?')) {
+              return;
+          }
+          
+          // Implement bulk action logic here
+          showNotification(`${action} applied to ${selectedSkills.length} skills`, 'info');
+      });
+  
+      // Animate proficiency bars on load
+      setTimeout(() => {
+          document.querySelectorAll('.proficiency-fill').forEach(bar => {
+              const width = bar.style.width;
+              bar.style.width = '0%';
+              setTimeout(() => {
+                  bar.style.width = width;
+              }, 100);
+          });
+      }, 500);
+  });
+  
+  // Notification helper function
+  function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+          type === 'success' ? 'bg-green-500' :
+          type === 'error' ? 'bg-red-500' :
+          type === 'warning' ? 'bg-yellow-500' :
+          'bg-blue-500'
+      }`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+          notification.remove();
+      }, 3000);
+  }
+  </script>
+  
+  {% endblock %}
