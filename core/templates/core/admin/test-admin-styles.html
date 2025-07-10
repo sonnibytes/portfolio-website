@@ -1,0 +1,490 @@
+<!-- 
+  * core/templates/core/admin/skill_list.html
+  * Skills Management Interface
+  * Version 1.0 - Matches AURA admin styling patterns
+  -->
+  {% extends 'admin/admin_base.html' %}
+  {% load static %}
+  
+  {% block admin_title %}Manage Skills{% endblock %}
+  
+  {% block admin_css %}
+  {{ block.super }}
+  <style>
+  .admin-nav-link.active {
+      background: rgba(var(--color-emerald-rgb), 0.2);
+      color: var(--emerald);
+  }
+  .skill-card {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+  }
+  .skill-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.15);
+  }
+  .skill-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gradient-primary);
+  }
+  .proficiency-bar {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      height: 8px;
+  }
+  .proficiency-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.3s ease;
+  }
+  .proficiency-1 { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .proficiency-2 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .proficiency-3 { background: linear-gradient(90deg, #eab308, #facc15); }
+  .proficiency-4 { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  .proficiency-5 { background: linear-gradient(90deg, #06b6d4, #0ea5e9); }
+  .featured-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: linear-gradient(45deg, #fbbf24, #f59e0b);
+      color: #000;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+  }
+  .learning-badge {
+      background: linear-gradient(45deg, #06b6d4, #0ea5e9);
+      color: white;
+  }
+  .certified-badge {
+      background: linear-gradient(45deg, #22c55e, #16a34a);
+      color: white;
+  }
+  .skill-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+  }
+  </style>
+  {% endblock %}
+  
+  {% block admin_content %}
+  <div class="space-y-6">
+      
+      <!-- Page Header -->
+      <div class="flex items-center justify-between">
+          <div>
+              <h1 class="text-2xl font-bold text-white mb-2">
+                  <i class="fas fa-vial text-emerald-400 mr-3"></i>
+                  Styles Testing
+              </h1>
+              <p class="text-gray-400">{{ subtitle }}</p>
+          </div>
+          <div class="flex items-center space-x-3">
+              <a href="" class="btn btn-emerald">
+                  <i class="fas fa-plus mr-2"></i>
+                  Add Button
+              </a>
+          </div>
+      </div>
+  
+      <!-- Stats Bar -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="glass-card p-4 text-center border-l-4 border-emerald-400">
+              <div class="text-2xl font-bold text-emerald-400">9</div>
+              <div class="text-sm text-gray-400">Emerald</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-yellow-400">
+              <div class="text-2xl font-bold text-yellow-400">
+                  45
+              </div>
+              <div class="text-sm text-gray-400">Yellow</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-blue-400">
+              <div class="text-2xl font-bold text-blue-400">
+                  11
+              </div>
+              <div class="text-sm text-gray-400">Blue</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-green-400">
+              <div class="text-2xl font-bold text-green-400">
+                  6
+              </div>
+              <div class="text-sm text-gray-400">Green</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-cyan-400">
+              <div class="text-2xl font-bold text-cyan-400">97</div>
+              <div class="text-sm text-gray-400">Cyan</div>
+          </div>
+      </div>
+  
+      
+  
+<!-- Skills Grid -->
+<div class="grid grid-cols-2 gap-6">
+
+    {% comment %} First Card - Base Buttons  {% endcomment %}
+    <div class="glass-card p-6">
+        <div class="mb-6">
+            <h3 class="text-xl font-bold text-white flex items-center">
+              <i class="fas fa-database mr-2 text-purple-400 mb-6"></i>
+              Base Buttons
+            </h3>
+            <div class="grid gap-4">
+
+                <div class="flex items-center justify-between text-sm">Basic With Text</div>
+                <div class="mb-3">
+                    {% for button in basic %}
+                        <a href="" class="btn btn-{{ button.style }}">
+                            <i class="fas {{ button.icon }} mr-2"></i>
+                            {{ button.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+               
+
+                <div class="flex items-center justify-between text-sm">Outline With Text</div>
+                <div class="mb-3">
+                    {% for button in basic %}
+                        <a href="" class="btn btn-{{ button.style }}-outline">
+                            <i class="fas {{ button.icon }} mr-2"></i>
+                            {{ button.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-between text-sm">Basic XS</div>
+                <div class="mb-3">
+                    {% for button in basic %}
+                        <a href="" class="btn btn-xs btn-{{ button.style }}" title="{{ button.text }}">
+                            <i class="fas {{ button.icon }}"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            
+                <div class="flex items-center justify-between text-sm">Outline XS</div>
+                <div class="mb-3">
+                    {% for button in basic %}
+                    <div class="mb-2">
+                        <a href="" class="btn btn-xs btn-{{ button.style }}" title="{{ button.text }}">
+                            <i class="fas {{ button.icon }}"></i>
+                        </a>
+                        <span class="text-sm text-gray-400">{{ button.text }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {% comment %} Second Card - Status Buttons  {% endcomment %}
+    <div class="glass-card p-6">
+        <div class="mb-6">
+            <h3 class="text-xl font-bold text-white flex items-center">
+              <i class="fas fa-alert mr-2 text-purple-400 mb-6"></i>
+              Status Buttons
+            </h3>
+            <div class="grid gap-4">
+
+                <div class="flex items-center justify-between text-sm">Basic With Text</div>
+                <div class="mb-3">
+                    {% for button in status %}
+                        <a href="" class="btn btn-{{ button.style }}">
+                            <i class="fas {{ button.icon }} mr-2"></i>
+                            {{ button.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+               
+
+                <div class="flex items-center justify-between text-sm">Outline With Text</div>
+                <div class="mb-3">
+                    {% for button in status %}
+                        <a href="" class="btn btn-{{ button.style }}-outline">
+                            <i class="fas {{ button.icon }} mr-2"></i>
+                            {{ button.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-between text-sm">Basic XS</div>
+                <div class="mb-3">
+                    {% for button in status %}
+                        <a href="" class="btn btn-xs btn-{{ button.style }}" title="{{ button.text }}">
+                            <i class="fas {{ button.icon }}"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            
+                <div class="flex items-center justify-between text-sm">Outline XS</div>
+                <div class="mb-3">
+                    {% for button in status %}
+                    <div class="mb-2">
+                        <a href="" class="btn btn-xs btn-{{ button.style }}" title="{{ button.text }}">
+                            <i class="fas {{ button.icon }}"></i>
+                        </a>
+                        <span class="text-sm text-gray-400">{{ button.text }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% comment %} Third Card - AURA Buttons  {% endcomment %}
+    <div class="glass-card p-6">
+        <div class="mb-6">
+            <h3 class="text-xl font-bold text-white flex items-center">
+              <i class="fas fa-alert mr-2 text-purple-400 mb-6"></i>
+              AURA Theme Buttons
+            </h3>
+            <div class="grid gap-4">
+
+                <div class="flex items-center justify-between text-sm">Basic With Text</div>
+                <div class="mb-3">
+                    {% for button in aura %}
+                        <a href="" class="btn btn-{{ button.style }} mb-3">
+                            <i class="fas {{ button.icon }} mr-2"></i>
+                            {{ button.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+               
+
+                <div class="flex items-center justify-between text-sm">Outline With Text</div>
+                <div class="mb-3">
+                    {% for button in aura %}
+                        <a href="" class="btn btn-{{ button.style }}-outline mb-3">
+                            <i class="fas {{ button.icon }} mr-2"></i>
+                            {{ button.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-between text-sm">Basic XS</div>
+                <div class="mb-3">
+                    {% for button in aura %}
+                        <a href="" class="btn btn-xs btn-{{ button.style }}" title="{{ button.text }}">
+                            <i class="fas {{ button.icon }}"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            
+                <div class="flex items-center justify-between text-sm">Outline XS</div>
+                <div class="mb-3">
+                    {% for button in aura %}
+                    <div class="mb-2">
+                        <a href="" class="btn btn-xs btn-{{ button.style }}" title="{{ button.text }}">
+                            <i class="fas {{ button.icon }}"></i>
+                        </a>
+                        <span class="text-sm text-gray-400">{{ button.text }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% comment %} Fourth Card - Other Color Buttons  {% endcomment %}
+    <div class="glass-card p-6">
+        <div class="mb-6">
+            <h3 class="text-xl font-bold text-white flex items-center">
+              <i class="fas fa-alert mr-2 text-purple-400 mb-6"></i>
+              Other Color Buttons
+            </h3>
+            <div class="grid gap-4">
+
+                <div class="flex items-center justify-between text-sm">Basic With Text</div>
+                <div class="mb-3">
+                    {% for button in colors %}
+                        <a href="" class="btn btn-{{ button.style }} mb-3">
+                            <i class="fas {{ button.icon }} mr-2"></i>
+                            {{ button.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+               
+
+                <div class="flex items-center justify-between text-sm">Outline With Text</div>
+                <div class="mb-3">
+                    {% for button in colors %}
+                        <a href="" class="btn btn-{{ button.style }}-outline mb-3">
+                            <i class="fas {{ button.icon }} mr-2"></i>
+                            {{ button.text }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-between text-sm">Basic XS</div>
+                <div class="mb-3">
+                    {% for button in colors %}
+                        <a href="" class="btn btn-xs btn-{{ button.style }}" title="{{ button.text }}">
+                            <i class="fas {{ button.icon }}"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            
+                <div class="flex items-center justify-between text-sm">Outline XS</div>
+                <div class="mb-3">
+                    {% for button in colors %}
+                    <div class="mb-2">
+                        <a href="" class="btn btn-xs btn-{{ button.style }}" title="{{ button.text }}">
+                            <i class="fas {{ button.icon }}"></i>
+                        </a>
+                        <span class="text-sm text-gray-400">{{ button.text }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+  
+  <!-- AJAX Scripts -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Featured Toggle functionality
+      document.querySelectorAll('.toggle-featured-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+              const skillId = this.dataset.skillId;
+              
+              fetch(`{% url 'aura_admin:skill_toggle_featured' 0 %}`.replace('0', skillId), {
+                  method: 'POST',
+                  headers: {
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                      'Content-Type': 'application/json',
+                  },
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      // Update button appearance
+                      if (data.featured) {
+                          this.className = 'btn btn-xs toggle-featured-btn btn-yellow';
+                          this.title = 'Remove from Featured';
+                      } else {
+                          this.className = 'btn btn-xs toggle-featured-btn btn-outline';
+                          this.title = 'Mark as Featured';
+                      }
+                      
+                      // Update badge if needed
+                      const card = this.closest('.skill-card');
+                      const existingBadge = card.querySelector('.featured-badge');
+                      if (data.featured && !existingBadge) {
+                          const badge = document.createElement('div');
+                          badge.className = 'featured-badge';
+                          badge.innerHTML = '<i class="fas fa-star mr-1"></i>Featured';
+                          card.appendChild(badge);
+                      } else if (!data.featured && existingBadge) {
+                          existingBadge.remove();
+                      }
+                      
+                      showNotification(data.message, 'success');
+                  }
+              })
+              .catch(error => {
+                  showNotification('Error toggling featured status', 'error');
+              });
+          });
+      });
+  
+      // Learning Toggle functionality
+      document.querySelectorAll('.toggle-learning-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+              const skillId = this.dataset.skillId;
+              
+              fetch(`{% url 'aura_admin:skill_toggle_learning' 0 %}`.replace('0', skillId), {
+                  method: 'POST',
+                  headers: {
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                      'Content-Type': 'application/json',
+                  },
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      // Update button appearance
+                      if (data.learning) {
+                          this.className = 'btn btn-xs toggle-learning-btn btn-blue';
+                          this.title = 'Stop Learning';
+                      } else {
+                          this.className = 'btn btn-xs toggle-learning-btn btn-outline';
+                          this.title = 'Mark as Learning';
+                      }
+                      
+                      showNotification(data.message, 'success');
+                  }
+              })
+              .catch(error => {
+                  showNotification('Error toggling learning status', 'error');
+              });
+          });
+      });
+  
+      // Bulk Actions
+      document.getElementById('applyBulkAction').addEventListener('click', function() {
+          const action = document.getElementById('bulkAction').value;
+          const selectedSkills = Array.from(document.querySelectorAll('.skill-checkbox:checked'))
+              .map(cb => cb.value);
+          
+          if (!action) {
+              showNotification('Please select an action', 'warning');
+              return;
+          }
+          
+          if (selectedSkills.length === 0) {
+              showNotification('Please select skills to perform action on', 'warning');
+              return;
+          }
+          
+          if (action === 'delete' && !confirm('Are you sure you want to delete the selected skills?')) {
+              return;
+          }
+          
+          // Implement bulk action logic here
+          showNotification(`${action} applied to ${selectedSkills.length} skills`, 'info');
+      });
+  
+      // Animate proficiency bars on load
+      setTimeout(() => {
+          document.querySelectorAll('.proficiency-fill').forEach(bar => {
+              const width = bar.style.width;
+              bar.style.width = '0%';
+              setTimeout(() => {
+                  bar.style.width = width;
+              }, 100);
+          });
+      }, 500);
+  });
+  
+  // Notification helper function
+  function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+          type === 'success' ? 'bg-green-500' :
+          type === 'error' ? 'bg-red-500' :
+          type === 'warning' ? 'bg-yellow-500' :
+          'bg-blue-500'
+      }`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+          notification.remove();
+      }, 3000);
+  }
+  </script>
+  
+  {% endblock %}

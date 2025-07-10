@@ -6,6 +6,7 @@ Version 4.0 - Add Core Models CRUD Ops
 """
 
 from django.urls import path, include
+from django.views.generic import TemplateView
 from .admin_views import (
     MainAdminDashboardView,
     # Core Dashboard
@@ -55,6 +56,8 @@ from .admin_views import (
     PortfolioAnalyticsUpdateAdminView,
     PortfolioAnalyticsDeleteAdminView,
     AnalyticsChartDataView,
+
+    test_admin_styles,
 )
 
 app_name = "admin"
@@ -65,6 +68,9 @@ urlpatterns = [
 
     # Core app-specific admin
     path("core/", CoreAdminDashboardView.as_view(), name="core_dashboard"),
+
+    # Testing Styles
+    path("test-admin/", test_admin_styles, name="test-admin"),
     
     # ===================
     # CORE PAGE MANAGEMENT

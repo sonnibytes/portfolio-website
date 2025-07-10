@@ -20,13 +20,63 @@ from django.db.models import Q, Count, Avg, Sum
 from django.utils import timezone
 from django.utils.text import slugify
 from django.core.paginator import Paginator
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
+
+from django.http import HttpResponse
 
 
 from datetime import datetime, timedelta
 
 from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics
 from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm
+
+
+# ======= BUTTON STYLE TESTING ========
+def test_admin_styles(request):
+    """Test some admin button styling."""
+
+    basic = [
+        {"style": "primary", "text": "Primary", "icon": "fa-star"},
+        {"style": "secondary", "text": "Secondary", "icon": "fa-star"},
+        {"style": "outline", "text": "Outline", "icon": "fa-star"},
+    ]
+
+    status = [
+        {"style": "danger", "text": "Danger", "icon": "fa-star"},
+        {"style": "warning", "text": "Warning", "icon": "fa-star"},
+        {"style": "success", "text": "Success", "icon": "fa-star"},
+        {"style": "info", "text": "Info", "icon": "fa-star"},
+    ]
+
+    aura = [
+        {"style": "teal", "text": "Teal", "icon": "fa-star"},
+        {"style": "yellow", "text": "Yellow", "icon": "fa-star"},
+        {"style": "navy", "text": "Navy", "icon": "fa-star"},
+        {"style": "lavender", "text": "Lavender", "icon": "fa-star"},
+        {"style": "coral", "text": "Coral", "icon": "fa-star"},
+        {"style": "mint", "text": "Mint", "icon": "fa-star"},
+        {"style": "gunmetal", "text": "Gunmetal", "icon": "fa-star"},
+    ]
+
+    colors = [
+        {"style": "purple", "text": "Purple", "icon": "fa-star"},
+        {"style": "emerald", "text": "Emerald", "icon": "fa-star"},
+        {"style": "orange", "text": "Orange", "icon": "fa-star"},
+        {"style": "blue", "text": "Blue", "icon": "fa-star"},
+        {"style": "orange", "text": "Orange", "icon": "fa-star"},
+        {"style": "gray", "text": "Gray", "icon": "fa-star"},
+        {"style": "cyan", "text": "Cyan", "icon": "fa-star"},
+        {"style": "red", "text": "Red", "icon": "fa-star"},
+    ]
+
+    context = {
+        'basic': basic,
+        'status': status,
+        'aura': aura,
+        'colors': colors
+    }
+    return render(request, "core/admin/test-admin-styles.html", context)
+
 
 
 class AdminAccessMixin(UserPassesTestMixin):
