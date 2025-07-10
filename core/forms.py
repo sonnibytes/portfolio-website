@@ -353,7 +353,7 @@ class EducationSkillDevelopmentForm(forms.ModelForm):
             "proficiency_before",
             "proficiency_after",
             "learning_focus",
-            "importance_in_curriculum",
+            "importance_level",
             "learning_notes",
         ]
         widgets = {
@@ -362,7 +362,7 @@ class EducationSkillDevelopmentForm(forms.ModelForm):
             "proficiency_before": forms.Select(attrs={"class": "form-control"}),
             "proficiency_after": forms.Select(attrs={"class": "form-control"}),
             "learning_focus": forms.Select(attrs={"class": "form-control"}),
-            "importance_in_curriculum": forms.Select(attrs={"class": "form-control"}),
+            "importance_level": forms.Select(attrs={"class": "form-control"}),
             "learning_notes": forms.Textarea(
                 attrs={
                     "class": "form-control",

@@ -1,0 +1,484 @@
+<!-- 
+  * core/templates/core/admin/dashboard.html
+  * Core App Admin Dashboard
+  * Version 1.0 - Matches existing AURA admin styling
+  -->
+  {% extends 'admin/admin_base.html' %}
+  {% load static %}
+  
+  {% block admin_title %}Core Admin Dashboard{% endblock %}
+  
+  {% block admin_css %}
+  {{ block.super }}
+  <style>
+  .admin-nav-link.active {
+      background: rgba(var(--emerald-rgb), 0.2);
+      color: var(--emerald);
+  }
+  .glass-card.emerald-accent {
+      border: 1px solid rgba(52, 211, 153, 0.2);
+  }
+  .glass-card.emerald-accent:hover {
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.15);
+  }
+  </style>
+  {% endblock %}
+  
+  {% block admin_content %}
+  <div class="space-y-8">
+      
+      <!-- Core Dashboard Header -->
+      <div class="text-center">
+          <h1 class="text-3xl font-bold text-white mb-2">
+              <i class="fas fa-cog text-emerald-400 mr-3"></i>
+              Core System Management
+          </h1>
+          <p class="text-gray-400">Portfolio foundation, skills, and learning journey administration</p>
+      </div>
+  
+      <!-- Core Metrics Overview -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- Skills Metric -->
+          <div class="glass-card emerald-accent p-6 text-center">
+              <div class="text-3xl font-bold text-emerald-400 mb-2">{{ skill_stats.total_skills }}</div>
+              <div class="text-sm text-gray-400">Total Skills</div>
+              <div class="mt-2 text-xs">
+                  <span class="text-green-400">{{ skill_stats.featured_skills }} featured</span> • 
+                  <span class="text-blue-400">{{ skill_stats.currently_learning }} learning</span>
+              </div>
+          </div>
+  
+          <!-- Education Metric -->
+          <div class="glass-card emerald-accent p-6 text-center">
+              <div class="text-3xl font-bold text-purple-400 mb-2">{{ education_stats.total_education }}</div>
+              <div class="text-sm text-gray-400">Education Entries</div>
+              <div class="mt-2 text-xs">
+                  <span class="text-green-400">{{ education_stats.completed_courses }} completed</span> • 
+                  <span class="text-yellow-400">{{ education_stats.current_education }} active</span>
+              </div>
+          </div>
+  
+          <!-- Experience Metric -->
+          <div class="glass-card emerald-accent p-6 text-center">
+              <div class="text-3xl font-bold text-cyan-400 mb-2">{{ experience_stats.years_experience }}</div>
+              <div class="text-sm text-gray-400">Years Experience</div>
+              <div class="mt-2 text-xs">
+                  <span class="text-blue-400">{{ experience_stats.total_companies }} companies</span> • 
+                  <span class="text-green-400">{{ experience_stats.current_positions }} current</span>
+              </div>
+          </div>
+  
+          <!-- Contacts Metric -->
+          <div class="glass-card emerald-accent p-6 text-center">
+              <div class="text-3xl font-bold text-orange-400 mb-2">{{ contact_stats.total_contacts }}</div>
+              <div class="text-sm text-gray-400">Portfolio Contacts</div>
+              <div class="mt-2 text-xs">
+                  <span class="text-red-400">{{ contact_stats.unread_contacts }} unread</span> • 
+                  <span class="text-yellow-400">{{ contact_stats.pending_responses }} pending</span>
+              </div>
+          </div>
+      </div>
+  
+      <!-- Quick Actions Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+          
+          <!-- Skills Management -->
+          <div class="glass-card emerald-accent p-6">
+              <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-xl font-bold text-white flex items-center">
+                      <i class="fas fa-brain mr-2 text-emerald-400"></i>
+                      Skills Management
+                  </h3>
+                  <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-sm btn-emerald">
+                      <i class="fas fa-external-link-alt mr-1"></i>
+                      Manage
+                  </a>
+              </div>
+              
+              <div class="space-y-4">
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Featured Skills</span>
+                      <span class="text-emerald-400 font-medium">{{ skill_stats.featured_skills }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Currently Learning</span>
+                      <span class="text-blue-400 font-medium">{{ skill_stats.currently_learning }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Certified Skills</span>
+                      <span class="text-yellow-400 font-medium">{{ skill_stats.certified_skills }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Avg Proficiency</span>
+                      <span class="text-cyan-400 font-medium">{{ skill_stats.avg_proficiency|floatformat:1 }}/5.0</span>
+                  </div>
+              </div>
+              
+              <div class="mt-6 grid grid-cols-2 gap-2">
+                  <a href="{% url 'aura_admin:skill_create' %}" class="btn btn-xs btn-outline">
+                      <i class="fas fa-plus mr-1"></i>
+                      Add Skill
+                  </a>
+                  <a href="{% url 'aura_admin:skill_list' %}?learning_status=currently_learning" class="btn btn-xs btn-outline">
+                      <i class="fas fa-graduation-cap mr-1"></i>
+                      Learning
+                  </a>
+              </div>
+          </div>
+  
+          <!-- Education Management -->
+          <div class="glass-card emerald-accent p-6">
+              <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-xl font-bold text-white flex items-center">
+                      <i class="fas fa-university mr-2 text-purple-400"></i>
+                      Education Journey
+                  </h3>
+                  <a href="{% url 'aura_admin:education_list' %}" class="btn btn-sm btn-purple">
+                      <i class="fas fa-external-link-alt mr-1"></i>
+                      Manage
+                  </a>
+              </div>
+              
+              <div class="space-y-4">
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Total Learning Hours</span>
+                      <span class="text-purple-400 font-medium">{{ education_stats.total_learning_hours }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Completed Courses</span>
+                      <span class="text-green-400 font-medium">{{ education_stats.completed_courses }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Career Relevance</span>
+                      <span class="text-cyan-400 font-medium">{{ education_stats.avg_career_relevance|floatformat:1 }}/5.0</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Skill Connections</span>
+                      <span class="text-emerald-400 font-medium">{{ integration_stats.education_skill_connections }}</span>
+                  </div>
+              </div>
+              
+              <div class="mt-6 grid grid-cols-2 gap-2">
+                  <a href="{% url 'aura_admin:education_create' %}" class="btn btn-xs btn-outline">
+                      <i class="fas fa-plus mr-1"></i>
+                      Add Course
+                  </a>
+                  <a href="{% url 'aura_admin:education_skill_list' %}" class="btn btn-xs btn-outline">
+                      <i class="fas fa-link mr-1"></i>
+                      Skills
+                  </a>
+              </div>
+          </div>
+  
+          <!-- Contact Management -->
+          <div class="glass-card emerald-accent p-6">
+              <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-xl font-bold text-white flex items-center">
+                      <i class="fas fa-envelope mr-2 text-orange-400"></i>
+                      Contact Insights
+                  </h3>
+                  <a href="{% url 'aura_admin:contact_list' %}" class="btn btn-sm btn-orange">
+                      <i class="fas fa-external-link-alt mr-1"></i>
+                      Manage
+                  </a>
+              </div>
+              
+              <div class="space-y-4">
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">This Month</span>
+                      <span class="text-green-400 font-medium">{{ contact_stats.this_month_contacts }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Unread Messages</span>
+                      <span class="text-red-400 font-medium">{{ contact_stats.unread_contacts }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">High Priority</span>
+                      <span class="text-yellow-400 font-medium">{{ contact_stats.high_priority_contacts }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Need Response</span>
+                      <span class="text-orange-400 font-medium">{{ contact_stats.pending_responses }}</span>
+                  </div>
+              </div>
+              
+              <div class="mt-6 grid grid-cols-2 gap-2">
+                  <a href="{% url 'aura_admin:contact_list' %}?read_status=unread" class="btn btn-xs btn-outline">
+                      <i class="fas fa-eye mr-1"></i>
+                      Unread
+                  </a>
+                  <a href="{% url 'aura_admin:contact_list' %}?priority=high" class="btn btn-xs btn-outline">
+                      <i class="fas fa-exclamation-triangle mr-1"></i>
+                      Priority
+                  </a>
+              </div>
+          </div>
+  
+          <!-- Analytics Overview -->
+          <div class="glass-card emerald-accent p-6">
+              <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-xl font-bold text-white flex items-center">
+                      <i class="fas fa-chart-line mr-2 text-cyan-400"></i>
+                      Portfolio Analytics
+                  </h3>
+                  <a href="{% url 'aura_admin:analytics_list' %}" class="btn btn-sm btn-cyan">
+                      <i class="fas fa-external-link-alt mr-1"></i>
+                      View
+                  </a>
+              </div>
+              
+              <div class="space-y-4">
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Tracked Days</span>
+                      <span class="text-cyan-400 font-medium">{{ analytics_stats.total_analytics_days }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Avg Learning Hours</span>
+                      <span class="text-purple-400 font-medium">{{ analytics_stats.avg_learning_hours|floatformat:1 }}h</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Monthly Visitors</span>
+                      <span class="text-green-400 font-medium">{{ analytics_stats.total_visitors_month }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Last Updated</span>
+                      <span class="text-emerald-400 font-medium">
+                          {% if analytics_stats.last_analytics_date %}
+                              {{ analytics_stats.last_analytics_date.date }}
+                          {% else %}
+                              Never
+                          {% endif %}
+                      </span>
+                  </div>
+              </div>
+              
+              <div class="mt-6 grid grid-cols-2 gap-2">
+                  <a href="{% url 'aura_admin:analytics_create' %}" class="btn btn-xs btn-outline">
+                      <i class="fas fa-plus mr-1"></i>
+                      Log Day
+                  </a>
+                  <a href="{% url 'aura_admin:analytics_chart_data' %}?days=30" class="btn btn-xs btn-outline" target="_blank">
+                      <i class="fas fa-chart-bar mr-1"></i>
+                      Charts
+                  </a>
+              </div>
+          </div>
+  
+          <!-- Experience Overview -->
+          <div class="glass-card emerald-accent p-6">
+              <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-xl font-bold text-white flex items-center">
+                      <i class="fas fa-briefcase mr-2 text-blue-400"></i>
+                      Professional Journey
+                  </h3>
+                  <a href="{% url 'aura_admin:experience_list' %}" class="btn btn-sm btn-blue">
+                      <i class="fas fa-external-link-alt mr-1"></i>
+                      Manage
+                  </a>
+              </div>
+              
+              <div class="space-y-4">
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Total Positions</span>
+                      <span class="text-blue-400 font-medium">{{ experience_stats.total_positions }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Current Roles</span>
+                      <span class="text-green-400 font-medium">{{ experience_stats.current_positions }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Companies</span>
+                      <span class="text-cyan-400 font-medium">{{ experience_stats.total_companies }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Total Experience</span>
+                      <span class="text-purple-400 font-medium">{{ experience_stats.years_experience }} years</span>
+                  </div>
+              </div>
+              
+              <div class="mt-6 grid grid-cols-2 gap-2">
+                  <a href="{% url 'aura_admin:experience_create' %}" class="btn btn-xs btn-outline">
+                      <i class="fas fa-plus mr-1"></i>
+                      Add Role
+                  </a>
+                  <a href="{% url 'aura_admin:experience_list' %}?status=current" class="btn btn-xs btn-outline">
+                      <i class="fas fa-clock mr-1"></i>
+                      Current
+                  </a>
+              </div>
+          </div>
+  
+          <!-- Core Pages & Links -->
+          <div class="glass-card emerald-accent p-6">
+              <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-xl font-bold text-white flex items-center">
+                      <i class="fas fa-file-alt mr-2 text-gray-400"></i>
+                      Site Management
+                  </h3>
+                  <a href="{% url 'aura_admin:corepage_list' %}" class="btn btn-sm btn-gray">
+                      <i class="fas fa-external-link-alt mr-1"></i>
+                      Manage
+                  </a>
+              </div>
+              
+              <div class="space-y-4">
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Core Pages</span>
+                      <span class="text-gray-400 font-medium">{{ page_stats.total_pages }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Published</span>
+                      <span class="text-green-400 font-medium">{{ page_stats.published_pages }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Draft Pages</span>
+                      <span class="text-yellow-400 font-medium">{{ page_stats.draft_pages }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400">Social Links</span>
+                      <span class="text-blue-400 font-medium">-</span>
+                  </div>
+              </div>
+              
+              <div class="mt-6 grid grid-cols-2 gap-2">
+                  <a href="{% url 'aura_admin:corepage_create' %}" class="btn btn-xs btn-outline">
+                      <i class="fas fa-plus mr-1"></i>
+                      Add Page
+                  </a>
+                  <a href="{% url 'aura_admin:sociallink_list' %}" class="btn btn-xs btn-outline">
+                      <i class="fas fa-share-alt mr-1"></i>
+                      Social
+                  </a>
+              </div>
+          </div>
+      </div>
+  
+      <!-- Recent Activity Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <!-- Recent Contacts -->
+          <div class="glass-card emerald-accent p-6">
+              <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-lg font-bold text-white">
+                      <i class="fas fa-envelope mr-2 text-orange-400"></i>
+                      Recent Contacts
+                  </h3>
+                  <a href="{% url 'aura_admin:contact_list' %}" class="text-sm text-emerald-400 hover:text-emerald-300">
+                      View All <i class="fas fa-arrow-right ml-1"></i>
+                  </a>
+              </div>
+              
+              {% if recent_contacts %}
+                  <div class="space-y-3">
+                      {% for contact in recent_contacts %}
+                          <div class="flex items-center justify-between p-3 bg-black/20 rounded-lg">
+                              <div class="flex-1">
+                                  <div class="flex items-center space-x-2">
+                                      <span class="font-medium text-white">{{ contact.name }}</span>
+                                      {% if not contact.is_read %}
+                                          <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+                                      {% endif %}
+                                      {% if contact.priority == 'high' %}
+                                          <i class="fas fa-exclamation-triangle text-yellow-400 text-xs"></i>
+                                      {% endif %}
+                                  </div>
+                                  <div class="text-sm text-gray-400">{{ contact.subject|truncatechars:40 }}</div>
+                                  <div class="text-xs text-gray-500">{{ contact.created_at|timesince }} ago</div>
+                              </div>
+                              <a href="{% url 'aura_admin:contact_update' contact.pk %}" class="btn btn-xs btn-outline">
+                                  View
+                              </a>
+                          </div>
+                      {% endfor %}
+                  </div>
+              {% else %}
+                  <div class="text-center py-8 text-gray-400">
+                      <i class="fas fa-inbox text-3xl mb-2"></i>
+                      <p>No recent contacts</p>
+                  </div>
+              {% endif %}
+          </div>
+  
+          <!-- Recent Learning Activity -->
+          <div class="glass-card emerald-accent p-6">
+              <div class="flex items-center justify-between mb-6">
+                  <h3 class="text-lg font-bold text-white">
+                      <i class="fas fa-chart-line mr-2 text-cyan-400"></i>
+                      Learning Progress
+                  </h3>
+                  <a href="{% url 'aura_admin:analytics_list' %}" class="text-sm text-emerald-400 hover:text-emerald-300">
+                      View Analytics <i class="fas fa-arrow-right ml-1"></i>
+                  </a>
+              </div>
+              
+              {% if recent_analytics %}
+                  <div class="space-y-3">
+                      {% for analytic in recent_analytics %}
+                          <div class="flex items-center justify-between p-3 bg-black/20 rounded-lg">
+                              <div class="flex-1">
+                                  <div class="flex items-center space-x-2">
+                                      <span class="font-medium text-white">{{ analytic.date }}</span>
+                                      {% if analytic.learning_hours_logged > 3 %}
+                                          <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">High</span>
+                                      {% elif analytic.learning_hours_logged > 1 %}
+                                          <span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">Medium</span>
+                                      {% endif %}
+                                  </div>
+                                  <div class="text-sm text-gray-400">
+                                      {{ analytic.learning_hours_logged }}h learning • {{ analytic.skills_practiced }} skills
+                                  </div>
+                                  <div class="text-xs text-gray-500">
+                                      {{ analytic.unique_visitors }} visitors • {{ analytic.resume_downloads }} downloads
+                                  </div>
+                              </div>
+                              <a href="{% url 'aura_admin:analytics_update' analytic.pk %}" class="btn btn-xs btn-outline">
+                                  Edit
+                              </a>
+                          </div>
+                      {% endfor %}
+                  </div>
+              {% else %}
+                  <div class="text-center py-8 text-gray-400">
+                      <i class="fas fa-chart-bar text-3xl mb-2"></i>
+                      <p>No analytics data yet</p>
+                      <a href="{% url 'aura_admin:analytics_create' %}" class="btn btn-xs btn-emerald mt-2">
+                          <i class="fas fa-plus mr-1"></i>
+                          Add Entry
+                      </a>
+                  </div>
+              {% endif %}
+          </div>
+      </div>
+  
+      <!-- Integration Status -->
+      <div class="glass-card emerald-accent p-6">
+          <h3 class="text-lg font-bold text-white mb-6">
+              <i class="fas fa-network-wired mr-2 text-emerald-400"></i>
+              Cross-App Integration Status
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="text-center">
+                  <div class="text-2xl font-bold text-emerald-400 mb-1">{{ integration_stats.education_skill_connections }}</div>
+                  <div class="text-sm text-gray-400">Education ↔ Skill Links</div>
+              </div>
+              <div class="text-center">
+                  <div class="text-2xl font-bold text-cyan-400 mb-1">{{ integration_stats.skills_linked_to_projects }}</div>
+                  <div class="text-sm text-gray-400">Skills ↔ Projects</div>
+              </div>
+              <div class="text-center">
+                  <div class="text-2xl font-bold text-purple-400 mb-1">{{ integration_stats.education_with_projects }}</div>
+                  <div class="text-sm text-gray-400">Education ↔ Projects</div>
+              </div>
+          </div>
+          
+          <div class="mt-4 text-center">
+              <a href="{% url 'aura_admin:education_skill_list' %}" class="btn btn-sm btn-emerald">
+                  <i class="fas fa-cogs mr-1"></i>
+                  Manage Connections
+              </a>
+          </div>
+      </div>
+  
+  </div>
+  {% endblock %}

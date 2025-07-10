@@ -463,12 +463,10 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             "total_analytics_days": PortfolioAnalytics.objects.count(),
             "avg_learning_hours": PortfolioAnalytics.objects.aggregate(
                 avg=Avg("learning_hours_logged")
-            )["avg"]
-            or 0,
+            )["avg"] or 0,
             "total_visitors_month": PortfolioAnalytics.objects.filter(
                 date__gte=timezone.now().date().replace(day=1)
-            ).aggregate(total=Sum("unique_visitors"))["total"]
-            or 0,
+            ).aggregate(total=Sum("unique_visitors"))["total"] or 0,
             "last_analytics_date": PortfolioAnalytics.objects.order_by("-date").first(),
         }
 
@@ -481,7 +479,7 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             .distinct()
             .count(),
             "education_with_projects": Education.objects.filter(
-                related_projects__isnull=False
+                related_systems__isnull=False
             )
             .distinct()
             .count(),
@@ -499,7 +497,7 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
                 "analytics_stats": analytics_stats,
                 "integration_stats": integration_stats,
                 "recent_contacts": Contact.objects.order_by("-created_at")[:5],
-                "recent_education": Education.objects.order_by("-updated_at")[:5],
+                "recent_education": Education.objects.order_by("-end_date", "-start_date")[:5],
                 "recent_analytics": PortfolioAnalytics.objects.order_by("-date")[:7],
             }
         )
