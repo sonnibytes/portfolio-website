@@ -200,6 +200,8 @@ class SkillForm(forms.ModelForm):
 
 
 class EducationForm(forms.ModelForm):
+    """Enhanced education form with skill and project relationships."""
+
     class Meta:
         model = Education
         fields = [
@@ -209,17 +211,178 @@ class EducationForm(forms.ModelForm):
             'field_of_study',
             'start_date',
             'end_date',
-            'is_current',
-            'location',
             'description',
-            'gpa',
-            'activities',
-            'url'
+            'is_current',
+            'learning_type',
+            'platform',
+            'certificate_url',
+            'hours_completed',
+            'related_systems',
+            'learning_intensity',
+            'career_relevance'
         ]
 
         widgets = {
-            'start_date': forms.DateInput(attrs={'type': 'date'}),
-            'end_date': forms.DateInput(attrs={'type': 'date'}),
-            'description': forms.Textarea(attrs={'rows': 3}),
-            'activities': forms.Textarea(attrs={'rows': 3}),
+            "institution": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Institution/Platform Name",
+                }
+            ),
+            "slug": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "auto-generated-from-degree-institution",
+                }
+            ),
+            "degree": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Degree/Certification/Course Name",
+                }
+            ),
+            "field_of_study": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Field of Study/Subject Area",
+                }
+            ),
+            "start_date": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "end_date": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Describe what you learned and achieved...",
+                }
+            ),
+            "is_current": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "learning_type": forms.Select(attrs={"class": "form-control"}),
+            "platform": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "e.g., edX HarvardX, Udemy, University of Alabama",
+                }
+            ),
+            "certificate_url": forms.URLInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "https://link-to-certificate.com",
+                }
+            ),
+            "hours_completed": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                    "placeholder": "Total hours of instruction/study",
+                }
+            ),
+            "related_systems": forms.SelectMultiple(
+                attrs={"class": "form-control", "size": 4}
+            ),
+            "learning_intensity": forms.Select(attrs={"class": "form-control"}),
+            "career_relevance": forms.Select(attrs={"class": "form-control"}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Populate related_systems choices
+        try:
+            from projects.models import SystemModule
+            # Not going to filter systems by status so able to link drafts, testing, etc
+            self.fields['related_systems'].queryset = SystemModule.objects.all()
+        except ImportError:
+            # If projects app not available, hide field
+            self.fields['related_systems'].widget = forms.HiddenInput()
+    
+    def clean_slug(self):
+        """Auto-generate slug from degree and institution."""
+        slug = self.cleaned_data.get('slug')
+        degree = self.cleaned_data.get('degree')
+        institution = self.cleaned_data.get('institution')
+
+        if not slug and degree and institution:
+            slug = slugify(f"{degree} {institution}")
+        
+        # Check for uniqueness
+        if slug:
+            existing = Education.objects.filter(slug=slug)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise ValidationError(
+                    f"An education entry with slug '{slug}' already exists."
+                )
+
+        return slug
+    
+    def clean_end_date(self):
+        """Validate end date logic."""
+        start_date = self.cleaned_data.get("start_date")
+        end_date = self.cleaned_data.get("end_date")
+        is_current = self.cleaned_data.get("is_current")
+
+        if is_current and end_date:
+            raise ValidationError("Current education should not have an end date.")
+
+        if not is_current and not end_date:
+            raise ValidationError("Completed education must have an end date.")
+
+        if start_date and end_date and end_date < start_date:
+            raise ValidationError("End date cannot be before start date.")
+
+        if end_date and end_date > date.today():
+            raise ValidationError("End date cannot be in the future.")
+
+        return end_date
+
+
+class EducationSkillDevelopmentForm(forms.ModelForm):
+    """Form for managing Education-Skill development connections."""
+
+    class Meta:
+        model = EducationSkillDevelopment
+        fields = [
+            "education",
+            "skill",
+            "proficiency_before",
+            "proficiency_after",
+            "learning_focus",
+            "importance_in_curriculum",
+            "learning_notes",
+        ]
+        widgets = {
+            "education": forms.Select(attrs={"class": "form-control"}),
+            "skill": forms.Select(attrs={"class": "form-control"}),
+            "proficiency_before": forms.Select(attrs={"class": "form-control"}),
+            "proficiency_after": forms.Select(attrs={"class": "form-control"}),
+            "learning_focus": forms.Select(attrs={"class": "form-control"}),
+            "importance_in_curriculum": forms.Select(attrs={"class": "form-control"}),
+            "learning_notes": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Specific learning outcomes or projects...",
+                }
+            ),
+        }
+    
+    def clean(self):
+        """Cross-field validation for proficiency progression."""
+        cleaned_data = super().clean()
+        proficiency_before = cleaned_data.get("proficiency_before")
+        proficiency_after = cleaned_data.get("proficiency_after")
+
+        if proficiency_before is not None and proficiency_after is not None:
+            if proficiency_after <= proficiency_before:
+                raise ValidationError(
+                    f"Proficiency after must be higher than proficiency before ({proficiency_before}). "
+                    "Learning should result in skill improvement."
+                )
+
+        return cleaned_data
