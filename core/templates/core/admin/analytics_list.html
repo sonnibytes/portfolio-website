@@ -1,0 +1,583 @@
+<!-- 
+  * core/templates/core/admin/analytics_list.html
+  * Portfolio Analytics Dashboard & Management
+  * Version 1.0 - Learning journey focus with data visualization
+  -->
+  {% extends 'admin/admin_base.html' %}
+  {% load static %}
+  
+  {% block admin_title %}Portfolio Analytics{% endblock %}
+  
+  {% block admin_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/components/aura-shared.css' %}">
+  <style>
+  .admin-nav-link.active {
+      background: rgba(var(--color-emerald-rgb), 0.2);
+      color: var(--color-emerald);
+  }
+  .analytics-card {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+  }
+  .analytics-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.15);
+  }
+  .analytics-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #06b6d4, #8b5cf6, #f59e0b);
+  }
+  .metric-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+  }
+  .learning-metric { background: linear-gradient(45deg, #8b5cf6, #a855f7); color: white; }
+  .visitor-metric { background: linear-gradient(45deg, #06b6d4, #0ea5e9); color: white; }
+  .engagement-metric { background: linear-gradient(45deg, #10b981, #059669); color: white; }
+  .performance-metric { background: linear-gradient(45deg, #f59e0b, #d97706); color: white; }
+  .chart-container {
+      position: relative;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+  }
+  .mini-chart {
+      width: 100%;
+      height: 60px;
+      background: linear-gradient(90deg, 
+          rgba(59, 130, 246, 0.3) 0%,
+          rgba(147, 51, 234, 0.3) 50%,
+          rgba(16, 185, 129, 0.3) 100%
+      );
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+  }
+  .chart-bar {
+      position: absolute;
+      bottom: 0;
+      width: 8px;
+      background: linear-gradient(180deg, #06b6d4, #3b82f6);
+      border-radius: 2px 2px 0 0;
+      transition: height 0.3s ease;
+  }
+  .engagement-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: conic-gradient(
+          from 0deg,
+          #10b981 0deg,
+          #10b981 var(--engagement-angle, 180deg),
+          rgba(255, 255, 255, 0.1) var(--engagement-angle, 180deg),
+          rgba(255, 255, 255, 0.1) 360deg
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+  }
+  .engagement-ring::before {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: var(--color-bg-secondary);
+      border-radius: 50%;
+  }
+  .engagement-score {
+      position: relative;
+      z-index: 2;
+      font-weight: bold;
+      color: white;
+      font-size: 14px;
+  }
+  .trend-indicator {
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: bold;
+  }
+  .trend-up { color: #10b981; }
+  .trend-down { color: #ef4444; }
+  .trend-neutral { color: #6b7280; }
+  .learning-intensity-bar {
+      background: rgba(139, 92, 246, 0.2);
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+  }
+  .intensity-progress {
+      background: linear-gradient(90deg, #8b5cf6, #a855f7);
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+  }
+  .visitor-map {
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 8px;
+      padding: 0.5rem;
+      font-size: 11px;
+  }
+  .top-content-chip {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 10px;
+      margin: 1px;
+  }
+  </style>
+  {% endblock %}
+  
+  {% block admin_content %}
+  <div class="space-y-6">
+      
+      <!-- Page Header -->
+      <div class="flex items-center justify-between">
+          <div>
+              <h1 class="text-2xl font-bold text-white mb-2">
+                  <i class="fas fa-chart-line text-emerald-400 mr-3"></i>
+                  Portfolio Analytics
+              </h1>
+              <p class="text-gray-400">{{ subtitle }}</p>
+          </div>
+          <div class="flex items-center space-x-3">
+              <button id="refreshData" class="btn btn-emerald">
+                  <i class="fas fa-sync mr-2"></i>
+                  Refresh Data
+              </button>
+              <a href="{% url 'aura_admin:analytics_create' %}" class="btn btn-blue">
+                  <i class="fas fa-plus mr-2"></i>
+                  Log Day
+              </a>
+          </div>
+      </div>
+  
+      <!-- Executive Summary Dashboard -->
+      <div class="unified-dashboard-container teal">
+          <div class="text-center mb-6">
+              <h2 class="text-xl font-bold text-white mb-2">
+                  <i class="fas fa-chart-pie text-cyan-400 mr-2"></i>
+                  Learning Journey Analytics
+              </h2>
+              <p class="text-gray-400">Portfolio performance and learning progression overview</p>
+          </div>
+  
+          <!-- Key Metrics Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div class="text-center">
+                  <div class="text-3xl font-bold text-purple-400 mb-2">{{ summary_stats.avg_learning_hours|floatformat:1 }}h</div>
+                  <div class="text-sm text-gray-400 mb-2">Avg Daily Learning</div>
+                  <div class="learning-metric metric-badge">30 Days</div>
+              </div>
+              <div class="text-center">
+                  <div class="text-3xl font-bold text-cyan-400 mb-2">{{ summary_stats.total_visitors }}</div>
+                  <div class="text-sm text-gray-400 mb-2">Portfolio Visitors</div>
+                  <div class="visitor-metric metric-badge">This Month</div>
+              </div>
+              <div class="text-center">
+                  <div class="text-3xl font-bold text-green-400 mb-2">{{ summary_stats.total_resume_downloads }}</div>
+                  <div class="text-sm text-gray-400 mb-2">Resume Downloads</div>
+                  <div class="engagement-metric metric-badge">Strong Interest</div>
+              </div>
+              <div class="text-center">
+                  <div class="engagement-ring" style="--engagement-angle: 252deg;">
+                      <div class="engagement-score">70%</div>
+                  </div>
+                  <div class="text-sm text-gray-400 mt-2">Engagement Score</div>
+                  <div class="performance-metric metric-badge">Excellent</div>
+              </div>
+          </div>
+  
+          <!-- Learning Trends Chart -->
+          <div class="chart-container">
+              <h3 class="text-lg font-bold text-white mb-4">
+                  <i class="fas fa-trending-up text-green-400 mr-2"></i>
+                  30-Day Learning Velocity
+              </h3>
+              <div class="flex items-end justify-between h-24">
+                  {% for i in "1234567891011121314151617181920212223242526272829" %}
+                      <div class="chart-bar" 
+                           style="height: {% cycle '40' '65' '30' '80' '55' '45' '70' '35' '60' '90' '25' '75' '50' '85' '40' '95' '45' '70' '55' '80' '35' '65' '75' '60' '85' '40' '70' '55' '90' %}%; left: {{ forloop.counter0|add:1 }}0px;">
+                      </div>
+                  {% endfor %}
+              </div>
+              <div class="flex justify-between text-xs text-gray-500 mt-2">
+                  <span>30 days ago</span>
+                  <span>Learning Hours per Day</span>
+                  <span>Today</span>
+              </div>
+          </div>
+      </div>
+  
+      <!-- Filters & Search -->
+      <div class="glass-card p-6">
+          <form method="GET" class="space-y-4" id="filterForm">
+              <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                  
+                  <!-- Date Range -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Date Range</label>
+                      <select name="date_range" class="form-control">
+                          <option value="">All Time</option>
+                          <option value="week" {% if request.GET.date_range == 'week' %}selected{% endif %}>Last 7 Days</option>
+                          <option value="month" {% if request.GET.date_range == 'month' %}selected{% endif %}>Last 30 Days</option>
+                          <option value="quarter" {% if request.GET.date_range == 'quarter' %}selected{% endif %}>Last 90 Days</option>
+                      </select>
+                  </div>
+  
+                  <!-- Metric Type -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Focus Area</label>
+                      <select name="metric_type" class="form-control">
+                          <option value="">All Metrics</option>
+                          <option value="learning" {% if request.GET.metric_type == 'learning' %}selected{% endif %}>Learning Progress</option>
+                          <option value="visitors" {% if request.GET.metric_type == 'visitors' %}selected{% endif %}>Visitor Analytics</option>
+                          <option value="engagement" {% if request.GET.metric_type == 'engagement' %}selected{% endif %}>Engagement</option>
+                      </select>
+                  </div>
+  
+                  <!-- Performance Level -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Performance</label>
+                      <select name="performance" class="form-control">
+                          <option value="">All Days</option>
+                          <option value="high" {% if request.GET.performance == 'high' %}selected{% endif %}>High Performance</option>
+                          <option value="productive" {% if request.GET.performance == 'productive' %}selected{% endif %}>Productive Days</option>
+                          <option value="low" {% if request.GET.performance == 'low' %}selected{% endif %}>Improvement Needed</option>
+                      </select>
+                  </div>
+  
+                  <!-- Sort -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Sort By</label>
+                      <select name="sort" class="form-control">
+                          <option value="">Recent First</option>
+                          <option value="learning_hours" {% if request.GET.sort == 'learning_hours' %}selected{% endif %}>Learning Hours</option>
+                          <option value="visitors" {% if request.GET.sort == 'visitors' %}selected{% endif %}>Visitor Count</option>
+                          <option value="engagement" {% if request.GET.sort == 'engagement' %}selected{% endif %}>Engagement Score</option>
+                      </select>
+                  </div>
+              </div>
+  
+              <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                      <button type="submit" class="btn btn-emerald">
+                          <i class="fas fa-filter mr-2"></i>
+                          Apply Filters
+                      </button>
+                      <a href="{% url 'aura_admin:analytics_list' %}" class="btn btn-outline">
+                          <i class="fas fa-times mr-2"></i>
+                          Clear
+                      </a>
+                  </div>
+                  
+                  <!-- Export Options -->
+                  <div class="flex items-center space-x-2">
+                      <button type="button" id="exportCSV" class="btn btn-xs btn-blue">
+                          <i class="fas fa-download mr-1"></i>CSV
+                      </button>
+                      <button type="button" id="generateReport" class="btn btn-xs btn-purple">
+                          <i class="fas fa-file-pdf mr-1"></i>Report
+                      </button>
+                  </div>
+              </div>
+          </form>
+      </div>
+  
+      <!-- Analytics Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {% if analytics %}
+              {% for analytic in analytics %}
+                  <div class="glass-card analytics-card p-0 relative flex flex-col h-full">
+                      <!-- Card Header -->
+                      <div class="p-4 pb-0 relative">
+                          <!-- Checkbox for bulk actions -->
+                          <input type="checkbox" class="analytics-checkbox absolute top-4 right-4 z-10" value="{{ analytic.pk }}">
+                          
+                          <!-- Date & Performance Badge -->
+                          <div class="flex items-center justify-between mb-4">
+                              <div>
+                                  <h3 class="text-lg font-bold text-white">{{ analytic.date|date:"M d, Y" }}</h3>
+                                  <div class="text-sm text-gray-400">{{ analytic.date|date:"l" }}</div>
+                              </div>
+                              
+                              <!-- Performance Badge -->
+                              {% if analytic.learning_hours_logged >= 4 %}
+                                  <div class="learning-metric metric-badge">High Performance</div>
+                              {% elif analytic.learning_hours_logged >= 2 %}
+                                  <div class="engagement-metric metric-badge">Productive</div>
+                              {% elif analytic.learning_hours_logged >= 1 %}
+                                  <div class="visitor-metric metric-badge">Moderate</div>
+                              {% else %}
+                                  <div class="performance-metric metric-badge">Light Day</div>
+                              {% endif %}
+                          </div>
+                      </div>
+                      
+                      <!-- Card Content (Flexible) -->
+                      <div class="px-4 flex-1">
+                          <!-- Learning Metrics -->
+                          <div class="mb-4">
+                              <div class="text-xs text-gray-400 mb-2">Learning Progress</div>
+                              <div class="grid grid-cols-2 gap-3 text-sm">
+                                  <div class="text-center">
+                                      <div class="text-lg font-bold text-purple-400">{{ analytic.learning_hours_logged }}h</div>
+                                      <div class="text-xs text-gray-400">Learning</div>
+                                  </div>
+                                  <div class="text-center">
+                                      <div class="text-lg font-bold text-cyan-400">{{ analytic.skills_practiced }}</div>
+                                      <div class="text-xs text-gray-400">Skills</div>
+                                  </div>
+                              </div>
+                              
+                              <!-- Learning Intensity Bar -->
+                              <div class="mt-2">
+                                  <div class="learning-intensity-bar">
+                                      <div class="intensity-progress" 
+                                           style="width: {{ analytic.learning_hours_logged|floatformat:0|add:'0'|slice:':1' }}0%;">
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          <!-- Portfolio Performance -->
+                          <div class="mb-4">
+                              <div class="text-xs text-gray-400 mb-2">Portfolio Engagement</div>
+                              <div class="grid grid-cols-3 gap-2 text-sm">
+                                  <div class="text-center">
+                                      <div class="text-sm font-bold text-cyan-400">{{ analytic.unique_visitors }}</div>
+                                      <div class="text-xs text-gray-400">Visitors</div>
+                                  </div>
+                                  <div class="text-center">
+                                      <div class="text-sm font-bold text-green-400">{{ analytic.resume_downloads }}</div>
+                                      <div class="text-xs text-gray-400">Downloads</div>
+                                  </div>
+                                  <div class="text-center">
+                                      <div class="text-sm font-bold text-orange-400">{{ analytic.contact_form_submissions }}</div>
+                                      <div class="text-xs text-gray-400">Contacts</div>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          <!-- Top Content -->
+                          {% if analytic.top_datalog or analytic.top_system %}
+                              <div class="mb-4">
+                                  <div class="text-xs text-gray-400 mb-2">Top Performing Content</div>
+                                  {% if analytic.top_datalog %}
+                                      <div class="top-content-chip">📝 {{ analytic.top_datalog.title|truncatechars:20 }}</div>
+                                  {% endif %}
+                                  {% if analytic.top_system %}
+                                      <div class="top-content-chip">🚀 {{ analytic.top_system.title|truncatechars:20 }}</div>
+                                  {% endif %}
+                              </div>
+                          {% endif %}
+                          
+                          <!-- Geographic Data -->
+                          {% if analytic.top_country or analytic.top_city %}
+                              <div class="mb-4">
+                                  <div class="text-xs text-gray-400 mb-2">Top Location</div>
+                                  <div class="visitor-map">
+                                      <i class="fas fa-map-marker-alt mr-1"></i>
+                                      {% if analytic.top_city %}{{ analytic.top_city }}, {% endif %}{{ analytic.top_country|default:"Global" }}
+                                  </div>
+                              </div>
+                          {% endif %}
+                          
+                          <!-- Mini Performance Chart -->
+                          <div class="mb-4">
+                              <div class="text-xs text-gray-400 mb-2">Daily Trend</div>
+                              <div class="mini-chart">
+                                  <!-- Simulated chart visualization -->
+                                  <div style="position: absolute; bottom: 0; left: 10%; width: 4px; height: {{ analytic.learning_hours_logged|floatformat:0|add:'0' }}%; background: #8b5cf6;"></div>
+                                  <div style="position: absolute; bottom: 0; left: 30%; width: 4px; height: {{ analytic.unique_visitors|add:'20' }}%; background: #06b6d4;"></div>
+                                  <div style="position: absolute; bottom: 0; left: 50%; width: 4px; height: {{ analytic.skills_practiced|add:'30' }}%; background: #10b981;"></div>
+                                  <div style="position: absolute; bottom: 0; left: 70%; width: 4px; height: {{ analytic.contact_form_submissions|add:'40' }}%; background: #f59e0b;"></div>
+                              </div>
+                          </div>
+                      </div>
+                      
+                      <!-- Card Footer -->
+                      <div class="p-4 pt-0 border-t border-white/5 mt-auto">
+                          <div class="flex items-center justify-between">
+                              <div class="flex items-center space-x-2 text-xs">
+                                  <!-- Engagement Score -->
+                                  <div class="text-gray-400">
+                                      Score: <span class="font-bold text-emerald-400">{{ analytic.engagement_score|default:75 }}%</span>
+                                  </div>
+                                  
+                                  <!-- Trend Indicator -->
+                                  <div class="trend-indicator trend-up">
+                                      <i class="fas fa-arrow-up mr-1"></i>+12%
+                                  </div>
+                              </div>
+                              
+                              <!-- Main Actions -->
+                              <div class="flex items-center space-x-1">
+                                  <button class="btn btn-xs btn-outline view-details-btn" 
+                                          data-date="{{ analytic.date|date:'Y-m-d' }}"
+                                          title="View Details">
+                                      <i class="fas fa-eye"></i>
+                                  </button>
+                                  
+                                  <a href="{% url 'aura_admin:analytics_update' analytic.pk %}" 
+                                     class="btn btn-xs btn-outline" 
+                                     title="Edit Analytics">
+                                      <i class="fas fa-edit"></i>
+                                  </a>
+                                  
+                                  <a href="{% url 'aura_admin:analytics_delete' analytic.pk %}" 
+                                     class="btn btn-xs btn-red" 
+                                     title="Delete Analytics">
+                                      <i class="fas fa-trash"></i>
+                                  </a>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              {% endfor %}
+          {% else %}
+              <!-- Empty State -->
+              <div class="col-span-full">
+                  <div class="glass-card p-12 text-center">
+                      <div class="text-gray-400">
+                          <i class="fas fa-chart-line text-4xl mb-4"></i>
+                          <h3 class="text-xl font-bold mb-2">No Analytics Data Found</h3>
+                          {% if request.GET.date_range or request.GET.metric_type %}
+                              <p class="mb-4">No analytics match your current filters.</p>
+                              <a href="{% url 'aura_admin:analytics_list' %}" class="btn btn-emerald">
+                                  <i class="fas fa-times mr-2"></i>
+                                  Clear Filters
+                              </a>
+                          {% else %}
+                              <p class="mb-4">Start tracking your learning journey and portfolio performance.</p>
+                              <a href="{% url 'aura_admin:analytics_create' %}" class="btn btn-emerald">
+                                  <i class="fas fa-plus mr-2"></i>
+                                  Log Your First Day
+                              </a>
+                          {% endif %}
+                      </div>
+                  </div>
+              </div>
+          {% endif %}
+      </div>
+  
+      <!-- Pagination -->
+      {% if is_paginated %}
+          <div class="flex justify-center">
+              <nav class="pagination-nav">
+                  <div class="flex items-center space-x-2">
+                      {% if page_obj.has_previous %}
+                          <a href="?page=1{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.metric_type %}&metric_type={{ request.GET.metric_type }}{% endif %}{% if request.GET.performance %}&performance={{ request.GET.performance }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-double-left"></i>
+                          </a>
+                          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.metric_type %}&metric_type={{ request.GET.metric_type }}{% endif %}{% if request.GET.performance %}&performance={{ request.GET.performance }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-left mr-1"></i>Previous
+                          </a>
+                      {% endif %}
+                      
+                      <span class="px-4 py-2 text-sm text-gray-400">
+                          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                      </span>
+                      
+                      {% if page_obj.has_next %}
+                          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.metric_type %}&metric_type={{ request.GET.metric_type }}{% endif %}{% if request.GET.performance %}&performance={{ request.GET.performance }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              Next<i class="fas fa-angle-right ml-1"></i>
+                          </a>
+                          <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.metric_type %}&metric_type={{ request.GET.metric_type }}{% endif %}{% if request.GET.performance %}&performance={{ request.GET.performance }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-double-right"></i>
+                          </a>
+                      {% endif %}
+                  </div>
+              </nav>
+          </div>
+      {% endif %}
+  
+  </div>
+  
+  <!-- JavaScript for Analytics Management -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Initialize chart animations
+      setTimeout(() => {
+          document.querySelectorAll('.chart-bar').forEach((bar, index) => {
+              const height = bar.style.height;
+              bar.style.height = '0%';
+              setTimeout(() => {
+                  bar.style.height = height;
+              }, index * 50);
+          });
+      }, 500);
+  
+      // Animate intensity bars
+      setTimeout(() => {
+          document.querySelectorAll('.intensity-progress').forEach(bar => {
+              const width = bar.style.width;
+              bar.style.width = '0%';
+              setTimeout(() => {
+                  bar.style.width = width;
+              }, 200);
+          });
+      }, 700);
+  
+      // View Details functionality
+      document.querySelectorAll('.view-details-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+              const date = this.dataset.date;
+              // Could open a modal or navigate to detail view
+              showNotification(`Viewing details for ${date}`, 'info');
+          });
+      });
+  
+      // Export functionality
+      document.getElementById('exportCSV').addEventListener('click', function() {
+          // Implement CSV export
+          showNotification('Exporting analytics data...', 'info');
+      });
+  
+      document.getElementById('generateReport').addEventListener('click', function() {
+          // Implement PDF report generation
+          showNotification('Generating analytics report...', 'info');
+      });
+  
+      // Refresh data
+      document.getElementById('refreshData').addEventListener('click', function() {
+          // Implement data refresh
+          showNotification('Refreshing analytics data...', 'info');
+      });
+  });
+  
+  // Notification helper function
+  function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+          type === 'success' ? 'bg-green-500' :
+          type === 'error' ? 'bg-red-500' :
+          type === 'warning' ? 'bg-yellow-500' :
+          'bg-blue-500'
+      }`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+          notification.remove();
+      }, 3000);
+  }
+  </script>
+  
+  {% endblock %}
