@@ -36,37 +36,36 @@ def test_admin_styles(request):
     """Test some admin button styling."""
 
     basic = [
-        {"style": "primary", "text": "Primary", "icon": "fa-star"},
-        {"style": "secondary", "text": "Secondary", "icon": "fa-star"},
-        {"style": "outline", "text": "Outline", "icon": "fa-star"},
+        {"style": "primary", "text": "Primary", "icon": "fa-database"},
+        {"style": "secondary", "text": "Secondary", "icon": "fa-users"},
+        {"style": "outline", "text": "Outline", "icon": "fa-chart-simple"},
     ]
 
     status = [
-        {"style": "danger", "text": "Danger", "icon": "fa-star"},
-        {"style": "warning", "text": "Warning", "icon": "fa-star"},
-        {"style": "success", "text": "Success", "icon": "fa-star"},
-        {"style": "info", "text": "Info", "icon": "fa-star"},
+        {"style": "danger", "text": "Danger", "icon": "fa-skull-crossbones"},
+        {"style": "warning", "text": "Warning", "icon": "fa-triangle-exclamation"},
+        {"style": "success", "text": "Success", "icon": "fa-fire"},
+        {"style": "info", "text": "Info", "icon": "fa-circle-exclamation"},
     ]
 
     aura = [
-        {"style": "teal", "text": "Teal", "icon": "fa-star"},
+        {"style": "teal", "text": "Teal", "icon": "fa-rocket"},
         {"style": "yellow", "text": "Yellow", "icon": "fa-star"},
-        {"style": "navy", "text": "Navy", "icon": "fa-star"},
-        {"style": "lavender", "text": "Lavender", "icon": "fa-star"},
-        {"style": "coral", "text": "Coral", "icon": "fa-star"},
-        {"style": "mint", "text": "Mint", "icon": "fa-star"},
-        {"style": "gunmetal", "text": "Gunmetal", "icon": "fa-star"},
+        {"style": "navy", "text": "Navy", "icon": "fa-microchip"},
+        {"style": "lavender", "text": "Lavender", "icon": "fa-brain"},
+        {"style": "coral", "text": "Coral", "icon": "fa-sun"},
+        {"style": "mint", "text": "Mint", "icon": "fa-leaf"},
+        {"style": "gunmetal", "text": "Gunmetal", "icon": "fa-cogs"},
     ]
 
     colors = [
-        {"style": "purple", "text": "Purple", "icon": "fa-star"},
-        {"style": "emerald", "text": "Emerald", "icon": "fa-star"},
-        {"style": "orange", "text": "Orange", "icon": "fa-star"},
-        {"style": "blue", "text": "Blue", "icon": "fa-star"},
-        {"style": "orange", "text": "Orange", "icon": "fa-star"},
-        {"style": "gray", "text": "Gray", "icon": "fa-star"},
-        {"style": "cyan", "text": "Cyan", "icon": "fa-star"},
-        {"style": "red", "text": "Red", "icon": "fa-star"},
+        {"style": "purple", "text": "Purple", "icon": "fa-route"},
+        {"style": "emerald", "text": "Emerald", "icon": "fa-flask"},
+        {"style": "orange", "text": "Orange", "icon": "fa-fish"},
+        {"style": "blue", "text": "Blue", "icon": "fa-mountain-sun"},
+        {"style": "gray", "text": "Gray", "icon": "fa-circle-xmark"},
+        {"style": "cyan", "text": "Cyan", "icon": "fa-code-branch"},
+        {"style": "red", "text": "Red", "icon": "fa-bullseye"},
     ]
 
     context = {
