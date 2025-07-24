@@ -2416,6 +2416,21 @@ class ArchitectureComponent(models.Model):
             info.append(f"Details: {self.description}")
         info.append(f"Type: {self.get_component_type_display()}")
         return "<br>".join(info)
+    
+    def get_component_type_icon(self):
+        """Get font awesome icon based on component type"""
+        icons = {
+            "frontend": "desktop",
+            "backend": "server",
+            "api": "plug",
+            "database": "database",
+            "processing": "arrows-rotate",
+            "file_io": "file-import",
+            "authentication": "lock",
+            "deployment": "rocket",
+            "other": "cube"
+        }
+        return icons.get(self.component_type, "cube")
 
 
 class ArchitectureConnection(models.Model):

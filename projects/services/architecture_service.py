@@ -59,7 +59,7 @@ class ArchitectureDiagramService:
             output_type='div',
             include_plotlyjs=True,
             config=config,
-            div_id=f'architecture-{self.system.slug}',
+            # div_id=f'architecture-{self.system.slug}',
         )
 
         return graph_html
@@ -100,7 +100,7 @@ class ArchitectureDiagramService:
                 name=component.name,
                 hovertemplate=hover_text + "<extra></extra>",
                 legendgroup=component.get_component_type_display(),
-                legendgrouptitle=component.get_component_type_display()
+                legendgrouptitle={'text': component.get_component_type_display()}
             ))
     
     def _add_connection_lines(self, fig):
