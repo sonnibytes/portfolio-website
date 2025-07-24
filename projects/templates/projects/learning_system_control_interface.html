@@ -1936,6 +1936,77 @@
                     {% endif %}
 
                 </div>
+                {% if active_panel == 'architecture' %}
+                <!-- Architecture Panel - Interactive 3D System Diagram -->
+                <div class="panel-content-grid grid-1-col">
+                    
+                    {% if has_architecture %}
+                    <!-- Architecture Diagram Container -->
+                    <div class="unified-dashboard-container teal">
+                        <div class="unified-container-header">
+                            <h3>Interactive System Architecture</h3>
+                            <p class="text-muted">3D visualization of system components and data flow</p>
+                        </div>
+                        <div class="unified-container-content">
+                            <div class="architecture-container">
+                                {{ architecture_diagram|safe }}
+                            </div>
+                            <div class="architecture-controls mt-3 text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-mouse me-2"></i>
+                                    <strong>Controls:</strong> Drag to rotate • Scroll to zoom • Hover components for details
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Architecture Metadata -->
+                    <div class="unified-dashboard-container lavender">
+                        <div class="unified-container-header">
+                            <h3>Architecture Components</h3>
+                            <p class="text-muted">System components and their relationships</p>
+                        </div>
+                        <div class="unified-container-content">
+                            <div class="architecture-stats-grid">
+                                {% for component in system.architecture_components.all %}
+                                <div class="component-stat-card">
+                                    <div class="component-icon" style="color: {{ component.color }};">
+                                        <i class="fas fa-{{ component.get_component_type_display|lower|slugify }}"></i>
+                                    </div>
+                                    <div class="component-info">
+                                        <h4>{{ component.name }}</h4>
+                                        <p class="component-type">{{ component.get_component_type_display }}</p>
+                                        {% if component.technology %}
+                                        <span class="tech-badge">{{ component.technology.name }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if component.is_core %}
+                                    <div class="core-indicator">
+                                        <i class="fas fa-star" title="Core Component"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% else %}
+                    <!-- No Architecture Message -->
+                    <div class="unified-dashboard-container gray">
+                        <div class="unified-container-content text-center py-5">
+                            <div class="text-muted mb-3">
+                                <i class="fas fa-project-diagram fa-3x"></i>
+                            </div>
+                            <h3 class="text-white">Architecture Diagram</h3>
+                            <p class="text-muted">No architecture components have been defined for this system yet.</p>
+                            <small class="text-muted">Architecture diagrams help visualize system structure and data flow.</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                </div>
+                {% endif %}
 
             </main>
 

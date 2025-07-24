@@ -961,6 +961,8 @@ class LearningSystemControlInterfaceView(DetailView):
     - Learning Timeline: Milestones and breakthroughs (replaces Performance panel)
     - Portfolio Assessment: Readiness breakdown (new panel)
     - Keep: DataLogs, Technologies, Features, Dependencies panels (already learning-relevant)
+
+    *Added architecture diagram support*
     """
 
     model = SystemModule
@@ -989,6 +991,13 @@ class LearningSystemControlInterfaceView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         system = self.object
+
+        # Architecture Diagram Integration
+        if system.has_architecture_diagram():
+            context['architecture_diagram'] = system.get_architecture_diagram()
+            context['has_architecture'] = True
+        else:
+            context['has_architecture'] = False
 
         # Define comprehensive control panels (system info + learning focused)
         context["control_panels"] = [
@@ -1063,6 +1072,16 @@ class LearningSystemControlInterfaceView(DetailView):
                 "count": system.dependencies.count(),
             },
         ]
+
+        # Optional: Add architecture panel to your control_panels list
+        if system.has_architecture_diagram():
+            context["control_panels"].insert(2, {  # Insert as 3rd panel
+                "id": "architecture",
+                "name": "System Architecture",
+                "icon": "project-diagram", 
+                "description": "Interactive 3D component visualization",
+                "count": system.architecture_components.count(),
+            })
 
         # Active panel (default to overview)
         context['active_panel'] = self.request.GET.get('panel', 'overview')
