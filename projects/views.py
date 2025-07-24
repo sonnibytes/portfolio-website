@@ -1171,9 +1171,9 @@ class LearningSystemControlInterfaceView(DetailView):
                 'main_description': system.description,
                 'brief_description': system.excerpt,
                 'technical_details': getattr(system, 'technical_details', None),
-                # Leaving bc might add setup and usage
-                'setup_instructions': getattr(system, 'setup_instructions', None),
-                'usage_examples': getattr(system, 'usage_examples', None),
+                # Leaving bc might add setup and usage - (updating to use existing tech details and features overview content fields)
+                'setup_instructions': getattr(system, 'technical_details', None),
+                'usage_examples': getattr(system, 'features_overview', None),
                 # Probably won't add, but just in case
                 'deployment_notes': getattr(system, 'deployment_notes', None),
             },
@@ -1450,16 +1450,16 @@ class LearningSystemControlInterfaceView(DetailView):
 
         timeline_events = []
 
-        # Add project start
-        if system.start_date:
-            timeline_events.append({
-                'date': system.start_date,
-                'type': 'project_start',
-                'title': 'Project Started',
-                'description': f'Began development in {system.learning_stage} stage',
-                'icon': 'play',
-                'color': 'teal'
-            })
+        # # Add project start
+        # if system.start_date:
+        #     timeline_events.append({
+        #         'date': system.start_date,
+        #         'type': 'project_start',
+        #         'title': 'Project Started',
+        #         'description': f'Began development in {system.learning_stage} stage',
+        #         'icon': 'play',
+        #         'color': 'teal'
+        #     })
 
         # Add real commit milestones
         repositories = system.github_repositories.all()
@@ -1489,7 +1489,7 @@ class LearningSystemControlInterfaceView(DetailView):
         # Add milestones
         for milestone in milestones:
             timeline_events.append({
-                'date': milestone.date_achieved.date(),
+                'date': milestone.date_achieved,
                 'type': 'milestone',
                 'title': milestone.title,
                 'description': milestone.description,
@@ -1505,7 +1505,7 @@ class LearningSystemControlInterfaceView(DetailView):
                 breakthroughs = gain.skill.get_breakthrough_moments()
                 for moment in breakthroughs:
                     timeline_events.append({
-                        'date': moment['date'].date(),  # Appx - could be more specific
+                        'date': moment['date'],  # Appx - could be more specific
                         'type': 'skill_breakthrough',
                         'title': f'{gain.skill.name} Breakthrough',
                         'description': moment['learning_story'],
@@ -1569,7 +1569,7 @@ class LearningSystemControlInterfaceView(DetailView):
             ).count(),
             'summary_stats': {
                 'total_events': len(timeline_events),
-                'recent_commits': len([e for e in timeline_events if e['type'] == 'commit' and (timezone.now() - e["date"].days <= 30)]),
+                'recent_commits': len([e for e in timeline_events if e['type'] == 'commit' and (timezone.now() - e["date"]).days <= 30]),
                 'milestones_achieved': len([e for e in timeline_events if e['type'] == 'milestone']),
                 'documentation_updates': len([e for e in timeline_events if e['type'] in ['datalog', 'system_update']]),
 
