@@ -756,17 +756,21 @@ class SystemModule(models.Model):
     description = MarkdownxField(
         help_text="Full project description in Markdown"
     )
+    # TODO: Remove/use instead for usage examples - Redundant to SystemFeatures
     features_overview = MarkdownxField(
-        blank=True, help_text="Key features and capabilities overview"
+        blank=True, help_text="Key features and usage examples"
     )
+    # TODO: Remove/use instead for setup instructions - Redundant to other related fields like tech, skills
     technical_details = MarkdownxField(
         blank=True,
-        help_text="Technical implementation details"
+        help_text="Technical implementation details and setup instructions"
     )
+    # TODO: May remove? Redundant and just another field to complete. Can address challenges w related DataLogs
     challenges = MarkdownxField(
         blank=True,
         help_text="Development challenges faced and how they were overcome"
     )
+    # TODO: lean on connected features w implementation status of 'planned' or 'in progress'
     future_enhancements = MarkdownxField(
         blank=True,
         help_text="Planned improvement and next steps"
@@ -834,6 +838,7 @@ class SystemModule(models.Model):
     # ================= LINKS AND RESOURCES =================
     github_url = models.URLField(blank=True)
     live_url = models.URLField(blank=True, help_text="Live demo/deployment URL")
+    # TODO: May remove demo_url and use live_url for both?
     demo_url = models.URLField(blank=True, help_text="Interactive demo URL")
     documentation_url = models.URLField(blank=True)
 
@@ -1947,6 +1952,21 @@ class SystemModule(models.Model):
 
         return base_color  # Normal activity - keep original color
 
+    # =========== Architecture Diagram Additions ==============
+    def get_architecture_diagram(self):
+        """
+        Generate interactive 3D architecture diagram using Plotly.
+        Returns HTML div ready for template embedding.
+        """
+        from .services.architecture_service import ArchitectureDiagramService
+
+        service = ArchitectureDiagramService(self)
+        return service.generate_plotly_diagram()
+    
+    def has_architecture_diagram(self):
+        """Check if system has architecture components defined"""
+        return self.architecture_components.exists()
+
 
 class SystemImage(models.Model):
     """Additional images for a system (gallery, screenshots, etc)."""
@@ -2339,3 +2359,95 @@ class LearningMilestone(models.Model):
             "has_post": bool(self.related_post),
             "shared": self.shared_publicly,
         }
+
+
+class ArchitectureComponent(models.Model):
+    """
+    Defines individual components in a system's architecture diagram.
+    Reusable across different projects with flexible configuration.
+    """
+    COMPONENT_TYPES = [
+        ('frontend', 'Frontend Interface'),
+        ('backend', 'Backend Service'),
+        ('api', 'External API'),
+        ('database', 'Data Storage'),
+        ('processing', 'Data Processing'),
+        ('file_io', 'File Input/Output'),
+        ('authentication', 'Authentication'),
+        ('deployment', 'Deployment/Hosting'),
+        ('other', 'Other Component'),
+    ]
+
+    # Core identification
+    system = models.ForeignKey(SystemModule, on_delete=models.CASCADE, related_name='architecture_components')
+    name = models.CharField(max_length=100, help_text="Display name (e.g., 'Streamlit Frontend)")
+    component_type = models.CharField(max_length=20, choices=COMPONENT_TYPES, default='other')
+
+    # Visual Positioning
+    position_x = models.FloatField(default=0.0, help_text="X coordinates in 3D space")
+    position_y = models.FloatField(default=0.0, help_text="Y coordinates in 3D space")
+    position_z = models.FloatField(default=0.0, help_text="Z coordinates in 3D space")
+
+    # Visual Styling
+    color = models.CharField(max_length=7, default='#00ffff', help_text="Hex color for component visualization")
+    size = models.PositiveIntegerField(default=15, help_text="Visual size (10-30 recommended)")
+
+    # Technical details
+    technology = models.ForeignKey(Technology, on_delete=models.SET_NULL, null=True, blank=True, help_text="Primary technology used in this component")
+    description = models.TextField(blank=True, help_text="Technical description for tooltips/hover info")
+
+    # Relationships and flow
+    display_order = models.PositiveIntegerField(default=0)
+    is_core = models.BooleanField(default=False, help_text="Mark as core/central component")
+
+    class Meta:
+        ordering = ['display_order', 'name']
+        unique_together = ('system', 'name')
+    
+    def __str__(self):
+        return f"{self.system.title} - {self.name}"
+    
+    def get_hover_info(self):
+        """Generate hover info for component."""
+        info = [f"<b>{self.name}</b>"]
+        if self.technology:
+            info.append(f"Technology: {self.technology.name}")
+        if self.description:
+            info.append(f"Details: {self.description}")
+        info.append(f"Type: {self.get_component_type_display()}")
+        return "<br>".join(info)
+
+
+class ArchitectureConnection(models.Model):
+    """
+    Defines connections between architectture components.
+    Represents data flow, dependencies, API calls, etc.
+    """
+    CONNECTION_TYPES = [
+        ('data_flow', 'Data Flow'),
+        ('api_call', 'API Request/Response'),
+        ('dependency', 'Dependency'),
+        ('file_transfer', 'File Transfer'),
+        ('authentication', 'Authentication'),
+        ('deployment', 'Deployment Pipeline'),
+        ('user_interaction', 'User Interaction'),
+    ]
+
+    # Core relationship
+    from_component = models.ForeignKey(ArchitectureComponent, on_delete=models.CASCADE, related_name='outgoing_connections')
+    to_component = models.ForeignKey(ArchitectureComponent, on_delete=models.CASCADE, related_name='incoming_connections')
+
+    # Connection details
+    connection_type = models.CharField(max_length=20, choices=CONNECTION_TYPES, default='data_flow')
+    label = models.CharField(max_length=50, blank=True, help_text="Label for connection line (e.g., 'Geocoding Request')")
+
+    # Visual styling
+    line_color = models.CharField(max_length=7, default='#00ffff', help_text="Color for connection line")
+    line_width = models.PositiveIntegerField(default=2, help_text="Line thickness (1-5 recommended)")
+    is_bidirectional = models.BooleanField(default=False, help_text="Two-way connection")
+
+    class Meta:
+        unique_together = ('from_component', 'to_component')
+    
+    def __str__(self):
+        return f"{self.from_component.name} → {self.to_component.name}"
