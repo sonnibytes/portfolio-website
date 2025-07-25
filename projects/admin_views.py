@@ -606,6 +606,23 @@ class ArchitectureConnectionCreateAdminView(BaseAdminCreateView):
         return context
 
 
+class ArchitectureConnectionUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing architecture connection"""
+
+    model = ArchitectureConnection
+    form_class = ArchitectureConnectionForm
+    template_name = 'projects/admin/architecture_connection_form.html'
+    success_url = reverse_lazy('aura_admin:projects:architecture_connection_list')
+
+
+class ArchitectureConnectionDeleteAdminView(BaseAdminDeleteView):
+    """Delete architecture connection"""
+    
+    model = ArchitectureConnection
+    success_url = reverse_lazy('aura_admin:projects:architecture_connection_list')
+
+
+
 # ============================================================================
 # ENHANCED SYSTEM ADMIN - ADD ARCHITECTURE MANAGEMENT
 # ============================================================================

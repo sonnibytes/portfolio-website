@@ -34,4 +34,23 @@ urlpatterns = [
     # AJAX API endpoints
     path('api/systems/<int:pk>/toggle-status/', admin_views.SystemStatusToggleView.as_view(), name='system_toggle_status'),
     path('api/systems/<int:pk>/toggle-feature/', admin_views.SystemFeatureToggleView.as_view(), name='system_toggle_feature'),
+
+    # ================= NEW ARCHITECTURE MANAGEMENT URLS =================
+    
+    # Architecture Components
+    path('architecture/components/', admin_views.ArchitectureComponentListAdminView.as_view(), name='architecture_component_list'),
+    path('architecture/components/create/', admin_views.ArchitectureComponentCreateAdminView.as_view(), name='architecture_component_create'),
+    path('architecture/components/<int:pk>/edit/', admin_views.ArchitectureComponentUpdateAdminView.as_view(), name='architecture_component_edit'),
+    path('architecture/components/<int:pk>/delete/', admin_views.ArchitectureComponentDeleteAdminView.as_view(), name='architecture_component_delete'),
+    
+    # Architecture Connections
+    path('architecture/connections/', admin_views.ArchitectureConnectionListAdminView.as_view(), name='architecture_connection_list'),
+    path('architecture/connections/create/', admin_views.ArchitectureConnectionCreateAdminView.as_view(), name='architecture_connection_create'),
+    path('architecture/connections/<int:pk>/edit/', admin_views.ArchitectureConnectionUpdateAdminView.as_view(), name='architecture_connection_edit'),
+    path('architecture/connections/<int:pk>/delete/', admin_views.ArchitectureConnectionDeleteAdminView.as_view(), name='architecture_connection_delete'),
+    
+    # System Architecture Management
+    path('systems/<int:pk>/architecture/', admin_views.SystemArchitectureAdminView.as_view(), name='system_architecture'),
+    
+
 ]
