@@ -548,3 +548,44 @@ class ArchitectureComponentDeleteAdminView(BaseAdminDeleteView):
     
     model = ArchitectureComponent
     success_url = reverse_lazy('aura_admin:projects:architecture_component_list')
+
+
+# ============================================================================
+# ARCHITECTURE CONNECTION MANAGEMENT VIEWS  
+# ============================================================================
+
+class ArchitectureConnectionListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage architecture connections"""
+    
+    model = ArchitectureConnection
+    template_name = 'projects/admin/architecture_connection_list.html'
+    context_object_name = 'connections'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return ArchitectureConnection.objects.select_related(
+            'from_component', 'to_component', 'from_component__system',
+            'to_component__system'
+        ).order_by('from_component__system__title', 'from_component__name')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update({
+            'title': 'Architecture Connection',
+            'subtitle': 'Manage component relationships and data flow',
+            'connection_types': ArchitectureConnection.CONNECTION_TYPES,
+            'stats': {
+                'total_connections': ArchitectureConnection.objects.count(),
+                'bidirectional_connections': ArchitectureConnection.objects.filter(
+                    is_bidirectional=True
+                ).count(),
+                'systems_connected': ArchitectureConnection.objects.values(
+                    'from_component__system'
+                ).distinct().count(),
+            }
+        })
+
+        return context
+
+
