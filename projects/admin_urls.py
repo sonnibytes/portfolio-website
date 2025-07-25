@@ -56,6 +56,3 @@ urlpatterns = [
     path('api/systems/<int:pk>/architecture-preview/', admin_views.ArchitecturePreviewView.as_view(), name='architecture_preview'),
     path('api/systems/<int:pk>/create-default-architecture/', admin_views.CreateDefaultArchitectureView.as_view(), name='create_default_architecture'),
 ]
-    
-
-]

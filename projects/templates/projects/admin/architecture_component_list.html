@@ -1,0 +1,249 @@
+<!-- projects/templates/projects/admin/architecture_component_list.html -->
+{% extends "admin/admin_base.html" %}
+{% load aura_filters %}
+
+{% block title %}Architecture Components - AURA Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="admin-header-content">
+            <h1 class="admin-title">
+                <i class="fas fa-cubes text-teal me-2"></i>
+                {{ title }}
+            </h1>
+            <p class="admin-subtitle">{{ subtitle }}</p>
+        </div>
+        <div class="admin-header-actions">
+            <a href="{% url 'aura_admin:projects:architecture_component_create' %}" 
+               class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>
+                Add Component
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="admin-stats-grid">
+        <div class="glass-card stat-card">
+            <div class="stat-icon teal">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.total_components }}</div>
+                <div class="stat-label">Total Components</div>
+            </div>
+        </div>
+        
+        <div class="glass-card stat-card">
+            <div class="stat-icon lavender">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.systems_with_architecture }}</div>
+                <div class="stat-label">Systems with Architecture</div>
+            </div>
+        </div>
+        
+        <div class="glass-card stat-card">
+            <div class="stat-icon coral">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.core_components }}</div>
+                <div class="stat-label">Core Components</div>
+            </div>
+        </div>
+        
+        <div class="glass-card stat-card">
+            <div class="stat-icon mint">
+                <i class="fas fa-arrows-alt"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.total_connections }}</div>
+                <div class="stat-label">Total Connections</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="glass-card mb-4">
+        <div class="glass-card-body">
+            <form method="get" class="admin-filters-form">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="search" value="{{ current_filters.search }}" 
+                               class="form-control" placeholder="Search components...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">System</label>
+                        <select name="system" class="form-select">
+                            <option value="">All Systems</option>
+                            {% for system in systems %}
+                            <option value="{{ system.slug }}" 
+                                    {% if current_filters.system == system.slug %}selected{% endif %}>
+                                {{ system.title }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Component Type</label>
+                        <select name="component_type" class="form-select">
+                            <option value="">All Types</option>
+                            {% for value, label in component_types %}
+                            <option value="{{ value }}" 
+                                    {% if current_filters.component_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Core Components</label>
+                        <select name="is_core" class="form-select">
+                            <option value="">All Components</option>
+                            <option value="true" {% if current_filters.is_core == 'true' %}selected{% endif %}>
+                                Core Only
+                            </option>
+                            <option value="false" {% if current_filters.is_core == 'false' %}selected{% endif %}>
+                                Non-Core Only
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-teal">
+                            <i class="fas fa-search me-2"></i>Filter
+                        </button>
+                        <a href="{% url 'aura_admin:projects:architecture_component_list' %}" 
+                           class="btn btn-secondary ms-2">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Components Table -->
+    <div class="glass-card">
+        <div class="glass-card-body">
+            {% if components %}
+            <div class="table-responsive">
+                <table class="table admin-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>System</th>
+                            <th>Type</th>
+                            <th>Technology</th>
+                            <th>Position</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for component in components %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="component-color-indicator me-3" 
+                                         style="background-color: {{ component.color }};"></div>
+                                    <div>
+                                        <div class="fw-bold text-white">{{ component.name }}</div>
+                                        {% if component.description %}
+                                        <small class="text-muted">{{ component.description|truncatechars:60 }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{% url 'aura_admin:projects:system_architecture' component.system.pk %}" 
+                                   class="text-teal">
+                                    {{ component.system.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ component.get_component_type_display }}</span>
+                            </td>
+                            <td>
+                                {% if component.technology %}
+                                <span class="tech-badge">{{ component.technology.name }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    ({{ component.position_x }}, {{ component.position_y }}, {{ component.position_z }})
+                                </small>
+                            </td>
+                            <td>
+                                {% if component.is_core %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-star me-1"></i>Core
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">Standard</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'aura_admin:projects:architecture_component_edit' component.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'aura_admin:projects:architecture_component_delete' component.pk %}" 
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="d-flex justify-content-center mt-4">
+                {% include "admin/components/pagination.html" %}
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-cubes fa-3x text-muted mb-3"></i>
+                <h3 class="text-white">No Architecture Components</h3>
+                <p class="text-muted">No components found matching your criteria.</p>
+                <a href="{% url 'aura_admin:projects:architecture_component_create' %}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create First Component
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.component-color-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.tech-badge {
+    background: rgba(0, 255, 255, 0.2);
+    color: #00ffff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+}
+</style>
+{% endblock %}
