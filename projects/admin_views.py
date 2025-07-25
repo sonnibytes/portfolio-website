@@ -275,7 +275,7 @@ class TechnologyListAdminView(BaseAdminListView, BulkActionMixin):
             'subtitle': 'Technology stack and tools',
             'category_choices': Technology.CATEGORY_CHOICES,
             # TODO: Fix categories count so badges have counts on page
-            'categories_count': Technology.objects.values_list(),
+            'categories_count': self.get_technology_categories(),
             'current_filters': {
                 'search': self.request.GET.get('search', ''),
                 'category': self.request.GET.get('category', ''),
@@ -284,14 +284,17 @@ class TechnologyListAdminView(BaseAdminListView, BulkActionMixin):
         return context
     
     def get_technology_categories(self):
-        """Distribution of tech by category"""
+        """Get technologies grouped by category"""
 
-        category_data = []
-
-        for category in categories:
-            category_data.append({
-
-            })
+        tech = Technology.objects.all()
+        
+        categories = {}
+        for t in tech:
+            tech_cat = t.category
+            if tech_cat not in categories:
+                categories[tech_cat] = []
+            categories[tech_cat].append(t)
+        return categories
 
 
 class TechnologyCreateAdminView(SlugAdminCreateView):
