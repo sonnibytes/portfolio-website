@@ -1,0 +1,381 @@
+<!-- projects/templates/projects/admin/system_architecture.html -->
+{% extends "admin/admin_base.html" %}
+{% load aura_filters %}
+
+{% block title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.architecture-preview {
+    min-height: 400px;
+    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.quick-action-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.quick-action-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.component-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.component-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 255, 255, 0.3);
+}
+
+.connection-flow {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.flow-arrow {
+    margin: 0 1rem;
+    color: #00ffff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="admin-header-content">
+            <h1 class="admin-title">
+                <i class="fas fa-project-diagram text-teal me-2"></i>
+                {{ title }}
+            </h1>
+            <p class="admin-subtitle">{{ subtitle }}</p>
+        </div>
+        <div class="admin-header-actions">
+            <a href="{% url 'aura_admin:projects:system_edit' system.pk %}" 
+               class="btn btn-secondary">
+                <i class="fas fa-edit me-2"></i>
+                Edit System
+            </a>
+            <a href="{% url 'aura_admin:projects:system_list' %}" 
+               class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Back to Systems
+            </a>
+        </div>
+    </div>
+
+    <!-- System Info -->
+    <div class="glass-card mb-4">
+        <div class="glass-card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h3 class="text-white">{{ system.title }}</h3>
+                    <p class="text-muted">{{ system.description|truncatechars:150 }}</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="system-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ components|length }}</span>
+                            <span class="stat-label">Components</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ connections|length }}</span>
+                            <span class="stat-label">Connections</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not has_architecture %}
+    <!-- No Architecture State -->
+    <div class="glass-card">
+        <div class="glass-card-body text-center py-5">
+            <i class="fas fa-project-diagram fa-4x text-muted mb-4"></i>
+            <h3 class="text-white">No Architecture Defined</h3>
+            <p class="text-muted mb-4">
+                This system doesn't have an architecture diagram yet. 
+                Create components and connections to visualize the system structure.
+            </p>
+            
+            <!-- Quick Architecture Creation -->
+            <div class="quick-actions-grid">
+                <div class="quick-action-card" onclick="createDefaultArchitecture('web_app')">
+                    <i class="fas fa-globe fa-2x text-teal mb-2"></i>
+                    <h5 class="text-white">Web Application</h5>
+                    <p class="text-muted small">Frontend + Backend + Database</p>
+                </div>
+                
+                <div class="quick-action-card" onclick="createDefaultArchitecture('api_service')">
+                    <i class="fas fa-server fa-2x text-lavender mb-2"></i>
+                    <h5 class="text-white">API Service</h5>
+                    <p class="text-muted small">API + Database + External Services</p>
+                </div>
+                
+                <div class="quick-action-card" onclick="createDefaultArchitecture('data_pipeline')">
+                    <i class="fas fa-stream fa-2x text-coral mb-2"></i>
+                    <h5 class="text-white">Data Pipeline</h5>
+                    <p class="text-muted small">Input + Processing + Output</p>
+                </div>
+                
+                <div class="quick-action-card" onclick="createDefaultArchitecture('ml_project')">
+                    <i class="fas fa-brain fa-2x text-mint mb-2"></i>
+                    <h5 class="text-white">ML Project</h5>
+                    <p class="text-muted small">Data + Training + Inference</p>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{% url 'aura_admin:projects:architecture_component_create' %}?system={{ system.pk }}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    Create Components Manually
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Architecture Management Interface -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Architecture Diagram -->
+            <div class="glass-card mb-4">
+                <div class="glass-card-header">
+                    <h3 class="text-white mb-0">
+                        <i class="fas fa-project-diagram text-teal me-2"></i>
+                        Interactive Architecture Diagram
+                    </h3>
+                    <div class="ms-auto">
+                        <button class="btn btn-sm btn-outline-teal" onclick="refreshDiagram()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="glass-card-body">
+                    <div class="architecture-preview" id="architecture-preview">
+                        {{ architecture_diagram|safe }}
+                    </div>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-mouse me-1"></i>
+                            Drag to rotate • Scroll to zoom • Hover for details
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Flow Connections -->
+            <div class="glass-card">
+                <div class="glass-card-header">
+                    <h3 class="text-white mb-0">
+                        <i class="fas fa-arrows-alt text-lavender me-2"></i>
+                        Data Flow Connections
+                    </h3>
+                    <a href="{% url 'aura_admin:projects:architecture_connection_create' %}?system={{ system.pk }}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Connection
+                    </a>
+                </div>
+                <div class="glass-card-body">
+                    {% if connections %}
+                    {% for connection in connections %}
+                    <div class="connection-flow">
+                        <div class="component-name">
+                            {{ connection.from_component.name }}
+                        </div>
+                        <div class="flow-arrow">
+                            {% if connection.is_bidirectional %}
+                            <i class="fas fa-exchange-alt"></i>
+                            {% else %}
+                            <i class="fas fa-arrow-right"></i>
+                            {% endif %}
+                        </div>
+                        <div class="component-name">
+                            {{ connection.to_component.name }}
+                        </div>
+                        <div class="ms-auto">
+                            <span class="badge bg-secondary">{{ connection.get_connection_type_display }}</span>
+                            {% if connection.label %}
+                            <small class="text-muted ms-2">{{ connection.label }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="ms-2">
+                            <a href="{% url 'aura_admin:projects:architecture_connection_edit' connection.pk %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted">No connections defined between components.</p>
+                        <a href="{% url 'aura_admin:projects:architecture_connection_create' %}?system={{ system.pk }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            Create First Connection
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Architecture Components -->
+            <div class="glass-card">
+                <div class="glass-card-header">
+                    <h3 class="text-white mb-0">
+                        <i class="fas fa-cubes text-coral me-2"></i>
+                        Components
+                    </h3>
+                    <a href="{% url 'aura_admin:projects:architecture_component_create' %}?system={{ system.pk }}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Component
+                    </a>
+                </div>
+                <div class="glass-card-body">
+                    {% for component in components %}
+                    <div class="component-card">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="component-color-indicator me-2" 
+                                 style="background-color: {{ component.color }};"></div>
+                            <h5 class="text-white mb-0">{{ component.name }}</h5>
+                            {% if component.is_core %}
+                            <span class="badge bg-warning ms-auto">
+                                <i class="fas fa-star"></i>
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <span class="badge bg-secondary">{{ component.get_component_type_display }}</span>
+                            {% if component.technology %}
+                            <span class="tech-badge ms-1">{{ component.technology.name }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if component.description %}
+                        <p class="text-muted small mb-2">{{ component.description|truncatechars:80 }}</p>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Position: ({{ component.position_x }}, {{ component.position_y }}, {{ component.position_z }})
+                            </small>
+                            <div class="btn-group">
+                                <a href="{% url 'aura_admin:projects:architecture_component_edit' component.pk %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'aura_admin:projects:architecture_component_delete' component.pk %}" 
+                                   class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function createDefaultArchitecture(type) {
+    if (confirm(`Create default ${type.replace('_', ' ')} architecture? This will add standard components for this type of system.`)) {
+        fetch(`{% url 'aura_admin:projects:create_default_architecture' system.pk %}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `architecture_type=${type}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error creating architecture: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error creating architecture');
+        });
+    }
+}
+
+function refreshDiagram() {
+    const preview = document.getElementById('architecture-preview');
+    preview.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-teal"></i><br><small class="text-muted mt-2">Refreshing diagram...</small></div>';
+    
+    fetch(`{% url 'aura_admin:projects:architecture_preview' system.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            preview.innerHTML = data.diagram_html;
+        } else {
+            preview.innerHTML = `<div class="text-center py-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><br><small class="mt-2">Error: ${data.error}</small></div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        preview.innerHTML = '<div class="text-center py-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><br><small class="mt-2">Error refreshing diagram</small></div>';
+    });
+}
+
+// Add CSRF token to all AJAX requests
+document.addEventListener('DOMContentLoaded', function() {
+    // Create a hidden CSRF token input for JavaScript access
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfInput);
+    }
+});
+</script>
+{% endblock %}
