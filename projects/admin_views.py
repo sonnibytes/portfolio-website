@@ -589,3 +589,86 @@ class ArchitectureConnectionListAdminView(BaseAdminListView, BulkActionMixin):
         return context
 
 
+class ArchitectureConnectionCreateAdminView(BaseAdminCreateView):
+    """Create new architecture connection"""
+    
+    model = ArchitectureConnection
+    form_class = ArchitectureConnectionForm
+    template_name = 'projects/admin/architecture_connection_form.html'
+    success_url = reverse_lazy('aura_admin:projects:architecture_connection_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Create Architecture Connection',
+            'subtitle': 'Connect system components with data flow relationship',
+        })
+        return context
+
+
+# ============================================================================
+# AJAX UTILITY VIEWS
+# ============================================================================
+
+class ArchitecturePreviewView(BaseAdminUpdateView):
+    """AJAX view to generate architecture diagram preview"""
+    
+    model = SystemModule
+    
+    def post(self, request, *args, **kwargs):
+        system = self.get_object()
+        
+        if system.has_architecture_diagram():
+            try:
+                diagram_html = system.get_architecture_diagram()
+                return JsonResponse({
+                    'success': True,
+                    'diagram_html': diagram_html,
+                    'component_count': system.architecture_components.count(),
+                    'connection_count': ArchitectureConnection.objects.filter(
+                        from_component__system=system
+                    ).count()
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'No architecture components defined for this system.'
+            })
+
+
+class CreateDefaultArchitectureView(BaseAdminUpdateView):
+    """AJAX view to create default architecture for a system"""
+    
+    model = SystemModule
+    
+    def post(self, request, *args, **kwargs):
+        system = self.get_object()
+        arch_type = request.POST.get('architecture_type', 'web_app')
+        
+        try:
+            from .services.architecture_service import ArchitectureDiagramService
+            
+            # Clear existing architecture if requested
+            if request.POST.get('clear_existing') == 'true':
+                system.architecture_components.all().delete()
+            
+            # Create default architecture
+            ArchitectureDiagramService.create_default_architecture(system, arch_type)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Created {arch_type} architecture for {system.title}',
+                'component_count': system.architecture_components.count(),
+                'redirect_url': reverse_lazy('aura_admin:projects:system_architecture', kwargs={'pk': system.pk})
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
