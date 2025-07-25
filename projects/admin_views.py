@@ -274,7 +274,6 @@ class TechnologyListAdminView(BaseAdminListView, BulkActionMixin):
             'title': 'Manage Technologies',
             'subtitle': 'Technology stack and tools',
             'category_choices': Technology.CATEGORY_CHOICES,
-            # TODO: Fix categories count so badges have counts on page
             'categories_count': self.get_technology_categories(),
             'current_filters': {
                 'search': self.request.GET.get('search', ''),

@@ -635,6 +635,8 @@ class Technology(models.Model):
         ('database', 'Database'),
         ('cloud', 'Cloud Service'),
         ('tool', 'Development Tool'),
+        # Added
+        ('os', 'Operating Systems & Distros'),
         ('other', 'Other'),
     )
 
