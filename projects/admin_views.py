@@ -607,6 +607,41 @@ class ArchitectureConnectionCreateAdminView(BaseAdminCreateView):
 
 
 # ============================================================================
+# ENHANCED SYSTEM ADMIN - ADD ARCHITECTURE MANAGEMENT
+# ============================================================================
+
+class SystemArchitectureAdminView(BaseAdminUpdateView):
+    """Dedicated view for managing a system's architecture"""
+    
+    model = SystemModule
+    template_name = 'projects/admin/system_architecture.html'
+    context_object_name = 'system'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        system = self.object
+
+        context.update({
+            'title': f'Architecture: {system.title}',
+            'subtitle': 'Manage system architecture components and connections',
+            'components': system.architecture_components.all().order_by('display_order', 'name'),
+            'connections': ArchitectureConnection.objects.filter(
+                from_component__system=system
+            ).select_related('from_component', 'to_component'),
+            'component_types': ArchitectureComponent.COMPONENT_TYPES,
+            'connection_types': ArchitectureConnection.CONNECTION_TYPES,
+            'available_technologies': Technology.objects.all().order_by('name'),
+            'has_architecture': system.has_architecture_diagram(),
+        })
+
+        # If system has architecture, generate the diagram
+        if system.has_architecture_diagram():
+            context['architecture_diagram'] = system.get_architecture_diagram()
+        
+        return context
+
+
+# ============================================================================
 # AJAX UTILITY VIEWS
 # ============================================================================
 
