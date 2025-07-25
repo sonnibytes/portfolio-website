@@ -9,7 +9,9 @@ from .models import (
     SystemMetric,
     SystemDependency,
     GitHubRepository,
-    GitHubLanguage
+    GitHubLanguage,
+    ArchitectureComponent,
+    ArchitectureConnection
 )
 
 
