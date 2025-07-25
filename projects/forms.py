@@ -7,7 +7,7 @@ Version 2.0
 from django import forms
 from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
-from .models import SystemModule, Technology, SystemType
+from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
 
 
 class SystemModuleForm(forms.ModelForm):
@@ -458,3 +458,300 @@ class QuickTechnologyForm(forms.ModelForm):
                 'type': 'color'
             }),
         }
+
+
+# ============================================================================
+# ARCHITECTURE COMPONENT FORM
+# ============================================================================
+
+class ArchitectureComponentForm(forms.ModelForm):
+    """Enhanced form for architecture components with AURA styling"""
+    
+    class Meta:
+        model = ArchitectureComponent
+        fields = [
+            'system', 'name', 'component_type', 'description', 'technology',
+            'position_x', 'position_y', 'position_z',
+            'color', 'size', 'is_core', 'display_order'
+        ]
+        widgets = {
+            'system': forms.Select(attrs={
+                'class': 'form-select',
+                'data-placeholder': 'Select system...'
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Streamlit Frontend, API Gateway...'
+            }),
+            'component_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Describe the component\'s role and functionality...'
+            }),
+            'technology': forms.Select(attrs={
+                'class': 'form-select',
+                'data-placeholder': 'Select primary technology (optional)...'
+            }),
+            'position_x': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.5',
+                'min': '-5',
+                'max': '5',
+                'placeholder': '0.0'
+            }),
+            'position_y': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.5',
+                'min': '-5',
+                'max': '5',
+                'placeholder': '0.0'
+            }),
+            'position_z': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.5', 
+                'min': '-5',
+                'max': '5',
+                'placeholder': '0.0'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control color-picker',
+                'type': 'color',
+                'value': '#00ffff'
+            }),
+            'size': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '5',
+                'max': '50',
+                'placeholder': '15'
+            }),
+            'is_core': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'display_order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'placeholder': '0'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Set empty labels for better styling
+        self.fields['system'].empty_label = 'Select System...'
+        self.fields['technology'].empty_label = 'No specific technology'
+        
+        # Add help text
+        self.fields['position_x'].help_text = 'X coordinate (-5 to +5, 0 = center)'
+        self.fields['position_y'].help_text = 'Y coordinate (-5 to +5, 0 = center)'
+        self.fields['position_z'].help_text = 'Z coordinate (-5 to +5, 0 = center)'
+        self.fields['size'].help_text = 'Visual size in diagram (5-50, 15 recommended)'
+        self.fields['is_core'].help_text = 'Mark as central/core component'
+        self.fields['display_order'].help_text = 'Lower numbers appear first'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Validate position coords
+        for coord in ['position_x', 'position_y', 'position_z']:
+            value = cleaned_data.get(coord)
+            if value is not None and (value < -5 or value > 5):
+                self.add_error(coord, 'Position must be between -5 and +5')
+        
+        # Validate size
+        size = cleaned_data.get('size')
+        if size and (size < 5 or size > 50):
+            self.add_error('size', 'Size must be between 5 and 50')
+        
+        # Validate color format
+        color = cleaned_data.get('color')
+        if color and not color.startswith('#'):
+            cleaned_data['color'] = f'#{color}'
+        
+        return cleaned_data
+
+
+# ============================================================================
+# ARCHITECTURE CONNECTION FORM
+# ============================================================================
+
+class ArchitectureConnectionForm(forms.ModelForm):
+    """Enhanced form for architecture connections"""
+    
+    class Meta:
+        model = ArchitectureConnection
+        fields = [
+            'from_component', 'to_component', 'connection_type', 'label',
+            'line_color', 'line_width', 'is_bidirectional'
+        ]
+        widgets = {
+            'from_component': forms.Select(attrs={
+                'class': 'form-select',
+                'data-placeholder': 'Select source component...'
+            }),
+            'to_component': forms.Select(attrs={
+                'class': 'form-select',
+                'data-placeholder': 'Select target component...'
+            }),
+            'connection_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'label': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., API Request, Data Flow, Authentication...'
+            }),
+            'line_color': forms.TextInput(attrs={
+                'class': 'form-control color-picker',
+                'type': 'color',
+                'value': '#00ffff'
+            }),
+            'line_width': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '10',
+                'value': '2'
+            }),
+            'is_bidirectional': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Group components by system for better UX
+        components = ArchitectureComponent.objects.select_related('system').order_by(
+            'system__title', 'name'
+        )
+        
+        choices = [('', 'Select component...')]
+        current_system = None
+        
+        for component in components:
+            if current_system != component.system.title:
+                if current_system is not None:
+                    # Close previous optgroup (handled by Django)
+                    pass
+                current_system = component.system.title
+                # Django will handle optgroup creation
+            
+            label = f"{component.system.title} → {component.name}"
+            choices.append((component.pk, label))
+        
+        self.fields['from_component'].choices = choices
+        self.fields['to_component'].choices = choices
+        
+        # Add help text
+        self.fields['label'].help_text = 'Optional label for the connection line'
+        self.fields['line_width'].help_text = 'Line thickness (1-10, 2 recommended)'
+        self.fields['is_bidirectional'].help_text = 'Two-way connection (arrows on both ends)'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        from_component = cleaned_data.get('from_component')
+        to_component = cleaned_data.get('to_component')
+        
+        # Prevent self-connections
+        if from_component and to_component and from_component == to_component:
+            raise forms.ValidationError('A component cannot connect to itself.')
+        
+        # Check for duplicate connections
+        if from_component and to_component:
+            existing = ArchitectureConnection.objects.filter(
+                from_component=from_component,
+                to_component=to_component
+            )
+            
+            # Exclude current instance when editing
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            
+            if existing.exists():
+                raise forms.ValidationError(
+                    'A connection between these components already exists.'
+                )
+        
+        # Validate line width
+        line_width = cleaned_data.get('line_width')
+        if line_width and (line_width < 1 or line_width > 10):
+            self.add_error('line_width', 'Line width must be between 1 and 10')
+        
+        return cleaned_data
+
+
+# ============================================================================
+# BULK ARCHITECTURE CREATION FORM
+# ============================================================================
+
+class BulkArchitectureForm(forms.Form):
+    """Form for creating default architecture for multiple systems"""
+    
+    systems = forms.ModelMultipleChoiceField(
+        queryset=SystemModule.objects.all(),
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
+        }),
+        help_text='Select systems to create default architecture for'
+    )
+    
+    architecture_type = forms.ChoiceField(
+        choices=[
+            ('auto', 'Auto-detect based on technologies'),
+            ('web_app', 'Web Application'),
+            ('api_service', 'API Service'),
+            ('data_pipeline', 'Data Pipeline'),
+            ('ml_project', 'Machine Learning Project'),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        initial='auto',
+        help_text='Type of architecture to create'
+    )
+    
+    clear_existing = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        help_text='Clear existing architecture components before creating new ones'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Only show systems without architecture by default
+        systems_without_arch = SystemModule.objects.filter(
+            architecture_components__isnull=True
+        ).distinct()
+        
+        if systems_without_arch.exists():
+            self.fields['systems'].queryset = systems_without_arch
+            self.fields['systems'].help_text = 'Systems without existing architecture'
+        else:
+            self.fields['systems'].help_text = 'All systems (some already have architecture)'
+
+
+# ============================================================================
+# SYSTEM SELECTION WIDGET FOR BETTER UX
+# ============================================================================
+
+class SystemSelectWidget(forms.Select):
+    """Custom widget for system selection with enhanced display"""
+    
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        
+        if value:
+            try:
+                system = SystemModule.objects.get(pk=value)
+                option['attrs']['data-status'] = system.status
+                option['attrs']['data-type'] = system.system_type.name if system.system_type else ''
+                option['attrs']['data-components'] = system.architecture_components.count()
+            except SystemModule.DoesNotExist:
+                pass
+        
+        return option
