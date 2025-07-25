@@ -504,3 +504,47 @@ class ArchitectureComponentListAdminView(BaseAdminListView, BulkActionMixin):
         return context
 
 
+class ArchitectureComponentCreateAdminView(BaseAdminCreateView):
+    """Create new architecture component"""
+
+    model = ArchitectureComponent
+    form_class = ArchitectureComponentForm
+    template_name = 'projects/admin/architecture_component_form.html'
+    success_url = reverse_lazy('aura_admin:projects:architecture_component_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Create Architecture Component',
+            'subtitle': 'Add new component to system architecture',
+        })
+        return context
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f"Architecture component '{self.object.name}' created succesfully!")
+        return response
+
+
+class ArchitectureComponentUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing architecture component"""
+    
+    model = ArchitectureComponent
+    form_class = ArchitectureComponentForm
+    template_name = 'projects/admin/architecture_component_form.html'
+    success_url = reverse_lazy('aura_admin:projects:architecture_component_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': f'Edit Component: {self.object.name}',
+            'subtitle': f'Update architecture component for {self.object.system.title}',
+        })
+        return context
+
+
+class ArchitectureComponentDeleteAdminView(BaseAdminDeleteView):
+    """Delete architecture component"""
+    
+    model = ArchitectureComponent
+    success_url = reverse_lazy('aura_admin:projects:architecture_component_list')
