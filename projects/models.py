@@ -635,8 +635,9 @@ class Technology(models.Model):
         ('database', 'Database'),
         ('cloud', 'Cloud Service'),
         ('tool', 'Development Tool'),
-        # Added
+        # Added os and AI/ML since there are enough of them to be their own category
         ('os', 'Operating Systems & Distros'),
+        ('ai', 'AI & Machine Learning'),
         ('other', 'Other'),
     )
 
