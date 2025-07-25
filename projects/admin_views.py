@@ -22,8 +22,8 @@ from core.admin_views import (
     SlugAdminCreateView,
     BulkActionMixin
 )
-from .models import SystemModule, Technology, SystemType
-from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm
+from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
+from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm, ArchitectureComponentForm, ArchitectureConnectionForm
 
 
 class ProjectsAdminDashboardView(BaseAdminListView):
@@ -430,3 +430,77 @@ class SystemFeatureToggleView(BaseAdminUpdateView):
             'success': True,
             'featured': system.featured
         })
+
+
+# ============================================================================
+# ARCHITECTURE COMPONENT MANAGEMENT VIEWS
+# ============================================================================
+
+class ArchitectureComponentListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage architecture components with AURA styling"""
+    
+    model = ArchitectureComponent
+    template_name = 'projects/admin/architecture_component_list.html'
+    context_object_name = 'components'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = ArchitectureComponent.objects.select_related(
+            'system', 'technology'
+        ).order_by('system__title', 'display_order', 'name')
+
+        # Search functionality
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(system__title__icontains=search_query)
+            )
+        
+        # System filtering
+        system_filter = self.request.GET.get('system', '')
+        if system_filter:
+            queryset = queryset.filter(system__slug=system_filter)
+        
+        # Component type filtering
+        type_filter = self.request.GET.get('component_type', '')
+        if type_filter:
+            queryset = queryset.filter(component_type=type_filter)
+        
+        # Core component filter
+        core_filter = self.request.GET.get('is_core', '')
+        if core_filter == 'true':
+            queryset = queryset.filter(is_core=True)
+        elif core_filter == 'false':
+            queryset = queryset.filter(is_core=False)
+        
+        return queryset.distinct()
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update({
+            'title': 'Architecture Components',
+            'subtitle': 'Manage system architecture components and diagrams',
+            'systems': SystemModule.objects.all().order_by('title'),
+            'component_types': ArchitectureComponent.COMPONENT_TYPES,
+            'current_filters': {
+                'search': self.request.GET.get('search', ''),
+                'system': self.request.GET.get('system', ''),
+                'component_type': self.request.GET.get('component_type', ''),
+                'is_core': self.request.GET.get('is_core', ''),
+            },
+            'stats': {
+                'total_components': ArchitectureComponent.objects.count(),
+                'systems_with_architecture': SystemModule.objects.filter(
+                    architecture_components__isnull=False
+                ).distinct().count(),
+                'core_components': ArchitectureComponent.objects.filter(is_core=True).count(),
+                'total_connections': ArchitectureConnection.objects.count(),
+            }
+        })
+
+        return context
+
+
