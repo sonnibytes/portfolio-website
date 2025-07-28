@@ -1023,6 +1023,13 @@ class LearningSystemControlInterfaceView(DetailView):
                 "count": None,
             },
             {
+                "id": "skills_tech",
+                "name": "Skills & Tech Analysis",
+                "icon": "brain",
+                "description": "Interactive skill progression and technology mastery visualization",
+                "count": system.skill_gains.count() + system.technologies.count(),
+            },
+            {
                 "id": "skills",
                 "name": "Skills Developed",
                 "icon": "brain",
@@ -1103,6 +1110,8 @@ class LearningSystemControlInterfaceView(DetailView):
             return self.get_system_details_data(system)
         elif active_panel == "learning_overview":
             return self.get_learning_overview_data(system, commit_stats)
+        elif active_panel == "skills_tech":
+            return self.get_skills_tech_analysis_data(system)
         elif active_panel == "skills":
             return self.get_skills_progression_data(system)
         elif active_panel == "timeline":
@@ -1734,6 +1743,188 @@ class LearningSystemControlInterfaceView(DetailView):
             'complex_integrations': [d for d in deps_data if d['integration_challenges'] >= 7],
             'skill_expanding': [d for d in deps_data if d['skill_requirements']]
         }
+    
+    # Panel to combine Skills and Tech
+    def get_skills_tech_analysis_data(self, system):
+        """
+        Combined Skills & Technology Analysis Panel with Plotly Charts
+        Uses SkillsTechChartsService to generate interactive visualizations
+        """
+        from .services.skills_tech_charts_service import SkillsTechChartsService
+    
+        # Initialize the charts service
+        charts_service = SkillsTechChartsService(system)
+
+        # ==================== SKILLS DATA ====================
+        skills_data = []
+        
+        # Get skills for this system with progression data
+        skill_gains = system.skill_gains.select_related('skill').all()
+        
+        for skill_gain in skill_gains:
+            skill = skill_gain.skill
+            
+            # Skill data for display
+            skills_data.append({
+                'skill': skill,
+                'proficiency_gained': skill_gain.proficiency_gained,
+                'proficiency_display': skill_gain.get_proficiency_gained_display(),
+                'learning_context': skill_gain.how_learned,
+                'other_projects': skill.project_gains.exclude(system=system).select_related('system')[:3],
+                'mastery_level': skill.get_mastery_level(),
+                'is_new_skill': skill_gain.proficiency_gained <= 2,
+                'color': getattr(skill, 'color', 'teal')
+            })
+        
+        # ==================== TECHNOLOGY DATA ====================
+        tech_data = []
+        
+        # Get technologies for this system with usage analysis
+        technologies = system.technologies.all()
+        
+        for tech in technologies:
+            mastery_level = self.assess_tech_mastery(tech, system)
+            learning_context = self.get_tech_learning_context(tech, system)
+            
+            # Technology data for display
+            tech_data.append({
+                'technology': tech,
+                'mastery_level': mastery_level,
+                'mastery_numeric': self.get_mastery_numeric(mastery_level),
+                'learning_context': learning_context,
+                'related_skills': system.skills_developed.filter(name__icontains=tech.name),
+                'other_projects': tech.systems.exclude(id=system.id)[:3],
+                'usage_count': tech.systems.count(),
+                'is_primary_tech': learning_context in ['core_framework', 'primary_language'],
+                'color': getattr(tech, 'color', 'coral')
+            })
+        
+        # ==================== RELATIONSHIPS DATA ====================
+        # Find connections between skills and technologies
+        skill_tech_connections = []
+        
+        for skill_gain in skill_gains:
+            skill = skill_gain.skill
+            related_techs = []
+            
+            # Find technologies that relate to this skill
+            for tech in technologies:
+                if (skill.name.lower() in tech.name.lower() or 
+                    tech.name.lower() in skill.name.lower() or
+                    self.check_skill_tech_relationship(skill, tech)):
+                    related_techs.append(tech)
+            
+            if related_techs:
+                skill_tech_connections.append({
+                    'skill': skill,
+                    'technologies': related_techs,
+                    'connection_strength': len(related_techs),
+                    'proficiency': skill_gain.proficiency_gained
+                })
+        
+        # ==================== SUMMARY METRICS ====================
+        analysis_summary = {
+            'total_skills': len(skills_data),
+            'new_skills_count': len([s for s in skills_data if s['is_new_skill']]),
+            'advanced_skills_count': len([s for s in skills_data if s['proficiency_gained'] >= 4]),
+            'total_technologies': len(tech_data),
+            'primary_tech_count': len([t for t in tech_data if t['is_primary_tech']]),
+            'skill_tech_connections': len(skill_tech_connections),
+            'avg_proficiency': sum(s['proficiency_gained'] for s in skills_data) / len(skills_data) if skills_data else 0,
+            'mastery_distribution': {
+                'beginner': len([s for s in skills_data if s['proficiency_gained'] <= 2]),
+                'intermediate': len([s for s in skills_data if s['proficiency_gained'] == 3]),
+                'advanced': len([s for s in skills_data if s['proficiency_gained'] >= 4])
+            }
+        }
+        
+        # ==================== GENERATE PLOTLY CHARTS ====================
+        # Generate the interactive charts using our service
+        skills_radar_html = charts_service.generate_skills_radar_chart()
+        tech_donut_html = charts_service.generate_tech_donut_chart()
+        skill_tech_network_html = charts_service.generate_skill_tech_network()
+        
+        return {
+            # Display data
+            'skills_data': skills_data,
+            'tech_data': tech_data, 
+            'skill_tech_connections': skill_tech_connections,
+            'analysis_summary': analysis_summary,
+            
+            # Plotly chart HTML (ready to embed)
+            'skills_radar_chart': skills_radar_html,
+            'tech_donut_chart': tech_donut_html,
+            'skill_tech_network_chart': skill_tech_network_html,
+            
+            # Chart availability flags
+            'has_skills_chart': bool(skills_data),
+            'has_tech_chart': bool(tech_data),
+            'has_network_chart': bool(skills_data and tech_data),
+        }
+    
+    # Helper methods combined skill/tech view
+    def get_mastery_numeric(self, mastery_level):
+        """Convert mastery level to numeric for charts"""
+        mapping = {
+            'beginner': 1,
+            'intermediate': 2, 
+            'advanced': 3,
+            'expert': 4
+        }
+        return mapping.get(mastery_level, 1)
+
+    def assess_tech_mastery(self, tech, system):
+        """Assess mastery level of technology in this system"""
+        # You can enhance this logic based on your existing implementation
+        total_systems = tech.systems.count()
+        if total_systems >= 3:
+            return 'advanced'
+        elif total_systems >= 2:
+            return 'intermediate'
+        else:
+            return 'beginner'
+
+    def get_tech_learning_context(self, tech, system):
+        """Get the learning context for this technology"""
+        tech_name_lower = tech.name.lower()
+        
+        if any(framework in tech_name_lower for framework in ['django', 'react', 'flask', 'vue']):
+            return 'core_framework'
+        elif any(lang in tech_name_lower for lang in ['python', 'javascript', 'java', 'c++']):
+            return 'primary_language'  
+        elif any(frontend in tech_name_lower for frontend in ['html', 'css', 'bootstrap', 'tailwind']):
+            return 'frontend_essential'
+        elif any(tool in tech_name_lower for tool in ['git', 'docker', 'postgresql', 'redis']):
+            return 'supporting_tool'
+        else:
+            return 'experimental'
+    
+    def check_skill_tech_relationship(self, skill, tech):
+        """Check if a skill and technology are related"""
+        skill_name = skill.name.lower()
+        tech_name = tech.name.lower()
+        
+        # Define relationship patterns
+        relationships = {
+            'python': ['django', 'flask', 'fastapi', 'pandas', 'numpy'],
+            'javascript': ['react', 'vue', 'node', 'express', 'jquery'],
+            'database': ['postgresql', 'mysql', 'sqlite', 'mongodb'],
+            'frontend': ['html', 'css', 'bootstrap', 'tailwind', 'sass'],
+            'version control': ['git', 'github', 'gitlab'],
+            'api': ['rest', 'graphql', 'django', 'flask', 'fastapi']
+        }
+        
+        # Check if skill relates to technology
+        for skill_key, tech_list in relationships.items():
+            if skill_key in skill_name:
+                return any(t in tech_name for t in tech_list)
+        
+        # Check reverse relationship  
+        for skill_key, tech_list in relationships.items():
+            if any(t in tech_name for t in tech_list):
+                return skill_key in skill_name
+        
+        return False
 
     # Helper methods for learning assessment
     def get_next_learning_stage(self, current_stage):
@@ -2177,25 +2368,25 @@ class LearningSystemControlInterfaceView(DetailView):
         """Assess how well-documented learning process is"""
         return min(related_logs.count() * 20, 100)
 
-    def get_tech_learning_context(self, tech, system):
-        """Determine learning context for technology"""
-        # Simple heuristic
-        if system.learning_stage in ['tutorial', 'guided']:
-            return 'Initial Learning'
-        elif system.learning_stage == 'independent':
-            return 'Building On'
-        else:
-            return 'Mastery'
+    # def get_tech_learning_context(self, tech, system):
+    #     """Determine learning context for technology"""
+    #     # Simple heuristic
+    #     if system.learning_stage in ['tutorial', 'guided']:
+    #         return 'Initial Learning'
+    #     elif system.learning_stage == 'independent':
+    #         return 'Building On'
+    #     else:
+    #         return 'Mastery'
 
-    def assess_tech_mastery(self, tech, system):
-        """Assess mastery level of technology in this project/system"""
-        # Simplifed assessment
-        if system.complexity >= 8:
-            return 'advanced'
-        elif system.complexity >= 5:
-            return 'intermediate'
-        else:
-            return 'beginner'
+    # def assess_tech_mastery(self, tech, system):
+    #     """Assess mastery level of technology in this project/system"""
+    #     # Simplifed assessment
+    #     if system.complexity >= 8:
+    #         return 'advanced'
+    #     elif system.complexity >= 5:
+    #         return 'intermediate'
+    #     else:
+    #         return 'beginner'
 
     def assess_tech_learning_impact(self, tech, system):
         """Assess learning impact of using this tech"""

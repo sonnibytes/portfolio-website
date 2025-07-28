@@ -131,7 +131,7 @@ class SkillsTechChartsService:
                 colors=colors,
                 line=dict(color='#0f172a', width=3)
             ),
-            hole=0.6  # donut chart
+            hole=0.6,  # donut chart
             textposition="inside",
             textinfo="label+percent",
             textfont=dict(color='white', size=12),
@@ -169,7 +169,7 @@ class SkillsTechChartsService:
 
         # Create network layout
         skill_positions = self._calculate_skill_positions()
-        tech_positions = self._calculate_tecch_positions()
+        tech_positions = self._calculate_tech_positions()
         connections = self._find_skill_tech_connections()
 
         # Add connection lines
@@ -198,14 +198,14 @@ class SkillsTechChartsService:
         fig.add_trace(go.Scatter(
             x=skill_x,
             y=skill_y,
-            node='markers+text',
+            mode='markers+text',
             marker=dict(
                 size=[prof * 8 + 20 for prof in skill_proficiency],
                 color=self.aura_colors['primary'],
                 line=dict(color='white', width=2)
             ),
             text=skill_names,
-            textposition="miiddle center",
+            textposition="middle center",
             textfont=dict(color='white', size=10),
             name='Skills',
             hovertemplate='<b>%{text}</b><br>' +
