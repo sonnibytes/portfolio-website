@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, DetailView
 from django.db import models
 
 from core.admin_views import (
@@ -20,6 +20,7 @@ from core.admin_views import (
     BaseAdminUpdateView,
     BaseAdminDeleteView,
     SlugAdminCreateView,
+    BaseAdminView,
     BulkActionMixin
 )
 from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
@@ -626,12 +627,13 @@ class ArchitectureConnectionDeleteAdminView(BaseAdminDeleteView):
 # ENHANCED SYSTEM ADMIN - ADD ARCHITECTURE MANAGEMENT
 # ============================================================================
 
-class SystemArchitectureAdminView(BaseAdminUpdateView):
-    """Dedicated view for managing a system's architecture"""
+class SystemArchitectureAdminView(BaseAdminView, DetailView):
+    """Dedicated view for managing a system's architecture - DetailView Approach"""
     
     model = SystemModule
     template_name = 'projects/admin/system_architecture.html'
     context_object_name = 'system'
+    pk_url_kwarg = 'pk'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -652,7 +654,12 @@ class SystemArchitectureAdminView(BaseAdminUpdateView):
 
         # If system has architecture, generate the diagram
         if system.has_architecture_diagram():
-            context['architecture_diagram'] = system.get_architecture_diagram()
+            try:
+                context['architecture_diagram'] = system.get_architecture_diagram()
+            except Exception as e:
+                # Handle diagram generation errors gracefully
+                context['diagram_error'] = str(e)
+                context['architecture_diagram'] = None
         
         return context
 
