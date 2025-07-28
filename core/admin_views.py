@@ -29,7 +29,7 @@ from datetime import datetime, timedelta
 
 from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics
 from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm
-
+from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule
 
 # ======= BUTTON STYLE TESTING ========
 def test_admin_styles(request):
@@ -377,6 +377,22 @@ class MainAdminDashboardView(AdminAccessMixin, TemplateView):
                 "recent_systems": SystemModule.objects.order_by("-updated_at")[:5],
             }
         )
+
+        # ADD ARCHITECTURE STATISTICS
+        context['architecture_stats'] = {
+            'total_components': ArchitectureComponent.objects.count(),
+            'systems_with_architecture': SystemModule.objects.filter(
+                architecture_components__isnull=False
+            ).distinct().count(),
+            'total_connections': ArchitectureConnection.objects.count(),
+            'core_components': ArchitectureComponent.objects.filter(is_core=True).count(),
+        }
+        
+        # Systems that need architecture diagrams
+        context['systems_without_architecture'] = SystemModule.objects.filter(
+            architecture_components__isnull=True,
+            status__in=['deployed', 'published', 'in_development', 'testing']
+        ).exclude(status__in=['draft', 'archived']).order_by('-updated_at')[:6]
 
         return context
 

@@ -754,7 +754,7 @@
                                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                                     {% for tech in panel_data.technology_summary.technologies %}
                                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
-                                        <span class="tech-name"><i class="fas {{ tech.icon}}"></i> {{ tech.name }}</span>
+                                        <span class="tech-name"><i class="{{ tech.icon}}"></i> {{ tech.name }}</span>
                                         <div style="display: flex; align-items: center; gap: 0.25rem;">
                                             <span class="tech-category">{{ tech.get_category_display }}</span>
                                             <span class="filter-count" style="color: var(--color-text-tertiary); font-size: 0.8rem;">{{ tech.systems_count }}</span>
@@ -1665,10 +1665,12 @@
                             <div style="text-align: center; padding: 4rem;">
                                 <i class="fas fa-file-text" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1.5rem;"></i>
                                 <h3>No DataLogs Connected</h3>
-                                <p>Document your learning journey by writing DataLogs about this project's challenges and breakthroughs.</p>
-                                <a href="{% url 'blog:post_create' %}" class="datalog-action" style="margin-top: 1rem; display: inline-block;">
-                                    <i class="fas fa-plus"></i> Create Learning DataLog
-                                </a>
+                                {% if user.is_staff %}
+                                    <p>Document your learning journey by writing DataLogs about this project's challenges and breakthroughs.</p>
+                                    <a href="{% url 'aura_admin:blog:post_create' %}" class="datalog-action" style="margin-top: 1rem; display: inline-block;">
+                                        <i class="fas fa-plus"></i> Create Learning DataLog
+                                    </a>
+                                {% endif %}
                             </div>
                         </div>
                         {% endif %}
@@ -1688,7 +1690,7 @@
                                     <span class="tech-usage-count">{{ analysis.learning_context|title }}</span>
                                 </div>
                                 <div class="tech-icon" style="display: inline; font-size: 1.5rem; color: var(--color-coral);">
-                                    <i class="fas {{ analysis.technology.icon|default:'cogs' }}"></i>
+                                    <i class="{{ analysis.technology.icon|default:'fas fa-cogs' }}"></i>
                                 </div>
 
                                 <div style="margin-bottom: 1rem;">
@@ -1717,7 +1719,7 @@
                                     <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">Also used in:</div>
                                     {% for similar_system in analysis.other_uses %}
                                     <div class="similar-system-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.03); border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.8rem;">
-                                        <i class="fas {{ similar_system.system_type.icon|default:'cube' }}"></i>
+                                        <i class="{{ similar_system.system_type.icon|default:'fas fa-cube' }}"></i>
                                         <span>{{ similar_system.title }}</span>
                                     </div>
                                     {% endfor %}
