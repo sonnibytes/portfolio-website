@@ -1,47 +1,44 @@
 <!-- projects/templates/projects/admin/system_architecture.html -->
 {% extends "admin/admin_base.html" %}
-{% load aura_filters %}
+{% load static %}
 
-{% block title %}{{ title }} - AURA Admin{% endblock %}
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
 
 {% block extra_css %}
 <style>
 .architecture-preview {
-    min-height: 400px;
+    min-height: 500px;
     background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
     border: 1px solid rgba(0, 255, 255, 0.3);
-    border-radius: 8px;
+    border-radius: 0.5rem;
     position: relative;
     overflow: hidden;
-}
-
-.quick-actions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
 }
 
 .quick-action-card {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    border-radius: 0.5rem;
     padding: 1.5rem;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
+    text-decoration: none;
+    color: white;
 }
 
 .quick-action-card:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(0, 255, 255, 0.3);
     transform: translateY(-2px);
+    color: white;
+    text-decoration: none;
 }
 
 .component-card {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    border-radius: 0.5rem;
     padding: 1rem;
     margin-bottom: 1rem;
     transition: all 0.3s ease;
@@ -57,7 +54,7 @@
     align-items: center;
     padding: 0.75rem;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 6px;
+    border-radius: 0.375rem;
     margin-bottom: 0.5rem;
 }
 
@@ -68,50 +65,45 @@
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="admin-container">
+{% block admin_content %}
+<div class="space-y-8">
+    
     <!-- Header Section -->
-    <div class="admin-header">
-        <div class="admin-header-content">
-            <h1 class="admin-title">
-                <i class="fas fa-project-diagram text-teal me-2"></i>
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-project-diagram text-teal-400 mr-3"></i>
                 {{ title }}
             </h1>
-            <p class="admin-subtitle">{{ subtitle }}</p>
+            <p class="text-gray-400">{{ subtitle }}</p>
         </div>
-        <div class="admin-header-actions">
-            <a href="{% url 'aura_admin:projects:system_edit' system.pk %}" 
-               class="btn btn-secondary">
-                <i class="fas fa-edit me-2"></i>
+        <div class="flex space-x-4">
+            <a href="{% url 'aura_admin:projects:system_edit' system.pk %}" class="btn btn-sm btn-outline">
+                <i class="fas fa-edit mr-2"></i>
                 Edit System
             </a>
-            <a href="{% url 'aura_admin:projects:system_list' %}" 
-               class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>
+            <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-sm btn-outline">
+                <i class="fas fa-arrow-left mr-2"></i>
                 Back to Systems
             </a>
         </div>
     </div>
 
     <!-- System Info -->
-    <div class="glass-card mb-4">
-        <div class="glass-card-body">
-            <div class="row">
-                <div class="col-md-8">
-                    <h3 class="text-white">{{ system.title }}</h3>
-                    <p class="text-muted">{{ system.description|truncatechars:150 }}</p>
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-xl font-bold text-white mb-2">{{ system.title }}</h3>
+                <p class="text-gray-400">{{ system.description|truncatechars:150 }}</p>
+            </div>
+            <div class="flex space-x-8">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-teal-400">{{ components|length }}</div>
+                    <div class="text-sm text-gray-400">Components</div>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="system-stats">
-                        <div class="stat-item">
-                            <span class="stat-number">{{ components|length }}</span>
-                            <span class="stat-label">Components</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number">{{ connections|length }}</span>
-                            <span class="stat-label">Connections</span>
-                        </div>
-                    </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-400">{{ connections|length }}</div>
+                    <div class="text-sm text-gray-400">Connections</div>
                 </div>
             </div>
         </div>
@@ -119,100 +111,96 @@
 
     {% if not has_architecture %}
     <!-- No Architecture State -->
-    <div class="glass-card">
-        <div class="glass-card-body text-center py-5">
-            <i class="fas fa-project-diagram fa-4x text-muted mb-4"></i>
-            <h3 class="text-white">No Architecture Defined</h3>
-            <p class="text-muted mb-4">
+    <div class="glass-card p-8">
+        <div class="text-center py-8">
+            <i class="fas fa-project-diagram text-6xl text-gray-500 mb-6"></i>
+            <h3 class="text-2xl font-bold text-white mb-4">No Architecture Defined</h3>
+            <p class="text-gray-400 mb-8 max-w-2xl mx-auto">
                 This system doesn't have an architecture diagram yet. 
                 Create components and connections to visualize the system structure.
             </p>
             
             <!-- Quick Architecture Creation -->
-            <div class="quick-actions-grid">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div class="quick-action-card" onclick="createDefaultArchitecture('web_app')">
-                    <i class="fas fa-globe fa-2x text-teal mb-2"></i>
-                    <h5 class="text-white">Web Application</h5>
-                    <p class="text-muted small">Frontend + Backend + Database</p>
+                    <i class="fas fa-globe text-3xl text-teal-400 mb-3"></i>
+                    <h5 class="text-lg font-bold text-white mb-2">Web Application</h5>
+                    <p class="text-sm text-gray-400">Frontend + Backend + Database</p>
                 </div>
                 
                 <div class="quick-action-card" onclick="createDefaultArchitecture('api_service')">
-                    <i class="fas fa-server fa-2x text-lavender mb-2"></i>
-                    <h5 class="text-white">API Service</h5>
-                    <p class="text-muted small">API + Database + External Services</p>
+                    <i class="fas fa-server text-3xl text-purple-400 mb-3"></i>
+                    <h5 class="text-lg font-bold text-white mb-2">API Service</h5>
+                    <p class="text-sm text-gray-400">API + Database + External Services</p>
                 </div>
                 
                 <div class="quick-action-card" onclick="createDefaultArchitecture('data_pipeline')">
-                    <i class="fas fa-stream fa-2x text-coral mb-2"></i>
-                    <h5 class="text-white">Data Pipeline</h5>
-                    <p class="text-muted small">Input + Processing + Output</p>
+                    <i class="fas fa-stream text-3xl text-orange-400 mb-3"></i>
+                    <h5 class="text-lg font-bold text-white mb-2">Data Pipeline</h5>
+                    <p class="text-sm text-gray-400">Input + Processing + Output</p>
                 </div>
                 
                 <div class="quick-action-card" onclick="createDefaultArchitecture('ml_project')">
-                    <i class="fas fa-brain fa-2x text-mint mb-2"></i>
-                    <h5 class="text-white">ML Project</h5>
-                    <p class="text-muted small">Data + Training + Inference</p>
+                    <i class="fas fa-brain text-3xl text-emerald-400 mb-3"></i>
+                    <h5 class="text-lg font-bold text-white mb-2">ML Project</h5>
+                    <p class="text-sm text-gray-400">Data + Training + Inference</p>
                 </div>
             </div>
             
-            <div class="mt-4">
-                <a href="{% url 'aura_admin:projects:architecture_component_create' %}?system={{ system.pk }}" 
-                   class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>
-                    Create Components Manually
-                </a>
-            </div>
+            <a href="{% url 'aura_admin:projects:architecture_component_create' %}?system={{ system.pk }}" 
+               class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>
+                Create Components Manually
+            </a>
         </div>
     </div>
     
     {% else %}
     <!-- Architecture Management Interface -->
-    <div class="row">
-        <div class="col-lg-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-8">
             <!-- Architecture Diagram -->
-            <div class="glass-card mb-4">
-                <div class="glass-card-header">
-                    <h3 class="text-white mb-0">
-                        <i class="fas fa-project-diagram text-teal me-2"></i>
+            <div class="glass-card p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-project-diagram text-teal-400 mr-2"></i>
                         Interactive Architecture Diagram
                     </h3>
-                    <div class="ms-auto">
-                        <button class="btn btn-sm btn-outline-teal" onclick="refreshDiagram()">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="refreshDiagram()">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
                 </div>
-                <div class="glass-card-body">
-                    <div class="architecture-preview" id="architecture-preview">
-                        {{ architecture_diagram|safe }}
-                    </div>
-                    <div class="mt-3 text-center">
-                        <small class="text-muted">
-                            <i class="fas fa-mouse me-1"></i>
-                            Drag to rotate • Scroll to zoom • Hover for details
-                        </small>
+                
+                <div class="architecture-preview" id="architecture-preview">
+                    {{ architecture_diagram|safe }}
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <div class="text-sm text-gray-400">
+                        <i class="fas fa-mouse mr-2"></i>
+                        Drag to rotate • Scroll to zoom • Hover for details
                     </div>
                 </div>
             </div>
             
             <!-- Data Flow Connections -->
-            <div class="glass-card">
-                <div class="glass-card-header">
-                    <h3 class="text-white mb-0">
-                        <i class="fas fa-arrows-alt text-lavender me-2"></i>
+            <div class="glass-card p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-arrows-alt text-purple-400 mr-2"></i>
                         Data Flow Connections
                     </h3>
                     <a href="{% url 'aura_admin:projects:architecture_connection_create' %}?system={{ system.pk }}" 
-                       class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus me-1"></i>
-                        Add Connection
+                       class="btn btn-sm btn-green">
+                        <i class="fas fa-plus mr-2"></i>Add Connection
                     </a>
                 </div>
-                <div class="glass-card-body">
-                    {% if connections %}
+                
+                {% if connections %}
+                <div class="space-y-3">
                     {% for connection in connections %}
                     <div class="connection-flow">
-                        <div class="component-name">
+                        <div class="text-white font-medium">
                             {{ connection.from_component.name }}
                         </div>
                         <div class="flow-arrow">
@@ -222,87 +210,92 @@
                             <i class="fas fa-arrow-right"></i>
                             {% endif %}
                         </div>
-                        <div class="component-name">
+                        <div class="text-white font-medium">
                             {{ connection.to_component.name }}
                         </div>
-                        <div class="ms-auto">
-                            <span class="badge bg-secondary">{{ connection.get_connection_type_display }}</span>
+                        <div class="ml-auto flex items-center space-x-3">
+                            <span class="px-2 py-1 bg-gray-600 text-gray-200 rounded text-sm">
+                                {{ connection.get_connection_type_display }}
+                            </span>
                             {% if connection.label %}
-                            <small class="text-muted ms-2">{{ connection.label }}</small>
+                            <span class="text-sm text-gray-400">{{ connection.label }}</span>
                             {% endif %}
-                        </div>
-                        <div class="ms-2">
                             <a href="{% url 'aura_admin:projects:architecture_connection_edit' connection.pk %}" 
-                               class="btn btn-sm btn-outline-primary">
+                               class="text-cyan-400 hover:text-cyan-300 p-1">
                                 <i class="fas fa-edit"></i>
                             </a>
                         </div>
                     </div>
                     {% endfor %}
-                    {% else %}
-                    <div class="text-center py-3">
-                        <p class="text-muted">No connections defined between components.</p>
-                        <a href="{% url 'aura_admin:projects:architecture_connection_create' %}?system={{ system.pk }}" 
-                           class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus me-1"></i>
-                            Create First Connection
-                        </a>
-                    </div>
-                    {% endif %}
                 </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <p class="text-gray-400 mb-4">No connections defined between components.</p>
+                    <a href="{% url 'aura_admin:projects:architecture_connection_create' %}?system={{ system.pk }}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus mr-2"></i>Create First Connection
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
         
-        <div class="col-lg-4">
+        <div class="space-y-8">
             <!-- Architecture Components -->
-            <div class="glass-card">
-                <div class="glass-card-header">
-                    <h3 class="text-white mb-0">
-                        <i class="fas fa-cubes text-coral me-2"></i>
+            <div class="glass-card p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-cubes text-orange-400 mr-2"></i>
                         Components
                     </h3>
                     <a href="{% url 'aura_admin:projects:architecture_component_create' %}?system={{ system.pk }}" 
-                       class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus me-1"></i>
-                        Add Component
+                       class="btn btn-sm btn-green">
+                        <i class="fas fa-plus mr-2"></i>Add
                     </a>
                 </div>
-                <div class="glass-card-body">
+                
+                <div class="space-y-4">
                     {% for component in components %}
                     <div class="component-card">
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="component-color-indicator me-2" 
-                                 style="background-color: {{ component.color }};"></div>
-                            <h5 class="text-white mb-0">{{ component.name }}</h5>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full mr-3 border-2 border-white border-opacity-30" 
+                                     style="background-color: {{ component.color }};"></div>
+                                <h5 class="font-bold text-white">{{ component.name }}</h5>
+                            </div>
                             {% if component.is_core %}
-                            <span class="badge bg-warning ms-auto">
-                                <i class="fas fa-star"></i>
+                            <span class="px-2 py-1 bg-yellow-500 bg-opacity-20 text-yellow-400 rounded text-xs flex items-center">
+                                <i class="fas fa-star mr-1"></i>Core
                             </span>
                             {% endif %}
                         </div>
                         
-                        <div class="mb-2">
-                            <span class="badge bg-secondary">{{ component.get_component_type_display }}</span>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="px-2 py-1 bg-gray-600 text-gray-200 rounded text-xs">
+                                {{ component.get_component_type_display }}
+                            </span>
                             {% if component.technology %}
-                            <span class="tech-badge ms-1">{{ component.technology.name }}</span>
+                            <span class="px-2 py-1 bg-teal-500 bg-opacity-20 text-teal-400 rounded text-xs">
+                                {{ component.technology.name }}
+                            </span>
                             {% endif %}
                         </div>
                         
                         {% if component.description %}
-                        <p class="text-muted small mb-2">{{ component.description|truncatechars:80 }}</p>
+                        <p class="text-sm text-gray-400 mb-3">{{ component.description|truncatechars:80 }}</p>
                         {% endif %}
                         
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs text-gray-500">
                                 Position: ({{ component.position_x }}, {{ component.position_y }}, {{ component.position_z }})
-                            </small>
-                            <div class="btn-group">
+                            </div>
+                            <div class="flex space-x-2">
                                 <a href="{% url 'aura_admin:projects:architecture_component_edit' component.pk %}" 
-                                   class="btn btn-sm btn-outline-primary">
+                                   class="text-cyan-400 hover:text-cyan-300 p-1">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <a href="{% url 'aura_admin:projects:architecture_component_delete' component.pk %}" 
-                                   class="btn btn-sm btn-outline-danger">
+                                   class="text-red-400 hover:text-red-300 p-1">
                                     <i class="fas fa-trash"></i>
                                 </a>
                             </div>
@@ -319,11 +312,15 @@
 <script>
 function createDefaultArchitecture(type) {
     if (confirm(`Create default ${type.replace('_', ' ')} architecture? This will add standard components for this type of system.`)) {
+        const button = event.target.closest('.quick-action-card');
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i><h5 class="text-lg font-bold text-white mb-2">Creating...</h5>';
+        
         fetch(`{% url 'aura_admin:projects:create_default_architecture' system.pk %}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': '{{ csrf_token }}'
             },
             body: `architecture_type=${type}`
         })
@@ -333,23 +330,26 @@ function createDefaultArchitecture(type) {
                 location.reload();
             } else {
                 alert('Error creating architecture: ' + data.error);
+                button.innerHTML = originalContent;
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Error creating architecture');
+            button.innerHTML = originalContent;
         });
     }
 }
 
 function refreshDiagram() {
     const preview = document.getElementById('architecture-preview');
-    preview.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-teal"></i><br><small class="text-muted mt-2">Refreshing diagram...</small></div>';
+    const originalContent = preview.innerHTML;
+    preview.innerHTML = '<div class="flex items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-3xl text-teal-400 mr-3"></i><span class="text-white">Refreshing diagram...</span></div>';
     
     fetch(`{% url 'aura_admin:projects:architecture_preview' system.pk %}`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            'X-CSRFToken': '{{ csrf_token }}'
         }
     })
     .then(response => response.json())
@@ -357,25 +357,13 @@ function refreshDiagram() {
         if (data.success) {
             preview.innerHTML = data.diagram_html;
         } else {
-            preview.innerHTML = `<div class="text-center py-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><br><small class="mt-2">Error: ${data.error}</small></div>`;
+            preview.innerHTML = `<div class="flex items-center justify-center h-full text-red-400"><i class="fas fa-exclamation-triangle text-3xl mr-3"></i><span>Error: ${data.error}</span></div>`;
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        preview.innerHTML = '<div class="text-center py-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><br><small class="mt-2">Error refreshing diagram</small></div>';
+        preview.innerHTML = '<div class="flex items-center justify-center h-full text-red-400"><i class="fas fa-exclamation-triangle text-3xl mr-3"></i><span>Error refreshing diagram</span></div>';
     });
 }
-
-// Add CSRF token to all AJAX requests
-document.addEventListener('DOMContentLoaded', function() {
-    // Create a hidden CSRF token input for JavaScript access
-    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = '{{ csrf_token }}';
-        document.body.appendChild(csrfInput);
-    }
-});
 </script>
 {% endblock %}
