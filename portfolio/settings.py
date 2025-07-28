@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "blog.apps.BlogConfig",
     "core.apps.CoreConfig",
     "projects.apps.ProjectsConfig",
+    "widget_tweaks",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
