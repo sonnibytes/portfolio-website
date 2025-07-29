@@ -1023,7 +1023,7 @@ class LearningSystemControlInterfaceView(DetailView):
                 "count": None,
             },
             {
-                "id": "skills_tech",
+                "id": "skills_tech_analysis",
                 "name": "Skills & Tech Analysis",
                 "icon": "brain",
                 "description": "Interactive skill progression and technology mastery visualization",
@@ -1110,7 +1110,7 @@ class LearningSystemControlInterfaceView(DetailView):
             return self.get_system_details_data(system)
         elif active_panel == "learning_overview":
             return self.get_learning_overview_data(system, commit_stats)
-        elif active_panel == "skills_tech":
+        elif active_panel == "skills_tech_analysis":
             return self.get_skills_tech_analysis_data(system)
         elif active_panel == "skills":
             return self.get_skills_progression_data(system)
