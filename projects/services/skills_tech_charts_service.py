@@ -72,11 +72,7 @@ class SkillsTechChartsService:
         # Convert to HTML w toggle button (may not need since skipping confidence)
         graph_html = self._create_chart_html(
             fig,
-            f'skills-radar-{self.system.slug}',
-            buttons=[
-                {'label': 'Proficiency', 'method': 'update', 'args': [{'visible': [True, False]}]},
-                {'label': 'Confidence', 'method': 'update', 'args': [{'visible': [False, True]}]},
-            ]
+            f'skills-radar-{self.system.slug}'
         )
 
         return graph_html
@@ -296,7 +292,7 @@ class SkillsTechChartsService:
 
     
     def _apply_radar_theme(self, fig, max_proficiency=5):
-        """Apply AURA theme to radar chart"""
+        """Apply AURA theme to radar chart - Improved"""
         fig.update_layout(
             polar=dict(
                 bgcolor='rgba(15, 23, 42, 0.8)',
@@ -316,58 +312,92 @@ class SkillsTechChartsService:
             paper_bgcolor='rgba(15, 23, 42, 0.9)',
             plot_bgcolor='rgba(15, 23, 42, 0.9)',
             font=dict(color=self.aura_colors['text']),
+            # Enhanced
             legend=dict(
+                x=0.02,
+                y=0.95,
+                xanchor='left',
+                yanchor='top',
                 bgcolor='rgba(15, 23, 42, 0.8)',
                 bordercolor=self.aura_colors['grid'],
                 borderwidth=1,
-                font=dict(color=self.aura_colors['text'])
+                font=dict(color=self.aura_colors['text'], size=10),
+                itemsizing='constant',
+                orientation='v'
             ),
-            margin=dict(t=40, b=40, l=40, r=40),
-            height=400
+            # Enahnced
+            margin=dict(l=120, r=80, t=80, b=60),
+            height=450,
+            autosize=True
         )
     
     def _apply_donut_theme(self, fig):
-        """Apply AURA theme to donut chart"""
+        """Apply AURA theme to donut chart - Improved"""
         fig.update_layout(
             paper_bgcolor='rgba(15, 23, 42, 0.9)',
             plot_bgcolor='rgba(15, 23, 42, 0.9)',
             font=dict(color=self.aura_colors['text']),
+            # Enahnced
             legend=dict(
-                bgcolor='rgba(15, 23, 42, 0.8)',
-                bordercolor=self.aura_colors['grid'],
+                x=0.02,
+                y=0.95,  # Slightly lower to avoid toggle buttons
+                xanchor='left',
+                yanchor='top',
+                bgcolor='rgba(15, 23, 42, 0.9)',
+                bordercolor='rgba(124, 58, 237, 0.4)',
                 borderwidth=1,
-                font=dict(color=self.aura_colors['text'])
+                font=dict(color=self.aura_colors['text'], size=10),
+                itemsizing='constant',
+                orientation='v',
+                itemwidth=30
             ),
-            margin=dict(t=40, b=40, l=40, r=40),
-            height=400
+            # Enahnced
+            margin=dict(l=120, r=80, t=80, b=60),
+            height=450,
+            autosize=True
         )
     
     def _apply_network_theme(self, fig):
-        """Apply AURA theme to network diagram"""
+        """Apply AURA theme to network diagram - Improved"""
         fig.update_layout(
             paper_bgcolor='rgba(15, 23, 42, 0.9)',
             plot_bgcolor='rgba(15, 23, 42, 0.9)',
             font=dict(color=self.aura_colors['text']),
+            # Enhanced - Improved aces for network chart
             xaxis=dict(
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                range=[-1.2, 1.2]
+                range=[-1.3, 1.3], # Slightly wider
+                scaleanchor="y",
+                scaleratio=1
             ),
             yaxis=dict(
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                range=[-1.2, 1.2]
+                range=[-1.3, 1.3]
             ),
+            # Enhanced, better legend positioning
             legend=dict(
-                bgcolor='rgba(15, 23, 42, 0.8)',
-                bordercolor=self.aura_colors['grid'],
+                x=0.02,
+                y=0.98,  # Higher since no toggle buttons
+                xanchor='left',
+                yanchor='top',
+                bgcolor='rgba(15, 23, 42, 0.9)',
+                bordercolor='rgba(124, 58, 237, 0.4)',
                 borderwidth=1,
-                font=dict(color=self.aura_colors['text']),
+                font=dict(color=self.aura_colors['text'], size=10),
+                itemsizing='constant',
+                orientation='v'
             ),
-            margin=dict(t=40, b=40, l=40, r=40),
-            height=500
+            # Enhanced
+            margin=dict(l=120, r=80, t=60, b=60),
+            height=500,
+            autosize=True,
+
+            # Better hover
+            hovermode='closest'
         )
     
     def _create_chart_html(self, fig, chart_id, buttons=None):
@@ -375,12 +405,17 @@ class SkillsTechChartsService:
         config = {
             'displayModeBar': True,
             'displaylogo': False,
-            'modeBarButtonsToRemove': ['pan2d', 'lasso2d', 'select2d'],
+            'modeBarButtonsToRemove': [
+                'pan2d', 'lasso2d', 'select2d', 'autoScale2d', 
+                'hoverClosestCartesian', 'hoverCompareCartesian'
+            ],
+            # ENHANCED: Modebar positioning
+            'modeBarButtonsToAdd': [],  # Can add custom buttons here if needed
             'toImageButtonOptions': {
                 'format': 'png',
                 'filename': f'{chart_id}',
-                'height': 400,
-                'width': 600,
+                'height': 500,
+                'width': 700,
                 'scale': 2
             },
             # Performance optimizations
@@ -400,16 +435,16 @@ class SkillsTechChartsService:
                     dict(
                         type="buttons",
                         direction="left",
-                        buttons=buttons,  # Use the buttons as-is from the calling method
-                        pad={"r": 8, "t": 8, "b": 8, "l": 8},
+                        buttons=buttons,
+                        pad={"r": 12, "t": 12, "b": 12, "l": 12},
                         showactive=True,
-                        active=0,  # FIXED: This should be an integer (index of active button)
-                        x=0.01,
+                        active=0,
+                        x=0.02,
                         xanchor="left", 
-                        y=1.02,
+                        y=1.08,
                         yanchor="top",
                         
-                        # FIXED: Simplified styling - Plotly has limited styling options
+                        # Button container styling
                         bgcolor='rgba(15, 23, 42, 0.95)',
                         bordercolor='rgba(124, 58, 237, 0.4)',
                         borderwidth=1,
@@ -419,11 +454,12 @@ class SkillsTechChartsService:
                             family='Inter, system-ui, sans-serif'
                         )
                     ),
-                ],
-                modebar={
-                    'orientation': 'h',
-                }
+                ]
             )
+
+        fig.update_layout(
+            autosize=True,
+        )
 
         graph_html = pyo.plot(
             fig,
@@ -537,3 +573,24 @@ class SkillsTechChartsService:
             '</div>'
         )
     
+    # Method to handle different chart type configurations
+    def get_chart_type_config(self, chart_type):
+        """Get chart-type specific configurations"""
+        configs = {
+            'radar': {
+                'height': 450,
+                'margin': dict(l=120, r=80, t=80, b=60),
+                'legend_orientation': 'v'
+            },
+            'donut': {
+                'height': 450,
+                'margin': dict(l=120, r=80, t=80, b=60),
+                'legend_orientation': 'v'
+            },
+            'network': {
+                'height': 500,
+                'margin': dict(l=120, r=80, t=60, b=60),
+                'legend_orientation': 'v'
+            }
+        }
+        return configs.get(chart_type, configs['radar'])
