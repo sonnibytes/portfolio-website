@@ -247,6 +247,54 @@ class SkillsTechChartsService:
 
         return graph_html
     
+    def generate_tech_sunburst(self):
+        """
+        Generate interactive technology distribution sunburst using Plotly.
+        Returns HTML div ready for embedding.
+        """
+        if not self.technologies.exists():
+            return self._generate_no_tech_message()
+        
+        fig = go.Figure()
+
+        # Prepare the data
+        tech_names = []
+        categories = []
+        usage_counts = []
+        colors = []
+
+        for tech in self.technologies:
+            tech_names.append(tech.name)
+            categories.append(tech.get_category_display())
+            usage_counts.append(tech.systems.count())
+            colors.append(getattr(tech, 'color', self.aura_colors['accent']))
+        
+        # Add Usage Trace
+        fig.add_trace(go.Sunburst(
+            labels=tech_names,
+            parents=categories,
+            values=usage_counts,
+            level=self.system.title,
+            name="Tech Usage by Category",
+            marker=dict(
+                colors=colors,
+                line=dict(color='white', width=3)
+            ),
+            hovertemplate='<b>%{label}</b><br>' +
+                         'Used in %{value} projects<br>' +
+                         '%{parent}<br>' +
+                         '<extra></extra>'
+        ))
+
+        # Apply AURA Theme
+        # self._apply_donut_theme(fig)
+
+        # Convert to HTML
+        graph_html = self._create_chart_html(fig, f'tech-sunburst-{self.system.slug}')
+
+        return graph_html
+
+    
     def _apply_radar_theme(self, fig, max_proficiency=5):
         """Apply AURA theme to radar chart"""
         fig.update_layout(
@@ -316,14 +364,14 @@ class SkillsTechChartsService:
                 bgcolor='rgba(15, 23, 42, 0.8)',
                 bordercolor=self.aura_colors['grid'],
                 borderwidth=1,
-                font=dict(color=self.aura_colors['text'])
+                font=dict(color=self.aura_colors['text']),
             ),
             margin=dict(t=40, b=40, l=40, r=40),
             height=500
         )
     
     def _create_chart_html(self, fig, chart_id, buttons=None):
-        """Convert Plotly figure to HTML with optional toggle buttons"""
+        """Convert Plotly figure to HTML with enhanced toggle buttons"""
         config = {
             'displayModeBar': True,
             'displaylogo': False,
@@ -334,29 +382,47 @@ class SkillsTechChartsService:
                 'height': 400,
                 'width': 600,
                 'scale': 2
-            }
+            },
+            # Performance optimizations
+            'responsive': True,
+            'staticPlot': False,
+            'plotlyServerURL': None,
+            'showTips': False,
+            'doubleClick': 'reset',
+            'editable': False,
+            'scrollZoom': True,
         }
 
-        # Add toggle buttons if provided
+        # FIXED: Simplified toggle buttons with correct Plotly structure
         if buttons:
             fig.update_layout(
                 updatemenus=[
                     dict(
                         type="buttons",
                         direction="left",
-                        buttons=buttons,
-                        pad={"r": 10, "t": 10},
+                        buttons=buttons,  # Use the buttons as-is from the calling method
+                        pad={"r": 8, "t": 8, "b": 8, "l": 8},
                         showactive=True,
+                        active=0,  # FIXED: This should be an integer (index of active button)
                         x=0.01,
-                        xanchor="left",
+                        xanchor="left", 
                         y=1.02,
                         yanchor="top",
-                        bgcolor='rgba(15, 23, 42, 0.8)',
-                        bordercolor=self.aura_colors['grid'],
+                        
+                        # FIXED: Simplified styling - Plotly has limited styling options
+                        bgcolor='rgba(15, 23, 42, 0.95)',
+                        bordercolor='rgba(124, 58, 237, 0.4)',
                         borderwidth=1,
-                        font=dict(color=self.aura_colors['text'])
+                        font=dict(
+                            color="#5c52bd",
+                            size=11,
+                            family='Inter, system-ui, sans-serif'
+                        )
                     ),
-                ]
+                ],
+                modebar={
+                    'orientation': 'h',
+                }
             )
 
         graph_html = pyo.plot(

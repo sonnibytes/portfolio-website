@@ -4833,3 +4833,854 @@ class GitHubSyncView(LoginRequiredMixin, View):
         
         # If last sync was more than 1hr ago, suggest update
         return last_repo.last_synced < timezone.now() - timedelta(hours=1)
+
+
+
+# ============== TEST SYS DETAIL VIEW ================
+# Will delete and use LearningSystemControlInterfaceView, want to see what metrics I want to pull
+class SystemControlInterfaceView(DetailView):
+    """
+    Learning-Focused System Control Interface w Real GitHub Data Integration.
+
+    Transform existing SystemControlInterfaceView to showcase learning progression
+    instead of performance metrics while maintaining the beautiful 8-panel structure.
+
+    Key Changes:
+    - Overview Panel: Learning metrics instead of performance metrics
+    - Skills Panel: Detailed skill progression (replaces Details panel)
+    - Learning Timeline: Milestones and breakthroughs (replaces Performance panel)
+    - Portfolio Assessment: Readiness breakdown (new panel)
+    - Keep: DataLogs, Technologies, Features, Dependencies panels (already learning-relevant)
+
+    Now integrates live commit data, repository statistics, and real development activity
+    instead of static fields. Showcases actual learning progression through code.
+    """
+
+    model = SystemModule
+    template_name = "projects/system_control_interface.html"
+    context_object_name = "system"
+
+    def get_queryset(self):
+        # Optimized for learning data
+        return SystemModule.objects.select_related(
+            "system_type", "author"
+        ).prefetch_related(
+            "technologies",
+            "skills_developed",
+            "skill_gains__skill",  # For detailed skill progression
+            "milestones",  # For learning timeline
+            "features",
+            "dependencies",
+            "log_entries__post",  # DataLogs integration
+            "log_entries__post__category",
+            "log_entries__post__tags",
+            # NEW: GitHub Repository data w commit info
+            "github_repositories",
+            "github_repositories__languages",
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        system = self.object
+
+        # Get real GitHub commit stats
+        commit_stats = system.get_commit_stats()
+
+        # Define comprehensive control panels w real data
+        context["control_panels"] = [
+            {
+                "id": "overview",
+                "name": "System Overview",
+                "icon": "tachometer-alt",
+                "description": "System metrics, technologies, and recent development activity",
+                "count": None,
+            },
+            {
+                "id": "details",
+                "name": "System Details",
+                "icon": "file-alt",
+                "description": "Technical documentation and system specifications",
+                "count": None,
+            },
+            {
+                "id": "learning_overview",
+                "name": "Learning Overview",
+                "icon": "chart-line",
+                "description": "Learning metrics and development progression with real commit data",
+                "count": commit_stats["total_commits"],  # Real commit count
+            },
+            {
+                "id": "skills",
+                "name": "Skills Developed",
+                "icon": "brain",
+                "description": "Detailed skill progression and competency gains",
+                "count": system.skills_developed.count(),
+            },
+            {
+                "id": "development_timeline",
+                "name": "Development Timeline",
+                "icon": "timeline",
+                "description": "Real development activity, commits, and learning milestones",
+                "count": commit_stats["commits_last_30_days"],  # Recent activity
+            },
+            {
+                "id": "portfolio_assesment",
+                "name": "Portfolio Assessment",
+                "icon": "star",
+                "description": "Portfolio readiness analysis and recommendations",
+                "count": None,
+            },
+            {
+                "id": "datalogs",
+                "name": "DataLogs",
+                "icon": "file-text",
+                "description": "Learning documentation and related posts",
+                "count": system.get_related_logs().count(),
+            },
+            {
+                "id": "technologies",
+                "name": "Technologies",
+                "icon": "cogs",
+                "description": "Technology stack analysis and learning context",
+                "count": system.technologies.count(),
+            },
+            {
+                "id": "features",
+                "name": "Features",
+                "icon": "list",
+                "description": "Feature development and implementation challenges",
+                "count": system.features.count(),
+            },
+            {
+                "id": "dependencies",
+                "name": "Dependencies",
+                "icon": "link",
+                "description": "External dependencies and integration challenges",
+                "count": system.dependencies.count(),
+            },
+        ]
+
+        # Active panel (default to overview)
+        context["active_panel"] = self.request.GET.get("panel", "overview")
+
+        # Panel data with real GitHub integration
+        context["panel_data"] = {
+            "overview": self.get_enhanced_overview_data(system, commit_stats),
+            "details": self.get_system_details_data(system),
+            "learning_overview": self.get_enhanced_learning_overview_data(system, commit_stats),
+            "skills": self.get_skills_development_data(system),
+            "development_timeline": self.get_real_development_timeline_data(system, commit_stats),
+            "portfolio_assessment": self.get_portfolio_assessment_data(system, commit_stats),
+            "technologies": self.get_technologies_data(system),
+            "features": self.get_features_data(system),
+            "dependencies": self.get_dependencies_data(system),
+            "datalogs": self.get_datalogs_data(system),
+        }
+
+        return context
+
+    def get_enhanced_overview_data(self, system, commit_stats):
+        """Enhanced overview with real GitHub repository data"""
+        return {
+            "basic_info": {
+                "name": system.title,
+                "status": system.status,
+                "learning_stage": system.learning_stage,
+                "complexity": system.complexity,
+                "completion_percent": system.completion_percent,
+                "portfolio_ready": system.portfolio_ready,
+            },
+            "real_development_stats": {
+                # Real GitHub data instead of static fields
+                "total_commits": commit_stats["total_commits"],
+                "commits_last_30_days": commit_stats["commits_last_30_days"],
+                "commits_last_year": commit_stats["commits_last_year"],
+                "last_commit_date": commit_stats["last_commit_date"],
+                "repository_count": commit_stats["repository_count"],
+                "active_repositories": commit_stats["active_repo_count"],
+                "avg_commits_per_month": commit_stats["avg_commits_per_month"],
+                "commit_frequency_rating": commit_stats["commit_frequency_rating"],
+                # Keep existing non-commit fields
+                "estimated_hours": system.estimated_dev_hours,
+                "actual_hours": system.actual_dev_hours,
+            },
+            "github_activity": {
+                "most_active_repo": commit_stats.get("most_active_repo"),
+                "recent_commit_message": commit_stats.get(
+                    "most_active_repo"
+                ).last_commit_message
+                if commit_stats.get("most_active_repo")
+                else None,
+                "development_status": self.get_development_status(commit_stats),
+                "activity_level": self.get_activity_level(
+                    commit_stats["commits_last_30_days"]
+                ),
+            },
+            "system_health": {
+                "status": system.get_health_status()
+                if hasattr(system, "get_health_status")
+                else "unknown",
+                "deployment_ready": system.status == "deployed",
+                "has_documentation": bool(system.description),
+                "has_features": system.features.count() > 0,
+                "has_active_development": commit_stats["commits_last_30_days"] > 0,
+                "github_connected": commit_stats["repository_count"] > 0,
+            },
+            "real_recent_activity": self.get_real_recent_activity_feed(
+                system, commit_stats
+            ),
+            "quick_links": {
+                "github_repositories": system.github_repositories.all()[:3],
+                "primary_repo_url": commit_stats.get("most_active_repo").html_url
+                if commit_stats.get("most_active_repo")
+                else None,
+                "live_url": system.live_url or system.demo_url,
+                "documentation_url": system.documentation_url,
+            },
+        }
+
+    def get_enhanced_learning_overview_data(self, system, commit_stats):
+        """Learning overview with real development progression data"""
+        # Calculate learning velocity based on real commits
+        learning_velocity = self.calculate_learning_velocity(system, commit_stats)
+
+        return {
+            "learning_metrics": {
+                "skills_gained": system.skills_developed.count(),
+                "milestones_achieved": system.milestones.count(),
+                "learning_stage": system.learning_stage,
+                "learning_stage_display": system.get_learning_stage_display(),
+                "portfolio_ready": system.portfolio_ready,
+                "learning_impact_score": system.get_learning_impact_score(),
+            },
+            "real_development_progression": {
+                "total_commits": commit_stats["total_commits"],
+                "development_velocity": learning_velocity,
+                "recent_activity_level": commit_stats["commits_last_30_days"],
+                "consistency_rating": self.get_development_consistency(commit_stats),
+                "learning_trajectory": self.analyze_learning_trajectory(
+                    system, commit_stats
+                ),
+            },
+            "time_investment": {
+                "estimated_hours": system.estimated_dev_hours,
+                "actual_hours": system.actual_dev_hours,
+                "commit_frequency": commit_stats["avg_commits_per_month"],
+                "development_span_months": self.calculate_development_span(
+                    commit_stats
+                ),
+            },
+            "learning_documentation": system.get_learning_documentation_from_logs(),
+            "progress_indicators": {
+                "completion_percent": system.completion_percent,
+                "feature_completion": self.calculate_feature_completion(system),
+                "documentation_completeness": self.assess_documentation_completeness(
+                    system
+                ),
+                "commit_activity_trend": self.get_commit_trend(commit_stats),
+            },
+        }
+
+    def get_real_development_timeline_data(self, system, commit_stats):
+        """Real development timeline using actual commit data and milestones"""
+        timeline_events = []
+
+        # Add real commit milestones
+        repositories = system.github_repositories.all()
+        for repo in repositories:
+            if repo.last_commit_date:
+                timeline_events.append(
+                    {
+                        "type": "commit",
+                        "date": repo.last_commit_date,
+                        "title": f"Latest commit to {repo.name}",
+                        "description": repo.last_commit_message[:100] + "..."
+                        if repo.last_commit_message
+                        and len(repo.last_commit_message) > 100
+                        else repo.last_commit_message,
+                        "author": 'ksg-dev',
+                        "repo_name": repo.name,
+                        "repo_url": repo.html_url,
+                        "commit_count": repo.total_commits,
+                        "icon": "code-branch",
+                        "color": "teal",
+                        "metadata": {
+                            "commits_this_month": repo.commits_last_30_days,
+                            "repo_activity": repo.commit_frequency_rating,
+                        },
+                    }
+                )
+
+        # Add learning milestones
+        milestones = system.milestones.order_by("-date_achieved")
+        for milestone in milestones:
+            timeline_events.append(
+                {
+                    "type": "milestone",
+                    "date": milestone.date_achieved,
+                    "title": milestone.title,
+                    "description": milestone.description,
+                    "milestone_type": milestone.milestone_type,
+                    "icon": self.get_milestone_icon(milestone.milestone_type),
+                    "color": self.get_milestone_color(milestone.milestone_type),
+                    "metadata": {
+                        "achievement_level": milestone.milestone_type,
+                    },
+                }
+            )
+
+        # Add system updates with commit correlation
+        if system.updated_at != system.created_at:
+            # Find commits around system update time
+            recent_commits = self.find_commits_around_date(system, system.updated_at)
+            timeline_events.append(
+                {
+                    "type": "system_update",
+                    "date": system.updated_at,
+                    "title": "System Information Updated",
+                    "description": f"System details updated - {len(recent_commits)} related commits found",
+                    "related_commits": recent_commits,
+                    "icon": "edit",
+                    "color": "lavender",
+                    "metadata": {
+                        "update_type": "documentation",
+                    },
+                }
+            )
+
+        # Add DataLog publications with development correlation
+        recent_logs = system.get_related_logs()[:5]
+        for log in recent_logs:
+            # Find commits around log publication
+            related_commits = self.find_commits_around_date(system, log.post.created_at)
+            timeline_events.append(
+                {
+                    "type": "datalog",
+                    "date": log.post.created_at,
+                    "title": f"DataLog: {log.post.title}",
+                    "description": log.post.excerpt or log.post.title,
+                    "post_url": log.post.get_absolute_url(),
+                    "connection_type": log.connection_type,
+                    "related_commits": related_commits,
+                    "icon": "file-text",
+                    "color": "lavender",
+                    "metadata": {
+                        "reading_time": log.post.reading_time,
+                        "category": log.post.category.name
+                        if log.post.category
+                        else None,
+                    },
+                }
+            )
+
+        # Sort all events by date (most recent first)
+        timeline_events.sort(key=lambda x: x["date"], reverse=True)
+
+        return {
+            "timeline_events": timeline_events[:15],  # Show last 15 events
+            "summary_stats": {
+                "total_events": len(timeline_events),
+                "recent_commits": len(
+                    [
+                        e
+                        for e in timeline_events
+                        if e["type"] == "commit"
+                        and (timezone.now() - e["date"]).days <= 30
+                    ]
+                ),
+                "milestones_achieved": len(
+                    [e for e in timeline_events if e["type"] == "milestone"]
+                ),
+                "documentation_updates": len(
+                    [
+                        e
+                        for e in timeline_events
+                        if e["type"] in ["datalog", "system_update"]
+                    ]
+                ),
+            },
+            "development_insights": self.analyze_development_patterns(timeline_events),
+        }
+
+    def get_real_recent_activity_feed(self, system, commit_stats):
+        """Generate real activity feed using GitHub data"""
+        activity = []
+
+        # Real recent commits from GitHub
+        repositories = system.github_repositories.filter(
+            commits_last_30_days__gt=0
+        ).order_by("-last_commit_date")
+        for repo in repositories[:3]:  # Top 3 active repos
+            if repo.last_commit_date:
+                activity.append(
+                    {
+                        "type": "commit",
+                        "date": repo.last_commit_date,
+                        "description": f"{repo.commits_last_30_days} commits to {repo.name} this month",
+                        "detail": repo.last_commit_message[:80] + "..."
+                        if repo.last_commit_message
+                        and len(repo.last_commit_message) > 80
+                        else repo.last_commit_message,
+                        "author": 'ksg-dev',
+                        "repo_url": repo.html_url,
+                        "icon": "code-branch",
+                        "color": "teal",
+                        "metadata": {
+                            "total_commits": repo.total_commits,
+                            "activity_rating": repo.commit_frequency_rating,
+                        },
+                    }
+                )
+
+        # Repository activity summaries
+        if commit_stats["commits_last_30_days"] > 0:
+            activity.append(
+                {
+                    "type": "development_summary",
+                    "date": commit_stats["last_commit_date"],
+                    "description": f"{commit_stats['commits_last_30_days']} total commits across {commit_stats['active_repo_count']} repositories",
+                    "detail": f"Development active in {commit_stats['repository_count']} connected repositories",
+                    "icon": "chart-line",
+                    "color": "mint",
+                    "metadata": {
+                        "total_commits": commit_stats["total_commits"],
+                        "avg_monthly": commit_stats["avg_commits_per_month"],
+                    },
+                }
+            )
+
+        # Recent milestones (keep existing)
+        recent_milestones = system.milestones.order_by("-date_achieved")[:3]
+        for milestone in recent_milestones:
+            activity.append(
+                {
+                    "type": "milestone",
+                    "date": milestone.date_achieved,
+                    "description": milestone.title,
+                    "detail": milestone.description,
+                    "icon": self.get_milestone_icon(milestone.milestone_type),
+                    "color": self.get_milestone_color(milestone.milestone_type),
+                    "metadata": {
+                        "milestone_type": milestone.milestone_type,
+                    },
+                }
+            )
+
+        # System updates correlated with commits
+        if system.updated_at != system.created_at:
+            recent_commits = self.find_commits_around_date(
+                system, system.updated_at, days=7
+            )
+            activity.append(
+                {
+                    "type": "update",
+                    "date": system.updated_at,
+                    "description": "System information updated",
+                    "detail": f"{len(recent_commits)} commits made around this time",
+                    "icon": "edit",
+                    "color": "info",
+                    "metadata": {
+                        "related_commits": len(recent_commits),
+                    },
+                }
+            )
+
+        # Recent DataLogs with development correlation
+        recent_logs = system.get_related_logs()[:3]
+        for log in recent_logs:
+            commits_around_log = self.find_commits_around_date(
+                system, log.post.created_at, days=14
+            )
+            activity.append(
+                {
+                    "type": "datalog",
+                    "date": log.post.created_at,
+                    "description": f"DataLog: {log.post.title}",
+                    "detail": f"{len(commits_around_log)} commits related to this documentation",
+                    "post_url": log.post.get_absolute_url(),
+                    "icon": "file-text",
+                    "color": "lavender",
+                    "metadata": {
+                        "connection_type": log.connection_type,
+                        "related_commits": len(commits_around_log),
+                    },
+                }
+            )
+
+        # Sort by date and return recent items
+        activity.sort(key=lambda x: x["date"], reverse=True)
+        return activity[:10]
+
+    # ================================
+    # HELPER METHODS FOR REAL DATA ANALYSIS
+    # ================================
+
+    def calculate_learning_velocity(self, system, commit_stats):
+        """Calculate learning velocity based on commits and milestones"""
+        if not commit_stats["total_commits"]:
+            return 0
+
+        # Base velocity on commits and time
+        months_active = self.calculate_development_span(commit_stats)
+        if months_active == 0:
+            return 0
+
+        velocity = commit_stats["total_commits"] / months_active
+
+        # Boost for milestones and skills
+        milestone_boost = system.milestones.count() * 2
+        skill_boost = system.skills_developed.count() * 1.5
+
+        return round(velocity + milestone_boost + skill_boost, 1)
+
+    def get_development_status(self, commit_stats):
+        """Determine development status from commit data"""
+        if not commit_stats["last_commit_date"]:
+            return "No Development Tracked"
+
+        days_since_commit = (timezone.now() - commit_stats["last_commit_date"]).days
+
+        if days_since_commit <= 7:
+            return "Active Development"
+        elif days_since_commit <= 30:
+            return "Recent Development"
+        elif days_since_commit <= 90:
+            return "Moderate Activity"
+        else:
+            return "Maintenance Mode"
+
+    def get_activity_level(self, commits_30_days):
+        """Get activity level description"""
+        if commits_30_days >= 20:
+            return "Very Active"
+        elif commits_30_days >= 10:
+            return "Active"
+        elif commits_30_days >= 5:
+            return "Moderate"
+        elif commits_30_days >= 1:
+            return "Light"
+        else:
+            return "Inactive"
+
+    def get_development_consistency(self, commit_stats):
+        """Rate development consistency"""
+        if commit_stats["avg_commits_per_month"] >= 10:
+            return 5  # Very consistent
+        elif commit_stats["avg_commits_per_month"] >= 5:
+            return 4  # Consistent
+        elif commit_stats["avg_commits_per_month"] >= 2:
+            return 3  # Moderate
+        elif commit_stats["avg_commits_per_month"] >= 1:
+            return 2  # Irregular
+        else:
+            return 1  # Inconsistent
+
+    def calculate_development_span(self, commit_stats):
+        """Calculate months of development activity"""
+        if not commit_stats.get("last_commit_date"):
+            return 0
+
+        # Find earliest repo creation (approximation)
+        earliest_date = commit_stats.get("last_commit_date")  # Fallback
+
+        # Calculate months between earliest and latest activity
+        months = max(1, (timezone.now() - earliest_date).days / 30)
+        return round(months, 1)
+
+    def analyze_learning_trajectory(self, system, commit_stats):
+        """Analyze the learning trajectory"""
+        trajectory = []
+
+        # Code volume trajectory
+        if commit_stats["total_commits"] > 50:
+            trajectory.append("High Code Volume")
+        elif commit_stats["total_commits"] > 20:
+            trajectory.append("Moderate Code Volume")
+        else:
+            trajectory.append("Learning Focused")
+
+        # Consistency trajectory
+        if commit_stats["avg_commits_per_month"] > 5:
+            trajectory.append("Consistent Development")
+        else:
+            trajectory.append("Project-Based Learning")
+
+        # Skill development trajectory
+        if system.skills_developed.count() >= 5:
+            trajectory.append("Multi-Skill Development")
+        elif system.skills_developed.count() >= 3:
+            trajectory.append("Focused Skill Building")
+        else:
+            trajectory.append("Exploratory Learning")
+
+        return trajectory
+
+    def find_commits_around_date(self, system, target_date, days=7):
+        """Find commits around a specific date"""
+        if not target_date:
+            return []
+
+        start_date = target_date - timedelta(days=days)
+        end_date = target_date + timedelta(days=days)
+
+        related_commits = []
+        for repo in system.github_repositories.all():
+            if (
+                repo.last_commit_date
+                and start_date <= repo.last_commit_date <= end_date
+            ):
+                related_commits.append(
+                    {
+                        "repo_name": repo.name,
+                        "commit_date": repo.last_commit_date,
+                        "message": repo.last_commit_message,
+                        "author": 'ksg-dev',
+                    }
+                )
+
+        return related_commits
+
+    def analyze_development_patterns(self, timeline_events):
+        """Analyze patterns in development timeline"""
+        commit_events = [e for e in timeline_events if e["type"] == "commit"]
+        milestone_events = [e for e in timeline_events if e["type"] == "milestone"]
+
+        patterns = {
+            "commit_frequency": len(commit_events),
+            "milestone_frequency": len(milestone_events),
+            "documentation_ratio": len(
+                [e for e in timeline_events if e["type"] == "datalog"]
+            )
+            / max(1, len(commit_events)),
+            "development_style": "Documentation-Driven"
+            if len([e for e in timeline_events if e["type"] == "datalog"])
+            > len(commit_events) / 2
+            else "Code-First",
+        }
+
+        return patterns
+
+    def get_commit_trend(self, commit_stats):
+        """Determine commit trend direction"""
+        if commit_stats["commits_last_30_days"] > commit_stats["avg_commits_per_month"]:
+            return "increasing"
+        elif (
+            commit_stats["commits_last_30_days"]
+            < commit_stats["avg_commits_per_month"] * 0.5
+        ):
+            return "decreasing"
+        else:
+            return "stable"
+
+    def calculate_feature_completion(self, system):
+        """Calculate feature completion percentage"""
+        if not system.features.exists():
+            return 0
+
+        total_features = system.features.count()
+        # Assuming you have a status field on features
+        # completed_features = system.features.filter(status='completed').count()
+        # For now, use a simple calculation
+        return min(100, (total_features * 20))  # Rough estimate
+
+    def assess_documentation_completeness(self, system):
+        """Assess documentation completeness"""
+        score = 0
+
+        if system.description:
+            score += 25
+        if system.get_related_logs().exists():
+            score += 25
+        if system.features.exists():
+            score += 25
+        if system.github_repositories.exists():
+            score += 25
+
+        return score
+
+    # Keep existing helper methods for milestones, etc.
+    def get_milestone_icon(self, milestone_type):
+        """Get icon for milestone type"""
+        icons = {
+            "breakthrough": "lightbulb",
+            "completion": "check-circle",
+            "deployment": "rocket",
+            "learning": "graduation-cap",
+            "collaboration": "users",
+            "recognition": "trophy",
+        }
+        return icons.get(milestone_type, "star")
+
+    def get_milestone_color(self, milestone_type):
+        """Get color for milestone type"""
+        colors = {
+            "breakthrough": "orange",
+            "completion": "green",
+            "deployment": "teal",
+            "learning": "purple",
+            "collaboration": "blue",
+            "recognition": "gold",
+        }
+        return colors.get(milestone_type, "gray")
+
+    # Keep existing methods that don't need GitHub integration
+    def get_system_details_data(self, system):
+        """System details panel data (unchanged)"""
+        return {
+            "descriptions": {
+                "main_description": system.description,
+                "brief_description": system.excerpt,
+                "technical_details": getattr(system, "technical_details", None),
+            },
+            "specifications": {
+                "system_type": system.system_type,
+                "complexity_level": system.complexity,
+                "estimated_timeline": f"{system.estimated_dev_hours} hours"
+                if system.estimated_dev_hours
+                else None,
+            },
+            "architecture_info": {
+                "architecture_diagram": system.architecture_diagram,
+            },
+        }
+
+    def get_skills_development_data(self, system):
+        """Skills development data (unchanged)"""
+        return {
+            "skills_gained": system.skills_developed.all(),
+            "skill_details": system.skill_gains.all(),
+            "learning_impact": system.get_learning_impact_score(),
+        }
+
+    def get_portfolio_assessment_data(self, system, commit_stats):
+        """Portfolio assessment with GitHub data integration"""
+        return {
+            "readiness_score": self.calculate_portfolio_readiness(system, commit_stats),
+            "showcase_factors": self.get_showcase_factors(system, commit_stats),
+            "improvement_suggestions": self.get_improvement_suggestions(
+                system, commit_stats
+            ),
+        }
+
+    def calculate_portfolio_readiness(self, system, commit_stats):
+        """Calculate portfolio readiness score with GitHub data"""
+        score = 0
+
+        # Basic system completeness
+        if system.completion_percent >= 80:
+            score += 20
+        elif system.completion_percent >= 60:
+            score += 15
+        elif system.completion_percent >= 40:
+            score += 10
+
+        # GitHub activity bonus
+        if commit_stats["total_commits"] >= 50:
+            score += 20
+        elif commit_stats["total_commits"] >= 20:
+            score += 15
+        elif commit_stats["total_commits"] >= 10:
+            score += 10
+
+        # Recent activity bonus
+        if commit_stats["commits_last_30_days"] > 0:
+            score += 15
+
+        # Documentation bonus
+        if system.get_related_logs().exists():
+            score += 15
+
+        # Features and complexity
+        if system.features.count() >= 5:
+            score += 10
+
+        # Live deployment
+        if system.live_url:
+            score += 10
+
+        # Repository quality
+        if commit_stats["repository_count"] > 0:
+            score += 10
+
+        return min(100, score)
+
+    def get_showcase_factors(self, system, commit_stats):
+        """Get factors that make this system showcase-worthy"""
+        factors = []
+
+        if commit_stats["total_commits"] >= 50:
+            factors.append("Substantial Development History")
+
+        if commit_stats["commits_last_30_days"] > 5:
+            factors.append("Active Recent Development")
+
+        if system.complexity >= 3:
+            factors.append("High Technical Complexity")
+
+        if system.skills_developed.count() >= 3:
+            factors.append("Multi-Skill Demonstration")
+
+        if system.get_related_logs().count() >= 3:
+            factors.append("Well Documented Learning")
+
+        if system.live_url:
+            factors.append("Live Deployment")
+
+        if commit_stats["repository_count"] > 1:
+            factors.append("Multi-Repository Project")
+
+        return factors
+
+    def get_improvement_suggestions(self, system, commit_stats):
+        """Get suggestions for improving portfolio value"""
+        suggestions = []
+
+        if commit_stats["total_commits"] < 10:
+            suggestions.append("Add more development activity to show sustained effort")
+
+        if not system.live_url:
+            suggestions.append(
+                "Deploy a live version to demonstrate real-world application"
+            )
+
+        if system.get_related_logs().count() < 2:
+            suggestions.append("Document learning process with detailed DataLogs")
+
+        if commit_stats["commits_last_30_days"] == 0 and system.status != "deployed":
+            suggestions.append("Continue development to show ongoing learning")
+
+        if system.features.count() < 3:
+            suggestions.append("Implement additional features to showcase versatility")
+
+        return suggestions
+
+    # Keep other existing unchanged methods...
+    def get_technologies_data(self, system):
+        """Technologies data (unchanged)"""
+        return {
+            "technologies": system.technologies.all(),
+            "primary_language": system.technologies.first()
+            if system.technologies.exists()
+            else None,
+        }
+
+    def get_features_data(self, system):
+        """Features data (unchanged)"""
+        return {
+            "features": system.features.all(),
+            "feature_count": system.features.count(),
+        }
+
+    def get_dependencies_data(self, system):
+        """Dependencies data (unchanged)"""
+        return {
+            "dependencies": system.dependencies.all(),
+            "dependency_count": system.dependencies.count(),
+        }
+
+    def get_datalogs_data(self, system):
+        """DataLogs data (unchanged)"""
+        return {
+            "related_logs": system.get_related_logs(),
+            "logs_count": system.get_related_logs().count(),
+        }

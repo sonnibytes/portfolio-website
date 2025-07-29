@@ -40,7 +40,7 @@ class ArchitectureDiagramService:
         # Apply AURA theme and layout
         self._apply_aura_theme(fig)
 
-        # Convert to HTML
+        # UPDATED CONFIG: Optimized to reduce canvas readback operations
         config = {
             'displayModeBar': True,
             'displaylogo': False,
@@ -51,7 +51,15 @@ class ArchitectureDiagramService:
                 'height': 600,
                 'width': 800,
                 'scale': 2
-            }
+            },
+            # Performance optimizations to reduce the warning
+            'responsive': True,
+            'staticPlot': False,
+            'plotlyServerURL': None,  # Disables cloud features that read canvas
+            'showTips': False,        # Reduces DOM operations
+            'doubleClick': 'reset',   # Cleaner interaction
+            'editable': False,        # Prevents editing operations
+            'scrollZoom': True,       # Better than pan for performance
         }
 
         graph_html = pyo.plot(
