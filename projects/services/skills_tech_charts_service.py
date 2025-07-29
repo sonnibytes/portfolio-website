@@ -439,9 +439,9 @@ class SkillsTechChartsService:
                         pad={"r": 12, "t": 12, "b": 12, "l": 12},
                         showactive=True,
                         active=0,
-                        x=0.02,
+                        x=0.01,
                         xanchor="left", 
-                        y=1.08,
+                        y=1.1,
                         yanchor="top",
                         
                         # Button container styling
@@ -458,8 +458,22 @@ class SkillsTechChartsService:
             )
 
         fig.update_layout(
-            autosize=True,
+            autosize=True,   
         )
+
+        # Add this right before pyo.plot() in your chart method:
+        # print(f"DEBUG - Fig: {fig.name}")
+        # print(f"DEBUG - xref: {fig.layout.legend.xref}")
+        # print(f"DEBUG - Legend X: {fig.layout.legend.x}")
+        # print(f"DEBUG - Legend Y: {fig.layout.legend.y}")
+        # print(f"DEBUG - Legend config: {fig.layout.legend}")
+        # print(f"DEBUG - Showlegend: {fig.layout.showlegend}")
+        # print("**********")
+        # # print(f"DEBUG - updatemenu X: {fig.layout.updatemenus.x}")
+        # # print(f"DEBUG - updatemenu Y: {fig.layout.updatemenus.y}")
+        # print(f"DEBUG - Buttons config: {fig.layout.updatemenus}")
+        # print()
+        # print("===========================")
 
         graph_html = pyo.plot(
             fig,
