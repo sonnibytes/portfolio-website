@@ -1844,6 +1844,7 @@ class LearningSystemControlInterfaceView(DetailView):
         tech_donut_html = charts_service.generate_tech_donut_chart()
         skill_tech_network_html = charts_service.generate_skill_tech_network()
         tech_sunburst_html = charts_service.generate_tech_sunburst()
+        tech_donut2 = charts_service.generate_tech_donut_chart2()
         
         return {
             # Display data
@@ -1857,6 +1858,7 @@ class LearningSystemControlInterfaceView(DetailView):
             'tech_donut_chart': tech_donut_html,
             'skill_tech_network_chart': skill_tech_network_html,
             'tech_sunburst_chart': tech_sunburst_html,
+            'tech_donut2': tech_donut2,
             
             # Chart availability flags
             'has_skills_chart': bool(skills_data),
@@ -2369,26 +2371,6 @@ class LearningSystemControlInterfaceView(DetailView):
     def assess_documentation_completeness(self, system, related_logs):
         """Assess how well-documented learning process is"""
         return min(related_logs.count() * 20, 100)
-
-    # def get_tech_learning_context(self, tech, system):
-    #     """Determine learning context for technology"""
-    #     # Simple heuristic
-    #     if system.learning_stage in ['tutorial', 'guided']:
-    #         return 'Initial Learning'
-    #     elif system.learning_stage == 'independent':
-    #         return 'Building On'
-    #     else:
-    #         return 'Mastery'
-
-    # def assess_tech_mastery(self, tech, system):
-    #     """Assess mastery level of technology in this project/system"""
-    #     # Simplifed assessment
-    #     if system.complexity >= 8:
-    #         return 'advanced'
-    #     elif system.complexity >= 5:
-    #         return 'intermediate'
-    #     else:
-    #         return 'beginner'
 
     def assess_tech_learning_impact(self, tech, system):
         """Assess learning impact of using this tech"""

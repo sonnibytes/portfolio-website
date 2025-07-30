@@ -1,6 +1,7 @@
 import plotly.graph_objects as go
 import plotly.offline as pyo
 from plotly.subplots import make_subplots
+import plotly.io as pio
 import numpy as np
 from django.utils.html import format_html
 
@@ -18,15 +19,39 @@ class SkillsTechChartsService:
 
         # AURA theme colors for consistency
         self.aura_colors = {
-            'primary': '#7c3aed',      # Purple
-            'secondary': '#f97316',    # Orange/Coral
-            'accent': '#3b82f6',       # Blue
-            'success': '#10b981',      # Green/Teal
-            'warning': '#f59e0b',      # Yellow
+            'primary': "#7c3aed",      # Purple
+            'secondary': "#fb923c",    # Orange
+            'accent': '#60a5fa',       # Blue
+            'success': '#34d399',      # Green/Emerald
+            'warning': '#fff59d',      # Yellow
+            'mint': '#a5d6a7',         # Mint
             'background': '#0f172a',   # Dark background
             'text': '#e2e8f0',         # Light text
-            'grid': 'rgba(148, 163, 184, 0.2)'  # Grid lines
+            'grid': 'rgba(148, 163, 184, 0.2)',  # Grid lines
+
+            # AURA Colors w Alpha
+            'primary_trans': 'rgba(124, 58, 237, 0.2)',  # Semi-transparent purple
+            'secondary_trans': 'rgba(251, 146, 60, 0.2)',  # Semi-transparent orange
+            'accent_trans': 'rgba(96, 165, 250, 0.2)',  # Semi-transparent blue
+            'success_trans': 'rgba(52, 211, 153, 0.2)',  # Semi-transparent green/emerald
+            'warning_trans': 'rgba(255, 245, 157, 0.2)',  # Semi-transparent yellow
+            'mint_trans': 'rgba(165, 214, 167, 0.2)',  # Semi-transparent purple
         }
+
+        self.theme = self.set_default_theme("plotly_dark")
+        self.colorway = pio.templates[self.theme].layout.colorway
+    
+    def set_default_theme(self, theme="plotly_dark"):
+        pio.templates.default = theme
+        return theme
+
+    
+    # Helper to convert hex colors to rgba w transparency
+    @staticmethod
+    def hex_to_rgba(hex_color, alpha=0.2):
+        hex_color = hex_color.strip('#')
+        r, g, b = tuple(int(hex_color[i: i + 2], 16) for i in (0, 2, 4))
+        return f"rgba({r}, {g}, {b}, {alpha})"
     
     def generate_skills_radar_chart(self):
         """
@@ -91,13 +116,13 @@ class SkillsTechChartsService:
         tech_names = []
         usage_counts = []
         mastery_levels = []
-        colors = []
+        # colors = []
 
         for tech in self.technologies:
             tech_names.append(tech.name)
             usage_counts.append(tech.systems.count())
             mastery_levels.append(self._get_mastery_numeric(tech))
-            colors.append(getattr(tech, 'color', self.aura_colors['secondary']))
+            # colors.append(getattr(tech, 'color', self.aura_colors['secondary']))
         
         # Add usage trace (default)
         fig.add_trace(go.Pie(
@@ -105,10 +130,12 @@ class SkillsTechChartsService:
             values=usage_counts,
             name="Technology Usage",
             marker=dict(
-                colors=colors,
-                line=dict(color='#0f172a', width=3)
+                colors=[self.hex_to_rgba(self.colorway[i % len(self.colorway)], 0.2) for i in range(len(tech_names))],
+                line=dict(
+                    color=[self.colorway[i % len(self.colorway)] for i in range(len(tech_names))], width=3)
             ),
             hole=0.6,  # Donut chart
+            # opacity=0.1,
             textposition="inside",
             textinfo="label+percent",
             textfont=dict(color='white', size=12),
@@ -124,7 +151,7 @@ class SkillsTechChartsService:
             values=mastery_levels,
             name="Technology Mastery",
             marker=dict(
-                colors=colors,
+                # colors=colors,
                 line=dict(color='#0f172a', width=3)
             ),
             hole=0.6,  # donut chart
@@ -137,6 +164,9 @@ class SkillsTechChartsService:
                          '%{percent}<br>' +
                          '<extra></extra>'
         ))
+
+        # Plotly Theme
+        fig.update_layout(template="plotly_dark")
 
         # Apply AURA theme
         self._apply_donut_theme(fig)
@@ -289,6 +319,89 @@ class SkillsTechChartsService:
         graph_html = self._create_chart_html(fig, f'tech-sunburst-{self.system.slug}')
 
         return graph_html
+    
+    def generate_tech_donut_chart2(self):
+        """
+        USING TO TEST DEFAULT THEMES
+        Generate interactive technology distribution donut chart using Plotly.
+        Returns HTML div ready for template embedding.
+        """
+        if not self.technologies.exists():
+            return self._generate_no_tech_message()
+        
+        fig = go.Figure()
+
+        # Prepare data
+        tech_names = []
+        usage_counts = []
+        mastery_levels = []
+        # colors = []
+
+        for tech in self.technologies:
+            tech_names.append(tech.name)
+            usage_counts.append(tech.systems.count())
+            mastery_levels.append(self._get_mastery_numeric(tech))
+            # colors.append(getattr(tech, 'color', self.aura_colors['secondary']))
+        
+        # Add usage trace (default)
+        fig.add_trace(go.Pie(
+            labels=tech_names,
+            values=usage_counts,
+            name="Technology Usage",
+            marker=dict(
+                # colors=colors,
+                line=dict(color='#0f172a', width=3)
+            ),
+            hole=0.6,  # Donut chart
+            textposition="inside",
+            textinfo="label+percent",
+            textfont=dict(color='white', size=12),
+            hovertemplate='<b>%{label}</b><br>' +
+                         'Used in %{value} projects<br>' +
+                         '%{percent}<br>' +
+                         '<extra></extra>'
+        ))
+
+        # Add mastery trace (hidden by default)
+        fig.add_trace(go.Pie(
+            labels=tech_names,
+            values=mastery_levels,
+            name="Technology Mastery",
+            marker=dict(
+                # colors=colors,
+                line=dict(color='#0f172a', width=3)
+            ),
+            hole=0.6,  # donut chart
+            textposition="inside",
+            textinfo="label+percent",
+            textfont=dict(color='white', size=12),
+            visible=False,  # Hidden by default
+            hovertemplate='<b>%{label}</b><br>' +
+                         'Mastery Level: %{value}/4<br>' +
+                         '%{percent}<br>' +
+                         '<extra></extra>'
+        ))
+
+        # Plotly Theme
+        fig.update_layout(template="plotly_dark")
+
+        # Add AURA Styling
+        self._apply_donut_theme(fig)
+        # fig.update_layout(template="ggplot2")
+        # fig.update_layout(template="seaborn")
+        # fig.update_layout(template="plotly_dark")
+
+        # Convert to HTML w toggle
+        graph_html = self._create_chart_html(
+            fig,
+            f'tech-donut-{self.system.slug}',
+            buttons=[
+                {'label': 'Usage Count', 'method': 'update', 'args': [{'visible': [True, False]}]},
+                {'label': 'Mastery Level', 'method': 'update', 'args': [{'visible': [False, True]}]}
+            ]
+        )
+
+        return graph_html
 
     
     def _apply_radar_theme(self, fig, max_proficiency=5):
@@ -339,10 +452,10 @@ class SkillsTechChartsService:
             font=dict(color=self.aura_colors['text']),
             # Enahnced
             legend=dict(
-                x=0.02,
-                y=0.95,  # Slightly lower to avoid toggle buttons
-                xanchor='left',
-                yanchor='top',
+                # x=0.02,
+                # y=0.95,  # Slightly lower to avoid toggle buttons
+                # xanchor='left',
+                # yanchor='top',
                 bgcolor='rgba(15, 23, 42, 0.9)',
                 bordercolor='rgba(124, 58, 237, 0.4)',
                 borderwidth=1,
@@ -439,7 +552,7 @@ class SkillsTechChartsService:
                         pad={"r": 12, "t": 12, "b": 12, "l": 12},
                         showactive=True,
                         active=0,
-                        x=0.01,
+                        x=0,
                         xanchor="left", 
                         y=1.1,
                         yanchor="top",
@@ -458,7 +571,7 @@ class SkillsTechChartsService:
             )
 
         fig.update_layout(
-            autosize=True,   
+            autosize=True  
         )
 
         # Add this right before pyo.plot() in your chart method:
