@@ -379,6 +379,160 @@ class SkillsTechChartsService:
 
         return graph_html
     
+    def generate_learning_journey_sunburst(self):
+        """
+        Multi-layered learning journey with varied segment sizes:
+        Center: System → Learning Stages → Skills → Proficiency Levels
+        Size varies dramatically based on learning investment
+        """
+        if not self.skill_gains.exists():
+            return self._generate_no_skills_message()
+        
+        fig = go.Figure()
+        
+        labels = []
+        parents = []
+        values = []
+        colors = []
+
+        # Root
+        root = f"{self.system.title} Learning Journey"
+        labels.append(root)
+        parents.append("")
+        values.append(0)
+        colors.append(self.aura_colors['primary'])
+
+        # Group skills by learning stage and calculate investment
+        stage_data = {}
+        total_investment = 0
+
+        for skill_gain in self.skill_gains:
+            # Use learning stage from system to infer from proficiency
+            stage = getattr(self.system, 'learning_stage', 'independent')
+            if stage not in stage_data:
+                stage_data[stage] = {'skills': [], 'total_investment': 0}
+            
+            # Calculate 'learning investment' = proficiency * time
+            proficiency = skill_gain.proficiency_gained or 1
+            time_factor = getattr(self.system, 'actual_dev_hours', 20) or 20
+
+            investment = proficiency * (time_factor / 10) # Normalize time
+            total_investment += investment
+
+            stage_data[stage]['skills'].append({
+                'skill': skill_gain.skill,
+                'proficiency': proficiency,
+                'investment': investment
+            })
+
+            stage_data[stage]['total_investment'] += investment
+
+        values[0] = total_investment
+
+        # Try Define stage colors instead of colorway
+        stage_colors = {
+            'tutorial': '#ff6b35',      # Orange - learning
+            'guided': '#f7931e',        # Amber - practicing  
+            'independent': '#3b82f6',   # Blue - working
+            'refactoring': '#8b5cf6',   # Purple - improving
+            'contributing': '#10b981',  # Green - sharing
+            'teaching': '#fbbf24'       # Gold - mastering
+        }
+
+        # Add learning stages (Ring 1)
+        for stage, data in stage_data.items():
+            labels.append(f"{stage.title()} Learning")
+            parents.append(root)
+            values.append(data['total_investment'])
+            colors.append(stage_colors.get(stage, self.aura_colors['secondary']))
+        
+        # Add skills (Ring 2) and proficiency (Ring 3)
+        for stage, data in stage_data.items():
+            stage_label = f"{stage.title()} Learning"
+
+            for skill_data in data['skills']:
+                skill_name = skill_data['skill'].name
+                skill_investment = skill_data['investment']
+
+                # Add skill node
+                labels.append(skill_name)
+                parents.append(stage_label)
+                values.append(skill_investment)
+                # Trying Use skill color or default
+                skill_color = getattr(skill_data['skill'], 'color', self.aura_colors['accent'])
+                colors.append(skill_color)
+
+                # Add proficiency levels as final ring (creates varied segments)
+                proficiency_levels = ['Basic', 'Intermediate', 'Advanced', 'Expert', 'Teaching']
+                current_level = min(skill_data['proficiency'] - 1, 4)
+
+                for i, level in enumerate(proficiency_levels):
+                    if i <= current_level:
+                        level_investment = skill_investment * (0.8 if i == current_level else 0.2)
+                        labels.append(f"{skill_name} ({level})")
+                        parents.append(skill_name)
+                        values.append(level_investment)
+
+                        # FIXED: Create gradient color for proficiency levels
+                        if skill_color.startswith('#'):
+                            # Convert hex to RGB for alpha variation
+                            r = int(skill_color[1:3], 16)
+                            g = int(skill_color[3:5], 16)
+                            b = int(skill_color[5:7], 16)
+                            alpha = 0.3 + (i * 0.175)  # Varying transparency
+                            level_color = f"rgba({r}, {g}, {b}, {alpha})"
+                        else:
+                            level_color = skill_color
+                        colors.append(level_color)
+        
+        # Create chart
+        fig.add_trace(go.Sunburst(
+            labels=labels,
+            parents=parents,
+            values=values,
+            branchvalues="total",  # CRITICAL: This tells Plotly how to calculate parent values
+            marker=dict(
+                colors=colors,  # FIXED: Use our custom colors array
+                line=dict(color='#0f172a', width=1)
+            ),
+            hovertemplate='<b>%{label}</b><br>' +
+                        'Investment: %{value:.1f}<br>' +
+                        'Percentage: %{percentParent}<br>' +
+                        '<extra></extra>',
+            maxdepth=4,  # Allow 4 levels: Root -> Stage -> Skill -> Proficiency
+            insidetextorientation='radial',
+            textinfo='label',
+            textfont=dict(color='white', size=10)
+        ))
+
+        # Apply AURA Theme
+        self._apply_sunburst_theme(fig)
+
+        # FIXED: Add title to the layout
+        fig.update_layout(
+            title=dict(
+                text=f"Learning Journey - {self.system.title}",
+                x=0.5,
+                xanchor='center',
+                font=dict(color=self.aura_colors['text'], size=16)
+            )
+        )
+
+        # DEBUG: Print the data (you can remove this later)
+        print(f"==== SUNBURST DEBUG ====")
+        print(f"Total labels: {len(labels)}")
+        print(f"Total values: {len(values)}")
+        print(f"Total colors: {len(colors)}")
+        print(f"Root value: {values[0]}")
+        print(f"labels: {labels}")
+        print(f"parents: {parents}")
+        print(f"values: {values}")
+
+        # Convert to HTML
+        graph_html = self._create_chart_html(fig, f'learning-sunburst-{self.system.slug}')
+
+        return graph_html
+    
     def _apply_sunburst_theme(self, fig):
         """Apply AURA theme to sunburst chart"""
         fig.update_layout(
@@ -391,8 +545,8 @@ class SkillsTechChartsService:
             # Legend for sunburst optional since self-explanatory
             showlegend=False,
             # Sizing and margins
-            height=500,  # Slightly taller for sunburst
-            margin=dict(l=50, r=50, t=50, b=50),
+            height=550,  # Slightly taller for sunburst
+            margin=dict(l=50, r=50, t=60, b=50),
             autosize=True,
 
         )

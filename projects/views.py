@@ -1844,6 +1844,7 @@ class LearningSystemControlInterfaceView(DetailView):
         tech_donut_html = charts_service.generate_tech_donut_chart()
         skill_tech_network_html = charts_service.generate_skill_tech_network()
         tech_sunburst_html = charts_service.generate_tech_sunburst_chart()
+        learning_sunburst_html = charts_service.generate_learning_journey_sunburst()
         
         return {
             # Display data
@@ -1857,6 +1858,7 @@ class LearningSystemControlInterfaceView(DetailView):
             'tech_donut_chart': tech_donut_html,
             'skill_tech_network_chart': skill_tech_network_html,
             'tech_sunburst_chart': tech_sunburst_html,
+            'learning_sunburst_chart': learning_sunburst_html,
             
             # Chart availability flags
             'has_skills_chart': bool(skills_data),
