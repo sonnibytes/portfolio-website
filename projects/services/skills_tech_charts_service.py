@@ -5,6 +5,8 @@ import plotly.io as pio
 import numpy as np
 from django.utils.html import format_html
 
+from projects.models import Technology
+
 class SkillsTechChartsService:
     """
     Service for generating interactive Skills & Technology analysis charts using Plotly.
@@ -274,52 +276,126 @@ class SkillsTechChartsService:
 
         return graph_html
     
-    def generate_tech_sunburst(self):
+    def generate_tech_sunburst_chart(self):
         """
         Generate interactive technology distribution sunburst using Plotly.
         Returns HTML div ready for embedding.
+        Creates a proper hierarchical structure: Root -> Categories -> Technologies
         """
         if not self.technologies.exists():
             return self._generate_no_tech_message()
         
         fig = go.Figure()
 
-        # Prepare the data
-        tech_names = []
-        categories = []
-        usage_counts = []
-        colors = []
+        # Prepare the data, Build Hierarchical Data Structure
+        labels = []
+        parents = []
+        values = []
+        
+        # Step 1: Add root node
+        root_label = f"{self.system.title} Technologies"
+        labels.append(root_label)
+        # Root has no parent
+        parents.append("")
+        # Will be calculated
+        values.append(0)
+
+        # Step 2: Collect Categories and their technologies
+        category_data = {}
+        total_usage = 0
+
+        # Want all categories, even if zero
+        for code, name in Technology.CATEGORY_CHOICES:
+            if name not in category_data:
+                category_data[name] = {
+                    'technologies': [],
+                    'total_usage': 0
+                }
 
         for tech in self.technologies:
-            tech_names.append(tech.name)
-            categories.append(tech.get_category_display())
-            usage_counts.append(tech.systems.count())
-            colors.append(getattr(tech, 'color', self.aura_colors['accent']))
+            category = tech.get_category_display() if hasattr(tech, 'get_category_display') else 'Other'
+            usage_count = tech.systems.count()
+            total_usage += usage_count
+
+            # if category not in category_data:
+            #     category_data[category] = {
+            #         'technologies': [],
+            #         'total_usage': 0
+            #     }
+
+            category_data[category]['technologies'].append({
+                'name': tech.name,
+                'usage': usage_count
+            })
+            category_data[category]['total_usage'] += usage_count
         
-        # Add Usage Trace
+        # Update root value
+        values[0] = total_usage
+
+        # Step 3: Add Category Nodes
+        for category_name, category_info in category_data.items():
+            labels.append(category_name)
+            # Categories are children of root
+            parents.append(root_label)
+            values.append(category_info['total_usage'])
+        
+        # Step 4: Add technology nodes
+        for category_name, category_info in category_data.items():
+            for tech_info in category_info['technologies']:
+                labels.append(tech_info['name'])
+                # Technologies are children of categories
+                parents.append(category_name)
+                values.append(tech_info['usage'])
+
+        
+        # UPDATED Create Sunburst w proper params
         fig.add_trace(go.Sunburst(
-            labels=tech_names,
-            parents=categories,
-            values=usage_counts,
-            level=self.system.title,
+            labels=labels,
+            parents=parents,
+            values=values,
+            # IMPORTANT: Tells Plotly how to calculate parent values
+            branchvalues="total",
             name="Tech Usage by Category",
             marker=dict(
-                colors=colors,
-                line=dict(color='white', width=3)
+                colors=[self.hex_to_rgba(self.colorway[i % len(self.colorway)], 0.2) for i in range(len(labels))],
+                line=dict(
+                    color=[self.colorway[i % len(self.colorway)] for i in range(len(labels))], width=3)
             ),
             hovertemplate='<b>%{label}</b><br>' +
-                         'Used in %{value} projects<br>' +
-                         '%{parent}<br>' +
-                         '<extra></extra>'
+                     'Usage: %{value}<br>' +
+                     'Percentage: %{percentParent}<br>' +
+                     '<extra></extra>',
+            maxdepth=3,  # Limit depth: Root -> Category -> Technology
+            insidetextorientation='radial',
+            textinfo='label',
+            textfont=dict(color='white', size=12)
         ))
 
         # Apply AURA Theme
-        # self._apply_donut_theme(fig)
+        self._apply_sunburst_theme(fig)
 
         # Convert to HTML
         graph_html = self._create_chart_html(fig, f'tech-sunburst-{self.system.slug}')
 
         return graph_html
+    
+    def _apply_sunburst_theme(self, fig):
+        """Apply AURA theme to sunburst chart"""
+        fig.update_layout(
+            paper_bgcolor='rgba(15, 23, 42, 0.9)',
+            plot_bgcolor='rgba(15, 23, 42, 0.9)',
+            font=dict(
+                color=self.aura_colors['text'],
+                family='Inter, system-ui, sans-serif'
+            ),
+            # Legend for sunburst optional since self-explanatory
+            showlegend=False,
+            # Sizing and margins
+            height=500,  # Slightly taller for sunburst
+            margin=dict(l=50, r=50, t=50, b=50),
+            autosize=True,
+
+        )
     
     def _apply_radar_theme(self, fig, max_proficiency=5):
         """Apply AURA theme to radar chart - Improved"""

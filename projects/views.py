@@ -1843,7 +1843,7 @@ class LearningSystemControlInterfaceView(DetailView):
         skills_radar_html = charts_service.generate_skills_radar_chart()
         tech_donut_html = charts_service.generate_tech_donut_chart()
         skill_tech_network_html = charts_service.generate_skill_tech_network()
-        tech_sunburst_html = charts_service.generate_tech_sunburst()
+        tech_sunburst_html = charts_service.generate_tech_sunburst_chart()
         
         return {
             # Display data
