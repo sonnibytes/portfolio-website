@@ -135,7 +135,6 @@ class SkillsTechChartsService:
                     color=[self.colorway[i % len(self.colorway)] for i in range(len(tech_names))], width=3)
             ),
             hole=0.6,  # Donut chart
-            # opacity=0.1,
             textposition="inside",
             textinfo="label+percent",
             textfont=dict(color='white', size=12),
@@ -151,8 +150,9 @@ class SkillsTechChartsService:
             values=mastery_levels,
             name="Technology Mastery",
             marker=dict(
-                # colors=colors,
-                line=dict(color='#0f172a', width=3)
+                colors=[self.hex_to_rgba(self.colorway[i % len(self.colorway)], 0.2) for i in range(len(tech_names))],
+                line=dict(
+                    color=[self.colorway[i % len(self.colorway)] for i in range(len(tech_names))], width=3)
             ),
             hole=0.6,  # donut chart
             textposition="inside",
@@ -166,7 +166,7 @@ class SkillsTechChartsService:
         ))
 
         # Plotly Theme
-        fig.update_layout(template="plotly_dark")
+        # fig.update_layout(template="plotly_dark")
 
         # Apply AURA theme
         self._apply_donut_theme(fig)
@@ -228,7 +228,8 @@ class SkillsTechChartsService:
             marker=dict(
                 size=[prof * 8 + 20 for prof in skill_proficiency],
                 color=self.aura_colors['primary'],
-                line=dict(color='white', width=2)
+                line=dict(color='white', width=2),
+                symbol='hexagon-open',
             ),
             text=skill_names,
             textposition="middle center",
@@ -320,90 +321,6 @@ class SkillsTechChartsService:
 
         return graph_html
     
-    def generate_tech_donut_chart2(self):
-        """
-        USING TO TEST DEFAULT THEMES
-        Generate interactive technology distribution donut chart using Plotly.
-        Returns HTML div ready for template embedding.
-        """
-        if not self.technologies.exists():
-            return self._generate_no_tech_message()
-        
-        fig = go.Figure()
-
-        # Prepare data
-        tech_names = []
-        usage_counts = []
-        mastery_levels = []
-        # colors = []
-
-        for tech in self.technologies:
-            tech_names.append(tech.name)
-            usage_counts.append(tech.systems.count())
-            mastery_levels.append(self._get_mastery_numeric(tech))
-            # colors.append(getattr(tech, 'color', self.aura_colors['secondary']))
-        
-        # Add usage trace (default)
-        fig.add_trace(go.Pie(
-            labels=tech_names,
-            values=usage_counts,
-            name="Technology Usage",
-            marker=dict(
-                # colors=colors,
-                line=dict(color='#0f172a', width=3)
-            ),
-            hole=0.6,  # Donut chart
-            textposition="inside",
-            textinfo="label+percent",
-            textfont=dict(color='white', size=12),
-            hovertemplate='<b>%{label}</b><br>' +
-                         'Used in %{value} projects<br>' +
-                         '%{percent}<br>' +
-                         '<extra></extra>'
-        ))
-
-        # Add mastery trace (hidden by default)
-        fig.add_trace(go.Pie(
-            labels=tech_names,
-            values=mastery_levels,
-            name="Technology Mastery",
-            marker=dict(
-                # colors=colors,
-                line=dict(color='#0f172a', width=3)
-            ),
-            hole=0.6,  # donut chart
-            textposition="inside",
-            textinfo="label+percent",
-            textfont=dict(color='white', size=12),
-            visible=False,  # Hidden by default
-            hovertemplate='<b>%{label}</b><br>' +
-                         'Mastery Level: %{value}/4<br>' +
-                         '%{percent}<br>' +
-                         '<extra></extra>'
-        ))
-
-        # Plotly Theme
-        fig.update_layout(template="plotly_dark")
-
-        # Add AURA Styling
-        self._apply_donut_theme(fig)
-        # fig.update_layout(template="ggplot2")
-        # fig.update_layout(template="seaborn")
-        # fig.update_layout(template="plotly_dark")
-
-        # Convert to HTML w toggle
-        graph_html = self._create_chart_html(
-            fig,
-            f'tech-donut-{self.system.slug}',
-            buttons=[
-                {'label': 'Usage Count', 'method': 'update', 'args': [{'visible': [True, False]}]},
-                {'label': 'Mastery Level', 'method': 'update', 'args': [{'visible': [False, True]}]}
-            ]
-        )
-
-        return graph_html
-
-    
     def _apply_radar_theme(self, fig, max_proficiency=5):
         """Apply AURA theme to radar chart - Improved"""
         fig.update_layout(
@@ -481,7 +398,7 @@ class SkillsTechChartsService:
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                range=[-1.3, 1.3], # Slightly wider
+                range=[-1.1, 1.1],
                 scaleanchor="y",
                 scaleratio=1
             ),
@@ -489,7 +406,7 @@ class SkillsTechChartsService:
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False,
-                range=[-1.3, 1.3]
+                range=[-1.1, 1.1]
             ),
             # Enhanced, better legend positioning
             legend=dict(
