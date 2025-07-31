@@ -376,7 +376,7 @@ class TagListAdminView(BaseAdminListView, BulkActionMixin):
             ).filter(post_count__gt=3).order_by('-post_count')
         
         posts = Post.objects.annotate(
-            tag_count=Count("tags", filter=Q(posts__status="published"))
+            tag_count=Count("tags", filter=Q(status="published"))
         )
         
         total_tag_usage = posts.aggregate(usage=Sum("tag_count"))["usage"] or 0

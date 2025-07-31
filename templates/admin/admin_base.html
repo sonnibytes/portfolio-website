@@ -27,24 +27,37 @@
               <i class="fas fa-shield-alt mr-2 text-{{ app_color|default:'cyan' }}"></i>
               AURA Admin
             </h1>
-            {% if breadcrumbs %}
-              <nav class="breadcrumbs">
-                <div class="flex items-center space-x-2 text-sm text-gray-400">
-                  {% for breadcrumb in breadcrumbs %}
-                    {% if breadcrumb.url %}
-                      <a href="{{ breadcrumb.url }}" class="hover:text-white transition-colors">
-                        {{ breadcrumb.name }}
-                      </a>
-                    {% else %}
-                      <span class="text-{{ app_color|default:'cyan' }}">{{ breadcrumb.name }}</span>
-                    {% endif %}
-                    {% if not forloop.last %}
-                      <i class="fas fa-chevron-right text-gray-600"></i>
-                    {% endif %}
-                  {% endfor %}
+
+            <!-- Admin Navigation -->
+            <nav class="admin-nav">
+              <div class="container mx-auto px-6">
+                <div class="flex space-x-6">
+                  <a href="{% url 'aura_admin:dashboard' %}" class="admin-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt mr-2"></i>
+                    Dashboard
+                    <div class="link-indicator bg-emerald-500"></div>
+                  </a>
+
+                  <a href="{% url 'aura_admin:core_dashboard' %}" class="admin-nav-link {% if request.resolver_match.url_name == 'core_dashboard' %}active{% endif %}">
+                    <i class="fas fa-sprout mr-2"></i>
+                    Core
+                    <div class="link-indicator bg-emerald-500"></div>
+                  </a>
+                  
+                  <a href="{% url 'aura_admin:blog:dashboard' %}" class="admin-nav-link {% if 'blog' in request.path %}active{% endif %}">
+                    <i class="fas fa-database mr-2"></i>
+                    DataLogs
+                    <div class="link-indicator bg-purple-500"></div>
+                  </a>
+                  
+                  <a href="{% url 'aura_admin:projects:dashboard' %}" class="admin-nav-link {% if 'projects' in request.path %}active{% endif %}">
+                    <i class="fas fa-project-diagram mr-2"></i>
+                    Systems
+                    <div class="link-indicator bg-cyan-500"></div>
+                  </a>
                 </div>
-              </nav>
-            {% endif %}
+              </div>
+            </nav>
           </div>
 
           <div class="flex items-center space-x-4">
@@ -54,40 +67,28 @@
             </a>
             <span class="text-gray-400">{{ user.username }}</span>
           </div>
+          
         </div>
+        {% if breadcrumbs %}
+          <nav class="breadcrumbs">
+            <div class="flex items-center space-x-2 text-sm text-gray-400">
+              {% for breadcrumb in breadcrumbs %}
+                {% if breadcrumb.url %}
+                  <a href="{{ breadcrumb.url }}" class="hover:text-white transition-colors">
+                    {{ breadcrumb.name }}
+                  </a>
+                {% else %}
+                  <span class="text-{{ app_color|default:'cyan' }}">{{ breadcrumb.name }}</span>
+                {% endif %}
+                {% if not forloop.last %}
+                  <i class="fas fa-chevron-right text-gray-600"></i>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </nav>
+        {% endif %}
       </div>
     </header>
-
-    <!-- Admin Navigation -->
-    <nav class="admin-nav">
-      <div class="container mx-auto px-6">
-        <div class="flex space-x-6">
-           <a href="{% url 'aura_admin:dashboard' %}" class="admin-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-            <i class="fas fa-tachometer-alt mr-2"></i>
-            Dashboard
-            <div class="link-indicator bg-emerald-500"></div>
-          </a>
-
-          <a href="{% url 'aura_admin:core_dashboard' %}" class="admin-nav-link {% if request.resolver_match.url_name == 'core_dashboard' %}active{% endif %}">
-            <i class="fas fa-sprout mr-2"></i>
-            Core
-            <div class="link-indicator bg-emerald-500"></div>
-          </a>
-          
-           <a href="{% url 'aura_admin:blog:dashboard' %}" class="admin-nav-link {% if 'blog' in request.path %}active{% endif %}">
-            <i class="fas fa-database mr-2"></i>
-            DataLogs
-            <div class="link-indicator bg-purple-500"></div>
-          </a>
-          
-           <a href="{% url 'aura_admin:projects:dashboard' %}" class="admin-nav-link {% if 'projects' in request.path %}active{% endif %}">
-            <i class="fas fa-project-diagram mr-2"></i>
-            Systems
-            <div class="link-indicator bg-cyan-500"></div>
-          </a>
-        </div>
-      </div>
-    </nav>
 
     <!-- Admin Content -->
     <div class="admin-content">
@@ -129,6 +130,6 @@
 
 {% block extra_js %}
 <!-- Admin Base js utils -->
-<script src="{% static 'static/js/components/admin.js' %}"></script>
+<script src="{% static 'js/components/admin.js' %}"></script>
   {% block admin_js %}{% endblock %}
 {% endblock %}
