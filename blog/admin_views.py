@@ -371,11 +371,25 @@ class TagListAdminView(BaseAdminListView, BulkActionMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        popular_tags = Tag.objects.annotate(
+                post_count=Count('posts', filter=Q(posts__status='published'))
+            ).filter(post_count__gt=3).order_by('-post_count')
         
+        posts = Post.objects.annotate(
+            tag_count=Count("tags", filter=Q(posts__status="published"))
+        )
+        
+        total_tag_usage = posts.aggregate(usage=Sum("tag_count"))["usage"] or 0
+
+        avg_tags_per_post = posts.aggregate(avg=Avg("tag_count"))["avg"] or 0
+
 
         context.update({
-            'title': 'Manage Tags',
-            'subtitle': 'DataLog tagging system',
+            'popular_tags': popular_tags[:10],
+            'total_tag_usage': total_tag_usage,
+            'popular_tags_count': len(popular_tags) if popular_tags else 0,
+            'avg_tags_per_post': avg_tags_per_post,
+
         })
         return context
 
