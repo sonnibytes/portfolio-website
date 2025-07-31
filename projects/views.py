@@ -1024,18 +1024,18 @@ class LearningSystemControlInterfaceView(DetailView):
             },
             {
                 "id": "skills_tech_analysis",
-                "name": "Skills & Tech Analysis",
+                "name": "Skills & Technology",
                 "icon": "brain",
-                "description": "Interactive skill progression and technology mastery visualization",
+                "description": "Interactive skill progression and technology mastery",
                 "count": system.skill_gains.count() + system.technologies.count(),
             },
-            {
-                "id": "skills",
-                "name": "Skills Developed",
-                "icon": "brain",
-                "description": "Detailed skill progression and competency gains",
-                "count": system.skills_developed.count(),
-            },
+            # {
+            #     "id": "skills",
+            #     "name": "Skills Developed",
+            #     "icon": "brain",
+            #     "description": "Detailed skill progression and competency gains",
+            #     "count": system.skills_developed.count(),
+            # },
             {
                 "id": "timeline",
                 "name": "Development Timeline",
@@ -1043,13 +1043,13 @@ class LearningSystemControlInterfaceView(DetailView):
                 "description": "Real development activity, commits, and learning milestones",
                 "count": system.milestones.count(),
             },
-            {
-                "id": "portfolio",
-                "name": "Portfolio Assessment",
-                "icon": "clipboard-check",
-                "description": "Portfolio readiness analysis and recommendations",
-                "count": None,
-            },
+            # {
+            #     "id": "portfolio",
+            #     "name": "Portfolio Assessment",
+            #     "icon": "clipboard-check",
+            #     "description": "Portfolio readiness analysis and recommendations",
+            #     "count": None,
+            # },
             {
                 "id": "datalogs",
                 "name": "DataLogs",
@@ -1057,13 +1057,13 @@ class LearningSystemControlInterfaceView(DetailView):
                 "description": "Learning documentation and related posts",
                 "count": system.get_related_logs().count(),
             },
-            {
-                "id": "technologies",
-                "name": "Technologies",
-                "icon": "cogs",
-                "description": "Technology stack analysis and learning context",
-                "count": system.technologies.count(),
-            },
+            # {
+            #     "id": "technologies",
+            #     "name": "Technologies",
+            #     "icon": "cogs",
+            #     "description": "Technology stack analysis and learning context",
+            #     "count": system.technologies.count(),
+            # },
             {
                 "id": "features",
                 "name": "Features",
@@ -1112,16 +1112,16 @@ class LearningSystemControlInterfaceView(DetailView):
             return self.get_learning_overview_data(system, commit_stats)
         elif active_panel == "skills_tech_analysis":
             return self.get_skills_tech_analysis_data(system)
-        elif active_panel == "skills":
-            return self.get_skills_progression_data(system)
+        # elif active_panel == "skills":
+        #     return self.get_skills_progression_data(system)
         elif active_panel == "timeline":
             return self.get_development_timeline_data(system)
-        elif active_panel == "portfolio":
-            return self.get_portfolio_assessment_data(system)
+        # elif active_panel == "portfolio":
+        #     return self.get_portfolio_assessment_data(system)
         elif active_panel == "datalogs":
             return self.get_datalogs_data(system)
-        elif active_panel == "technologies":
-            return self.get_tech_learning_data(system)
+        # elif active_panel == "technologies":
+        #     return self.get_tech_learning_data(system)
         elif active_panel == "features":
             return self.get_features_learning_data(system)
         elif active_panel == "dependencies":
@@ -1443,31 +1443,32 @@ class LearningSystemControlInterfaceView(DetailView):
             }
         }
 
-    # Panel 4 - Skills Progression
-    def get_skills_progression_data(self, system):
-        """Detailed skills analysis"""
-        skill_gains = system.skill_gains.select_related('skill').all()
+    # REMOVE: replacing w skill & tech panel
+    ## Panel 4 - Skills Progression
+    # def get_skills_progression_data(self, system):
+    #     """Detailed skills analysis"""
+    #     skill_gains = system.skill_gains.select_related('skill').all()
 
-        skills_analysis = []
-        for gain in skill_gains:
-            skills_analysis.append({
-                'skill': gain.skill,
-                'proficiency_gained': gain.proficiency_gained,
-                'how_learned': gain.how_learned,
-                'has_breakthrough_moment': gain.skill.has_breakthroughs(),
-                'breakthrough_moments': gain.skill.get_breakthrough_moments(),
-                'mastery_level': gain.skill.get_mastery_level(),
-                'other_systems': gain.skill.get_systems_using_skill().exclude(system=system)[:3],
-                'progression': gain.skill.get_learning_progression()
-            })
+    #     skills_analysis = []
+    #     for gain in skill_gains:
+    #         skills_analysis.append({
+    #             'skill': gain.skill,
+    #             'proficiency_gained': gain.proficiency_gained,
+    #             'how_learned': gain.how_learned,
+    #             'has_breakthrough_moment': gain.skill.has_breakthroughs(),
+    #             'breakthrough_moments': gain.skill.get_breakthrough_moments(),
+    #             'mastery_level': gain.skill.get_mastery_level(),
+    #             'other_systems': gain.skill.get_systems_using_skill().exclude(system=system)[:3],
+    #             'progression': gain.skill.get_learning_progression()
+    #         })
 
-        return {
-            'skills_analysis': skills_analysis,
-            'skill_categories': self.categorize_skills(skill_gains),
-            'learning_focus': self.identify_learning_focus(skill_gains),
-            'skill_gaps': self.identify_skill_gaps(system),
-            'recommended_next_skills': self.get_recommended_skills(system)
-        }
+    #     return {
+    #         'skills_analysis': skills_analysis,
+    #         'skill_categories': self.categorize_skills(skill_gains),
+    #         'learning_focus': self.identify_learning_focus(skill_gains),
+    #         'skill_gaps': self.identify_skill_gaps(system),
+    #         'recommended_next_skills': self.get_recommended_skills(system)
+    #     }
 
     # Panel 5 - Development Timeline
     def get_development_timeline_data(self, system):
@@ -1605,64 +1606,65 @@ class LearningSystemControlInterfaceView(DetailView):
             'development_insights': self.analyze_development_patterns(timeline_events),
         }
 
-    # Panel 6 - Portfolio Assessment
-    def get_portfolio_assessment_data(self, system):
-        """Portfolio readiness assessment (new panel)"""
-        assessment = {
-            'overall_ready': system.portfolio_ready,
-            'readiness_score': system.get_portfolio_readiness_score(),
-            'assessment_criteria': []
-        }
+    # Removing - don't think it works public facing may add to admin functionality later
+    # # Panel 6 - Portfolio Assessment
+    # def get_portfolio_assessment_data(self, system):
+    #     """Portfolio readiness assessment (new panel)"""
+    #     assessment = {
+    #         'overall_ready': system.portfolio_ready,
+    #         'readiness_score': system.get_portfolio_readiness_score(),
+    #         'assessment_criteria': []
+    #     }
 
-        # Assess different criteria
-        criteria = [
-            {
-                "name": "Code Quality",
-                "weight": 25,
-                "score": self.assess_code_quality(system),
-                "description": "Clean, well-structured, documented code",
-            },
-            {
-                "name": "Feature Completeness",
-                "weight": 20,
-                "score": self.assess_feature_completeness(system),
-                "description": "Core features implemented and working",
-            },
-            {
-                "name": "Documentation",
-                "weight": 20,
-                "score": self.assess_documentation(system),
-                "description": "Clear README, setup instructions, usage examples",
-            },
-            {
-                "name": "Technology Showcase",
-                "weight": 15,
-                "score": self.assess_tech_showcase(system),
-                "description": "Demonstrates relevant technical skills",
-            },
-            {
-                "name": "Learning Evidence",
-                "weight": 10,
-                "score": self.assess_learning_evidence(system),
-                "description": "Shows learning progression and growth",
-            },
-            {
-                "name": "Deployment/Demo",
-                "weight": 10,
-                "score": self.assess_deployment(system),
-                "description": "Live demo or deployment available",
-            },
-        ]
+    #     # Assess different criteria
+    #     criteria = [
+    #         {
+    #             "name": "Code Quality",
+    #             "weight": 25,
+    #             "score": self.assess_code_quality(system),
+    #             "description": "Clean, well-structured, documented code",
+    #         },
+    #         {
+    #             "name": "Feature Completeness",
+    #             "weight": 20,
+    #             "score": self.assess_feature_completeness(system),
+    #             "description": "Core features implemented and working",
+    #         },
+    #         {
+    #             "name": "Documentation",
+    #             "weight": 20,
+    #             "score": self.assess_documentation(system),
+    #             "description": "Clear README, setup instructions, usage examples",
+    #         },
+    #         {
+    #             "name": "Technology Showcase",
+    #             "weight": 15,
+    #             "score": self.assess_tech_showcase(system),
+    #             "description": "Demonstrates relevant technical skills",
+    #         },
+    #         {
+    #             "name": "Learning Evidence",
+    #             "weight": 10,
+    #             "score": self.assess_learning_evidence(system),
+    #             "description": "Shows learning progression and growth",
+    #         },
+    #         {
+    #             "name": "Deployment/Demo",
+    #             "weight": 10,
+    #             "score": self.assess_deployment(system),
+    #             "description": "Live demo or deployment available",
+    #         },
+    #     ]
 
-        assessment['assessment_criteria'] = criteria
-        assessment['weighted_score'] = sum(
-            c['score'] * c['weight'] / 100 for c in criteria
-        )
+    #     assessment['assessment_criteria'] = criteria
+    #     assessment['weighted_score'] = sum(
+    #         c['score'] * c['weight'] / 100 for c in criteria
+    #     )
 
-        # Recommendations
-        assessment['recommendations'] = self.get_portfolio_recommendations(system, criteria)
+    #     # Recommendations
+    #     assessment['recommendations'] = self.get_portfolio_recommendations(system, criteria)
 
-        return assessment
+    #     return assessment
 
     # Panel 7 - DataLogs Panel
     def get_datalogs_data(self, system):
@@ -1677,28 +1679,29 @@ class LearningSystemControlInterfaceView(DetailView):
             'documentation_completeness': self.assess_documentation_completeness(system, related_logs)
         }
 
-    # Panel 8 - Technologies
-    def get_tech_learning_data(self, system):
-        """Technology analysis with learning context"""
-        tech_analysis = []
+    # REMOVE: replacing w skill & tech panel
+    # # Panel 8 - Technologies
+    # def get_tech_learning_data(self, system):
+    #     """Technology analysis with learning context"""
+    #     tech_analysis = []
 
-        for tech in system.technologies.all():
-            analysis = {
-                'technology': tech,
-                'learning_context': self.get_tech_learning_context(tech, system),
-                'skill_connections': system.skills_developed.filter(name__icontains=tech.name),
-                'other_uses': tech.systems.exclude(id=system.id)[:3],
-                'mastery_level': self.assess_tech_mastery(tech, system),
-                'learning_impact': self.assess_tech_learning_impact(tech, system)
-            }
-            tech_analysis.append(analysis)
+    #     for tech in system.technologies.all():
+    #         analysis = {
+    #             'technology': tech,
+    #             'learning_context': self.get_tech_learning_context(tech, system),
+    #             'skill_connections': system.skills_developed.filter(name__icontains=tech.name),
+    #             'other_uses': tech.systems.exclude(id=system.id)[:3],
+    #             'mastery_level': self.assess_tech_mastery(tech, system),
+    #             'learning_impact': self.assess_tech_learning_impact(tech, system)
+    #         }
+    #         tech_analysis.append(analysis)
 
-        return {
-            'tech_analysis': tech_analysis,
-            'primary_stack': tech_analysis[:4],
-            'learning_new_techs': [t for t in tech_analysis if t['learning_context'] == 'first_time'],
-            'mastery_showcase': [t for t in tech_analysis if t['mastery_level'] >= 'intermediate']
-        }
+    #     return {
+    #         'tech_analysis': tech_analysis,
+    #         'primary_stack': tech_analysis[:4],
+    #         'learning_new_techs': [t for t in tech_analysis if t['learning_context'] == 'first_time'],
+    #         'mastery_showcase': [t for t in tech_analysis if t['mastery_level'] >= 'intermediate']
+    #     }
 
     # Panel 9 - System Features - No changes w GH Data
     def get_features_learning_data(self, system):
@@ -1843,8 +1846,8 @@ class LearningSystemControlInterfaceView(DetailView):
         skills_radar_html = charts_service.generate_skills_radar_chart()
         tech_donut_html = charts_service.generate_tech_donut_chart()
         skill_tech_network_html = charts_service.generate_skill_tech_network()
-        tech_sunburst_html = charts_service.generate_tech_sunburst_chart()
-        learning_sunburst_html = charts_service.generate_learning_journey_sunburst()
+        # tech_sunburst_html = charts_service.generate_tech_sunburst_chart()
+        # learning_sunburst_html = charts_service.generate_learning_journey_sunburst()
         
         return {
             # Display data
@@ -1857,8 +1860,8 @@ class LearningSystemControlInterfaceView(DetailView):
             'skills_radar_chart': skills_radar_html,
             'tech_donut_chart': tech_donut_html,
             'skill_tech_network_chart': skill_tech_network_html,
-            'tech_sunburst_chart': tech_sunburst_html,
-            'learning_sunburst_chart': learning_sunburst_html,
+            # 'tech_sunburst_chart': tech_sunburst_html,
+            # 'learning_sunburst_chart': learning_sunburst_html,
             
             # Chart availability flags
             'has_skills_chart': bool(skills_data),

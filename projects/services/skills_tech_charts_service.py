@@ -518,15 +518,15 @@ class SkillsTechChartsService:
             )
         )
 
-        # DEBUG: Print the data (you can remove this later)
-        print(f"==== SUNBURST DEBUG ====")
-        print(f"Total labels: {len(labels)}")
-        print(f"Total values: {len(values)}")
-        print(f"Total colors: {len(colors)}")
-        print(f"Root value: {values[0]}")
-        print(f"labels: {labels}")
-        print(f"parents: {parents}")
-        print(f"values: {values}")
+        # DEBUG: Print the data
+        # print(f"==== SUNBURST DEBUG ====")
+        # print(f"Total labels: {len(labels)}")
+        # print(f"Total values: {len(values)}")
+        # print(f"Total colors: {len(colors)}")
+        # print(f"Root value: {values[0]}")
+        # print(f"labels: {labels}")
+        # print(f"parents: {parents}")
+        # print(f"values: {values}")
 
         # Convert to HTML
         graph_html = self._create_chart_html(fig, f'learning-sunburst-{self.system.slug}')
