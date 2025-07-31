@@ -5,110 +5,118 @@
 {% block admin_title %}Category Management{% endblock %}
 
 {% block admin_css %}
-{{ block.super }}
 <style>
-  .tech-grid {
+  .category-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 1.5rem;
   }
   
-  .tech-card {
+  .category-card {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+    backdrop-filter: blur(10px);
   }
   
-  .tech-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+  .category-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 32px rgba(179, 157, 219, 0.2);
+    border-color: rgba(179, 157, 219, 0.3);
   }
   
-  .tech-header {
+  .category-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1rem;
   }
   
-  .tech-info {
+  .category-info {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
   }
   
-  .tech-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+  .category-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    color: #1d1c1c;
     font-weight: bold;
+    font-size: 0.875rem;
+    margin-right: 1rem;
+    border: 2px solid;
   }
   
-  .tech-details h3 {
+  .category-details h4 {
     margin: 0;
-    font-size: 1.1rem;
+    color: white;
+    font-size: 1.125rem;
     font-weight: 600;
-    color: #ffffff;
   }
   
-  .tech-category {
-    font-size: 0.75rem;
+  .category-details p {
+    margin: 0.25rem 0 0 0;
     color: #b0bec5;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 0.25rem;
+    font-size: 0.875rem;
   }
   
-  .tech-actions {
+  .category-actions {
     display: flex;
     gap: 0.5rem;
   }
   
-  .tech-action {
+  .category-action {
     width: 32px;
     height: 32px;
-    border-radius: 6px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
     text-decoration: none;
-    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
-  .tech-action:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  .category-action.edit { 
+    background: rgba(38, 198, 218, 0.1); 
+    color: #26c6da; 
+  }
+  .category-action.edit:hover { 
+    background: rgba(38, 198, 218, 0.2); 
+    transform: scale(1.05);
   }
   
-  .tech-action.edit { color: #26c6da; }
-  .tech-action.edit:hover { background: rgba(38, 198, 218, 0.2); }
+  .category-action.view { 
+    background: rgba(76, 175, 80, 0.1); 
+    color: #4caf50; 
+  }
+  .category-action.view:hover { 
+    background: rgba(76, 175, 80, 0.2); 
+    transform: scale(1.05);
+  }
   
-  .tech-action.delete { color: #f44336; }
-  .tech-action.delete:hover { background: rgba(244, 67, 54, 0.2); }
+  .category-action.delete { 
+    background: rgba(244, 67, 54, 0.1); 
+    color: #f44336; 
+  }
+  .category-action.delete:hover { 
+    background: rgba(244, 67, 54, 0.2); 
+    transform: scale(1.05);
+  }
   
-  .tech-action.view { color: #4caf50; }
-  .tech-action.view:hover { background: rgba(76, 175, 80, 0.2); }
-  
-  .tech-description {
+  .category-description {
     color: #e8eaf6;
     font-size: 0.875rem;
     line-height: 1.4;
     margin-bottom: 1rem;
   }
   
-  .tech-stats {
+  .category-stats {
     display: flex;
     justify-content: space-between;
     padding-top: 1rem;
@@ -117,7 +125,7 @@
     color: #b0bec5;
   }
   
-  .tech-filter-bar {
+  .category-filter-bar {
     background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
     padding: 1.5rem;
@@ -155,55 +163,18 @@
   
   .filter-input:focus {
     outline: none;
-    border-color: #26c6da;
-    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
-  }
-  
-  .category-filter {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  
-  .category-btn {
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    color: #e8eaf6;
-    text-decoration: none;
-    font-size: 0.875rem;
-    transition: all 0.3s ease;
-  }
-  
-  .category-btn:hover,
-  .category-btn.active {
-    background: rgba(38, 198, 218, 0.2);
-    border-color: #26c6da;
-    color: #26c6da;
-  }
-  
-  .tech-count {
-    background: rgba(38, 198, 218, 0.2);
-    color: #26c6da;
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
+    border-color: #b39ddb;
+    box-shadow: 0 0 0 2px rgba(179, 157, 219, 0.2);
   }
   
   @media (max-width: 768px) {
-    .tech-grid {
+    .category-grid {
       grid-template-columns: 1fr;
     }
     
     .filter-group {
       flex-direction: column;
       align-items: stretch;
-    }
-    
-    .category-filter {
-      justify-content: center;
     }
   }
 </style>
@@ -216,14 +187,14 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h1 class="text-2xl font-bold text-white mb-2">
-        <i class="fas fa-icons text-pink-400 mr-2"></i>
-        Post Category Management
+        <i class="fas fa-folder-open text-lavender-400 mr-2"></i>
+        DataLog Categories Management
       </h1>
-      <p class="text-gray-400">Manage categories across entries</p>
+      <p class="text-gray-400">Organize your DataLogs by category with custom codes and colors</p>
     </div>
     <div class="mt-4 sm:mt-0">
       <a href="{% url 'aura_admin:blog:category_create' %}" 
-         class="inline-flex items-center px-4 py-2 bg-pink-500 hover:bg-pink-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25">
+         class="inline-flex items-center px-4 py-2 bg-lavender-500 hover:bg-lavender-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-lavender-500/25">
         <i class="fas fa-plus mr-2"></i>
         Add Category
       </a>
@@ -233,49 +204,48 @@
   <!-- Stats Summary -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <div class="glass-card p-4 text-center">
-      <div class="text-2xl font-bold text-orange-400 mb-1">{{ categories.count }}</div>
+      <div class="text-2xl font-bold text-lavender-400 mb-1">{{ categories.count }}</div>
       <div class="text-sm text-gray-400">Total Categories</div>
     </div>
     <div class="glass-card p-4 text-center">
       <div class="text-2xl font-bold text-blue-400 mb-1">
-        {{ categories_count.language|length|default:0 }}
+        {{ total_posts|default:0 }}
       </div>
-      <div class="text-sm text-gray-400">Placeholder</div>
+      <div class="text-sm text-gray-400">Total DataLogs</div>
     </div>
     <div class="glass-card p-4 text-center">
       <div class="text-2xl font-bold text-green-400 mb-1">
-        {{ categories_count.framework|length|default:0 }}
+        {{ active_categories|default:0 }}
       </div>
-      <div class="text-sm text-gray-400">Placeholder</div>
+      <div class="text-sm text-gray-400">Active Categories</div>
     </div>
     <div class="glass-card p-4 text-center">
       <div class="text-2xl font-bold text-purple-400 mb-1">
-        {{ categories_count.database|length|default:0 }}
+        {{ avg_posts_per_category|floatformat:1|default:0 }}
       </div>
-      <div class="text-sm text-gray-400">Placeholder</div>
+      <div class="text-sm text-gray-400">Avg Posts/Category</div>
     </div>
   </div>
 
   <!-- Filters -->
-  <div class="tech-filter-bar">
-    <form method="GET" class="filter-form">
+  <div class="category-filter-bar">
+    <form method="GET" class="filter-form" id="categoryFilterForm">
       <div class="filter-group">
         <div class="filter-item">
           <label class="filter-label">Search Categories</label>
           <input type="text" name="search" value="{{ request.GET.search }}" 
-                 placeholder="Search categories..." class="filter-input">
+                 placeholder="Search by name or description..." class="filter-input">
         </div>
         
         <div class="filter-item">
-          <label class="filter-label">Placeholder Filter</label>
-          <select name="category" class="filter-input">
-            <option value="">All Categories</option>
-            <option value="language" {% if request.GET.category == 'language' %}selected{% endif %}>Programming Language</option>
-            <option value="framework" {% if request.GET.category == 'framework' %}selected{% endif %}>Framework/Library</option>
-            <option value="database" {% if request.GET.category == 'database' %}selected{% endif %}>Database</option>
-            <option value="cloud" {% if request.GET.category == 'cloud' %}selected{% endif %}>Cloud Service</option>
-            <option value="tool" {% if request.GET.category == 'tool' %}selected{% endif %}>Development Tool</option>
-            <option value="other" {% if request.GET.category == 'other' %}selected{% endif %}>Other</option>
+          <label class="filter-label">Sort By</label>
+          <select name="sort" class="filter-input">
+            <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name A-Z</option>
+            <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name Z-A</option>
+            <option value="post_count" {% if request.GET.sort == 'post_count' %}selected{% endif %}>Posts (Low to High)</option>
+            <option value="-post_count" {% if request.GET.sort == '-post_count' %}selected{% endif %}>Posts (High to Low)</option>
+            <option value="code" {% if request.GET.sort == 'code' %}selected{% endif %}>Code A-Z</option>
+            <option value="-created" {% if request.GET.sort == '-created' %}selected{% endif %}>Recently Created</option>
           </select>
         </div>
         
@@ -291,83 +261,52 @@
     </form>
   </div>
 
-  <!-- Quick Category Filter -->
-  <!-- <div class="category-filter">
-    <a href="?category=" class="category-btn {% if not request.GET.category %}active{% endif %}">
-      All <span class="tech-count">{{ technologies.count }}</span>
-    </a>
-    <a href="?category=language" class="category-btn {% if request.GET.category == 'language' %}active{% endif %}">
-      Languages <span class="tech-count">{{ categories_count.language|length|default:0 }}</span>
-    </a>
-    <a href="?category=framework" class="category-btn {% if request.GET.category == 'framework' %}active{% endif %}">
-      Frameworks <span class="tech-count">{{ categories_count.framework|length|default:0 }}</span>
-    </a>
-    <a href="?category=database" class="category-btn {% if request.GET.category == 'database' %}active{% endif %}">
-      Databases <span class="tech-count">{{ categories_count.database|length|default:0 }}</span>
-    </a>
-    <a href="?category=cloud" class="category-btn {% if request.GET.category == 'cloud' %}active{% endif %}">
-      Cloud <span class="tech-count">{{ categories_count.cloud|length|default:0 }}</span>
-    </a>
-    <a href="?category=tool" class="category-btn {% if request.GET.category == 'tool' %}active{% endif %}">
-      Tools <span class="tech-count">{{ categories_count.tool|length|default:0 }}</span>
-    </a>
-  </div> -->
-
-  <!-- Technology Grid -->
-  <div class="tech-grid">
+  <!-- Categories Grid -->
+  <div class="category-grid">
     {% for category in categories %}
-      <div class="tech-card">
-        <div class="tech-header">
-          <div class="tech-info">
-            <div class="tech-icon" style="background-color: {{ category.color }}">
-              <!-- {% if category.icon %} -->
-                <i class="{{ category.icon|safe_icon }}"></i>
-              <!-- {% else %}
-                {{ category.name|first|upper }}
-              {% endif %} -->
+      <div class="category-card">
+        <div class="category-header">
+          <div class="category-info">
+            <div class="category-badge" 
+                 style="background-color: {{ category.color }}20; color: {{ category.color }}; border-color: {{ category.color }};">
+              {{ category.code }}
             </div>
-            <div class="tech-details">
-              <h3>{{ category.name }}</h3>
-              <div class="tech-category">{{ category.code|upper }}</div>
+            <div class="category-details">
+              <h4>{{ category.name }}</h4>
+              <p>{{ category.slug }}</p>
             </div>
           </div>
-          <div class="tech-actions">
-            <a href="#" target="_blank" 
-               class="tech-action view" title="View Category">
-              <i class="fas fa-eye"></i>
-            </a>
+          <div class="category-actions">
             <a href="{% url 'aura_admin:blog:category_edit' category.pk %}" 
-               class="tech-action edit" title="Edit Category">
+               class="category-action edit" title="Edit Category">
               <i class="fas fa-edit"></i>
             </a>
+            <a href="{% url 'aura_admin:blog:post_list' %}?category={{ category.slug }}" 
+               class="category-action view" title="View DataLogs">
+              <i class="fas fa-eye"></i>
+            </a>
             <a href="{% url 'aura_admin:blog:category_delete' category.pk %}" 
-               class="tech-action delete" title="Delete Category"
-               onclick="return confirm('Are you sure you want to delete {{ category.name }}?')">
+               class="category-action delete" title="Delete Category"
+               onclick="return confirm('Are you sure you want to delete this category?')">
               <i class="fas fa-trash"></i>
             </a>
           </div>
         </div>
         
         {% if category.description %}
-          <div class="tech-description">
-            {{ category.description }}
+          <div class="category-description">
+            {{ category.description|truncatechars:120 }}
           </div>
         {% endif %}
         
-        <div class="tech-stats">
+        <div class="category-stats">
           <span>
-            <i class="fas fa-pencil mr-1"></i>
-            {{ category.post_count }} log{{ category.post_count|pluralize }}
+            <i class="fas fa-file-alt mr-1"></i>
+            {{ category.post_count }} DataLog{{ category.post_count|pluralize }}
           </span>
           <span>
-            {% if tech.documentation_url %}
-              <a href="{{ tech.documentation_url }}" target="_blank" 
-                 class="text-cyan-400 hover:text-cyan-300">
-                <i class="fas fa-external-link-alt mr-1"></i>Docs
-              </a>
-            {% else %}
-              <span class="text-gray-500">No docs</span>
-            {% endif %}
+            <i class="fas fa-calendar mr-1"></i>
+            Created {{ category.created|date:"M d, Y" }}
           </span>
         </div>
       </div>
@@ -375,13 +314,13 @@
       <div class="col-span-full">
         <div class="text-center py-12">
           <div class="text-gray-400">
-            <i class="fas fa-tools text-6xl mb-4"></i>
+            <i class="fas fa-folder-open text-6xl mb-4"></i>
             <h3 class="text-xl font-bold mb-2">No Categories Found</h3>
             <p class="text-sm mb-4">
-              {% if request.GET.search or request.GET.category %}
-                No categories match your current filters.
+              {% if request.GET.search %}
+                No categories match your current search.
                 <br>
-                <a href="{% url 'aura_admin:blog:category_list' %}" class="text-cyan-400 hover:text-cyan-300">Clear filters</a>
+                <a href="{% url 'aura_admin:blog:category_list' %}" class="text-lavender-400 hover:text-lavender-300">Clear search</a>
                 to see all categories.
               {% else %}
                 Start organizing your DataLogs by creating your first category.
@@ -405,26 +344,26 @@
       </div>
       <div class="flex space-x-2">
         {% if page_obj.has_previous %}
-          <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+          <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
              class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
             First
           </a>
-          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
              class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
             Previous
           </a>
         {% endif %}
         
-        <span class="px-3 py-2 bg-orange-500 text-black rounded-lg font-medium">
+        <span class="px-3 py-2 bg-lavender-500 text-black rounded-lg">
           {{ page_obj.number }}
         </span>
         
         {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
              class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
             Next
           </a>
-          <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+          <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
              class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
             Last
           </a>
@@ -434,43 +373,30 @@
   {% endif %}
 
 </div>
-{% endblock %}
 
-{% block admin_js %}
-{{ block.super }}
 <script>
+// Auto-submit filter form on select change
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-submit filters on change
-    document.querySelectorAll('.filter-input').forEach(input => {
-        if (input.type !== 'text') {
-            input.addEventListener('change', function() {
-                this.closest('form').submit();
+    const sortSelect = document.querySelector('select[name="sort"]');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            document.getElementById('categoryFilterForm').submit();
             });
         }
-    });
     
-    // Search input delay
+    // Add search input debounce
     const searchInput = document.querySelector('input[name="search"]');
     if (searchInput) {
-        let timeout;
+        let searchTimeout;
         searchInput.addEventListener('input', function() {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                this.closest('form').submit();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    document.getElementById('categoryFilterForm').submit();
+                }
             }, 500);
         });
     }
-    
-    // Tech card hover effects
-    document.querySelectorAll('.tech-card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-4px) scale(1.02)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(-2px) scale(1)';
-        });
-    });
 });
 </script>
 {% endblock %}
