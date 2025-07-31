@@ -170,8 +170,8 @@ class SystemListAdminView(BaseAdminListView, BulkActionMixin):
         context = super().get_context_data(**kwargs)
         
         context.update({
-            'title': 'Manage Systems',
-            'subtitle': 'All portfolio projects and systems',
+            'title': 'Systems Management',
+            'subtitle': 'Manage your portfolio projects and systems',
             'system_types': SystemType.objects.all(),
             'status_choices': SystemModule.STATUS_CHOICES,
             'priority_choices': SystemModule.PRIORITY_CHOICES,

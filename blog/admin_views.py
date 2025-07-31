@@ -141,9 +141,10 @@ class PostListAdminView(BaseAdminListView, BulkActionMixin):
         context = super().get_context_data(**kwargs)
         
         context.update({
-            'title': 'Manage DataLogs',
-            'subtitle': 'All technical logs and entries',
+            'title': 'DataLogs Management',
+            'subtitle': 'Manage your datalog entries across projects',
             'categories': Category.objects.all(),
+            'categories_count': self.get_post_categories(),
             'series': Series.objects.all(),
             'status_choices': Post.STATUS_CHOICES,
             'current_filters': {
@@ -155,6 +156,10 @@ class PostListAdminView(BaseAdminListView, BulkActionMixin):
         })
         
         return context
+    
+    def get_post_categories(self):
+        """Get posts grouped by category"""
+        cats = Category.objects.all()
 
 
 class PostCreateAdminView(BaseAdminCreateView):
