@@ -144,6 +144,7 @@ class PostListAdminView(BaseAdminListView, BulkActionMixin):
             'title': 'Manage DataLogs',
             'subtitle': 'All technical logs and entries',
             'categories': Category.objects.all(),
+            'series': Series.objects.all(),
             'status_choices': Post.STATUS_CHOICES,
             'current_filters': {
                 'search': self.request.GET.get('search', ''),
