@@ -2,6 +2,8 @@
 /**
  * AURA Portfolio Admin Interface JavaScript
  * Enhanced admin functionality with AURA theme integration
+ * Includes DataLog-specific features for category and tag management
+ * Version 3.0 - With updates for DataLogs Pages
  */
 
 class AURAAdmin {
@@ -18,6 +20,9 @@ class AURAAdmin {
         this.initKeyboardShortcuts();
         this.initAjaxForms();
         this.initThemeFeatures();
+        
+        // DataLog-specific features
+        this.initDataLogFeatures();
         
         console.log('✅ AURA Admin Interface Ready');
     }
@@ -47,6 +52,10 @@ class AURAAdmin {
         
         // Markdown preview for MarkdownX fields
         this.initMarkdownPreviews();
+        
+        // DataLog-specific form enhancements
+        this.initAutoSubmitFilters();
+        this.initSearchDebounce();
     }
     
     autoResizeTextarea(textarea) {
@@ -197,12 +206,50 @@ class AURAAdmin {
             .replace(/\n/gim, '<br>');
     }
     
+    // Auto-submit filter forms when selects change (DataLog feature)
+    initAutoSubmitFilters() {
+        const filterForms = document.querySelectorAll('.filter-form');
+        
+        filterForms.forEach(form => {
+            const selects = form.querySelectorAll('select');
+            selects.forEach(select => {
+                select.addEventListener('change', () => {
+                    form.submit();
+                });
+            });
+        });
+    }
+
+    // Debounced search input submission (DataLog feature)
+    initSearchDebounce(delay = 500, minLength = 2) {
+        const searchInputs = document.querySelectorAll('.filter-form input[name="search"]');
+        
+        searchInputs.forEach(input => {
+            let searchTimeout;
+            
+            input.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                
+                searchTimeout = setTimeout(() => {
+                    const value = input.value.trim();
+                    if (value.length >= minLength || value.length === 0) {
+                        const form = input.closest('form');
+                        if (form) {
+                            form.submit();
+                        }
+                    }
+                }, delay);
+            });
+        });
+    }
+    
     // Enhanced table functionality
     initTableFeatures() {
         this.initSortableColumns();
         this.initRowSelection();
         this.initQuickSearch();
         this.initRowActions();
+        this.initTableInteractions(); // DataLog feature
     }
     
     initSortableColumns() {
@@ -284,7 +331,7 @@ class AURAAdmin {
     }
     
     initQuickSearch() {
-        const searchInput = document.querySelector('input[name="search"]');
+        const searchInput = document.querySelector('input[name="search"]:not(.filter-form input[name="search"])');
         if (searchInput) {
             let searchTimeout;
             
@@ -312,16 +359,63 @@ class AURAAdmin {
             button.addEventListener('click', (e) => {
                 if (button.href && button.href.includes('delete')) {
                     e.preventDefault();
-                    this.confirmDelete(button.href);
+                    this.confirmDelete(button.href, button);
                 }
             });
         });
     }
     
-    confirmDelete(deleteUrl) {
-        if (confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+    confirmDelete(deleteUrl, button = null) {
+        // Enhanced confirmation with item identification
+        let itemName = '';
+        let itemType = 'item';
+        
+        if (button) {
+            const container = button.closest('.category-card, .admin-table-row, tr');
+            if (container) {
+                if (container.classList.contains('category-card')) {
+                    itemType = 'category';
+                    const nameElement = container.querySelector('.category-details h4');
+                    itemName = nameElement?.textContent.trim() || '';
+                } else {
+                    // Check if it's a tag row
+                    const tagElement = container.querySelector('.tag-name');
+                    if (tagElement) {
+                        itemType = 'tag';
+                        itemName = tagElement.textContent.replace('#', '').trim();
+                    }
+                }
+            }
+        }
+        
+        const message = `Are you sure you want to delete this ${itemType}?` +
+                      (itemName ? `\n\n"${itemName}" will be permanently removed.` : '') +
+                      `\n\nThis action cannot be undone.`;
+        
+        if (confirm(message)) {
             window.location.href = deleteUrl;
         }
+    }
+    
+    // Enhanced table interactions (DataLog feature)
+    initTableInteractions() {
+        const tables = document.querySelectorAll('.admin-table');
+        
+        tables.forEach(table => {
+            const rows = table.querySelectorAll('.admin-table-row, tbody tr');
+            rows.forEach(row => {
+                row.addEventListener('click', (e) => {
+                    // Don't highlight if clicking on action buttons or links
+                    if (e.target.closest('a, button, input')) return;
+                    
+                    // Remove previous highlights
+                    rows.forEach(r => r.classList.remove('row-highlighted'));
+                    
+                    // Add highlight to clicked row
+                    row.classList.add('row-highlighted');
+                });
+            });
+        });
     }
     
     // Enhanced notifications
@@ -356,19 +450,49 @@ class AURAAdmin {
             info: 'fas fa-info-circle'
         };
         
+        const backgrounds = {
+            success: 'rgba(76, 175, 80, 0.9)',
+            error: 'rgba(244, 67, 54, 0.9)',
+            warning: 'rgba(255, 152, 0, 0.9)',
+            info: 'rgba(179, 157, 219, 0.9)'
+        };
+        
         notification.className = `alert alert-${type} alert-dismissible fade show mb-2`;
+        notification.style.cssText = `
+            background: ${backgrounds[type]};
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        
         notification.innerHTML = `
-            <i class="${icons[type]} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" onclick="this.parentNode.remove()"></button>
+            <div style="display: flex; align-items: center;">
+                <i class="${icons[type]} me-2"></i>
+                <span>${message}</span>
+                <button type="button" style="background: none; border: none; color: white; margin-left: auto; cursor: pointer;" onclick="this.parentNode.parentNode.remove()">×</button>
+            </div>
         `;
         
         container.appendChild(notification);
         
+        // Animate in
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
         // Auto-hide after duration
         setTimeout(() => {
             if (notification.parentNode) {
-                notification.remove();
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
             }
         }, duration);
     }
@@ -494,6 +618,7 @@ class AURAAdmin {
         this.initGlowEffects();
         this.initProgressBars();
         this.initCounterAnimations();
+        this.initDataLogAnimations(); // DataLog-specific animations
     }
     
     initGlowEffects() {
@@ -542,6 +667,123 @@ class AURAAdmin {
             updateCounter();
         });
     }
+    
+    // DataLog-specific features
+    initDataLogFeatures() {
+        this.initDataLogAnimations();
+        this.initDataLogHoverEffects();
+        this.initDataLogUtilities();
+    }
+    
+    // DataLog-specific animations
+    initDataLogAnimations() {
+        // Animate usage bars and progress indicators
+        const usageBars = document.querySelectorAll('.tag-usage-fill');
+        usageBars.forEach(bar => {
+            const targetWidth = bar.style.width || '0%';
+            bar.style.width = '0%';
+            
+            setTimeout(() => {
+                bar.style.transition = 'width 0.8s ease-out';
+                bar.style.width = targetWidth;
+            }, Math.random() * 500 + 200); // Stagger animations
+        });
+
+        // Animate metric counters on stats cards
+        const metricCounters = document.querySelectorAll('.text-2xl.font-bold');
+        metricCounters.forEach(counter => {
+            const target = parseInt(counter.textContent) || 0;
+            if (target > 0) {
+                const duration = 1000;
+                const increment = target / (duration / 16);
+                let current = 0;
+                
+                const updateCounter = () => {
+                    current += increment;
+                    if (current < target) {
+                        counter.textContent = Math.floor(current);
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        counter.textContent = target;
+                    }
+                };
+                
+                setTimeout(updateCounter, 200);
+            }
+        });
+    }
+    
+    // Enhanced hover effects for DataLog elements
+    initDataLogHoverEffects() {
+        // Enhanced card hover effects
+        const cards = document.querySelectorAll('.category-card, .tag-bubble');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px) scale(1.02)';
+                card.style.transition = 'transform 0.3s ease';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Action button hover effects with rotation
+        const actionButtons = document.querySelectorAll('.category-action, .tag-action');
+        actionButtons.forEach(button => {
+            button.addEventListener('mouseenter', () => {
+                button.style.transform = 'scale(1.15) rotate(10deg)';
+                button.style.transition = 'transform 0.2s ease';
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                button.style.transform = 'scale(1) rotate(0deg)';
+            });
+        });
+    }
+    
+    // DataLog utility methods
+    initDataLogUtilities() {
+        // Add global utility methods for DataLog features
+        window.DataLogUtils = {
+            formatNumber: (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+            randomColor: () => '#' + Math.floor(Math.random()*16777215).toString(16),
+            slugify: (text) => text.toString().toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\-]+/g, '')
+                .replace(/\-\-+/g, '-')
+                .replace(/^-+/, '')
+                .replace(/-+$/, ''),
+            timeAgo: (date) => {
+                const now = new Date();
+                const diffTime = Math.abs(now - new Date(date));
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) return '1 day ago';
+                if (diffDays < 7) return `${diffDays} days ago`;
+                if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+                if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+                return `${Math.floor(diffDays / 365)} years ago`;
+            }
+        };
+    }
+    
+    // Filter management utilities
+    clearAllFilters(formSelector = '.filter-form') {
+        const form = document.querySelector(formSelector);
+        if (!form) return;
+
+        // Clear all inputs
+        const inputs = form.querySelectorAll('input[type="text"], input[type="search"]');
+        inputs.forEach(input => input.value = '');
+
+        // Reset all selects to first option
+        const selects = form.querySelectorAll('select');
+        selects.forEach(select => select.selectedIndex = 0);
+
+        // Submit to apply cleared filters
+        form.submit();
+    }
 }
 
 // Initialize when DOM is ready
@@ -555,6 +797,9 @@ function initAdminFeatures() {
         window.auraAdmin.init();
     }
 }
+
+// Backwards compatibility
+window.DataLogAdmin = window.auraAdmin;
 
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {

@@ -311,9 +311,15 @@ class CategoryListAdminView(BaseAdminListView, BulkActionMixin):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        total_posts = Post.objects.filter(status='published').count()
+        active_categories = self.get_queryset().filter(post_count__gt=0).count()
+        avg_posts_per_category = total_posts // active_categories if active_categories > 0 else 0
+
         context.update({
-            'title': 'Manage Categories',
-            'subtitle': 'DataLog organization categories',
+            'total_posts': total_posts,
+            'active_categories': active_categories,
+            'avg_posts_per_category': avg_posts_per_category,
         })
         return context
 
@@ -364,6 +370,9 @@ class TagListAdminView(BaseAdminListView, BulkActionMixin):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        
+
         context.update({
             'title': 'Manage Tags',
             'subtitle': 'DataLog tagging system',
