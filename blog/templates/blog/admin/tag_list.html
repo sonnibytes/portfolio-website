@@ -15,9 +15,97 @@
 {% endblock %}
 
 {% block admin_content %}
-  <div class="tag-list">
+  <div class="space-y-8 tag-list">
+
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-tags text-purple-400 mr-3"></i>
+                Tags Management
+            </h1>
+            <p class="text-gray-400">Manage tags for DataLogs</p>
+        </div>
+        <a href="{% url 'aura_admin:blog:tag_create' %}" 
+           class="btn btn-sm btn-purple">
+            <i class="fas fa-plus mr-2"></i>
+            Add Tag
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="glass-card p-6 text-center">
+            <div class="text-3xl font-bold text-teal-400 mb-2">{{ total_count }}</div>
+            <div class="text-sm text-gray-400">Total Tags</div>
+        </div>
+        <div class="glass-card p-6 text-center">
+            <div class="text-3xl font-bold text-purple-400 mb-2">{{ filtered_count }}</div>
+            <div class="text-sm text-gray-400">Showing</div>
+        </div>
+        <div class="glass-card p-6 text-center">
+            <div class="text-3xl font-bold text-orange-400 mb-2">{{ total_count|default:12 }}</div>
+            <div class="text-sm text-gray-400">Placeholder</div>
+        </div>
+        <div class="glass-card p-6 text-center">
+            <div class="text-3xl font-bold text-emerald-400 mb-2">{{ filtered_count|default:8 }}</div>
+            <div class="text-sm text-gray-400">Placeholder</div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="glass-card p-6">
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Search</label>
+                    <input type="text" name="search" value="{{ current_filters.search }}" 
+                           class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
+                           placeholder="Search tags...">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">System</label>
+                    <select name="system" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none">
+                        <option value="">All Systems</option>
+                        {% for system in systems %}
+                        <option value="{{ system.slug }}" {% if current_filters.system == system.slug %}selected{% endif %}>
+                            {{ system.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Component Type</label>
+                    <select name="component_type" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none">
+                        <option value="">All Types</option>
+                        {% for value, label in component_types %}
+                        <option value="{{ value }}" {% if current_filters.component_type == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Core Components</label>
+                    <select name="is_core" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none">
+                        <option value="">All Components</option>
+                        <option value="true" {% if current_filters.is_core == 'true' %}selected{% endif %}>Core Only</option>
+                        <option value="false" {% if current_filters.is_core == 'false' %}selected{% endif %}>Non-Core Only</option>
+                    </select>
+                </div> -->
+            </div>
+            <div class="flex space-x-4">
+                <button type="submit" class="btn btn-sm btn-cyan">
+                    <i class="fas fa-search mr-2"></i>Filter
+                </button>
+                <a href="{% url 'aura_admin:blog:tag_list' %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
     
-    <!-- Search & Stats Bar -->
+    <!-- Search & Stats Bar
     <div class="glass-card p-6 mb-8">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center space-x-6">
@@ -47,7 +135,7 @@
           {% endif %}
         </form>
       </div>
-    </div>
+    </div> -->
 
     <!-- Tags Display -->
     {% if tags %}

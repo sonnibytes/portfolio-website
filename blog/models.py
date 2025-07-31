@@ -459,7 +459,7 @@ class SeriesPost(models.Model):
 class SystemLogEntry(models.Model):
     """
     Enhanced connection model between blog posts and systems with HUD-style metadata.
-    Represents how a DEVLOG entry relates to a specific system/project.
+    Represents how a DataLogs entry relates to a specific system/project.
     """
 
     CONNECTION_TYPES = (
