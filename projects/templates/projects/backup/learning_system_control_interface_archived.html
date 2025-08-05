@@ -779,59 +779,37 @@
                     <!-- System Overview Panel - TECHNICAL SYSTEM INFO -->
                     <div class="panel-content-grid grid-2-col">
 
-                        <!-- System Basic Info -->
+                        <!-- System Status & Metrics -->
                         <div class="unified-dashboard-container teal">
                             <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">Basic Information</h3>
+                            <h3 style="margin-bottom: 1.5rem;">System Development Metrics</h3>
                             </div>
-
-                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                                <!-- <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Short Description</div> -->
-                                <div style="color: var(--color-teal); font-weight: 600;">
-                                    {{ system.excerpt }}
-                                </div>
-                            </div>
-                            
-                            <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem; margin-top: 1.5rem;">
-                                <span>Connected Repository</span>
-                            {% for repo in system.github_repositories.all|slice:":4" %}
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px;">
-                                <div>
-                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">
-                                        <a href="{{ repo.html_url }}" target="_blank" style="color: var(--color-text-primary); text-decoration: none;">
-                                            <i class="fab fa-github"></i> {{ repo.name }}
-                                        </a>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-teal);">
+                                        {{ panel_data.system_metrics.completion_percent|floatformat:0 }}%
                                     </div>
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
-                                        {{ repo.total_commits|format_commit_count }} commits
-                                        {% if repo.commits_last_30_days > 0 %}
-                                            • {{ repo.commits_last_30_days }} this month
-                                        {% endif %}
+                                    <div class="metric-label-large">Complete</div>
+                                </div>
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-teal);">
+                                        {{ panel_data.system_metrics.complexity }}
                                     </div>
+                                    <div class="metric-label-large">Complexity</div>
                                 </div>
-                                <div>
-                                    {{ repo.commit_frequency_rating|commit_frequency_badge }}
+                                
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-teal);">
+                                        {{ panel_data.development_stats.total_commits }}
+                                    </div>
+                                    <div class="metric-label-large">Placeholder</div>
                                 </div>
-                            </div>
-                            {% endfor %}
-                            </div>    
-
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                                <a href="{{ panel_data.quick_links.github_url }}" target="_blank" class="quick-link" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: var(--color-text-primary); text-decoration: none; transition: all 0.3s ease;">
-                                    <i class="fab fa-github" style="color: var(--color-teal);"></i>
-                                    <span>View Source Code</span>
-                                </a>
-                                
-                                <a href="{{ panel_data.quick_links.live_url }}" target="_blank" class="quick-link" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: var(--color-text-primary); text-decoration: none; transition: all 0.3s ease;">
-                                    <i class="fas fa-external-link-alt" style="color: var(--color-teal);"></i>
-                                    <span>Live Demo</span>
-                                </a>
-                                
-                                <a href="{{ panel_data.quick_links.documentation_url }}" target="_blank" class="quick-link" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: var(--color-text-primary); text-decoration: none; transition: all 0.3s ease;">
-                                    <i class="fas fa-book" style="color: var(--color-teal);"></i>
-                                    <span>Documentation</span>
-                                </a>
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-teal);">
+                                        {{ panel_data.development_stats.commits_last_30_days }}
+                                    </div>
+                                    <div class="metric-label-large">Placeholder</div>
+                                </div>
                             </div>
 
                             <div style="margin-bottom: 1.5rem;" class="system-progress-container">
@@ -854,30 +832,177 @@
                             <div style="display: flex; justify-content: space-around; gap: 1rem;">
                                 <div style="text-align: center;">
                                     <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Status</div>
-                                    <div class="system-status-badge status-{{ panel_data.system_metrics.status }}" style="color: var(--color-teal); font-weight: 600;">
+                                    <div class="system-status-badge status-{{ panel_data.system_metrics.status }}" style="padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;">
                                         {{ panel_data.system_metrics.status_display }}
                                     </div>
                                 </div>
                                 <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Related DataLogs</div>
-                                    <div class="priority-indicator" style="color: var(--color-teal); font-weight: 600;">
-                                        {{ system.get_related_logs.count|default:0 }}
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Priority</div>
+                                    <div class="priority-indicator" style="color: var(--color-warning); font-weight: 600;">
+                                        {{ panel_data.system_metrics.priority|default:"Normal" }}
                                     </div>
                                 </div>
                                 <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">System Type</div>
-                                    <div class="system-status-badge status-{{ panel_data.system_metrics.created_date }}" style="color: var(--color-teal); font-weight: 600;">
-                                        {{ system.system_type }}
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Created</div>
+                                    <div class="system-status-badge status-{{ panel_data.system_metrics.created_date }}" style="padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem;">
+                                        {{ panel_data.system_metrics.created_date|date }}
                                     </div>
                                 </div>
                                 <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Dev Context</div>
-                                    <div class="system-status-badge status-{{ panel_data.system_metrics.last_updated }}" style="color: var(--color-teal); font-weight: 600;">
-                                        {{ system.get_learning_stage_display }}
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Updated</div>
+                                    <div class="system-status-badge status-{{ panel_data.system_metrics.last_updated }}" style="padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem;">
+                                        {{ panel_data.system_metrics.last_updated|date }}
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Technology Stack -->
+                        <div class="unified-dashboard-container coral">
+                            <div class="unified-container-header">
+                            <h3 style="margin-bottom: 1.5rem;">Technology Stack</h3>
+                            </div>
+                            
+                            <div class="learning-metric-card" style="margin-bottom: 1.5rem;">
+                                <div class="metric-value-large" style="color: var(--color-coral);">
+                                    {{ panel_data.technology_summary.total_count }}
+                                </div>
+                                <div class="metric-label-large">Technologies</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 1.5rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">Primary Technologies</div>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    {% for tech in panel_data.technology_summary.technologies %}
+                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                                        <span class="tech-name"><i class="{{ tech.icon}}"></i> {{ tech.name }}</span>
+                                        <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                            <span class="tech-category">{{ tech.get_category_display }}</span>
+                                            <span class="filter-count" style="color: var(--color-text-tertiary); font-size: 0.8rem;">{{ tech.systems_count }}</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            {% if panel_data.technology_summary.primary_languages %}
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <div style="font-size: 0.9rem; font-weight: 600; color: var(--color-coral); margin-bottom: 0.5rem;">
+                                    Primary Languages
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
+                                    {% for lang in panel_data.technology_summary.primary_languages %}{{ lang.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Development Statistics -->
+                        <div class="unified-dashboard-container mint">
+                            <div class="unified-container-header">
+                            <h3 style="margin-bottom: 1.5rem;">Development Stats</h3>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                                {% if system.github_repositories.exists %}
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-mint);">
+                                        {{ panel_data.development_stats.total_commits|default:"0" }}
+                                    </div>
+                                    <div class="metric-label-large">Commits</div>
+                                </div>
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-mint);">
+                                        {{ panel_data.development_stats.lines_of_code|default:"0" }}
+                                    </div>
+                                    <div class="metric-label-large">Lines of Code</div>
+                                </div>
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-mint);">
+                                        {{ panel_data.development_stats.commit_frequency_rating|default:"0" }}
+                                    </div>
+                                    <div class="metric-label-large">Commit Frequency Rating</div>
+                                </div>
+                                <div class="learning-metric-card">
+                                    <div class="metric-value-large" style="color: var(--color-mint);">
+                                        {{ panel_data.development_stats.commits_last_30_days|default:"0" }}
+                                    </div>
+                                    <div class="metric-label-large">Commits - last 30 days</div>
+                                </div>
+                            
+
+                            {% else %}
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-mint);">
+                                    {{ system.commit_count|default:"0" }}
+                                </div>
+                                <div class="metric-label-large">Commits</div>
+                            </div>
+                            <div class="learning-metric-card">
+                                <div class="metric-value-large" style="color: var(--color-mint);">
+                                    {{ panel_data.development_stats.lines_of_code|default:"0" }}
+                                </div>
+                                <div class="metric-label-large">Lines of Code</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Time Investment</div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: var(--color-mint);">Est: {{ panel_data.development_stats.estimated_hours|default:"--" }}h</span>
+                                    <span style="color: var(--color-mint);">Actual: {{ panel_data.development_stats.actual_hours|default:"--" }}h</span>
+                                </div>
+                            </div>
+                            
+                            {% if panel_data.development_stats.last_commit_date %}
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Last Commit</div>
+                                <div style="color: var(--color-mint); font-weight: 600;">
+                                    {{ panel_data.development_stats.last_commit_date|date:"M d, Y" }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- CONNECTED REPOSITORIES -->
+                        
+                        <div class="unified-dashboard-container coral">
+                            <div class="unified-container-header">
+                                <h3 style="margin-bottom: 1.5rem;">Connected Repositories</h3>
+                            </div>
+                            {% if system.github_repositories.exists %}
+                            {% for repo in system.github_repositories.all|slice:":4" %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px;">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">
+                                        <a href="{{ repo.html_url }}" target="_blank" style="color: var(--color-text-primary); text-decoration: none;">
+                                            <i class="fab fa-github"></i> {{ repo.name }}
+                                        </a>
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
+                                        {{ repo.total_commits|format_commit_count }} commits
+                                        {% if repo.commits_last_30_days > 0 %}
+                                            • {{ repo.commits_last_30_days }} this month
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div>
+                                    {{ repo.commit_frequency_rating|commit_frequency_badge }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <div style="color: var(--color-text-secondary);">
+                                    <i class="fas fa-info-circle"></i>
+                                    No GitHub activity tracked yet
+                                </div>
+                            </div>
+
+                            {% endif %}
+                        </div>
+                        
 
                         <!-- Recent Activity Feed -->
                         <div class="unified-dashboard-container purple">
@@ -924,169 +1049,8 @@
                             {% endwith %}
                         </div>
 
-                        <!-- System Statistics -->
-                        <div class="unified-dashboard-container mint">
-                            <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">System Stats</h3>
-                            </div>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                                {% if system.github_repositories.exists %}
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-mint);">
-                                        {{ panel_data.development_stats.total_commits|default:"0" }}
-                                    </div>
-                                    <div class="metric-label-large">Commits</div>
-                                </div>
-                                {% else %}
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-mint);">
-                                        {{ system.commit_count|default:"0" }}
-                                    </div>
-                                    <div class="metric-label-large">Commits</div>
-                                </div>
-                                {% endif %}
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-mint);">
-                                        {{ panel_data.system_metrics.complexity }}
-                                    </div>
-                                    <div class="metric-label-large">Complexity</div>
-                                </div>
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-mint);">
-                                        {{ panel_data.development_stats.estimated_hours|default:"--" }}h
-                                    </div>
-                                    <div class="metric-label-large">Est Dev Hrs</div>
-                                </div>
-                                <div class="learning-metric-card">
-                                    <div class="metric-value-large" style="color: var(--color-mint);">
-                                        {{ panel_data.development_stats.actual_hours|default:"--" }}h
-                                    </div>
-                                    <div class="metric-label-large">Actual Dev Hrs</div>
-                                </div>
-                            
-                        </div>
-                            
-                            <!-- <div style="margin-bottom: 1rem;">
-                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Time Investment</div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--color-mint);">Est: {{ panel_data.development_stats.estimated_hours|default:"--" }}h</span>
-                                    <span style="color: var(--color-mint);">Actual: {{ panel_data.development_stats.actual_hours|default:"--" }}h</span>
-                                </div>
-                            </div> -->
-
-                            <div style="display: flex; justify-content: space-around; gap: 1rem;">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Status</div>
-                                    <div class="system-status-badge status-{{ panel_data.system_metrics.status }}" style="color: var(--color-success); font-weight: 600;">
-                                        {{ panel_data.system_metrics.status_display }}
-                                    </div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Last Commit</div>
-                                    <div class="priority-indicator" style="color: var(--color-success); font-weight: 600;">
-                                        {{ panel_data.development_stats.last_commit_date|date:"M d, Y" }}
-                                    </div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Created</div>
-                                    <div class="system-status-badge status-{{ panel_data.system_metrics.created_date }}" style="color: var(--color-success); font-weight: 600;">
-                                        {{ panel_data.system_metrics.created_date|date }}
-                                    </div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Updated</div>
-                                    <div class="system-status-badge status-{{ panel_data.system_metrics.last_updated }}" style="color: var(--color-success); font-weight: 600;">
-                                        {{ panel_data.system_metrics.last_updated|date }}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                        </div>
-
-                        <!-- Technology Stack -->
-                        <div class="unified-dashboard-container coral">
-                            <div class="unified-container-header">
-                            <h3 style="margin-bottom: 1.5rem;">Technology Stack</h3>
-                            </div>
-                            
-                            <div class="learning-metric-card" style="margin-bottom: 1.5rem;">
-                                <div class="metric-value-large" style="color: var(--color-coral);">
-                                    {{ panel_data.technology_summary.total_count }}
-                                </div>
-                                <div class="metric-label-large">Technologies</div>
-                            </div>
-                            
-                            <div style="margin-bottom: 1.5rem;">
-                                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.75rem;">Primary Technologies</div>
-                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                    {% for tech in panel_data.technology_summary.technologies %}
-                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
-                                        <span class="tech-name"><i class="{{ tech.icon}}"></i> {{ tech.name }}</span>
-                                        <div style="display: flex; align-items: center; gap: 0.25rem;">
-                                            <span class="tech-category">{{ tech.get_category_display }}</span>
-                                            <span class="filter-count" style="color: var(--color-text-tertiary); font-size: 0.8rem;">{{ tech.systems_count }}</span>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            
-                            {% if panel_data.technology_summary.primary_languages %}
-                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                                <div style="font-size: 0.9rem; font-weight: 600; color: var(--color-coral); margin-bottom: 0.5rem;">
-                                    Primary Languages
-                                </div>
-                                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
-                                    {% for lang in panel_data.technology_summary.primary_languages %}{{ lang.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- CONNECTED REPOSITORIES -->
-                        
-                        <!-- <div class="unified-dashboard-container coral">
-                            <div class="unified-container-header">
-                                <h3 style="margin-bottom: 1.5rem;">Connected Repositories</h3>
-                            </div>
-                            {% if system.github_repositories.exists %}
-                            {% for repo in system.github_repositories.all|slice:":4" %}
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px;">
-                                <div>
-                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">
-                                        <a href="{{ repo.html_url }}" target="_blank" style="color: var(--color-text-primary); text-decoration: none;">
-                                            <i class="fab fa-github"></i> {{ repo.name }}
-                                        </a>
-                                    </div>
-                                    <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
-                                        {{ repo.total_commits|format_commit_count }} commits
-                                        {% if repo.commits_last_30_days > 0 %}
-                                            • {{ repo.commits_last_30_days }} this month
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div>
-                                    {{ repo.commit_frequency_rating|commit_frequency_badge }}
-                                </div>
-                            </div>
-                            {% endfor %}
-                            {% else %}
-                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                                <div style="color: var(--color-text-secondary);">
-                                    <i class="fas fa-info-circle"></i>
-                                    No GitHub activity tracked yet
-                                </div>
-                            </div>
-
-                            {% endif %}
-                        </div> -->
-                        
-
-                        
-
                         <!-- System Health & Quick Links -->
-                        <!-- <div class="unified-dashboard-container yellow">
+                        <div class="unified-dashboard-container yellow">
                             <div class="unified-container-header">
                             <h3 style="margin-bottom: 1.5rem;">System Health & Links</h3>
                             </div>
@@ -1137,7 +1101,7 @@
                                 </a>
                                 {% endif %}
                             </div>
-                        </div> -->
+                        </div>
 
                     </div>
 
