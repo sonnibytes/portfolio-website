@@ -15,6 +15,7 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from django.core.management.utils import get_random_secret_key
+import dj_database_url
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -112,8 +113,6 @@ WSGI_APPLICATION = "portfolio.wsgi.application"
 
 # Prefer DATABASE_URL, fallback to SQLite locally
 if os.getenv("DATABASE_URL"):
-    # pip install dj-database-url
-    import dj_database_url
     DATABASES = {
         "default": dj_database_url.parse(
             os.environ["DATABASE_URL"],
