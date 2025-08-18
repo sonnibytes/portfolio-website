@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from urllib.parse import urlparse
 from django.core.management.utils import get_random_secret_key
 import dj_database_url
+import json
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,11 +36,22 @@ SECRET_KEY = os.getenv("SECRET_KEY") or get_random_secret_key()
 DEBUG = os.getenv("DEBUG", "0") == "1"
 
 # Hosts & CSRF come from env so can add custom domain later
-ALLOWED_HOSTS = [
-    os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-    if not DEBUG else ["*"]
-]
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if not DEBUG else []
+def env_list(name: str, default: str = "") -> list[str]:
+    raw = os.getenv(name, default)
+    if not raw:
+        return []
+    # If the value is JSON (e.g., '[".onrender.com","example.com"]'), use it.
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            return [str(x).strip() for x in parsed if str(x).strip()]
+    except Exception:
+        pass
+    # Otherwise treat as comma-separated
+    return [x.strip() for x in raw.split(",") if x.strip()]
+
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1") if not DEBUG else ["*"]
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") if not DEBUG else []
 
 # GITHUB API CONFIG
 GITHUB_API_CONFIG = {
