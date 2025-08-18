@@ -1241,7 +1241,7 @@ class LearningSystemControlInterfaceView(DetailView):
                         "detail": repo.last_commit_message[:80] + "..."
                         if repo.last_commit_message and len(repo.last_commit_message) > 80
                         else repo.last_commit_message,
-                        "author": "ksg-dev",
+                        "author": "sonnibytes",
                         "repo_url": repo.html_url,
                         "icon": "code-branch",
                         "color": "teal",
@@ -1502,7 +1502,7 @@ class LearningSystemControlInterfaceView(DetailView):
                         "description": repo.last_commit_message[:100] + "..."
                         if repo.last_commit_message and len(repo.last_commit_message) > 100
                         else repo.last_commit_message,
-                        "author": "ksg-dev",
+                        "author": "sonnibytes",
                         "repo_name": repo.name,
                         "repo_url": repo.html_url,
                         "commit_count": repo.total_commits,
@@ -2052,7 +2052,7 @@ class LearningSystemControlInterfaceView(DetailView):
                         "repo_name": repo.name,
                         "commit_date": repo.last_commit_date,
                         "message": repo.last_commit_message,
-                        "author": "ksg-dev",
+                        "author": "sonnibytes",
                     }
                 )
 
