@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from urllib.parse import urlparse
+from django.core.management.utils import get_random_secret_key
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,21 +26,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ["SECRET_KEY"]
+# Use provided SECRET_KEY or safe fallback for local dev
+# In prod, always set SECRET_KEY in the platform env
+SECRET_KEY = os.getenv("SECRET_KEY") or get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "0") == "1"
 
+# Hosts & CSRF come from env so can add custom domain later
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
+    os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if not DEBUG else ["*"]
 ]
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if not DEBUG else []
 
 # GITHUB API CONFIG
 GITHUB_API_CONFIG = {
     'BASE_URL': 'https://api.github.com',
-    'TOKEN': os.environ["GITHUB_TOKEN"],
-    'USERNAME': os.environ["GITHUB_USERNAME"],
+    'TOKEN': os.getenv("GITHUB_TOKEN", ""),  # leave blank locally if needed
+    'USERNAME': os.getenv("GITHUB_USERNAME", ""),
     'TIMEOUT': 30,
     'CACHE_TIMEOUT': 3600,  # 1hr
 }
@@ -62,13 +68,17 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "core.middleware.MaintenanceModeMiddleware",  # Custom maintenance mode
+    # Optional: only enable maintenance in prod when explicitly requested
+    # *(depends on your middleware’s implementation)*
+    # *Example*:
+    # *(os.getenv("MAINTENANCE_MODE") == "1") and "core.middleware.MaintenanceModeMiddleware"
 ]
 
 ROOT_URLCONF = "portfolio.urls"
@@ -100,12 +110,24 @@ WSGI_APPLICATION = "portfolio.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Prefer DATABASE_URL, fallback to SQLite locally
+if os.getenv("DATABASE_URL"):
+    # pip install dj-database-url
+    import dj_database_url
+    DATABASES = {
+        "default": dj_database_url.parse(
+            os.environ["DATABASE_URL"],
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -137,7 +159,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "America/Chicago"
+TIME_ZONE = os.getenv("TIMEZONE", "America/New_York")
 
 USE_I18N = True
 
@@ -148,13 +170,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [
     BASE_DIR / "static"
 ]
 
 MEDIA_ROOT = BASE_DIR / "uploads"
 MEDIA_URL = "/files/"
+# Note: For production, plan to move MEDIA to S3/Cloudinary. WhiteNoise does *not* serve MEDIA.
 
 # Use WhiteNoise for serving static files in production (recommended)
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
@@ -171,8 +194,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ========== CREATE LOGS DIRECTORY ==========
 # Create logs directory if it doesn't exist
 LOGS_DIR = BASE_DIR / "logs"
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
+LOGS_DIR.mkdir(exist_ok=True)
 
 # ========== SIMPLE LOGGING CONFIGURATION ==========
 # Start with this simple version, then use enhanced later
@@ -196,12 +218,6 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': LOGS_DIR / 'django.log',
-            'formatter': 'verbose',
-        },
     },
     'root': {
         'handlers': ['console'],
@@ -209,118 +225,28 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
     },
 }
-
-# ========== LOGGING CONFIGURATION ==========
-# Enhanced logging for error tracking
-"""
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[{levelname}] {asctime} {name} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'aura_system.log',
-            'formatter': 'aura_format',
-        },
-        'error_file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'aura_errors.log',
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'aura_format',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file', 'error_file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'aura': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-    },
-}
-"""
-
-
 
 
 # ========== SECURITY SETTINGS ==========
-# Enhanced security for production deployment w notes for reference
-
-# Enables browser's built-in XSS (Cross-Site Scripting) Protection
-# Adds X-XSS-Protection: 1; mode=block header
-# Protect against malicious js injection
 SECURE_BROWSER_XSS_FILTER = True
-
-# Adds X-Content-Type-Options: nosniff header
-# Prevents browsers from guessing file types
-# Stops browsers from executing .txt files as js
 SECURE_CONTENT_TYPE_NOSNIFF = True
-
-# Prevents site from being embedded in iframes
-# Protects against clickjacking attacks
-# Options 'DENY' 'SAMEORIGIN' or 'ALLOW-FROM uri'
 X_FRAME_OPTIONS = 'DENY'
 
-# HTTPS Security (HSTS)
-# Forces browsers to use HTTPS for site
-# Prevents downgrade attacks
-# 31536000 = 1 year in seconds - if statement means only enable in prod
-# Prevents HTTPS issues during local development
-
-# How long browsers remember to use HTTPS
-SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
-# Apply to all subdomains too
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-# Submit to browser preload lists for extra security
-SECURE_HSTS_PRELOAD = True
-
-
-# ========== EMAIL CONFIGURATION FOR ERROR REPORTING ==========
-# Configure email for error notifications (can uncomment when applies, see if DEBUG config in settings prod breakdown doc)
-# Development
-#EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-"""
-ADMINS = [
-    ('AURA Admin', 'admin@your-domain.com'),
-]
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'my-smtp-server.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'my-email@domain.com'
-EMAIL_HOST_PASSWORD = 'put-env-ref-to-password-here'
-
-# Send error emails to admins
-SERVER_EMAIL = 'aura-system@your-domain.com'
-DEFAULT_FROM_EMAIL = 'AURA System <noreply@your-domain.com>'
-"""
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # HSTS only in prod
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 
 # ========== PERFORMANCE SETTINGS ==========
@@ -336,20 +262,9 @@ CACHES = {
     }
 }
 
-# Session Configuration
-# HTTPS only in prod
-SESSION_COOKIE_SECURE = not DEBUG
-# No js access
+# CSRF/Session hardening Configuration
 SESSION_COOKIE_HTTPONLY = True
-# CSRF protection
 SESSION_COOKIE_SAMESITE = 'Lax'
-# Expire when browser closes
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-
-# CSRF Protection
-# HTTPS only in prod
-CSRF_COOKIE_SECURE = not DEBUG
-# No js access
 CSRF_COOKIE_HTTPONLY = True
-# Additional CSRF protection
 CSRF_COOKIE_SAMESITE = 'Lax'
