@@ -1,0 +1,121 @@
+<!-- Create this file: projects/templates/projects/components/repo_language_bar.html -->
+
+{% load github_tags %}
+
+{% if languages %}
+<div class="repo-language-breakdown">
+    <!-- Language Progress Bar -->
+    <div class="language-bar">
+        {% for lang in languages %}
+            <div class="lang-segment" 
+                 style="width: {{ lang.percentage }}%; background-color: {{ lang.language|language_color }};"
+                 title="{{ lang.language }}: {{ lang.percentage|floatformat:1 }}%">
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Language Labels -->
+    <div class="language-labels">
+        {% for lang in languages|slice:":5" %}
+            <span class="lang-label" style="color: {{ lang.language|language_color }};">
+                <span class="lang-dot" style="background-color: {{ lang.language|language_color }};"></span>
+                {{ lang.language }} {{ lang.percentage|floatformat:1 }}%
+            </span>
+        {% endfor %}
+        
+        {% if languages.count > 5 %}
+            <span class="lang-label more-languages">
+                +{{ languages.count|add:"-5" }} more
+            </span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Styles for the language bar -->
+<style>
+.repo-language-breakdown {
+    margin: 8px 0;
+}
+
+.language-bar {
+    height: 8px;
+    background: rgba(51, 65, 85, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.lang-segment {
+    height: 100%;
+    transition: all 0.3s ease;
+    min-width: 2px; /* Ensure very small percentages are still visible */
+}
+
+.lang-segment:hover {
+    opacity: 0.8;
+    transform: scaleY(1.2);
+}
+
+.language-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.8rem;
+}
+
+.lang-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    padding: 2px 6px;
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(51, 65, 85, 0.2);
+    transition: all 0.2s ease;
+}
+
+.lang-label:hover {
+    background: rgba(30, 41, 59, 0.5);
+    border-color: rgba(51, 65, 85, 0.4);
+}
+
+.lang-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.more-languages {
+    color: #94a3b8 !important;
+    font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .language-labels {
+        font-size: 0.75rem;
+        gap: 6px;
+    }
+    
+    .lang-label {
+        padding: 1px 4px;
+    }
+    
+    .lang-dot {
+        width: 6px;
+        height: 6px;
+    }
+}
+</style>
+
+{% else %}
+<!-- No languages detected -->
+<div class="no-languages">
+    <span class="text-muted" style="color: #94a3b8; font-size: 0.8rem; font-style: italic;">
+        No languages detected
+    </span>
+</div>
+{% endif %}

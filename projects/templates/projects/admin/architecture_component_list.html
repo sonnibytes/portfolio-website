@@ -1,0 +1,212 @@
+<!-- projects/templates/projects/admin/architecture_component_list.html -->
+{% extends "admin/admin_base.html" %}
+{% load static %}
+
+{% block admin_title %}Architecture Components - AURA Admin{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-cubes text-teal-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <a href="{% url 'aura_admin:projects:architecture_component_create' %}" 
+           class="btn btn-sm btn-green">
+            <i class="fas fa-plus mr-2"></i>
+            Add Component
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="glass-card p-6 text-center">
+            <div class="text-3xl font-bold text-teal-400 mb-2">{{ stats.total_components }}</div>
+            <div class="text-sm text-gray-400">Total Components</div>
+        </div>
+        <div class="glass-card p-6 text-center">
+            <div class="text-3xl font-bold text-purple-400 mb-2">{{ stats.systems_with_architecture }}</div>
+            <div class="text-sm text-gray-400">Systems with Architecture</div>
+        </div>
+        <div class="glass-card p-6 text-center">
+            <div class="text-3xl font-bold text-orange-400 mb-2">{{ stats.core_components }}</div>
+            <div class="text-sm text-gray-400">Core Components</div>
+        </div>
+        <div class="glass-card p-6 text-center">
+            <div class="text-3xl font-bold text-emerald-400 mb-2">{{ stats.total_connections }}</div>
+            <div class="text-sm text-gray-400">Total Connections</div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="glass-card p-6">
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Search</label>
+                    <input type="text" name="search" value="{{ current_filters.search }}" 
+                           class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
+                           placeholder="Search components...">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">System</label>
+                    <select name="system" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none">
+                        <option value="">All Systems</option>
+                        {% for system in systems %}
+                        <option value="{{ system.slug }}" {% if current_filters.system == system.slug %}selected{% endif %}>
+                            {{ system.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Component Type</label>
+                    <select name="component_type" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none">
+                        <option value="">All Types</option>
+                        {% for value, label in component_types %}
+                        <option value="{{ value }}" {% if current_filters.component_type == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Core Components</label>
+                    <select name="is_core" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none">
+                        <option value="">All Components</option>
+                        <option value="true" {% if current_filters.is_core == 'true' %}selected{% endif %}>Core Only</option>
+                        <option value="false" {% if current_filters.is_core == 'false' %}selected{% endif %}>Non-Core Only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex space-x-4">
+                <button type="submit" class="btn btn-sm btn-cyan">
+                    <i class="fas fa-search mr-2"></i>Filter
+                </button>
+                <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Components Table -->
+    <div class="glass-card p-6">
+        {% if components %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-600">
+                        <th class="text-left py-3 px-4 font-medium text-gray-300">Component</th>
+                        <th class="text-left py-3 px-4 font-medium text-gray-300">System</th>
+                        <th class="text-left py-3 px-4 font-medium text-gray-300">Type</th>
+                        <th class="text-left py-3 px-4 font-medium text-gray-300">Technology</th>
+                        <th class="text-left py-3 px-4 font-medium text-gray-300">Position</th>
+                        <th class="text-left py-3 px-4 font-medium text-gray-300">Status</th>
+                        <th class="text-left py-3 px-4 font-medium text-gray-300">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for component in components %}
+                    <tr class="border-b border-gray-700 hover:bg-black hover:bg-opacity-20">
+                        <td class="py-4 px-4">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full mr-3 border-2 border-white border-opacity-30" 
+                                     style="background-color: {{ component.color }};"></div>
+                                <div>
+                                    <div class="font-medium text-white">{{ component.name }}</div>
+                                    {% if component.description %}
+                                    <div class="text-sm text-gray-400">{{ component.description|truncatechars:60 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <a href="{% url 'aura_admin:projects:system_architecture' component.system.pk %}" 
+                               class="text-teal-400 hover:text-teal-300">
+                                {{ component.system.title }}
+                            </a>
+                        </td>
+                        <td class="py-4 px-4">
+                            <span class="px-2 py-1 bg-gray-600 text-gray-200 rounded text-sm">
+                                {{ component.get_component_type_display }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-4">
+                            {% if component.technology %}
+                            <span class="px-2 py-1 bg-teal-500 bg-opacity-20 text-teal-400 rounded text-sm">
+                                {{ component.technology.name }}
+                            </span>
+                            {% else %}
+                            <span class="text-gray-500">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4">
+                            <span class="text-sm text-gray-400">
+                                ({{ component.position_x }}, {{ component.position_y }}, {{ component.position_z }})
+                            </span>
+                        </td>
+                        <td class="py-4 px-4">
+                            {% if component.is_core %}
+                            <span class="px-2 py-1 bg-yellow-500 bg-opacity-20 text-yellow-400 rounded text-sm flex items-center w-fit">
+                                <i class="fas fa-star mr-1"></i>Core
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-1 bg-gray-600 text-gray-300 rounded text-sm">Standard</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="flex space-x-2">
+                                <a href="{% url 'aura_admin:projects:architecture_component_edit' component.pk %}" 
+                                   class="text-cyan-400 hover:text-cyan-300 p-2">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'aura_admin:projects:architecture_component_delete' component.pk %}" 
+                                   class="text-red-400 hover:text-red-300 p-2">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="flex justify-center mt-6 space-x-2">
+            {% if page_obj.has_previous %}
+            <a href="?page=1" class="px-3 py-2 bg-black bg-opacity-30 text-gray-300 rounded hover:bg-opacity-50">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 bg-black bg-opacity-30 text-gray-300 rounded hover:bg-opacity-50">Previous</a>
+            {% endif %}
+            
+            <span class="px-3 py-2 bg-cyan-500 bg-opacity-20 text-cyan-400 rounded">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 bg-black bg-opacity-30 text-gray-300 rounded hover:bg-opacity-50">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 bg-black bg-opacity-30 text-gray-300 rounded hover:bg-opacity-50">Last</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-cubes text-4xl text-gray-500 mb-4"></i>
+            <h3 class="text-xl font-bold text-white mb-2">No Architecture Components</h3>
+            <p class="text-gray-400 mb-6">No components found matching your criteria.</p>
+            <a href="{% url 'aura_admin:projects:architecture_component_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>Create First Component
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

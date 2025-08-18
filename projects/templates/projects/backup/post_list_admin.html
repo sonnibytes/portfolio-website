@@ -1,0 +1,452 @@
+<!-- 
+  *blog/templates/blog/admin/post_list.html
+  *Version 2.0
+  -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_actions %}
+  <div class="flex items-center space-x-4">
+    <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-purple">
+      <i class="fas fa-plus mr-2"></i>
+      New DataLog
+    </a>
+  </div>
+{% endblock %}
+
+{% block admin_content %}
+  <div class="blog-post-list">
+    
+    <!-- Filters and Search -->
+    <div class="glass-card p-6 mb-8">
+      <form method="get" class="admin-filters-form">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          
+          <!-- Search -->
+          <div class="admin-search-bar">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" name="search" placeholder="Search DataLogs..." 
+                   value="{{ current_filters.search }}" class="w-full">
+          </div>
+          
+          <!-- Status Filter -->
+          <select name="status" class="admin-filter-select">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if current_filters.status == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+          
+          <!-- Category Filter -->
+          <select name="category" class="admin-filter-select">
+            <option value="">All Categories</option>
+            {% for category in categories %}
+              <option value="{{ category.slug }}" {% if current_filters.category == category.slug %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+            {% endfor %}
+          </select>
+          
+          <!-- Featured Filter -->
+          <select name="featured" class="admin-filter-select">
+            <option value="">All Posts</option>
+            <option value="true" {% if current_filters.featured == 'true' %}selected{% endif %}>Featured Only</option>
+            <option value="false" {% if current_filters.featured == 'false' %}selected{% endif %}>Not Featured</option>
+          </select>
+        </div>
+        
+        <div class="flex justify-between items-center mt-4">
+          <div class="text-sm text-gray-400">
+            Showing {{ filtered_count }} of {{ total_count }} DataLogs
+          </div>
+          <div class="flex space-x-2">
+            <button type="submit" class="btn btn-sm btn-primary">
+              <i class="fas fa-filter mr-1"></i>
+              Filter
+            </button>
+            {% if current_filters.search or current_filters.status or current_filters.category or current_filters.featured %}
+              <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-times mr-1"></i>
+                Clear
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Bulk Actions -->
+    {% if posts %}
+      <form method="post" id="bulk-actions-form" class="mb-6">
+        {% csrf_token %}
+        <div class="glass-card p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <label class="flex items-center">
+                <input type="checkbox" id="select-all" class="form-check-input mr-2">
+                <span class="text-sm text-gray-400">Select All</span>
+              </label>
+              <span id="selected-count" class="text-sm text-gray-400">0 selected</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <select name="action" class="admin-filter-select" required>
+                <option value="">Bulk Actions</option>
+                <option value="publish">Publish Selected</option>
+                <option value="draft">Move to Draft</option>
+                <option value="feature">Feature Selected</option>
+                <option value="unfeature">Unfeature Selected</option>
+                <option value="delete">Delete Selected</option>
+              </select>
+              <button type="submit" class="btn btn-sm btn-primary" disabled id="bulk-action-btn">
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    {% endif %}
+
+    <!-- DataLogs Table -->
+    {% if posts %}
+      <div class="glass-card overflow-hidden">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th width="40"><input type="checkbox" id="select-all-header"></th>
+              <th>DataLog</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Reading Time</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for post in posts %}
+              <tr class="admin-table-row" data-post-id="{{ post.pk }}">
+                <td>
+                  <input type="checkbox" name="selected_items" value="{{ post.pk }}" class="item-checkbox form-check-input">
+                </td>
+                <td>
+                  <div class="flex items-start">
+                    {% if post.thumbnail %}
+                      <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" 
+                           class="w-12 h-12 object-cover rounded mr-3 flex-shrink-0">
+                    {% else %}
+                      <div class="w-12 h-12 bg-gray-600 rounded mr-3 flex-shrink-0 flex items-center justify-center">
+                        <i class="fas fa-file-alt text-gray-400"></i>
+                      </div>
+                    {% endif %}
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-medium text-white truncate">{{ post.title }}</h4>
+                      {% if post.excerpt %}
+                        <p class="text-sm text-gray-400 mt-1 line-clamp-2">{{ post.excerpt|truncatewords:15 }}</p>
+                      {% endif %}
+                      <div class="flex items-center mt-2 space-x-2">
+                        {% if post.featured %}
+                          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-400 bg-opacity-20 text-yellow-400">
+                            <i class="fas fa-star mr-1"></i>
+                            Featured
+                          </span>
+                        {% endif %}
+                        {% for tag in post.tags.all|slice:":2" %}
+                          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-400 bg-opacity-20 text-purple-400">
+                            {{ tag.name }}
+                          </span>
+                        {% endfor %}
+                        {% if post.tags.count > 2 %}
+                          <span class="text-xs text-gray-500">+{{ post.tags.count|add:"-2" }} more</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="flex items-center">
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-2"
+                         style="background-color: {{ post.category.color }}20; color: {{ post.category.color }};">
+                      {{ post.category.code }}
+                    </div>
+                    <span class="text-white">{{ post.category.name }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="status-badge status-{{ post.status }} cursor-pointer" 
+                        onclick="toggleStatus({{ post.pk }}, '{{ post.status }}')" 
+                        title="Click to toggle status">
+                    {{ post.get_status_display }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-gray-400">{{ post.reading_time }}min</span>
+                </td>
+                <td>
+                  <div class="text-gray-400">
+                    <div>{{ post.created_at|date:"M j, Y" }}</div>
+                    <div class="text-xs text-gray-500">{{ post.created_at|time:"g:i A" }}</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="flex items-center space-x-2">
+                    <a href="{{ post.get_absolute_url }}" target="_blank" 
+                       class="text-gray-400 hover:text-white" title="View DataLog">
+                      <i class="fas fa-external-link-alt"></i>
+                    </a>
+                    <a href="{% url 'aura_admin:blog:post_edit' post.pk %}" 
+                       class="text-blue-400 hover:text-blue-300" title="Edit">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <button onclick="toggleFeature({{ post.pk }}, {{ post.featured|yesno:'true,false' }})" 
+                            class="text-yellow-400 hover:text-yellow-300" title="Toggle Featured">
+                      <i class="fas fa-star{% if not post.featured %} fa-star-o{% endif %}"></i>
+                    </button>
+                    <a href="{% url 'aura_admin:blog:post_delete' post.pk %}" 
+                       class="text-red-400 hover:text-red-300" title="Delete"
+                       onclick="return confirm('Are you sure you want to delete this DataLog?')">
+                      <i class="fas fa-trash"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if is_paginated %}
+        <div class="admin-pagination mt-8">
+          {% if page_obj.has_previous %}
+            <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.featured %}&featured={{ request.GET.featured }}{% endif %}">&laquo; First</a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.featured %}&featured={{ request.GET.featured }}{% endif %}">&lsaquo; Previous</a>
+          {% endif %}
+
+          <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+          </span>
+
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.featured %}&featured={{ request.GET.featured }}{% endif %}">Next &rsaquo;</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.featured %}&featured={{ request.GET.featured }}{% endif %}">Last &raquo;</a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+    {% else %}
+      <!-- Empty State -->
+      <div class="glass-card p-12 text-center">
+        <i class="fas fa-database text-6xl text-gray-600 mb-6"></i>
+        <h3 class="text-xl font-bold text-white mb-4">No DataLogs Found</h3>
+        <p class="text-gray-400 mb-6">
+          {% if current_filters.search or current_filters.status or current_filters.category or current_filters.featured %}
+            No DataLogs match your current filters. Try adjusting your search criteria.
+          {% else %}
+            Start documenting your development journey by creating your first DataLog entry.
+          {% endif %}
+        </p>
+        {% if not current_filters.search and not current_filters.status and not current_filters.category and not current_filters.featured %}
+          <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-purple">
+            <i class="fas fa-plus mr-2"></i>
+            Create Your First DataLog
+          </a>
+        {% else %}
+          <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>
+            Clear Filters
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block admin_js %}
+<script>
+// Bulk action functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select-all');
+    const selectAllHeaderCheckbox = document.getElementById('select-all-header');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const bulkActionBtn = document.getElementById('bulk-action-btn');
+    const bulkActionsForm = document.getElementById('bulk-actions-form');
+
+    // Sync header and main select-all checkboxes
+    if (selectAllCheckbox && selectAllHeaderCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            selectAllHeaderCheckbox.checked = this.checked;
+            toggleAllItems(this.checked);
+        });
+
+        selectAllHeaderCheckbox.addEventListener('change', function() {
+            selectAllCheckbox.checked = this.checked;
+            toggleAllItems(this.checked);
+        });
+    }
+
+    function toggleAllItems(checked) {
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+        updateSelectedCount();
+    }
+
+    // Individual checkbox handling
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+
+    function updateSelectedCount() {
+        const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+        const count = selectedItems.length;
+        
+        if (selectedCountSpan) {
+            selectedCountSpan.textContent = `${count} selected`;
+        }
+        
+        if (bulkActionBtn) {
+            bulkActionBtn.disabled = count === 0;
+        }
+
+        // Update select-all checkboxes
+        const allSelected = count === itemCheckboxes.length && count > 0;
+        const someSelected = count > 0 && count < itemCheckboxes.length;
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = allSelected;
+            selectAllCheckbox.indeterminate = someSelected;
+        }
+        
+        if (selectAllHeaderCheckbox) {
+            selectAllHeaderCheckbox.checked = allSelected;
+            selectAllHeaderCheckbox.indeterminate = someSelected;
+        }
+    }
+
+    // Bulk actions form submission
+    if (bulkActionsForm) {
+        bulkActionsForm.addEventListener('submit', function(e) {
+            const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+            const action = document.querySelector('select[name="action"]').value;
+            
+            if (selectedItems.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one item.');
+                return;
+            }
+            
+            if (!action) {
+                e.preventDefault();
+                alert('Please select an action.');
+                return;
+            }
+            
+            if (action === 'delete') {
+                if (!confirm(`Are you sure you want to delete ${selectedItems.length} DataLog(s)?`)) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+        });
+    }
+});
+
+// AJAX functions for quick actions
+function toggleStatus(postId, currentStatus) {
+    fetch(`/blog/admin/api/posts/${postId}/toggle-status/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const statusBadge = document.querySelector(`[data-post-id="${postId}"] .status-badge`);
+            statusBadge.textContent = data.new_status_display;
+            statusBadge.className = `status-badge status-${data.new_status} cursor-pointer`;
+            statusBadge.setAttribute('onclick', `toggleStatus(${postId}, '${data.new_status}')`);
+            
+            // Show success message
+            showNotification('Status updated successfully!', 'success');
+        } else {
+            showNotification('Failed to update status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred', 'error');
+    });
+}
+
+function toggleFeature(postId, currentFeatured) {
+    fetch(`/blog/admin/api/posts/${postId}/toggle-feature/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const featureButton = document.querySelector(`[data-post-id="${postId}"] .fa-star`).parentElement;
+            const icon = featureButton.querySelector('i');
+            
+            if (data.featured) {
+                icon.className = 'fas fa-star';
+                featureButton.setAttribute('onclick', `toggleFeature(${postId}, true)`);
+            } else {
+                icon.className = 'far fa-star';
+                featureButton.setAttribute('onclick', `toggleFeature(${postId}, false)`);
+            }
+            
+            // Update featured badge in the title cell if it exists
+            const titleCell = document.querySelector(`[data-post-id="${postId}"] td:nth-child(2)`);
+            const existingBadge = titleCell.querySelector('.bg-yellow-400');
+            
+            if (data.featured && !existingBadge) {
+                // Add featured badge
+                const badge = document.createElement('span');
+                badge.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-400 bg-opacity-20 text-yellow-400';
+                badge.innerHTML = '<i class="fas fa-star mr-1"></i>Featured';
+                titleCell.querySelector('.flex.items-center.mt-2').insertBefore(badge, titleCell.querySelector('.flex.items-center.mt-2').firstChild);
+            } else if (!data.featured && existingBadge) {
+                // Remove featured badge
+                existingBadge.remove();
+            }
+            
+            showNotification(data.featured ? 'DataLog featured!' : 'DataLog unfeatured!', 'success');
+        } else {
+            showNotification('Failed to update featured status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred', 'error');
+    });
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} fixed top-4 right-4 z-50 max-w-sm`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}"

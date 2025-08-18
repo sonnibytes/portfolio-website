@@ -1,189 +1,402 @@
-<!-- 
-  *blog/templates/blog/admin/category_list.html
-  *Version 2.0
-  -->
 {% extends 'admin/admin_base.html' %}
 {% load static %}
+{% load aura_filters %}
 
-{% block admin_actions %}
-  <div class="flex items-center space-x-4">
-    <a href="{% url 'aura_admin:blog:category_create' %}" class="btn btn-purple">
-      <i class="fas fa-plus mr-2"></i>
-      New Category
-    </a>
-  </div>
-{% endblock %}
-
-{% block admin_content %}
-  <div class="category-list">
-    
-    <!-- Search Bar -->
-    <div class="glass-card p-6 mb-8">
-      <form method="get" class="admin-filters-form">
-        <div class="flex items-center space-x-4">
-          <div class="admin-search-bar flex-1">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" name="search" placeholder="Search categories..." 
-                   value="{{ request.GET.search }}" class="w-full">
-          </div>
-          <button type="submit" class="btn btn-sm btn-primary">
-            <i class="fas fa-search mr-1"></i>
-            Search
-          </button>
-          {% if request.GET.search %}
-            <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-sm btn-secondary">
-              <i class="fas fa-times mr-1"></i>
-              Clear
-            </a>
-          {% endif %}
-        </div>
-        
-        <div class="text-sm text-gray-400 mt-4">
-          Showing {{ filtered_count }} of {{ total_count }} categories
-        </div>
-      </form>
-    </div>
-
-    <!-- Categories Grid -->
-    {% if categories %}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for category in categories %}
-          <div class="glass-card p-6 category-card">
-            <div class="flex items-start justify-between mb-4">
-              <!-- Category Icon & Info -->
-              <div class="flex items-center">
-                <div class="category-icon w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold mr-4"
-                     style="background-color: {{ category.color }}20; color: {{ category.color }};">
-                  {% if category.icon %}
-                    <i class="fa-solid {{ category.icon }}"></i>
-                  {% else %}
-                    {{ category.code|upper }}
-                  {% endif %}
-                </div>
-                <div>
-                  <h3 class="text-lg font-bold text-white">{{ category.name }}</h3>
-                  <p class="text-sm text-gray-400">{{ category.code|upper }}</p>
-                </div>
-              </div>
-              
-              <!-- Actions -->
-              <div class="flex items-center space-x-2">
-                <a href="{% url 'aura_admin:blog:category_edit' category.pk %}" 
-                   class="text-blue-400 hover:text-blue-300" title="Edit">
-                  <i class="fas fa-edit"></i>
-                </a>
-                <a href="{% url 'aura_admin:blog:category_delete' category.pk %}" 
-                   class="text-red-400 hover:text-red-300" title="Delete"
-                   onclick="return confirm('Are you sure you want to delete this category?')">
-                  <i class="fas fa-trash"></i>
-                </a>
-              </div>
-            </div>
-            
-            <!-- Category Description -->
-            {% if category.description %}
-              <p class="text-gray-300 text-sm mb-4 line-clamp-2">{{ category.description }}</p>
-            {% endif %}
-            
-            <!-- Category Stats -->
-            <div class="flex items-center justify-between pt-4 border-t border-gray-600">
-              <div class="flex items-center space-x-4">
-                <div class="text-center">
-                  <div class="text-lg font-bold text-white">{{ category.post_count }}</div>
-                  <div class="text-xs text-gray-400">Posts</div>
-                </div>
-                <div class="text-center">
-                  <div class="w-3 h-3 rounded-full" style="background-color: {{ category.color }};"></div>
-                  <div class="text-xs text-gray-400 mt-1">Color</div>
-                </div>
-              </div>
-              
-              <div class="flex items-center space-x-2">
-                {% if category.post_count > 0 %}
-                  <a href="{% url 'aura_admin:blog:post_list' %}?category={{ category.slug }}" 
-                     class="btn btn-sm btn-secondary">
-                    <i class="fas fa-eye mr-1"></i>
-                    View Posts
-                  </a>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-
-      <!-- Pagination (if needed) -->
-      {% if is_paginated %}
-        <div class="admin-pagination mt-8">
-          {% if page_obj.has_previous %}
-            <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">&laquo; First</a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">&lsaquo; Previous</a>
-          {% endif %}
-
-          <span class="current">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-          </span>
-
-          {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next &rsaquo;</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Last &raquo;</a>
-          {% endif %}
-        </div>
-      {% endif %}
-
-    {% else %}
-      <!-- Empty State -->
-      <div class="glass-card p-12 text-center">
-        <i class="fas fa-folder text-6xl text-gray-600 mb-6"></i>
-        <h3 class="text-xl font-bold text-white mb-4">No Categories Found</h3>
-        <p class="text-gray-400 mb-6">
-          {% if request.GET.search %}
-            No categories match your search criteria.
-          {% else %}
-            Start organizing your DataLogs by creating your first category.
-          {% endif %}
-        </p>
-        {% if not request.GET.search %}
-          <a href="{% url 'aura_admin:blog:category_create' %}" class="btn btn-purple">
-            <i class="fas fa-plus mr-2"></i>
-            Create Your First Category
-          </a>
-        {% else %}
-          <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-secondary">
-            <i class="fas fa-times mr-2"></i>
-            Clear Search
-          </a>
-        {% endif %}
-      </div>
-    {% endif %}
-  </div>
-{% endblock %}
+{% block admin_title %}Category Management{% endblock %}
 
 {% block admin_css %}
 <style>
-.category-card {
-  transition: all 0.3s ease;
-}
-
-.category-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.category-icon {
-  transition: all 0.3s ease;
-}
-
-.category-card:hover .category-icon {
-  transform: scale(1.1);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .category-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+  
+  .category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(179, 157, 219, 0.2);
+    border-color: rgba(179, 157, 219, 0.3);
+  }
+  
+  .category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  
+  .category-info {
+    display: flex;
+    align-items: center;
+  }
+  
+  .category-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.875rem;
+    margin-right: 1rem;
+    border: 2px solid;
+  }
+  
+  .category-details h4 {
+    margin: 0;
+    color: white;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  
+  .category-details p {
+    margin: 0.25rem 0 0 0;
+    color: #b0bec5;
+    font-size: 0.875rem;
+  }
+  
+  .category-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .category-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .category-action.edit { 
+    background: rgba(38, 198, 218, 0.1); 
+    color: #26c6da; 
+  }
+  .category-action.edit:hover { 
+    background: rgba(38, 198, 218, 0.2); 
+    transform: scale(1.05);
+  }
+  
+  .category-action.view { 
+    background: rgba(76, 175, 80, 0.1); 
+    color: #4caf50; 
+  }
+  .category-action.view:hover { 
+    background: rgba(76, 175, 80, 0.2); 
+    transform: scale(1.05);
+  }
+  
+  .category-action.delete { 
+    background: rgba(244, 67, 54, 0.1); 
+    color: #f44336; 
+  }
+  .category-action.delete:hover { 
+    background: rgba(244, 67, 54, 0.2); 
+    transform: scale(1.05);
+  }
+  
+  .category-description {
+    color: #e8eaf6;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
+  
+  .category-stats {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+    color: #b0bec5;
+  }
+  
+  .category-filter-bar {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .filter-label {
+    font-size: 0.875rem;
+    color: #e8eaf6;
+    font-weight: 500;
+  }
+  
+  .filter-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    color: white;
+    min-width: 120px;
+  }
+  
+  .filter-input:focus {
+    outline: none;
+    border-color: #b39ddb;
+    box-shadow: 0 0 0 2px rgba(179, 157, 219, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    .category-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .filter-group {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
 </style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-white mb-2">
+        <i class="fas fa-folder-open text-lavender-400 mr-2"></i>
+        DataLog Categories Management
+      </h1>
+      <p class="text-gray-400">Organize your DataLogs by category with custom codes and colors</p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+      <a href="{% url 'aura_admin:blog:category_create' %}" 
+         class="inline-flex items-center px-4 py-2 bg-lavender-500 hover:bg-lavender-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-lavender-500/25">
+        <i class="fas fa-plus mr-2"></i>
+        Add Category
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-lavender-400 mb-1">{{ categories.count }}</div>
+      <div class="text-sm text-gray-400">Total Categories</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-blue-400 mb-1">
+        {{ total_posts|default:0 }}
+      </div>
+      <div class="text-sm text-gray-400">Total DataLogs</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-green-400 mb-1">
+        {{ active_categories|default:0 }}
+      </div>
+      <div class="text-sm text-gray-400">Active Categories</div>
+    </div>
+    <div class="glass-card p-4 text-center">
+      <div class="text-2xl font-bold text-purple-400 mb-1">
+        {{ avg_posts_per_category|floatformat:1|default:0 }}
+      </div>
+      <div class="text-sm text-gray-400">Avg Posts/Category</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="category-filter-bar">
+    <form method="GET" class="filter-form" id="categoryFilterForm">
+      <div class="filter-group">
+        <div class="filter-item">
+          <label class="filter-label">Search Categories</label>
+          <input type="text" name="search" value="{{ request.GET.search }}" 
+                 placeholder="Search by name or description..." class="filter-input">
+        </div>
+        
+        <div class="filter-item">
+          <label class="filter-label">Sort By</label>
+          <select name="sort" class="filter-input">
+            <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name A-Z</option>
+            <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name Z-A</option>
+            <option value="post_count" {% if request.GET.sort == 'post_count' %}selected{% endif %}>Posts (Low to High)</option>
+            <option value="-post_count" {% if request.GET.sort == '-post_count' %}selected{% endif %}>Posts (High to Low)</option>
+            <option value="code" {% if request.GET.sort == 'code' %}selected{% endif %}>Code A-Z</option>
+            <option value="-created" {% if request.GET.sort == '-created' %}selected{% endif %}>Recently Created</option>
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search mr-2"></i>Filter
+          </button>
+          <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times mr-2"></i>Clear
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Categories Grid -->
+  <div class="category-grid">
+    {% for category in categories %}
+      <div class="category-card">
+        <div class="category-header">
+          <div class="category-info">
+            <div class="category-badge" 
+                 style="background-color: {{ category.color }}20; color: {{ category.color }}; border-color: {{ category.color }};">
+              {{ category.code }}
+            </div>
+            <div class="category-details">
+              <h4>{{ category.name }}</h4>
+              <p>{{ category.slug }}</p>
+            </div>
+          </div>
+          <div class="category-actions">
+            <a href="{% url 'aura_admin:blog:category_edit' category.pk %}" 
+               class="category-action edit" title="Edit Category">
+              <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'aura_admin:blog:post_list' %}?category={{ category.slug }}" 
+               class="category-action view" title="View DataLogs">
+              <i class="fas fa-eye"></i>
+            </a>
+            <a href="{% url 'aura_admin:blog:category_delete' category.pk %}" 
+               class="category-action delete" title="Delete Category"
+               onclick="return confirm('Are you sure you want to delete this category?')">
+              <i class="fas fa-trash"></i>
+            </a>
+          </div>
+        </div>
+        
+        {% if category.description %}
+          <div class="category-description">
+            {{ category.description|truncatechars:120 }}
+          </div>
+        {% endif %}
+        
+        <div class="category-stats">
+          <span>
+            <i class="fas fa-file-alt mr-1"></i>
+            {{ category.post_count }} DataLog{{ category.post_count|pluralize }}
+          </span>
+          <span>
+            <i class="fas fa-calendar mr-1"></i>
+            Created {{ category.created|date:"M d, Y" }}
+          </span>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-span-full">
+        <div class="text-center py-12">
+          <div class="text-gray-400">
+            <i class="fas fa-folder-open text-6xl mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">No Categories Found</h3>
+            <p class="text-sm mb-4">
+              {% if request.GET.search %}
+                No categories match your current search.
+                <br>
+                <a href="{% url 'aura_admin:blog:category_list' %}" class="text-lavender-400 hover:text-lavender-300">Clear search</a>
+                to see all categories.
+              {% else %}
+                Start organizing your DataLogs by creating your first category.
+              {% endif %}
+            </p>
+            <a href="{% url 'aura_admin:blog:category_create' %}" 
+               class="btn btn-primary">
+              <i class="fas fa-plus mr-2"></i>Add Your First Category
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+    <div class="flex items-center justify-between mt-8">
+      <div class="text-sm text-gray-400">
+        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} categories
+      </div>
+      <div class="flex space-x-2">
+        {% if page_obj.has_previous %}
+          <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+             class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+            First
+          </a>
+          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+             class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+            Previous
+          </a>
+        {% endif %}
+        
+        <span class="px-3 py-2 bg-lavender-500 text-black rounded-lg">
+          {{ page_obj.number }}
+        </span>
+        
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+             class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+            Next
+          </a>
+          <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
+             class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
+            Last
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+
+<script>
+// Auto-submit filter form on select change
+document.addEventListener('DOMContentLoaded', function() {
+    const sortSelect = document.querySelector('select[name="sort"]');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            document.getElementById('categoryFilterForm').submit();
+            });
+        }
+    
+    // Add search input debounce
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    document.getElementById('categoryFilterForm').submit();
+                }
+            }, 500);
+        });
+    }
+});
+</script>
 {% endblock %}

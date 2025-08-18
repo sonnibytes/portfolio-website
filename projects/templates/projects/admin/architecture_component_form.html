@@ -1,0 +1,292 @@
+<!-- projects/templates/projects/admin/architecture_component_form.html -->
+{% extends "admin/admin_base.html" %}
+{% load widget_tweaks %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.color-preview {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.position-preview {
+    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.size-preview {
+    display: inline-block;
+    border-radius: 50%;
+    margin: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-cube text-teal-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-sm btn-outline">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Components
+        </a>
+    </div>
+
+    <!-- Form Container -->
+    <div class="glass-card p-6">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Basic Information Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-teal-400 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Basic Information
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">System *</label>
+                        {{ form.system|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        {% if form.system.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.system.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Component Type *</label>
+                        {{ form.component_type|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        {% if form.component_type.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.component_type.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Component Name *</label>
+                        {{ form.name|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        {% if form.name.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                        {{ form.description|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        <div class="text-xs text-gray-500 mt-1">{{ form.description.help_text }}</div>
+                        {% if form.description.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Primary Technology</label>
+                        {{ form.technology|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        {% if form.technology.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.technology.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3D Positioning Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-purple-400 flex items-center">
+                    <i class="fas fa-cube mr-2"></i>
+                    3D Positioning
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">X Position</label>
+                        {{ form.position_x|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        <div class="text-xs text-gray-500 mt-1">{{ form.position_x.help_text }}</div>
+                        {% if form.position_x.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.position_x.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Y Position</label>
+                        {{ form.position_y|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        <div class="text-xs text-gray-500 mt-1">{{ form.position_y.help_text }}</div>
+                        {% if form.position_y.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.position_y.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Z Position</label>
+                        {{ form.position_z|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        <div class="text-xs text-gray-500 mt-1">{{ form.position_z.help_text }}</div>
+                        {% if form.position_z.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.position_z.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="position-preview">
+                    <h5 class="text-white font-medium mb-2">Position Preview</h5>
+                    <p class="text-gray-400">
+                        Component will be positioned at 
+                        <span id="position-display" class="text-cyan-400">(0, 0, 0)</span> in 3D space
+                    </p>
+                    <div class="text-xs text-gray-500 mt-2">
+                        Center = (0,0,0) | Range: -5 to +5 for each axis
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Styling Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-orange-400 flex items-center">
+                    <i class="fas fa-palette mr-2"></i>
+                    Visual Styling
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Color</label>
+                        <div class="flex items-center">
+                            {{ form.color|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                            <div class="color-preview ml-3" id="color-preview"></div>
+                        </div>
+                        {% if form.color.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.color.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Size</label>
+                        {{ form.size|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        <div class="text-xs text-gray-500 mt-1">{{ form.size.help_text }}</div>
+                        <div class="mt-2">
+                            <div class="size-preview" id="size-preview"></div>
+                        </div>
+                        {% if form.size.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.size.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Display Order</label>
+                        {{ form.display_order|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        <div class="text-xs text-gray-500 mt-1">{{ form.display_order.help_text }}</div>
+                        {% if form.display_order.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.display_order.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="md:col-span-3">
+                        <div class="flex items-center">
+                            {{ form.is_core|add_class:"mr-2" }}
+                            <label class="text-sm text-gray-300" for="{{ form.is_core.id_for_label }}">
+                                Mark as Core Component
+                            </label>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">{{ form.is_core.help_text }}</div>
+                        {% if form.is_core.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.is_core.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-600">
+                <div class="flex space-x-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if object %}Update Component{% else %}Create Component{% endif %}
+                    </button>
+                    
+                    <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-outline">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancel
+                    </a>
+                </div>
+                
+                {% if object %}
+                <a href="{% url 'aura_admin:projects:architecture_component_delete' object.pk %}" 
+                   class="btn btn-red">
+                    <i class="fas fa-trash mr-2"></i>
+                    Delete Component
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Position preview update
+    function updatePositionPreview() {
+        const x = document.querySelector('[name="position_x"]').value || 0;
+        const y = document.querySelector('[name="position_y"]').value || 0;
+        const z = document.querySelector('[name="position_z"]').value || 0;
+        
+        document.getElementById('position-display').textContent = `(${x}, ${y}, ${z})`;
+    }
+    
+    // Color preview update
+    function updateColorPreview() {
+        const color = document.querySelector('[name="color"]').value;
+        document.getElementById('color-preview').style.backgroundColor = color;
+    }
+    
+    // Size preview update
+    function updateSizePreview() {
+        const size = document.querySelector('[name="size"]').value || 15;
+        const color = document.querySelector('[name="color"]').value || '#00ffff';
+        const preview = document.getElementById('size-preview');
+        
+        preview.style.width = size + 'px';
+        preview.style.height = size + 'px';
+        preview.style.backgroundColor = color;
+    }
+    
+    // Event listeners
+    ['position_x', 'position_y', 'position_z'].forEach(field => {
+        document.querySelector(`[name="${field}"]`).addEventListener('input', updatePositionPreview);
+    });
+    
+    document.querySelector('[name="color"]').addEventListener('input', function() {
+        updateColorPreview();
+        updateSizePreview();
+    });
+    
+    document.querySelector('[name="size"]').addEventListener('input', updateSizePreview);
+    
+    // Initial updates
+    updatePositionPreview();
+    updateColorPreview();
+    updateSizePreview();
+});
+</script>
+{% endblock %}

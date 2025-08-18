@@ -7,9 +7,70 @@ from .models import (
     SystemFeature,
     SystemImage,
     SystemMetric,
-    SystemDependency
+    SystemDependency,
+    GitHubRepository,
+    GitHubLanguage,
+    ArchitectureComponent,
+    ArchitectureConnection
 )
 
+
+# ============================================================================
+# ARCHITECTURE COMPONENTS ADMIN
+# ============================================================================
+
+class ArchitectureComponentInline(admin.TabularInline):
+    """Inline editing of architecture components within SystemModule admin"""
+    model = ArchitectureComponent
+    extra = 0
+    fields = (
+        'name', 'component_type', 'technology',
+        'position_x', 'position_y', 'position_z', 
+        'color', 'size', 'is_core', 'display_order'
+    )
+    classes = ('collapse',)
+
+class ArchitectureConnectionInline(admin.TabularInline):
+    """Inline editing of connections within ArchitectureComponent admin"""
+    model = ArchitectureConnection
+    fk_name = 'from_component'
+    extra = 0
+    fields = ('to_component', 'connection_type', 'label', 'line_color', 'is_bidirectional')
+    classes = ('collapse',)
+
+@admin.register(ArchitectureComponent)
+class ArchitectureComponentAdmin(admin.ModelAdmin):
+    """Architecture Component management"""
+    list_display = ('name', 'system', 'component_type', 'technology', 'is_core')
+    list_filter = ('component_type', 'is_core', 'system__system_type')
+    search_fields = ('name', 'system__title', 'description')
+    list_select_related = ('system', 'technology')
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('system', 'name', 'component_type', 'description', 'technology')
+        }),
+        ('3D Positioning', {
+            'fields': ('position_x', 'position_y', 'position_z'),
+            'description': 'Position in 3D space. Origin (0,0,0) is center. Range: -5 to +5'
+        }),
+        ('Visual Styling', {
+            'fields': ('color', 'size', 'is_core', 'display_order'),
+            'description': 'Visual appearance in architecture diagram'
+        }),
+    )
+    
+    inlines = [ArchitectureConnectionInline]
+
+@admin.register(ArchitectureConnection)
+class ArchitectureConnectionAdmin(admin.ModelAdmin):
+    """Architecture Connection management"""
+    list_display = ('from_component', 'to_component', 'connection_type', 'is_bidirectional')
+    list_filter = ('connection_type', 'is_bidirectional')
+    search_fields = ('from_component__name', 'to_component__name', 'label')
+    list_select_related = ('from_component', 'to_component')
+
+# =======================================
 
 @admin.register(Technology)
 class TechnologyAdmin(admin.ModelAdmin):
@@ -141,7 +202,10 @@ class SystemModuleAdmin(admin.ModelAdmin):
     )
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
-    inlines = [SystemFeatureInline, SystemImageInline, SystemMetricInline]
+    inlines = [SystemFeatureInline, SystemImageInline, SystemMetricInline, ArchitectureComponentInline]
+
+    # Add admin action for creating default architectures
+    actions = ['create_default_architecture']
 
     fieldsets = (
         (
@@ -313,6 +377,40 @@ class SystemModuleAdmin(admin.ModelAdmin):
 
     performance_display.short_description = "Performance"
 
+    # ============= ARCHITECTURE UPDATES =========================
+
+    def create_default_architecture(self, request, queryset):
+        """Admin action to create default architecture for selected systems"""
+        from .services.architecture_service import ArchitectureDiagramService
+        
+        count = 0
+        for system in queryset:
+            if not system.has_architecture_diagram():
+                # Auto-detect architecture type
+                arch_type = self._determine_architecture_type(system)
+                ArchitectureDiagramService.create_default_architecture(system, arch_type)
+                count += 1
+        
+        self.message_user(request, f'Created default architecture for {count} systems.')
+    
+    create_default_architecture.short_description = "Create default architecture diagrams"
+    
+    def _determine_architecture_type(self, system):
+        """Auto-detect appropriate architecture type"""
+        techs = [tech.name.lower() for tech in system.technologies.all()]
+        title = system.title.lower()
+        
+        if 'streamlit' in techs or ('map' in title and 'buddy' in title):
+            return 'data_pipeline'
+        elif 'django' in techs or 'flask' in techs:
+            return 'web_app'
+        elif 'fastapi' in techs or 'api' in title:
+            return 'api_service'
+        elif any(ml_tech in techs for ml_tech in ['scikit-learn', 'tensorflow', 'pytorch']):
+            return 'ml_project'
+        else:
+            return 'web_app'
+
 
 @admin.register(SystemDependency)
 class SystemDependencyAdmin(admin.ModelAdmin):
@@ -367,6 +465,71 @@ class SystemMetricAdmin(admin.ModelAdmin):
     search_fields = ("metric_name", "system__title")
     readonly_fields = ("created_at",)
     ordering = ("-created_at",)
+
+
+@admin.register(GitHubRepository)
+class GitHubRepositoryAdmin(admin.ModelAdmin):
+    list_display = [
+        "name",
+        "language",
+        "stars_count",
+        "forks_count",
+        "is_private",
+        "is_active",
+        "last_synced",
+    ]
+    list_filter = ["language", "is_private", "is_fork", "is_archived", "last_synced"]
+    search_fields = ["name", "full_name", "description"]
+    readonly_fields = [
+        "github_id",
+        "github_created_at",
+        "github_updated_at",
+        "last_synced",
+    ]
+
+    fieldsets = (
+        (
+            "Basic Information",
+            {"fields": ("name", "full_name", "description", "related_system")},
+        ),
+        ("GitHub Data", {"fields": ("github_id", "html_url", "clone_url", "homepage")}),
+        (
+            "Statistics",
+            {
+                "fields": (
+                    "stars_count",
+                    "forks_count",
+                    "watchers_count",
+                    "size",
+                    "language",
+                )
+            },
+        ),
+        ("Flags", {"fields": ("is_private", "is_fork", "is_archived")}),
+        (
+            "Timestamps",
+            {
+                "fields": ("github_created_at", "github_updated_at", "last_synced"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    def is_active(self, obj):
+        return obj.is_recently_active
+
+    is_active.boolean = True
+    is_active.short_description = "Recently Active"
+
+
+class GitHubLanguageInline(admin.TabularInline):
+    model = GitHubLanguage
+    extra = 0
+    readonly_fields = ["language", "bytes_count", "percentage"]
+
+
+# Update GitHubRepositoryAdmin to include inline
+GitHubRepositoryAdmin.inlines = [GitHubLanguageInline]
 
 
 # Customize admin site

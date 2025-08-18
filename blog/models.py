@@ -214,19 +214,20 @@ class Post(models.Model):
         # Return the appropriate filename based on format
         return format_to_filename.get(self.featured_code_format, 'code.txt')
 
-    def get_icon_text(self):
-        """Return text to display as icon if no image available."""
-        # Mapping of category codes to custom display text
-        category_to_icon = {
-            "LJ": "📚",  # Learning Journey - book emoji
-            "TD": "🔍",  # Technical Deep Dive - magnifying glass
-            "PD": "📋",  # Project Documentation - clipboard
-            "CT": "🚀",  # Career Transition - rocket
-            "NS": "💡",  # Neural Sparks - light bulb
-        }
+    # Think I can delete this method? Commenting out and seeing if errors
+    # def get_icon_text(self):
+    #     """Return text to display as icon if no image available."""
+    #     # Mapping of category codes to custom display text
+    #     category_to_icon = {
+    #         "LJ": "📚",  # Learning Journey - book emoji
+    #         "TD": "🔍",  # Technical Deep Dive - magnifying glass
+    #         "PD": "📋",  # Project Documentation - clipboard
+    #         "CT": "🚀",  # Career Transition - rocket
+    #         "NS": "💡",  # Neural Sparks - light bulb
+    #     }
 
-        # Return the mapped icon text or category code
-        return category_to_icon.get(self.category.code, self.category.code)
+    #     # Return the mapped icon text or category code
+    #     return category_to_icon.get(self.category.code, self.category.code)
 
     def get_headings(self):
         """Extract headings from markdown content for table of contents."""
@@ -459,7 +460,7 @@ class SeriesPost(models.Model):
 class SystemLogEntry(models.Model):
     """
     Enhanced connection model between blog posts and systems with HUD-style metadata.
-    Represents how a DEVLOG entry relates to a specific system/project.
+    Represents how a DataLogs entry relates to a specific system/project.
     """
 
     CONNECTION_TYPES = (

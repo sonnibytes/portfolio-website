@@ -1,0 +1,231 @@
+<!-- Create this as projects/templates/projects/github_test.html for testing -->
+{% extends "base.html" %}
+{% load static %}
+{% load github_tags %}
+
+{% block title %}GitHub Integration Test{% endblock %}
+
+{% block extra_css %}
+<style>
+.test-section {
+    margin: 30px 0;
+    padding: 20px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.5);
+}
+
+.test-repo {
+    margin: 15px 0;
+    padding: 15px;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 6px;
+}
+
+.weekly-stats {
+    background: rgba(124, 58, 237, 0.1);
+    padding: 15px;
+    border-radius: 6px;
+    margin: 15px 0;
+}
+
+.chart-test-section {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.debug-info {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(51, 65, 85, 0.4);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+.debug-info h4 {
+    color: #7c3aed;
+    margin-bottom: 10px;
+}
+
+.debug-item {
+    margin: 5px 0;
+    color: #94a3b8;
+}
+
+.debug-success {
+    color: #10b981;
+}
+
+.debug-warning {
+    color: #f59e0b;
+}
+
+.debug-error {
+    color: #ef4444;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>🚀 GitHub Integration Test - With Fixed Charts!</h1>
+    
+    <!-- Debug Information -->
+    <div class="debug-info">
+        <h4>🔍 Debug Information</h4>
+        <div class="debug-item">Chart.js Status: <span id="chartjs-status">Checking...</span></div>
+        <div class="debug-item">GitHub Charts Manager: <span id="manager-status">Not initialized</span></div>
+        <div class="debug-item">Chart Elements Found: <span id="chart-elements">0</span></div>
+        <div class="debug-item">Charts Created: <span id="charts-created">0</span></div>
+        <div class="debug-item">JSON Data Scripts: <span id="json-scripts">0</span></div>
+    </div>
+    
+    <!-- Test 1: Basic template tags are working -->
+    <div class="test-section">
+        <h2>✅ Test 1: Basic Template Tags</h2>
+        {% for repo in test_repos %}
+            <div class="test-repo">
+                <h3>{{ repo.name }}</h3>
+                <p>Language: <span style="color: {{ repo.language|language_color }};">{{ repo.language|default:"Not specified" }}</span></p>
+                <p>Size: {{ repo.size|format_repo_size }}</p>
+                <p>Active: {{ repo.github_updated_at|is_active_repo|yesno:"✅ Active,❌ Inactive" }}</p>
+                <p>Commit Badge: {{ repo.commit_frequency_rating|commit_frequency_badge }}</p>
+                <p>Last Commit: {{ repo.last_commit_date|days_since_commit }}</p>
+                
+                <!-- Test language bar -->
+                {% repo_language_bar repo %}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Test 2: Weekly tracking (if available) -->
+    <div class="test-section">
+        <h2>📊 Test 2: Weekly Tracking & Charts</h2>
+        {% if repos_with_tracking %}
+            <p>Found {{ repos_with_tracking.count }} repos with weekly tracking</p>
+            
+            <!-- Test weekly activity summary -->
+            {% weekly_activity_summary repos_with_tracking as weekly_stats %}
+            {% if weekly_stats %}
+                <div class="weekly-stats">
+                    <h4>📈 Weekly Summary</h4>
+                    <p>Total recent commits: {{ weekly_stats.total_recent_commits }}</p>
+                    <p>Avg per week: {{ weekly_stats.avg_commits_per_week }}</p>
+                    <p>Tracked repos: {{ weekly_stats.total_tracked_repos }}</p>
+                </div>
+            {% endif %}
+            
+            <!-- Test weekly panel WITH CHARTS -->
+            <div class="chart-test-section">
+                <h3>🎯 Main Weekly Panel (Should Show Chart)</h3>
+            {% github_weekly_panel panel_style="component" %}
+            </div>
+            
+            <!-- Individual repo panels -->
+            {% for repo in repos_with_tracking|slice:":2" %}
+                <div class="chart-test-section">
+                    <h3>📊 Individual Repo: {{ repo.name }}</h3>
+                    {% github_weekly_panel repo=repo weeks_back=8 panel_style="dashboard" %}
+                </div>
+            {% endfor %}
+            
+        {% else %}
+            <div class="no-tracking">
+                <p>❌ No repositories with weekly tracking found.</p>
+                <p>🔧 Run: <code>python manage.py sync_github_data --weekly-only</code></p>
+                <p>📝 Make sure you have repositories linked to systems</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Test 3: Enhanced repo cards -->
+    <div class="test-section">
+        <h2>🎴 Test 3: Enhanced Repository Cards</h2>
+        {% if repos_with_tracking %}
+            <h4>With Weekly Data:</h4>
+            {% for repo in repos_with_tracking|slice:":2" %}
+                {% github_repo_card repo=repo show_weekly_summary=True %}
+            {% endfor %}
+        {% endif %}
+        
+        <h4>Basic Cards:</h4>
+        {% for repo in all_repos|slice:":2" %}
+            {% github_repo_card repo=repo show_weekly_summary=False %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- GitHub Charts JavaScript -->
+<script src="{% static 'projects/js/github-charts.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update debug info
+    updateDebugInfo();
+    
+    // Initialize GitHub charts
+    if (typeof Chart !== 'undefined') {
+        try {
+        window.githubCharts = new GitHubChartsManager();
+            document.getElementById('manager-status').innerHTML = '<span class="debug-success">✅ Initialized</span>';
+            
+            // Update charts created count after a brief delay
+            setTimeout(() => {
+                const chartsCreated = window.githubCharts ? window.githubCharts.getChartCount() : 0;
+                document.getElementById('charts-created').innerHTML = `<span class="debug-success">${chartsCreated}</span>`;
+                
+                // Debug chart data if needed
+                if (window.githubCharts && chartsCreated === 0) {
+                    window.githubCharts.debugChartData();
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Error initializing GitHub charts:', error);
+            document.getElementById('manager-status').innerHTML = '<span class="debug-error">❌ Error: ' + error.message + '</span>';
+        }
+    } else {
+        document.getElementById('manager-status').innerHTML = '<span class="debug-error">❌ Chart.js not available</span>';
+    }
+});
+
+function updateDebugInfo() {
+    // Chart.js status
+    const chartjsStatus = typeof Chart !== 'undefined' ? 
+        '<span class="debug-success">✅ Loaded</span>' : 
+        '<span class="debug-error">❌ Not loaded</span>';
+    document.getElementById('chartjs-status').innerHTML = chartjsStatus;
+    
+    // Chart elements
+    const chartElements = document.querySelectorAll('.commit-chart');
+    const elementsCount = chartElements.length;
+    const elementsStatus = elementsCount > 0 ? 
+        `<span class="debug-success">${elementsCount}</span>` : 
+        '<span class="debug-warning">0</span>';
+    document.getElementById('chart-elements').innerHTML = elementsStatus;
+    
+    // JSON data scripts
+    const jsonScripts = document.querySelectorAll('script[type="application/json"]');
+    const scriptsCount = jsonScripts.length;
+    const scriptsStatus = scriptsCount > 0 ? 
+        `<span class="debug-success">${scriptsCount}</span>` : 
+        '<span class="debug-warning">0</span>';
+    document.getElementById('json-scripts').innerHTML = scriptsStatus;
+    
+    // Log detailed info
+    console.log('Debug Info:', {
+        chartjs: typeof Chart !== 'undefined',
+        chartElements: elementsCount,
+        jsonScripts: scriptsCount,
+        scriptIds: Array.from(jsonScripts).map(s => s.id)
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% load static %}
+{% load github_tags %}
+{% load aura_filters %}
+
+<div class="commit-summary-card glass-card">
+    <div class="card-header">
+        <h4><i class="fas fa-code-branch"></i> Development Activity</h4>
+        {% if stats.commit_frequency_rating %}
+            {{ stats.commit_frequency_rating|commit_frequency_badge }}
+        {% endif %}
+    </div>
+    
+    <div class="commit-metrics-grid">
+        <!-- Total Commits -->
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-code-branch" style="color: var(--color-teal);"></i>
+            </div>
+            <div class="metric-content">
+                <span class="metric-value">{{ stats.total_commits|format_commit_count }}</span>
+                <span class="metric-label">Total Commits</span>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-clock" style="color: var(--color-lavender);"></i>
+            </div>
+            <div class="metric-content">
+                <span class="metric-value">{{ stats.commits_last_30_days }}</span>
+                <span class="metric-label">Last 30 Days</span>
+            </div>
+        </div>
+        
+        <!-- Repository Count -->
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-folder" style="color: var(--color-orange);"></i>
+            </div>
+            <div class="metric-content">
+                <span class="metric-value">{{ stats.repository_count }}</span>
+                <span class="metric-label">Repositories</span>
+            </div>
+        </div>
+        
+        <!-- Average Monthly -->
+        <div class="metric-item">
+            <div class="metric-icon">
+                <i class="fas fa-chart-line" style="color: var(--color-green);"></i>
+            </div>
+            <div class="metric-content">
+                <span class="metric-value">{{ stats.avg_commits_per_month }}</span>
+                <span class="metric-label">Avg/Month</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Last Commit Info -->
+    {% if stats.last_commit_date %}
+    <div class="last-commit-info">
+        <div class="commit-timeline">
+            <div class="timeline-icon">
+                <i class="fas fa-git-alt"></i>
+            </div>
+            <div class="timeline-content">
+                <div class="commit-meta">
+                    <span class="commit-date">{{ stats.last_commit_date|days_since_commit }}</span>
+                    {% if stats.most_active_repo %}
+                        <span class="commit-repo">in {{ stats.most_active_repo.name }}</span>
+                    {% endif %}
+                </div>
+                {% if stats.most_active_repo.last_commit_message %}
+                    <div class="commit-message">
+                        "{{ stats.most_active_repo.last_commit_message|truncatewords:12 }}"
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="no-commits-message">
+        <i class="fas fa-info-circle"></i>
+        <span>No commit activity tracked yet</span>
+    </div>
+    {% endif %}
+    
+    <!-- Activity Progress -->
+    <div class="activity-progress">
+        <div class="progress-header">
+            <span>Repository Activity</span>
+            <span>{{ stats.active_repo_count }}/{{ stats.repository_count }} active</span>
+        </div>
+        {% if stats.repository_count > 0 %}
+            {% with activity_percentage=stats.active_repo_count|mul:100|div:stats.repository_count %}
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ activity_percentage }}%; background: var(--color-teal);"></div>
+                </div>
+            {% endwith %}
+        {% endif %}
+    </div>
+</div>

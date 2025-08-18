@@ -1,0 +1,612 @@
+<!-- 
+  * core/templates/core/admin/experience_list.html
+  * Professional Experience Management Interface
+  * Version 1.0 - Professional timeline with AURA styling
+  -->
+  {% extends 'admin/admin_base.html' %}
+  {% load static %}
+  
+  {% block admin_title %}Manage Experience{% endblock %}
+  
+  {% block admin_css %}
+  {{ block.super }}
+  <style>
+  .admin-nav-link.active {
+      background: rgba(var(--emerald-rgb), 0.2);
+      color: var(--emerald);
+  }
+  .experience-card {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+  }
+  .experience-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+  }
+  .experience-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  }
+  .current-position {
+      background: linear-gradient(45deg, #22c55e, #16a34a);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      animation: pulse 2s infinite;
+  }
+  .position-duration {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+  }
+  .company-logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+  }
+  .tech-chip {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      margin: 2px;
+  }
+  .timeline-dot {
+      position: absolute;
+      left: -6px;
+      top: 24px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 3px solid;
+      background: var(--bg-primary);
+  }
+  .timeline-dot.current {
+      border-color: #22c55e;
+      background: #22c55e;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+  }
+  .timeline-dot.past {
+      border-color: #3b82f6;
+      background: #3b82f6;
+  }
+  .timeline-line {
+      position: absolute;
+      left: -1px;
+      top: 36px;
+      bottom: -20px;
+      width: 2px;
+      background: linear-gradient(180deg, #3b82f6, transparent);
+  }
+  .timeline-line.last {
+      display: none;
+  }
+  .duration-bar {
+      background: rgba(255, 255, 255, 0.1);
+      height: 6px;
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+  }
+  .duration-progress {
+      background: linear-gradient(90deg, #3b82f6, #06b6d4);
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+  }
+  .location-badge {
+      background: rgba(156, 163, 175, 0.2);
+      color: #9ca3af;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+  }
+  </style>
+  {% endblock %}
+  
+  {% block admin_content %}
+  <div class="space-y-6">
+      
+      <!-- Page Header -->
+      <div class="flex items-center justify-between">
+          <div>
+              <h1 class="text-2xl font-bold text-white mb-2">
+                  <i class="fas fa-briefcase text-blue-400 mr-3"></i>
+                  Professional Experience
+              </h1>
+              <p class="text-gray-400">{{ subtitle }}</p>
+          </div>
+          <div class="flex items-center space-x-3">
+              <a href="{% url 'aura_admin:experience_create' %}" class="btn btn-blue">
+                  <i class="fas fa-plus mr-2"></i>
+                  Add Position
+              </a>
+          </div>
+      </div>
+  
+      <!-- Stats Bar -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="glass-card p-4 text-center border-l-4 border-blue-400">
+              <div class="text-2xl font-bold text-blue-400">{{ total_count }}</div>
+              <div class="text-sm text-gray-400">Total Positions</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-green-400">
+              <div class="text-2xl font-bold text-green-400">
+                  {% for exp in experiences %}{% if exp.is_current %}1{% endif %}{% empty %}0{% endfor %}
+              </div>
+              <div class="text-sm text-gray-400">Current Roles</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-cyan-400">
+              <div class="text-2xl font-bold text-cyan-400">
+                  {{ experiences|length }}
+              </div>
+              <div class="text-sm text-gray-400">Companies</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-purple-400">
+              <div class="text-2xl font-bold text-purple-400">5.2</div>
+              <div class="text-sm text-gray-400">Years Experience</div>
+          </div>
+          <div class="glass-card p-4 text-center border-l-4 border-emerald-400">
+              <div class="text-2xl font-bold text-emerald-400">{{ filtered_count }}</div>
+              <div class="text-sm text-gray-400">Filtered Results</div>
+          </div>
+      </div>
+  
+      <!-- Filters & Search -->
+      <div class="glass-card p-6">
+          <form method="GET" class="space-y-4" id="filterForm">
+              <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                  
+                  <!-- Search -->
+                  <div class="lg:col-span-2">
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Search Experience</label>
+                      <div class="relative">
+                          <input 
+                              type="text" 
+                              name="search" 
+                              value="{{ search_query }}"
+                              placeholder="Search position, company, technologies..." 
+                              class="form-control pl-10"
+                          >
+                          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                      </div>
+                  </div>
+  
+                  <!-- Status Filter -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Status</label>
+                      <select name="status" class="form-control">
+                          <option value="">All Positions</option>
+                          <option value="current" {% if request.GET.status == 'current' %}selected{% endif %}>Current Only</option>
+                          <option value="past" {% if request.GET.status == 'past' %}selected{% endif %}>Past Only</option>
+                      </select>
+                  </div>
+  
+                  <!-- Sort Filter -->
+                  <div>
+                      <label class="block text-sm font-medium text-gray-400 mb-1">Sort By</label>
+                      <select name="sort" class="form-control">
+                          <option value="">Recent First</option>
+                          <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                          <option value="company" {% if request.GET.sort == 'company' %}selected{% endif %}>Company</option>
+                          <option value="position" {% if request.GET.sort == 'position' %}selected{% endif %}>Position</option>
+                      </select>
+                  </div>
+              </div>
+  
+              <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                      <button type="submit" class="btn btn-blue">
+                          <i class="fas fa-filter mr-2"></i>
+                          Apply Filters
+                      </button>
+                      <a href="{% url 'aura_admin:experience_list' %}" class="btn btn-outline">
+                          <i class="fas fa-times mr-2"></i>
+                          Clear
+                      </a>
+                  </div>
+                  
+                  <!-- View Toggle -->
+                  <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-400">View:</span>
+                      <button type="button" id="timelineView" class="btn btn-xs btn-blue">
+                          <i class="fas fa-timeline mr-1"></i>Timeline
+                      </button>
+                      <button type="button" id="gridView" class="btn btn-xs btn-outline">
+                          <i class="fas fa-th mr-1"></i>Grid
+                      </button>
+                  </div>
+              </div>
+          </form>
+      </div>
+  
+      <!-- Experience Timeline/Grid -->
+      <div class="experience-container">
+          
+          <!-- Timeline View (Default) -->
+          <div id="timeline-container" class="space-y-6">
+              {% if experiences %}
+                  {% for experience in experiences %}
+                      <div class="relative pl-8">
+                          <!-- Timeline Elements -->
+                          <div class="timeline-dot {% if experience.is_current %}current{% else %}past{% endif %}"></div>
+                          {% if not forloop.last %}
+                              <div class="timeline-line {% if forloop.last %}last{% endif %}"></div>
+                          {% endif %}
+                          
+                          <!-- Experience Card -->
+                          <div class="glass-card experience-card p-0 relative flex flex-col">
+                              <!-- Card Header -->
+                              <div class="p-6 pb-0 relative">
+                                  <!-- Checkbox for bulk actions -->
+                                  <input type="checkbox" class="experience-checkbox absolute top-6 right-6 z-10" value="{{ experience.pk }}">
+                                  
+                                  <!-- Header Content -->
+                                  <div class="flex items-start space-x-4 mb-4">
+                                      <!-- Company Logo -->
+                                      <div class="company-logo">
+                                          {{ experience.company|first|upper }}
+                                      </div>
+                                      
+                                      <!-- Position Info -->
+                                      <div class="flex-1">
+                                          <div class="flex items-center space-x-3 mb-2">
+                                              <h3 class="text-xl font-bold text-white">{{ experience.position }}</h3>
+                                              {% if experience.is_current %}
+                                                  <div class="current-position">
+                                                      <i class="fas fa-clock mr-1"></i>Current
+                                                  </div>
+                                              {% endif %}
+                                          </div>
+                                          
+                                          <div class="text-blue-400 font-medium text-lg mb-1">{{ experience.company }}</div>
+                                          
+                                          <div class="flex items-center space-x-4 text-sm text-gray-400">
+                                              <!-- Duration -->
+                                              <div class="flex items-center space-x-2">
+                                                  <i class="fas fa-calendar-alt"></i>
+                                                  <span>
+                                                      {{ experience.start_date|date:"M Y" }} - 
+                                                      {% if experience.end_date %}{{ experience.end_date|date:"M Y" }}{% else %}Present{% endif %}
+                                                  </span>
+                                              </div>
+                                              
+                                              <!-- Location -->
+                                              {% if experience.location %}
+                                                  <div class="flex items-center space-x-1">
+                                                      <i class="fas fa-map-marker-alt"></i>
+                                                      <span class="location-badge">{{ experience.location }}</span>
+                                                  </div>
+                                              {% endif %}
+                                              
+                                              <!-- Duration Badge -->
+                                              <div class="position-duration">
+                                                  {% with days=experience.start_date|timesince:experience.end_date|default:"Present" %}
+                                                      {% if experience.is_current %}
+                                                          {{ experience.start_date|timesince }}
+                                                      {% else %}
+                                                          {% comment %} Calculate duration manually if needed {% endcomment %}
+                                                          2.5 years
+                                                      {% endif %}
+                                                  {% endwith %}
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              
+                              <!-- Card Content (Flexible) -->
+                              <div class="px-6 flex-1">
+                                  <!-- Description -->
+                                  {% if experience.description %}
+                                      <div class="mb-4">
+                                          <div class="text-gray-300 text-sm leading-relaxed">
+                                              {{ experience.description|truncatewords:30 }}
+                                          </div>
+                                      </div>
+                                  {% endif %}
+                                  
+                                  <!-- Technologies Used -->
+                                  {% if experience.technologies %}
+                                      <div class="mb-4">
+                                          <div class="text-xs text-gray-400 mb-2">Technologies Used</div>
+                                          <div class="flex flex-wrap">
+                                              {% for tech in experience.get_technologies_list %}
+                                                  <span class="tech-chip">{{ tech }}</span>
+                                              {% endfor %}
+                                          </div>
+                                      </div>
+                                  {% endif %}
+                                  
+                                  <!-- Duration Progress Bar -->
+                                  <div class="mb-4">
+                                      <div class="flex items-center justify-between mb-2">
+                                          <span class="text-xs text-gray-400">Position Duration</span>
+                                          <span class="text-xs text-blue-400">
+                                              {% if experience.is_current %}Ongoing{% else %}Completed{% endif %}
+                                          </span>
+                                      </div>
+                                      <div class="duration-bar">
+                                          <div class="duration-progress" 
+                                               style="width: {% if experience.is_current %}75{% else %}100{% endif %}%;">
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              
+                              <!-- Card Footer -->
+                              <div class="p-6 pt-0 border-t border-white/5 mt-auto">
+                                  <div class="flex items-center justify-between">
+                                      <div class="flex items-center space-x-2 text-xs text-gray-500">
+                                          <i class="fas fa-history"></i>
+                                          <span>Added {{ experience.start_date|timesince }} ago</span>
+                                      </div>
+                                      
+                                      <!-- Main Actions -->
+                                      <div class="flex items-center space-x-1">
+                                          <a href="{% url 'aura_admin:experience_update' experience.pk %}" 
+                                             class="btn btn-xs btn-outline" 
+                                             title="Edit Experience">
+                                              <i class="fas fa-edit"></i>
+                                          </a>
+                                          
+                                          <a href="{% url 'aura_admin:experience_delete' experience.pk %}" 
+                                             class="btn btn-xs btn-red" 
+                                             title="Delete Experience">
+                                              <i class="fas fa-trash"></i>
+                                          </a>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  {% endfor %}
+              {% else %}
+                  <!-- Empty State -->
+                  <div class="glass-card p-12 text-center">
+                      <div class="text-gray-400">
+                          <i class="fas fa-briefcase text-4xl mb-4"></i>
+                          <h3 class="text-xl font-bold mb-2">No Experience Entries Found</h3>
+                          {% if search_query or request.GET.status %}
+                              <p class="mb-4">No experience entries match your current filters.</p>
+                              <a href="{% url 'aura_admin:experience_list' %}" class="btn btn-blue">
+                                  <i class="fas fa-times mr-2"></i>
+                                  Clear Filters
+                              </a>
+                          {% else %}
+                              <p class="mb-4">Start documenting your professional journey.</p>
+                              <a href="{% url 'aura_admin:experience_create' %}" class="btn btn-blue">
+                                  <i class="fas fa-plus mr-2"></i>
+                                  Add Your First Position
+                              </a>
+                          {% endif %}
+                      </div>
+                  </div>
+              {% endif %}
+          </div>
+          
+          <!-- Grid View (Hidden by default) -->
+          <div id="grid-container" class="hidden grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {% if experiences %}
+                  {% for experience in experiences %}
+                      <div class="glass-card experience-card p-0 relative flex flex-col h-full">
+                          <!-- Card Header -->
+                          <div class="p-4 pb-0 relative">
+                              <!-- Checkbox for bulk actions -->
+                              <input type="checkbox" class="experience-checkbox absolute top-4 right-4 z-10" value="{{ experience.pk }}">
+                              
+                              <!-- Header Content -->
+                              <div class="flex items-start space-x-3 mb-4">
+                                  <!-- Company Logo -->
+                                  <div class="company-logo flex-shrink-0" style="width: 40px; height: 40px; font-size: 14px;">
+                                      {{ experience.company|first|upper }}
+                                  </div>
+                                  
+                                  <!-- Position Info -->
+                                  <div class="flex-1 min-w-0">
+                                      <div class="flex items-center space-x-2 mb-1">
+                                          <h3 class="text-lg font-bold text-white truncate">{{ experience.position }}</h3>
+                                          {% if experience.is_current %}
+                                              <div class="current-position flex-shrink-0">
+                                                  <i class="fas fa-clock mr-1"></i>Current
+                                              </div>
+                                          {% endif %}
+                                      </div>
+                                      
+                                      <div class="text-blue-400 font-medium mb-1 truncate">{{ experience.company }}</div>
+                                      
+                                      {% if experience.location %}
+                                          <div class="location-badge text-xs">{{ experience.location }}</div>
+                                      {% endif %}
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          <!-- Card Content (Flexible) -->
+                          <div class="px-4 flex-1">
+                              <!-- Duration -->
+                              <div class="mb-3">
+                                  <div class="text-xs text-gray-400 mb-1">Duration</div>
+                                  <div class="text-sm text-white">
+                                      {{ experience.start_date|date:"M Y" }} - 
+                                      {% if experience.end_date %}{{ experience.end_date|date:"M Y" }}{% else %}Present{% endif %}
+                                  </div>
+                              </div>
+                              
+                              <!-- Description -->
+                              {% if experience.description %}
+                                  <div class="mb-3">
+                                      <div class="text-sm text-gray-400 line-clamp-3">
+                                          {{ experience.description|truncatewords:20 }}
+                                      </div>
+                                  </div>
+                              {% endif %}
+                              
+                              <!-- Technologies -->
+                              {% if experience.technologies %}
+                                  <div class="mb-3">
+                                      <div class="text-xs text-gray-400 mb-1">Tech Stack</div>
+                                      <div class="flex flex-wrap">
+                                          {% for tech in experience.get_technologies_list|slice:":3" %}
+                                              <span class="tech-chip">{{ tech }}</span>
+                                          {% endfor %}
+                                          {% if experience.get_technologies_list|length > 3 %}
+                                              <span class="tech-chip">+{{ experience.get_technologies_list|length|add:"-3" }}</span>
+                                          {% endif %}
+                                      </div>
+                                  </div>
+                              {% endif %}
+                          </div>
+                          
+                          <!-- Card Footer -->
+                          <div class="p-4 pt-0 border-t border-white/5 mt-auto">
+                              <div class="flex items-center justify-between">
+                                  <div class="position-duration">
+                                      {% if experience.is_current %}
+                                          {{ experience.start_date|timesince }}
+                                      {% else %}
+                                          2.5 years
+                                      {% endif %}
+                                  </div>
+                                  
+                                  <!-- Actions -->
+                                  <div class="flex items-center space-x-1">
+                                      <a href="{% url 'aura_admin:experience_update' experience.pk %}" 
+                                         class="btn btn-xs btn-outline" 
+                                         title="Edit">
+                                          <i class="fas fa-edit"></i>
+                                      </a>
+                                      
+                                      <a href="{% url 'aura_admin:experience_delete' experience.pk %}" 
+                                         class="btn btn-xs btn-red" 
+                                         title="Delete">
+                                          <i class="fas fa-trash"></i>
+                                      </a>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  {% endfor %}
+              {% endif %}
+          </div>
+      </div>
+  
+      <!-- Pagination -->
+      {% if is_paginated %}
+          <div class="flex justify-center">
+              <nav class="pagination-nav">
+                  <div class="flex items-center space-x-2">
+                      {% if page_obj.has_previous %}
+                          <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-double-left"></i>
+                          </a>
+                          <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-left mr-1"></i>Previous
+                          </a>
+                      {% endif %}
+                      
+                      <span class="px-4 py-2 text-sm text-gray-400">
+                          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                      </span>
+                      
+                      {% if page_obj.has_next %}
+                          <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              Next<i class="fas fa-angle-right ml-1"></i>
+                          </a>
+                          <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" class="btn btn-xs btn-outline">
+                              <i class="fas fa-angle-double-right"></i>
+                          </a>
+                      {% endif %}
+                  </div>
+              </nav>
+          </div>
+      {% endif %}
+  
+  </div>
+  
+  <!-- JavaScript for Experience Management -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // View Toggle functionality
+      const timelineBtn = document.getElementById('timelineView');
+      const gridBtn = document.getElementById('gridView');
+      const timelineContainer = document.getElementById('timeline-container');
+      const gridContainer = document.getElementById('grid-container');
+      
+      timelineBtn.addEventListener('click', function() {
+          timelineContainer.classList.remove('hidden');
+          gridContainer.classList.add('hidden');
+          timelineBtn.className = 'btn btn-xs btn-blue';
+          gridBtn.className = 'btn btn-xs btn-outline';
+      });
+      
+      gridBtn.addEventListener('click', function() {
+          timelineContainer.classList.add('hidden');
+          gridContainer.classList.remove('hidden');
+          timelineBtn.className = 'btn btn-xs btn-outline';
+          gridBtn.className = 'btn btn-xs btn-blue';
+      });
+  
+      // Animate duration progress bars
+      setTimeout(() => {
+          document.querySelectorAll('.duration-progress').forEach(bar => {
+              const width = bar.style.width;
+              bar.style.width = '0%';
+              setTimeout(() => {
+                  bar.style.width = width;
+              }, 200);
+          });
+      }, 300);
+  
+      // Timeline dots animation
+      setTimeout(() => {
+          document.querySelectorAll('.timeline-dot.current').forEach(dot => {
+              dot.style.transform = 'scale(1.2)';
+              setTimeout(() => {
+                  dot.style.transform = 'scale(1)';
+              }, 200);
+          });
+      }, 500);
+  });
+  
+  // Notification helper function
+  function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+          type === 'success' ? 'bg-green-500' :
+          type === 'error' ? 'bg-red-500' :
+          type === 'warning' ? 'bg-yellow-500' :
+          'bg-blue-500'
+      }`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+          notification.remove();
+      }, 3000);
+  }
+  </script>
+  
+  {% endblock %}

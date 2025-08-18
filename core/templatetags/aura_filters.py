@@ -20,6 +20,47 @@ import math
 
 register = template.Library()
 
+
+# Safe handling of icons since it's hit or miss on whether the fas/fa-solid is always included
+@register.filter
+def safe_icon(value, default="fa-code", prefix="fa-solid"):
+    """
+    Checks if icon has Font Awesome leading fas/fa-solid and adds if needed. If no icon, return default.
+    Usage: <i class="{{ category.icon|safe_icon }}"></i>
+    Added prefix to account for brands/icons that need fab/fa-brands.
+
+    Example icon (cogs):
+    - Handles--
+    -- fas fa-cogs
+    -- fa-solid fa-cogs
+    -- fa-cogs
+    -- cogs 
+    """
+    value = value.strip()
+
+    try:
+        if not value:
+            return f"{prefix} {default}"
+        
+        # Check if icon string has any spaces
+        parts = value.split(" ")
+
+        # if two parts, has either fas/fa-solid or fab/fa-brands leading
+        if len(parts) > 1:
+            # Check for hyphen in second part
+            if '-' in parts[1] and parts[0].startswith('fa'):
+                return value
+        
+        # Else, only one part, so check if hyphen icon or just icon short name
+        if '-' in value and value.startswith('fa'):
+            return f"{prefix} {value}"
+        # Otherwise, just icon word ('cogs')
+        else:
+            return f"{prefix} fa-{value}"
+    except (ValueError, TypeError):
+        return f"{prefix} {default}"
+
+
 #  ==============  MATHEMATICAL OPERATIONS  ============== #
 
 @register.filter

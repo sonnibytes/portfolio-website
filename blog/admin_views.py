@@ -141,9 +141,11 @@ class PostListAdminView(BaseAdminListView, BulkActionMixin):
         context = super().get_context_data(**kwargs)
         
         context.update({
-            'title': 'Manage DataLogs',
-            'subtitle': 'All technical logs and entries',
+            'title': 'DataLogs Management',
+            'subtitle': 'Manage your datalog entries across projects',
             'categories': Category.objects.all(),
+            'categories_count': self.get_post_categories(),
+            'series': Series.objects.all(),
             'status_choices': Post.STATUS_CHOICES,
             'current_filters': {
                 'search': self.request.GET.get('search', ''),
@@ -154,6 +156,10 @@ class PostListAdminView(BaseAdminListView, BulkActionMixin):
         })
         
         return context
+    
+    def get_post_categories(self):
+        """Get posts grouped by category"""
+        cats = Category.objects.all()
 
 
 class PostCreateAdminView(BaseAdminCreateView):
@@ -305,9 +311,15 @@ class CategoryListAdminView(BaseAdminListView, BulkActionMixin):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        total_posts = Post.objects.filter(status='published').count()
+        active_categories = self.get_queryset().filter(post_count__gt=0).count()
+        avg_posts_per_category = total_posts // active_categories if active_categories > 0 else 0
+
         context.update({
-            'title': 'Manage Categories',
-            'subtitle': 'DataLog organization categories',
+            'total_posts': total_posts,
+            'active_categories': active_categories,
+            'avg_posts_per_category': avg_posts_per_category,
         })
         return context
 
@@ -358,9 +370,26 @@ class TagListAdminView(BaseAdminListView, BulkActionMixin):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        popular_tags = Tag.objects.annotate(
+                post_count=Count('posts', filter=Q(posts__status='published'))
+            ).filter(post_count__gt=3).order_by('-post_count')
+        
+        posts = Post.objects.annotate(
+            tag_count=Count("tags", filter=Q(status="published"))
+        )
+        
+        total_tag_usage = posts.aggregate(usage=Sum("tag_count"))["usage"] or 0
+
+        avg_tags_per_post = posts.aggregate(avg=Avg("tag_count"))["avg"] or 0
+
+
         context.update({
-            'title': 'Manage Tags',
-            'subtitle': 'DataLog tagging system',
+            'popular_tags': popular_tags[:10],
+            'total_tag_usage': total_tag_usage,
+            'popular_tags_count': len(popular_tags) if popular_tags else 0,
+            'avg_tags_per_post': avg_tags_per_post,
+
         })
         return context
 

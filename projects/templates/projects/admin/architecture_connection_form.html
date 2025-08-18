@@ -1,0 +1,275 @@
+<!-- projects/templates/projects/admin/architecture_connection_form.html -->
+{% extends "admin/admin_base.html" %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.connection-preview {
+    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.connection-flow-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    margin: 1rem 0;
+}
+
+.component-preview {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.arrow-preview {
+    font-size: 2rem;
+    color: #00ffff;
+}
+
+.line-width-preview {
+    height: 4px;
+    background: #00ffff;
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    transition: all 0.3s ease;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-link text-purple-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <a href="{% url 'aura_admin:projects:architecture_connection_list' %}" class="btn btn-sm btn-outline">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Connections
+        </a>
+    </div>
+
+    <!-- Form Container -->
+    <div class="glass-card p-6">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Connection Components Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-teal-400 flex items-center">
+                    <i class="fas fa-cubes mr-2"></i>
+                    Connection Components
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">From Component *</label>
+                        {{ form.from_component|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        {% if form.from_component.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.from_component.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">To Component *</label>
+                        {{ form.to_component|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        {% if form.to_component.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.to_component.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Connection Preview -->
+                <div class="connection-preview">
+                    <h5 class="text-white font-medium mb-4">Connection Preview</h5>
+                    <div class="connection-flow-preview">
+                        <div class="component-preview">
+                            <span id="from-component-name">Source Component</span>
+                        </div>
+                        <div class="arrow-preview" id="arrow-preview">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="component-preview">
+                            <span id="to-component-name">Target Component</span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        This connection will appear in the 3D architecture diagram
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Details Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-purple-400 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Connection Details
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Connection Type *</label>
+                        {{ form.connection_type|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        {% if form.connection_type.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.connection_type.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Connection Label</label>
+                        {{ form.label|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        <div class="text-xs text-gray-500 mt-1">{{ form.label.help_text }}</div>
+                        {% if form.label.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.label.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <div class="flex items-center">
+                            {{ form.is_bidirectional|add_class:"mr-2" }}
+                            <label class="text-sm text-gray-300" for="{{ form.is_bidirectional.id_for_label }}">
+                                Bidirectional Connection
+                            </label>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">{{ form.is_bidirectional.help_text }}</div>
+                        {% if form.is_bidirectional.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.is_bidirectional.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Styling Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-orange-400 flex items-center">
+                    <i class="fas fa-palette mr-2"></i>
+                    Visual Styling
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Line Color</label>
+                        {{ form.line_color|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        {% if form.line_color.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.line_color.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Line Width</label>
+                        {{ form.line_width|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none" }}
+                        <div class="text-xs text-gray-500 mt-1">{{ form.line_width.help_text }}</div>
+                        <div class="line-width-preview" id="line-width-preview"></div>
+                        {% if form.line_width.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.line_width.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-600">
+                <div class="flex space-x-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if object %}Update Connection{% else %}Create Connection{% endif %}
+                    </button>
+                    
+                    <a href="{% url 'aura_admin:projects:architecture_connection_list' %}" class="btn btn-outline">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancel
+                    </a>
+                </div>
+                
+                {% if object %}
+                <a href="{% url 'aura_admin:projects:architecture_connection_delete' object.pk %}" 
+                   class="btn btn-red">
+                    <i class="fas fa-trash mr-2"></i>
+                    Delete Connection
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update connection preview
+    function updateConnectionPreview() {
+        const fromSelect = document.querySelector('[name="from_component"]');
+        const toSelect = document.querySelector('[name="to_component"]');
+        const bidirectional = document.querySelector('[name="is_bidirectional"]');
+        
+        const fromName = fromSelect.options[fromSelect.selectedIndex]?.text || 'Source Component';
+        const toName = toSelect.options[toSelect.selectedIndex]?.text || 'Target Component';
+        
+        document.getElementById('from-component-name').textContent = fromName.split(' → ').pop();
+        document.getElementById('to-component-name').textContent = toName.split(' → ').pop();
+        
+        // Update arrow based on bidirectional status
+        const arrow = document.getElementById('arrow-preview');
+        if (bidirectional.checked) {
+            arrow.innerHTML = '<i class="fas fa-exchange-alt"></i>';
+        } else {
+            arrow.innerHTML = '<i class="fas fa-arrow-right"></i>';
+        }
+    }
+    
+    // Update line width preview
+    function updateLineWidthPreview() {
+        const width = document.querySelector('[name="line_width"]').value || 2;
+        const color = document.querySelector('[name="line_color"]').value || '#00ffff';
+        const preview = document.getElementById('line-width-preview');
+        
+        preview.style.height = width + 'px';
+        preview.style.backgroundColor = color;
+    }
+    
+    // Update arrow color
+    function updateArrowColor() {
+        const color = document.querySelector('[name="line_color"]').value || '#00ffff';
+        document.getElementById('arrow-preview').style.color = color;
+    }
+    
+    // Event listeners
+    document.querySelector('[name="from_component"]').addEventListener('change', updateConnectionPreview);
+    document.querySelector('[name="to_component"]').addEventListener('change', updateConnectionPreview);
+    document.querySelector('[name="is_bidirectional"]').addEventListener('change', updateConnectionPreview);
+    
+    document.querySelector('[name="line_width"]').addEventListener('input', updateLineWidthPreview);
+    document.querySelector('[name="line_color"]').addEventListener('input', function() {
+        updateLineWidthPreview();
+        updateArrowColor();
+    });
+    
+    // Initial updates
+    updateConnectionPreview();
+    updateLineWidthPreview();
+    updateArrowColor();
+});
+</script>
+{% endblock %}

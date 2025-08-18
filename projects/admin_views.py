@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, DetailView
 from django.db import models
 
 from core.admin_views import (
@@ -20,10 +20,11 @@ from core.admin_views import (
     BaseAdminUpdateView,
     BaseAdminDeleteView,
     SlugAdminCreateView,
+    BaseAdminView,
     BulkActionMixin
 )
-from .models import SystemModule, Technology, SystemType
-from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm
+from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
+from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm, ArchitectureComponentForm, ArchitectureConnectionForm
 
 
 class ProjectsAdminDashboardView(BaseAdminListView):
@@ -101,6 +102,22 @@ class ProjectsAdminDashboardView(BaseAdminListView):
             'deployment_percentage': round((deployed_systems / total_systems * 100) if total_systems > 0 else 0, 1),
             'completion_percentage': round(avg_completion, 1),
         })
+
+        # ADD ARCHITECTURE STATISTICS
+        context['architecture_stats'] = {
+            'total_components': ArchitectureComponent.objects.count(),
+            'systems_with_architecture': SystemModule.objects.filter(
+                architecture_components__isnull=False
+            ).distinct().count(),
+            'total_connections': ArchitectureConnection.objects.count(),
+            'core_components': ArchitectureComponent.objects.filter(is_core=True).count(),
+        }
+        
+        # Systems that need architecture diagrams
+        context['systems_without_architecture'] = SystemModule.objects.filter(
+            architecture_components__isnull=True,
+            status__in=['deployed', 'published', 'in_development', 'testing']
+        ).exclude(status__in=['draft', 'archived']).order_by('-updated_at')[:6]
         
         return context
 
@@ -153,8 +170,8 @@ class SystemListAdminView(BaseAdminListView, BulkActionMixin):
         context = super().get_context_data(**kwargs)
         
         context.update({
-            'title': 'Manage Systems',
-            'subtitle': 'All portfolio projects and systems',
+            'title': 'Systems Management',
+            'subtitle': 'Manage your portfolio projects and systems',
             'system_types': SystemType.objects.all(),
             'status_choices': SystemModule.STATUS_CHOICES,
             'priority_choices': SystemModule.PRIORITY_CHOICES,
@@ -274,12 +291,26 @@ class TechnologyListAdminView(BaseAdminListView, BulkActionMixin):
             'title': 'Manage Technologies',
             'subtitle': 'Technology stack and tools',
             'category_choices': Technology.CATEGORY_CHOICES,
+            'categories_count': self.get_technology_categories(),
             'current_filters': {
                 'search': self.request.GET.get('search', ''),
                 'category': self.request.GET.get('category', ''),
             }
         })
         return context
+    
+    def get_technology_categories(self):
+        """Get technologies grouped by category"""
+
+        tech = Technology.objects.all()
+        
+        categories = {}
+        for t in tech:
+            tech_cat = t.category
+            if tech_cat not in categories:
+                categories[tech_cat] = []
+            categories[tech_cat].append(t)
+        return categories
 
 
 class TechnologyCreateAdminView(SlugAdminCreateView):
@@ -415,3 +446,303 @@ class SystemFeatureToggleView(BaseAdminUpdateView):
             'success': True,
             'featured': system.featured
         })
+
+
+# ============================================================================
+# ARCHITECTURE COMPONENT MANAGEMENT VIEWS
+# ============================================================================
+
+class ArchitectureComponentListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage architecture components with AURA styling"""
+    
+    model = ArchitectureComponent
+    template_name = 'projects/admin/architecture_component_list.html'
+    context_object_name = 'components'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = ArchitectureComponent.objects.select_related(
+            'system', 'technology'
+        ).order_by('system__title', 'display_order', 'name')
+
+        # Search functionality
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(system__title__icontains=search_query)
+            )
+        
+        # System filtering
+        system_filter = self.request.GET.get('system', '')
+        if system_filter:
+            queryset = queryset.filter(system__slug=system_filter)
+        
+        # Component type filtering
+        type_filter = self.request.GET.get('component_type', '')
+        if type_filter:
+            queryset = queryset.filter(component_type=type_filter)
+        
+        # Core component filter
+        core_filter = self.request.GET.get('is_core', '')
+        if core_filter == 'true':
+            queryset = queryset.filter(is_core=True)
+        elif core_filter == 'false':
+            queryset = queryset.filter(is_core=False)
+        
+        return queryset.distinct()
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update({
+            'title': 'Architecture Components',
+            'subtitle': 'Manage system architecture components and diagrams',
+            'systems': SystemModule.objects.all().order_by('title'),
+            'component_types': ArchitectureComponent.COMPONENT_TYPES,
+            'current_filters': {
+                'search': self.request.GET.get('search', ''),
+                'system': self.request.GET.get('system', ''),
+                'component_type': self.request.GET.get('component_type', ''),
+                'is_core': self.request.GET.get('is_core', ''),
+            },
+            'stats': {
+                'total_components': ArchitectureComponent.objects.count(),
+                'systems_with_architecture': SystemModule.objects.filter(
+                    architecture_components__isnull=False
+                ).distinct().count(),
+                'core_components': ArchitectureComponent.objects.filter(is_core=True).count(),
+                'total_connections': ArchitectureConnection.objects.count(),
+            }
+        })
+
+        return context
+
+
+class ArchitectureComponentCreateAdminView(BaseAdminCreateView):
+    """Create new architecture component"""
+
+    model = ArchitectureComponent
+    form_class = ArchitectureComponentForm
+    template_name = 'projects/admin/architecture_component_form.html'
+    success_url = reverse_lazy('aura_admin:projects:architecture_component_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Create Architecture Component',
+            'subtitle': 'Add new component to system architecture',
+        })
+        return context
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f"Architecture component '{self.object.name}' created succesfully!")
+        return response
+
+
+class ArchitectureComponentUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing architecture component"""
+    
+    model = ArchitectureComponent
+    form_class = ArchitectureComponentForm
+    template_name = 'projects/admin/architecture_component_form.html'
+    success_url = reverse_lazy('aura_admin:projects:architecture_component_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': f'Edit Component: {self.object.name}',
+            'subtitle': f'Update architecture component for {self.object.system.title}',
+        })
+        return context
+
+
+class ArchitectureComponentDeleteAdminView(BaseAdminDeleteView):
+    """Delete architecture component"""
+    
+    model = ArchitectureComponent
+    success_url = reverse_lazy('aura_admin:projects:architecture_component_list')
+
+
+# ============================================================================
+# ARCHITECTURE CONNECTION MANAGEMENT VIEWS  
+# ============================================================================
+
+class ArchitectureConnectionListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage architecture connections"""
+    
+    model = ArchitectureConnection
+    template_name = 'projects/admin/architecture_connection_list.html'
+    context_object_name = 'connections'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return ArchitectureConnection.objects.select_related(
+            'from_component', 'to_component', 'from_component__system',
+            'to_component__system'
+        ).order_by('from_component__system__title', 'from_component__name')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update({
+            'title': 'Architecture Connection',
+            'subtitle': 'Manage component relationships and data flow',
+            'connection_types': ArchitectureConnection.CONNECTION_TYPES,
+            'stats': {
+                'total_connections': ArchitectureConnection.objects.count(),
+                'bidirectional_connections': ArchitectureConnection.objects.filter(
+                    is_bidirectional=True
+                ).count(),
+                'systems_connected': ArchitectureConnection.objects.values(
+                    'from_component__system'
+                ).distinct().count(),
+            }
+        })
+
+        return context
+
+
+class ArchitectureConnectionCreateAdminView(BaseAdminCreateView):
+    """Create new architecture connection"""
+    
+    model = ArchitectureConnection
+    form_class = ArchitectureConnectionForm
+    template_name = 'projects/admin/architecture_connection_form.html'
+    success_url = reverse_lazy('aura_admin:projects:architecture_connection_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Create Architecture Connection',
+            'subtitle': 'Connect system components with data flow relationship',
+        })
+        return context
+
+
+class ArchitectureConnectionUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing architecture connection"""
+
+    model = ArchitectureConnection
+    form_class = ArchitectureConnectionForm
+    template_name = 'projects/admin/architecture_connection_form.html'
+    success_url = reverse_lazy('aura_admin:projects:architecture_connection_list')
+
+
+class ArchitectureConnectionDeleteAdminView(BaseAdminDeleteView):
+    """Delete architecture connection"""
+    
+    model = ArchitectureConnection
+    success_url = reverse_lazy('aura_admin:projects:architecture_connection_list')
+
+
+
+# ============================================================================
+# ENHANCED SYSTEM ADMIN - ADD ARCHITECTURE MANAGEMENT
+# ============================================================================
+
+class SystemArchitectureAdminView(BaseAdminView, DetailView):
+    """Dedicated view for managing a system's architecture - DetailView Approach"""
+    
+    model = SystemModule
+    template_name = 'projects/admin/system_architecture.html'
+    context_object_name = 'system'
+    pk_url_kwarg = 'pk'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        system = self.object
+
+        context.update({
+            'title': f'Architecture: {system.title}',
+            'subtitle': 'Manage system architecture components and connections',
+            'components': system.architecture_components.all().order_by('display_order', 'name'),
+            'connections': ArchitectureConnection.objects.filter(
+                from_component__system=system
+            ).select_related('from_component', 'to_component'),
+            'component_types': ArchitectureComponent.COMPONENT_TYPES,
+            'connection_types': ArchitectureConnection.CONNECTION_TYPES,
+            'available_technologies': Technology.objects.all().order_by('name'),
+            'has_architecture': system.has_architecture_diagram(),
+        })
+
+        # If system has architecture, generate the diagram
+        if system.has_architecture_diagram():
+            try:
+                context['architecture_diagram'] = system.get_architecture_diagram()
+            except Exception as e:
+                # Handle diagram generation errors gracefully
+                context['diagram_error'] = str(e)
+                context['architecture_diagram'] = None
+        
+        return context
+
+
+# ============================================================================
+# AJAX UTILITY VIEWS
+# ============================================================================
+
+class ArchitecturePreviewView(BaseAdminUpdateView):
+    """AJAX view to generate architecture diagram preview"""
+    
+    model = SystemModule
+    
+    def post(self, request, *args, **kwargs):
+        system = self.get_object()
+        
+        if system.has_architecture_diagram():
+            try:
+                diagram_html = system.get_architecture_diagram()
+                return JsonResponse({
+                    'success': True,
+                    'diagram_html': diagram_html,
+                    'component_count': system.architecture_components.count(),
+                    'connection_count': ArchitectureConnection.objects.filter(
+                        from_component__system=system
+                    ).count()
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'No architecture components defined for this system.'
+            })
+
+
+class CreateDefaultArchitectureView(BaseAdminUpdateView):
+    """AJAX view to create default architecture for a system"""
+    
+    model = SystemModule
+    
+    def post(self, request, *args, **kwargs):
+        system = self.get_object()
+        arch_type = request.POST.get('architecture_type', 'web_app')
+        
+        try:
+            from .services.architecture_service import ArchitectureDiagramService
+            
+            # Clear existing architecture if requested
+            if request.POST.get('clear_existing') == 'true':
+                system.architecture_components.all().delete()
+            
+            # Create default architecture
+            ArchitectureDiagramService.create_default_architecture(system, arch_type)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Created {arch_type} architecture for {system.title}',
+                'component_count': system.architecture_components.count(),
+                'redirect_url': reverse_lazy('aura_admin:projects:system_architecture', kwargs={'pk': system.pk})
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
