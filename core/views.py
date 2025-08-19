@@ -361,7 +361,8 @@ class CommTerminalView(FormView):
         context['social_links'] = SocialLink.objects.all().order_by(
             'display_order')
         
-        # Professional Links
+        # Professional Links - 
+        # TODO: Throws error page if not in db
         context['pro_links'] = {
             'github': SocialLink.objects.get(name__iexact='github') or 'https://github.com',
             'linkedin': SocialLink.objects.get(name__iexact='linkedin') or 'https://linkedin.com',
