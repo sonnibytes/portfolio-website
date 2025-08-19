@@ -2187,6 +2187,14 @@ class SystemSkillGain(models.Model):
     skill_level_before = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level before project (1-5, optional)")
     skill_level_after = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level after project (1-5, optional)")
 
+    # === New for Skill-Tech Models Rework ===
+    technologies_used = models.ManyToManyField(
+        'Technology',
+        blank=True,
+        related_name='skill_applications',
+        help_text='Which technologies were used to apply this skill in this project?'
+    )
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
