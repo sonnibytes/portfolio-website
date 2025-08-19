@@ -48,23 +48,16 @@ class Skill(models.Model):
     """Dev skills with proficiency values for visualization."""
 
     CATEGORY_CHOICES = (
-        ("language", "Programming Language"),
-        ("framework", "Framework/Library"),
-        ("tool", "Development Tool"),
-        ("database", "Database"),
+        ("technical_concept", "Technical Concept"),
+        ("methodology", "Methodology/Process"),
         ('soft_skill', 'Soft Skill'),
-        ('api', 'API Design/Development'),
-        ('data', 'Data Engineering'),
-        ('system', 'System Design/Development'),
-        ('ml', 'Machine Learning'),
-        ('ui', 'UX/UI & Design'),
-        ('ai', 'AI'),
+        ('domain_knowledge', 'Domain Knowledge'),
         ("other", "Other"),
     )
 
     name = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, max_length=100)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='technical_concept')
     description = models.TextField(blank=True)
     proficiency = models.IntegerField(
         choices=[(i, i) for i in range(1, 6)],
@@ -91,6 +84,15 @@ class Skill(models.Model):
 
     # Skill Validation
     is_certified = models.BooleanField(default=False, help_text="Have certification in this skill")
+
+    # ===== New Skill -> Technology Relationship =====
+    related_technologies = models.ManyToManyField(
+        'projects.Technology',
+        through='SkillTechnologyRelation',
+        blank=True,
+        related_name='related_skills',
+        help_text='Technologies commonly used with this skill'
+    )
 
     class Meta:
         ordering = ['category', 'display_order']
@@ -388,6 +390,61 @@ class Skill(models.Model):
         score += min(20, self.proficiency * 4)
 
         return min(100, score)
+
+
+class SkillTechnologyRelation(models.Model):
+    """
+    Through model for Skill ↔ Technology relationships
+    Allows tracking strength of relationship and context
+    """
+    RELATIONSHIP_STRENGTH = [
+        (1, 'Occasionally Used'),
+        (2, 'Commonly Used'),
+        (3, 'Essential Technology'),
+        (4, 'Primary Implementation'),
+    ]
+
+    RELATIONSHIHP_TYPE = [
+        ('implementation', 'Primary Implementation Tool'),
+        ('supporting', 'Supporting Technology'),
+        ('alternative', 'Alternative Implementation'),
+        ('data_source', 'Data Source/Storage'),
+        ('visualization', 'Visualization/Display'),
+        ('deployment', 'Deployment/Infrastructure'),
+    ]
+
+    skill = models.ForeignKey('Skill', on_delete=models.CASCADE, related_name='technology_relations')
+    technology = models.ForeignKey('projects.Technology', on_delete=models.CASCADE, related_name='skill_relations')
+
+    # Relationship metadata
+    strength = models.IntegerField(choices=RELATIONSHIP_STRENGTH, default=2, help_text='How essential is this technology for this skill?')
+    relationship_type = models.CharField(max_length=20, choices=RELATIONSHIHP_TYPE, default='implementation')
+    notes = models.TextField(blank=True, help_text='Context about how this technology relates to the skill')
+
+    # Learning Context
+    first_used_together = models.DateField(null=True, blank=True)
+    last_used_together = models.DateField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('skill', 'technology')
+        verbose_name = "Skill-Technology Relation"
+        verbose_name_plural = "Skill-Technology Relations"
+    
+    def __str__(self):
+        return f"{self.skill.name} → {self.technology.name}"
+    
+    def get_strength_color(self):
+        """Return color based on relationship strength"""
+        colors = {
+            1: '#6c757d',  # Gray - Occasional
+            2: '#17a2b8',  # Teal - Common  
+            3: '#28a745',  # Green - Essential
+            4: '#007bff',  # Blue - Primary
+        }
+        return colors.get(self.strength, '#6c757d')
 
 
 class Education(models.Model):

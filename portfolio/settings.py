@@ -35,6 +35,7 @@ SECRET_KEY = os.getenv("SECRET_KEY") or get_random_secret_key()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "0") == "1"
 
+
 # Hosts & CSRF come from env so can add custom domain later
 def env_list(name: str, default: str = "") -> list[str]:
     raw = os.getenv(name, default)
