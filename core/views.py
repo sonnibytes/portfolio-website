@@ -360,6 +360,12 @@ class CommTerminalView(FormView):
         # Add social links for network connections
         context['social_links'] = SocialLink.objects.all().order_by(
             'display_order')
+        
+        # Professional Links
+        context['pro_links'] = {
+            'github': SocialLink.objects.get(name__iexact='github'),
+            'linkedin': SocialLink.objects.get(name__iexact='linkedin'),
+        }
 
         # Add system metrics for HUD display
         # Can get System Specs for this feed?
