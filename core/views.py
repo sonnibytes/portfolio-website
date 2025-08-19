@@ -363,8 +363,8 @@ class CommTerminalView(FormView):
         
         # Professional Links
         context['pro_links'] = {
-            'github': SocialLink.objects.get(name__iexact='github'),
-            'linkedin': SocialLink.objects.get(name__iexact='linkedin'),
+            'github': SocialLink.objects.get(name__iexact='github') or 'https://github.com',
+            'linkedin': SocialLink.objects.get(name__iexact='linkedin') or 'https://linkedin.com',
         }
 
         # Add system metrics for HUD display
