@@ -367,10 +367,27 @@ class ContactAdmin(admin.ModelAdmin):
 
 @admin.register(SocialLink)
 class SocialLinkAdmin(admin.ModelAdmin):
-    list_display = ("name", "url", "handle", "display_order", "category")
+    list_display = ("name", "url", "handle", "display_order", "category", "color_preview", "icon_preview")
     search_fields = ("name", "handle", "url", "category")
     list_editable = ("display_order",)
     ordering = ("display_order", "name")
+
+    def color_preview(self, obj):
+        if obj.color:
+            return format_html(
+                '<div style="width: 20px; height: 20px; background-color: {}; border-radius: 3px; display: inline-block;"></div>',
+                obj.color,
+            )
+        return "-"
+    
+    color_preview.short_description = "Color"
+
+    def icon_preview(self, obj):
+        if obj.icon:
+            return format_html('<i class="fas {}"></i> {}', obj.icon, obj.icon)
+        return "-"
+
+    icon_preview.short_description = "Icon"
 
 
 # Customize admin site

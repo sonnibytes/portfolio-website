@@ -1161,6 +1161,10 @@ class SocialLinkListAdminView(BaseAdminListView, BulkActionMixin):
                 Q(handle__icontains=search_query)
             )
         
+        category_filter = self.request.GET.get('category', '')
+        if category_filter:
+            queryset = queryset.filter(category=category_filter)
+
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -1169,9 +1173,28 @@ class SocialLinkListAdminView(BaseAdminListView, BulkActionMixin):
             {
                 "title": "Manage Social Links",
                 "subtitle": "Social media and external profile links",
+                "category_choices": SocialLink.CATEGORY_CHOICES,
+                "categories_count": self.get_sociallink_categories(),
+                "current_filters": {
+                    'search': self.request.GET.get('search', ''),
+                    'category': self.request.GET.get('category', ''),
+                }
             }
         )
         return context
+    
+    def get_sociallink_categories(self):
+        """Get SocialLinks grouped by category"""
+        links = SocialLink.objects.all()
+
+        categories = {}
+        for l in links:
+            link_cat = l.category
+            if link_cat not in categories:
+                categories[link_cat] = []
+            categories[link_cat].append(l)
+        
+        return categories
 
 
 class SocialLinkCreateAdminView(BaseAdminCreateView):

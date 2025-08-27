@@ -751,8 +751,9 @@ class SocialLink(models.Model):
     )
     display_order = models.PositiveIntegerField(default=0)
 
-    # New SocialLink Category
+    # New SocialLink Category & Color
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
+    color = models.CharField(max_length=7, default="#60a5fa", help_text="Hex color for icon display (e.g., #00f0ff)")
 
     class Meta:
         ordering = ['display_order']

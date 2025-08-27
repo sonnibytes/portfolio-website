@@ -215,16 +215,16 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h1 class="text-2xl font-bold text-white mb-2">
-        <i class="fas fa-tools text-orange-400 mr-2"></i>
-        Technology Stack Management
+        <i class="fas fa-icons text-rose-400 mr-2"></i>
+        {{ title }}
       </h1>
-      <p class="text-gray-400">Manage technologies and tools used across your systems</p>
+      <p class="text-gray-400">{{ subtitle }}</p>
     </div>
     <div class="mt-4 sm:mt-0">
-      <a href="{% url 'aura_admin:projects:technology_create' %}" 
-         class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25">
+      <a href="{% url 'aura_admin:sociallink_create' %}" 
+         class="inline-flex items-center px-4 py-2 bg-rose-500 hover:bg-rose-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-rose-500/25">
         <i class="fas fa-plus mr-2"></i>
-        Add Technology
+        Add SocialLink
       </a>
     </div>
   </div>
@@ -232,26 +232,26 @@
   <!-- Stats Summary -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <div class="glass-card p-4 text-center">
-      <div class="text-2xl font-bold text-orange-400 mb-1">{{ technologies.count }}</div>
-      <div class="text-sm text-gray-400">Total Technologies</div>
+      <div class="text-2xl font-bold text-rose-400 mb-1">{{ social_links.count }}</div>
+      <div class="text-sm text-gray-400">Total SocialLinks</div>
     </div>
     <div class="glass-card p-4 text-center">
       <div class="text-2xl font-bold text-blue-400 mb-1">
-        {{ categories_count.language|length|default:0 }}
+        {{ categories_count.professional|length|default:0 }}
       </div>
-      <div class="text-sm text-gray-400">Languages</div>
+      <div class="text-sm text-gray-400">Professional & Coding-Centric</div>
     </div>
     <div class="glass-card p-4 text-center">
       <div class="text-2xl font-bold text-green-400 mb-1">
-        {{ categories_count.framework|length|default:0 }}
+        {{ categories_count.community|length|default:0 }}
       </div>
-      <div class="text-sm text-gray-400">Frameworks</div>
+      <div class="text-sm text-gray-400">Discussion & Community</div>
     </div>
     <div class="glass-card p-4 text-center">
       <div class="text-2xl font-bold text-purple-400 mb-1">
-        {{ categories_count.database|length|default:0 }}
+        {{ categories_count.chat|length|default:0 }}
       </div>
-      <div class="text-sm text-gray-400">Databases</div>
+      <div class="text-sm text-gray-400">Messaging & Chat</div>
     </div>
   </div>
 
@@ -260,20 +260,20 @@
     <form method="GET" class="filter-form">
       <div class="filter-group">
         <div class="filter-item">
-          <label class="filter-label">Search Technologies</label>
+          <label class="filter-label">Search SocialLinks</label>
           <input type="text" name="search" value="{{ request.GET.search }}" 
-                 placeholder="Search by name or description..." class="filter-input">
+                 placeholder="Search by name, url, or handle..." class="filter-input">
         </div>
         
         <div class="filter-item">
           <label class="filter-label">Category</label>
           <select name="category" class="filter-input">
             <option value="">All Categories</option>
-            <option value="language" {% if request.GET.category == 'language' %}selected{% endif %}>Programming Language</option>
-            <option value="framework" {% if request.GET.category == 'framework' %}selected{% endif %}>Framework/Library</option>
-            <option value="database" {% if request.GET.category == 'database' %}selected{% endif %}>Database</option>
-            <option value="cloud" {% if request.GET.category == 'cloud' %}selected{% endif %}>Cloud Service</option>
-            <option value="tool" {% if request.GET.category == 'tool' %}selected{% endif %}>Development Tool</option>
+            <option value="professional" {% if request.GET.category == 'professional' %}selected{% endif %}>Professional & Coding-Centric</option>
+            <option value="community" {% if request.GET.category == 'community' %}selected{% endif %}>Discussion & Community</option>
+            <option value="media" {% if request.GET.category == 'media' %}selected{% endif %}>Media</option>
+            <option value="chat" {% if request.GET.category == 'chat' %}selected{% endif %}>Messaging</option>
+            <option value="blog" {% if request.GET.category == 'blog' %}selected{% endif %}>Blogging & Content</option>
             <option value="other" {% if request.GET.category == 'other' %}selected{% endif %}>Other</option>
           </select>
         </div>
@@ -282,7 +282,7 @@
           <button type="submit" class="btn btn-primary">
             <i class="fas fa-search mr-2"></i>Filter
           </button>
-          <a href="{% url 'aura_admin:projects:technology_list' %}" class="btn btn-secondary">
+          <a href="{% url 'aura_admin:sociallink_list' %}" class="btn btn-secondary">
             <i class="fas fa-times mr-2"></i>Clear
           </a>
         </div>
@@ -293,28 +293,28 @@
   <!-- Quick Category Filter -->
   <div class="category-filter">
     <a href="?category=" class="category-btn {% if not request.GET.category %}active{% endif %}">
-      All <span class="tech-count">{{ technologies.count }}</span>
+      All <span class="tech-count">{{ social_links.count }}</span>
     </a>
-    <a href="?category=language" class="category-btn {% if request.GET.category == 'language' %}active{% endif %}">
-      Languages <span class="tech-count">{{ categories_count.language|length|default:0 }}</span>
+    <a href="?category=professional" class="category-btn {% if request.GET.category == 'professional' %}active{% endif %}">
+      Professional & Coding-Centric <span class="tech-count">{{ categories_count.professional|length|default:0 }}</span>
     </a>
-    <a href="?category=framework" class="category-btn {% if request.GET.category == 'framework' %}active{% endif %}">
-      Frameworks <span class="tech-count">{{ categories_count.framework|length|default:0 }}</span>
+    <a href="?category=community" class="category-btn {% if request.GET.category == 'community' %}active{% endif %}">
+      Discussion & Community <span class="tech-count">{{ categories_count.community|length|default:0 }}</span>
     </a>
-    <a href="?category=database" class="category-btn {% if request.GET.category == 'database' %}active{% endif %}">
-      Databases <span class="tech-count">{{ categories_count.database|length|default:0 }}</span>
+    <a href="?category=media" class="category-btn {% if request.GET.category == 'media' %}active{% endif %}">
+      Media <span class="tech-count">{{ categories_count.media|length|default:0 }}</span>
     </a>
-    <a href="?category=cloud" class="category-btn {% if request.GET.category == 'cloud' %}active{% endif %}">
-      Cloud <span class="tech-count">{{ categories_count.cloud|length|default:0 }}</span>
+    <a href="?category=chat" class="category-btn {% if request.GET.category == 'chat' %}active{% endif %}">
+      Messaging <span class="tech-count">{{ categories_count.chat|length|default:0 }}</span>
     </a>
-    <a href="?category=tool" class="category-btn {% if request.GET.category == 'tool' %}active{% endif %}">
-      Tools <span class="tech-count">{{ categories_count.tool|length|default:0 }}</span>
+    <a href="?category=blog" class="category-btn {% if request.GET.category == 'blog' %}active{% endif %}">
+      Blogging & Content <span class="tech-count">{{ categories_count.blog|length|default:0 }}</span>
     </a>
   </div>
 
-  <!-- Technology Grid -->
+  <!-- SocialLinks Grid -->
   <div class="tech-grid">
-    {% for tech in technologies %}
+    {% for link in social_links %}
       <div class="tech-card">
         <div class="tech-header">
           <div class="tech-info">
@@ -335,11 +335,11 @@
                class="tech-action view" title="View Technology">
               <i class="fas fa-eye"></i>
             </a>
-            <a href="{% url 'aura_admin:projects:technology_edit' tech.pk %}" 
+            <a href="{% url 'aura_admin:sociallink_edit' tech.pk %}" 
                class="tech-action edit" title="Edit Technology">
               <i class="fas fa-edit"></i>
             </a>
-            <a href="{% url 'aura_admin:projects:technology_delete' tech.pk %}" 
+            <a href="{% url 'aura_admin:sociallink_delete' tech.pk %}" 
                class="tech-action delete" title="Delete Technology"
                onclick="return confirm('Are you sure you want to delete {{ tech.name }}?')">
               <i class="fas fa-trash"></i>
@@ -380,13 +380,13 @@
               {% if request.GET.search or request.GET.category %}
                 No technologies match your current filters.
                 <br>
-                <a href="{% url 'aura_admin:projects:technology_list' %}" class="text-cyan-400 hover:text-cyan-300">Clear filters</a>
+                <a href="{% url 'aura_admin:sociallink_list' %}" class="text-cyan-400 hover:text-cyan-300">Clear filters</a>
                 to see all technologies.
               {% else %}
                 Start building your technology stack!
               {% endif %}
             </p>
-            <a href="{% url 'aura_admin:projects:technology_create' %}" 
+            <a href="{% url 'aura_admin:sociallink_create' %}" 
                class="btn btn-primary">
               <i class="fas fa-plus mr-2"></i>Add Your First Technology
             </a>
@@ -414,7 +414,7 @@
           </a>
         {% endif %}
         
-        <span class="px-3 py-2 bg-orange-500 text-black rounded-lg font-medium">
+        <span class="px-3 py-2 bg-rose-500 text-black rounded-lg font-medium">
           {{ page_obj.number }}
         </span>
         
