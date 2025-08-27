@@ -245,6 +245,16 @@ class SystemMetricInline(admin.TabularInline):
     fields = ("metric_name", "metric_value", "metric_unit", "metric_type", "is_current")
     readonly_fields = ("created_at",)
 
+# New with Skill-Tech Rework
+class SystemSkillGainInline(admin.TabularInline):
+    """Inline editing of skill gains within SystemModule admin"""
+    model = SystemSkillGain
+    extra = 0
+    fields = ['skill', 'proficiency_gained', 'how_learned']
+    autocomplete_fields = ['skill']
+    verbose_name = "Skill Gained"
+    verbose_name_plural = "Skills Gained"
+
 
 @admin.register(SystemModule)
 class SystemModuleAdmin(admin.ModelAdmin):
@@ -279,7 +289,7 @@ class SystemModuleAdmin(admin.ModelAdmin):
     )
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
-    inlines = [SystemFeatureInline, SystemImageInline, SystemMetricInline, ArchitectureComponentInline]
+    inlines = [SystemFeatureInline, SystemImageInline, SystemMetricInline, ArchitectureComponentInline, SystemSkillGainInline]
 
     # Add admin action for creating default architectures
     actions = ['create_default_architecture']
