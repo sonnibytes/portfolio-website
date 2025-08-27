@@ -27,9 +27,9 @@ from django.http import HttpResponse
 
 from datetime import datetime, timedelta
 
-from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation, Technology
+from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
 from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
-from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule
+from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule, Technology
 
 # ======= BUTTON STYLE TESTING ========
 def test_admin_styles(request):

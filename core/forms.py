@@ -12,7 +12,7 @@ from datetime import date
 
 from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink, SkillTechnologyRelation
 from markdownx.fields import MarkdownxFormField  # pyright: ignore[reportMissingImports]
-
+from projects.models import Technology
 
 # Existing Contact Form
 # class ContactForm(forms.ModelForm):
