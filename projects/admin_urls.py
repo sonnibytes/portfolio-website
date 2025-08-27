@@ -57,8 +57,8 @@ urlpatterns = [
     path('api/systems/<int:pk>/create-default-architecture/', admin_views.CreateDefaultArchitectureView.as_view(), name='create_default_architecture'),
 
     # New SystemSkillGain Views
-    path('skill-gains/', admin_views.SystemSkillGainListAdminView.as_view(), name='system_skill_gain_list'),
-    path('skill-gains/create/', admin_views.SystemTypeCreateAdminView.as_view(), name='system_skill_gain_create'),
-    path('skill-gains/<int:pk>/edit/', admin_views.SystemTypeUpdateAdminView.as_view(), name='system_skill_gain_edit'),
-    path('skill-gains/<int:pk>/delete/', admin_views.SystemTypeDeleteAdminView.as_view(), name='system_skill_gain_delete'),
+    path('system-skill-gains/', admin_views.SystemSkillGainListAdminView.as_view(), name='system_skill_gain_list'),
+    path('system-skill-gains/create/', admin_views.SystemTypeCreateAdminView.as_view(), name='system_skill_gain_create'),
+    path('system-skill-gains/<int:pk>/edit/', admin_views.SystemTypeUpdateAdminView.as_view(), name='system_skill_gain_edit'),
+    path('system-skill-gains/<int:pk>/delete/', admin_views.SystemTypeDeleteAdminView.as_view(), name='system_skill_gain_delete'),
 ]

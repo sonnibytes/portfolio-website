@@ -1,0 +1,224 @@
+{% extends "admin/admin_base.html" %}
+{% load static %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.relationship-card {
+    background: linear-gradient(135deg, rgba(179, 157, 219, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.relationship-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(179, 157, 219, 0.5);
+    box-shadow: 0 8px 32px rgba(179, 157, 219, 0.2);
+}
+
+.strength-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.strength-4 { background: rgba(76, 175, 80, 0.2); color: #4CAF50; border: 1px solid rgba(76, 175, 80, 0.3); }
+.strength-3 { background: rgba(33, 150, 243, 0.2); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.3); }
+.strength-2 { background: rgba(255, 152, 0, 0.2); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.3); }
+.strength-1 { background: rgba(158, 158, 158, 0.2); color: #9E9E9E; border: 1px solid rgba(158, 158, 158, 0.3); }
+
+.relationship-type-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: #E8EAF6;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #00FFFF;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #B0BEC5;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-link text-purple-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <a href="{% url 'aura_admin:core:skill_tech_relation_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            Add Relationship
+        </a>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ relationship_stats.total_relationships }}</div>
+            <div class="stat-label">Total Relationships</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ relationship_stats.primary_relationships }}</div>
+            <div class="stat-label">Primary Implementations</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ relationship_stats.skills_with_tech }}</div>
+            <div class="stat-label">Skills with Technologies</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ relationship_stats.technologies_with_skills }}</div>
+            <div class="stat-label">Technologies with Skills</div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="glass-card p-6">
+        <form method="GET" class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-64">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Skill</label>
+                <select name="skill" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white">
+                    <option value="">All Skills</option>
+                    {% for skill in skills %}
+                        <option value="{{ skill.slug }}" {% if request.GET.skill == skill.slug %}selected{% endif %}>
+                            {{ skill.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="flex-1 min-w-64">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Technology</label>
+                <select name="technology" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white">
+                    <option value="">All Technologies</option>
+                    {% for technology in technologies %}
+                        <option value="{{ technology.slug }}" {% if request.GET.technology == technology.slug %}selected{% endif %}>
+                            {{ technology.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="flex-1 min-w-48">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Strength</label>
+                <select name="strength" class="w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white">
+                    <option value="">All Strengths</option>
+                    {% for value, label in strength_choices %}
+                        <option value="{{ value }}" {% if request.GET.strength == value|stringformat:"s" %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary">
+                <i class="fas fa-filter mr-2"></i>Filter
+            </button>
+            
+            <a href="{% url 'aura_admin:core:skill_tech_relation_list' %}" class="btn btn-outline">
+                <i class="fas fa-times mr-2"></i>Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- Relationships Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for relationship in relationships %}
+            <div class="relationship-card">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-white mb-1">{{ relationship.skill.name }}</h3>
+                        <p class="text-sm text-gray-400">{{ relationship.skill.get_category_display }}</p>
+                    </div>
+                    <div class="strength-indicator strength-{{ relationship.strength }}">
+                        <span>{{ relationship.get_strength_display }}</span>
+                        <div class="w-2 h-2 rounded-full" style="background-color: {{ relationship.get_strength_color }};"></div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-cog text-teal-400"></i>
+                        <span class="text-white font-medium">{{ relationship.technology.name }}</span>
+                    </div>
+                    <span class="relationship-type-badge">{{ relationship.get_relationship_type_display }}</span>
+                </div>
+                
+                {% if relationship.notes %}
+                    <p class="text-sm text-gray-300 mb-4">{{ relationship.notes|truncatewords:15 }}</p>
+                {% endif %}
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex space-x-2">
+                        <a href="{% url 'aura_admin:core:skill_tech_relation_update' relationship.pk %}" 
+                           class="btn btn-sm btn-secondary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'aura_admin:core:skill_tech_relation_delete' relationship.pk %}" 
+                           class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                    
+                    {% if relationship.last_used_together %}
+                        <span class="text-xs text-gray-400">
+                            Last used: {{ relationship.last_used_together|date:"M Y" }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-link text-6xl text-gray-600 mb-4"></i>
+                <h3 class="text-xl text-gray-400 mb-2">No Relationships Found</h3>
+                <p class="text-gray-500">Create your first skill-technology relationship to get started.</p>
+                <a href="{% url 'aura_admin:core:skill_tech_relation_create' %}" class="btn btn-primary mt-4">
+                    <i class="fas fa-plus mr-2"></i>Add Relationship
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
