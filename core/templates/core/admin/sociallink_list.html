@@ -1,4 +1,5 @@
 {% extends 'admin/admin_base.html' %}
+{% load aura_filters %}
 {% load static %}
 
 {% block admin_title %}SocialLink Management{% endblock %}
@@ -318,47 +319,47 @@
       <div class="tech-card">
         <div class="tech-header">
           <div class="tech-info">
-            <div class="tech-icon" style="background-color: {{ tech.color }}">
-              {% if tech.icon %}
-                <i class="{{ tech.icon }}"></i>
+            <div class="tech-icon" style="background-color: {{ link.color }}">
+              {% if link.icon %}
+                <i class="{{ link.icon|safe_icon:'brands' }}"></i>
               {% else %}
-                {{ tech.name|first|upper }}
+                {{ link.name|first|upper }}
               {% endif %}
             </div>
             <div class="tech-details">
-              <h3>{{ tech.name }}</h3>
-              <div class="tech-category">{{ tech.get_category_display }}</div>
+              <h3>{{ link.name }}</h3>
+              <div class="tech-category">{{ link.get_category_display }}</div>
             </div>
           </div>
           <div class="tech-actions">
             <a href="#" target="_blank" 
-               class="tech-action view" title="View Technology">
+               class="tech-action view" title="View SocialLink">
               <i class="fas fa-eye"></i>
             </a>
-            <a href="{% url 'aura_admin:sociallink_edit' tech.pk %}" 
-               class="tech-action edit" title="Edit Technology">
+            <a href="{% url 'aura_admin:sociallink_update' link.pk %}" 
+               class="tech-action edit" title="Edit SocialLink">
               <i class="fas fa-edit"></i>
             </a>
-            <a href="{% url 'aura_admin:sociallink_delete' tech.pk %}" 
-               class="tech-action delete" title="Delete Technology"
-               onclick="return confirm('Are you sure you want to delete {{ tech.name }}?')">
+            <a href="{% url 'aura_admin:sociallink_delete' link.pk %}" 
+               class="tech-action delete" title="Delete SocialLink"
+               onclick="return confirm('Are you sure you want to delete {{ link.name }}?')">
               <i class="fas fa-trash"></i>
             </a>
           </div>
         </div>
         
-        {% if tech.description %}
+        <!-- {% if tech.description %}
           <div class="tech-description">
             {{ tech.description|truncatechars:120 }}
           </div>
-        {% endif %}
+        {% endif %} -->
         
         <div class="tech-stats">
           <span>
-            <i class="fas fa-project-diagram mr-1"></i>
-            {{ tech.systems.count }} system{{ tech.systems.count|pluralize }}
+            <i class="fas fa-user mr-1"></i>
+            {{ link.handle }} 
           </span>
-          <span>
+          <!-- <span>
             {% if tech.documentation_url %}
               <a href="{{ tech.documentation_url }}" target="_blank" 
                  class="text-cyan-400 hover:text-cyan-300">
@@ -367,28 +368,28 @@
             {% else %}
               <span class="text-gray-500">No docs</span>
             {% endif %}
-          </span>
+          </span> -->
         </div>
       </div>
     {% empty %}
       <div class="col-span-full">
         <div class="text-center py-12">
           <div class="text-gray-400">
-            <i class="fas fa-tools text-6xl mb-4"></i>
-            <h3 class="text-xl font-bold mb-2">No Technologies Found</h3>
+            <i class="fas fa-icons text-6xl mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">No SocialLinks Found</h3>
             <p class="text-sm mb-4">
               {% if request.GET.search or request.GET.category %}
-                No technologies match your current filters.
+                No social links match your current filters.
                 <br>
                 <a href="{% url 'aura_admin:sociallink_list' %}" class="text-cyan-400 hover:text-cyan-300">Clear filters</a>
-                to see all technologies.
+                to see all social links.
               {% else %}
-                Start building your technology stack!
+                Start building your social network!
               {% endif %}
             </p>
             <a href="{% url 'aura_admin:sociallink_create' %}" 
                class="btn btn-primary">
-              <i class="fas fa-plus mr-2"></i>Add Your First Technology
+              <i class="fas fa-plus mr-2"></i>Add Your First SocialLink
             </a>
           </div>
         </div>
@@ -400,7 +401,7 @@
   {% if is_paginated %}
     <div class="flex items-center justify-between mt-8">
       <div class="text-sm text-gray-400">
-        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} technologies
+        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} social links
       </div>
       <div class="flex space-x-2">
         {% if page_obj.has_previous %}

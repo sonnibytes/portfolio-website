@@ -23,7 +23,7 @@ register = template.Library()
 
 # Safe handling of icons since it's hit or miss on whether the fas/fa-solid is always included
 @register.filter
-def safe_icon(value, default="fa-code", prefix="fa-solid"):
+def safe_icon(value, type="solid", default="fa-code"):
     """
     Checks if icon has Font Awesome leading fas/fa-solid and adds if needed. If no icon, return default.
     Usage: <i class="{{ category.icon|safe_icon }}"></i>
@@ -37,6 +37,12 @@ def safe_icon(value, default="fa-code", prefix="fa-solid"):
     -- cogs 
     """
     value = value.strip()
+
+    prefixes = {
+        'solid': 'fa-solid',
+        'brands': 'fa-brands',
+    }
+    prefix = prefixes.get(type, 'solid')
 
     try:
         if not value:
