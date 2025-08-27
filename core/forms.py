@@ -12,7 +12,7 @@ from datetime import date
 
 from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink, SkillTechnologyRelation
 from markdownx.fields import MarkdownxFormField  # pyright: ignore[reportMissingImports]
-from projects.models import Technology
+from projects.models import Technology, SystemModule
 
 # Existing Contact Form
 # class ContactForm(forms.ModelForm):
@@ -139,13 +139,12 @@ class CorePageForm(forms.ModelForm):
 
 
 class SkillForm(forms.ModelForm):
-    """Enhanced skill form with technology relationship support."""
+    """Enhanced skill form - relationships handled separately."""
 
     class Meta:
         model = Skill
         fields = [
             'name',
-            # 'slug',
             'category',
             'description',
             'proficiency',
@@ -157,20 +156,14 @@ class SkillForm(forms.ModelForm):
             'color',
             'display_order',
             'is_featured',
-            'related_technology'
+             # Note: related_technologies handled via SkillTechnologyRelation views
         ]
 
         widgets = {
             "name": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Skill Name (e.g., Python, Django, React)",
-                }
-            ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "auto-generated-from-name",
+                    "placeholder": "e.g., Machine Learning, API Design",
                 }
             ),
             "category": forms.Select(attrs={"class": "form-control"}),
@@ -186,24 +179,24 @@ class SkillForm(forms.ModelForm):
                     "class": "form-control",
                 }
             ),
+            "years_experience": forms.NumberInput(
+                attrs={"class": "form-control", "min": 0, "max": 50, "step": 0.5}
+            ),
+            "last_used": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
             "icon": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "fa-python (FontAwesome icon name)",
+                    "placeholder": "FontAwesome icon name (fa-cogs, fa-chart-simple, etc)",
                 }
             ),
             "color": forms.TextInput(attrs={"class": "form-control", "type": "color"}),
             "display_order": forms.NumberInput(
                 attrs={"class": "form-control", "min": 0}
             ),
-            "related_technology": forms.Select(attrs={"class": "form-control"}),
-            "years_experience": forms.NumberInput(
-                attrs={"class": "form-control", "min": 0, "max": 50, "step": 0.5}
-            ),
+            # "related_technology": forms.Select(attrs={"class": "form-control"}),
             "is_featured": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "last_used": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
             "is_currently_learning": forms.CheckboxInput(
                 attrs={"class": "form-check-input"}
             ),
@@ -213,14 +206,18 @@ class SkillForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Populate related_technology choices
-        try:
-            from projects.models import Technology
-            self.fields['related_technology'].queryset = Technology.objects.all()
-            self.fields['related_technology'].empty_label = "Select related technology..."
-        except ImportError:
-            # If projects app isn't available, hide the field
-            self.fields['related_technology'].widget = forms.HiddenInput()
+        self.fields['last_used'].required = False
+        self.fields['icon'].required = False
+        self.fields['color'].required = False
+
+        # # Populate related_technology choices
+        # try:
+        #     from projects.models import Technology
+        #     self.fields['related_technology'].queryset = Technology.objects.all()
+        #     self.fields['related_technology'].empty_label = "Select related technology..."
+        # except ImportError:
+        #     # If projects app isn't available, hide the field
+        #     self.fields['related_technology'].widget = forms.HiddenInput()
     
     def clean_slug(self):
         """Auto-generate slug from name if not provided."""
@@ -255,7 +252,6 @@ class EducationForm(forms.ModelForm):
         model = Education
         fields = [
             'institution',
-            # 'slug',
             'degree',
             'field_of_study',
             'start_date',
@@ -268,32 +264,27 @@ class EducationForm(forms.ModelForm):
             'hours_completed',
             'related_systems',
             'learning_intensity',
-            'career_relevance'
+            'career_relevance',
+            # Note: skills_learned handled via EducationSkillDevelopment views
         ]
 
         widgets = {
             "institution": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Institution/Platform Name",
-                }
-            ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "auto-generated-from-degree-institution",
+                    "placeholder": "University, Company, Platform name",
                 }
             ),
             "degree": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Degree/Certification/Course Name",
+                    "placeholder": "Degree name or course title",
                 }
             ),
             "field_of_study": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Field of Study/Subject Area",
+                    "placeholder": "Computer Science, Web Development, etc.",
                 }
             ),
             "start_date": forms.DateInput(
@@ -306,7 +297,7 @@ class EducationForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "rows": 4,
-                    "placeholder": "Describe what you learned and achieved...",
+                    "placeholder": "Key topics covered, skills gained, final projects...",
                 }
             ),
             "is_current": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -314,7 +305,7 @@ class EducationForm(forms.ModelForm):
             "platform": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "e.g., edX HarvardX, Udemy, University of Alabama",
+                    "placeholder": "e.g., Coursera, Udemy, edX, etc.",
                 }
             ),
             "certificate_url": forms.URLInput(
@@ -330,8 +321,8 @@ class EducationForm(forms.ModelForm):
                     "placeholder": "Total hours of instruction/study",
                 }
             ),
-            "related_systems": forms.SelectMultiple(
-                attrs={"class": "form-control", "size": 4}
+            "related_systems": forms.CheckboxSelectMultiple(
+                attrs={"class": "form-control"}
             ),
             "learning_intensity": forms.Select(attrs={"class": "form-control"}),
             "career_relevance": forms.Select(attrs={"class": "form-control"}),
@@ -344,10 +335,18 @@ class EducationForm(forms.ModelForm):
         try:
             from projects.models import SystemModule
             # Not going to filter systems by status so able to link drafts, testing, etc
-            self.fields['related_systems'].queryset = SystemModule.objects.all()
+            self.fields['related_systems'].queryset = SystemModule.objects.order_by('title')
         except ImportError:
             # If projects app not available, hide field
             self.fields['related_systems'].widget = forms.HiddenInput()
+        
+        # Make optional fields clearly optional
+        self.fields['end_date'].required = False
+        self.fields['platform'].required = False
+        self.fields['certificate_url'].required = False
+        self.fields['description'].required = False
+
+        self.fields['related_systems'].help_text = "Projects where you applied knowledge from this education"
     
     def clean_slug(self):
         """Auto-generate slug from degree and institution."""
@@ -415,11 +414,17 @@ class EducationSkillDevelopmentForm(forms.ModelForm):
             "learning_notes": forms.Textarea(
                 attrs={
                     "class": "form-control",
-                    "rows": 3,
-                    "placeholder": "Specific learning outcomes or projects...",
+                    "rows": 4,
+                    "placeholder": "Specific learning outcomes, projects completed, key concepts mastered...",
                 }
             ),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['education'].queryset = Education.objects.order_by('-start_date')
+        self.fields['skill'].queryset = Skill.objects.order_by('category', 'name')
+        self.fields['learning_notes'].required = False
     
     def clean(self):
         """Cross-field validation for proficiency progression."""
@@ -444,7 +449,6 @@ class ExperienceForm(forms.ModelForm):
         model = Experience
         fields = [
             "company",
-            # "slug",
             "position",
             "location",
             "description",
@@ -457,12 +461,6 @@ class ExperienceForm(forms.ModelForm):
             "company": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Company Name"}
             ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "auto-generated-from-position-company",
-                }
-            ),
             "position": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Job Title/Position"}
             ),
@@ -473,7 +471,7 @@ class ExperienceForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "rows": 6,
-                    "placeholder": "Describe your role, responsibilities, and achievements...",
+                    "placeholder": "Role responsibilities, key achievements, impact made...",
                 }
             ),
             "start_date": forms.DateInput(
@@ -490,6 +488,12 @@ class ExperienceForm(forms.ModelForm):
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['end_date'].required = False
+        self.fields['location'].required = False
+        self.fields['technologies'].required = False
     
     def clean_slug(self):
         """Auto-generate slug from position and company."""
