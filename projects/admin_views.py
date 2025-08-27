@@ -66,6 +66,29 @@ class SystemSkillGainListAdminView(BaseAdminListView, BulkActionMixin):
         return context
 
 
+class SystemSkillGainCreateAdminView(BaseAdminCreateView):
+    """Create new system skill gain relationship"""
+
+    model = SystemSkillGain
+    form_class = SystemSkillGainForm
+    template_name = "projects/admin/system_skill_gain_form.html"
+    success_url = reverse_lazy("aura_admin:projects:system_skill_gain_list")
+
+
+class SystemSkillGainUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing system skill gain relationship"""
+
+    model = SystemSkillGain
+    form_class = SystemSkillGainForm
+    template_name = "projects/admin/system_skill_gain_form.html"
+    success_url = reverse_lazy("aura_admin:projects:system_skill_gain_list")
+
+
+class SystemSkillGainDeleteAdminView(BaseAdminDeleteView):
+    """Delete system skill gain relationship"""
+
+    model = SystemSkillGain
+    success_url = reverse_lazy("aura_admin:projects:system_skill_gain_list")
 
 
 class ProjectsAdminDashboardView(BaseAdminListView):
