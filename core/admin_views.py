@@ -499,17 +499,22 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             "total_learning_hours": Education.objects.aggregate(
                 total=Sum("hours_completed")
             )["total"] or 0,
-            "avg_career_relevance": Education.objects.aggregate(
-                avg=Avg("career_relevance")
-            )["avg"] or 0,
+            # "avg_career_relevance": Education.objects.aggregate(
+            #     avg=Avg("career_relevance")
+            # )["avg"] or 0,
+            "formal_education": Education.objects.filter(
+                learning_type__in=['degree', 'bootcamp']
+            ).count(),
         }
 
         # Experience Analytics
         experience_stats = {
-            "total_positions": Experience.objects.count(),
-            "current_positions": Experience.objects.filter(is_current=True).count(),
-            "total_companies": Experience.objects.values("company").distinct().count(),
             "years_experience": self.calculate_total_experience(),
+            "total_companies": Experience.objects.values('company').distinct().count(),
+            "current_positions": Experience.objects.filter(is_current=True).count(),
+            "unique_industries": 4,  # Placeholder for now
+            # TODO: Enhance Experience model w industry?
+            # "unique_industries": Experience.objects.values('industry').distinct().count(),
         }
 
         # Contact Analytics
@@ -517,38 +522,57 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             "total_contacts": Contact.objects.count(),
             "unread_contacts": Contact.objects.filter(is_read=False).count(),
             "this_month_contacts": Contact.objects.filter(
-                created_at__gte=timezone.now().replace(day=1)
+                created_at__month=timezone.now().month,
+                created_at__year=timezone.now().year
             ).count(),
-            "pending_responses": Contact.objects.filter(response_sent=False).count(),
+            "pending_responses": Contact.objects.filter(is_read=True, response_sent=False).count(),
             "high_priority_contacts": Contact.objects.filter(priority="high").count(),
         }
 
-        # Portfolio Analytics
-        analytics_stats = {
-            "total_analytics_days": PortfolioAnalytics.objects.count(),
-            "avg_learning_hours": PortfolioAnalytics.objects.aggregate(
-                avg=Avg("learning_hours_logged")
-            )["avg"] or 0,
-            "total_visitors_month": PortfolioAnalytics.objects.filter(
-                date__gte=timezone.now().date().replace(day=1)
-            ).aggregate(total=Sum("unique_visitors"))["total"] or 0,
-            "last_analytics_date": PortfolioAnalytics.objects.order_by("-date").first(),
+        # NEW: Social Links Analytics
+        social_stats = {
+            "total_social_links": SocialLink.objects.count(),
+            "professional_links": SocialLink.objects.filter(category='professional').count(),
+            "community_links": SocialLink.objects.filter(category='community').count(),
+            "media_links": SocialLink.objects.filter(category='media').count(),
+            "chat_links": SocialLink.objects.filter(category='chat').count(),
+            "blog_links": SocialLink.objects.filter(category='blog').count(),
+            "other_links": SocialLink.objects.filter(category='other').count(),
+            # Category breakdown for dashboard display
+            "category_breakdown": {
+                category[0]: SocialLink.objects.filter(category=category[0]).count()
+                for category in SocialLink.CATEGORY_CHOICES
+            }
         }
+
+        # Portfolio Analytics
+        # analytics_stats = {
+        #     "total_analytics_days": PortfolioAnalytics.objects.count(),
+        #     "avg_learning_hours": PortfolioAnalytics.objects.aggregate(
+        #         avg=Avg("learning_hours_logged")
+        #     )["avg"] or 0,
+        #     "total_visitors_month": PortfolioAnalytics.objects.filter(
+        #         date__gte=timezone.now().date().replace(day=1)
+        #     ).aggregate(total=Sum("unique_visitors"))["total"] or 0,
+        #     "last_analytics_date": PortfolioAnalytics.objects.order_by("-date").first(),
+        # }
 
         # Cross-app integration stats
         integration_stats = {
             "education_skill_connections": EducationSkillDevelopment.objects.count(),
             "skills_linked_to_projects": Skill.objects.filter(
-                developed_in_projects__isnull=False
-            )
-            .distinct()
-            .count(),
-            "education_with_projects": Education.objects.filter(
-                related_systems__isnull=False
-            )
-            .distinct()
-            .count(),
+                related_technology__systems__isnull=False
+            ).distinct().count(),
+            # "education_with_projects": Education.objects.filter(
+            #     related_systems__isnull=False
+            # )
+            # .distinct()
+            # .count(),
+            "total_skill_tech_relations": SkillTechnologyRelation.objects.count(),
         }
+
+        # Recent Analytics (Portfolio Analytics) - replacing analytics above
+        recent_analytics = PortfolioAnalytics.objects.order_by('-date')[:7]
 
         context.update(
             {
@@ -559,11 +583,17 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
                 "education_stats": education_stats,
                 "experience_stats": experience_stats,
                 "contact_stats": contact_stats,
-                "analytics_stats": analytics_stats,
+                "social_stats": social_stats,
+                "recent_analytics": recent_analytics,
+                # "analytics_stats": analytics_stats,
                 "integration_stats": integration_stats,
-                "recent_contacts": Contact.objects.order_by("-created_at")[:5],
-                "recent_education": Education.objects.order_by("-end_date", "-start_date")[:5],
-                "recent_analytics": PortfolioAnalytics.objects.order_by("-date")[:7],
+                # "recent_contacts": Contact.objects.order_by("-created_at")[:5],
+                # "recent_education": Education.objects.order_by("-end_date", "-start_date")[:5],
+                # "recent_analytics": PortfolioAnalytics.objects.order_by("-date")[:7],
+
+                # Meta information
+                'dashboard_title': 'Core System Management',
+                'dashboard_subtitle': 'Portfolio foundation, skills, and learning journey administration',
             }
         )
 
