@@ -8,11 +8,63 @@ from django import forms
 from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
 from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection, SystemSkillGain
+from core.models import Skill
 
 
 # NEW: For new skill-tech relationship
+
 class SystemSkillGainForm(forms.ModelForm):
-    pass
+    """Enhanced form for managing system skill gains with technology connections."""
+    
+    class Meta:
+        model = SystemSkillGain
+        fields = [
+            'system',
+            'skill', 
+            'proficiency_gained',
+            'technologies_used',
+            'how_learned',
+        ]
+        widgets = {
+            'system': forms.Select(attrs={
+                'class': 'w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none',
+            }),
+            'skill': forms.Select(attrs={
+                'class': 'w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none',
+            }),
+            'proficiency_gained': forms.Select(attrs={
+                'class': 'w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none',
+            }),
+            'technologies_used': forms.CheckboxSelectMultiple(attrs={
+                'class': 'technology-checkboxes space-y-2'
+            }),
+            'how_learned': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none',
+                'placeholder': 'Tutorial, documentation, experimentation, etc.'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Order querysets for better UX
+        self.fields['system'].queryset = SystemModule.objects.order_by('title')
+        self.fields['skill'].queryset = Skill.objects.order_by('category', 'name')
+        self.fields['technologies_used'].queryset = Technology.objects.order_by('category', 'name')
+        
+        # Make some fields optional
+        self.fields['how_learned'].required = False
+        
+        # Add help text
+        self.fields['proficiency_gained'].help_text = "What level of proficiency did you gain with this skill from this project?"
+        self.fields['technologies_used'].help_text = "Which technologies were used to apply this skill in this project?"
+    
+    # def clean_time_invested_hours(self):
+    #     """Validate time invested hours"""
+    #     hours = self.cleaned_data.get('time_invested_hours')
+    #     if hours is not None and hours < 0:
+    #         raise forms.ValidationError("Time invested cannot be negative.")
+    #     return hours
 
 
 class SystemModuleForm(forms.ModelForm):
