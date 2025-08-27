@@ -56,6 +56,11 @@ from .admin_views import (
     PortfolioAnalyticsUpdateAdminView,
     PortfolioAnalyticsDeleteAdminView,
     AnalyticsChartDataView,
+    # SkillTechnologyRelation Management
+    SkillTechnologyRelationListAdminView,
+    SkillTechnologyRelationCreateAdminView,
+    SkillTechnologyRelationUpdateAdminView,
+    SkillTechnologyRelationDeleteAdminView,
 
     test_admin_styles,
 )
@@ -154,6 +159,15 @@ urlpatterns = [
     
     # Analytics AJAX functionality
     path("analytics/chart-data/", AnalyticsChartDataView.as_view(), name="analytics_chart_data"),
+
+    # ===================
+    # SKILL-TECHNOLOGY RELATIONSHIP MANAGEMENT
+    # ===================
+
+    path("skill-tech-relations/", SkillTechnologyRelationListAdminView.as_view(), name="skill_tech_relation_list"),
+    path("skill-tech-relations/create/", SkillTechnologyRelationCreateAdminView.as_view(), name="skill_tech_relation_create"),
+    path("skill-tech-relations/<int:pk>/edit/", SkillTechnologyRelationUpdateAdminView.as_view(), name="skill_tech_relation_update"),
+    path("skill-tech-relations/<int:pk>/delete/", SkillTechnologyRelationDeleteAdminView.as_view(), name="skill_tech_relation_delete"),
     
     # ===================
     # APP ADMIN INCLUDES
