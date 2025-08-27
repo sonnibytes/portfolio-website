@@ -367,8 +367,8 @@ class ContactAdmin(admin.ModelAdmin):
 
 @admin.register(SocialLink)
 class SocialLinkAdmin(admin.ModelAdmin):
-    list_display = ("name", "url", "handle", "display_order")
-    search_fields = ("name", "handle", "url")
+    list_display = ("name", "url", "handle", "display_order", "category")
+    search_fields = ("name", "handle", "url", "category")
     list_editable = ("display_order",)
     ordering = ("display_order", "name")
 

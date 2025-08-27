@@ -1151,7 +1151,17 @@ class SocialLinkListAdminView(BaseAdminListView, BulkActionMixin):
     context_object_name = "social_links"
 
     def get_queryset(self):
-        return SocialLink.objects.order_by("display_order")
+        queryset = SocialLink.objects.order_by("display_order")
+
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(url__icontains=search_query) |
+                Q(handle__icontains=search_query)
+            )
+        
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

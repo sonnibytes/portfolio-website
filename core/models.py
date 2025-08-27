@@ -734,6 +734,15 @@ class Contact(models.Model):
 class SocialLink(models.Model):
     """Model for social media and external profile links."""
 
+    CATEGORY_CHOICES = [
+        ('professional', 'Professional & Coding-Centric'),
+        ('community', 'Discussion & Community'),
+        ('media', 'Media & Video'),
+        ('chat', 'Messaging & Chat'),
+        ('blog', 'Blogging & Content'),
+        ('other', 'Other Socials')
+    ]
+
     name = models.CharField(max_length=50)
     url = models.URLField()
     handle = models.CharField(max_length=100, blank=True)
@@ -741,6 +750,9 @@ class SocialLink(models.Model):
         max_length=50, blank=True, help_text="Font Awesome icon name (e.g., 'fa-github')"
     )
     display_order = models.PositiveIntegerField(default=0)
+
+    # New SocialLink Category
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
 
     class Meta:
         ordering = ['display_order']
@@ -750,6 +762,8 @@ class SocialLink(models.Model):
 
     def get_absolute_url(self):
         return self.url  # External URL, so just return the actual URL
+    
+    def get_category_icon
 
 
 class PortfolioAnalytics(models.Model):
