@@ -26,7 +26,6 @@ class SystemSkillGainAdmin(admin.ModelAdmin):
         'skill',
         'proficiency_gained_display',
         'tech_count',
-        'time_invested_hours',
         'how_learned_short'
     ]
 
@@ -41,7 +40,6 @@ class SystemSkillGainAdmin(admin.ModelAdmin):
         'skill__name',
         'system__title',
         'how_learned',
-        'learning_resources'
     ]
 
     autocomplete_fields = ['skill', 'system']
@@ -57,7 +55,7 @@ class SystemSkillGainAdmin(admin.ModelAdmin):
             'description': 'Which technologies were used to apply this skill in this project'
         }),
         ('Learning Details', {
-            'fields': ('how_learned', 'learning_resources', 'time_invested_hours'),
+            'fields': ('how_learned',),
             'classes': ('collapse',)
         }),
     )
