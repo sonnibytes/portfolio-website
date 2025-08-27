@@ -763,8 +763,6 @@ class SocialLink(models.Model):
     def get_absolute_url(self):
         return self.url  # External URL, so just return the actual URL
     
-    def get_category_icon
-
 
 class PortfolioAnalytics(models.Model):
     """
