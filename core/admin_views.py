@@ -660,7 +660,7 @@ class SkillListAdminView(BaseAdminListView, BulkActionMixin):
     context_object_name = "skills"
 
     def get_queryset(self):
-        queryset = Skill.objects.select_related("related_technology").order_by(
+        queryset = Skill.objects.prefetch_related('related_technologies').order_by(
             "category", "display_order"
         )
 
@@ -702,6 +702,11 @@ class SkillListAdminView(BaseAdminListView, BulkActionMixin):
                 "featured": Skill.objects.filter(is_featured=True).count(),
                 "is_learning": Skill.objects.filter(is_currently_learning=True).count(),
                 "certified": Skill.objects.filter(is_certified=True).count(),
+                # NEW: Technology relationship stats
+                'skills_with_tech': Skill.objects.filter(
+                    related_technologies__isnull=False
+                ).distinct().count(),
+                'total_tech_relationships': SkillTechnologyRelation.objects.count(),
             }
         )
         return context
