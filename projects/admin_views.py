@@ -23,8 +23,49 @@ from core.admin_views import (
     BaseAdminView,
     BulkActionMixin
 )
-from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
-from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm, ArchitectureComponentForm, ArchitectureConnectionForm
+from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection, SystemSkillGain
+from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm, ArchitectureComponentForm, ArchitectureConnectionForm, SystemSkillGainForm
+from core.models import Skill
+
+# NEW: SystemSkillGain Mangement
+class SystemSkillGainListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage system skill gains."""
+
+    model = SystemSkillGain
+    template_name = "projects/admin/system_skill_gain_list.html"
+    context_object_name = "skill_gains"
+
+    def get_queryset(self):
+        queryset = SystemSkillGain.objects.select_related(
+            'system', 'skill'
+        ).prefetch_related('technologies_used').order_by(
+            '-system__created_at', 'skill__name'
+        )
+
+        # Filter by system
+        system_filter = self.request.GET.get('system', '')
+        if system_filter:
+            queryset = queryset.filter(system__slug=system_filter)
+        
+        # Filter by skill
+        skill_filter = self.request.GET.get('skill', '')
+        if skill_filter:
+            queryset = queryset.filter(skill__slug=skill_filter)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'System Skill Gains',
+            'subtitle': 'Skills ddeveloped through projects',
+            'systems': SystemModule.objects.order_by('title'),
+            'skills': Skill.objects.order_by('name'),
+            'proficiency_choices': SystemSkillGain.PROFICIENCY_GAINED_CHOICES,
+        })
+        return context
+
+
 
 
 class ProjectsAdminDashboardView(BaseAdminListView):

@@ -7,7 +7,12 @@ Version 2.0
 from django import forms
 from django.utils.text import slugify
 from markdownx.fields import MarkdownxFormField
-from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
+from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection, SystemSkillGain
+
+
+# NEW: For new skill-tech relationship
+class SystemSkillGainForm(forms.ModelForm):
+    pass
 
 
 class SystemModuleForm(forms.ModelForm):
