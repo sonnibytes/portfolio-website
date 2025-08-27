@@ -27,8 +27,8 @@ from django.http import HttpResponse
 
 from datetime import datetime, timedelta
 
-from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics
-from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm
+from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation, Technology
+from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
 from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule
 
 # ======= BUTTON STYLE TESTING ========
@@ -730,6 +730,67 @@ class SkillDeleteAdminView(BaseAdminDeleteView):
 
     model = Skill
     success_url = reverse_lazy("aura_admin:core:skill_list")
+
+
+# ========== NEW: SKILL-TECHNOLOGY RELATIONSHIP VIEWS ==========
+
+class SkillTechnologyRelationListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage skill-technology relationships."""
+
+    model = SkillTechnologyRelation
+    template_name = "core/admin/skill_technology_relation_list.html"
+    context_object_name = "relationships"
+
+    def get_queryset(self):
+        queryset = SkillTechnologyRelation.objects.select_related(
+            'skill', 'technology'
+        ).order_by('skill__category', 'skill__name', '-strength')
+
+        # Filter by skill
+        skill_filter = self.request.GET.get('skill', '')
+        if skill_filter:
+            queryset = queryset.filter(skill__slug=skill_filter)
+        
+        # Filter by technology
+        tech_filter = self.request.GET.get('technology', '')
+        if tech_filter:
+            queryset = queryset.filter(technology__slug=tech_filter)
+        
+        # Filter by strength
+        strength_filter = self.request.GET.get('strength', '')
+        if strength_filter:
+            queryset = queryset.filter(strength=int(strength_filter))
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Skill-Technology Relationships',
+            'subtitle': 'Manage connections between skills and technologies',
+            'skills': Skill.objects.all().order_by('name'),
+            'technologies': Technology.objects.all().order_by('name'),
+            'strength_choices': SkillTechnologyRelation.RELATIONSHIP_STRENGTH,
+            'relationship_stats': self.get_relationship_stats(),
+        })
+        return context
+    
+    def get_relationship_stats(self):
+        """Get stats for the dashboard"""
+        relationships = SkillTechnologyRelation.objects.all()
+        return {
+            'total_relationships': relationships.count(),
+            'primary_relationships': relationships.filter(strength=4).count(),
+            'essential_relationships': relationships.filter(strength=3).count(),
+            'skills_with_tech': Skill.objects.filter(
+                related_technologies__isnull=False
+            ).distinct().count(),
+            'technologies_with_skills': Technology.objects.filter(
+                related_skills__isnull=False
+            ).distinct().count(),
+        }
+
+
 
 
 # ===================

@@ -10,7 +10,7 @@ from django.utils.text import slugify
 
 from datetime import date
 
-from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink
+from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink, SkillTechnologyRelation
 from markdownx.fields import MarkdownxFormField  # pyright: ignore[reportMissingImports]
 
 
@@ -40,6 +40,9 @@ from markdownx.fields import MarkdownxFormField  # pyright: ignore[reportMissing
 #                 'rows': 5
 #             }),
 #         }
+
+class SkillTechnologyRelationForm(forms.ModelForm):
+    pass
 
 
 class CorePageForm(forms.ModelForm):
