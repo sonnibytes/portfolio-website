@@ -168,6 +168,15 @@ urlpatterns = [
     path("skill-tech-relations/create/", SkillTechnologyRelationCreateAdminView.as_view(), name="skill_tech_relation_create"),
     path("skill-tech-relations/<int:pk>/edit/", SkillTechnologyRelationUpdateAdminView.as_view(), name="skill_tech_relation_update"),
     path("skill-tech-relations/<int:pk>/delete/", SkillTechnologyRelationDeleteAdminView.as_view(), name="skill_tech_relation_delete"),
+
+    # ===================
+    # EDUCATION-SKILL DEVELOPMENT MANAGEMENT
+    # ===================
+
+    path("education-skills/", EducationSkillListAdminView.as_view(), name="education_skill_list"),
+    path("education-skills/create/", EducationSkillCreateAdminView.as_view(), name="education_skill_create"),
+    path("education-skills/<int:pk>/edit/", EducationSkillUpdateAdminView.as_view(), name="education_skill_update"),
+    path("education-skills/<int:pk>/delete/", EducationSkillDeleteAdminView.as_view(), name="education_skill_delete"),
     
     # ===================
     # APP ADMIN INCLUDES

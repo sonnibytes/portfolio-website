@@ -1,6 +1,6 @@
 {% extends "admin/admin_base.html" %}
 {% load widget_tweaks %}
-
+{% load static %}
 
 {% block admin_title %}{{ title }} - AURA Admin{% endblock %}
 
@@ -13,39 +13,46 @@
     padding: 1.5rem;
 }
 
-.education-preview {
-    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
-    border: 1px solid rgba(139, 69, 19, 0.3);
+.system-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-top: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.date-range {
+.system-checkboxes label {
     display: flex;
-    gap: 1rem;
     align-items: center;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    color: #E8EAF6;
 }
 
-.status-indicator {
-    display: inline-flex;
+.system-checkboxes label:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.system-checkboxes input[type="checkbox"] {
+    margin-right: 0.5rem;
+    accent-color: #00FFFF;
+}
+
+.intensity-indicator, .relevance-indicator {
+    display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
-    font-size: 0.875rem;
+    margin-top: 0.5rem;
 }
 
-.status-current {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4CAF50;
-    border: 1px solid rgba(76, 175, 80, 0.3);
-}
-
-.status-completed {
-    background: rgba(33, 150, 243, 0.2);
-    color: #2196F3;
-    border: 1px solid rgba(33, 150, 243, 0.3);
+.star-rating {
+    color: #FFD700;
 }
 </style>
 {% endblock %}
@@ -157,8 +164,8 @@
                     Timeline & Status
                 </h3>
                 
-                <div class="date-range">
-                    <div class="flex-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Start Date</label>
                         {{ form.start_date|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
                         {% if form.start_date.errors %}
@@ -166,9 +173,7 @@
                         {% endif %}
                     </div>
                     
-                    <div class="text-gray-400 text-2xl">→</div>
-                    
-                    <div class="flex-1">
+                    <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">End Date</label>
                         {{ form.end_date|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
                         {% if form.end_date.errors %}
@@ -197,39 +202,93 @@
                 </div>
             </div>
             
-            <!-- Achievement Section -->
+            <!-- Learning Assessment Section -->
             <div class="form-section space-y-6">
                 <h3 class="text-lg font-bold text-purple-400 flex items-center">
-                    <i class="fas fa-award mr-2"></i>
-                    Achievement & Certification
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Learning Assessment
                 </h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">GPA / Grade</label>
-                        {{ form.gpa|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.gpa.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.gpa.errors.0 }}</div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Learning Intensity</label>
+                        {{ form.learning_intensity|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.learning_intensity.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.learning_intensity.errors.0 }}</div>
                         {% endif %}
+                        <div class="text-gray-400 text-sm mt-1">1=Easy pace, 5=Very intensive</div>
                     </div>
                     
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Career Relevance</label>
+                        {{ form.career_relevance|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.career_relevance.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.career_relevance.errors.0 }}</div>
+                        {% endif %}
+                        <div class="text-gray-400 text-sm mt-1">How relevant to software development career</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Platform & Certification Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-[var(--color-coral)] flex items-center">
+                    <i class="fas fa-certificate mr-2"></i>
+                    Platform & Certification
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Platform</label>
                         {{ form.platform|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
                         {% if form.platform.errors %}
                             <div class="text-red-400 text-sm mt-1">{{ form.platform.errors.0 }}</div>
                         {% endif %}
-                        <div class="text-gray-400 text-sm mt-1">e.g., Coursera, Udemy, University Name</div>
+                        <div class="text-gray-400 text-sm mt-1">Coursera, Udemy, University, etc.</div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Certificate URL</label>
+                        {{ form.certificate_url|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.certificate_url.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.certificate_url.errors.0 }}</div>
+                        {% endif %}
+                        <div class="text-gray-400 text-sm mt-1">Link to certificate or credential</div>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Related Systems Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-[var(--color-mint)] flex items-center">
+                    <i class="fas fa-project-diagram mr-2"></i>
+                    Related Projects
+                </h3>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Certificate URL</label>
-                    {{ form.certificate_url|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                    {% if form.certificate_url.errors %}
-                        <div class="text-red-400 text-sm mt-1">{{ form.certificate_url.errors.0 }}</div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Related Systems</label>
+                    <div class="system-checkboxes">
+                        {{ form.related_systems }}
+                    </div>
+                    {% if form.related_systems.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.related_systems.errors.0 }}</div>
                     {% endif %}
-                    <div class="text-gray-400 text-sm mt-1">Link to certificate or credential</div>
+                    {% if form.related_systems.help_text %}
+                        <div class="text-gray-400 text-sm mt-1">{{ form.related_systems.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="bg-blue-900 bg-opacity-20 border border-blue-500 rounded-lg p-4">
+                    <h4 class="text-blue-300 font-bold mb-2 flex items-center">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Skills Management
+                    </h4>
+                    <p class="text-blue-200 text-sm">
+                        Skills learned in this education are managed separately for detailed tracking. 
+                        After creating this education entry, visit 
+                        <a href="{% url 'aura_admin:education_skill_list' %}" class="text-blue-400 underline">Education-Skills Management</a> 
+                        to add specific skills and proficiency levels.
+                    </p>
                 </div>
             </div>
 

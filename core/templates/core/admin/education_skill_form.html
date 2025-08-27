@@ -1,0 +1,352 @@
+{% extends "admin/admin_base.html" %}
+{% load widget_tweaks %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.proficiency-preview {
+    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
+    border: 1px solid rgba(139, 69, 19, 0.3);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.proficiency-scale {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+}
+
+.scale-item {
+    text-align: center;
+    flex: 1;
+}
+
+.scale-number {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.5rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.scale-0 { background: #424242; color: #BDBDBD; }
+.scale-1 { background: #F44336; color: #FFEBEE; }
+.scale-2 { background: #FF9800; color: #FFF3E0; }
+.scale-3 { background: #2196F3; color: #E3F2FD; }
+.scale-4 { background: #4CAF50; color: #E8F5E8; }
+.scale-5 { background: #9C27B0; color: #F3E5F5; }
+
+.scale-label {
+    font-size: 0.75rem;
+    color: #B0BEC5;
+    text-align: center;
+}
+
+.importance-stars {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.star-option {
+    color: #546E7A;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.star-option:hover,
+.star-option.active {
+    color: #FFD700;
+}
+
+.learning-focus-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.focus-option {
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.focus-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(139, 69, 19, 0.5);
+}
+
+.focus-option.selected {
+    background: rgba(139, 69, 19, 0.2);
+    border-color: rgba(139, 69, 19, 0.8);
+    color: #D2691E;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-link text-yellow-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <a href="{% url 'aura_admin:education_skill_list' %}" class="btn btn-sm btn-outline">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Skill Developments
+        </a>
+    </div>
+
+    <!-- Form Container -->
+    <div class="glass-card p-6">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Connection Definition Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-yellow-400 flex items-center">
+                    <i class="fas fa-link mr-2"></i>
+                    Learning Connection
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Education *</label>
+                        {{ form.education|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.education.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.education.errors.0 }}</div>
+                        {% endif %}
+                        <div class="text-gray-400 text-sm mt-1">Which course/program taught this skill?</div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Skill *</label>
+                        {{ form.skill|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.skill.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.skill.errors.0 }}</div>
+                        {% endif %}
+                        <div class="text-gray-400 text-sm mt-1">What skill was developed or improved?</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Proficiency Tracking Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-teal-400 flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Proficiency Development
+                </h3>
+                
+                <div class="proficiency-scale">
+                    <div class="scale-item">
+                        <div class="scale-number scale-0">0</div>
+                        <div class="scale-label">No Experience</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-number scale-1">1</div>
+                        <div class="scale-label">Beginner</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-number scale-2">2</div>
+                        <div class="scale-label">Basic</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-number scale-3">3</div>
+                        <div class="scale-label">Intermediate</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-number scale-4">4</div>
+                        <div class="scale-label">Advanced</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-number scale-5">5</div>
+                        <div class="scale-label">Expert</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Proficiency Before *</label>
+                        {{ form.proficiency_before|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.proficiency_before.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.proficiency_before.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.proficiency_before.help_text %}
+                            <div class="text-gray-400 text-sm mt-1">{{ form.proficiency_before.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Proficiency After *</label>
+                        {{ form.proficiency_after|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.proficiency_after.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.proficiency_after.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.proficiency_after.help_text %}
+                            <div class="text-gray-400 text-sm mt-1">{{ form.proficiency_after.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Learning Context Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-purple-400 flex items-center">
+                    <i class="fas fa-brain mr-2"></i>
+                    Learning Context
+                </h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Learning Focus *</label>
+                    {{ form.learning_focus|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                    {% if form.learning_focus.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.learning_focus.errors.0 }}</div>
+                    {% endif %}
+                    {% if form.learning_focus.help_text %}
+                        <div class="text-gray-400 text-sm mt-1">{{ form.learning_focus.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Importance Level *</label>
+                    {{ form.importance_level|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                    {% if form.importance_level.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.importance_level.errors.0 }}</div>
+                    {% endif %}
+                    {% if form.importance_level.help_text %}
+                        <div class="text-gray-400 text-sm mt-1">{{ form.importance_level.help_text }}</div>
+                    {% endif %}
+                    
+                    <div class="importance-stars">
+                        {% for i in "12345" %}
+                            <i class="fas fa-star star-option" data-value="{{ forloop.counter }}"></i>
+                        {% endfor %}
+                    </div>
+                    <div class="text-gray-400 text-sm mt-1">Click stars to set importance level</div>
+                </div>
+            </div>
+            
+            <!-- Learning Notes Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-[var(--color-coral)] flex items-center">
+                    <i class="fas fa-sticky-note mr-2"></i>
+                    Learning Notes
+                </h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Learning Notes</label>
+                    {{ form.learning_notes|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                    {% if form.learning_notes.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.learning_notes.errors.0 }}</div>
+                    {% endif %}
+                    <div class="text-gray-400 text-sm mt-1">Specific learning outcomes, projects completed, key concepts mastered, etc.</div>
+                </div>
+            </div>
+            
+            <!-- Preview Section -->
+            {% if object %}
+                <div class="proficiency-preview">
+                    <h4 class="text-lg font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-eye mr-2"></i>
+                        Development Preview
+                    </h4>
+                    <div class="flex items-center justify-between">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-400">{{ object.proficiency_before }}</div>
+                            <div class="text-sm text-gray-500">Before</div>
+                        </div>
+                        <div class="flex-1 mx-6">
+                            <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-gray-500 to-green-500 rounded-full transition-all duration-1000"
+                                     style="width: {{ object.proficiency_after|floatformat:0 }}0%;"></div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-400">{{ object.proficiency_after }}</div>
+                            <div class="text-sm text-gray-500">After</div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <div class="text-lg font-semibold" style="color: {{ object.get_improvement_color }};">
+                            +{{ object.get_skill_improvement }} Level Improvement
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-700">
+                <a href="{% url 'aura_admin:education_skill_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if object %}Update Skill Development{% else %}Create Skill Development{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<script>
+// Star rating interaction
+document.querySelectorAll('.star-option').forEach(star => {
+    star.addEventListener('click', function() {
+        const value = parseInt(this.dataset.value);
+        const importanceField = document.querySelector('select[name="importance_level"]');
+        importanceField.value = value;
+        
+        // Update visual state
+        document.querySelectorAll('.star-option').forEach((s, index) => {
+            if (index < value) {
+                s.classList.add('active');
+            } else {
+                s.classList.remove('active');
+            }
+        });
+    });
+});
+
+// Initialize star display
+document.addEventListener('DOMContentLoaded', function() {
+    const importanceField = document.querySelector('select[name="importance_level"]');
+    const currentValue = parseInt(importanceField.value) || 0;
+    
+    document.querySelectorAll('.star-option').forEach((s, index) => {
+        if (index < currentValue) {
+            s.classList.add('active');
+        }
+    });
+});
+</script>
+{% endblock %}
