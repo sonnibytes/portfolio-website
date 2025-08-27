@@ -11,8 +11,85 @@ from .models import (
     GitHubRepository,
     GitHubLanguage,
     ArchitectureComponent,
-    ArchitectureConnection
+    ArchitectureConnection,
+    SystemSkillGain
 )
+
+
+# ========== NEW: SYSTEM SKILL GAIN ADMIN ==========
+
+@admin.register(SystemSkillGain)
+class SystemSkillGainAdmin(admin.ModelAdmin):
+    """Management of skill gains from projects"""
+    list_display = [
+        'system',
+        'skill',
+        'proficiency_gained_display',
+        'tech_count',
+        'time_invested_hours',
+        'how_learned_short'
+    ]
+
+    list_filter = [
+        'proficiency_gained',
+        'skill__category',
+        'system__status',
+        'system__learning_stage'
+    ]
+
+    search_fields = [
+        'skill__name',
+        'system__title',
+        'how_learned',
+        'learning_resources'
+    ]
+
+    autocomplete_fields = ['skill', 'system']
+    filter_horizontal = ['technologies_used']  # New field
+    list_select_related = ['skill', 'system']
+
+    fieldsets = (
+        ('Learning Context', {
+            'fields': ('system', 'skill', 'proficiency_gained')
+        }),
+        ('Technologies Applied', {
+            'fields': ('technologies_used',),
+            'description': 'Which technologies were used to apply this skill in this project'
+        }),
+        ('Learning Details', {
+            'fields': ('how_learned', 'learning_resources', 'time_invested_hours'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def proficiency_gained_display(self, obj):
+        colors = {
+            1: '#ff8a80',  # Light red
+            2: '#ffbd2e',  # Yellow
+            3: '#00f0ff',  # Cyan
+            4: '#27c93f',  # Green
+            5: '#9c27b0',  # Purple
+        }
+        color = colors.get(obj.proficiency_gained, '#999')
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color,
+            obj.get_proficiency_gained_display()
+        )
+    proficiency_gained_display.short_description = "Proficiency Level"
+
+    def tech_count(self, obj):
+        count = obj.technologies_used.count()
+        if count > 0:
+            return format_html('<span style="color: #00f0ff;">{}</span>', count)
+        return format_html('<span style="color: #999;">0</span>')
+    tech_count.short_description = "Tech Used"
+
+    def how_learned_short(self, obj):
+        if obj.how_learned:
+            return obj.how_learned[:50] + "..." if len(obj.how_learned) > 50 else obj.how_learned
+        return "-"
+    how_learned_short.short_description = "How Learned"
 
 
 # ============================================================================
