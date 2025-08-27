@@ -791,6 +791,29 @@ class SkillTechnologyRelationListAdminView(BaseAdminListView, BulkActionMixin):
         }
 
 
+class SkillTechnologyRelationCreateAdminView(BaseAdminCreateView):
+    """Create a new skill-technology relationship."""
+
+    model = SkillTechnologyRelation
+    form_class = SkillTechnologyRelationForm
+    template_name = "core/admin/skill_technology_relation_form.html"
+    success_url = reverse_lazy("aura_admin:core:skill_tech_relation_list")
+
+
+class SkillTechnologyRelationUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing skill-technology relationship."""
+
+    model = SkillTechnologyRelation
+    form_class = SkillTechnologyRelationForm
+    template_name = "core/admin/skill_technology_relation_form.html"
+    success_url = reverse_lazy("aura_admin:core:skill_tech_relation_list")
+
+
+class SkillTechnologyRelationDeleteAdminView(BaseAdminDeleteView):
+    """Delete skill-technology relationship."""
+
+    model = SkillTechnologyRelation
+    success_url = reverse_lazy("aura_admin:core:skill_tech_relation_list")
 
 
 # ===================
