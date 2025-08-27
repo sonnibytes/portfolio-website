@@ -2,7 +2,51 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 
-from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics
+from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
+
+
+# ========== NEW: SKILL-TECHNOLOGY RELATIONSHIP MANAGEMENT ==========
+
+class SkillTechnologyRelationInline(admin.TabularInline):
+    """Inline editing of skill-technology relationships with Skill admin"""
+    model = SkillTechnologyRelation
+    extra = 1
+    fields = ['technology', 'strength', 'relationship_type', 'notes']
+    autocomplete_fields = ['technology']
+    verbose_name = "Related Technology"
+    verbose_name_plural = "Related Technologies"
+
+
+@admin.register(SkillTechnologyRelation)
+class SkillTechnologyRelationAdmin(admin.ModelAdmin):
+    """Standalone management of skill-technology relationships"""
+    list_display = ['skill', 'technology', 'strength_display', 'relationship_type', 'strength_color']
+    list_filter = ['strength', 'relationship_type', 'skill__category']
+    search_fields = ['skill__name', 'technology__name', 'notes']
+    autocomplete_fields = ['skill', 'technology']
+    list_select_related = ['skill', 'technology']
+
+    fieldsets = (
+        ('Relationship', {
+            'fields': ('skill', 'technology', 'strength', 'relationship_type')
+        }),
+        ('Context & Notes', {
+            'fields': ('notes', 'first_used_together', 'last_used_together'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def strength_display(self, obj):
+        return obj.get_strength_display()
+    strength_display.short_description = "Strength"
+
+    def strength_color(self, obj):
+        color = obj.get_strength_color()
+        return format_html(
+            '<span style="color: {}; font-size: 16px;">●</span>', 
+            color
+        )
+    strength_color.short_description = "Level"
 
 
 @admin.register(PortfolioAnalytics)
@@ -96,19 +140,23 @@ class CorePageAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
 
+# ========== UPDATED: SKILL ADMIN ==========
+
 @admin.register(Skill)
 class SkillAdmin(admin.ModelAdmin):
+    """Enhanced Skill admin w technology relationships"""
     list_display = (
         "name",
         "category",
         "proficiency_stars",
         "experience_level",
-        "technology_link",
+        "technology_count",
         "featured_status",
         "recency_status",
         "display_order",
         "is_featured",
     )
+
     list_filter = (
         "category",
         "proficiency",
@@ -119,6 +167,9 @@ class SkillAdmin(admin.ModelAdmin):
     search_fields = ("name", "description")
     list_editable = ("display_order", "is_featured")
     prepopulated_fields = {"slug": ("name",)}
+
+    # Add inline for tech relationships
+    inlines = [SkillTechnologyRelationInline]
 
     fieldsets = (
         ("Basic Information", {"fields": ("name", "slug", "category", "description")}),
@@ -137,13 +188,6 @@ class SkillAdmin(admin.ModelAdmin):
         (
             "Visual & Display",
             {"fields": ("icon", "color", "display_order", "is_featured")},
-        ),
-        (
-            "Technology Connection",
-            {
-                "fields": ("related_technology",),
-                "description": "Link this skill to a technology in the projects app",
-            },
         ),
     )
 
@@ -169,18 +213,19 @@ class SkillAdmin(admin.ModelAdmin):
 
     experience_level.short_description = "Experience"
 
-    def technology_link(self, obj):
-        if obj.related_technology:
+    # Updated function for new many-to-many relationship
+    def technology_count(self, obj):
+        """Show count of related technologies"""
+        count = obj.related_technologies.count()
+        if count > 0:
             return format_html(
-                '<a href="{}">{}</a>',
-                reverse(
-                    "admin:projects_technology_change", args=[obj.related_technology.pk]
-                ),
-                obj.related_technology.name,
+                '<span style="color: #00f0ff; font-weight: bold;">{} tech{}</span>',
+                count,
+                's' if count != 1 else ''
             )
-        return "-"
+        return format_html('<span style="color: #999;">No tech</span>')
 
-    technology_link.short_description = "Technology"
+    technology_count.short_description = "Technologies"
 
     def featured_status(self, obj):
         if obj.is_featured:
