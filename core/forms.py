@@ -42,7 +42,53 @@ from projects.models import Technology
 #         }
 
 class SkillTechnologyRelationForm(forms.ModelForm):
-    pass
+    """Form for managing skill-technology relationships"""
+
+    class Meta:
+        model = SkillTechnologyRelation
+        fields = [
+            'skill',
+            'technology',
+            'strength',
+            'relationship_type',
+            'notes',
+            'first_used_together',
+            'last_used_together'
+        ]
+
+        widgets = {
+            'skill': forms.Select(attrs={'class': 'form-control'}),
+            'technology': forms.Select(attrs={'class': 'form-control'}),
+            'strength': forms.Select(attrs={'class': 'form-control'}),
+            'relationship_type': forms.Select(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Context about how this technology relates to the skill...'
+            }),
+            'first_used_together': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'last_used_together': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            })
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Order skills by category and name
+        self.fields['skill'].queryset = Skill.objects.order_by('category', 'name')
+
+        # Order technologies by category and name
+        self.fields['technology'].queryset = Technology.objects.order_by('category', 'name')
+
+        # Make some fields optional
+        self.fields['notes'].required = False
+        self.fields['first_used_together'].required = False
+        self.fields['last_used_together'].required = False
 
 
 class CorePageForm(forms.ModelForm):
