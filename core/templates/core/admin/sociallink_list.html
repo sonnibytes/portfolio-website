@@ -1,211 +1,177 @@
-{% extends 'admin/admin_base.html' %}
-{% load aura_filters %}
+<!-- core/templates/core/admin/sociallink_list.html -->
+{% extends "admin/admin_base.html" %}
 {% load static %}
+{% load aura_filters %}
 
-{% block admin_title %}SocialLink Management{% endblock %}
+{% block admin_title %}Manage Social Links - AURA Admin{% endblock %}
 
-{% block admin_css %}
-{{ block.super }}
+{% block extra_css %}
 <style>
-  .tech-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+.social-filter-bar {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: end;
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: end;
+  flex: 1;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 150px;
+}
+
+.filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #d1d5db;
+}
+
+.filter-input {
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 0.875rem;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #26c6da;
+  box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+}
+
+.social-link-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.social-link-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(38, 198, 218, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.social-link-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.social-link-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.social-icon-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.social-link-details h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 0.25rem 0;
+}
+
+.social-link-details p {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.social-link-actions {
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.social-link-card:hover .social-link-actions {
+  opacity: 1;
+}
+
+.social-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #9ca3af;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #d1d5db;
+  text-transform: capitalize;
+}
+
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .social-grid {
+    grid-template-columns: 1fr;
   }
   
-  .tech-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .tech-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  }
-  
-  .tech-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
-  
-  .tech-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  
-  .tech-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: #1d1c1c;
-    font-weight: bold;
-  }
-  
-  .tech-details h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #ffffff;
-  }
-  
-  .tech-category {
-    font-size: 0.75rem;
-    color: #b0bec5;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 0.25rem;
-  }
-  
-  .tech-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .tech-action {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  
-  .tech-action:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-  
-  .tech-action.edit { color: #26c6da; }
-  .tech-action.edit:hover { background: rgba(38, 198, 218, 0.2); }
-  
-  .tech-action.delete { color: #f44336; }
-  .tech-action.delete:hover { background: rgba(244, 67, 54, 0.2); }
-  
-  .tech-action.view { color: #4caf50; }
-  .tech-action.view:hover { background: rgba(76, 175, 80, 0.2); }
-  
-  .tech-description {
-    color: #e8eaf6;
-    font-size: 0.875rem;
-    line-height: 1.4;
-    margin-bottom: 1rem;
-  }
-  
-  .tech-stats {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 0.75rem;
-    color: #b0bec5;
-  }
-  
-  .tech-filter-bar {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  .filter-form {
+    flex-direction: column;
+    align-items: stretch;
   }
   
   .filter-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
   }
   
   .filter-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    min-width: auto;
   }
-  
-  .filter-label {
-    font-size: 0.875rem;
-    color: #e8eaf6;
-    font-weight: 500;
-  }
-  
-  .filter-input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    color: white;
-    min-width: 120px;
-  }
-  
-  .filter-input:focus {
-    outline: none;
-    border-color: #26c6da;
-    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
-  }
-  
-  .category-filter {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  
-  .category-btn {
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    color: #e8eaf6;
-    text-decoration: none;
-    font-size: 0.875rem;
-    transition: all 0.3s ease;
-  }
-  
-  .category-btn:hover,
-  .category-btn.active {
-    background: rgba(38, 198, 218, 0.2);
-    border-color: #26c6da;
-    color: #26c6da;
-  }
-  
-  .tech-count {
-    background: rgba(38, 198, 218, 0.2);
-    color: #26c6da;
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-  
-  @media (max-width: 768px) {
-    .tech-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .filter-group {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    
-    .category-filter {
-      justify-content: center;
-    }
-  }
+}
 </style>
 {% endblock %}
 
@@ -216,16 +182,16 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <div>
       <h1 class="text-2xl font-bold text-white mb-2">
-        <i class="fas fa-icons text-rose-400 mr-2"></i>
-        {{ title }}
+        <i class="fas fa-share-alt text-teal-400 mr-2"></i>
+        Social Links Management
       </h1>
-      <p class="text-gray-400">{{ subtitle }}</p>
+      <p class="text-gray-400">Manage your social media profiles and external links</p>
     </div>
     <div class="mt-4 sm:mt-0">
       <a href="{% url 'aura_admin:sociallink_create' %}" 
-         class="inline-flex items-center px-4 py-2 bg-rose-500 hover:bg-rose-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-rose-500/25">
+         class="inline-flex items-center px-4 py-2 bg-teal-500 hover:bg-teal-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/25">
         <i class="fas fa-plus mr-2"></i>
-        Add SocialLink
+        Add Social Link
       </a>
     </div>
   </div>
@@ -233,8 +199,8 @@
   <!-- Stats Summary -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <div class="glass-card p-4 text-center">
-      <div class="text-2xl font-bold text-rose-400 mb-1">{{ social_links.count }}</div>
-      <div class="text-sm text-gray-400">Total SocialLinks</div>
+      <div class="text-2xl font-bold text-teal-400 mb-1">{{ social_links.count }}</div>
+      <div class="text-sm text-gray-400">Total Links</div>
     </div>
     <div class="glass-card p-4 text-center">
       <div class="text-2xl font-bold text-blue-400 mb-1">
@@ -257,117 +223,99 @@
   </div>
 
   <!-- Filters -->
-  <div class="tech-filter-bar">
+  <div class="social-filter-bar">
     <form method="GET" class="filter-form">
       <div class="filter-group">
         <div class="filter-item">
-          <label class="filter-label">Search SocialLinks</label>
-          <input type="text" name="search" value="{{ request.GET.search }}" 
-                 placeholder="Search by name, url, or handle..." class="filter-input">
+          <label class="filter-label">Search</label>
+          <input type="text" 
+                 name="search" 
+                 value="{{ current_filters.search }}"
+                 placeholder="Search links..."
+                 class="filter-input">
         </div>
         
         <div class="filter-item">
           <label class="filter-label">Category</label>
           <select name="category" class="filter-input">
             <option value="">All Categories</option>
-            <option value="professional" {% if request.GET.category == 'professional' %}selected{% endif %}>Professional & Coding-Centric</option>
-            <option value="community" {% if request.GET.category == 'community' %}selected{% endif %}>Discussion & Community</option>
-            <option value="media" {% if request.GET.category == 'media' %}selected{% endif %}>Media</option>
-            <option value="chat" {% if request.GET.category == 'chat' %}selected{% endif %}>Messaging</option>
-            <option value="blog" {% if request.GET.category == 'blog' %}selected{% endif %}>Blogging & Content</option>
-            <option value="other" {% if request.GET.category == 'other' %}selected{% endif %}>Other</option>
+            {% for value, label in category_choices %}
+              <option value="{{ value }}" {% if current_filters.category == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
           </select>
         </div>
-        
-        <div class="filter-item">
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-search mr-2"></i>Filter
-          </button>
-          <a href="{% url 'aura_admin:sociallink_list' %}" class="btn btn-secondary">
-            <i class="fas fa-times mr-2"></i>Clear
+      </div>
+      
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="fas fa-search mr-1"></i>Filter
+        </button>
+        {% if current_filters.search or current_filters.category %}
+          <a href="{% url 'aura_admin:sociallink_list' %}" class="btn btn-sm btn-outline">
+            <i class="fas fa-times mr-1"></i>Clear
           </a>
-        </div>
+        {% endif %}
       </div>
     </form>
   </div>
 
-  <!-- Quick Category Filter -->
-  <div class="category-filter">
-    <a href="?category=" class="category-btn {% if not request.GET.category %}active{% endif %}">
-      All <span class="tech-count">{{ social_links.count }}</span>
-    </a>
-    <a href="?category=professional" class="category-btn {% if request.GET.category == 'professional' %}active{% endif %}">
-      Professional & Coding-Centric <span class="tech-count">{{ categories_count.professional|length|default:0 }}</span>
-    </a>
-    <a href="?category=community" class="category-btn {% if request.GET.category == 'community' %}active{% endif %}">
-      Discussion & Community <span class="tech-count">{{ categories_count.community|length|default:0 }}</span>
-    </a>
-    <a href="?category=media" class="category-btn {% if request.GET.category == 'media' %}active{% endif %}">
-      Media <span class="tech-count">{{ categories_count.media|length|default:0 }}</span>
-    </a>
-    <a href="?category=chat" class="category-btn {% if request.GET.category == 'chat' %}active{% endif %}">
-      Messaging <span class="tech-count">{{ categories_count.chat|length|default:0 }}</span>
-    </a>
-    <a href="?category=blog" class="category-btn {% if request.GET.category == 'blog' %}active{% endif %}">
-      Blogging & Content <span class="tech-count">{{ categories_count.blog|length|default:0 }}</span>
-    </a>
-  </div>
-
-  <!-- SocialLinks Grid -->
-  <div class="tech-grid">
+  <!-- Social Links Grid -->
+  <div class="social-grid">
     {% for link in social_links %}
-      <div class="tech-card">
-        <div class="tech-header">
-          <div class="tech-info">
-            <div class="tech-icon" style="background-color: {{ link.color }}">
+      <div class="social-link-card">
+        <div class="social-link-header">
+          <div class="social-link-info">
+            <div class="social-icon-container" 
+                 style="background-color: {{ link.color }}20; border-color: {{ link.color }}40; color: {{ link.color }};">
               {% if link.icon %}
                 <i class="{{ link.icon|safe_icon:'brands' }}"></i>
               {% else %}
-                {{ link.name|first|upper }}
+                <i class="fas fa-share-alt"></i>
               {% endif %}
             </div>
-            <div class="tech-details">
+            <div class="social-link-details">
               <h3>{{ link.name }}</h3>
-              <div class="tech-category">{{ link.get_category_display }}</div>
+              <p>
+                {% if link.handle %}
+                  {{ link.handle }}
+                {% else %}
+                  Order: {{ link.display_order }}
+                {% endif %}
+              </p>
             </div>
           </div>
-          <div class="tech-actions">
-            <a href="#" target="_blank" 
-               class="tech-action view" title="View SocialLink">
-              <i class="fas fa-eye"></i>
+          <div class="social-link-actions">
+            <a href="{{ link.url }}" target="_blank" 
+               class="text-teal-400 hover:text-teal-300 p-1" 
+               title="Visit {{ link.name }}">
+              <i class="fas fa-external-link-alt"></i>
             </a>
             <a href="{% url 'aura_admin:sociallink_update' link.pk %}" 
-               class="tech-action edit" title="Edit SocialLink">
+               class="text-blue-400 hover:text-blue-300 p-1" 
+               title="Edit {{ link.name }}">
               <i class="fas fa-edit"></i>
             </a>
             <a href="{% url 'aura_admin:sociallink_delete' link.pk %}" 
-               class="tech-action delete" title="Delete SocialLink"
-               onclick="return confirm('Are you sure you want to delete {{ link.name }}?')">
+               class="text-red-400 hover:text-red-300 p-1" 
+               title="Delete {{ link.name }}"
+               onclick="return confirm('Delete {{ link.name }}?')">
               <i class="fas fa-trash"></i>
             </a>
           </div>
         </div>
         
-        <!-- {% if tech.description %}
-          <div class="tech-description">
-            {{ tech.description|truncatechars:120 }}
-          </div>
-        {% endif %} -->
-        
-        <div class="tech-stats">
-          <span>
-            <i class="fas fa-user mr-1"></i>
-            {{ link.handle }} 
+        <div class="social-stats">
+          <span class="category-badge">
+            <i class="fas fa-tag mr-1"></i>
+            {{ link.get_category_display }}
           </span>
           <!-- <span>
-            {% if tech.documentation_url %}
-              <a href="{{ tech.documentation_url }}" target="_blank" 
-                 class="text-cyan-400 hover:text-cyan-300">
-                <i class="fas fa-external-link-alt mr-1"></i>Docs
-              </a>
-            {% else %}
-              <span class="text-gray-500">No docs</span>
-            {% endif %}
+            <a href="{{ link.url }}" target="_blank" 
+               class="text-teal-400 hover:text-teal-300 text-sm">
+              <i class="fas fa-external-link-alt mr-1"></i>Visit Profile
+            </a>
           </span> -->
         </div>
       </div>
@@ -375,21 +323,21 @@
       <div class="col-span-full">
         <div class="text-center py-12">
           <div class="text-gray-400">
-            <i class="fas fa-icons text-6xl mb-4"></i>
-            <h3 class="text-xl font-bold mb-2">No SocialLinks Found</h3>
+            <i class="fas fa-share-alt text-6xl mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">No Social Links Found</h3>
             <p class="text-sm mb-4">
               {% if request.GET.search or request.GET.category %}
                 No social links match your current filters.
                 <br>
-                <a href="{% url 'aura_admin:sociallink_list' %}" class="text-cyan-400 hover:text-cyan-300">Clear filters</a>
+                <a href="{% url 'aura_admin:sociallink_list' %}" class="text-teal-400 hover:text-teal-300">Clear filters</a>
                 to see all social links.
               {% else %}
-                Start building your social network!
+                Start building your social network presence!
               {% endif %}
             </p>
             <a href="{% url 'aura_admin:sociallink_create' %}" 
                class="btn btn-primary">
-              <i class="fas fa-plus mr-2"></i>Add Your First SocialLink
+              <i class="fas fa-plus mr-2"></i>Add Your First Social Link
             </a>
           </div>
         </div>
@@ -414,11 +362,11 @@
             Previous
           </a>
         {% endif %}
-        
-        <span class="px-3 py-2 bg-rose-500 text-black rounded-lg font-medium">
-          {{ page_obj.number }}
+
+        <span class="px-3 py-2 bg-teal-600 text-white rounded-lg">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
         </span>
-        
+
         {% if page_obj.has_next %}
           <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
              class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
@@ -434,43 +382,4 @@
   {% endif %}
 
 </div>
-{% endblock %}
-
-{% block admin_js %}
-{{ block.super }}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-submit filters on change
-    document.querySelectorAll('.filter-input').forEach(input => {
-        if (input.type !== 'text') {
-            input.addEventListener('change', function() {
-                this.closest('form').submit();
-            });
-        }
-    });
-    
-    // Search input delay
-    const searchInput = document.querySelector('input[name="search"]');
-    if (searchInput) {
-        let timeout;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                this.closest('form').submit();
-            }, 500);
-        });
-    }
-    
-    // Tech card hover effects
-    document.querySelectorAll('.tech-card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-4px) scale(1.02)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(-2px) scale(1)';
-        });
-    });
-});
-</script>
 {% endblock %}

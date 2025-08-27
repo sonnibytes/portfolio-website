@@ -612,35 +612,54 @@ class ContactForm(forms.ModelForm):
 
 
 class SocialLinkForm(forms.ModelForm):
-    """Form for managing social media links."""
+    """Enhanced Form for managing social media links."""
 
     class Meta:
         model = SocialLink
-        fields = ["name", "url", "handle", "icon", "display_order"]
+        fields = ["name", "url", "handle", "icon", "display_order", "category", "color"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
-                    "class": "form-control",
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
                     "placeholder": "Platform Name (e.g., GitHub, LinkedIn)",
                 }
             ),
             "url": forms.URLInput(
                 attrs={
-                    "class": "form-control",
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
                     "placeholder": "https://github.com/yourusername",
                 }
             ),
             "handle": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "@username or handle"}
+                attrs={
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none", 
+                    "placeholder": "@username or handle"
+                }
             ),
             "icon": forms.TextInput(
                 attrs={
-                    "class": "form-control",
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
                     "placeholder": "fa-github (FontAwesome icon name)",
                 }
             ),
             "display_order": forms.NumberInput(
-                attrs={"class": "form-control", "min": 0}
+                attrs={
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
+                    "min": 0
+                }
+            ),
+            "category": forms.Select(
+                attrs={
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none"
+                }
+            ),
+            "color": forms.TextInput(
+                attrs={
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
+                    "placeholder": "#60a5fa",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "title": "Enter a valid hex color code (e.g., #60a5fa)"
+                }
             ),
         }
 
@@ -650,6 +669,18 @@ class SocialLinkForm(forms.ModelForm):
         if url and not url.startswith(("http://", "https://")):
             url = "https://" + url
         return url
+    
+    def clean_color(self):
+        """Validate hex color format."""
+        color = self.cleaned_data.get("color")
+        if color:
+            # Remove # if present and add it back
+            color = color.lstrip('#')
+            if len(color) == 6 and all(c in '0123456789abcdefABCDEF' for c in color):
+                return f"#{color.lower()}"
+            else:
+                raise ValidationError("Please enter a valid hex color code (e.g., #60a5fa)")
+        return color or "#60a5fa"  # Default color
 
 
 class PortfolioAnalyticsForm(forms.ModelForm):
