@@ -145,7 +145,7 @@ class SkillForm(forms.ModelForm):
         model = Skill
         fields = [
             'name',
-            'slug',
+            # 'slug',
             'category',
             'description',
             'proficiency',
@@ -255,7 +255,7 @@ class EducationForm(forms.ModelForm):
         model = Education
         fields = [
             'institution',
-            'slug',
+            # 'slug',
             'degree',
             'field_of_study',
             'start_date',
@@ -444,7 +444,7 @@ class ExperienceForm(forms.ModelForm):
         model = Experience
         fields = [
             "company",
-            "slug",
+            # "slug",
             "position",
             "location",
             "description",

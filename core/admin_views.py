@@ -628,7 +628,7 @@ class CorePageCreateAdminView(SlugAdminCreateView):
     model = CorePage
     form_class = CorePageForm
     template_name = "core/admin/corepage_form.html"
-    success_url = reverse_lazy("aura_admin:core:corepage_list")
+    success_url = reverse_lazy("aura_admin:corepage_list")
 
 
 class CorePageUpdateAdminView(BaseAdminUpdateView):
@@ -637,14 +637,14 @@ class CorePageUpdateAdminView(BaseAdminUpdateView):
     model = CorePage
     form_class = CorePageForm
     template_name = "core/admin/corepage_form.html"
-    success_url = reverse_lazy("aura_admin:core:corepage_list")
+    success_url = reverse_lazy("aura_admin:corepage_list")
 
 
 class CorePageDeleteAdminView(BaseAdminDeleteView):
     """Delete core page."""
 
     model = CorePage
-    success_url = reverse_lazy("aura_admin:core:corepage_list")
+    success_url = reverse_lazy("aura_admin:corepage_list")
 
 
 # ===================
@@ -718,7 +718,39 @@ class SkillCreateAdminView(SlugAdminCreateView):
     model = Skill
     form_class = SkillForm
     template_name = "core/admin/skill_form.html"
-    success_url = reverse_lazy("aura_admin:core:skill_list")
+    success_url = reverse_lazy("aura_admin:skill_list")
+
+    # ADD THIS METHOD FOR DEBUGGING:
+    def form_valid(self, form):
+        """Debug the form submission."""
+        print(f"🟢 FORM IS VALID")
+        print(f"🟢 Form cleaned_data: {form.cleaned_data}")
+        
+        try:
+            # Call the parent form_valid which should save the object
+            response = super().form_valid(form)
+            print(f"🟢 Object created successfully: {self.object}")
+            print(f"🟢 Object ID: {self.object.pk}")
+            print(f"🟢 Redirecting to: {self.get_success_url()}")
+            return response
+        except Exception as e:
+            print(f"🔴 ERROR in form_valid: {e}")
+            import traceback
+            traceback.print_exc()
+            return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        """Debug form validation errors."""
+        print(f"🔴 FORM IS INVALID")
+        print(f"🔴 Form errors: {form.errors}")
+        print(f"🔴 Form non_field_errors: {form.non_field_errors}")
+        return super().form_invalid(form)
+    
+    def post(self, request, *args, **kwargs):
+        """Debug the entire POST process."""
+        print(f"🔵 POST request received")
+        print(f"🔵 POST data: {request.POST}")
+        return super().post(request, *args, **kwargs)
 
 
 class SkillUpdateAdminView(BaseAdminUpdateView):
@@ -727,14 +759,14 @@ class SkillUpdateAdminView(BaseAdminUpdateView):
     model = Skill
     form_class = SkillForm
     template_name = "core/admin/skill_form.html"
-    success_url = reverse_lazy("aura_admin:core:skill_list")
+    success_url = reverse_lazy("aura_admin:skill_list")
 
 
 class SkillDeleteAdminView(BaseAdminDeleteView):
     """Delete skill."""
 
     model = Skill
-    success_url = reverse_lazy("aura_admin:core:skill_list")
+    success_url = reverse_lazy("aura_admin:skill_list")
 
 
 # ========== NEW: SKILL-TECHNOLOGY RELATIONSHIP VIEWS ==========
@@ -802,7 +834,7 @@ class SkillTechnologyRelationCreateAdminView(BaseAdminCreateView):
     model = SkillTechnologyRelation
     form_class = SkillTechnologyRelationForm
     template_name = "core/admin/skill_technology_relation_form.html"
-    success_url = reverse_lazy("aura_admin:core:skill_tech_relation_list")
+    success_url = reverse_lazy("aura_admin:skill_tech_relation_list")
 
 
 class SkillTechnologyRelationUpdateAdminView(BaseAdminUpdateView):
@@ -811,14 +843,14 @@ class SkillTechnologyRelationUpdateAdminView(BaseAdminUpdateView):
     model = SkillTechnologyRelation
     form_class = SkillTechnologyRelationForm
     template_name = "core/admin/skill_technology_relation_form.html"
-    success_url = reverse_lazy("aura_admin:core:skill_tech_relation_list")
+    success_url = reverse_lazy("aura_admin:skill_tech_relation_list")
 
 
 class SkillTechnologyRelationDeleteAdminView(BaseAdminDeleteView):
     """Delete skill-technology relationship."""
 
     model = SkillTechnologyRelation
-    success_url = reverse_lazy("aura_admin:core:skill_tech_relation_list")
+    success_url = reverse_lazy("aura_admin:skill_tech_relation_list")
 
 
 # ===================
@@ -882,7 +914,7 @@ class EducationCreateAdminView(SlugAdminCreateView):
     model = Education
     form_class = EducationForm
     template_name = "core/admin/education_form.html"
-    success_url = reverse_lazy("aura_admin:core:education_list")
+    success_url = reverse_lazy("aura_admin:education_list")
 
 
 class EducationUpdateAdminView(BaseAdminUpdateView):
@@ -891,14 +923,14 @@ class EducationUpdateAdminView(BaseAdminUpdateView):
     model = Education
     form_class = EducationForm
     template_name = "core/admin/education_form.html"
-    success_url = reverse_lazy("aura_admin:core:education_list")
+    success_url = reverse_lazy("aura_admin:education_list")
 
 
 class EducationDeleteAdminView(BaseAdminDeleteView):
     """Delete education entry."""
 
     model = Education
-    success_url = reverse_lazy("aura_admin:core:education_list")
+    success_url = reverse_lazy("aura_admin:education_list")
 
 
 # ===================
@@ -935,7 +967,7 @@ class EducationSkillCreateAdminView(BaseAdminCreateView):
     model = EducationSkillDevelopment
     form_class = EducationSkillDevelopmentForm
     template_name = "core/admin/education_skill_form.html"
-    success_url = reverse_lazy("aura_admin:core:education_skill_list")
+    success_url = reverse_lazy("aura_admin:education_skill_list")
 
 
 class EducationSkillUpdateAdminView(BaseAdminUpdateView):
@@ -944,14 +976,14 @@ class EducationSkillUpdateAdminView(BaseAdminUpdateView):
     model = EducationSkillDevelopment
     form_class = EducationSkillDevelopmentForm
     template_name = "core/admin/education_skill_form.html"
-    success_url = reverse_lazy("aura_admin:core:education_skill_list")
+    success_url = reverse_lazy("aura_admin:education_skill_list")
 
 
 class EducationSkillDeleteAdminView(BaseAdminDeleteView):
     """Delete education-skill connection."""
 
     model = EducationSkillDevelopment
-    success_url = reverse_lazy("aura_admin:core:education_skill_list")
+    success_url = reverse_lazy("aura_admin:education_skill_list")
 
 
 # ===================
@@ -1004,7 +1036,7 @@ class ExperienceCreateAdminView(SlugAdminCreateView):
     model = Experience
     form_class = ExperienceForm
     template_name = "core/admin/experience_form.html"
-    success_url = reverse_lazy("aura_admin:core:experience_list")
+    success_url = reverse_lazy("aura_admin:experience_list")
 
 
 class ExperienceUpdateAdminView(BaseAdminUpdateView):
@@ -1013,14 +1045,14 @@ class ExperienceUpdateAdminView(BaseAdminUpdateView):
     model = Experience
     form_class = ExperienceForm
     template_name = "core/admin/experience_form.html"
-    success_url = reverse_lazy("aura_admin:core:experience_list")
+    success_url = reverse_lazy("aura_admin:experience_list")
 
 
 class ExperienceDeleteAdminView(BaseAdminDeleteView):
     """Delete experience entry."""
 
     model = Experience
-    success_url = reverse_lazy("aura_admin:core:experience_list")
+    success_url = reverse_lazy("aura_admin:experience_list")
 
 
 # ===================
@@ -1087,7 +1119,7 @@ class ContactCreateAdminView(BaseAdminCreateView):
     model = Contact
     form_class = ContactForm
     template_name = "core/admin/contact_form.html"
-    success_url = reverse_lazy("aura_admin:core:contact_list")
+    success_url = reverse_lazy("aura_admin:contact_list")
 
 
 class ContactUpdateAdminView(BaseAdminUpdateView):
@@ -1096,14 +1128,14 @@ class ContactUpdateAdminView(BaseAdminUpdateView):
     model = Contact
     form_class = ContactForm
     template_name = "core/admin/contact_form.html"
-    success_url = reverse_lazy("aura_admin:core:contact_list")
+    success_url = reverse_lazy("aura_admin:contact_list")
 
 
 class ContactDeleteAdminView(BaseAdminDeleteView):
     """Delete contact."""
 
     model = Contact
-    success_url = reverse_lazy("aura_admin:core:contact_list")
+    success_url = reverse_lazy("aura_admin:contact_list")
 
 
 # ===================
@@ -1138,7 +1170,7 @@ class SocialLinkCreateAdminView(BaseAdminCreateView):
     model = SocialLink
     form_class = SocialLinkForm
     template_name = "core/admin/sociallink_form.html"
-    success_url = reverse_lazy("aura_admin:core:sociallink_list")
+    success_url = reverse_lazy("aura_admin:sociallink_list")
 
 
 class SocialLinkUpdateAdminView(BaseAdminUpdateView):
@@ -1147,14 +1179,14 @@ class SocialLinkUpdateAdminView(BaseAdminUpdateView):
     model = SocialLink
     form_class = SocialLinkForm
     template_name = "core/admin/sociallink_form.html"
-    success_url = reverse_lazy("aura_admin:core:sociallink_list")
+    success_url = reverse_lazy("aura_admin:sociallink_list")
 
 
 class SocialLinkDeleteAdminView(BaseAdminDeleteView):
     """Delete social link."""
 
     model = SocialLink
-    success_url = reverse_lazy("aura_admin:core:sociallink_list")
+    success_url = reverse_lazy("aura_admin:sociallink_list")
 
 
 # ===================
@@ -1228,7 +1260,7 @@ class PortfolioAnalyticsCreateAdminView(BaseAdminCreateView):
     model = PortfolioAnalytics
     form_class = PortfolioAnalyticsForm
     template_name = "core/admin/analytics_form.html"
-    success_url = reverse_lazy("aura_admin:core:analytics_list")
+    success_url = reverse_lazy("aura_admin:analytics_list")
 
 
 class PortfolioAnalyticsUpdateAdminView(BaseAdminUpdateView):
@@ -1237,14 +1269,14 @@ class PortfolioAnalyticsUpdateAdminView(BaseAdminUpdateView):
     model = PortfolioAnalytics
     form_class = PortfolioAnalyticsForm
     template_name = "core/admin/analytics_form.html"
-    success_url = reverse_lazy("aura_admin:core:analytics_list")
+    success_url = reverse_lazy("aura_admin:analytics_list")
 
 
 class PortfolioAnalyticsDeleteAdminView(BaseAdminDeleteView):
     """Delete analytics entry."""
 
     model = PortfolioAnalytics
-    success_url = reverse_lazy("aura_admin:core:analytics_list")
+    success_url = reverse_lazy("aura_admin:analytics_list")
 
 
 # ===================

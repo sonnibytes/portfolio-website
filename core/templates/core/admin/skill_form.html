@@ -1,0 +1,323 @@
+{% extends "admin/admin_base.html" %}
+{% load widget_tweaks %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.proficiency-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+    border-left: 4px solid #00ffff;
+}
+
+.skill-preview {
+    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.color-picker {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.color-option.selected {
+    border-color: #ffffff;
+    transform: scale(1.2);
+}
+
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.icon-option {
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #b0bec5;
+}
+
+.icon-option:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.icon-option.selected {
+    border-color: #00FFFF;
+    background: rgba(0, 255, 255, 0.2);
+    color: #00FFFF;
+}
+
+.technology-connections {
+    background: rgba(179, 157, 219, 0.05);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-cogs text-teal-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-sm btn-outline">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Skills
+        </a>
+    </div>
+
+    <!-- Form Container -->
+    <div class="glass-card p-6">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Basic Information Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-teal-400 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Basic Information
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Skill Name *</label>
+                        {{ form.name|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.name.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Category *</label>
+                        {{ form.category|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.category.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.category.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                    {{ form.description|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                    {% if form.description.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.description.errors.0 }}</div>
+                    {% endif %}
+                    <div class="text-gray-400 text-sm mt-1">Brief description of this skill and how you use it</div>
+                </div>
+            </div>
+            
+            <!-- Proficiency & Experience Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-purple-400 flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Proficiency & Experience
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Proficiency Level *</label>
+                        {{ form.proficiency|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.proficiency.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.proficiency.errors.0 }}</div>
+                        {% endif %}
+                        <div class="text-gray-400 text-sm mt-1">1=Beginner, 5=Expert</div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Years of Experience</label>
+                        {{ form.years_experience|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.years_experience.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.years_experience.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Last Used</label>
+                        {{ form.last_used|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.last_used.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.last_used.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <label class="flex items-center text-gray-300">
+                        <input type="checkbox" name="is_currently_learning" {% if form.instance.is_currently_learning %}checked{% endif %} 
+                               class="mr-2 accent-teal-400">
+                        Currently Learning
+                    </label>
+                    
+                    <label class="flex items-center text-gray-300">
+                        <input type="checkbox" name="is_certified" {% if form.instance.is_certified %}checked{% endif %} 
+                               class="mr-2 accent-purple-400">
+                        Have Certification
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Visual & Display Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-yellow-400 flex items-center">
+                    <i class="fas fa-palette mr-2"></i>
+                    Visual & Display
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Icon</label>
+                        {{ form.icon|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.icon.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.icon.errors.0 }}</div>
+                        {% endif %}
+                        <div class="text-gray-400 text-sm mt-1">Font Awesome icon name (e.g., fa-solid fa-cogs)</div>
+                        
+                        <!-- Quick icon selector -->
+                        <div class="icon-grid mt-2">
+                            <div class="icon-option" data-icon="fa-code"><i class="fa-solid fa-code"></i></div>
+                            <div class="icon-option" data-icon="fa-globe"><i class="fa-solid fa-globe"></i></div>
+                            <div class="icon-option" data-icon="fa-vials"><i class="fa-solid fa-vials"></i></div>
+                            <div class="icon-option" data-icon="fa-lock"><i class="fa-solid fa-lock"></i></div>
+                            <div class="icon-option" data-icon="fa-brain"><i class="fa-solid fa-brain"></i></div>
+                            <div class="icon-option" data-icon="fa-database"><i class="fa-solid fa-database"></i></div>
+                            <div class="icon-option" data-icon="fa-server"><i class="fa-solid fa-server"></i></div>
+                            <div class="icon-option" data-icon="fa-puzzle-piece"><i class="fa-solid fa-puzzle-piece"></i></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Color</label>
+                        {{ form.color|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.color.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.color.errors.0 }}</div>
+                        {% endif %}
+                        
+                        <!-- Color picker -->
+                        <div class="color-picker mt-2">
+                            <div class="color-option" style="background-color: #00FFFF;" data-color="#00FFFF"></div>
+                            <div class="color-option" style="background-color: #B39DDB;" data-color="#B39DDB"></div>
+                            <div class="color-option" style="background-color: #FF8A80;" data-color="#FF8A80"></div>
+                            <div class="color-option" style="background-color: #FFBD2E;" data-color="#FFBD2E"></div>
+                            <div class="color-option" style="background-color: #27C93F;" data-color="#27C93F"></div>
+                            <div class="color-option" style="background-color: #FF6B35;" data-color="#FF6B35"></div>
+                            <div class="color-option" style="background-color: #4ECDC4;" data-color="#4ECDC4"></div>
+                            <div class="color-option" style="background-color: #546E7A;" data-color="#546E7A"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Display Order</label>
+                        {{ form.display_order|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.display_order.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.display_order.errors.0 }}</div>
+                        {% endif %}
+                        <div class="text-gray-400 text-sm mt-1">Order for displaying in skill lists</div>
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-center text-gray-300 mt-8">
+                            <input type="checkbox" name="is_featured" {% if form.instance.is_featured %}checked{% endif %} 
+                                   class="mr-2 accent-teal-400">
+                            Featured Skill
+                        </label>
+                        <div class="text-gray-400 text-sm mt-1">Show prominently on homepage and profiles</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-700">
+                <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if object %}Update Skill{% else %}Create Skill{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<script>
+// Color picker functionality
+document.querySelectorAll('.color-option').forEach(option => {
+    option.addEventListener('click', function() {
+        const color = this.dataset.color;
+        document.querySelector('input[name="color"]').value = color;
+        
+        // Update selected state
+        document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+        this.classList.add('selected');
+    });
+});
+
+// Icon picker functionality
+document.querySelectorAll('.icon-option').forEach(option => {
+    option.addEventListener('click', function() {
+        const icon = this.dataset.icon;
+        document.querySelector('input[name="icon"]').value = icon;
+        
+        // Update selected state
+        document.querySelectorAll('.icon-option').forEach(opt => opt.classList.remove('selected'));
+        this.classList.add('selected');
+    });
+});
+</script>
+{% endblock %}
