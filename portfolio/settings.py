@@ -113,6 +113,7 @@ TEMPLATES = [
                 "core.context_processors.global_context",
                 "projects.context_processors.systems_context",
                 "core.context_processors.admin_context",
+                "core.context_processors.admin_navigation_context",
             ],
         },
     },

@@ -1,0 +1,138 @@
+<!-- 
+ * templates/admin/admin_base.html
+ * Version 2.0 - FIXED URL Namespaces
+ -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+  {{ title }} | AURA Admin
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+  {% block admin_css %}{% endblock %}
+{% endblock %}
+
+{% block body_class %}admin-interface{% endblock %}
+
+{% block subnav %}
+  <div class="admin-interface">
+    <!-- Admin Header -->
+    <header class="admin-header">
+      <div class="container mx-auto px-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <h1 class="text-2xl font-bold text-white">
+              <i class="fas fa-shield-alt mr-2 text-{{ app_color|default:'cyan' }}"></i>
+              AURA Admin
+            </h1>
+
+            <!-- Admin Navigation -->
+            <nav class="admin-nav">
+              <div class="container mx-auto px-6">
+                <div class="flex space-x-6">
+                  <a href="{% url 'aura_admin:dashboard' %}" class="admin-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt mr-2"></i>
+                    Dashboard
+                    <div class="link-indicator bg-emerald-500"></div>
+                  </a>
+
+                  <a href="{% url 'aura_admin:core_dashboard' %}" class="admin-nav-link {% if request.resolver_match.url_name == 'core_dashboard' %}active{% endif %}">
+                    <i class="fas fa-sprout mr-2"></i>
+                    Core
+                    <div class="link-indicator bg-emerald-500"></div>
+                  </a>
+                  
+                  <a href="{% url 'aura_admin:blog:dashboard' %}" class="admin-nav-link {% if 'blog' in request.path %}active{% endif %}">
+                    <i class="fas fa-database mr-2"></i>
+                    DataLogs
+                    <div class="link-indicator bg-purple-500"></div>
+                  </a>
+                  
+                  <a href="{% url 'aura_admin:projects:dashboard' %}" class="admin-nav-link {% if 'projects' in request.path %}active{% endif %}">
+                    <i class="fas fa-project-diagram mr-2"></i>
+                    Systems
+                    <div class="link-indicator bg-cyan-500"></div>
+                  </a>
+                </div>
+              </div>
+            </nav>
+          </div>
+
+          <div class="flex items-center space-x-4">
+            <a href="{% url 'core:home' %}" class="admin-nav-link">
+              <i class="fas fa-home mr-2"></i>
+              View Site
+            </a>
+            <span class="text-gray-400">{{ user.username }}</span>
+          </div>
+          
+        </div>
+        {% if breadcrumbs %}
+          <nav class="breadcrumbs">
+            <div class="flex items-center space-x-2 text-sm text-gray-400">
+              {% for breadcrumb in breadcrumbs %}
+                {% if breadcrumb.url %}
+                  <a href="{{ breadcrumb.url }}" class="hover:text-white transition-colors">
+                    {{ breadcrumb.name }}
+                  </a>
+                {% else %}
+                  <span class="text-{{ app_color|default:'cyan' }}">{{ breadcrumb.name }}</span>
+                {% endif %}
+                {% if not forloop.last %}
+                  <i class="fas fa-chevron-right text-gray-600"></i>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </nav>
+        {% endif %}
+      </div>
+    </header>
+
+    {% endblock %}
+
+    {% block content %}
+    <!-- Admin Content -->
+    <div class="admin-content">
+      <div class="container mx-auto px-6 py-8">
+        <!-- Messages -->
+        {% if messages %}
+          <div class="messages mb-6">
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} mb-4">
+                <div class="flex items-center">
+                  {% if message.tags == 'success' %}
+                     <i class="fas fa-check-circle mr-2"></i>
+                  {% elif message.tags == 'error' %}
+                     <i class="fas fa-exclamation-triangle mr-2"></i>
+                  {% elif message.tags == 'warning' %}
+                     <i class="fas fa-exclamation-circle mr-2"></i>
+                  {% else %}
+                     <i class="fas fa-info-circle mr-2"></i>
+                  {% endif %}
+                   {{ message }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+         <!-- Admin Content -->
+         {% block admin_content %}
+           <div class="text-center py-12">
+             <i class="fas fa-shield-alt text-6xl text-cyan-400 mb-4"></i>
+             <h2 class="text-2xl font-bold text-white mb-2">AURA Admin System</h2>
+             <p class="text-gray-400">Advanced User Repository & Archive Management</p>
+          </div>
+        {% endblock %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Admin Base js utils -->
+<script src="{% static 'js/components/admin.js' %}"></script>
+  {% block admin_js %}{% endblock %}
+{% endblock %}
