@@ -735,7 +735,7 @@ class LearningJourneyDashboardView(AdminAccessMixin, TemplateView):
             'system_connections': SystemLogEntry.objects.count(),
             'connected_systems': SystemLogEntry.objects.values('system').distinct().count(),
             'discoveries_this_month': Post.objects.filter(
-                createdd_at__gte=timezone.now() - timedelta(days=30)
+                created_at__gte=timezone.now() - timedelta(days=30)
             ).count(),
             'avg_reading_time': Post.objects.aggregate(
                 avg_time=Avg('reading_time')
