@@ -1,499 +1,609 @@
-<!-- 
-  *blog/templates/blog/admin/series_form.html
-  *Version 2.0
-  -->
-{% extends 'admin/admin_base.html' %}
+<!-- blog/templates/blog/admin/series_form.html -->
+{% extends "admin/admin_base.html" %}
 {% load static %}
+{% load widget_tweaks %}
 
-{% block admin_actions %}
-  <div class="flex items-center space-x-4">
-    <a href="{% url 'aura_admin:blog:series_list' %}" class="btn btn-secondary">
-      <i class="fas fa-arrow-left mr-2"></i>
-      Back to Series
-    </a>
-  </div>
-{% endblock %}
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
 
-{% block admin_content %}
-  <div class="series-form">
-    <form method="post" enctype="multipart/form-data" class="space-y-8">
-      {% csrf_token %}
-      
-      <!-- Basic Information -->
-      <div class="admin-form-container">
-        <div class="form-section">
-          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fas fa-layer-group mr-2 text-blue-400"></i>
-            Series Information
-          </h3>
-          
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Title -->
-            <div class="admin-form-field lg:col-span-2">
-              <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-                {{ form.title.label }}
-                <span class="text-red-400">*</span>
-              </label>
-              {{ form.title }}
-              {% if form.title.help_text %}
-                <p class="mt-1 text-sm text-gray-400">{{ form.title.help_text }}</p>
-              {% endif %}
-              {% if form.title.errors %}
-                <div class="mt-1 text-sm text-red-400">
-                  {% for error in form.title.errors %}
-                    <p>{{ error }}</p>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </div>
-            
-            <!-- Slug -->
-            <div class="admin-form-field">
-              <label for="{{ form.slug.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-                {{ form.slug.label }}
-              </label>
-              {{ form.slug }}
-              {% if form.slug.help_text %}
-                <p class="mt-1 text-sm text-gray-400">{{ form.slug.help_text }}</p>
-              {% endif %}
-              {% if form.slug.errors %}
-                <div class="mt-1 text-sm text-red-400">
-                  {% for error in form.slug.errors %}
-                    <p>{{ error }}</p>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </div>
-            
-            <!-- Difficulty Level -->
-            <div class="admin-form-field">
-              <label for="{{ form.difficulty_level.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-                {{ form.difficulty_level.label }}
-              </label>
-              {{ form.difficulty_level }}
-              {% if form.difficulty_level.help_text %}
-                <p class="mt-1 text-sm text-gray-400">{{ form.difficulty_level.help_text }}</p>
-              {% endif %}
-              {% if form.difficulty_level.errors %}
-                <div class="mt-1 text-sm text-red-400">
-                  {% for error in form.difficulty_level.errors %}
-                    <p>{{ error }}</p>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </div>
-          </div>
-          
-          <!-- Description -->
-          <div class="admin-form-field">
-            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-              {{ form.description.label }}
-            </label>
-            {{ form.description }}
-            {% if form.description.help_text %}
-              <p class="mt-1 text-sm text-gray-400">{{ form.description.help_text }}</p>
-            {% endif %}
-            {% if form.description.errors %}
-              <div class="mt-1 text-sm text-red-400">
-                {% for error in form.description.errors %}
-                  <p>{{ error }}</p>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Visual Assets -->
-      <div class="admin-form-container">
-        <div class="form-section">
-          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fas fa-image mr-2 text-blue-400"></i>
-            Visual Assets
-          </h3>
-          
-          <!-- Thumbnail -->
-          <div class="admin-form-field">
-            <label for="{{ form.thumbnail.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-              {{ form.thumbnail.label }}
-            </label>
-            {% if object.thumbnail %}
-              <div class="mb-3">
-                <img src="{{ object.thumbnail.url }}" alt="Current thumbnail" class="w-32 h-24 object-cover rounded border border-gray-600">
-                <p class="text-xs text-gray-400 mt-1">Current thumbnail</p>
-              </div>
-            {% endif %}
-            {{ form.thumbnail }}
-            {% if form.thumbnail.help_text %}
-              <p class="mt-1 text-sm text-gray-400">{{ form.thumbnail.help_text }}</p>
-            {% endif %}
-            {% if form.thumbnail.errors %}
-              <div class="mt-1 text-sm text-red-400">
-                {% for error in form.thumbnail.errors %}
-                  <p>{{ error }}</p>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Series Settings -->
-      <div class="admin-form-container">
-        <div class="form-section">
-          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fas fa-cog mr-2 text-blue-400"></i>
-            Series Settings
-          </h3>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Status Checkboxes -->
-            <div class="admin-form-field">
-              <label class="block text-sm font-medium text-white mb-4">Status Options</label>
-              <div class="space-y-3">
-                <label class="flex items-center">
-                  {{ form.is_complete }}
-                  <span class="ml-2 text-sm text-gray-300">{{ form.is_complete.label }}</span>
-                  <span class="ml-2 text-xs text-gray-500">(Mark when all posts are published)</span>
-                </label>
-                <label class="flex items-center">
-                  {{ form.is_featured }}
-                  <span class="ml-2 text-sm text-gray-300">{{ form.is_featured.label }}</span>
-                  <span class="ml-2 text-xs text-gray-500">(Show prominently on site)</span>
-                </label>
-              </div>
-            </div>
-            
-            <!-- Difficulty Badge Preview -->
-            <div class="admin-form-field">
-              <label class="block text-sm font-medium text-white mb-4">Difficulty Preview</label>
-              <div class="difficulty-preview">
-                <span class="difficulty-badge" id="difficulty-preview">
-                  {{ form.difficulty_level.value|default:'intermediate'|title }}
-                </span>
-                <p class="text-xs text-gray-400 mt-2">This badge will appear on the series card</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Series Preview -->
-      <div class="admin-form-container">
-        <div class="form-section">
-          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fas fa-eye mr-2 text-blue-400"></i>
-            Series Preview
-          </h3>
-          
-          <div class="series-preview-card glass-card p-6 max-w-2xl">
-            <div class="flex items-start space-x-4">
-              <div class="series-thumbnail-preview w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-layer-group text-white text-xl"></i>
-              </div>
-              
-              <div class="flex-1 min-w-0">
-                <h4 class="text-lg font-bold text-white mb-1" id="preview-title">{{ form.title.value|default:'Series Title' }}</h4>
-                <div class="flex items-center space-x-4 text-sm text-gray-400 mb-2">
-                  <span class="difficulty-badge" id="preview-difficulty">
-                    {{ form.difficulty_level.value|default:'intermediate'|title }}
-                  </span>
-                  <span class="status-badge bg-yellow-400 bg-opacity-20 text-yellow-400" id="preview-status">
-                    In Progress
-                  </span>
-                  <span class="status-badge bg-purple-400 bg-opacity-20 text-purple-400" id="preview-featured" style="display: none;">
-                    <i class="fas fa-star mr-1"></i>Featured
-                  </span>
-                </div>
-                <p class="text-gray-300 text-sm" id="preview-description">{{ form.description.value|default:'Series description will appear here...' }}</p>
-              </div>
-            </div>
-            
-            <!-- Preview Stats -->
-            <div class="grid grid-cols-3 gap-4 pt-4 mt-4 border-t border-gray-600">
-              <div class="text-center">
-                <div class="text-lg font-bold text-white">{{ object.posts.count|default:0 }}</div>
-                <div class="text-xs text-gray-400">Posts</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-bold text-white">{{ object.total_reading_time|default:0 }}</div>
-                <div class="text-xs text-gray-400">Minutes</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-bold text-white" id="preview-completion">
-                  {% if object.is_complete %}100{% else %}0{% endif %}%
-                </div>
-                <div class="text-xs text-gray-400">Complete</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Series Statistics (if editing) -->
-      {% if object and object.posts.exists %}
-        <div class="admin-form-container">
-          <div class="form-section">
-            <h3 class="text-xl font-bold text-white mb-6 flex items-center">
-              <i class="fas fa-chart-bar mr-2 text-blue-400"></i>
-              Series Statistics
-            </h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div class="stat-card">
-                <div class="stat-number">{{ object.posts.count }}</div>
-                <div class="stat-label">Total Posts</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-number">{{ object.total_reading_time|default:0 }}</div>
-                <div class="stat-label">Reading Time</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-number">
-                  {% if object.posts.exists %}
-                    {{ object.posts.first.created_at|date:"M Y" }}
-                  {% else %}
-                    --
-                  {% endif %}
-                </div>
-                <div class="stat-label">Started</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-number">
-                  {% if object.is_complete %}
-                    100%
-                  {% else %}
-                    {{ object.get_progress_percentage|floatformat:0 }}%
-                  {% endif %}
-                </div>
-                <div class="stat-label">Progress</div>
-              </div>
-            </div>
-            
-            <!-- Recent Posts in Series -->
-            {% if object.posts.exists %}
-              <div class="mt-6">
-                <h4 class="text-lg font-bold text-white mb-4">Posts in Series</h4>
-                <div class="space-y-3">
-                  {% for series_post in object.posts.all|slice:":5" %}
-                    <div class="flex items-center justify-between p-3 bg-black bg-opacity-20 rounded-lg">
-                      <div class="flex items-center">
-                        <span class="w-8 h-8 bg-blue-500 bg-opacity-20 text-blue-400 rounded-full flex items-center justify-center text-sm font-bold mr-3">
-                          {{ series_post.order }}
-                        </span>
-                        <div>
-                          <div class="font-medium text-white">{{ series_post.post.title }}</div>
-                          <div class="text-xs text-gray-400">{{ series_post.post.created_at|date:"M j, Y" }}</div>
-                        </div>
-                      </div>
-                      <a href="{% url 'aura_admin:blog:post_edit' series_post.post.pk %}" class="text-blue-400 hover:text-blue-300">
-                        <i class="fas fa-edit"></i>
-                      </a>
-                    </div>
-                  {% endfor %}
-                  {% if object.posts.count > 5 %}
-                    <p class="text-gray-400 text-sm text-center">
-                      ... and {{ object.posts.count|add:"-5" }} more posts
-                    </p>
-                  {% endif %}
-                </div>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      {% endif %}
-
-      <!-- Form Actions -->
-      <div class="admin-form-actions">
-        <div class="flex justify-between items-center">
-          <div class="flex space-x-4">
-            {% if object %}
-              <a href="{% url 'aura_admin:blog:series_posts_manage' object.pk %}" class="btn btn-secondary">
-                <i class="fas fa-cogs mr-2"></i>
-                Manage Posts ({{ object.posts.count }})
-              </a>
-              <a href="{% url 'aura_admin:blog:post_list' %}?search={{ object.title }}" class="btn btn-secondary">
-                <i class="fas fa-eye mr-2"></i>
-                View Series Posts
-              </a>
-              <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-secondary">
-                <i class="fas fa-plus mr-2"></i>
-                Create New Post
-              </a>
-            {% endif %}
-          </div>
-          
-          <div class="flex space-x-4">
-            <a href="{% url 'aura_admin:blog:series_list' %}" class="btn btn-secondary">
-              Cancel
-            </a>
-            <button type="submit" class="btn btn-purple">
-              <i class="fas fa-save mr-2"></i>
-              {% if form_mode == 'create' %}Create Series{% else %}Update Series{% endif %}
-            </button>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-{% endblock %}
+{% block admin_breadcrumb %}DataLogs › {% if object %}Edit Learning Journey{% else %}Start Learning Journey{% endif %}{% endblock %}
 
 {% block admin_css %}
+{{ block.super }}
 <style>
-.difficulty-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.learning-form-container {
+    max-width: 900px;
+    margin: 0 auto;
 }
 
-.difficulty-badge.beginner {
-  background: rgba(34, 197, 94, 0.2);
-  color: rgb(34, 197, 94);
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
-.difficulty-badge.intermediate {
-  background: rgba(234, 179, 8, 0.2);
-  color: rgb(234, 179, 8);
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.difficulty-badge.advanced {
-  background: rgba(249, 115, 22, 0.2);
-  color: rgb(249, 115, 22);
+.form-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
 }
 
-.difficulty-badge.expert {
-  background: rgba(239, 68, 68, 0.2);
-  color: rgb(239, 68, 68);
+.form-section-subtitle {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin: 0;
 }
 
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
 }
 
-.series-preview-card {
-  transition: all 0.3s ease;
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
-.stat-card {
-  text-align: center;
-  padding: 1.5rem;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 0.75rem;
+.form-field.full-width {
+    grid-column: 1 / -1;
 }
 
-.stat-number {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #60a5fa;
-  margin-bottom: 0.5rem;
+.form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #e8eaf6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.stat-label {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.form-input, .form-textarea, .form-select {
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #b39ddb;
+    box-shadow: 0 0 0 3px rgba(179, 157, 219, 0.1);
+}
+
+.form-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-select option {
+    background: #0d0d1f;
+    color: white;
+}
+
+.journey-preview {
+    background: rgba(179, 157, 219, 0.05);
+    border: 1px solid rgba(179, 157, 219, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.journey-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: #b39ddb;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.journey-card-preview {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+}
+
+.journey-card-preview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #b39ddb, #d1c4e9);
+    border-radius: 8px 8px 0 0;
+}
+
+.preview-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.preview-meta {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+}
+
+.preview-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.difficulty-beginner { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.difficulty-intermediate { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.difficulty-advanced { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+.difficulty-expert { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+.preview-description {
+    color: #d1d5db;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(179, 157, 219, 0.05);
+    border: 1px solid rgba(179, 157, 219, 0.1);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.checkbox-group:hover {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: rgba(179, 157, 219, 0.2);
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: #b39ddb;
+}
+
+.checkbox-label {
+    color: #e8eaf6;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-actions-left {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.form-actions-right {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #b39ddb;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #9c88c2;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    text-decoration: none;
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #b39ddb;
+    border: 1px solid #b39ddb;
+}
+
+.btn-outline:hover {
+    background: rgba(179, 157, 219, 0.1);
+    text-decoration: none;
+    color: #b39ddb;
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.error-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.error-list li {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.journey-tips {
+    background: rgba(34, 197, 94, 0.05);
+    border: 1px solid rgba(34, 197, 94, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.journey-tips-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #22c55e;
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+.journey-tips ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: #d1d5db;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.journey-tips li {
+    margin-bottom: 0.25rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .form-actions-left,
+    .form-actions-right {
+        justify-content: center;
+    }
 }
 </style>
 {% endblock %}
 
+{% block admin_content %}
+<div class="learning-form-container">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2 flex items-center justify-center">
+            <i class="fas fa-route text-lavender-400 mr-3"></i>
+            {{ title }}
+        </h1>
+        <p class="text-gray-400">{{ subtitle }}</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="journey-form">
+        {% csrf_token %}
+        
+        <!-- Learning Journey Identity Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-route text-lavender-400"></i>
+                <div>
+                    <h3 class="form-section-title">Learning Journey Identity</h3>
+                    <p class="form-section-subtitle">Define your learning path and goals</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-heading"></i>
+                        Journey Title
+                    </label>
+                    
+                    {{ form.title|attr:"placeholder:What will you learn? (e.g., 'Mastering Django REST APIs)'"|add_class:"form-input" }}
+                    {% if form.title.errors %}
+                        <ul class="error-list">
+                            {% for error in form.title.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-layer-group"></i>
+                        Learning Difficulty
+                    </label>
+                    {% render_field form.difficulty_level class="form-select" %}
+                    <div class="help-text">Choose the complexity level that best matches this learning journey</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-link"></i>
+                        URL Slug
+                    </label>
+                    {% render_field form.slug class="form-input" placeholder="auto-generated-from-title" %}
+                    <div class="help-text">URL-friendly version (auto-generated if left blank)</div>
+                </div>
+                
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        Learning Journey Description
+                    </label>
+                
+                    {{ form.description|attr:"placeholder:Describe what you'll learn, why it's important, and what skills you'll gain..."|add_class:"form-textarea" }}
+                    <div class="help-text">Explain the learning goals and what someone will gain from following this journey</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Journey Settings Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-cogs text-teal-400"></i>
+                <div>
+                    <h3 class="form-section-title">Journey Configuration</h3>
+                    <p class="form-section-subtitle">Set journey status and visibility</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-tasks"></i>
+                        Journey Status
+                    </label>
+                    <div class="checkbox-group">
+                        {% render_field form.is_complete %}
+                        <label for="{{ form.is_complete.id_for_label }}" class="checkbox-label">
+                            Mark this learning journey as completed
+                        </label>
+                    </div>
+                    <div class="help-text">Check when you've finished all planned discoveries for this journey</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-star"></i>
+                        Journey Visibility
+                    </label>
+                    <div class="checkbox-group">
+                        {% render_field form.is_featured %}
+                        <label for="{{ form.is_featured.id_for_label }}" class="checkbox-label">
+                            Feature this learning journey prominently
+                        </label>
+                    </div>
+                    <div class="help-text">Featured journeys appear at the top of learning lists</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Design Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-palette text-purple-400"></i>
+                <div>
+                    <h3 class="form-section-title">Visual Design (Optional)</h3>
+                    <p class="form-section-subtitle">Customize the journey's appearance</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-image"></i>
+                        Journey Thumbnail
+                    </label>
+                    {% render_field form.thumbnail class="form-input" %}
+                    <div class="help-text">Optional thumbnail image for the journey (recommended: 400x300px)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Journey Preview -->
+        <div class="journey-preview">
+            <div class="journey-preview-header">
+                <i class="fas fa-eye"></i>
+                Journey Preview
+            </div>
+            <div class="journey-card-preview" id="journey-preview">
+                <div class="preview-title" id="preview-title">Your Learning Journey Title</div>
+                <div class="preview-meta">
+                    <span class="preview-badge difficulty-intermediate" id="preview-difficulty">Intermediate</span>
+                    <span id="preview-status">Planning</span>
+                </div>
+                <div class="preview-description" id="preview-description">
+                    Your journey description will appear here...
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Journey Tips -->
+        <div class="journey-tips">
+            <div class="journey-tips-header">
+                <i class="fas fa-lightbulb"></i>
+                Tips for Effective Learning Journeys
+            </div>
+            <ul>
+                <li><strong>Be Specific:</strong> Focus on a particular skill or technology rather than broad topics</li>
+                <li><strong>Set Clear Goals:</strong> Define what you want to achieve by the end of this journey</li>
+                <li><strong>Document Progress:</strong> Add discoveries regularly to track your learning</li>
+                <li><strong>Connect to Practice:</strong> Link your learning to real systems and projects</li>
+                <li><strong>Share Knowledge:</strong> Featured journeys help others follow similar learning paths</li>
+            </ul>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <div class="form-actions-left">
+                <a href="{% url 'aura_admin:blog:learning_journey_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Journeys
+                </a>
+            </div>
+            <div class="form-actions-right">
+                {% if object %}
+                    <a href="{% url 'aura_admin:blog:learning_journey_detail' object.pk %}" class="btn btn-outline">
+                        <i class="fas fa-cogs"></i>
+                        Manage Posts
+                    </a>
+                {% endif %}
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-{% if object %}save{% else %}plus{% endif %}"></i>
+                    {% if object %}Update Journey{% else %}Start Learning Journey{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+
+</div>
+{% endblock %}
+
 {% block admin_js %}
+{{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-generate slug from title
-    const titleField = document.getElementById('{{ form.title.id_for_label }}');
-    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
-    const descriptionField = document.getElementById('{{ form.description.id_for_label }}');
-    const difficultyField = document.getElementById('{{ form.difficulty_level.id_for_label }}');
-    const isCompleteField = document.getElementById('{{ form.is_complete.id_for_label }}');
-    const isFeaturedField = document.getElementById('{{ form.is_featured.id_for_label }}');
+    // Form elements
+    const titleInput = document.querySelector('#id_title');
+    const descriptionInput = document.querySelector('#id_description');
+    const difficultySelect = document.querySelector('#id_difficulty_level');
+    const isCompleteCheckbox = document.querySelector('#id_is_complete');
+    const isFeaturedCheckbox = document.querySelector('#id_is_featured');
     
     // Preview elements
     const previewTitle = document.getElementById('preview-title');
     const previewDescription = document.getElementById('preview-description');
     const previewDifficulty = document.getElementById('preview-difficulty');
     const previewStatus = document.getElementById('preview-status');
-    const previewFeatured = document.getElementById('preview-featured');
-    const previewCompletion = document.getElementById('preview-completion');
-    const difficultyPreview = document.getElementById('difficulty-preview');
+    
+    // Update preview in real-time
+    function updatePreview() {
+        // Update title
+        const title = titleInput.value.trim() || 'Your Learning Journey Title';
+        previewTitle.textContent = title;
+        
+        // Update description
+        const description = descriptionInput.value.trim() || 'Your journey description will appear here...';
+        previewDescription.textContent = description;
+        
+        // Update difficulty
+        const difficulty = difficultySelect.value || 'intermediate';
+        const difficultyText = difficultySelect.options[difficultySelect.selectedIndex].text;
+        previewDifficulty.textContent = difficultyText;
+        previewDifficulty.className = `preview-badge difficulty-${difficulty}`;
+        
+        // Update status
+        let status = 'Planning';
+        if (isCompleteCheckbox.checked) {
+            status = 'Completed';
+        } else if (title && description) {
+            status = 'Learning';
+        }
+        previewStatus.textContent = status;
+    }
+    
+    // Add event listeners
+    if (titleInput) titleInput.addEventListener('input', updatePreview);
+    if (descriptionInput) descriptionInput.addEventListener('input', updatePreview);
+    if (difficultySelect) difficultySelect.addEventListener('change', updatePreview);
+    if (isCompleteCheckbox) isCompleteCheckbox.addEventListener('change', updatePreview);
     
     // Auto-generate slug from title
-    if (titleField && slugField && !slugField.dataset.modified) {
-        titleField.addEventListener('input', function() {
-            if (!slugField.dataset.modified) {
+    if (titleInput) {
+        titleInput.addEventListener('input', function() {
+            const slugField = document.querySelector('#id_slug');
+            if (slugField && !slugField.value) {
                 const slug = this.value
                     .toLowerCase()
-                    .replace(/[^a-z0-9\s-]/g, '')
-                    .replace(/\s+/g, '-')
-                    .replace(/-+/g, '-')
-                    .trim('-');
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '');
                 slugField.value = slug;
             }
-            
-            // Update preview
-            previewTitle.textContent = this.value || 'Series Title';
-        });
-        
-        slugField.addEventListener('input', function() {
-            this.dataset.modified = 'true';
         });
     }
     
-    // Update description preview
-    if (descriptionField) {
-        descriptionField.addEventListener('input', function() {
-            previewDescription.textContent = this.value || 'Series description will appear here...';
-        });
-    }
+    // Initial preview update
+    updatePreview();
     
-    // Update difficulty preview
-    if (difficultyField) {
-        difficultyField.addEventListener('change', function() {
-            const difficulty = this.value || 'intermediate';
-            const difficultyText = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
-            
-            // Update both previews
-            previewDifficulty.textContent = difficultyText;
-            previewDifficulty.className = `difficulty-badge ${difficulty}`;
-            
-            difficultyPreview.textContent = difficultyText;
-            difficultyPreview.className = `difficulty-badge ${difficulty}`;
-        });
-    }
-    
-    // Update status previews
-    if (isCompleteField) {
-        isCompleteField.addEventListener('change', function() {
-            if (this.checked) {
-                previewStatus.textContent = 'Complete';
-                previewStatus.className = 'status-badge bg-green-400 bg-opacity-20 text-green-400';
-                previewCompletion.textContent = '100%';
-            } else {
-                previewStatus.textContent = 'In Progress';
-                previewStatus.className = 'status-badge bg-yellow-400 bg-opacity-20 text-yellow-400';
-                previewCompletion.textContent = '0%';
+    // Enhanced checkbox styling
+    const checkboxGroups = document.querySelectorAll('.checkbox-group');
+    checkboxGroups.forEach(group => {
+        group.addEventListener('click', function(e) {
+            if (e.target.type !== 'checkbox') {
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    updatePreview();
+                }
             }
         });
-    }
-    
-    if (isFeaturedField) {
-        isFeaturedField.addEventListener('change', function() {
-            if (this.checked) {
-                previewFeatured.style.display = 'inline-flex';
-            } else {
-                previewFeatured.style.display = 'none';
-            }
-        });
-    }
+    });
 });
 </script>
 {% endblock %}

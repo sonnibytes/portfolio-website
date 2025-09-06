@@ -1,356 +1,641 @@
-<!-- 
-  *blog/templates/blog/admin/category_form.html
-  *Version 2.0
-  -->
-{% extends 'admin/admin_base.html' %}
+<!-- blog/templates/blog/admin/category_form.html -->
+{% extends "admin/admin_base.html" %}
 {% load static %}
+{% load widget_tweaks %}
 
-{% block admin_actions %}
-  <div class="flex items-center space-x-4">
-    <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-secondary">
-      <i class="fas fa-arrow-left mr-2"></i>
-      Back to Categories
-    </a>
-  </div>
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block admin_breadcrumb %}DataLogs › {% if object %}Edit Knowledge Domain{% else %}Create Knowledge Domain{% endif %}{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+.learning-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.form-section-subtitle {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #e8eaf6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-input, .form-textarea, .form-select {
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #ff8a80;
+    box-shadow: 0 0 0 3px rgba(255, 138, 128, 0.1);
+}
+
+.form-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-select option {
+    background: #0d0d1f;
+    color: white;
+}
+
+.color-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.color-input {
+    width: 60px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+
+.color-presets {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.color-preset {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.color-preset:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+}
+
+.color-preset.selected {
+    border-color: white;
+    transform: scale(1.15);
+}
+
+.icon-picker-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.icon-option {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #d1d5db;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.icon-option:hover {
+    background: rgba(255, 138, 128, 0.1);
+    border-color: #ff8a80;
+    color: #ff8a80;
+}
+
+.icon-option.selected {
+    background: rgba(255, 138, 128, 0.2);
+    border-color: #ff8a80;
+    color: #ff8a80;
+}
+
+.domain-preview {
+    background: rgba(255, 138, 128, 0.05);
+    border: 1px solid rgba(255, 138, 128, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.domain-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: #ff8a80;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.domain-badge-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid;
+    transition: all 0.3s ease;
+}
+
+.usage-examples {
+    background: rgba(34, 197, 94, 0.05);
+    border: 1px solid rgba(34, 197, 94, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.usage-examples-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #22c55e;
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+.usage-examples ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: #d1d5db;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.usage-examples li {
+    margin-bottom: 0.25rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-actions-left {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.form-actions-right {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #ff8a80;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #ff7043;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    text-decoration: none;
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #ff8a80;
+    border: 1px solid #ff8a80;
+}
+
+.btn-outline:hover {
+    background: rgba(255, 138, 128, 0.1);
+    text-decoration: none;
+    color: #ff8a80;
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.error-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.error-list li {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .form-actions-left,
+    .form-actions-right {
+        justify-content: center;
+    }
+    
+    .color-picker-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .icon-picker-container {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+</style>
 {% endblock %}
 
 {% block admin_content %}
-  <div class="category-form">
-    <form method="post" class="space-y-8">
-      {% csrf_token %}
-      
-      <!-- Basic Information -->
-      <div class="admin-form-container">
-        <div class="form-section">
-          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fas fa-info-circle mr-2 text-orange-400"></i>
-            Category Information
-          </h3>
-          
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Name -->
-            <div class="admin-form-field">
-              <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-                {{ form.name.label }}
-                <span class="text-red-400">*</span>
-              </label>
-              {{ form.name }}
-              {% if form.name.help_text %}
-                <p class="mt-1 text-sm text-gray-400">{{ form.name.help_text }}</p>
-              {% endif %}
-              {% if form.name.errors %}
-                <div class="mt-1 text-sm text-red-400">
-                  {% for error in form.name.errors %}
-                    <p>{{ error }}</p>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </div>
-            
-            <!-- Slug -->
-            <div class="admin-form-field">
-              <label for="{{ form.slug.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-                {{ form.slug.label }}
-              </label>
-              {{ form.slug }}
-              {% if form.slug.help_text %}
-                <p class="mt-1 text-sm text-gray-400">{{ form.slug.help_text }}</p>
-              {% endif %}
-              {% if form.slug.errors %}
-                <div class="mt-1 text-sm text-red-400">
-                  {% for error in form.slug.errors %}
-                    <p>{{ error }}</p>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </div>
-            
-            <!-- Code -->
-            <div class="admin-form-field">
-              <label for="{{ form.code.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-                {{ form.code.label }}
-                <span class="text-red-400">*</span>
-              </label>
-              {{ form.code }}
-              {% if form.code.help_text %}
-                <p class="mt-1 text-sm text-gray-400">{{ form.code.help_text }}</p>
-              {% endif %}
-              {% if form.code.errors %}
-                <div class="mt-1 text-sm text-red-400">
-                  {% for error in form.code.errors %}
-                    <p>{{ error }}</p>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </div>
-            
-            <!-- Color -->
-            <div class="admin-form-field">
-              <label for="{{ form.color.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-                {{ form.color.label }}
-              </label>
-              <div class="flex items-center space-x-3">
-                {{ form.color }}
-                <div class="color-preview w-8 h-8 rounded border border-gray-600" 
-                     id="color-preview" style="background-color: {{ form.color.value|default:'#00f0ff' }};"></div>
-              </div>
-              {% if form.color.help_text %}
-                <p class="mt-1 text-sm text-gray-400">{{ form.color.help_text }}</p>
-              {% endif %}
-              {% if form.color.errors %}
-                <div class="mt-1 text-sm text-red-400">
-                  {% for error in form.color.errors %}
-                    <p>{{ error }}</p>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </div>
-          </div>
-          
-          <!-- Description -->
-          <div class="admin-form-field">
-            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-              {{ form.description.label }}
-            </label>
-            {{ form.description }}
-            {% if form.description.help_text %}
-              <p class="mt-1 text-sm text-gray-400">{{ form.description.help_text }}</p>
-            {% endif %}
-            {% if form.description.errors %}
-              <div class="mt-1 text-sm text-red-400">
-                {% for error in form.description.errors %}
-                  <p>{{ error }}</p>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-          
-          <!-- Icon -->
-          <div class="admin-form-field">
-            <label for="{{ form.icon.id_for_label }}" class="block text-sm font-medium text-white mb-2">
-              {{ form.icon.label }}
-            </label>
-            <div class="flex items-center space-x-3">
-              {{ form.icon }}
-              <div class="icon-preview w-8 h-8 flex items-center justify-center rounded border border-gray-600 text-orange-400" 
-                   id="icon-preview">
-                <i class="fa-solid {{ form.icon.value }}"></i>
-              </div>
-            </div>
-            {% if form.icon.help_text %}
-              <p class="mt-1 text-sm text-gray-400">{{ form.icon.help_text }}</p>
-            {% endif %}
-            <p class="mt-1 text-xs text-gray-500">
-              Common icons: fa-code, fa-database, fa-cog, fa-chart-line, fa-rocket, fa-brain, fa-server, fa-mobile-alt, fa-cloud, fa-lock
-            </p>
-            <p class="mt-1 text-xs text-gray-400">
-              Find more icons at <a href="https://fontawesome.com/icons" target="_blank" class="text-blue-400 hover:text-blue-300">fontawesome.com/icons</a>
-            </p>
-            {% if form.icon.errors %}
-              <div class="mt-1 text-sm text-red-400">
-                {% for error in form.icon.errors %}
-                  <p>{{ error }}</p>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
+<div class="learning-form-container">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2 flex items-center justify-center">
+            <i class="fas fa-tags text-coral-400 mr-3"></i>
+            {{ title }}
+        </h1>
+        <p class="text-gray-400">{{ subtitle }}</p>
+    </div>
 
-      <!-- Preview Section -->
-      <div class="admin-form-container">
+    <form method="post" enctype="multipart/form-data" id="domain-form">
+        {% csrf_token %}
+        
+        <!-- Knowledge Domain Identity Section -->
         <div class="form-section">
-          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fas fa-eye mr-2 text-orange-400"></i>
-            Category Preview
-          </h3>
-          
-          <div class="category-preview glass-card p-6 max-w-md">
-            <div class="flex items-center">
-              <div class="category-icon w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold mr-4"
-                   id="preview-icon-container"
-                   style="background-color: {{ form.color.value|default:'#00f0ff' }}20; color: {{ form.color.value|default:'#00f0ff' }};">
-                <i class="fa-solid {{ form.icon.value|default:'fa-folder' }}" id="preview-icon"></i>
-              </div>
-              <div>
-                <h4 class="text-lg font-bold text-white" id="preview-name">{{ form.name.value|default:'Category Name' }}</h4>
-                <p class="text-sm text-gray-400" id="preview-code">{{ form.code.value|default:'XX' }}</p>
-              </div>
+            <div class="form-section-header">
+                <i class="fas fa-tags text-coral-400"></i>
+                <div>
+                    <h3 class="form-section-title">Domain Identity</h3>
+                    <p class="form-section-subtitle">Define your knowledge domain and organization</p>
+                </div>
             </div>
-            {% if form.description.value %}
-              <p class="text-gray-300 text-sm mt-4" id="preview-description">{{ form.description.value }}</p>
-            {% endif %}
-          </div>
+            
+            <div class="form-grid">
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-heading"></i>
+                        Domain Name
+                    </label>
+                    {% render_field form.name class="form-input" placeholder="e.g., Python Development, Data Science, Web Design" %}
+                    {% if form.name.errors %}
+                        <ul class="error-list">
+                            {% for error in form.name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <div class="help-text">Clear, specific name for this knowledge area</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-link"></i>
+                        URL Slug
+                    </label>
+                    {% render_field form.slug class="form-input" placeholder="auto-generated-from-name" %}
+                    <div class="help-text">URL-friendly version (auto-generated if left blank)</div>
+                </div>
+                
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        Domain Description
+                    </label>
+                    
+                    {{ form.description|attr:"placeholder:Describe what this knowledge domain covers and why it's important to your learning..."|add_class:"form-textarea" }}
+                    <div class="help-text">Explain what discoveries and learning this domain encompasses</div>
+                </div>
+            </div>
         </div>
-      </div>
 
-      <!-- Form Actions -->
-      <div class="admin-form-actions">
-        <div class="flex justify-between items-center">
-          <div class="flex space-x-4">
-            {% if object %}
-              <a href="{% url 'aura_admin:blog:post_list' %}?category={{ object.slug }}" class="btn btn-secondary">
-                <i class="fas fa-eye mr-2"></i>
-                View Posts in Category
-              </a>
-            {% endif %}
-          </div>
-          
-          <div class="flex space-x-4">
-            <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-secondary">
-              Cancel
-            </a>
-            <button type="submit" class="btn btn-purple">
-              <i class="fas fa-save mr-2"></i>
-              {% if form_mode == 'create' %}Create Category{% else %}Update Category{% endif %}
-            </button>
-          </div>
+        <!-- Visual Design Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-palette text-purple-400"></i>
+                <div>
+                    <h3 class="form-section-title">Visual Design</h3>
+                    <p class="form-section-subtitle">Customize the domain's appearance and recognition</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-paint-brush"></i>
+                        Domain Color
+                    </label>
+                    <div class="color-picker-container">
+                        {% render_field form.color class="color-input" type="color" %}
+                        <span id="color-hex" class="text-gray-400 font-mono text-sm">#ff8a80</span>
+                    </div>
+                    <div class="color-presets">
+                        <div class="color-preset" data-color="#ff8a80" style="background-color: #ff8a80;" title="Coral"></div>
+                        <div class="color-preset" data-color="#b39ddb" style="background-color: #b39ddb;" title="Lavender"></div>
+                        <div class="color-preset" data-color="#26c6da" style="background-color: #26c6da;" title="Teal"></div>
+                        <div class="color-preset" data-color="#81c784" style="background-color: #81c784;" title="Green"></div>
+                        <div class="color-preset" data-color="#ffb74d" style="background-color: #ffb74d;" title="Orange"></div>
+                        <div class="color-preset" data-color="#f48fb1" style="background-color: #f48fb1;" title="Pink"></div>
+                        <div class="color-preset" data-color="#90a4ae" style="background-color: #90a4ae;" title="Blue Grey"></div>
+                        <div class="color-preset" data-color="#fff59d" style="background-color: #fff59d;" title="Yellow"></div>
+                    </div>
+                    <div class="help-text">Choose a color that represents this knowledge domain</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-icons"></i>
+                        Domain Icon (Font Awesome)
+                    </label>
+                    {% render_field form.icon class="form-input" placeholder="e.g., fas fa-code, fas fa-database" %}
+                    <div class="help-text">Click an icon below or enter Font Awesome class manually</div>
+                </div>
+                
+                <div class="form-field full-width">
+                    <div class="icon-picker-container" id="icon-picker">
+                        <!-- Common knowledge domain icons -->
+                        <div class="icon-option" data-icon="fas fa-code" title="Programming"><i class="fas fa-code"></i></div>
+                        <div class="icon-option" data-icon="fas fa-database" title="Database"><i class="fas fa-database"></i></div>
+                        <div class="icon-option" data-icon="fas fa-chart-bar" title="Analytics"><i class="fas fa-chart-bar"></i></div>
+                        <div class="icon-option" data-icon="fas fa-desktop" title="Frontend"><i class="fas fa-desktop"></i></div>
+                        <div class="icon-option" data-icon="fas fa-server" title="Backend"><i class="fas fa-server"></i></div>
+                        <div class="icon-option" data-icon="fas fa-mobile-alt" title="Mobile"><i class="fas fa-mobile-alt"></i></div>
+                        <div class="icon-option" data-icon="fas fa-cloud" title="Cloud"><i class="fas fa-cloud"></i></div>
+                        <div class="icon-option" data-icon="fas fa-shield-alt" title="Security"><i class="fas fa-shield-alt"></i></div>
+                        <div class="icon-option" data-icon="fas fa-robot" title="AI/ML"><i class="fas fa-robot"></i></div>
+                        <div class="icon-option" data-icon="fas fa-palette" title="Design"><i class="fas fa-palette"></i></div>
+                        <div class="icon-option" data-icon="fas fa-tools" title="DevOps"><i class="fas fa-tools"></i></div>
+                        <div class="icon-option" data-icon="fas fa-network-wired" title="Networking"><i class="fas fa-network-wired"></i></div>
+                        <div class="icon-option" data-icon="fas fa-user-friends" title="Soft Skills"><i class="fas fa-user-friends"></i></div>
+                        <div class="icon-option" data-icon="fas fa-graduation-cap" title="Learning"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="icon-option" data-icon="fas fa-lightbulb" title="Innovation"><i class="fas fa-lightbulb"></i></div>
+                        <div class="icon-option" data-icon="fas fa-cogs" title="Systems"><i class="fas fa-cogs"></i></div>
+                        <div class="icon-option" data-icon="fas fa-bug" title="Testing/QA"><i class="fas fa-bug"></i></div>
+                        <div class="icon-option" data-icon="fas fa-book" title="Documentation"><i class="fas fa-book"></i></div>
+                        <div class="icon-option" data-icon="fas fa-rocket" title="Performance"><i class="fas fa-rocket"></i></div>
+                        <div class="icon-option" data-icon="fas fa-puzzle-piece" title="Integration"><i class="fas fa-puzzle-piece"></i></div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- Domain Preview -->
+        <div class="domain-preview">
+            <div class="domain-preview-header">
+                <i class="fas fa-eye"></i>
+                Domain Preview
+            </div>
+            <div class="domain-badge-preview" id="domain-preview">
+                <i class="fas fa-code" id="preview-icon"></i>
+                <span id="preview-name">Your Knowledge Domain</span>
+            </div>
+        </div>
+
+        <!-- Usage Examples -->
+        <div class="usage-examples">
+            <div class="usage-examples-header">
+                <i class="fas fa-lightbulb"></i>
+                Effective Knowledge Domain Examples
+            </div>
+            <ul>
+                <li><strong>Python Development:</strong> For all Python-related learning, from basics to advanced frameworks</li>
+                <li><strong>Data Science:</strong> Analytics, visualization, machine learning, and data processing discoveries</li>
+                <li><strong>Web Development:</strong> Frontend, backend, full-stack web application learning</li>
+                <li><strong>DevOps & Infrastructure:</strong> Deployment, CI/CD, cloud services, and system administration</li>
+                <li><strong>Database Design:</strong> SQL, NoSQL, database optimization, and data modeling</li>
+                <li><strong>Software Architecture:</strong> Design patterns, system design, and architectural decisions</li>
+            </ul>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <div class="form-actions-left">
+                <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Domains
+                </a>
+            </div>
+            <div class="form-actions-right">
+                {% if object %}
+                    <a href="{% url 'aura_admin:blog:post_list' %}?category={{ object.slug }}" class="btn btn-outline">
+                        <i class="fas fa-eye"></i>
+                        View Discoveries
+                    </a>
+                {% endif %}
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-{% if object %}save{% else %}plus{% endif %}"></i>
+                    {% if object %}Update Domain{% else %}Create Domain{% endif %}
+                </button>
+            </div>
+        </div>
     </form>
-  </div>
+
+</div>
 {% endblock %}
 
 {% block admin_js %}
+{{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-generate slug from name
-    const nameField = document.getElementById('{{ form.name.id_for_label }}');
-    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
-    const codeField = document.getElementById('{{ form.code.id_for_label }}');
-    const colorField = document.getElementById('{{ form.color.id_for_label }}');
-    const iconField = document.getElementById('{{ form.icon.id_for_label }}');
+    // Form elements
+    const nameInput = document.querySelector('#id_name');
+    const colorInput = document.querySelector('#id_color');
+    const iconInput = document.querySelector('#id_icon');
     
     // Preview elements
     const previewName = document.getElementById('preview-name');
-    const previewCode = document.getElementById('preview-code');
-    const previewIconContainer = document.getElementById('preview-icon-container');
     const previewIcon = document.getElementById('preview-icon');
-    const colorPreview = document.getElementById('color-preview');
-    const iconPreview = document.getElementById('icon-preview');
+    const colorHex = document.getElementById('color-hex');
+    const domainPreview = document.getElementById('domain-preview');
     
-    // Auto-generate slug and code from name
-    if (nameField && slugField && !slugField.dataset.modified) {
-        nameField.addEventListener('input', function() {
-            if (!slugField.dataset.modified) {
+    // Update preview in real-time
+    function updatePreview() {
+        // Update name
+        const name = nameInput.value.trim() || 'Your Knowledge Domain';
+        previewName.textContent = name;
+        
+        // Update color
+        const color = colorInput.value || '#ff8a80';
+        colorHex.textContent = color;
+        domainPreview.style.backgroundColor = `${color}20`;
+        domainPreview.style.borderColor = `${color}40`;
+        domainPreview.style.color = color;
+        
+        // Update icon
+        const icon = iconInput.value.trim() || 'fas fa-code';
+        previewIcon.className = icon;
+    }
+    
+    // Color preset functionality
+    const colorPresets = document.querySelectorAll('.color-preset');
+    colorPresets.forEach(preset => {
+        preset.addEventListener('click', function() {
+            const color = this.dataset.color;
+            colorInput.value = color;
+            
+            // Update visual selection
+            colorPresets.forEach(p => p.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            updatePreview();
+        });
+    });
+    
+    // Icon picker functionality
+    const iconOptions = document.querySelectorAll('.icon-option');
+    iconOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const icon = this.dataset.icon;
+            iconInput.value = icon;
+            
+            // Update visual selection
+            iconOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            updatePreview();
+        });
+    });
+    
+    // Add event listeners for real-time updates
+    if (nameInput) nameInput.addEventListener('input', updatePreview);
+    if (colorInput) colorInput.addEventListener('input', updatePreview);
+    if (iconInput) iconInput.addEventListener('input', updatePreview);
+    
+    // Auto-generate slug from name
+    if (nameInput) {
+        nameInput.addEventListener('input', function() {
+            const slugField = document.querySelector('#id_slug');
+            if (slugField && !slugField.value) {
                 const slug = this.value
                     .toLowerCase()
-                    .replace(/[^a-z0-9\s-]/g, '')
-                    .replace(/\s+/g, '-')
-                    .replace(/-+/g, '-')
-                    .trim('-');
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '');
                 slugField.value = slug;
             }
-            
-            // Auto-generate code from first 2 letters
-            if (!codeField.dataset.modified && this.value.length >= 2) {
-                codeField.value = this.value.substring(0, 2).toUpperCase();
-                previewCode.textContent = codeField.value;
-            }
-            
-            // Update preview
-            previewName.textContent = this.value || 'Category Name';
-        });
-        
-        slugField.addEventListener('input', function() {
-            this.dataset.modified = 'true';
-        });
-        
-        codeField.addEventListener('input', function() {
-            this.dataset.modified = 'true';
-            previewCode.textContent = this.value || 'XX';
         });
     }
     
-    // Color picker updates
-    if (colorField) {
-        colorField.addEventListener('input', function() {
-            const color = this.value;
-            colorPreview.style.backgroundColor = color;
-            previewIconContainer.style.backgroundColor = color + '20';
-            previewIconContainer.style.color = color;
-        });
+    // Set initial selection for existing values
+    if (colorInput.value) {
+        const matchingPreset = document.querySelector(`[data-color="${colorInput.value}"]`);
+        if (matchingPreset) {
+            matchingPreset.classList.add('selected');
+        }
     }
     
-    // Icon field updates with validation
-    if (iconField) {
-        // List of common Font Awesome icons that should work
-        const validIcons = [
-            'fa-folder', 'fa-code', 'fa-database', 'fa-cog', 'fa-chart-line', 
-            'fa-rocket', 'fa-brain', 'fa-server', 'fa-mobile-alt', 'fa-cloud', 
-            'fa-lock', 'fa-book', 'fa-graduation-cap', 'fa-tools', 'fa-laptop-code',
-            'fa-terminal', 'fa-project-diagram', 'fa-sitemap', 'fa-network-wired',
-            'fa-shield-alt', 'fa-bug', 'fa-flask', 'fa-lightbulb'
-        ];
-        
-        iconField.addEventListener('input', function() {
-            const iconValue = this.value.trim();
-            let iconClass = 'fa-folder'; // Default fallback
-            
-            if (iconValue) {
-                // Clean up the input - remove any extra spaces or prefixes
-                let cleanIcon = iconValue.toLowerCase()
-                    .replace(/^(fas?|far|fab)\s+/, '') // Remove fa/fas/far/fab prefix
-                    .replace(/^fa-/, ''); // Remove fa- prefix
-                
-                // Add fa- prefix
-                iconClass = `fa-${cleanIcon}`;
-                
-                // Check if it's in our known good list or set to default
-                if (!validIcons.includes(iconClass)) {
-                    // For unknown icons, still try to display but warn user
-                    console.log(`Icon "${iconClass}" might not exist. Using anyway.`);
-                }
-            }
-            
-            // Update the input field to show the cleaned version
-            if (this.value !== iconClass) {
-                this.value = iconClass;
-            }
-            
-            // Update both preview icons
-            updateIconPreviews(iconClass);
-        });
-        
-        // Function to update icon previews
-        function updateIconPreviews(iconClass) {
-            // Update with fas (solid) prefix for Font Awesome 6
-            const fullIconClass = `fas ${iconClass}`;
-            
-            iconPreview.className = fullIconClass;
-            previewIcon.className = fullIconClass;
-            
-            // Add a subtle indication if icon might not exist
-            setTimeout(() => {
-                const testElement = document.createElement('i');
-                testElement.className = fullIconClass;
-                testElement.style.position = 'absolute';
-                testElement.style.left = '-9999px';
-                document.body.appendChild(testElement);
-                
-                const computedStyle = window.getComputedStyle(testElement, '::before');
-                const hasContent = computedStyle.content && computedStyle.content !== 'none' && computedStyle.content !== '""';
-                
-                document.body.removeChild(testElement);
-                
-                if (!hasContent) {
-                    // Icon doesn't exist, revert to folder
-                    iconPreview.className = 'fas fa-folder';
-                    previewIcon.className = 'fas fa-folder';
-                    iconField.style.borderColor = '#f59e0b'; // Yellow border to indicate issue
-                    iconField.title = 'Icon not found - using folder as fallback';
-                } else {
-                    iconField.style.borderColor = ''; // Reset border
-                    iconField.title = '';
-                }
-            }, 100);
-        }
-        
-        // Initialize with current value
-        if (iconField.value) {
-            updateIconPreviews(iconField.value);
+    if (iconInput.value) {
+        const matchingIcon = document.querySelector(`[data-icon="${iconInput.value}"]`);
+        if (matchingIcon) {
+            matchingIcon.classList.add('selected');
         }
     }
+    
+    // Initial preview update
+    updatePreview();
 });
 </script>
 {% endblock %}
