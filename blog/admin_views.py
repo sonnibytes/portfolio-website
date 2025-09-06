@@ -15,6 +15,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import TemplateView
 from django.db import models
 
+from datetime import timedelta
+
 from core.admin_views import (
     BaseAdminListView,
     BaseAdminCreateView, 
@@ -27,7 +29,8 @@ from core.admin_views import (
     BaseAdminView,
     AdminAccessMixin
 )
-from .models import Post, Category, Tag, Series
+from .models import Post, Category, Tag, Series, SystemLogEntry
+from projects.models import SystemModule
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 
 
@@ -650,3 +653,205 @@ class PostFeatureToggleView(BaseAdminUpdateView):
             'success': True,
             'featured': post.featured
         })
+
+
+# ==== RESTRUCTURE for Learning Journey Storytelling ====
+# - Admin-Facing Learning Metrics with Improvements and Gap Analysis
+# - GOAL: Personal Learning Management System
+# ==== Will Replace Scattered DataLogs Admin Suite Flow ====
+class LearningJourneyDashboardView(AdminAccessMixin, TemplateView):
+    """Main Learning Journeys Dashboard - replaces BlogAdminDashboardView"""
+
+    template_name = "blog/admin/learning_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Learning Journey Metrics
+        active_journeys = Series.objects.filter(is_complete=False).count()
+        completed_journeys = Series.objects.filter(is_complete=True).count()
+        total_discoveries = Post.objects.count()
+        published_discoveries = Post.objects.filter(status='published').count()
+
+        
+        # Calculate avg journey completion
+        journeys_with_posts = Series.objects.annotate(
+            completion_rate=Count('posts') * 100.0 / models.F('post_count')
+        )
+        avg_journey_completion = journeys_with_posts.aggregate(
+            avg_completion=Avg('completion_rate')
+        )['avg_completion'] or 0
+
+        
+        # Recent learning activity
+        recent_discoveries = Post.objects.select_related(
+            'category', 'author'
+        ).prefetch_related('tags').order_by('-created_at')[:8]
+
+        
+        # Active learning journeys with recent posts
+        active_learning_journeys = Series.objects.filter(
+            is_complete=False
+        ).annotate(
+            post_count_actual=Count('posts')
+        ).prefetch_related('posts__post')[:6]
+
+
+        # System-knowledge connections
+        system_knowledge_connections = SystemLogEntry.objects.select_related(
+            'system', 'post'
+        ).values('system__id', 'system__title').annotate(
+            post_count=Count('post'),
+            recent_discovery=models.Max('post__created_at')
+        ).order_by('-post_count')[:6]
+
+
+        # Knowledge domains (Categories) with Stats
+        knowledge_domain_stats = Category.objects.annotate(
+            post_count=Count('posts'),
+            journey_count=Count('posts__series_associations__series', distinct=True)
+        ).filter(post_count__gt=0).order_by('-post_count')
+
+        context.update({
+            'title': 'Learning Journeys Dashboard',
+            'subtitle': 'Personal knowledge management and learning progress',
+
+            # Main metrics
+            'active_journeys': active_journeys,
+            'completed_journeys': completed_journeys,
+            'total_discoveries': total_discoveries,
+            'published_discoveries': published_discoveries,
+            'avg_journey_completion': avg_journey_completion,
+
+            # Learning data
+            'active_learning_journeys': active_learning_journeys,
+            'recent_discoveries': recent_discoveries,
+            'system_knowledge_connections': system_knowledge_connections,
+            'knowledge_domain_stats': knowledge_domain_stats,
+
+            # Additional metrics
+            'knowledge_domains': Category.objects.count(),
+            'active_domains': Category.objects.filter(posts__isnull=False).distinct().count(),
+            'system_connections': SystemLogEntry.objects.count(),
+            'connected_systems': SystemLogEntry.objects.values('system').distinct().count(),
+            'discoveries_this_month': Post.objects.filter(
+                createdd_at__gte=timezone.now() - timedelta(days=30)
+            ).count(),
+            'avg_reading_time': Post.objects.aggregate(
+                avg_time=Avg('reading_time')
+            )['avg_time'] or 0,
+        })
+
+        return context
+
+
+class EnhancedPostCreateView(StatusAdminCreateView):
+    """Learning-first post creation with journey integration"""
+
+    model = Post
+    form_class = PostForm
+    template_name = "blog/admin/post_form_enhanced.html"
+    success_url = reverse_lazy('aura_admin:blog:post_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        
+        # Add Journey suggestions based on recent activity
+        recent_journeys = Series.objects.filter(
+            is_complete=False
+        ).order_by('-updated_at')[:5]
+
+        
+        # Add System suggestions for connections
+        active_systems = SystemModule.objects.filter(
+            status__in=['deployed', 'published', 'in_development']
+        ).order_by('-updated_at')[:8]
+
+        
+        # Add Category suggestions with post counts
+        popular_categories = Category.objects.annotate(
+            post_count=Count('posts')
+        ).filter(post_count__gt=0).order_by('-post_count')[:6]
+
+
+        context.update({
+            'title': 'Document New Discovery',
+            'subtitle': 'Capture what you learned and connect it to your learning journey',
+            'recent_journeys': recent_journeys,
+            'active_systems': active_systems,
+            'popular_categories': popular_categories,
+            # Allow inline journey creation
+            'journey_creation_enabled': True,
+        })
+        return context
+
+    def form_valid(self, form):
+        # Handle journey assignment during post creation
+        journey_id = self.request.POST.get('learning_journey')
+        if journey_id:
+            try:
+                journey = Series.objects.get(id=journey_id)
+                # Create the post first
+                response = super().form_valid(form)
+
+                # Then add to journey
+                from .models import SeriesPost
+                last_order = journey.posts.aggregate(
+                    max_order=models.Max('order')
+                )['max_order'] or 0
+
+                SeriesPost.objects.create(
+                    series=journey,
+                    post=self.object,
+                    order=last_order + 1
+                )
+
+                messages.success(
+                    self.request,
+                    f'Discovery added to learning journey: {journey.title}'
+                )
+                return response
+            except Series.DoesNotExist:
+                pass
+        
+        return super().form_valid(form)
+
+
+class LearningJourneyListView(BaseAdminListView):
+    """Enhanced series list focused on learning progression"""
+
+    model = Series
+    template_name = "blog/admin/learning_journey_list.html"
+    context_object_name = 'learning_journeys'
+
+    def get_queryset(self):
+        return Series.objects.annotate(
+            actual_post_count=Count('posts'),
+            completion_percentage=models.Case(
+                models.When(post_count=0, then=0),
+                default=Count('posts') * 100 / models.F('post_count'),
+                output_field=models.IntegerField()
+            ),
+            last_activity=models.Max('posts__post__updated_at')
+        ).order_by('-last_activity', '-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Add learning-focused stats
+        total_journeys = self.get_queryset().count()
+        active_journeys = self.get_queryset().filter(is_complete=False).count()
+        completed_journeys = self.get_queryset().filter(is_complete=True).count()
+
+        context.update({
+            'title': 'Learning Journeys',
+            'subtitle': 'Manage your knowledge building paths and learning progression',
+            'total_journeys': total_journeys,
+            'active_journeys': active_journeys,
+            'completed_journeys': completed_journeys,
+            'learning_velocity': Post.objects.filter(
+                created_at__gte=timezone.now() - timedelta(days=30)
+            ).count(),
+        })
+        return context
