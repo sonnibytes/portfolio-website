@@ -10,9 +10,10 @@
 {% block admin_css %}
 {{ block.super }}
 <style>
-.system-filter-bar {
+/* Systems Specific List Styling */
+.system-filters {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 0.75rem;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 1.5rem;
     margin-bottom: 2rem;
@@ -36,52 +37,67 @@
 .filter-item {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    min-width: 150px;
+    gap: 0.5rem;
+    min-width: 120px;
 }
 
 .filter-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #d1d5db;
+    color: #e8eaf6;
 }
 
-.filter-input {
+.filter-input, .filter-select {
     padding: 0.5rem 0.75rem;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.375rem;
+    border-radius: 6px;
     color: white;
     font-size: 0.875rem;
 }
 
-.filter-input:focus {
+.filter-input:focus, .filter-select:focus {
     outline: none;
     border-color: #26c6da;
     box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
 }
 
-.system-grid {
+.filter-select option {
+    background: #0d0d1f;
+    color: white;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: end;
+}
+
+.system-list-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
     gap: 1.5rem;
+    margin-top: 2rem;
 }
 
 .system-card {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.75rem;
+    border-radius: 12px;
     padding: 1.5rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
 }
 
 .system-card:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(38, 198, 218, 0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 4px 20px rgba(38, 198, 218, 0.1);
 }
 
 .system-card::before {
@@ -91,7 +107,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--color-teal), var(--color-lavender));
+    background: linear-gradient(90deg, #26c6da, #b39ddb);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -100,10 +116,30 @@
     opacity: 1;
 }
 
+.system-card.featured {
+    border-color: rgba(255, 215, 0, 0.4);
+    background: rgba(255, 215, 0, 0.02);
+}
+
+.system-card.featured::before {
+    background: linear-gradient(90deg, #ffd700, #ffb700);
+    opacity: 0.8;
+}
+
+.system-card.high-priority {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.02);
+}
+
+.system-card.high-priority::before {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    opacity: 0.8;
+}
+
 .system-header {
     display: flex;
     align-items: flex-start;
-    justify-content: between;
+    justify-content: space-between;
     margin-bottom: 1rem;
 }
 
@@ -115,159 +151,300 @@
     font-size: 1.25rem;
     font-weight: 600;
     color: white;
-    margin: 0 0 0.25rem 0;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
 }
 
 .system-id {
-    background: rgba(38, 198, 218, 0.2);
-    color: var(--color-teal);
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.375rem;
     font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.system-meta {
-    color: #9ca3af;
-    font-size: 0.875rem;
-    margin-bottom: 1rem;
-}
-
-.system-description {
-    color: #d1d5db;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    margin-bottom: 1rem;
-}
-
-.system-actions {
-    display: flex;
-    gap: 0.5rem;
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
-}
-
-.system-card:hover .system-actions {
-    opacity: 1;
-}
-
-.action-btn {
-    padding: 0.375rem;
-    border-radius: 0.375rem;
-    color: #9ca3af;
-    transition: all 0.2s ease;
-    text-decoration: none;
-}
-
-.action-btn:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.1);
-    text-decoration: none;
-}
-
-.system-technologies {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-    margin-bottom: 1rem;
-}
-
-.tech-badge {
+    color: #26c6da;
+    font-family: 'Courier New', monospace;
+    background: rgba(38, 198, 218, 0.1);
     padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background: rgba(255, 255, 255, 0.1);
-    color: #d1d5db;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.system-stats {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 0.875rem;
-    color: #9ca3af;
-}
-
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.status-operational { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-.status-development { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
-.status-testing { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
-.status-deployed { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-.status-archived { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
-
-.complexity-indicator {
-    display: flex;
-    gap: 2px;
-    align-items: center;
-}
-
-.complexity-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #4b5563;
-}
-
-.complexity-dot.active {
-    background: var(--color-teal);
-    box-shadow: 0 0 4px rgba(38, 198, 218, 0.6);
+    border-radius: 4px;
+    border: 1px solid rgba(38, 198, 218, 0.3);
 }
 
 .featured-indicator {
     position: absolute;
     top: 1rem;
     right: 1rem;
-    color: #fbbf24;
-    font-size: 1.25rem;
+    background: linear-gradient(135deg, #ffd700, #ffb700);
+    color: #1a1a1a;
+    padding: 0.5rem;
+    border-radius: 50%;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    animation: pulse-gold 2s infinite;
 }
 
-.system-progress {
-    margin-top: 0.75rem;
+.priority-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 50%;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-gold {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes pulse-red {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.system-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.system-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+    transition: all 0.3s ease;
+    background: rgba(38, 198, 218, 0.1);
+    color: #26c6da;
+    border-color: rgba(38, 198, 218, 0.3);
+}
+
+.system-type-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-deployed { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+.status-in_development { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+.status-testing { background: rgba(156, 39, 176, 0.2); color: #9c27b0; }
+.status-draft { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
+.status-archived { background: rgba(96, 125, 139, 0.2); color: #607d8b; }
+
+.system-description {
+    color: #d1d5db;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.system-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.stat-icon {
+    color: #26c6da;
+}
+
+.progress-section {
+    margin-bottom: 1rem;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
 }
 
 .progress-label {
-    display: flex;
-    justify-content: between;
-    align-items: center;
-    margin-bottom: 0.5rem;
     font-size: 0.875rem;
+    color: #d1d5db;
+    font-weight: 500;
+}
+
+.progress-percentage {
+    font-size: 0.875rem;
+    color: #26c6da;
+    font-weight: 600;
 }
 
 .progress-bar {
     width: 100%;
-    height: 6px;
+    height: 8px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
+    border-radius: 4px;
     overflow: hidden;
+    position: relative;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--color-teal), var(--color-lavender));
-    border-radius: 3px;
-    transition: width 0.5s ease;
+    background: linear-gradient(90deg, #26c6da, #b39ddb);
+    border-radius: 4px;
+    transition: width 0.8s ease-in-out;
+    position: relative;
 }
 
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: progress-shimmer 2s infinite;
+}
+
+@keyframes progress-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.tech-chip {
+    background: rgba(38, 198, 218, 0.1);
+    color: #26c6da;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid rgba(38, 198, 218, 0.2);
+    transition: all 0.2s ease;
+}
+
+.tech-chip:hover {
+    background: rgba(38, 198, 218, 0.2);
+    border-color: rgba(38, 198, 218, 0.4);
+    transform: scale(1.05);
+}
+
+.system-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #d1d5db;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: #26c6da;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: rgba(38, 198, 218, 0.2);
+    border-color: #26c6da;
+    color: #26c6da;
+}
+
+.action-btn.primary:hover {
+    background: #26c6da;
+    color: white;
+}
+
+.action-btn.danger {
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+}
+
+/* .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 2rem;
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+} */
+
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
-    .system-grid {
+    .system-list-container {
         grid-template-columns: 1fr;
     }
     
@@ -287,11 +464,33 @@
     
     .system-header {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 1rem;
     }
     
     .system-actions {
-        justify-content: flex-end;
+        grid-template-columns: 1fr;
+    }
+    
+    .system-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .system-filters {
+        padding: 1rem;
+    }
+    
+    .system-card {
+        padding: 1rem;
+    }
+    
+    .system-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
     }
 }
 </style>
@@ -300,269 +499,346 @@
 {% block admin_content %}
 <div class="space-y-6">
     
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-white mb-2">
-                <i class="fas fa-server text-cyan-400 mr-3"></i>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-server text-teal-400 mr-3"></i>
                 System Management
             </h1>
-            <p class="text-gray-400">Manage and monitor all system modules</p>
+            <p class="text-gray-400">System modules, architecture components, and deployment status</p>
         </div>
-        <div class="mt-4 sm:mt-0">
+        <div class="flex flex-wrap gap-2">
             <a href="{% url 'aura_admin:projects:system_create' %}" 
-               class="inline-flex items-center px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25">
+               class="inline-flex items-center px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/25">
                 <i class="fas fa-plus mr-2"></i>
                 Create System
+            </a>
+            <a href="{% url 'aura_admin:projects:technology_list' %}" 
+               class="inline-flex items-center px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white font-medium rounded-lg transition-all duration-300">
+                <i class="fas fa-tools mr-2"></i>
+                Technologies
+            </a>
+            <a href="{% url 'aura_admin:projects:system_type_list' %}" 
+               class="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-medium rounded-lg transition-all duration-300">
+                <i class="fas fa-layer-group mr-2"></i>
+                Types
             </a>
         </div>
     </div>
 
-    <!-- Stats Summary -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div class="glass-card p-4 text-center">
-            <div class="text-2xl font-bold text-cyan-400 mb-1">{{ systems.count }}</div>
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-emerald-400 mb-1">{{ systems.count|default:0 }}</div>
             <div class="text-sm text-gray-400">Total Systems</div>
-        </div>
-        <div class="glass-card p-4 text-center">
-            <div class="text-2xl font-bold text-green-400 mb-1">
-                {{ systems|filter_by_status:'operational'|length }}
+            <div class="mt-1 text-xs">
+                <span class="text-yellow-400">{{ avg_progress|floatformat:1|default:0 }}% avg progress</span>
             </div>
-            <div class="text-sm text-gray-400">Operational</div>
         </div>
-        <div class="glass-card p-4 text-center">
-            <div class="text-2xl font-bold text-yellow-400 mb-1">
-                {{ systems|filter_by_status:'development'|length }}
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-purple-400 mb-1">{{ deployed_count|default:0 }}</div>
+            <div class="text-sm text-gray-400">Deployed</div>
+            <div class="mt-1 text-xs">
+                <span class="text-green-400">{{ recent_deployments|default:0 }} recent</span>
             </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-cyan-400 mb-1">{{ in_development_count|default:0 }}</div>
             <div class="text-sm text-gray-400">In Development</div>
-        </div>
-        <div class="glass-card p-4 text-center">
-            <div class="text-2xl font-bold text-purple-400 mb-1">
-                {{ systems|filter_by_status:'testing'|length }}
+            <div class="mt-1 text-xs">
+                <span class="text-orange-400">{{ active_development|default:0 }} active</span>
             </div>
-            <div class="text-sm text-gray-400">Testing</div>
         </div>
-        <div class="glass-card p-4 text-center">
-            <div class="text-2xl font-bold text-orange-400 mb-1">
-                {{ systems|featured_only|length }}
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-orange-400 mb-1">{{ system_types_count|default:0 }}</div>
+            <div class="text-sm text-gray-400">System Types</div>
+            <div class="mt-1 text-xs">
+                <span class="text-purple-400">{{ unique_architectures|default:0 }} architectures</span>
             </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-teal-400 mb-1">{{ featured_count|default:0 }}</div>
             <div class="text-sm text-gray-400">Featured</div>
+            <div class="mt-1 text-xs">
+                <span class="text-cyan-400">{{ high_priority_count|default:0 }} high priority</span>
+            </div>
         </div>
     </div>
 
     <!-- Filters -->
-    <div class="system-filter-bar">
-        <form method="GET" class="filter-form">
+    <div class="system-filters">
+        <form method="get" class="filter-form">
             <div class="filter-group">
                 <div class="filter-item">
-                    <label class="filter-label">Search Systems</label>
-                    <input type="text" 
-                           name="search" 
-                           value="{{ current_filters.search }}"
-                           placeholder="Search by name or description..."
-                           class="filter-input">
+                    <label class="filter-label">Search</label>
+                    <input type="text" name="search" value="{{ request.GET.search }}" 
+                           placeholder="Search systems..." class="filter-input">
                 </div>
-                
                 <div class="filter-item">
                     <label class="filter-label">Status</label>
-                    <select name="status" class="filter-input">
-                        <option value="">All Statuses</option>
-                        <option value="operational" {% if current_filters.status == 'operational' %}selected{% endif %}>Operational</option>
-                        <option value="development" {% if current_filters.status == 'development' %}selected{% endif %}>Development</option>
-                        <option value="testing" {% if current_filters.status == 'testing' %}selected{% endif %}>Testing</option>
-                        <option value="deployed" {% if current_filters.status == 'deployed' %}selected{% endif %}>Deployed</option>
-                        <option value="archived" {% if current_filters.status == 'archived' %}selected{% endif %}>Archived</option>
+                    <select name="status" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="deployed" {% if request.GET.status == 'deployed' %}selected{% endif %}>Deployed</option>
+                        <option value="in_development" {% if request.GET.status == 'in_development' %}selected{% endif %}>In Development</option>
+                        <option value="testing" {% if request.GET.status == 'testing' %}selected{% endif %}>Testing</option>
+                        <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
                     </select>
                 </div>
-                
                 <div class="filter-item">
-                    <label class="filter-label">System Type</label>
-                    <select name="system_type" class="filter-input">
+                    <label class="filter-label">Type</label>
+                    <select name="system_type" class="filter-select">
                         <option value="">All Types</option>
-                        {% for type in system_types %}
-                            <option value="{{ type.id }}" {% if current_filters.system_type == type.id|stringformat:"s" %}selected{% endif %}>
-                                {{ type.name }}
+                        {% for system_type in system_types %}
+                            <option value="{{ system_type.slug }}" {% if request.GET.system_type == system_type.slug %}selected{% endif %}>
+                                {{ system_type.name }}
                             </option>
                         {% endfor %}
                     </select>
                 </div>
-                
                 <div class="filter-item">
-                    <label class="filter-label">Complexity</label>
-                    <select name="complexity" class="filter-input">
-                        <option value="">All Complexities</option>
-                        <option value="simple" {% if current_filters.complexity == 'simple' %}selected{% endif %}>Simple</option>
-                        <option value="moderate" {% if current_filters.complexity == 'moderate' %}selected{% endif %}>Moderate</option>
-                        <option value="complex" {% if current_filters.complexity == 'complex' %}selected{% endif %}>Complex</option>
-                        <option value="enterprise" {% if current_filters.complexity == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                    <label class="filter-label">Sort By</label>
+                    <select name="sort" class="filter-select">
+                        <option value="-created_at" {% if request.GET.sort == '-created_at' or not request.GET.sort %}selected{% endif %}>Newest First</option>
+                        <option value="created_at" {% if request.GET.sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+                        <option value="-updated_at" {% if request.GET.sort == '-updated_at' %}selected{% endif %}>Recently Updated</option>
+                        <option value="-progress" {% if request.GET.sort == '-progress' %}selected{% endif %}>Progress High-Low</option>
+                        <option value="progress" {% if request.GET.sort == 'progress' %}selected{% endif %}>Progress Low-High</option>
+                        <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name A-Z</option>
                     </select>
                 </div>
             </div>
-            
-            <div class="flex gap-2">
-                <button type="submit" class="btn btn-sm btn-primary">
-                    <i class="fas fa-search mr-1"></i>Filter
+            <div class="filter-actions">
+                <button type="submit" class="action-btn primary">
+                    <i class="fas fa-search"></i>
+                    Filter
                 </button>
-                {% if current_filters.search or current_filters.status or current_filters.system_type or current_filters.complexity %}
-                    <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-sm btn-outline">
-                        <i class="fas fa-times mr-1"></i>Clear
-                    </a>
-                {% endif %}
+                <a href="{% url 'aura_admin:projects:system_list' %}" class="action-btn">
+                    <i class="fas fa-times"></i>
+                    Clear
+                </a>
             </div>
         </form>
     </div>
 
-    <!-- Systems Grid -->
-    <div class="system-grid">
-        {% for system in systems %}
-            <div class="system-card">
-                
-                {% if system.featured %}
-                    <div class="featured-indicator">
-                        <i class="fas fa-star" title="Featured System"></i>
-                    </div>
-                {% endif %}
-                
-                <div class="system-header">
-                    <div class="system-info">
-                        <h3 class="system-title">
-                            {{ system.title }}
-                            {% if system.system_id %}
-                                <span class="system-id">{{ system.system_id }}</span>
-                            {% endif %}
-                        </h3>
-                        <div class="system-meta">
-                            {% if system.system_type %}{{ system.system_type.name }} • {% endif %}
-                            {% if system.complexity %}{{ system.get_complexity_display }} • {% endif %}
-                            Updated {{ system.updated_at|timesince }} ago
-                        </div>
-                    </div>
-                    <div class="system-actions">
-                        <a href="{% url 'aura_admin:projects:system_edit' system.pk %}" 
-                           class="action-btn" title="Edit System">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        <a href="{{ system.get_absolute_url }}" 
-                           class="action-btn" title="View Details" target="_blank">
-                            <i class="fas fa-external-link-alt"></i>
-                        </a>
-                        <a href="{% url 'aura_admin:projects:system_delete' system.pk %}" 
-                           class="action-btn" title="Delete System"
-                           onclick="return confirm('Delete {{ system.title }}?')">
-                            <i class="fas fa-trash"></i>
-                        </a>
-                    </div>
-                </div>
-                
-                {% if system.description %}
-                    <div class="system-description">
-                        {{ system.description|truncatewords:20 }}
-                    </div>
-                {% endif %}
-                
-                {% if system.technologies.exists %}
-                    <div class="system-technologies">
-                        {% for tech in system.technologies.all|slice:":5" %}
-                            <span class="tech-badge" style="background-color: {{ tech.color }}20; color: {{ tech.color }}; border-color: {{ tech.color }}40;">
-                                {% if tech.icon %}<i class="{{ tech.icon }} mr-1"></i>{% endif %}
-                                {{ tech.name }}
-                            </span>
-                        {% endfor %}
-                        {% if system.technologies.count > 5 %}
-                            <span class="tech-badge">+{{ system.technologies.count|add:"-5" }} more</span>
-                        {% endif %}
-                    </div>
-                {% endif %}
-                
-                {% if system.completion_percent is not None %}
-                    <div class="system-progress">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <span class="text-teal-400 font-medium">{{ system.completion_percent|floatformat:0 }}%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ system.completion_percent }}%"></div>
-                        </div>
-                    </div>
-                {% endif %}
-                
-                <div class="system-stats">
-                    <span class="status-badge status-{{ system.status }}">
-                        <i class="fas fa-circle"></i>
-                        {{ system.get_status_display }}
-                    </span>
+    <!-- System List -->
+    {% if systems %}
+        <div class="system-list-container">
+            {% for system in systems %}
+                <div class="system-card {% if system.featured %}featured{% endif %} {% if system.priority == 'high' %}high-priority{% endif %}">
                     
-                    {% if system.complexity %}
-                        <div class="complexity-indicator" title="Complexity: {{ system.get_complexity_display }}">
-                            {% for i in "12345" %}
-                                <div class="complexity-dot {% if forloop.counter <= system.get_complexity_level %}active{% endif %}"></div>
-                            {% endfor %}
+                    {% if system.featured %}
+                        <div class="featured-indicator" title="Featured System">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    {% elif system.priority == 'high' %}
+                        <div class="priority-indicator" title="High Priority">
+                            <i class="fas fa-exclamation"></i>
                         </div>
                     {% endif %}
-                </div>
-                
-            </div>
-        {% empty %}
-            <div class="col-span-full">
-                <div class="text-center py-16">
-                    <div class="text-gray-400">
-                        <i class="fas fa-server text-6xl mb-4"></i>
-                        <h3 class="text-xl font-bold mb-2">No Systems Found</h3>
-                        <p class="text-sm mb-6">
-                            {% if current_filters.search or current_filters.status or current_filters.system_type or current_filters.complexity %}
-                                No systems match your current filters.
-                                <br>
-                                <a href="{% url 'aura_admin:projects:system_list' %}" class="text-cyan-400 hover:text-cyan-300">Clear filters</a>
-                                to see all systems.
-                            {% else %}
-                                Create your first system to get started with project management.
+                    
+                    <div class="system-header">
+                        <div class="system-info">
+                            <h3 class="system-title">
+                                {{ system.name }}
+                                {% if system.id %}
+                                    <span class="system-id">SYS-{{ system.id|stringformat:"03d" }}</span>
+                                {% endif %}
+                            </h3>
+                        </div>
+                    </div>
+                    
+                    <div class="system-meta">
+                        <span class="status-badge status-{{ system.status }}">
+                            <i class="fas fa-{% if system.status == 'deployed' %}check-circle{% elif system.status == 'in_development' %}code{% elif system.status == 'testing' %}vial{% else %}edit{% endif %} mr-1"></i>
+                            {{ system.get_status_display }}
+                        </span>
+                        {% if system.system_type %}
+                            <span class="system-type-badge">
+                                {% if system.system_type.icon %}
+                                    <i class="{{ system.system_type.icon }}"></i>
+                                {% endif %}
+                                {{ system.system_type.name }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if system.description %}
+                        <div class="system-description">{{ system.description }}</div>
+                    {% endif %}
+                    
+                    <div class="system-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-calendar stat-icon"></i>
+                            <span>{{ system.created_at|timesince }} ago</span>
+                        </div>
+                        {% if system.complexity %}
+                            <div class="stat-item">
+                                <i class="fas fa-layer-group stat-icon"></i>
+                                <span>{{ system.get_complexity_display }} complexity</span>
+                            </div>
+                        {% endif %}
+                        {% if system.technologies.all.count %}
+                            <div class="stat-item">
+                                <i class="fas fa-tools stat-icon"></i>
+                                <span>{{ system.technologies.all.count }} tech{{ system.technologies.all.count|pluralize }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span class="progress-label">Development Progress</span>
+                            <span class="progress-percentage">{{ system.progress|default:0 }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ system.progress|default:0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    {% if system.technologies.all %}
+                        <div class="tech-stack">
+                            {% for tech in system.technologies.all|slice:":6" %}
+                                <span class="tech-chip">{{ tech.name }}</span>
+                            {% endfor %}
+                            {% if system.technologies.all.count > 6 %}
+                                <span class="tech-chip">+{{ system.technologies.all.count|add:"-6" }} more</span>
                             {% endif %}
-                        </p>
-                        <a href="{% url 'aura_admin:projects:system_create' %}" 
-                           class="btn btn-primary">
-                            <i class="fas fa-plus mr-2"></i>Create Your First System
+                        </div>
+                    {% endif %}
+                    
+                    <div class="system-actions">
+                        <a href="{% url 'aura_admin:projects:system_edit' system.pk %}" 
+                           class="action-btn primary" title="Edit System">
+                            <i class="fas fa-edit"></i>
+                            <span>Edit</span>
+                        </a>
+                        <a href="{% url 'aura_admin:projects:system_detail' system.slug %}" 
+                           class="action-btn" title="View System Details">
+                            <i class="fas fa-eye"></i>
+                            <span>Details</span>
                         </a>
                     </div>
+                    
                 </div>
-            </div>
-        {% endfor %}
-    </div>
+            {% endfor %}
+        </div>
 
-    <!-- Pagination -->
-    {% if is_paginated %}
-        <div class="flex items-center justify-between mt-8">
-            <div class="text-sm text-gray-400">
-                Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} systems
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="flex justify-center mt-8">
+                <nav class="flex items-center space-x-2">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    {% endif %}
+                    
+                    <span class="px-4 py-2 text-white bg-teal-500 rounded-lg">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    {% endif %}
+                </nav>
             </div>
-            <div class="flex space-x-2">
-                {% if page_obj.has_previous %}
-                    <a href="?page=1{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}" 
-                       class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
-                        First
-                    </a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}" 
-                       class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
-                        Previous
-                    </a>
-                {% endif %}
-
-                <span class="px-3 py-2 bg-cyan-600 text-white rounded-lg">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                </span>
-
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}" 
-                       class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
-                        Next
-                    </a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in current_filters.items %}&{{ key }}={{ value }}{% endfor %}" 
-                       class="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
-                        Last
-                    </a>
-                {% endif %}
-            </div>
+        {% endif %}
+        
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-server"></i>
+            <h3>No Systems Found</h3>
+            <p>{% if request.GET %}No systems match your current filters.{% else %}You haven't created any systems yet.{% endif %}</p>
+            <a href="{% url 'aura_admin:projects:system_create' %}" 
+               class="action-btn primary">
+                <i class="fas fa-plus mr-2"></i>
+                Create Your First System
+            </a>
         </div>
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading states to action buttons
+    const actionButtons = document.querySelectorAll('.action-btn[href*="delete"]');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            if (!confirm('Are you sure you want to delete this system? This action cannot be undone.')) {
+                e.preventDefault();
+            }
+        });
+    });
+    
+    // Enhanced card hover effects
+    const systemCards = document.querySelectorAll('.system-card');
+    systemCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.5), 0 8px 30px rgba(38, 198, 218, 0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.boxShadow = '';
+        });
+    });
+    
+    // Animate progress bars on scroll
+    const progressBars = document.querySelectorAll('.progress-fill');
+    const progressObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const progressBar = entry.target;
+                const width = progressBar.style.width;
+                progressBar.style.width = '0%';
+                setTimeout(() => {
+                    progressBar.style.width = width;
+                }, 100);
+            }
+        });
+    });
+    
+    progressBars.forEach(bar => progressObserver.observe(bar));
+    
+    // Auto-submit filter form on select changes
+    const filterSelects = document.querySelectorAll('.filter-select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Search input enhancement
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 800);
+        });
+    }
+});
+</script>
 {% endblock %}
