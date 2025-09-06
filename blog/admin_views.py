@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, DetailView
 from django.db import models
 
 from datetime import timedelta
@@ -29,7 +29,7 @@ from core.admin_views import (
     BaseAdminView,
     AdminAccessMixin
 )
-from .models import Post, Category, Tag, Series, SystemLogEntry
+from .models import Post, Category, Tag, Series, SeriesPost, SystemLogEntry
 from projects.models import SystemModule
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 
@@ -855,3 +855,111 @@ class LearningJourneyListView(BaseAdminListView):
             ).count(),
         })
         return context
+
+
+class LearningJourneyDetailView(BaseAdminView, DetailView):
+    """Enhanced journey management with inline post organization"""
+
+    model = Series
+    template_name = 'blog/admin/learning_journey_detail.html'
+    context_object_name = 'learning_journey'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        journey = self.object
+
+        # Get Journey posts with order
+        journey_posts = SeriesPost.objects.filter(
+            series=journey
+        ).select_related('post').order_by('order')
+
+
+        # Get available posts for adding to journey
+        available_posts = Post.objects.filter(
+            status='published'
+        ).exclude(
+            id__in=journey_posts.values_list('post__id', flat=True)
+        ).order_by('-created_at')[:20]
+
+
+        # Calculate journey metrics
+        total_reading_time = sum(
+            jp.post.reading_time for jp in journey_posts if jp.post.reading_time
+        )
+
+
+        # System connections for this journey
+        system_connections = SystemLogEntry.objects.filter(
+            post__in=[jp.post for jp in journey_posts]
+        ).select_related('system').values(
+            'system__id', 'system__title'
+        ).annotate(
+            connection_count=Count('id')
+        ).order_by('-connection_count')
+
+
+        context.update({
+            'title': f'Learning Journey: {journey.title}',
+            'subtitle': 'Organize and track your learning progression',
+            'journey_posts': journey_posts,
+            'available_posts': available_posts,
+            'total_reading_time': total_reading_time,
+            'system_connections': system_connections,
+            'completion_percentage': journey.get_progress_percentage(),
+            'knowledge_domains': Category.objects.filter(
+                posts__in=[jp.post for jp in journey_posts]
+            ).distinct(),
+        })
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        """Handle journey management actions"""
+
+        journey = self.get_object()
+        action = request.POST.get('action')
+
+        if action == 'add_post':
+            post_id = request.POST.get('post_id')
+            try:
+                post = Post.objects.get(id=post_id, status='published')
+                last_order = journey.posts.aggregate(
+                    max_order=models.Max('order')
+                )['max_order'] or 0
+
+                SeriesPost.objects.create(
+                    series=journey,
+                    post=post,
+                    order=last_order + 1
+                )
+
+                messages.success(
+                    request,
+                    f'Added "{post.title}" to learning journey'
+                )
+            except Post.DoesNotExist:
+                messages.error(request, 'Post not found')
+        
+        elif action == 'mark_complete':
+            journey.is_complete = not journey.is_complete
+            journey.save()
+
+            status = 'completed' if journey.is_complete else 'reopened'
+            messages.success(
+                request,
+                f'Learning journey {status}: {journey.title}'
+            )
+
+        elif action == 'reorder_posts':
+            # Handle AJAX reordering
+            post_orders = request.POST.getList('post_orders')
+            for i, series_post_id in enumerate(post_orders, 1):
+                SeriesPost.objects.filter(
+                    id=series_post_id, series=journey
+                ).update(order=i)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Reordered {len(post_orders)} posts'
+            })
+        
+        return redirect('aura_admin:blog:learning_journey_detail', pk=journey.pk)
