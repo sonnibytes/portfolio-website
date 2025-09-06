@@ -1,0 +1,795 @@
+<!-- blog/templates/blog/admin/post_form_enhanced.html -->
+{% extends "admin/admin_base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block admin_breadcrumb %}DataLogs › {% if object %}Edit Discovery{% else %}Document Discovery{% endif %}{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+.learning-form-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.form-section-subtitle {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #e8eaf6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-input, .form-textarea, .form-select {
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #b39ddb;
+    box-shadow: 0 0 0 3px rgba(179, 157, 219, 0.1);
+}
+
+.form-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-textarea.large {
+    min-height: 200px;
+}
+
+.form-select option {
+    background: #0d0d1f;
+    color: white;
+}
+
+.suggestion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.suggestion-item {
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.suggestion-item:hover {
+    background: rgba(179, 157, 219, 0.2);
+    border-color: #b39ddb;
+    transform: translateY(-2px);
+}
+
+.suggestion-item.selected {
+    background: rgba(179, 157, 219, 0.3);
+    border-color: #b39ddb;
+}
+
+.suggestion-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.suggestion-meta {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.quick-create-section {
+    background: rgba(179, 157, 219, 0.05);
+    border: 1px solid rgba(179, 157, 219, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.quick-create-toggle {
+    background: none;
+    border: none;
+    color: #b39ddb;
+    font-size: 0.875rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.quick-create-form {
+    display: none;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    align-items: end;
+}
+
+.quick-create-form.active {
+    display: grid;
+}
+
+.tag-input-container {
+    position: relative;
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.tag-suggestion {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 0.2s ease;
+}
+
+.tag-suggestion:hover {
+    background: rgba(179, 157, 219, 0.2);
+}
+
+.tag-suggestion:last-child {
+    border-bottom: none;
+}
+
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.tag-chip {
+    background: rgba(179, 157, 219, 0.2);
+    color: #b39ddb;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.tag-remove {
+    background: none;
+    border: none;
+    color: #b39ddb;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-actions-left {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.form-actions-right {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #b39ddb;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #9c88c2;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    text-decoration: none;
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #b39ddb;
+    border: 1px solid #b39ddb;
+}
+
+.btn-outline:hover {
+    background: rgba(179, 157, 219, 0.1);
+    text-decoration: none;
+    color: #b39ddb;
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.error-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.error-list li {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .suggestion-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .form-actions-left,
+    .form-actions-right {
+        justify-content: center;
+    }
+    
+    .quick-create-form {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="learning-form-container">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2 flex items-center justify-center">
+            <i class="fas fa-lightbulb text-lavender-400 mr-3"></i>
+            {{ title }}
+        </h1>
+        <p class="text-gray-400">{{ subtitle }}</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="discovery-form">
+        {% csrf_token %}
+        
+        <!-- Learning Journey & Context Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-route text-lavender-400"></i>
+                <div>
+                    <h3 class="form-section-title">Learning Journey & Context</h3>
+                    <p class="form-section-subtitle">Connect this discovery to your learning path</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-route"></i>
+                        Learning Journey
+                    </label>
+                    <select name="learning_journey" class="form-select" id="journey-select">
+                        <option value="">Choose a learning journey...</option>
+                        {% for journey in recent_journeys %}
+                            <option value="{{ journey.id }}" data-posts="{{ journey.post_count }}" data-difficulty="{{ journey.difficulty_level }}">
+                                {{ journey.title }} ({{ journey.post_count }} discoveries)
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">
+                        Which learning path does this discovery belong to?
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-tags"></i>
+                        Knowledge Domain
+                    </label>
+                    {% render_field form.category class="form-select" %}
+                    {% if form.category.help_text %}
+                        <div class="help-text">{{ form.category.help_text }}</div>
+                    {% endif %}
+                    {% if form.category.errors %}
+                        <ul class="error-list">
+                            {% for error in form.category.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Journey Suggestions -->
+            {% if recent_journeys %}
+                <div class="suggestion-grid">
+                    {% for journey in recent_journeys|slice:":4" %}
+                        <div class="suggestion-item" data-journey-id="{{ journey.id }}">
+                            <div class="suggestion-title">{{ journey.title|truncatechars:25 }}</div>
+                            <div class="suggestion-meta">
+                                {{ journey.post_count }} discoveries • {{ journey.difficulty_level }}
+                                {% if not journey.is_complete %}
+                                    <span style="color: #22c55e;">• Active</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <!-- Quick Journey Creation -->
+            <div class="quick-create-section">
+                <button type="button" class="quick-create-toggle" onclick="toggleQuickCreate('journey')">
+                    <i class="fas fa-plus"></i>
+                    Create new learning journey
+                </button>
+                <div class="quick-create-form" id="quick-journey-form">
+                    <input type="text" placeholder="New journey title..." class="form-input" id="new-journey-title">
+                    <button type="button" class="btn btn-outline" onclick="createQuickJourney()">Create</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discovery Content Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-lightbulb text-yellow-400"></i>
+                <div>
+                    <h3 class="form-section-title">Discovery Content</h3>
+                    <p class="form-section-subtitle">Document what you learned</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-heading"></i>
+                        Discovery Title
+                    </label>
+                    {% render_field form.title class="form-input" placeholder="What did you discover?" %}
+                    {% if form.title.errors %}
+                        <ul class="error-list">
+                            {% for error in form.title.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>
+                        Discovery Summary
+                    </label>
+                    {% render_field form.excerpt class="form-textarea" placeholder="Brief summary of what you learned..." %}
+                    <div class="help-text">A concise summary that will appear in learning journey overviews</div>
+                </div>
+                
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-file-alt"></i>
+                        Full Discovery Content
+                    </label>
+                    {% render_field form.content class="form-textarea large" placeholder="Document your complete learning discovery..." %}
+                    <div class="help-text">Use Markdown for formatting. Include code examples, insights, and detailed explanations.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Metadata Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-cogs text-teal-400"></i>
+                <div>
+                    <h3 class="form-section-title">Learning Metadata</h3>
+                    <p class="form-section-subtitle">Add context and organization</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-clock"></i>
+                        Reading Time (minutes)
+                    </label>
+                    {% render_field form.reading_time class="form-input" placeholder="Auto-calculated if left blank" %}
+                    <div class="help-text">Estimated reading time (auto-calculated based on content length)</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-list"></i>
+                        Publication Status
+                    </label>
+                    {% render_field form.status class="form-select" %}
+                </div>
+                
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-hashtag"></i>
+                        Knowledge Tags
+                    </label>
+                    <div class="tag-input-container">
+                        <input type="text" class="form-input" id="tag-input" placeholder="Add tags to organize your knowledge...">
+                        <div class="tag-suggestions" id="tag-suggestions"></div>
+                    </div>
+                    <div class="selected-tags" id="selected-tags"></div>
+                    <div class="help-text">Press Enter or comma to add tags. Use existing tags when possible.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Connection Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-link text-emerald-400"></i>
+                <div>
+                    <h3 class="form-section-title">System Connections</h3>
+                    <p class="form-section-subtitle">Connect theory to practice</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-server"></i>
+                        Related System
+                    </label>
+                    <select name="related_system" class="form-select" id="system-select">
+                        <option value="">No system connection</option>
+                        {% for system in active_systems %}
+                            <option value="{{ system.id }}" data-status="{{ system.status }}">
+                                {{ system.title }} ({{ system.get_status_display }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">Which system did you learn this from or apply this to?</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-sitemap"></i>
+                        Connection Type
+                    </label>
+                    <select name="connection_type" class="form-select">
+                        <option value="">Select connection type...</option>
+                        <option value="development">Development Learning</option>
+                        <option value="documentation">Documentation</option>
+                        <option value="analysis">Analysis & Research</option>
+                        <option value="troubleshooting">Problem Solving</option>
+                        <option value="implementation">Implementation</option>
+                    </select>
+                    <div class="help-text">How does this discovery relate to the system?</div>
+                </div>
+            </div>
+            
+            <!-- System Suggestions -->
+            {% if active_systems %}
+                <div class="suggestion-grid">
+                    {% for system in active_systems|slice:":4" %}
+                        <div class="suggestion-item" data-system-id="{{ system.id }}">
+                            <div class="suggestion-title">{{ system.title|truncatechars:20 }}</div>
+                            <div class="suggestion-meta">
+                                {{ system.get_status_display }}
+                                {% if system.technologies.all.count %}
+                                    • {{ system.technologies.all.count }} tech{{ system.technologies.all.count|pluralize }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Featured Code Section (if applicable) -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-code text-cyan-400"></i>
+                <div>
+                    <h3 class="form-section-title">Featured Code (Optional)</h3>
+                    <p class="form-section-subtitle">Highlight key code from your discovery</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-code"></i>
+                        Programming Language
+                    </label>
+                    {% render_field form.featured_code_format class="form-select" %}
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-star"></i>
+                        Featured Content
+                    </label>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; color: #9ca3af; font-size: 0.875rem;">
+                            {% render_field form.featured style="margin: 0;" %}
+                            Mark as featured discovery
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-terminal"></i>
+                        Code Snippet
+                    </label>
+                    {% render_field form.featured_code class="form-textarea" placeholder="Paste your featured code here..." %}
+                    <div class="help-text">Code that best demonstrates what you learned</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <div class="form-actions-left">
+                <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Discoveries
+                </a>
+            </div>
+            <div class="form-actions-right">
+                <button type="submit" name="save_draft" class="btn btn-outline">
+                    <i class="fas fa-save"></i>
+                    Save as Draft
+                </button>
+                <button type="submit" name="save_publish" class="btn btn-primary">
+                    <i class="fas fa-rocket"></i>
+                    {% if object %}Update Discovery{% else %}Publish Discovery{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+
+</div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Journey suggestion selection
+    const journeySelect = document.getElementById('journey-select');
+    const journeySuggestions = document.querySelectorAll('[data-journey-id]');
+    
+    journeySuggestions.forEach(suggestion => {
+        suggestion.addEventListener('click', function() {
+            const journeyId = this.dataset.journeyId;
+            journeySelect.value = journeyId;
+            
+            // Update visual selection
+            journeySuggestions.forEach(s => s.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+    
+    // System suggestion selection
+    const systemSelect = document.getElementById('system-select');
+    const systemSuggestions = document.querySelectorAll('[data-system-id]');
+    
+    systemSuggestions.forEach(suggestion => {
+        suggestion.addEventListener('click', function() {
+            const systemId = this.dataset.systemId;
+            systemSelect.value = systemId;
+            
+            // Update visual selection
+            systemSuggestions.forEach(s => s.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+    
+    // Tag input functionality
+    const tagInput = document.getElementById('tag-input');
+    const tagSuggestions = document.getElementById('tag-suggestions');
+    const selectedTags = document.getElementById('selected-tags');
+    let selectedTagsArray = [];
+    
+    // Existing tags for suggestions (you'd populate this from the backend)
+    const existingTags = [
+        'python', 'django', 'javascript', 'html', 'css', 'sql', 'git',
+        'debugging', 'api', 'database', 'frontend', 'backend', 'learning',
+        'tutorial', 'project', 'automation', 'data-analysis'
+    ];
+    
+    tagInput.addEventListener('input', function() {
+        const value = this.value.toLowerCase();
+        if (value.length > 0) {
+            const matches = existingTags.filter(tag => 
+                tag.toLowerCase().includes(value) && !selectedTagsArray.includes(tag)
+            );
+            
+            if (matches.length > 0) {
+                tagSuggestions.innerHTML = matches.map(tag => 
+                    `<div class="tag-suggestion" data-tag="${tag}">${tag}</div>`
+                ).join('');
+                tagSuggestions.style.display = 'block';
+            } else {
+                tagSuggestions.style.display = 'none';
+            }
+        } else {
+            tagSuggestions.style.display = 'none';
+        }
+    });
+    
+    tagInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag(this.value.trim());
+            this.value = '';
+            tagSuggestions.style.display = 'none';
+        }
+    });
+    
+    tagSuggestions.addEventListener('click', function(e) {
+        if (e.target.classList.contains('tag-suggestion')) {
+            addTag(e.target.dataset.tag);
+            tagInput.value = '';
+            tagSuggestions.style.display = 'none';
+        }
+    });
+    
+    function addTag(tag) {
+        if (tag && !selectedTagsArray.includes(tag)) {
+            selectedTagsArray.push(tag);
+            updateTagDisplay();
+        }
+    }
+    
+    function removeTag(tag) {
+        selectedTagsArray = selectedTagsArray.filter(t => t !== tag);
+        updateTagDisplay();
+    }
+    
+    function updateTagDisplay() {
+        selectedTags.innerHTML = selectedTagsArray.map(tag => 
+            `<div class="tag-chip">
+                ${tag}
+                <button type="button" class="tag-remove" onclick="removeTag('${tag}')">×</button>
+            </div>`
+        ).join('');
+        
+        // Update hidden form field (you'd add this to your form)
+        const hiddenTagsInput = document.getElementById('id_tags') || createHiddenTagsInput();
+        hiddenTagsInput.value = selectedTagsArray.join(',');
+    }
+    
+    function createHiddenTagsInput() {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'tags';
+        input.id = 'id_tags';
+        document.getElementById('discovery-form').appendChild(input);
+        return input;
+    }
+    
+    // Make removeTag globally accessible
+    window.removeTag = removeTag;
+});
+
+function toggleQuickCreate(type) {
+    const form = document.getElementById(`quick-${type}-form`);
+    form.classList.toggle('active');
+}
+
+function createQuickJourney() {
+    const titleInput = document.getElementById('new-journey-title');
+    const title = titleInput.value.trim();
+    
+    if (title) {
+        // Here you'd make an AJAX call to create the journey
+        alert(`Creating new learning journey: ${title}`);
+        titleInput.value = '';
+        toggleQuickCreate('journey');
+    }
+}
+</script>
+{% endblock %}

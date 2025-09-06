@@ -1,0 +1,913 @@
+<!-- blog/templates/blog/admin/learning_journey_list.html -->
+{% extends "admin/admin_base.html" %}
+{% load static %}
+{% load aura_filters %}
+
+{% block admin_title %}Learning Journeys - AURA Admin{% endblock %}
+
+{% block admin_breadcrumb %}DataLogs › Learning Journeys{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+/* Learning Journeys Specific List Styling */
+.journey-filters {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+    flex: 1;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 120px;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #e8eaf6;
+}
+
+.filter-input, .filter-select {
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.filter-input:focus, .filter-select:focus {
+    outline: none;
+    border-color: #b39ddb;
+    box-shadow: 0 0 0 2px rgba(179, 157, 219, 0.2);
+}
+
+.filter-select option {
+    background: #0d0d1f;
+    color: white;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: end;
+}
+
+.journey-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.journey-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+}
+
+.journey-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(179, 157, 219, 0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 4px 20px rgba(179, 157, 219, 0.1);
+}
+
+.journey-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #b39ddb, #d1c4e9);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.journey-card:hover::before {
+    opacity: 1;
+}
+
+.journey-card.completed {
+    border-color: rgba(34, 197, 94, 0.4);
+    background: rgba(34, 197, 94, 0.02);
+}
+
+.journey-card.completed::before {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    opacity: 0.8;
+}
+
+.journey-card.featured {
+    border-color: rgba(255, 215, 0, 0.4);
+    background: rgba(255, 215, 0, 0.02);
+}
+
+.journey-card.featured::before {
+    background: linear-gradient(90deg, #ffd700, #ffb700);
+    opacity: 0.8;
+}
+
+.journey-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.journey-info {
+    flex: 1;
+}
+
+.journey-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.journey-id {
+    font-size: 0.75rem;
+    color: #b39ddb;
+    font-family: 'Courier New', monospace;
+    background: rgba(179, 157, 219, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(179, 157, 219, 0.3);
+}
+
+.completion-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 50%;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+    animation: pulse-success 2s infinite;
+}
+
+.featured-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, #ffd700, #ffb700);
+    color: #1a1a1a;
+    padding: 0.5rem;
+    border-radius: 50%;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    animation: pulse-gold 2s infinite;
+}
+
+@keyframes pulse-success {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes pulse-gold {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.journey-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.difficulty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+    transition: all 0.3s ease;
+}
+
+.difficulty-beginner { background: rgba(34, 197, 94, 0.2); color: #22c55e; border-color: rgba(34, 197, 94, 0.3); }
+.difficulty-intermediate { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); }
+.difficulty-advanced { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; border-color: rgba(139, 92, 246, 0.3); }
+.difficulty-expert { background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.status-planning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.status-complete { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+.status-paused { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
+
+.journey-description {
+    color: #d1d5db;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.journey-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #b39ddb;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.progress-section {
+    margin-bottom: 1rem;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.progress-label {
+    font-size: 0.875rem;
+    color: #d1d5db;
+    font-weight: 500;
+}
+
+.progress-percentage {
+    font-size: 0.875rem;
+    color: #b39ddb;
+    font-weight: 600;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #b39ddb, #d1c4e9);
+    border-radius: 4px;
+    transition: width 0.8s ease-in-out;
+    position: relative;
+}
+
+.progress-fill.completed {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: progress-shimmer 2s infinite;
+}
+
+@keyframes progress-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.recent-discoveries {
+    margin-bottom: 1rem;
+}
+
+.recent-discoveries-header {
+    font-size: 0.875rem;
+    color: #d1d5db;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.discovery-list {
+    space-y: 0.5rem;
+}
+
+.discovery-item {
+    background: rgba(179, 157, 219, 0.05);
+    border: 1px solid rgba(179, 157, 219, 0.1);
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.discovery-title {
+    font-size: 0.75rem;
+    color: white;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.discovery-meta {
+    font-size: 0.625rem;
+    color: #9ca3af;
+}
+
+.journey-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #d1d5db;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: #b39ddb;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: rgba(179, 157, 219, 0.2);
+    border-color: #b39ddb;
+    color: #b39ddb;
+}
+
+.action-btn.primary:hover {
+    background: #b39ddb;
+    color: white;
+}
+
+.action-btn.success {
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.action-btn.success:hover {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: #22c55e;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .journey-list-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-item {
+        min-width: auto;
+    }
+    
+    .journey-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .journey-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .journey-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .journey-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .journey-filters {
+        padding: 1rem;
+    }
+    
+    .journey-card {
+        padding: 1rem;
+    }
+    
+    .journey-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-route text-lavender-400 mr-3"></i>
+                Learning Journeys
+            </h1>
+            <p class="text-gray-400">Manage your knowledge building paths and learning progression</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'aura_admin:blog:series_create' %}" 
+               class="inline-flex items-center px-4 py-2 bg-lavender-500 hover:bg-lavender-400 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-lavender-500/25">
+                <i class="fas fa-plus mr-2"></i>
+                Start Journey
+            </a>
+            <a href="{% url 'aura_admin:blog:post_create' %}" 
+               class="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-white font-medium rounded-lg transition-all duration-300">
+                <i class="fas fa-lightbulb mr-2"></i>
+                Document Discovery
+            </a>
+            <a href="{% url 'aura_admin:blog:dashboard' %}" 
+               class="inline-flex items-center px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white font-medium rounded-lg transition-all duration-300">
+                <i class="fas fa-chart-pie mr-2"></i>
+                Learning Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Learning Journey Overview Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="glass-card lavender-accent p-4 text-center">
+            <div class="text-2xl font-bold text-lavender-400 mb-1">{{ total_journeys|default:0 }}</div>
+            <div class="text-sm text-gray-400">Total Journeys</div>
+            <div class="mt-1 text-xs">
+                <span class="text-yellow-400">{{ learning_velocity|default:0 }} discoveries this month</span>
+            </div>
+        </div>
+        <div class="glass-card lavender-accent p-4 text-center">
+            <div class="text-2xl font-bold text-purple-400 mb-1">{{ active_journeys|default:0 }}</div>
+            <div class="text-sm text-gray-400">Active Learning</div>
+            <div class="mt-1 text-xs">
+                <span class="text-green-400">In progress</span>
+            </div>
+        </div>
+        <div class="glass-card lavender-accent p-4 text-center">
+            <div class="text-2xl font-bold text-cyan-400 mb-1">{{ completed_journeys|default:0 }}</div>
+            <div class="text-sm text-gray-400">Completed</div>
+            <div class="mt-1 text-xs">
+                <span class="text-orange-400">Knowledge mastered</span>
+            </div>
+        </div>
+        <div class="glass-card lavender-accent p-4 text-center">
+            <div class="text-2xl font-bold text-orange-400 mb-1">{{ avg_discoveries_per_journey|floatformat:1|default:0 }}</div>
+            <div class="text-sm text-gray-400">Avg Discoveries</div>
+            <div class="mt-1 text-xs">
+                <span class="text-purple-400">Per journey</span>
+            </div>
+        </div>
+        <div class="glass-card lavender-accent p-4 text-center">
+            <div class="text-2xl font-bold text-teal-400 mb-1">{{ total_reading_time|default:0 }}</div>
+            <div class="text-sm text-gray-400">Total Learning</div>
+            <div class="mt-1 text-xs">
+                <span class="text-cyan-400">Minutes of knowledge</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="journey-filters">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label class="filter-label">Search</label>
+                    <input type="text" name="search" value="{{ request.GET.search }}" 
+                           placeholder="Search learning journeys..." class="filter-input">
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Status</label>
+                    <select name="status" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active Learning</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="planning" {% if request.GET.status == 'planning' %}selected{% endif %}>Planning</option>
+                        <option value="paused" {% if request.GET.status == 'paused' %}selected{% endif %}>Paused</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Difficulty</label>
+                    <select name="difficulty" class="filter-select">
+                        <option value="">All Levels</option>
+                        <option value="beginner" {% if request.GET.difficulty == 'beginner' %}selected{% endif %}>Beginner</option>
+                        <option value="intermediate" {% if request.GET.difficulty == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                        <option value="advanced" {% if request.GET.difficulty == 'advanced' %}selected{% endif %}>Advanced</option>
+                        <option value="expert" {% if request.GET.difficulty == 'expert' %}selected{% endif %}>Expert</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Sort By</label>
+                    <select name="sort" class="filter-select">
+                        <option value="-last_activity" {% if request.GET.sort == '-last_activity' or not request.GET.sort %}selected{% endif %}>Recent Activity</option>
+                        <option value="-created_at" {% if request.GET.sort == '-created_at' %}selected{% endif %}>Newest First</option>
+                        <option value="created_at" {% if request.GET.sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+                        <option value="-completion_percentage" {% if request.GET.sort == '-completion_percentage' %}selected{% endif %}>Most Complete</option>
+                        <option value="-actual_post_count" {% if request.GET.sort == '-actual_post_count' %}selected{% endif %}>Most Discoveries</option>
+                        <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>Name A-Z</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="action-btn primary">
+                    <i class="fas fa-search"></i>
+                    Filter
+                </button>
+                <a href="{% url 'aura_admin:blog:learning_journey_list' %}" class="action-btn">
+                    <i class="fas fa-times"></i>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Learning Journey List -->
+    {% if learning_journeys %}
+        <div class="journey-list-container">
+            {% for journey in learning_journeys %}
+                <div class="journey-card {% if journey.is_complete %}completed{% endif %} {% if journey.is_featured %}featured{% endif %}">
+                    
+                    {% if journey.is_complete %}
+                        <div class="completion-indicator" title="Learning Journey Completed">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    {% elif journey.is_featured %}
+                        <div class="featured-indicator" title="Featured Learning Journey">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="journey-header">
+                        <div class="journey-info">
+                            <h3 class="journey-title">
+                                {{ journey.title }}
+                                {% if journey.id %}
+                                    <span class="journey-id">J-{{ journey.id|stringformat:"02d" }}</span>
+                                {% endif %}
+                            </h3>
+                        </div>
+                    </div>
+                    
+                    <div class="journey-meta">
+                        <span class="difficulty-badge difficulty-{{ journey.difficulty_level }}">
+                            <i class="fas fa-{% if journey.difficulty_level == 'beginner' %}seedling{% elif journey.difficulty_level == 'intermediate' %}tree{% elif journey.difficulty_level == 'advanced' %}mountain{% else %}crown{% endif %}"></i>
+                            {{ journey.get_difficulty_level_display }}
+                        </span>
+                        
+                        <span class="status-badge status-{% if journey.is_complete %}complete{% else %}active{% endif %}">
+                            <i class="fas fa-{% if journey.is_complete %}check-circle{% else %}play-circle{% endif %}"></i>
+                            {% if journey.is_complete %}Complete{% else %}Learning{% endif %}
+                        </span>
+                        
+                        {% if journey.last_activity %}
+                            <span>{{ journey.last_activity|timesince }} ago</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if journey.description %}
+                        <div class="journey-description">{{ journey.description }}</div>
+                    {% endif %}
+                    
+                    <!-- Journey Statistics -->
+                    <div class="journey-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ journey.actual_post_count|default:0 }}</span>
+                            <span class="stat-label">Discoveries</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ journey.total_reading_time|default:0 }}</span>
+                            <span class="stat-label">Minutes</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ journey.completion_percentage|default:0 }}%</span>
+                            <span class="stat-label">Progress</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span class="progress-label">Learning Progress</span>
+                            <span class="progress-percentage">{{ journey.completion_percentage|default:0 }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill {% if journey.is_complete %}completed{% endif %}" 
+                                 style="width: {{ journey.completion_percentage|default:0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Discoveries -->
+                    {% if journey.posts.all %}
+                        <div class="recent-discoveries">
+                            <div class="recent-discoveries-header">
+                                <i class="fas fa-lightbulb"></i>
+                                Recent Discoveries
+                            </div>
+                            <div class="discovery-list">
+                                {% for series_post in journey.posts.all|slice:":3" %}
+                                    <div class="discovery-item">
+                                        <div class="discovery-title">{{ series_post.post.title|truncatechars:40 }}</div>
+                                        <div class="discovery-meta">
+                                            {{ series_post.post.created_at|timesince }} ago
+                                            {% if series_post.post.reading_time %} • {{ series_post.post.reading_time }}min read{% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                {% if journey.posts.all.count > 3 %}
+                                    <div class="discovery-item">
+                                        <div class="discovery-title">+{{ journey.posts.all.count|add:"-3" }} more discoveries...</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="journey-actions">
+                        <a href="{% url 'aura_admin:blog:learning_journey_detail' journey.pk %}" 
+                           class="action-btn primary" title="Manage Learning Journey">
+                            <i class="fas fa-cogs"></i>
+                            <span>Manage</span>
+                        </a>
+                        {% if journey.is_complete %}
+                            <a href="{% url 'aura_admin:blog:series_edit' journey.pk %}" 
+                               class="action-btn success" title="Edit Completed Journey">
+                                <i class="fas fa-edit"></i>
+                                <span>Edit</span>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'aura_admin:blog:post_create' %}?journey={{ journey.id }}" 
+                               class="action-btn" title="Add Discovery">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Discovery</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                    
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="flex justify-center mt-8">
+                <nav class="flex items-center space-x-2">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    {% endif %}
+                    
+                    <span class="px-4 py-2 text-white bg-lavender-500 rounded-lg">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% endif %}
+        
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-route"></i>
+            <h3>No Learning Journeys Found</h3>
+            <p>{% if request.GET %}No journeys match your current filters.{% else %}Start your first learning journey to begin documenting your knowledge growth.{% endif %}</p>
+            <div class="flex justify-center gap-4">
+                <a href="{% url 'aura_admin:blog:series_create' %}" 
+                   class="action-btn primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Start Your First Journey
+                </a>
+                <a href="{% url 'aura_admin:blog:post_create' %}" 
+                   class="action-btn">
+                    <i class="fas fa-lightbulb mr-2"></i>
+                    Document Discovery
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced card hover effects
+    const journeyCards = document.querySelectorAll('.journey-card');
+    journeyCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.5), 0 8px 30px rgba(179, 157, 219, 0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.boxShadow = '';
+        });
+    });
+    
+    // Animate progress bars on scroll
+    const progressBars = document.querySelectorAll('.progress-fill');
+    const progressObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const progressBar = entry.target;
+                const width = progressBar.style.width;
+                progressBar.style.width = '0%';
+                setTimeout(() => {
+                    progressBar.style.width = width;
+                }, 200);
+            }
+        });
+    });
+    
+    progressBars.forEach(bar => progressObserver.observe(bar));
+    
+    // Auto-submit filter form on select changes
+    const filterSelects = document.querySelectorAll('.filter-select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Search input enhancement
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 800);
+        });
+    }
+    
+    // Statistics animation on load
+    const statValues = document.querySelectorAll('.stat-value');
+    const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const statValue = entry.target;
+                const finalValue = parseInt(statValue.textContent);
+                if (!isNaN(finalValue) && finalValue > 0) {
+                    let currentValue = 0;
+                    const increment = Math.ceil(finalValue / 20);
+                    
+                    const counter = setInterval(() => {
+                        currentValue += increment;
+                        if (currentValue >= finalValue) {
+                            currentValue = finalValue;
+                            clearInterval(counter);
+                        }
+                        statValue.textContent = currentValue;
+                    }, 50);
+                }
+            }
+        });
+    });
+    
+    statValues.forEach(stat => statsObserver.observe(stat));
+});
+</script>
+{% endblock %}
