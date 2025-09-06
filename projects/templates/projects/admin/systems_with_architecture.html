@@ -1,0 +1,777 @@
+<!-- projects/templates/projects/admin/systems_with_architecture.html -->
+{% extends "admin/admin_base.html" %}
+{% load static %}
+{% load aura_filters %}
+
+{% block admin_title %}Systems with Architecture - AURA Admin{% endblock %}
+
+{% block admin_breadcrumb %}Architecture › System Diagrams{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+/* Architecture Systems Specific List Styling */
+.architecture-filters {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+    flex: 1;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 120px;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #e8eaf6;
+}
+
+.filter-input, .filter-select {
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.filter-input:focus, .filter-select:focus {
+    outline: none;
+    border-color: #26c6da;
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+}
+
+.filter-select option {
+    background: #0d0d1f;
+    color: white;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: end;
+}
+
+.architecture-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.architecture-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+}
+
+.architecture-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(38, 198, 218, 0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 4px 20px rgba(38, 198, 218, 0.1);
+}
+
+.architecture-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #26c6da, #b39ddb);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.architecture-card:hover::before {
+    opacity: 1;
+}
+
+.architecture-card.complex {
+    border-color: rgba(255, 215, 0, 0.4);
+    background: rgba(255, 215, 0, 0.02);
+}
+
+.architecture-card.complex::before {
+    background: linear-gradient(90deg, #ffd700, #ff8c00);
+    opacity: 0.8;
+}
+
+.architecture-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.architecture-info {
+    flex: 1;
+}
+
+.architecture-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.system-id {
+    font-size: 0.75rem;
+    color: #26c6da;
+    font-family: 'Courier New', monospace;
+    background: rgba(38, 198, 218, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(38, 198, 218, 0.3);
+}
+
+.complexity-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: #1a1a1a;
+    padding: 0.5rem;
+    border-radius: 50%;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    animation: pulse-complexity 2s infinite;
+}
+
+@keyframes pulse-complexity {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.architecture-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.system-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+    transition: all 0.3s ease;
+    background: rgba(38, 198, 218, 0.1);
+    color: #26c6da;
+    border-color: rgba(38, 198, 218, 0.3);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-deployed { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+.status-in_development { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+.status-testing { background: rgba(156, 39, 176, 0.2); color: #9c27b0; }
+.status-draft { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
+
+.architecture-description {
+    color: #d1d5db;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.architecture-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #26c6da;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.core-components-indicator {
+    background: rgba(255, 215, 0, 0.1);
+    color: #ffd700;
+}
+
+.component-preview {
+    margin-bottom: 1rem;
+}
+
+.component-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: between;
+    margin-bottom: 0.5rem;
+}
+
+.component-preview-title {
+    font-size: 0.875rem;
+    color: #d1d5db;
+    font-weight: 500;
+}
+
+.component-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.component-type-chip {
+    background: rgba(38, 198, 218, 0.1);
+    color: #26c6da;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.675rem;
+    font-weight: 500;
+    border: 1px solid rgba(38, 198, 218, 0.2);
+    transition: all 0.2s ease;
+}
+
+.component-type-chip:hover {
+    background: rgba(38, 198, 218, 0.2);
+    border-color: rgba(38, 198, 218, 0.4);
+    transform: scale(1.05);
+}
+
+.architecture-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #d1d5db;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: #26c6da;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: rgba(38, 198, 218, 0.2);
+    border-color: #26c6da;
+    color: #26c6da;
+}
+
+.action-btn.primary:hover {
+    background: #26c6da;
+    color: white;
+}
+
+.action-btn.secondary {
+    border-color: rgba(179, 157, 219, 0.3);
+    color: #b39ddb;
+}
+
+.action-btn.secondary:hover {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: #b39ddb;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .architecture-list-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-item {
+        min-width: auto;
+    }
+    
+    .architecture-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .architecture-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .architecture-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .architecture-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .architecture-filters {
+        padding: 1rem;
+    }
+    
+    .architecture-card {
+        padding: 1rem;
+    }
+    
+    .architecture-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-blueprint text-teal-400 mr-3"></i>
+                Systems with Architecture
+            </h1>
+            <p class="text-gray-400">Browse and manage system architecture diagrams and components</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'aura_admin:projects:architecture_dashboard' %}" 
+               class="inline-flex items-center px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/25">
+                <i class="fas fa-chart-pie mr-2"></i>
+                Architecture Dashboard
+            </a>
+            <a href="{% url 'aura_admin:projects:architecture_component_create' %}" 
+               class="inline-flex items-center px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white font-medium rounded-lg transition-all duration-300">
+                <i class="fas fa-plus mr-2"></i>
+                Add Component
+            </a>
+            <a href="{% url 'aura_admin:projects:system_list' %}" 
+               class="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-medium rounded-lg transition-all duration-300">
+                <i class="fas fa-cubes mr-2"></i>
+                All Systems
+            </a>
+        </div>
+    </div>
+
+    <!-- Architecture Overview Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-emerald-400 mb-1">{{ systems.count|default:0 }}</div>
+            <div class="text-sm text-gray-400">Systems with Architecture</div>
+            <div class="mt-1 text-xs">
+                <span class="text-yellow-400">{{ total_components|default:0 }} total components</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-purple-400 mb-1">{{ avg_components|floatformat:1|default:0 }}</div>
+            <div class="text-sm text-gray-400">Avg Components</div>
+            <div class="mt-1 text-xs">
+                <span class="text-green-400">Per system</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-cyan-400 mb-1">{{ total_connections|default:0 }}</div>
+            <div class="text-sm text-gray-400">Total Connections</div>
+            <div class="mt-1 text-xs">
+                <span class="text-orange-400">{{ avg_connections|floatformat:1|default:0 }} avg/system</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-orange-400 mb-1">{{ core_components|default:0 }}</div>
+            <div class="text-sm text-gray-400">Core Components</div>
+            <div class="mt-1 text-xs">
+                <span class="text-purple-400">Critical systems</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-teal-400 mb-1">{{ complex_systems|default:0 }}</div>
+            <div class="text-sm text-gray-400">Complex Systems</div>
+            <div class="mt-1 text-xs">
+                <span class="text-cyan-400">5+ components</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="architecture-filters">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label class="filter-label">Search</label>
+                    <input type="text" name="search" value="{{ request.GET.search }}" 
+                           placeholder="Search systems..." class="filter-input">
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">System Type</label>
+                    <select name="system_type" class="filter-select">
+                        <option value="">All Types</option>
+                        {% for system_type in system_types %}
+                            <option value="{{ system_type.slug }}" {% if request.GET.system_type == system_type.slug %}selected{% endif %}>
+                                {{ system_type.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Complexity</label>
+                    <select name="complexity" class="filter-select">
+                        <option value="">All Complexity</option>
+                        <option value="simple" {% if request.GET.complexity == 'simple' %}selected{% endif %}>Simple (1-3 components)</option>
+                        <option value="moderate" {% if request.GET.complexity == 'moderate' %}selected{% endif %}>Moderate (4-6 components)</option>
+                        <option value="complex" {% if request.GET.complexity == 'complex' %}selected{% endif %}>Complex (7+ components)</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Sort By</label>
+                    <select name="sort" class="filter-select">
+                        <option value="-component_count" {% if request.GET.sort == '-component_count' or not request.GET.sort %}selected{% endif %}>Most Components</option>
+                        <option value="component_count" {% if request.GET.sort == 'component_count' %}selected{% endif %}>Fewest Components</option>
+                        <option value="-connection_count" {% if request.GET.sort == '-connection_count' %}selected{% endif %}>Most Connections</option>
+                        <option value="-core_component_count" {% if request.GET.sort == '-core_component_count' %}selected{% endif %}>Most Core Components</option>
+                        <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>Name A-Z</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="action-btn primary">
+                    <i class="fas fa-search"></i>
+                    Filter
+                </button>
+                <a href="{% url 'aura_admin:projects:systems_with_architecture' %}" class="action-btn">
+                    <i class="fas fa-times"></i>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Architecture Systems List -->
+    {% if systems %}
+        <div class="architecture-list-container">
+            {% for system in systems %}
+                <div class="architecture-card {% if system.component_count >= 7 %}complex{% endif %}">
+                    
+                    {% if system.component_count >= 7 %}
+                        <div class="complexity-indicator" title="Complex Architecture">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="architecture-header">
+                        <div class="architecture-info">
+                            <h3 class="architecture-title">
+                                {{ system.title }}
+                                {% if system.id %}
+                                    <span class="system-id">SYS-{{ system.id|stringformat:"03d" }}</span>
+                                {% endif %}
+                            </h3>
+                        </div>
+                    </div>
+                    
+                    <div class="architecture-meta">
+                        <span class="status-badge status-{{ system.status }}">
+                            <i class="fas fa-{% if system.status == 'deployed' %}check-circle{% elif system.status == 'in_development' %}code{% elif system.status == 'testing' %}vial{% else %}edit{% endif %} mr-1"></i>
+                            {{ system.get_status_display }}
+                        </span>
+                        {% if system.system_type %}
+                            <span class="system-type-badge">
+                                {% if system.system_type.icon %}
+                                    <i class="{{ system.system_type.icon }}"></i>
+                                {% endif %}
+                                {{ system.system_type.name }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if system.description %}
+                        <div class="architecture-description">{{ system.description }}</div>
+                    {% endif %}
+                    
+                    <!-- Architecture Statistics -->
+                    <div class="architecture-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ system.component_count }}</span>
+                            <span class="stat-label">Components</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ system.connection_count }}</span>
+                            <span class="stat-label">Connections</span>
+                        </div>
+                        <div class="stat-item {% if system.core_component_count > 0 %}core-components-indicator{% endif %}">
+                            <span class="stat-value">{{ system.core_component_count }}</span>
+                            <span class="stat-label">Core</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Component Types Preview -->
+                    <div class="component-preview">
+                        <div class="component-preview-header">
+                            <span class="component-preview-title">Architecture Components</span>
+                        </div>
+                        <div class="component-types">
+                            {% for component in system.architecture_components.all|slice:":6" %}
+                                <span class="component-type-chip" title="{{ component.name }}">
+                                    <i class="fas fa-{% if component.component_type == 'frontend' %}desktop{% elif component.component_type == 'backend' %}server{% elif component.component_type == 'database' %}database{% elif component.component_type == 'api' %}plug{% else %}cube{% endif %} mr-1"></i>
+                                    {{ component.get_component_type_display }}
+                                </span>
+                            {% endfor %}
+                            {% if system.architecture_components.all.count > 6 %}
+                                <span class="component-type-chip">+{{ system.architecture_components.all.count|add:"-6" }} more</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="architecture-actions">
+                        <a href="{% url 'aura_admin:projects:system_architecture' system.pk %}" 
+                           class="action-btn primary" title="View Architecture Diagram">
+                            <i class="fas fa-blueprint"></i>
+                            <span>View Diagram</span>
+                        </a>
+                        <a href="{% url 'aura_admin:projects:system_edit' system.pk %}" 
+                           class="action-btn secondary" title="Edit System">
+                            <i class="fas fa-edit"></i>
+                            <span>Edit System</span>
+                        </a>
+                    </div>
+                    
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="flex justify-center mt-8">
+                <nav class="flex items-center space-x-2">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    {% endif %}
+                    
+                    <span class="px-4 py-2 text-white bg-teal-500 rounded-lg">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="action-btn">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% endif %}
+        
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-blueprint"></i>
+            <h3>No Systems with Architecture Found</h3>
+            <p>{% if request.GET %}No systems match your current filters.{% else %}No systems have architecture diagrams yet. Start by adding components to your systems.{% endif %}</p>
+            <div class="flex justify-center gap-4">
+                <a href="{% url 'aura_admin:projects:system_list' %}" 
+                   class="action-btn primary">
+                    <i class="fas fa-cubes mr-2"></i>
+                    View All Systems
+                </a>
+                <a href="{% url 'aura_admin:projects:architecture_component_create' %}" 
+                   class="action-btn secondary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add Components
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced card hover effects
+    const architectureCards = document.querySelectorAll('.architecture-card');
+    architectureCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.5), 0 8px 30px rgba(38, 198, 218, 0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.boxShadow = '';
+        });
+    });
+    
+    // Auto-submit filter form on select changes
+    const filterSelects = document.querySelectorAll('.filter-select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Search input enhancement
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 800);
+        });
+    }
+    
+    // Animate statistics on scroll
+    const statValues = document.querySelectorAll('.stat-value');
+    const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const statValue = entry.target;
+                const finalValue = parseInt(statValue.textContent);
+                let currentValue = 0;
+                const increment = Math.ceil(finalValue / 20);
+                
+                const counter = setInterval(() => {
+                    currentValue += increment;
+                    if (currentValue >= finalValue) {
+                        currentValue = finalValue;
+                        clearInterval(counter);
+                    }
+                    statValue.textContent = currentValue;
+                }, 50);
+            }
+        });
+    });
+    
+    statValues.forEach(stat => statsObserver.observe(stat));
+});
+</script>
+{% endblock %}

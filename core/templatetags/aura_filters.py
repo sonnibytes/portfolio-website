@@ -20,6 +20,16 @@ import math
 
 register = template.Library()
 
+# Basic str replace method
+@register.filter()
+@stringfilter
+def sub_space(value, arg):
+    """
+    Replaces any instances of arg in value to space.
+    Usage: {{ example_value|sub_space:"_" }} (resulting in 'example value')
+    """
+    return value.replace(arg, " ")
+
 
 # Safe handling of icons since it's hit or miss on whether the fas/fa-solid is always included
 @register.filter

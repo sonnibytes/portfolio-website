@@ -5,14 +5,14 @@
 
 {% block admin_title %}Projects Dashboard - AURA Admin{% endblock %}
 
-{% block admin_breadcrumb %}Projects Dashboard{% endblock %}
+{% block admin_breadcrumb %}Projects › Dashboard{% endblock %}
 
 {% block admin_css %}
 {{ block.super }}
 <style>
 .admin-nav-link.active {
-    background: rgba(var(--color-emerald-rgb), 0.2);
-    color: var(--color-emerald);
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
 }
 .glass-card.emerald-accent {
     border: 1px solid rgba(52, 211, 153, 0.2);
@@ -22,7 +22,7 @@
 }
 .management-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     gap: 1.5rem;
 }
 .quick-stats {
@@ -53,7 +53,7 @@
 .system-header {
     display: flex;
     align-items: center;
-    justify-content: between;
+    justify-content: space-between;
     margin-bottom: 0.5rem;
 }
 .system-title {
@@ -63,8 +63,8 @@
     margin: 0;
 }
 .system-id {
-    background: rgba(38, 198, 218, 0.2);
-    color: var(--color-teal);
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;
     font-size: 0.75rem;
@@ -98,11 +98,28 @@
     font-weight: 500;
     text-transform: capitalize;
 }
-.status-operational { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-.status-development { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.status-deployed { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.status-in_development { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
 .status-testing { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
-.status-deployed { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.status-draft { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
 .status-archived { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #81c784);
+    border-radius: 3px;
+    transition: width 0.8s ease-in-out;
+}
+
 @media (max-width: 768px) {
     .management-grid {
         grid-template-columns: 1fr;
@@ -116,11 +133,11 @@
     
     <!-- Projects Dashboard Header -->
     <div class="text-center">
-        <h1 class="text-3xl font-bold text-white mb-2">
-            <i class="fas fa-project-diagram text-cyan-400 mr-3"></i>
-            Projects System Management
+        <h1 class="text-3xl font-bold text-white mb-2 flex items-center justify-center">
+            <i class="fas fa-server text-emerald-400 mr-3"></i>
+            Projects & Systems Dashboard
         </h1>
-        <p class="text-gray-400">Project modules, technologies, and system architecture administration</p>
+        <p class="text-gray-400">System modules, technologies, and project development management</p>
     </div>
 
     <!-- System Metrics Overview -->
@@ -139,10 +156,10 @@
         <!-- Deployed/Published Systems Metric -->
         <div class="glass-card emerald-accent p-4 text-center">
             <div class="text-2xl font-bold text-purple-400 mb-1">{{ operational_systems|default:0 }}</div>
-            <div class="text-sm text-gray-400">Active</div>
+            <div class="text-sm text-gray-400">Active/Deployed</div>
             {% if total_systems > 0 %}
                 <div class="mt-1 text-xs">
-                    <span class="text-green-400">{{ operational_systems|mul:100|div:total_systems|floatformat:0 }}% uptime</span>
+                    <span class="text-green-400">{{ operational_systems|mul:100|div:total_systems|floatformat:0 }}% deployment rate</span>
                 </div>
             {% endif %}
         </div>
@@ -152,7 +169,7 @@
             <div class="text-2xl font-bold text-cyan-400 mb-1">{{ in_dev_systems|default:0 }}</div>
             <div class="text-sm text-gray-400">In Development</div>
             <div class="mt-1 text-xs">
-                <span class="text-blue-400">Avg Completion: {{ avg_completion|floatformat:1 }}%</span>
+                <span class="text-blue-400">{{ avg_completion|floatformat:1|default:0 }}% avg completion</span>
             </div>
         </div>
 
@@ -161,7 +178,7 @@
             <div class="text-2xl font-bold text-orange-400 mb-1">{{ total_technologies|default:0 }}</div>
             <div class="text-sm text-gray-400">Technologies</div>
             <div class="mt-1 text-xs">
-                <span class="text-yellow-400">{{ popular_technologies|length|default:0 }} popular</span>
+                <span class="text-yellow-400">{{ popular_technologies|length|default:0 }} frequently used</span>
             </div>
         </div>
 
@@ -170,7 +187,7 @@
             <div class="text-2xl font-bold text-teal-400 mb-1">{{ total_system_types|default:0 }}</div>
             <div class="text-sm text-gray-400">System Types</div>
             <div class="mt-1 text-xs">
-                <span class="text-yellow-400">{{ popular_system_types|length|default:0 }} popular</span>
+                <span class="text-purple-400">{{ popular_system_types|length|default:0 }} active types</span>
             </div>
         </div>
     </div>
@@ -206,7 +223,7 @@
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Avg Progress</span>
-                    <span class="text-emerald-400 font-medium">{{ avg_completion|floatformat:1 }}%</span>
+                    <span class="text-emerald-400 font-medium">{{ avg_completion|floatformat:1|default:0 }}%</span>
                 </div>
             </div>
             
@@ -222,7 +239,7 @@
             </div>
         </div>
 
-        <!-- Technology Management -->
+        <!-- Technology Stack Management -->
         <div class="glass-card emerald-accent p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-white flex items-center">
@@ -249,7 +266,7 @@
                     <span class="text-green-400 font-medium">{{ database_count|default:0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">Total Stack</span>
+                    <span class="text-gray-400">Total Technologies</span>
                     <span class="text-orange-400 font-medium">{{ total_technologies|default:0 }}</span>
                 </div>
             </div>
@@ -266,12 +283,12 @@
             </div>
         </div>
 
-        <!-- System Types & Architecture -->
+        <!-- System Types & Categories -->
         <div class="glass-card emerald-accent p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-sitemap mr-2 text-purple-400"></i>
-                    Architecture & Types
+                    <i class="fas fa-layer-group mr-2 text-purple-400"></i>
+                    System Types & Categories
                 </h3>
                 <a href="{% url 'aura_admin:projects:system_type_list' %}" class="btn btn-sm btn-purple">
                     <i class="fas fa-external-link-alt mr-1"></i>
@@ -285,16 +302,16 @@
                     <span class="text-purple-400 font-medium">{{ total_system_types|default:0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">Architecture Components</span>
-                    <span class="text-cyan-400 font-medium">{{ architecture_components|default:0 }}</span>
+                    <span class="text-gray-400">Web Applications</span>
+                    <span class="text-cyan-400 font-medium">{{ web_app_count|default:0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">System Connections</span>
-                    <span class="text-green-400 font-medium">{{ system_connections|default:0 }}</span>
+                    <span class="text-gray-400">Data Analytics</span>
+                    <span class="text-green-400 font-medium">{{ data_analytics_count|default:0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">Documented Systems</span>
-                    <span class="text-purple-400 font-medium">{{ documented_systems|default:0 }}</span>
+                    <span class="text-gray-400">Automation Tools</span>
+                    <span class="text-purple-400 font-medium">{{ automation_count|default:0 }}</span>
                 </div>
             </div>
             
@@ -303,9 +320,9 @@
                     <i class="fas fa-plus mr-1"></i>
                     New Type
                 </a>
-                <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-xs btn-outline">
-                    <i class="fas fa-puzzle-piece mr-1"></i>
-                    Architecture
+                <a href="{% url 'aura_admin:projects:system_type_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-layer-group mr-1"></i>
+                    Categories
                 </a>
             </div>
         </div>
@@ -323,154 +340,149 @@
                 </a>
             </div>
             
-            {% if recent_systems %}
                 <div class="space-y-3">
                     {% for system in recent_systems|slice:":5" %}
                         <div class="system-item">
                             <div class="system-header">
-                                <div class="flex items-center flex-1">
-                                    <h4 class="system-title">{{ system.title }}</h4>
-                                    {% if system.system_id %}
-                                        <span class="system-id">{{ system.system_id }}</span>
-                                    {% endif %}
+                            <div>
+                                <h4 class="system-title">
+                                    {{ system.title|truncatechars:25 }}
+                                    <span class="system-id">SYS-{{ system.id|stringformat:"03d" }}</span>
+                                </h4>
+                                <div class="system-meta">
+                                    {{ system.updated_at|timesince }} ago • {{ system.get_status_display }}
+                                </div>
                                 </div>
                                 <span class="status-badge status-{{ system.status }}">
+                                <i class="fas fa-{% if system.status == 'deployed' %}check-circle{% elif system.status == 'in_development' %}code{% elif system.status == 'testing' %}vial{% else %}edit{% endif %}"></i>
                                     {{ system.get_status_display }}
                                 </span>
                             </div>
-                            <div class="system-meta">
-                                {% if system.system_type %}{{ system.system_type.name }} • {% endif %}
-                                Updated {{ system.updated_at|timesince }} ago
+                        {% if system.progress %}
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ system.progress }}%"></div>
                             </div>
-                            {% if system.technologies.exists %}
+                        {% endif %}
+                        {% if system.technologies.all %}
                                 <div class="system-technologies">
                                     {% for tech in system.technologies.all|slice:":3" %}
                                         <span class="tech-tag" style="background-color: {{ tech.color }}20; color: {{ tech.color }};">
                                             {{ tech.name }}
                                         </span>
                                     {% endfor %}
+                                {% if system.technologies.all.count > 3 %}
+                                    <span class="tech-tag" style="background-color: rgba(156, 163, 175, 0.2); color: #9ca3af;">
+                                        +{{ system.technologies.all.count|add:"-3" }} more
+                                    </span>
+                                {% endif %}
                                 </div>
                             {% endif %}
                         </div>
+                {% empty %}
+                    <p class="text-gray-500 text-sm">No recent activity</p>
                     {% endfor %}
                 </div>
-            {% else %}
-                <div class="text-center py-4 text-gray-400">
-                    <i class="fas fa-server text-2xl mb-2"></i>
-                    <p class="text-sm">No recent system activity</p>
-                </div>
-            {% endif %}
             
             <div class="action-buttons">
                 <a href="{% url 'aura_admin:projects:system_create' %}" class="btn btn-xs btn-outline">
                     <i class="fas fa-plus mr-1"></i>
-                    New System
+                    Create System
                 </a>
                 <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-xs btn-outline">
-                    <i class="fas fa-history mr-1"></i>
-                    Activity
+                    <i class="fas fa-eye mr-1"></i>
+                    View Activity
                 </a>
             </div>
         </div>
 
-        <!-- Popular Technologies -->
+        <!-- Project Development Status -->
         <div class="glass-card emerald-accent p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-fire mr-2 text-orange-400"></i>
-                    Popular Technologies
+                    <i class="fas fa-chart-line mr-2 text-green-400"></i>
+                    Development Progress
                 </h3>
-                <a href="{% url 'aura_admin:projects:technology_list' %}?sort=-system_count" class="btn btn-sm btn-orange">
-                    <i class="fas fa-external-link-alt mr-1"></i>
-                    View All
-                </a>
-            </div>
-            
-            {% if popular_technologies %}
-                <div class="space-y-3">
-                    {% for tech in popular_technologies|slice:":5" %}
-                        <div class="system-item">
-                            <div class="system-header">
-                                <div class="flex items-center flex-1">
-                                    <div class="w-6 h-6 rounded flex items-center justify-center text-xs mr-2"
-                                         style="background-color: {{ tech.color }}20; color: {{ tech.color }};">
-                                        {% if tech.icon %}
-                                            <i class="{{ tech.icon }}"></i>
-                                        {% else %}
-                                            <i class="fas fa-cog"></i>
-                                        {% endif %}
-                                    </div>
-                                    <h4 class="system-title">{{ tech.name }}</h4>
-                                </div>
-                                <div class="text-xs text-gray-400">
-                                    {{ tech.system_count|default:0 }} systems
-                                </div>
-                            </div>
-                            <div class="system-meta">
-                                {{ tech.get_category_display }} technology
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="text-center py-4 text-gray-400">
-                    <i class="fas fa-tools text-2xl mb-2"></i>
-                    <p class="text-sm">No technologies yet</p>
-                </div>
-            {% endif %}
-            
-            <div class="action-buttons">
-                <a href="{% url 'aura_admin:projects:technology_create' %}" class="btn btn-xs btn-outline">
-                    <i class="fas fa-plus mr-1"></i>
-                    Add Tech
-                </a>
-                <a href="{% url 'aura_admin:projects:technology_list' %}" class="btn btn-xs btn-outline">
-                    <i class="fas fa-chart-bar mr-1"></i>
-                    Analytics
-                </a>
-            </div>
-        </div>
-
-        <!-- System Integration Status -->
-        <div class="glass-card emerald-accent p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-network-wired mr-2 text-emerald-400"></i>
-                    System Integration
-                </h3>
-                <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-sm btn-emerald">
-                    <i class="fas fa-external-link-alt mr-1"></i>
-                    Manage
-                </a>
             </div>
             
             <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400 text-sm">Overall Progress</span>
+                    <span class="text-green-400 font-medium">{{ avg_completion|floatformat:1|default:0 }}%</span>
+                            </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ avg_completion|default:0 }}%"></div>
+                            </div>
+                
+                {% if systems_by_status %}
+                    {% for status_data in systems_by_status %}
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-400">{{ status_data.status|title }} Systems</span>
+                            <span class="text-emerald-400 font-medium">{{ status_data.count }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
                 <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">System ↔ DataLogs</span>
-                    <span class="text-emerald-400 font-medium">{{ system_datalog_connections|default:0 }}</span>
+                    <span class="text-gray-400">This Month's Progress</span>
+                    <span class="text-cyan-400 font-medium">+{{ monthly_progress|floatformat:1|default:0 }}%</span>
                 </div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">Tech ↔ Systems</span>
-                    <span class="text-cyan-400 font-medium">{{ tech_system_connections|default:0 }}</span>
                 </div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">Documented APIs</span>
-                    <span class="text-purple-400 font-medium">{{ documented_apis|default:0 }}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">Total Connections</span>
-                    <span class="text-emerald-400 font-medium">{{ total_integrations|default:0 }}</span>
-                </div>
-            </div>
             
             <div class="action-buttons">
-                <a href="{% url 'aura_admin:projects:architecture_connection_list' %}" class="btn btn-xs btn-outline">
-                    <i class="fas fa-link mr-1"></i>
-                    Connections
+                <a href="{% url 'aura_admin:projects:system_list' %}?status=in_development" class="btn btn-xs btn-outline">
+                    <i class="fas fa-code mr-1"></i>
+                    In Progress
                 </a>
-                <a href="{% url 'aura_admin:blog:post_list' %}?systems=true" class="btn btn-xs btn-outline">
-                    <i class="fas fa-database mr-1"></i>
-                    DataLogs
+                <a href="{% url 'aura_admin:projects:system_list' %}?status=deployed" class="btn btn-xs btn-outline">
+                    <i class="fas fa-rocket mr-1"></i>
+                    Deployed
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Project Actions -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-rocket mr-2 text-yellow-400"></i>
+                    Quick Actions
+                </h3>
+            </div>
+            
+            <div class="space-y-3">
+                <a href="{% url 'aura_admin:projects:system_create' %}" 
+                   class="flex items-center p-3 bg-emerald-500 bg-opacity-20 border border-emerald-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-plus text-emerald-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Create New System</div>
+                        <div class="text-gray-400 text-xs">Start a new project module</div>
+                </div>
+                </a>
+                
+                <a href="{% url 'aura_admin:projects:technology_create' %}" 
+                   class="flex items-center p-3 bg-orange-500 bg-opacity-20 border border-orange-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-tools text-orange-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Add Technology</div>
+                        <div class="text-gray-400 text-xs">Expand your tech stack</div>
+                </div>
+                </a>
+                
+                <a href="{% url 'aura_admin:projects:system_type_create' %}" 
+                   class="flex items-center p-3 bg-purple-500 bg-opacity-20 border border-purple-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-layer-group text-purple-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Define System Type</div>
+                        <div class="text-gray-400 text-xs">Create project categories</div>
+                </div>
+                </a>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-gray-700">
+                <a href="{% url 'aura_admin:projects:architecture_dashboard' %}" 
+                   class="flex items-center justify-center p-2 bg-teal-500 bg-opacity-20 border border-teal-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-project-diagram text-teal-400 mr-2"></i>
+                    <span class="text-white font-medium text-sm">Architecture Dashboard</span>
                 </a>
             </div>
         </div>
@@ -478,4 +490,35 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block admin_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate progress bars on page load
+    const progressBars = document.querySelectorAll('.progress-fill');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 500);
+    });
+    
+    // System item hover effects
+    const systemItems = document.querySelectorAll('.system-item');
+    systemItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(4px)';
+            this.style.background = 'rgba(0, 0, 0, 0.4)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+            this.style.background = 'rgba(0, 0, 0, 0.2)';
+        });
+    });
+});
+</script>
 {% endblock %}

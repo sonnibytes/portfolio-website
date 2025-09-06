@@ -22,7 +22,7 @@ def admin_navigation_context(request):
     try:
         # Import models to avoid circular imports
         from core.models import Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics
-        from projects.models import SystemModule, Technology, SystemType
+        from projects.models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
         from blog.models import Post, Category, Series
 
         # Core App Stats
@@ -70,6 +70,21 @@ def admin_navigation_context(request):
             'total_systems': SystemModule.objects.count(),
             'active_systems': SystemModule.objects.filter(status__in=['deployed', 'published']).count(),
             'development_systems': SystemModule.objects.filter(status__in=['in_development', 'testing']).count(),
+
+            # Added context for experimental architecture dashboard rework
+            'total_system_types': SystemType.objects.count(),
+            # Adding as dupe for now, can remove technology_stats below if I like the flow
+            'total_technologies': Technology.objects.count(),
+        }
+
+        ## ADDED Architecture context
+        architecture_stats = {
+            'total_components': ArchitectureComponent.objects.count(),
+            'total_connections': ArchitectureConnection.objects.count(),
+            'systems_with_architecture': SystemModule.objects.filter(
+                architecture_components__isnull=False
+            ).distinct().count(),
+            'core_components': ArchitectureComponent.objects.filter(is_core=True).count(),
         }
 
         technology_stats = {
@@ -78,8 +93,8 @@ def admin_navigation_context(request):
             'frameworks': Technology.objects.filter(category='framework').count(),
         }
 
-        # Blog (DataLogs) Stats
-        blog_stats = {
+        # DataLogs Stats
+        datalogs_stats = {
             'total_posts': Post.objects.count(),
             'published_posts': Post.objects.filter(status='published').count(),
             'draft_posts': Post.objects.filter(status='draft').count(),
@@ -105,8 +120,9 @@ def admin_navigation_context(request):
             'contact_stats': contact_stats,
             'social_stats': social_stats,
             'system_stats': system_stats,
+            'architecture_stats': architecture_stats,
             'technology_stats': technology_stats,
-            'blog_stats': blog_stats,
+            'blog_stats': datalogs_stats,
             'integration_stats': integration_stats,
         }
     

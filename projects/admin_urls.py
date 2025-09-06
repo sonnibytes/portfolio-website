@@ -56,9 +56,15 @@ urlpatterns = [
     path('api/systems/<int:pk>/architecture-preview/', admin_views.ArchitecturePreviewView.as_view(), name='architecture_preview'),
     path('api/systems/<int:pk>/create-default-architecture/', admin_views.CreateDefaultArchitectureView.as_view(), name='create_default_architecture'),
 
-    # New SystemSkillGain Views
+    # ======== New SystemSkillGain Views ========
     path('system-skill-gains/', admin_views.SystemSkillGainListAdminView.as_view(), name='system_skill_gain_list'),
     path('system-skill-gains/create/', admin_views.SystemTypeCreateAdminView.as_view(), name='system_skill_gain_create'),
     path('system-skill-gains/<int:pk>/edit/', admin_views.SystemTypeUpdateAdminView.as_view(), name='system_skill_gain_edit'),
     path('system-skill-gains/<int:pk>/delete/', admin_views.SystemTypeDeleteAdminView.as_view(), name='system_skill_gain_delete'),
+
+    # NEW: Testing the Architecture Restructure Flow
+    ## New Architecture Dashboard
+    path('architecture/', admin_views.ArchitectureDashboardView.as_view(), name='architecture_dashboard'),
+    ## New Systems w Architecture View
+    path('architecture/systems/', admin_views.SystemsWithArchitectureView.as_view(), name='systems_with_architecture'),
 ]
