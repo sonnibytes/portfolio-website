@@ -953,7 +953,7 @@ class LearningJourneyDashboardView(AdminAccessMixin, TemplateView):
             'active_learning_journeys': active_learning_journeys,
             'recent_discoveries': recent_discoveries,
             'system_knowledge_connections': system_knowledge_connections,
-            'knowledge_domain_stats': knowledge_domain_stats,
+            'knowledge_domains_stats': knowledge_domain_stats,
 
             # Additional metrics
             'knowledge_domains': Category.objects.count(),

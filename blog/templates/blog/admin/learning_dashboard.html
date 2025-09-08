@@ -22,9 +22,40 @@
 }
 .management-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    grid-template-columns: repeat(3, minmax(340px, 1fr));
     gap: 1.5rem;
+    /* align-items: stretch; Make all cards same height */
 }
+
+/* Make dashboard cards flex containers */
+.glass-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Ensure cards fill available height */
+}
+
+/* Card content areas should grow to fill space */
+.glass-card .card-content {
+    flex: 1; /* This will grow to fill available space */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure card headers don't interfere with flex layout */
+.glass-card h3 {
+    /* flex-shrink: 0; Prevent header from shrinking */
+    margin-bottom: 1rem;
+}
+
+/* Stats and content sections */
+.glass-card .space-y-4,
+.glass-card .stats-section {
+    flex: 1; /* Allow this section to grow */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
 .quick-stats {
     display: flex;
     justify-content: space-between;
@@ -33,12 +64,44 @@
     color: #9ca3af;
     margin-top: 1rem;
 }
+/* Action buttons container - push to bottom */
 .action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    margin-top: auto; /* This pushes the buttons to the bottom */
+    padding-top: 1rem; /* Add some space above buttons */
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Optional separator */
+    display: flex;
     gap: 0.5rem;
-    margin-top: 1rem;
+    flex-wrap: wrap;
 }
+
+/* For cards with preview sections (like popular tags) */
+.preview-section {
+    margin-bottom: 1rem;
+    flex-shrink: 0; /* Don't let preview sections shrink */
+}
+
+/* Button styling improvements */
+.action-buttons .btn {
+    flex: 1;
+    min-width: fit-content;
+    text-align: center;
+}
+
+.action-buttons .btn:not(:last-child) {
+    margin-right: 0; /* Remove any conflicting margins */
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+}
+
 .learning-item {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 0.5rem;
@@ -230,15 +293,183 @@
         </div>
     </div>
 
+    <!-- Quick Actions Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Quick Learning Actions -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-rocket mr-2 text-emerald-400"></i>
+                    Quick Actions | Create
+                </h3>
+            </div>
+            
+            <div class="space-y-3">
+                <a href="{% url 'aura_admin:blog:series_create' %}" 
+                   class="flex items-center p-3 bg-violet-500 bg-opacity-20 border border-violet-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-route text-violet-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Start Learning Journey</div>
+                        <div class="text-gray-400 text-xs">Create Series | Plan a new knowledge path</div>
+                    </div>
+                </a>
+                
+                <a href="{% url 'aura_admin:blog:post_create' %}" 
+                   class="flex items-center p-3 bg-yellow-500 bg-opacity-20 border border-yellow-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Document Discovery</div>
+                        <div class="text-gray-400 text-xs">Create Datalog Entry | Capture what you learned</div>
+                    </div>
+                </a>
+                
+                <a href="{% url 'aura_admin:blog:category_create' %}" 
+                   class="flex items-center p-3 bg-orange-500 bg-opacity-20 border border-orange-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-tags text-orange-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Define Knowledge Domain</div>
+                        <div class="text-gray-400 text-xs">Create Category | Organize learning areas</div>
+                    </div>
+                </a>
+
+                <a href="{% url 'aura_admin:blog:tag_create' %}" 
+                   class="flex items-center p-3 bg-rose-500 bg-opacity-20 border border-rose-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-tags text-rose-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Define Tags & Knowledge Markers</div>
+                        <div class="text-gray-400 text-xs">Create Tag | Organize learning tags</div>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-gray-700">
+                <a href="{% url 'aura_admin:projects:dashboard' %}" 
+                   class="flex items-center justify-center p-2 bg-teal-500 bg-opacity-20 border border-teal-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-server text-teal-400 mr-2"></i>
+                    <span class="text-white font-medium text-sm">Connect to Systems</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Learning Actions -->
+        <div class="glass-card lavender-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-rocket mr-2 text-purple-400"></i>
+                    Quick Actions | Manage
+                </h3>
+            </div>
+            
+            <div class="space-y-3">
+                <a href="{% url 'aura_admin:blog:series_list' %}" 
+                   class="flex items-center p-3 bg-violet-500 bg-opacity-20 border border-violet-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-route text-violet-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Manage Learning Journeys</div>
+                        <div class="text-gray-400 text-xs">Manage Series | See all active learning paths</div>
+                    </div>
+                </a>
+                
+                <a href="{% url 'aura_admin:blog:post_list' %}" 
+                   class="flex items-center p-3 bg-yellow-500 bg-opacity-20 border border-yellow-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Manage Discoveries</div>
+                        <div class="text-gray-400 text-xs">Manage DataLogs | See all documented discoveries</div>
+                    </div>
+                </a>
+                
+                <a href="{% url 'aura_admin:blog:category_list' %}" 
+                   class="flex items-center p-3 bg-orange-500 bg-opacity-20 border border-orange-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-tags text-orange-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Manage Knowledge Domains</div>
+                        <div class="text-gray-400 text-xs">Manage Categories | Organize learning areas</div>
+                    </div>
+                </a>
+
+                <a href="{% url 'aura_admin:blog:tag_list' %}" 
+                   class="flex items-center p-3 bg-rose-500 bg-opacity-20 border border-rose-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-tags text-rose-400 mr-3"></i>
+                    <div>
+                        <div class="text-white font-medium text-sm">Manage Tags & Knowledge Markers</div>
+                        <div class="text-gray-400 text-xs">Manage Tags | Organize learning tags</div>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-gray-700">
+                <a href="{% url 'aura_admin:projects:dashboard' %}" 
+                   class="flex items-center justify-center p-2 bg-teal-500 bg-opacity-20 border border-teal-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
+                    <i class="fas fa-server text-teal-400 mr-2"></i>
+                    <span class="text-white font-medium text-sm">Connect to Systems</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Learning Progress Tracking -->
+        <div class="glass-card lavender-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-chart-line mr-2 text-green-400"></i>
+                    Learning Progress
+                </h3>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400 text-sm">Overall Knowledge Progress</span>
+                    <span class="text-green-400 font-medium">{{ avg_journey_completion|floatformat:1|default:0 }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ avg_journey_completion|default:0 }}%"></div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Completed Journeys</span>
+                        <span class="text-lavender-400 font-medium">{{ completed_journeys|default:0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">In Progress</span>
+                        <span class="text-blue-400 font-medium">{{ active_journeys|default:0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Learning Velocity</span>
+                        <span class="text-cyan-400 font-medium">{{ discoveries_this_month|default:0 }} discoveries/month</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Knowledge Depth</span>
+                        <span class="text-purple-400 font-medium">{{ avg_reading_time|floatformat:1|default:0 }}min avg</span>
+                    </div>
+                </div>
+            </div>
+            
+            
+                <div class="action-buttons">
+                    <a href="{% url 'aura_admin:blog:series_list' %}?status=incomplete" class="btn btn-xs btn-outline">
+                        <i class="fas fa-tasks mr-1"></i>
+                        Complete Journeys
+                    </a>
+                    <a href="{% url 'aura_admin:blog:post_list' %}?sort=-created_at" class="btn btn-xs btn-outline">
+                        <i class="fas fa-chart-line mr-1"></i>
+                        Track Progress
+                    </a>
+                </div>
+            
+            
+        </div>
+        </div>
+
     <!-- Learning Management Interface Grid -->
     <div class="management-grid">
         
         <!-- Active Learning Journeys -->
-        <div class="glass-card lavender-accent p-6">
+        <div class="glass-card violet-accent p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-route mr-2 text-lavender-400"></i>
-                    Active Learning Journeys
+                    <i class="fas fa-route mr-2 text-violet-400"></i>
+                    Series | Journeys
                 </h3>
                 <a href="{% url 'aura_admin:blog:series_list' %}" class="btn btn-sm btn-lavender">
                     <i class="fas fa-external-link-alt mr-1"></i>
@@ -302,7 +533,7 @@
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-white flex items-center">
                     <i class="fas fa-lightbulb mr-2 text-yellow-400"></i>
-                    Knowledge Discovery Hub
+                    Datalogs | Discoveries
                 </h3>
                 <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-sm btn-yellow">
                     <i class="fas fa-external-link-alt mr-1"></i>
@@ -356,114 +587,16 @@
                 </a>
             </div>
         </div>
+        
 
-        <!-- Learning Progress Tracking -->
-        <div class="glass-card lavender-accent p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-chart-line mr-2 text-green-400"></i>
-                    Learning Progress
-                </h3>
-            </div>
-            
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <span class="text-gray-400 text-sm">Overall Knowledge Progress</span>
-                    <span class="text-green-400 font-medium">{{ avg_journey_completion|floatformat:1|default:0 }}%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ avg_journey_completion|default:0 }}%"></div>
-                </div>
-                
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-400">Completed Journeys</span>
-                        <span class="text-lavender-400 font-medium">{{ completed_journeys|default:0 }}</span>
-                    </div>
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-400">In Progress</span>
-                        <span class="text-blue-400 font-medium">{{ active_journeys|default:0 }}</span>
-                    </div>
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-400">Learning Velocity</span>
-                        <span class="text-cyan-400 font-medium">{{ discoveries_this_month|default:0 }} discoveries/month</span>
-                    </div>
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-400">Knowledge Depth</span>
-                        <span class="text-purple-400 font-medium">{{ avg_reading_time|floatformat:1|default:0 }}min avg</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="action-buttons">
-                <a href="{% url 'aura_admin:blog:series_list' %}?status=incomplete" class="btn btn-xs btn-outline">
-                    <i class="fas fa-tasks mr-1"></i>
-                    Complete Journeys
-                </a>
-                <a href="{% url 'aura_admin:blog:post_list' %}?sort=-created_at" class="btn btn-xs btn-outline">
-                    <i class="fas fa-chart-line mr-1"></i>
-                    Track Progress
-                </a>
-            </div>
-        </div>
-
-        <!-- System-Knowledge Integration -->
-        <div class="glass-card lavender-accent p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-link mr-2 text-teal-400"></i>
-                    System-Knowledge Integration
-                </h3>
-                <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-sm btn-teal">
-                    <i class="fas fa-external-link-alt mr-1"></i>
-                    Systems
-                </a>
-            </div>
-            
-            <div class="space-y-3">
-                {% for connection in system_knowledge_connections|slice:":4" %}
-                    <div class="learning-item">
-                        <div class="learning-header">
-                            <div>
-                                <h4 class="learning-title">{{ connection.system.title|truncatechars:25 }}</h4>
-                                <div class="learning-meta">
-                                    {{ connection.post_count }} discoveries • {{ connection.connection_type }}
-                                </div>
-                            </div>
-                            <span class="system-connection">
-                                <i class="fas fa-server"></i>
-                                SYS-{{ connection.system.id|stringformat:"03d" }}
-                            </span>
-                        </div>
-                        {% if connection.recent_discovery %}
-                            <div class="mt-2 text-xs text-gray-400">
-                                Latest: {{ connection.recent_discovery.title|truncatechars:35 }}
-                            </div>
-                        {% endif %}
-                    </div>
-                {% empty %}
-                    <p class="text-gray-500 text-sm">No system connections yet</p>
-                {% endfor %}
-            </div>
-            
-            <div class="action-buttons">
-                <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-xs btn-outline">
-                    <i class="fas fa-plus mr-1"></i>
-                    Connect System
-                </a>
-                <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-xs btn-outline">
-                    <i class="fas fa-server mr-1"></i>
-                    View Systems
-                </a>
-            </div>
-        </div>
+        
 
         <!-- Knowledge Domains -->
         <div class="glass-card lavender-accent p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-tags mr-2 text-orange-400"></i>
-                    Knowledge Domains
+                    <i class="fas fa-icons mr-2 text-orange-400"></i>
+                    Categories
                 </h3>
                 <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-sm btn-orange">
                     <i class="fas fa-external-link-alt mr-1"></i>
@@ -472,6 +605,11 @@
             </div>
             
             <div class="space-y-3">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Total Categories</span>
+                    <span class="text-coral-400 font-medium">{{ total_categories|default:0 }}</span>
+                </div>
+                <hr>
                 {% for domain in knowledge_domains_stats|slice:":5" %}
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
@@ -484,7 +622,7 @@
                             <span class="text-orange-400 font-medium text-sm">{{ domain.post_count }}</span>
                             {% if domain.journey_count > 0 %}
                                 <span class="bg-orange-500 bg-opacity-20 text-orange-400 px-2 py-1 rounded text-xs">
-                                    {{ domain.journey_count }} journeys
+                                    {{ domain.journey_count }} journey{{ domain.journey_count|pluralize }}
                                 </span>
                             {% endif %}
                         </div>
@@ -510,8 +648,8 @@
         <div class="glass-card coral-accent p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-tags mr-2 text-coral-400"></i>
-                    Tags & Knowledge Markers
+                    <i class="fas fa-tags mr-2 text-rose-400"></i>
+                    Tags
                 </h3>
                 <a href="{% url 'aura_admin:blog:tag_list' %}" class="btn btn-sm btn-coral">
                     <i class="fas fa-external-link-alt mr-1"></i>
@@ -570,49 +708,53 @@
             </div>
         </div>
 
-        <!-- Quick Learning Actions -->
+        <!-- System-Knowledge Integration -->
         <div class="glass-card lavender-accent p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-rocket mr-2 text-purple-400"></i>
-                    Quick Learning Actions
+                    <i class="fas fa-link mr-2 text-teal-400"></i>
+                    System-Knowledge Integration
                 </h3>
+                <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-sm btn-teal">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    Systems
+                </a>
             </div>
             
             <div class="space-y-3">
-                <a href="{% url 'aura_admin:blog:series_create' %}" 
-                   class="flex items-center p-3 bg-lavender-500 bg-opacity-20 border border-lavender-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
-                    <i class="fas fa-route text-lavender-400 mr-3"></i>
-                    <div>
-                        <div class="text-white font-medium text-sm">Start Learning Journey</div>
-                        <div class="text-gray-400 text-xs">Plan a new knowledge path</div>
+                {% for connection in system_knowledge_connections|slice:":4" %}
+                    <div class="learning-item">
+                        <div class="learning-header">
+                            <div>
+                                <h4 class="learning-title">{{ connection.system.title|truncatechars:25 }}</h4>
+                                <div class="learning-meta">
+                                    {{ connection.post_count }} discoveries • {{ connection.connection_type }}
+                                </div>
+                            </div>
+                            <span class="system-connection">
+                                <i class="fas fa-server"></i>
+                                SYS-{{ connection.system.id|stringformat:"03d" }}
+                            </span>
+                        </div>
+                        {% if connection.recent_discovery %}
+                            <div class="mt-2 text-xs text-gray-400">
+                                Latest: {{ connection.recent_discovery.title|truncatechars:35 }}
+                            </div>
+                        {% endif %}
                     </div>
-                </a>
-                
-                <a href="{% url 'aura_admin:blog:post_create' %}" 
-                   class="flex items-center p-3 bg-yellow-500 bg-opacity-20 border border-yellow-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
-                    <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
-                    <div>
-                        <div class="text-white font-medium text-sm">Document Discovery</div>
-                        <div class="text-gray-400 text-xs">Capture what you learned</div>
-                    </div>
-                </a>
-                
-                <a href="{% url 'aura_admin:blog:category_create' %}" 
-                   class="flex items-center p-3 bg-orange-500 bg-opacity-20 border border-orange-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
-                    <i class="fas fa-tags text-orange-400 mr-3"></i>
-                    <div>
-                        <div class="text-white font-medium text-sm">Define Knowledge Domain</div>
-                        <div class="text-gray-400 text-xs">Organize learning areas</div>
-                    </div>
-                </a>
+                {% empty %}
+                    <p class="text-gray-500 text-sm">No system connections yet</p>
+                {% endfor %}
             </div>
             
-            <div class="mt-4 pt-4 border-t border-gray-700">
-                <a href="{% url 'aura_admin:projects:dashboard' %}" 
-                   class="flex items-center justify-center p-2 bg-teal-500 bg-opacity-20 border border-teal-500 border-opacity-30 rounded-lg hover:bg-opacity-30 transition-all duration-200">
-                    <i class="fas fa-server text-teal-400 mr-2"></i>
-                    <span class="text-white font-medium text-sm">Connect to Systems</span>
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Connect System
+                </a>
+                <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-server mr-1"></i>
+                    View Systems
                 </a>
             </div>
         </div>
