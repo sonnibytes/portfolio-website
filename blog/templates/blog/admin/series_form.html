@@ -529,81 +529,91 @@
 {{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Form elements
-    const titleInput = document.querySelector('#id_title');
-    const descriptionInput = document.querySelector('#id_description');
-    const difficultySelect = document.querySelector('#id_difficulty_level');
-    const isCompleteCheckbox = document.querySelector('#id_is_complete');
-    const isFeaturedCheckbox = document.querySelector('#id_is_featured');
+    // Auto-generate slug from title
+    const titleField = document.getElementById('{{ form.title.id_for_label }}');
+    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
+    const descriptionField = document.getElementById('{{ form.description.id_for_label }}');
+    const difficultyField = document.getElementById('{{ form.difficulty_level.id_for_label }}');
+    const isCompleteField = document.getElementById('{{ form.is_complete.id_for_label }}');
+    const isFeaturedField = document.getElementById('{{ form.is_featured.id_for_label }}');
     
     // Preview elements
     const previewTitle = document.getElementById('preview-title');
     const previewDescription = document.getElementById('preview-description');
     const previewDifficulty = document.getElementById('preview-difficulty');
     const previewStatus = document.getElementById('preview-status');
-    
-    // Update preview in real-time
-    function updatePreview() {
-        // Update title
-        const title = titleInput.value.trim() || 'Your Learning Journey Title';
-        previewTitle.textContent = title;
-        
-        // Update description
-        const description = descriptionInput.value.trim() || 'Your journey description will appear here...';
-        previewDescription.textContent = description;
-        
-        // Update difficulty
-        const difficulty = difficultySelect.value || 'intermediate';
-        const difficultyText = difficultySelect.options[difficultySelect.selectedIndex].text;
-        previewDifficulty.textContent = difficultyText;
-        previewDifficulty.className = `preview-badge difficulty-${difficulty}`;
-        
-        // Update status
-        let status = 'Planning';
-        if (isCompleteCheckbox.checked) {
-            status = 'Completed';
-        } else if (title && description) {
-            status = 'Learning';
-        }
-        previewStatus.textContent = status;
-    }
-    
-    // Add event listeners
-    if (titleInput) titleInput.addEventListener('input', updatePreview);
-    if (descriptionInput) descriptionInput.addEventListener('input', updatePreview);
-    if (difficultySelect) difficultySelect.addEventListener('change', updatePreview);
-    if (isCompleteCheckbox) isCompleteCheckbox.addEventListener('change', updatePreview);
-    
+    const previewFeatured = document.getElementById('preview-featured');
+    const previewCompletion = document.getElementById('preview-completion');
+    const difficultyPreview = document.getElementById('difficulty-preview');
+
     // Auto-generate slug from title
-    if (titleInput) {
-        titleInput.addEventListener('input', function() {
-            const slugField = document.querySelector('#id_slug');
-            if (slugField && !slugField.value) {
+    if (titleField && slugField && !slugField.dataset.modified) {
+        titleField.addEventListener('input', function() {
+            if (!slugField.dataset.modified) {
                 const slug = this.value
                     .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-|-$/g, '');
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
                 slugField.value = slug;
+            }
+            
+            // Update preview
+            previewTitle.textContent = this.value || 'Your Learning Journey Title';
+        });
+        
+        slugField.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+        });
+    }
+
+    // Update description preview
+    if (descriptionField) {
+        descriptionField.addEventListener('input', function() {
+            previewDescription.textContent = this.value || 'Your Journey description will appear here...';
+        });
+    }
+
+    // Update difficulty preview
+    if (difficultyField) {
+        difficultyField.addEventListener('change', function() {
+            const difficulty = this.value || 'intermediate';
+            const difficultyText = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+            
+            // Update both previews
+            previewDifficulty.textContent = difficultyText;
+            previewDifficulty.className = `difficulty-badge ${difficulty}`;
+            
+            difficultyPreview.textContent = difficultyText;
+            difficultyPreview.className = `difficulty-badge ${difficulty}`;
+        });
+    }
+
+    // Update status previews
+    if (isCompleteField) {
+        isCompleteField.addEventListener('change', function() {
+            if (this.checked) {
+                previewStatus.textContent = 'Completed';
+                previewStatus.className = 'status-badge bg-green-400 bg-opacity-20 text-green-400';
+                previewCompletion.textContent = '100%';
+            } else {
+                previewStatus.textContent = 'In Progress';
+                previewStatus.className = 'status-badge bg-yellow-400 bg-opacity-20 text-yellow-400';
+                previewCompletion.textContent = '0%';
             }
         });
     }
-    
-    // Initial preview update
-    updatePreview();
-    
-    // Enhanced checkbox styling
-    const checkboxGroups = document.querySelectorAll('.checkbox-group');
-    checkboxGroups.forEach(group => {
-        group.addEventListener('click', function(e) {
-            if (e.target.type !== 'checkbox') {
-                const checkbox = this.querySelector('input[type="checkbox"]');
-                if (checkbox) {
-                    checkbox.checked = !checkbox.checked;
-                    updatePreview();
-                }
+
+    if (isFeaturedField) {
+        isFeaturedField.addEventListener('change', function() {
+            if (this.checked) {
+                previewFeatured.style.display = 'inline-flex';
+            } else {
+                previewFeatured.style.display = 'none';
             }
         });
-    });
+    }
 });
 </script>
 {% endblock %}
