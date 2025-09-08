@@ -819,6 +819,9 @@ class EnhancedPostCreateView(StatusAdminCreateView):
         return context
 
     def form_valid(self, form):
+        # Auto assign author
+        form.instance.author = self.request.user
+
         # Handle journey assignment during post creation
         journey_id = self.request.POST.get('learning_journey')
         if journey_id:

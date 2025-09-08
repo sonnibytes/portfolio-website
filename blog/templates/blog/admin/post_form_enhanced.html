@@ -5,7 +5,7 @@
 
 {% block admin_title %}{{ title }} - AURA Admin{% endblock %}
 
-{% block admin_breadcrumb %}DataLogs › {% if object %}Edit Discovery{% else %}Document Discovery{% endif %}{% endblock %}
+{% block admin_breadcrumb %}DataLogs › {% if object %}Edit Discovery{% else %}Create Discovery{% endif %}{% endblock %}
 
 {% block admin_css %}
 {{ block.super }}
@@ -70,7 +70,7 @@
     gap: 0.5rem;
 }
 
-.form-input, .form-textarea, .form-select {
+.form-input, .form-textarea, .form-select, .markdownx-editor{
     padding: 0.75rem;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -80,14 +80,14 @@
     transition: all 0.3s ease;
 }
 
-.form-input:focus, .form-textarea:focus, .form-select:focus {
+.form-input:focus, .form-textarea:focus, .form-select:focus, .markdownx-editor:focus {
     outline: none;
     border-color: #b39ddb;
     box-shadow: 0 0 0 3px rgba(179, 157, 219, 0.1);
 }
 
 .form-textarea {
-    min-height: 120px;
+    min-height: 100px;
     resize: vertical;
 }
 
@@ -100,7 +100,7 @@
     color: white;
 }
 
-.suggestion-grid {
+.suggestions-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 0.75rem;
@@ -194,6 +194,8 @@
     cursor: pointer;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     transition: background 0.2s ease;
+    color: #d1d5db;
+    font-size: 0.875rem;
 }
 
 .tag-suggestion:hover {
@@ -228,6 +230,61 @@
     color: #b39ddb;
     cursor: pointer;
     font-size: 0.875rem;
+}
+
+.system-suggestions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.system-suggestion {
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.2);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #26c6da;
+}
+
+.system-suggestion:hover {
+    background: rgba(38, 198, 218, 0.2);
+    transform: translateY(-1px);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(179, 157, 219, 0.05);
+    border: 1px solid rgba(179, 157, 219, 0.1);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.checkbox-group:hover {
+    background: rgba(179, 157, 219, 0.1);
+    border-color: rgba(179, 157, 219, 0.2);
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: #b39ddb;
+}
+
+.checkbox-label {
+    color: #e8eaf6;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0;
+    cursor: pointer;
 }
 
 .form-actions {
@@ -296,6 +353,16 @@
     color: #b39ddb;
 }
 
+.btn-success {
+    background: #22c55e;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #16a34a;
+    transform: translateY(-1px);
+}
+
 .help-text {
     font-size: 0.75rem;
     color: #6b7280;
@@ -314,13 +381,24 @@
     margin-top: 0.25rem;
 }
 
+.character-counter {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: right;
+    margin-top: 0.25rem;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .form-grid {
         grid-template-columns: 1fr;
     }
     
-    .suggestion-grid {
+    .suggestions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .system-suggestions {
         grid-template-columns: 1fr;
     }
     
@@ -334,101 +412,71 @@
     .form-actions-right {
         justify-content: center;
     }
-    
-    .quick-create-form {
-        grid-template-columns: 1fr;
-    }
 }
 </style>
 {% endblock %}
 
 {% block admin_content %}
 <div class="learning-form-container">
-    
-    <!-- Header -->
-    <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-white mb-2 flex items-center justify-center">
-            <i class="fas fa-lightbulb text-lavender-400 mr-3"></i>
-            {{ title }}
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white mb-2">
+            {% if object %}Edit Learning Discovery{% else %}Document New Discovery{% endif %}
         </h1>
-        <p class="text-gray-400">{{ subtitle }}</p>
+        <p class="text-gray-400">
+            {% if object %}Update this learning discovery and its connections{% else %}Capture what you learned and connect it to your learning journey{% endif %}
+        </p>
     </div>
 
-    <form method="post" enctype="multipart/form-data" id="discovery-form">
+    <form method="post" enctype="multipart/form-data" id="post-form">
         {% csrf_token %}
         
-        <!-- Learning Journey & Context Section -->
+        <!-- Learning Journey Context Section -->
         <div class="form-section">
             <div class="form-section-header">
-                <i class="fas fa-route text-lavender-400"></i>
+                <i class="fas fa-map text-blue-400"></i>
                 <div>
-                    <h3 class="form-section-title">Learning Journey & Context</h3>
+                    <h3 class="form-section-title">Learning Journey Context</h3>
                     <p class="form-section-subtitle">Connect this discovery to your learning path</p>
                 </div>
             </div>
             
-            <div class="form-grid">
                 <div class="form-field">
                     <label class="form-label">
                         <i class="fas fa-route"></i>
-                        Learning Journey
+                        Learning Journey (Series)
                     </label>
-                    <select name="learning_journey" class="form-select" id="journey-select">
-                        <option value="">Choose a learning journey...</option>
+                    <select name="series" id="id_series" class="form-select">
+                        <option value="">Select a learning journey...</option>
                         {% for journey in recent_journeys %}
-                            <option value="{{ journey.id }}" data-posts="{{ journey.post_count }}" data-difficulty="{{ journey.difficulty_level }}">
-                                {{ journey.title }} ({{ journey.post_count }} discoveries)
-                            </option>
+                            <option value="{{ journey.id }}">{{ journey.title }}</option>
                         {% endfor %}
                     </select>
-                    <div class="help-text">
-                        Which learning path does this discovery belong to?
-                    </div>
+                    <div class="help-text">Which learning journey does this discovery belong to?</div>
                 </div>
                 
-                <div class="form-field">
-                    <label class="form-label">
-                        <i class="fas fa-tags"></i>
-                        Knowledge Domain
-                    </label>
-                    {% render_field form.category class="form-select" %}
-                    {% if form.category.help_text %}
-                        <div class="help-text">{{ form.category.help_text }}</div>
-                    {% endif %}
-                    {% if form.category.errors %}
-                        <ul class="error-list">
-                            {% for error in form.category.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Journey Suggestions -->
             {% if recent_journeys %}
-                <div class="suggestion-grid">
-                    {% for journey in recent_journeys|slice:":4" %}
+            <div>
+                <label class="form-label">Quick Select Recent Journeys</label>
+                <div class="suggestions-grid">
+                    {% for journey in recent_journeys %}
                         <div class="suggestion-item" data-journey-id="{{ journey.id }}">
-                            <div class="suggestion-title">{{ journey.title|truncatechars:25 }}</div>
+                        <div class="suggestion-title">{{ journey.title }}</div>
                             <div class="suggestion-meta">
-                                {{ journey.post_count }} discoveries • {{ journey.difficulty_level }}
-                                {% if not journey.is_complete %}
-                                    <span style="color: #22c55e;">• Active</span>
-                                {% endif %}
+                            {{ journey.posts.count }} discoveries • 
+                            {% if journey.is_complete %}Completed{% else %}Active{% endif %}
                             </div>
                         </div>
                     {% endfor %}
                 </div>
+            </div>
             {% endif %}
             
-            <!-- Quick Journey Creation -->
             <div class="quick-create-section">
-                <button type="button" class="quick-create-toggle" onclick="toggleQuickCreate('journey')">
+                <button type="button" class="quick-create-toggle">
                     <i class="fas fa-plus"></i>
-                    Create new learning journey
+                    <span>Quick Create Journey</span>
                 </button>
-                <div class="quick-create-form" id="quick-journey-form">
+                <div class="quick-create-form">
                     <input type="text" placeholder="New journey title..." class="form-input" id="new-journey-title">
                     <button type="button" class="btn btn-outline" onclick="createQuickJourney()">Create</button>
                 </div>
@@ -461,6 +509,30 @@
                     {% endif %}
                 </div>
                 
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-link"></i>
+                        URL Slug
+                    </label>
+                    {% render_field form.slug class="form-input" placeholder="auto-generated-from-title" %}
+                    <div class="help-text">URL-friendly version (auto-generated from title)</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-folder"></i>
+                        Knowledge Domain
+                    </label>
+                    {% render_field form.category class="form-select" %}
+                    {% if form.category.errors %}
+                        <ul class="error-list">
+                            {% for error in form.category.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
                 <div class="form-field full-width">
                     <label class="form-label">
                         <i class="fas fa-align-left"></i>
@@ -478,6 +550,118 @@
                     {% render_field form.content class="form-textarea large" placeholder="Document your complete learning discovery..." %}
                     <div class="help-text">Use Markdown for formatting. Include code examples, insights, and detailed explanations.</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Featured Code Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-code text-green-400"></i>
+                <div>
+                    <h3 class="form-section-title">Featured Code Snippet</h3>
+                    <p class="form-section-subtitle">Highlight important code from this discovery</p>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-field full-width">
+                    <label class="form-label">
+                        <i class="fas fa-terminal"></i>
+                        Code Snippet
+                    </label>
+                    {% render_field form.featured_code class="form-textarea large" placeholder="Paste your code snippet here..." %}
+                    {% if form.featured_code.errors %}
+                        <ul class="error-list">
+                            {% for error in form.featured_code.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <div class="help-text">Featured code that will be highlighted on the discovery page</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-file-code"></i>
+                        Programming Language
+                    </label>
+                    {% render_field form.featured_code_format class="form-select" %}
+                    {% if form.featured_code_format.errors %}
+                        <ul class="error-list">
+                            {% for error in form.featured_code_format.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <div class="help-text">Language for syntax highlighting</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-list-ol"></i>
+                        Show Table of Contents
+                    </label>
+                    <div class="checkbox-group">
+                        {% render_field form.show_toc %}
+                        <label for="{{ form.show_toc.id_for_label }}" class="checkbox-label">
+                            Display table of contents on discovery page
+                        </label>
+                    </div>
+                    {% if form.show_toc.errors %}
+                        <ul class="error-list">
+                            {% for error in form.show_toc.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-star"></i>
+                        Featured Post
+                    </label>
+                    <div class="checkbox-group">
+                        {% render_field form.featured %}
+                        <label for="{{ form.featured.id_for_label }}" class="checkbox-label">
+                            Feature this discovery prominently on the blog
+                        </label>
+                    </div>
+                    {% if form.featured.errors %}
+                        <ul class="error-list">
+                            {% for error in form.featured.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Tags Section -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <i class="fas fa-hashtag text-purple-400"></i>
+                <div>
+                    <h3 class="form-section-title">Knowledge Tags</h3>
+                    <p class="form-section-subtitle">Tag this discovery for better organization and searchability</p>
+                </div>
+            </div>
+            
+            <div class="form-field full-width">
+                <label class="form-label">
+                    <i class="fas fa-tags"></i>
+                    Add Knowledge Tags
+                </label>
+                <div class="tag-input-container">
+                    <input type="text" class="form-input" id="tag-input" placeholder="Type tags and press Enter or comma...">
+                    <div class="tag-suggestions" id="tag-suggestions"></div>
+                </div>
+                <div class="selected-tags" id="selected-tags"></div>
+                <div class="help-text">Press Enter or comma to add tags. Use specific, searchable terms.</div>
+                
+                <!-- Hidden field for form submission -->
+                {% render_field form.tags style="display: none;" %}
             </div>
         </div>
 
@@ -509,125 +693,50 @@
                     {% render_field form.status class="form-select" %}
                 </div>
                 
-                <div class="form-field full-width">
-                    <label class="form-label">
-                        <i class="fas fa-hashtag"></i>
-                        Knowledge Tags
-                    </label>
-                    <div class="tag-input-container">
-                        <input type="text" class="form-input" id="tag-input" placeholder="Add tags to organize your knowledge...">
-                        <div class="tag-suggestions" id="tag-suggestions"></div>
-                    </div>
-                    <div class="selected-tags" id="selected-tags"></div>
-                    <div class="help-text">Press Enter or comma to add tags. Use existing tags when possible.</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- System Connection Section -->
-        <div class="form-section">
-            <div class="form-section-header">
-                <i class="fas fa-link text-emerald-400"></i>
-                <div>
-                    <h3 class="form-section-title">System Connections</h3>
-                    <p class="form-section-subtitle">Connect theory to practice</p>
-                </div>
-            </div>
-            
-            <div class="form-grid">
                 <div class="form-field">
                     <label class="form-label">
-                        <i class="fas fa-server"></i>
-                        Related System
+                        <i class="fas fa-image"></i>
+                        Thumbnail Image
                     </label>
-                    <select name="related_system" class="form-select" id="system-select">
-                        <option value="">No system connection</option>
-                        {% for system in active_systems %}
-                            <option value="{{ system.id }}" data-status="{{ system.status }}">
-                                {{ system.title }} ({{ system.get_status_display }})
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <div class="help-text">Which system did you learn this from or apply this to?</div>
+                    {% render_field form.thumbnail class="form-input" %}
+                    <div class="help-text">Optional thumbnail for this discovery</div>
                 </div>
                 
                 <div class="form-field">
                     <label class="form-label">
-                        <i class="fas fa-sitemap"></i>
-                        Connection Type
+                        <i class="fas fa-calendar"></i>
+                        Published Date
                     </label>
-                    <select name="connection_type" class="form-select">
-                        <option value="">Select connection type...</option>
-                        <option value="development">Development Learning</option>
-                        <option value="documentation">Documentation</option>
-                        <option value="analysis">Analysis & Research</option>
-                        <option value="troubleshooting">Problem Solving</option>
-                        <option value="implementation">Implementation</option>
-                    </select>
-                    <div class="help-text">How does this discovery relate to the system?</div>
+                    {% render_field form.published_date class="form-input" %}
+                    <div class="help-text">Leave blank to auto-set when publishing</div>
                 </div>
-            </div>
-            
-            <!-- System Suggestions -->
-            {% if active_systems %}
-                <div class="suggestion-grid">
-                    {% for system in active_systems|slice:":4" %}
-                        <div class="suggestion-item" data-system-id="{{ system.id }}">
-                            <div class="suggestion-title">{{ system.title|truncatechars:20 }}</div>
-                            <div class="suggestion-meta">
-                                {{ system.get_status_display }}
-                                {% if system.technologies.all.count %}
-                                    • {{ system.technologies.all.count }} tech{{ system.technologies.all.count|pluralize }}
-                                {% endif %}
                             </div>
                         </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
 
-        <!-- Featured Code Section (if applicable) -->
+        <!-- System Connections Section -->
+        {% if active_systems %}
         <div class="form-section">
             <div class="form-section-header">
-                <i class="fas fa-code text-cyan-400"></i>
+                <i class="fas fa-project-diagram text-cyan-400"></i>
                 <div>
-                    <h3 class="form-section-title">Featured Code (Optional)</h3>
-                    <p class="form-section-subtitle">Highlight key code from your discovery</p>
+                    <h3 class="form-section-title">System Connections</h3>
+                    <p class="form-section-subtitle">Connect this learning to your active systems and projects</p>
                 </div>
             </div>
             
-            <div class="form-grid">
-                <div class="form-field">
-                    <label class="form-label">
-                        <i class="fas fa-code"></i>
-                        Programming Language
-                    </label>
-                    {% render_field form.featured_code_format class="form-select" %}
-                </div>
-                
-                <div class="form-field">
-                    <label class="form-label">
-                        <i class="fas fa-star"></i>
-                        Featured Content
-                    </label>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; color: #9ca3af; font-size: 0.875rem;">
-                            {% render_field form.featured style="margin: 0;" %}
-                            Mark as featured discovery
-                        </label>
+            <div>
+                <label class="form-label">Click systems related to this discovery</label>
+                <div class="system-suggestions">
+                    {% for system in active_systems %}
+                    <div class="system-suggestion" data-system-id="{{ system.id }}">
+                        {{ system.title }}
                     </div>
+                    {% endfor %}
                 </div>
-                
-                <div class="form-field full-width">
-                    <label class="form-label">
-                        <i class="fas fa-terminal"></i>
-                        Code Snippet
-                    </label>
-                    {% render_field form.featured_code class="form-textarea" placeholder="Paste your featured code here..." %}
-                    <div class="help-text">Code that best demonstrates what you learned</div>
-                </div>
+                <div class="help-text">These will be referenced in your discovery content for cross-linking</div>
             </div>
         </div>
+        {% endif %}
 
         <!-- Form Actions -->
         <div class="form-actions">
@@ -638,13 +747,17 @@
                 </a>
             </div>
             <div class="form-actions-right">
-                <button type="submit" name="save_draft" class="btn btn-outline">
+                <button type="button" class="btn btn-outline" id="save-draft-btn">
                     <i class="fas fa-save"></i>
-                    Save as Draft
+                    Save Draft
                 </button>
-                <button type="submit" name="save_publish" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-{% if object %}save{% else %}plus{% endif %}"></i>
+                    {% if object %}Update Discovery{% else %}Create Discovery{% endif %}
+                </button>
+                <button type="submit" name="save_publish" class="btn btn-success">
                     <i class="fas fa-rocket"></i>
-                    {% if object %}Update Discovery{% else %}Publish Discovery{% endif %}
+                    {% if object %}Update & Publish{% else %}Create & Publish{% endif %}
                 </button>
             </div>
         </div>
@@ -657,139 +770,389 @@
 {{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Journey suggestion selection
-    const journeySelect = document.getElementById('journey-select');
-    const journeySuggestions = document.querySelectorAll('[data-journey-id]');
+    // Form elements using Django template IDs
+    const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+    const excerptInput = document.getElementById('{{ form.excerpt.id_for_label }}');
+    const contentInput = document.getElementById('{{ form.content.id_for_label }}');
+    const categorySelect = document.getElementById('{{ form.category.id_for_label }}');
     
+    // Use our manual series field ID
+    const seriesSelect = document.getElementById('id_series');
+    const statusSelect = document.getElementById('{{ form.status.id_for_label }}');
+    
+    // Debug logging
+    console.log('Form elements found:');
+    console.log('- titleInput:', titleInput);
+    console.log('- seriesSelect:', seriesSelect);
+    console.log('- journeySuggestions count:', document.querySelectorAll('.suggestion-item').length);
+    
+    // Auto-generate slug from title (robust logic)
+    if (titleInput && slugInput) {
+        titleInput.addEventListener('input', function() {
+            // Only auto-generate if slug hasn't been manually modified
+            if (!slugInput.dataset.modified) {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars but keep spaces and hyphens
+                    .replace(/\s+/g, '-')          // Replace spaces with hyphens
+                    .replace(/-+/g, '-')           // Replace multiple hyphens with single
+                    .replace(/^-+|-+$/g, '');      // Remove leading/trailing hyphens
+                slugInput.value = slug;
+            }
+        });
+        
+        // Mark slug as manually modified when user types in it
+        slugInput.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+        });
+    }
+    
+    // Learning Journey (Series) suggestions functionality
+    const journeySuggestions = document.querySelectorAll('.suggestion-item');
     journeySuggestions.forEach(suggestion => {
         suggestion.addEventListener('click', function() {
             const journeyId = this.dataset.journeyId;
-            journeySelect.value = journeyId;
+            console.log('Journey clicked:', journeyId, 'Series select:', seriesSelect); // Debug log
+            
+            if (seriesSelect && journeyId) {
+                seriesSelect.value = journeyId;
             
             // Update visual selection
             journeySuggestions.forEach(s => s.classList.remove('selected'));
             this.classList.add('selected');
+                
+                // Visual feedback
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+                
+                console.log('Journey selected:', journeyId, 'Select value:', seriesSelect.value); // Debug log
+            } else {
+                console.log('Missing elements - seriesSelect:', seriesSelect, 'journeyId:', journeyId);
+            }
         });
     });
     
-    // System suggestion selection
-    const systemSelect = document.getElementById('system-select');
-    const systemSuggestions = document.querySelectorAll('[data-system-id]');
+    // Quick Journey Creation
+    const quickCreateToggle = document.querySelector('.quick-create-toggle');
+    const quickCreateForm = document.querySelector('.quick-create-form');
     
-    systemSuggestions.forEach(suggestion => {
-        suggestion.addEventListener('click', function() {
-            const systemId = this.dataset.systemId;
-            systemSelect.value = systemId;
+    if (quickCreateToggle && quickCreateForm) {
+        quickCreateToggle.addEventListener('click', function() {
+            quickCreateForm.classList.toggle('active');
+            const icon = this.querySelector('i');
+            if (quickCreateForm.classList.contains('active')) {
+                icon.className = 'fas fa-chevron-up';
+                this.querySelector('span').textContent = 'Hide Quick Create';
+            } else {
+                icon.className = 'fas fa-plus';
+                this.querySelector('span').textContent = 'Quick Create Journey';
+            }
+    });
+    }
+    
+    // Quick Create Journey function (global for the button onclick)
+    window.createQuickJourney = function() {
+        const titleInput = document.getElementById('new-journey-title');
+        const title = titleInput?.value.trim();
+        
+        if (!title) {
+            alert('Please enter a journey title.');
+            titleInput?.focus();
+            return;
+        }
+        
+        // Here you would typically make an AJAX call to create the journey
+        // For now, we'll just add it to the select as a placeholder
+        if (seriesSelect) {
+            const option = document.createElement('option');
+            option.value = 'new-' + Date.now(); // Temporary ID
+            option.textContent = title;
+            option.selected = true;
+            seriesSelect.appendChild(option);
             
-            // Update visual selection
-            systemSuggestions.forEach(s => s.classList.remove('selected'));
-            this.classList.add('selected');
-        });
-    });
+            // Clear the input
+            titleInput.value = '';
+            
+            // Hide the quick create form
+            quickCreateForm.classList.remove('active');
+            quickCreateToggle.querySelector('i').className = 'fas fa-plus';
+            quickCreateToggle.querySelector('span').textContent = 'Quick Create Journey';
+            
+            alert('Journey "' + title + '" created! (This is a demo - implement AJAX for real functionality)');
+        }
+    };
     
-    // Tag input functionality
+    // Tag System with Auto-suggestions
     const tagInput = document.getElementById('tag-input');
     const tagSuggestions = document.getElementById('tag-suggestions');
     const selectedTags = document.getElementById('selected-tags');
-    let selectedTagsArray = [];
+    let currentTags = [];
     
-    // Existing tags for suggestions (you'd populate this from the backend)
-    const existingTags = [
-        'python', 'django', 'javascript', 'html', 'css', 'sql', 'git',
-        'debugging', 'api', 'database', 'frontend', 'backend', 'learning',
-        'tutorial', 'project', 'automation', 'data-analysis'
+    // Sample tag suggestions - you can populate this from your backend
+    const availableTags = [
+        'python', 'javascript', 'django', 'react', 'api-design', 'database',
+        'testing', 'deployment', 'performance', 'security', 'tutorial',
+        'deep-dive', 'quick-tip', 'troubleshooting', 'best-practices',
+        'architecture', 'design-patterns', 'debugging', 'optimization',
+        'machine-learning', 'data-science', 'frontend', 'backend',
+        'devops', 'cloud', 'docker', 'kubernetes', 'git', 'ci-cd'
     ];
     
+    if (tagInput) {
     tagInput.addEventListener('input', function() {
-        const value = this.value.toLowerCase();
-        if (value.length > 0) {
-            const matches = existingTags.filter(tag => 
-                tag.toLowerCase().includes(value) && !selectedTagsArray.includes(tag)
-            );
+            const query = this.value.toLowerCase().trim();
             
-            if (matches.length > 0) {
-                tagSuggestions.innerHTML = matches.map(tag => 
-                    `<div class="tag-suggestion" data-tag="${tag}">${tag}</div>`
-                ).join('');
-                tagSuggestions.style.display = 'block';
+            if (query.length > 0) {
+                const matches = availableTags.filter(tag => 
+                    tag.includes(query) && !currentTags.includes(tag)
+                ).slice(0, 8);
+                
+                showTagSuggestions(matches);
             } else {
-                tagSuggestions.style.display = 'none';
-            }
-        } else {
-            tagSuggestions.style.display = 'none';
+                hideTagSuggestions();
         }
     });
     
     tagInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
-            addTag(this.value.trim());
+                const tag = this.value.trim().toLowerCase().replace(/\s+/g, '-');
+                if (tag && !currentTags.includes(tag)) {
+                    addTag(tag);
             this.value = '';
-            tagSuggestions.style.display = 'none';
+                    hideTagSuggestions();
+                }
         }
     });
+    }
     
-    tagSuggestions.addEventListener('click', function(e) {
-        if (e.target.classList.contains('tag-suggestion')) {
-            addTag(e.target.dataset.tag);
+    function showTagSuggestions(suggestions) {
+        if (!tagSuggestions) return;
+        
+        tagSuggestions.innerHTML = '';
+        suggestions.forEach(tag => {
+            const suggestion = document.createElement('div');
+            suggestion.className = 'tag-suggestion';
+            suggestion.textContent = tag;
+            suggestion.addEventListener('click', () => {
+                addTag(tag);
             tagInput.value = '';
+                hideTagSuggestions();
+            });
+            tagSuggestions.appendChild(suggestion);
+        });
+        
+        tagSuggestions.style.display = suggestions.length > 0 ? 'block' : 'none';
+    }
+    
+    function hideTagSuggestions() {
+        if (tagSuggestions) {
             tagSuggestions.style.display = 'none';
         }
-    });
+    }
     
     function addTag(tag) {
-        if (tag && !selectedTagsArray.includes(tag)) {
-            selectedTagsArray.push(tag);
-            updateTagDisplay();
+        if (!currentTags.includes(tag)) {
+            currentTags.push(tag);
+            renderTags();
+            updateTagsField();
         }
     }
     
     function removeTag(tag) {
-        selectedTagsArray = selectedTagsArray.filter(t => t !== tag);
-        updateTagDisplay();
+        currentTags = currentTags.filter(t => t !== tag);
+        renderTags();
+        updateTagsField();
     }
     
-    function updateTagDisplay() {
-        selectedTags.innerHTML = selectedTagsArray.map(tag => 
-            `<div class="tag-chip">
+    function renderTags() {
+        if (!selectedTags) return;
+        
+        selectedTags.innerHTML = '';
+        currentTags.forEach(tag => {
+            const chip = document.createElement('span');
+            chip.className = 'tag-chip';
+            chip.innerHTML = `
                 ${tag}
                 <button type="button" class="tag-remove" onclick="removeTag('${tag}')">×</button>
-            </div>`
-        ).join('');
-        
-        // Update hidden form field (you'd add this to your form)
-        const hiddenTagsInput = document.getElementById('id_tags') || createHiddenTagsInput();
-        hiddenTagsInput.value = selectedTagsArray.join(',');
+            `;
+            selectedTags.appendChild(chip);
+        });
     }
     
-    function createHiddenTagsInput() {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'tags';
-        input.id = 'id_tags';
-        document.getElementById('discovery-form').appendChild(input);
-        return input;
+    function updateTagsField() {
+        // Update the actual form field
+        const tagsField = document.getElementById('{{ form.tags.id_for_label }}');
+        if (tagsField) {
+            tagsField.value = currentTags.join(',');
+        }
     }
     
-    // Make removeTag globally accessible
+    // Make removeTag available globally for the tag chips
     window.removeTag = removeTag;
-});
-
-function toggleQuickCreate(type) {
-    const form = document.getElementById(`quick-${type}-form`);
-    form.classList.toggle('active');
-}
-
-function createQuickJourney() {
-    const titleInput = document.getElementById('new-journey-title');
-    const title = titleInput.value.trim();
     
-    if (title) {
-        // Here you'd make an AJAX call to create the journey
-        alert(`Creating new learning journey: ${title}`);
-        titleInput.value = '';
-        toggleQuickCreate('journey');
+    // Initialize tags if editing existing post
+    {% if object and object.tags.all %}
+    const existingTags = [{% for tag in object.tags.all %}'{{ tag.name }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+    existingTags.forEach(tag => addTag(tag));
+    {% endif %}
+    
+    // Auto-calculate reading time
+    if (contentInput) {
+        const readingTimeField = document.getElementById('{{ form.reading_time.id_for_label }}');
+        
+        function calculateReadingTime() {
+            if (!readingTimeField) return;
+            
+            const content = contentInput.value;
+            const wordsPerMinute = 200; // Average reading speed
+            const wordCount = content.trim().split(/\s+/).length;
+            const readingTime = Math.ceil(wordCount / wordsPerMinute);
+            
+            // Only auto-set if field is empty or hasn't been manually set
+            if (!readingTimeField.value || !readingTimeField.dataset.modified) {
+                readingTimeField.value = readingTime > 0 ? readingTime : '';
     }
-}
+        }
+        
+        // Calculate on content change (debounced)
+        let readingTimeTimeout;
+        contentInput.addEventListener('input', function() {
+            clearTimeout(readingTimeTimeout);
+            readingTimeTimeout = setTimeout(calculateReadingTime, 1000);
+        });
+        
+        // Mark reading time as manually modified if user changes it
+        if (readingTimeField) {
+            readingTimeField.addEventListener('input', function() {
+                this.dataset.modified = 'true';
+            });
+        }
+        
+        // Initial calculation
+        calculateReadingTime();
+    }
+    
+    // System connection suggestions
+    const systemSuggestions = document.querySelectorAll('.system-suggestion');
+    systemSuggestions.forEach(suggestion => {
+        suggestion.addEventListener('click', function() {
+            const systemId = this.dataset.systemId;
+            const systemName = this.textContent.trim();
+            
+            // Add to content as a reference
+            if (contentInput) {
+                const currentContent = contentInput.value;
+                const systemRef = `\n\n**Related System:** [${systemName}](/systems/${systemId}/)\n`;
+                contentInput.value = currentContent + systemRef;
+                
+                // Trigger reading time recalculation
+                const event = new Event('input');
+                contentInput.dispatchEvent(event);
+            }
+            
+            // Visual feedback
+            this.style.backgroundColor = 'rgba(38, 198, 218, 0.3)';
+            setTimeout(() => {
+                this.style.backgroundColor = '';
+            }, 1000);
+        });
+    });
+    
+    // Form validation before submit
+    const form = document.getElementById('post-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const title = titleInput?.value.trim();
+            const content = contentInput?.value.trim();
+            
+            if (!title) {
+                e.preventDefault();
+                alert('Please enter a discovery title.');
+                titleInput?.focus();
+                return false;
+            }
+            
+            if (!content) {
+                e.preventDefault();
+                alert('Please enter discovery content.');
+                contentInput?.focus();
+                return false;
+    }
+    
+            // Ensure slug is set
+            if (slugInput && !slugInput.value.trim()) {
+                const slug = title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                slugInput.value = slug;
+            }
+            
+            // Ensure tags are set in form field
+            updateTagsField();
+});
+    }
+    
+    // Save draft functionality
+    const saveDraftBtn = document.getElementById('save-draft-btn');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Set status to draft
+            if (statusSelect) {
+                statusSelect.value = 'draft';
+            }
+            
+            // Add hidden input to indicate draft save
+            const draftInput = document.createElement('input');
+            draftInput.type = 'hidden';
+            draftInput.name = 'save_draft';
+            draftInput.value = 'true';
+            form.appendChild(draftInput);
+            
+            // Submit form
+            form?.submit();
+        });
+    }
+    
+    // Quick save with Ctrl+S
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            form?.submit();
+        }
+    });
+    
+    // Character count for excerpt
+    if (excerptInput) {
+        const maxLength = 300;
+        const counter = document.createElement('div');
+        counter.className = 'character-counter';
+        excerptInput.parentNode.appendChild(counter);
+        
+        function updateCharacterCount() {
+            const remaining = maxLength - excerptInput.value.length;
+            counter.textContent = `${excerptInput.value.length}/${maxLength} characters`;
+            counter.style.color = remaining < 50 ? '#ef4444' : '#6b7280';
+        }
+        
+        excerptInput.addEventListener('input', updateCharacterCount);
+        updateCharacterCount();
+    }
+    
+    console.log('Enhanced Post Form JavaScript loaded successfully!');
+    console.log('Final state check:');
+    console.log('- Form element:', form);
+    console.log('- Series select found:', !!seriesSelect);
+    console.log('- Journey suggestions found:', document.querySelectorAll('.suggestion-item').length);
+    console.log('- Tag system initialized:', !!tagInput);
+});
 </script>
 {% endblock %}
