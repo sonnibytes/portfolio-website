@@ -437,24 +437,16 @@
                     {% render_field form.slug class="form-input" placeholder="auto-generated-from-name" %}
                     <div class="help-text">URL-friendly version (auto-generated if left blank)</div>
                 </div>
-                
-                <div class="form-field full-width">
-                    <label class="form-label">
-                        <i class="fas fa-align-left"></i>
-                        Tag Description (Optional)
-                    </label>
-                    {% render_field form.description class="form-textarea" placeholder="Describe what this tag represents and when to use it..." %}
-                    <div class="help-text">Brief explanation of when and how to use this tag</div>
-                </div>
             </div>
         </div>
 
         <!-- Tag Type & Purpose Section -->
+         <!-- Could be used to link tags to tech, skills, etc.  -->
         <div class="form-section">
             <div class="form-section-header">
                 <i class="fas fa-bullseye text-teal-400"></i>
                 <div>
-                    <h3 class="form-section-title">Tag Type & Purpose</h3>
+                    <h3 class="form-section-title">Tag Type & Purpose (IN DEVELOPMENT)</h3>
                     <p class="form-section-subtitle">Choose the type of knowledge this tag represents</p>
                 </div>
             </div>
@@ -543,7 +535,7 @@
                 </span>
             </div>
             <div style="margin-top: 0.75rem; color: #9ca3af; font-size: 0.875rem;">
-                URL: <span style="color: #b39ddb;">/blog/tags/<span id="preview-slug">your-tag-name</span>/</span>
+                URL: <span style="color: #b39ddb;">/datalog/tag/<span id="preview-slug">your-tag-name</span>/</span>
             </div>
         </div>
 
@@ -626,8 +618,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Form elements
-    const nameInput = document.querySelector('#id_name');
-    const slugInput = document.querySelector('#id_slug');
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
     
     // Preview elements
     const previewName = document.getElementById('preview-name');
@@ -677,15 +669,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-generate slug from name
     function generateSlug() {
-        if (!slugInput.value.trim()) {
-            const name = nameInput.value.trim();
-            const slug = name
-                .toLowerCase()
-                .replace(/[^a-z0-9\s-]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-+|-+$/g, '');
-            slugInput.value = slug;
+        // Auto-generate slug from name (robust logic)
+        if (nameInput && slugInput) {
+            nameInput.addEventListener('input', function() {
+                // Only auto-generate if slug hasn't been manually modified
+                if (!slugInput.dataset.modified) {
+                    const slug = this.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars but keep spaces and hyphens
+                        .replace(/\s+/g, '-')          // Replace spaces with hyphens
+                        .replace(/-+/g, '-')           // Replace multiple hyphens with single
+                        .replace(/^-+|-+$/g, '');      // Remove leading/trailing hyphens
+                    slugInput.value = slug;
+                }
+                updatePreview();
+            });
         }
     }
     
@@ -695,7 +693,11 @@ document.addEventListener('DOMContentLoaded', function() {
         generateSlug();
     });
     
-    slugInput?.addEventListener('input', updatePreview);
+    slugInput?.addEventListener('input', function() {
+        // Mark as manually modified to prevent auto-generation
+        this.dataset.modified = 'true';
+        updatePreview();
+    });
     
     // Tag type selection
     tagTypeOptions.forEach(option => {
