@@ -25,7 +25,8 @@ urlpatterns = [
     
     # Post Management (or Discoveries)
     path('posts/', admin_views.PostListAdminView.as_view(), name='post_list'),  # All discoveries
-    path('posts/create/', admin_views.PostCreateAdminView.as_view(), name='post_create'),
+    path('posts/create/', admin_views.EnhancedPostCreateView.as_view(), name='post_create'),  # Use updated post create view
+    # path('posts/create/', admin_views.PostCreateAdminView.as_view(), name='post_create'),
     path('posts/<int:pk>/edit/', admin_views.PostUpdateAdminView.as_view(), name='post_edit'),
     path('posts/<int:pk>/delete/', admin_views.PostDeleteAdminView.as_view(), name='post_delete'),
     

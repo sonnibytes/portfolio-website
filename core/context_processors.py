@@ -23,7 +23,7 @@ def admin_navigation_context(request):
         # Import models to avoid circular imports
         from core.models import Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics
         from projects.models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
-        from blog.models import Post, Category, Series
+        from blog.models import Post, Category, Series, Tag
 
         # Core App Stats
         skill_stats = {
@@ -100,6 +100,7 @@ def admin_navigation_context(request):
             'draft_posts': Post.objects.filter(status='draft').count(),
             'total_categories': Category.objects.count(),
             'total_series': Series.objects.count(),
+            'total_tags': Tag.objects.count(),
         }
 
 
@@ -122,7 +123,7 @@ def admin_navigation_context(request):
             'system_stats': system_stats,
             'architecture_stats': architecture_stats,
             'technology_stats': technology_stats,
-            'blog_stats': datalogs_stats,
+            'datalog_stats': datalogs_stats,
             'integration_stats': integration_stats,
         }
     

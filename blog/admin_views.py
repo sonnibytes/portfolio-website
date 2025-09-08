@@ -165,74 +165,74 @@ class PostListAdminView(BaseAdminListView, BulkActionMixin):
         cats = Category.objects.all()
 
 
-class PostCreateAdminView(BaseAdminCreateView):
-    """Create new DataLog entry."""
+# class PostCreateAdminView(BaseAdminCreateView):
+#     """Create new DataLog entry."""
     
-    model = Post
-    form_class = PostForm
-    template_name = 'blog/admin/post_form.html'
-    success_url = reverse_lazy('aura_admin:blog:post_list')
+#     model = Post
+#     form_class = PostForm
+#     template_name = 'blog/admin/post_form.html'
+#     success_url = reverse_lazy('aura_admin:blog:post_list')
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            'title': 'Create New DataLog',
-            'subtitle': 'Add a new technical log entry',
-        })
-        return context
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context.update({
+#             'title': 'Create New DataLog',
+#             'subtitle': 'Add a new technical log entry',
+#         })
+#         return context
     
-    def form_valid(self, form):
-        #  # Debug logging
-        # print(f"DEBUG: User is authenticated: {self.request.user.is_authenticated}")
-        # print(f"DEBUG: Current user: {self.request.user}")
-        # print(f"DEBUG: Form instance author before: {getattr(form.instance, 'author', 'NO AUTHOR FIELD')}")
+#     def form_valid(self, form):
+#         #  # Debug logging
+#         # print(f"DEBUG: User is authenticated: {self.request.user.is_authenticated}")
+#         # print(f"DEBUG: Current user: {self.request.user}")
+#         # print(f"DEBUG: Form instance author before: {getattr(form.instance, 'author', 'NO AUTHOR FIELD')}")
         
-        # Auto-assign author - CRITICAL
-        form.instance.author = self.request.user
+#         # Auto-assign author - CRITICAL
+#         form.instance.author = self.request.user
         
-        # print(f"DEBUG: Form instance author after: {form.instance.author}")
+#         # print(f"DEBUG: Form instance author after: {form.instance.author}")
         
-        # Auto-generate slug if not provided
-        if not form.instance.slug and form.instance.title:
-            form.instance.slug = slugify(form.instance.title)
-            # print(f"DEBUG: Generated slug: {form.instance.slug}")
+#         # Auto-generate slug if not provided
+#         if not form.instance.slug and form.instance.title:
+#             form.instance.slug = slugify(form.instance.title)
+#             # print(f"DEBUG: Generated slug: {form.instance.slug}")
         
-        # Auto-calculate reading time if not set
-        if not form.instance.reading_time and form.instance.content:
-            content_words = len(form.instance.content.split())
-            form.instance.reading_time = max(1, content_words // 200)  # 200 WPM
-            # print(f"DEBUG: Calculated reading time: {form.instance.reading_time}")
+#         # Auto-calculate reading time if not set
+#         if not form.instance.reading_time and form.instance.content:
+#             content_words = len(form.instance.content.split())
+#             form.instance.reading_time = max(1, content_words // 200)  # 200 WPM
+#             # print(f"DEBUG: Calculated reading time: {form.instance.reading_time}")
         
-        # Handle save button actions
-        if 'save_draft' in self.request.POST:
-            form.instance.status = 'draft'
-            # print("DEBUG: Setting status to draft")
-        elif 'save_publish' in self.request.POST:
-            form.instance.status = 'published'
-            # print("DEBUG: Setting status to published")
+#         # Handle save button actions
+#         if 'save_draft' in self.request.POST:
+#             form.instance.status = 'draft'
+#             # print("DEBUG: Setting status to draft")
+#         elif 'save_publish' in self.request.POST:
+#             form.instance.status = 'published'
+#             # print("DEBUG: Setting status to published")
         
-        # Set published_date when publishing for the first time
-        if form.instance.status == 'published' and not form.instance.published_date:
-            form.instance.published_date = timezone.now()
+#         # Set published_date when publishing for the first time
+#         if form.instance.status == 'published' and not form.instance.published_date:
+#             form.instance.published_date = timezone.now()
         
-        # print(f"DEBUG: About to save with author: {form.instance.author}")
+#         # print(f"DEBUG: About to save with author: {form.instance.author}")
         
-        try:
-            response = super().form_valid(form)
-            # print("DEBUG: Save successful!")
-            messages.success(
-                self.request, 
-                f'DataLog "{self.object.title}" created successfully!'
-            )
-            return response
-        except Exception as e:
-            print(f"DEBUG: Save failed with error: {e}")
-            print(f"DEBUG: Form instance dict: {form.instance.__dict__}")
-            raise
+#         try:
+#             response = super().form_valid(form)
+#             # print("DEBUG: Save successful!")
+#             messages.success(
+#                 self.request, 
+#                 f'DataLog "{self.object.title}" created successfully!'
+#             )
+#             return response
+#         except Exception as e:
+#             print(f"DEBUG: Save failed with error: {e}")
+#             print(f"DEBUG: Form instance dict: {form.instance.__dict__}")
+#             raise
 
 
 class PostUpdateAdminView(BaseAdminUpdateView):
-    """Edit existing DataLog entry."""
+    """Enhanced DataLog entry editing with learning journey integration."""
     
     model = Post
     form_class = PostForm
@@ -241,13 +241,155 @@ class PostUpdateAdminView(BaseAdminUpdateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        post = self.object 
+
+        # Add journey suggestions based on recent activity
+        recent_journeys = Series.objects.filter(
+            is_complete=False
+        ).order_by('-updated_at')[:5]
+
+        # Add system suggestions for connections
+        active_systems = SystemModule.objects.filter(
+            status__in=['deployed', 'published', 'in_development']
+        ).order_by('-updated_at')[:6]
+
+        # Get existing system connections for this post
+        existing_system_connections = SystemLogEntry.objects.filter(
+            post=post
+        ).select_related('system')
+
+        # Get existing series connection
+        existing_series_post = SeriesPost.objects.filter(post=post).first()
+        current_series = existing_series_post.series if existing_series_post else None
+        current_series_order = existing_series_post.order if existing_series_post else None
+
+        # Popular categories and tags for suggestions
+        popular_categories = Category.objects.annotate(
+            post_count=Count('posts')
+        ).order_by('-post_count')[:6]
+
+        popular_tags = Tag.objects.annotate(
+            usage_count=Count('posts')
+        ).order_by('-usage_count')[:20]
+
+        # Get current post tags for pre-selection
+        current_tags = list(post.tags.values_list('name', flat=True))
+
+        # Learning analytics for this post
+        post_analytics = {
+            'word_count': len(post.content.split()) if post.content else 0,
+            'reading_time': post.reading_time,
+            'view_count': getattr(post, 'view_count', 0),  # If I want to add view tracking later
+            'created_date': post.created_at,
+            'last_updated': post.updated_at,
+        }
+
+        # Related posts in same category or series
+        related_posts = Post.objects.filter(
+            Q(category=post.category) |
+            Q(series_associations__series=current_series)
+        ).exclude(id=post.id).distinct()[:4]
+
+
         context.update({
-            'title': f'Edit DataLog: {self.object.title}',
-            'subtitle': 'Update technical log entry',
+            'title': f'Edit Discovery Log: {post.title}',
+            'subtitle': 'Update technical log/learning discovery and connections',
+
+            # Enhanced form context
+            'recent_journeys': recent_journeys,
+            'active_systems': active_systems,
+            'popular_categories': popular_categories,
+            'popular_tags': popular_tags,
+
+            # Current post data
+            'current_series': current_series,
+            'current_series_order': current_series_order,
+            'current_tags': current_tags,
+            'existing_system_connections': existing_system_connections,
+            'related_posts': related_posts,
+            'post_analytics': post_analytics,
+
+            # Additional context for enhanced form
+            'learning_domains': Category.objects.all().order_by('name'),
+            # Flag to indicate this is an update, not create
+            'is_update': True,
+
+            # Learning suggestions based on existing data
+            'suggested_next_topics': self.get_suggested_topics(post),
+            'learning_progression': self.get_learning_progression(post),
         })
+
         return context
     
+    def get_suggested_topics(self, post):
+        """Generate topic suggestions based on current post content and category."""
+        suggestions = []
+
+        # Get other posts in same category for topics ideas
+        related_posts = Post.objects.filter(
+            category=post.category
+        ).exclude(id=post.id).values_list('title', flat=True)[:3]
+
+
+        # Get common tags from same category
+        common_tags = Tag.objects.filter(
+            posts__category=post.category
+        ).annotate(
+            usage_count=Count('posts')
+        ).exclude(
+            posts=post
+        ).order_by('-usage_count')[:5]
+
+        suggestions.extend(related_posts)
+        suggestions.extend([f"#{tag.name}" for tag in common_tags])
+
+        return suggestions[:6]
+    
+    def get_learning_progression(self, post):
+        """Analyze learning progression for this post."""
+        progression = {
+            'current_level': 'intermediate',  # Could calculate this?
+            'next_steps': [],
+            'skills_demonstrated': [],
+            'knowledge_gaps': []
+        }
+
+        # Get series progression if post is in a series
+        series_post = SeriesPost.objects.filter(post=post).first()
+        if series_post:
+            series = series_post.series
+            total_posts = series.posts.count()
+            current_position = series_post.order
+
+            progression['series_progress'] = {
+                'position': current_position,
+                'total': total_posts,
+                'percentage': round((current_position / total_posts) * 100) if total_posts > 0 else 0
+            }
+
+            # Suggest next steps based on series
+            next_posts = SeriesPost.objects.filter(
+                series=series,
+                order__gt=current_position
+            ).order_by('order')[:2]
+
+            progression['next_steps'] = [
+                f"Continue with: {sp.post.title}" for sp in next_posts
+            ]
+
+        # Analyze tags for skill demonstration
+        current_tags = post.tags.all()
+        technical_tags = [tag.name for tag in current_tags if any(
+            tech.tag.name.lower()
+            for tech in ['python', 'django', 'js', 'css', 'sql', 'api', 'git']
+        )]
+
+        progression['skills_demonstrated'] = technical_tags
+
+        return progression
+    
     def form_valid(self, form):
+        """Enhanced form validation with learning journey features."""
         # Ensure author is preserved or set
         if not form.instance.author:
             form.instance.author = self.request.user
@@ -266,6 +408,10 @@ class PostUpdateAdminView(BaseAdminUpdateView):
             form.instance.status = 'draft'
         elif 'save_publish' in self.request.POST:
             form.instance.status = 'published'
+        elif 'save_continue_learning' in self.request.POST:
+            # Save and redirect to create next post in series
+            form.instance.status = 'published'
+            self.continue_learning = True
         
         # Set published_date when publishing for the first time
         if (form.instance.status == 'published' and 
@@ -273,16 +419,64 @@ class PostUpdateAdminView(BaseAdminUpdateView):
             not form.instance.published_date):
             form.instance.published_date = timezone.now()
         
-        # Auto-calculate reading time if not set
-        if not form.instance.reading_time:
+        # Auto-calculate reading time if content changed
+        if form.instance.content:
             content_words = len(form.instance.content.split())
             form.instance.reading_time = max(1, content_words // 200)  # 200 WPM
+
+        # Handle series assignment
+        series_id = self.request.POST.get('series')
+        if series_id:
+            try:
+                series = Series.objects.get(id=series_id)
+                # Update or create series association
+                series_post, created = SeriesPost.objects.get_or_create(
+                    post=form.instance,
+                    defaults={'series': series, 'order': series.posts.count() + 1}
+                )
+                if not created and series_post.series != series:
+                    # Moving to different series
+                    series_post.series = series
+                    series_post.order = series.post.count() + 1
+                    series_post.save()
+            except Series.DoesNotExist:
+                pass
+        
+        # Handle system connections
+        system_id = self.request.POST.get('system_connection')
+        connection_type = self.request.POST.get('connection_type', 'documentation')
+
+        if system_id:
+            try:
+                system = SystemModule.objects.get(id=system_id)
+                # Create or update system connection
+                SystemLogEntry.objects.get_or_create(
+                    post=form.instance,
+                    system=system,
+                    defaults={
+                        'connection_type': connection_type,
+                        'priority': 3,  # default,
+                        'log_entry_id': f"SYS-{system.id:03d}-LOG-{form.instance.id:03d}"
+                    }
+                )
+            except SystemModule.DoesNotExist:
+                pass
         
         response = super().form_valid(form)
-        messages.success(
-            self.request,
-            f'DataLog "{self.object.title}" updated successfully!'
-        )
+
+        # Success message with learning context
+        if hasattr(self, 'contunue_learning') and self.continue_learning:
+            messages.success(
+                self.request,
+                f'Discovery "{self.object.title}" updated and published! Ready to document your next learning milestone?'
+            )
+            # Redirect to create new post in same series
+            return redirect('aura_admin:blog:discovery_create')
+        else:
+            messages.success(
+                self.request,
+                f'Learning discovery "{self.object.title}" updated successfully!'
+            )
         return response
 
 
@@ -782,7 +976,7 @@ class EnhancedPostCreateView(StatusAdminCreateView):
 
     model = Post
     form_class = PostForm
-    template_name = "blog/admin/post_form_enhanced.html"
+    template_name = "blog/admin/post_form.html"
     success_url = reverse_lazy('aura_admin:blog:post_list')
 
     def get_context_data(self, **kwargs):
