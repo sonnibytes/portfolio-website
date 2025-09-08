@@ -206,6 +206,20 @@
     transition: all 0.3s ease;
 }
 
+.code-display {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-left: 0.5rem;
+    border: 1px solid;
+}
+
 .usage-examples {
     background: rgba(34, 197, 94, 0.05);
     border: 1px solid rgba(34, 197, 94, 0.1);
@@ -274,7 +288,7 @@
 }
 
 .btn-primary:hover {
-    background: #ff7043;
+    background: #e57373;
     transform: translateY(-1px);
 }
 
@@ -326,6 +340,10 @@
         grid-template-columns: 1fr;
     }
     
+    .color-presets {
+        justify-content: center;
+    }
+    
     .form-actions {
         flex-direction: column;
         gap: 1rem;
@@ -336,30 +354,19 @@
     .form-actions-right {
         justify-content: center;
     }
-    
-    .color-picker-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
-    .icon-picker-container {
-        grid-template-columns: repeat(6, 1fr);
-    }
 }
 </style>
 {% endblock %}
 
 {% block admin_content %}
 <div class="learning-form-container">
-    
-    <!-- Header -->
-    <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-white mb-2 flex items-center justify-center">
-            <i class="fas fa-tags text-coral-400 mr-3"></i>
-            {{ title }}
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white mb-2">
+            {% if object %}Edit Knowledge Domain{% else %}Create Knowledge Domain{% endif %}
         </h1>
-        <p class="text-gray-400">{{ subtitle }}</p>
+        <p class="text-gray-400">
+            {% if object %}Update this knowledge domain to better organize your discoveries{% else %}Create a knowledge domain to categorize and organize your learning discoveries{% endif %}
+        </p>
     </div>
 
     <form method="post" enctype="multipart/form-data" id="domain-form">
@@ -390,6 +397,22 @@
                         </ul>
                     {% endif %}
                     <div class="help-text">Clear, specific name for this knowledge area</div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label">
+                        <i class="fas fa-code"></i>
+                        Domain Code
+                    </label>
+                    {% render_field form.code class="form-input" placeholder="PY" maxlength="4" %}
+                    {% if form.code.errors %}
+                        <ul class="error-list">
+                            {% for error in form.code.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <div class="help-text">Short 2-4 letter code (auto-generated from name)</div>
                 </div>
                 
                 <div class="form-field">
@@ -451,26 +474,14 @@
                         <i class="fas fa-icons"></i>
                         Domain Icon (Font Awesome)
                     </label>
-                    {% render_field form.icon class="form-input" placeholder="e.g., fas fa-code, fas fa-database" %}
-                    <div class="help-text">Click an icon below or enter Font Awesome class manually</div>
-                </div>
-                
-                <div class="form-field full-width">
-                    <div class="icon-picker-container" id="icon-picker">
-                        <!-- Common knowledge domain icons -->
-                        <div class="icon-option" data-icon="fas fa-code" title="Programming"><i class="fas fa-code"></i></div>
+                    {% render_field form.icon class="form-input" placeholder="fas fa-code" %}
+                    <div class="icon-picker-container">
+                        <div class="icon-option" data-icon="fas fa-code" title="Code"><i class="fas fa-code"></i></div>
                         <div class="icon-option" data-icon="fas fa-database" title="Database"><i class="fas fa-database"></i></div>
-                        <div class="icon-option" data-icon="fas fa-chart-bar" title="Analytics"><i class="fas fa-chart-bar"></i></div>
-                        <div class="icon-option" data-icon="fas fa-desktop" title="Frontend"><i class="fas fa-desktop"></i></div>
-                        <div class="icon-option" data-icon="fas fa-server" title="Backend"><i class="fas fa-server"></i></div>
+                        <div class="icon-option" data-icon="fas fa-server" title="Server"><i class="fas fa-server"></i></div>
                         <div class="icon-option" data-icon="fas fa-mobile-alt" title="Mobile"><i class="fas fa-mobile-alt"></i></div>
                         <div class="icon-option" data-icon="fas fa-cloud" title="Cloud"><i class="fas fa-cloud"></i></div>
-                        <div class="icon-option" data-icon="fas fa-shield-alt" title="Security"><i class="fas fa-shield-alt"></i></div>
-                        <div class="icon-option" data-icon="fas fa-robot" title="AI/ML"><i class="fas fa-robot"></i></div>
-                        <div class="icon-option" data-icon="fas fa-palette" title="Design"><i class="fas fa-palette"></i></div>
-                        <div class="icon-option" data-icon="fas fa-tools" title="DevOps"><i class="fas fa-tools"></i></div>
-                        <div class="icon-option" data-icon="fas fa-network-wired" title="Networking"><i class="fas fa-network-wired"></i></div>
-                        <div class="icon-option" data-icon="fas fa-user-friends" title="Soft Skills"><i class="fas fa-user-friends"></i></div>
+                        <div class="icon-option" data-icon="fas fa-chart-line" title="Analytics"><i class="fas fa-chart-line"></i></div>
                         <div class="icon-option" data-icon="fas fa-graduation-cap" title="Learning"><i class="fas fa-graduation-cap"></i></div>
                         <div class="icon-option" data-icon="fas fa-lightbulb" title="Innovation"><i class="fas fa-lightbulb"></i></div>
                         <div class="icon-option" data-icon="fas fa-cogs" title="Systems"><i class="fas fa-cogs"></i></div>
@@ -478,7 +489,11 @@
                         <div class="icon-option" data-icon="fas fa-book" title="Documentation"><i class="fas fa-book"></i></div>
                         <div class="icon-option" data-icon="fas fa-rocket" title="Performance"><i class="fas fa-rocket"></i></div>
                         <div class="icon-option" data-icon="fas fa-puzzle-piece" title="Integration"><i class="fas fa-puzzle-piece"></i></div>
+                        <div class="icon-option" data-icon="fas fa-shield-alt" title="Security"><i class="fas fa-shield-alt"></i></div>
+                        <div class="icon-option" data-icon="fas fa-brain" title="AI/ML"><i class="fas fa-brain"></i></div>
+                        <div class="icon-option" data-icon="fas fa-network-wired" title="Networking"><i class="fas fa-network-wired"></i></div>
                     </div>
+                    <div class="help-text">FontAwesome icon class (e.g., fas fa-code)</div>
                 </div>
             </div>
         </div>
@@ -492,6 +507,10 @@
             <div class="domain-badge-preview" id="domain-preview">
                 <i class="fas fa-code" id="preview-icon"></i>
                 <span id="preview-name">Your Knowledge Domain</span>
+                <div class="code-display" id="preview-code">XX</div>
+            </div>
+            <div style="margin-top: 0.75rem; color: #9ca3af; font-size: 0.875rem;">
+                URL: <span style="color: #ff8a80;">/datalogs/category/<span id="preview-slug">your-knowledge-domain</span>/</span>
             </div>
         </div>
 
@@ -542,12 +561,16 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Form elements
-    const nameInput = document.querySelector('#id_name');
-    const colorInput = document.querySelector('#id_color');
-    const iconInput = document.querySelector('#id_icon');
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+    const codeInput = document.getElementById('{{ form.code.id_for_label }}');
+    const colorInput = document.getElementById('{{ form.color.id_for_label }}');
+    const iconInput = document.getElementById('{{ form.icon.id_for_label }}');
     
     // Preview elements
     const previewName = document.getElementById('preview-name');
+    const previewSlug = document.getElementById('preview-slug');
+    const previewCode = document.getElementById('preview-code');
     const previewIcon = document.getElementById('preview-icon');
     const colorHex = document.getElementById('color-hex');
     const domainPreview = document.getElementById('domain-preview');
@@ -555,19 +578,99 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update preview in real-time
     function updatePreview() {
         // Update name
-        const name = nameInput.value.trim() || 'Your Knowledge Domain';
-        previewName.textContent = name;
+        const name = nameInput?.value.trim() || 'Your Knowledge Domain';
+        if (previewName) previewName.textContent = name;
+        
+        // Update slug
+        const slug = slugInput?.value.trim() || 'your-knowledge-domain';
+        if (previewSlug) previewSlug.textContent = slug;
+        
+        // Update code
+        const code = codeInput?.value.trim() || 'XX';
+        if (previewCode) previewCode.textContent = code.toUpperCase();
         
         // Update color
-        const color = colorInput.value || '#ff8a80';
-        colorHex.textContent = color;
+        const color = colorInput?.value || '#ff8a80';
+        if (colorHex) colorHex.textContent = color;
+        if (domainPreview) {
         domainPreview.style.backgroundColor = `${color}20`;
         domainPreview.style.borderColor = `${color}40`;
         domainPreview.style.color = color;
+        }
+        if (previewCode) {
+            previewCode.style.backgroundColor = `${color}30`;
+            previewCode.style.borderColor = `${color}60`;
+            previewCode.style.color = color;
+        }
         
         // Update icon
-        const icon = iconInput.value.trim() || 'fas fa-code';
-        previewIcon.className = icon;
+        const icon = iconInput?.value.trim() || 'fas fa-code';
+        if (previewIcon) previewIcon.className = icon;
+    }
+    
+    // Auto-generate slug from name (robust logic)
+    if (nameInput && slugInput) {
+        nameInput.addEventListener('input', function() {
+            // Only auto-generate if slug hasn't been manually modified
+            if (!slugInput.dataset.modified) {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars but keep spaces and hyphens
+                    .replace(/\s+/g, '-')          // Replace spaces with hyphens
+                    .replace(/-+/g, '-')           // Replace multiple hyphens with single
+                    .replace(/^-+|-+$/g, '');      // Remove leading/trailing hyphens
+                slugInput.value = slug;
+            }
+            updatePreview();
+        });
+        
+        // Mark slug as manually modified when user types in it
+        slugInput.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+            updatePreview();
+        });
+    }
+    
+    // Auto-generate code from name (first 2-4 letters)
+    if (nameInput && codeInput) {
+        nameInput.addEventListener('input', function() {
+            // Only auto-generate if code hasn't been manually modified
+            if (!codeInput.dataset.modified) {
+                const name = this.value.trim();
+                let code = '';
+                
+                if (name.length > 0) {
+                    // Try to get first letters of each word (up to 4 chars)
+                    const words = name.split(/\s+/);
+                    if (words.length > 1) {
+                        // Multiple words - take first letter of each (up to 4)
+                        code = words.slice(0, 4).map(word => word.charAt(0).toUpperCase()).join('');
+                    } else {
+                        // Single word - take first 2-3 letters
+                        code = name.substring(0, Math.min(3, name.length)).toUpperCase();
+                    }
+                }
+                
+                codeInput.value = code;
+            }
+            updatePreview();
+        });
+        
+        // Mark code as manually modified when user types in it
+        codeInput.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+            updatePreview();
+        });
+    }
+    
+    // Color picker updates
+    if (colorInput) {
+        colorInput.addEventListener('input', updatePreview);
+    }
+    
+    // Icon field updates
+    if (iconInput) {
+        iconInput.addEventListener('input', updatePreview);
     }
     
     // Color preset functionality
@@ -575,7 +678,7 @@ document.addEventListener('DOMContentLoaded', function() {
     colorPresets.forEach(preset => {
         preset.addEventListener('click', function() {
             const color = this.dataset.color;
-            colorInput.value = color;
+            if (colorInput) colorInput.value = color;
             
             // Update visual selection
             colorPresets.forEach(p => p.classList.remove('selected'));
@@ -590,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
     iconOptions.forEach(option => {
         option.addEventListener('click', function() {
             const icon = this.dataset.icon;
-            iconInput.value = icon;
+            if (iconInput) iconInput.value = icon;
             
             // Update visual selection
             iconOptions.forEach(opt => opt.classList.remove('selected'));
@@ -600,34 +703,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add event listeners for real-time updates
-    if (nameInput) nameInput.addEventListener('input', updatePreview);
-    if (colorInput) colorInput.addEventListener('input', updatePreview);
-    if (iconInput) iconInput.addEventListener('input', updatePreview);
-    
-    // Auto-generate slug from name
-    if (nameInput) {
-        nameInput.addEventListener('input', function() {
-            const slugField = document.querySelector('#id_slug');
-            if (slugField && !slugField.value) {
-                const slug = this.value
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-|-$/g, '');
-                slugField.value = slug;
-            }
-        });
-    }
-    
     // Set initial selection for existing values
-    if (colorInput.value) {
+    if (colorInput?.value) {
         const matchingPreset = document.querySelector(`[data-color="${colorInput.value}"]`);
         if (matchingPreset) {
             matchingPreset.classList.add('selected');
         }
     }
     
-    if (iconInput.value) {
+    if (iconInput?.value) {
         const matchingIcon = document.querySelector(`[data-icon="${iconInput.value}"]`);
         if (matchingIcon) {
             matchingIcon.classList.add('selected');
