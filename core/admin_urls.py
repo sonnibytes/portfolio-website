@@ -63,14 +63,6 @@ from .admin_views import (
     SkillTechnologyRelationDeleteAdminView,
 
     test_admin_styles,
-
-    # NEW: Learning Journey Dashboard Views
-    LearningJourneyDashboardView,
-    IntegratedSkillsManagementView,
-    EducationWithSkillDevelopmentView,
-    LearningAnalyticsView,
-    SkillTechnologyConnectionAjaxView,
-    EducationSkillDevelopmentAjaxView,
 )
 
 app_name = "admin"
@@ -186,20 +178,6 @@ urlpatterns = [
     path("education-skills/<int:pk>/edit/", EducationSkillUpdateAdminView.as_view(), name="education_skill_update"),
     path("education-skills/<int:pk>/delete/", EducationSkillDeleteAdminView.as_view(), name="education_skill_delete"),
 
-    # =================================================
-    # LEARNING JOURNEY DASHBOARD - INTEGRATED WORKFLOW
-    # Will replace/consolidate a lot of this I think...testing
-    # =================================================
-    # Main Learning Journey Dashboard
-    path("learning-journey/", LearningJourneyDashboardView.as_view(), name="learning_journey_dashbaord"),
-    # Integrated Management Views
-    path("learning-journey/skills/", IntegratedSkillsManagementView.as_view(), name="integrated_skills_management"),
-    path("learning-journey/education/", EducationWithSkillDevelopmentView.as_view(), name="education_skill_development"),
-    path("learning-journey/analytics/", LearningAnalyticsView.as_view(), name="learning_analytics"),
-    # AJAX Endpoints for Quick Actions
-    path("learning-journey/connect-skill-tech/", SkillTechnologyConnectionAjaxView.as_view(), name="connect_skill_technology"),
-    path("learning-journey/add-skill-development", EducationSkillDevelopmentAjaxView.as_view(), name="add_skill_development"),
-    
     # ===================
     # APP ADMIN INCLUDES
     # ===================
