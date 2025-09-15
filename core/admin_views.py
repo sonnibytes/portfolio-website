@@ -1727,3 +1727,85 @@ class EnhancedSkillCreateView(BaseAdminCreateView):
         return response
 
 
+class ProfessionalGrowthTimelineView(BaseAdminView, TemplateView):
+    """Professional development timeline across all apps"""
+    template_name = 'core/admin/growth_timeline.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Build comprehensive timeline
+        timeline_events = []
+
+        # Education milestones
+        for education in Education.objects.all().order_by('start_date'):
+            timeline_events.append({
+                'date': education.start_date,
+                'type': 'education_start',
+                'category': 'Learning',
+                'title': f'Started {education.degree}',
+                'description': f'{education.field_of_study} at {education.institution}',
+                'icon': 'fa-solid fa-graduation-cap',
+                'color': 'teal',
+                'skills_gained': education.skill_developments.all()[:3]
+            })
+
+            if education.end_date:
+                timeline_events.append({
+                    'date': education.end_date,
+                    'type': 'education_complete',
+                    'category': 'Achievement',
+                    'title': f'Completed {education.degree}',
+                    'description': f'Gained expertise in {education.field_of_study}',
+                    'icon': 'fa-solid fa-certificate',
+                    'color': 'green',
+                })
+
+        
+        # Project milestones
+        for project in SystemModule.objects.filter(status='deployed').order_by('created_at'):
+            timeline_events.append({
+                'date': project.created_at.date(),
+                'type': 'project_deployed',
+                'category': 'Application',
+                'title': f'Deployed {project.title}',
+                'description': project.description[:100] + '...' if len(project.description) > 100 else project.description,
+                'icon': 'fa-solid fa-rocket',
+                'color': 'coral',
+                'technologies_used': project.technologies.all()[:4]
+            })
+        
+
+        # Blog documentation milestones
+        for post in Post.objects.filter(status='published').order_by('published_date')[:20]:
+            timeline_events.append({
+                'date': post.published_date.date() if post.published_date else post.created_at.date(),
+                'type': 'documentation',
+                'category': 'Knowledge Sharing',
+                'description': post.excerpt or (post.content[:100] + '...' if len(post.content) > 100 else post.content),
+                'icon': 'fa-solid fa-file-alt',
+                'color': 'lavender',
+                'category_tag': post.category.name if post.category else None
+            })
+        
+        # Sort chronologically
+        timeline_events.sort(key=lambda x: x['date'])
+
+        # Group by year for display
+        grouped_timeline = {}
+        for event in timeline_events:
+            year = event['date'].year
+            if year not in grouped_timeline:
+                grouped_timeline[year] = []
+            grouped_timeline[year].append(event)
+        
+        context.update({
+            'title': 'Professional Growth Timeline',
+            'subtitle': 'Complete development journey across all learning and projects',
+            'timeline_events': timeline_events[-50:],  # Last 50 events
+            'grouped_timeline': grouped_timeline,
+            'total_events': len(timeline_events),
+            'years_active': len(grouped_timeline),
+        })
+
+        return context
