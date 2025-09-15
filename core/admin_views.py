@@ -1630,7 +1630,7 @@ class ProfessionalDevelopmentDashboardView(AdminAccessMixin, TemplateView):
                 created_at__lt=thirty_days_ago
             ).count(),
             'education_this_month': Education.objects.filter(
-                created_at__gte=thirty_days_ago
+                start_date__gte=thirty_days_ago
             ).count(),
             'projects_this_month': SystemModule.objects.filter(
                 created_at__gte=thirty_days_ago
@@ -1656,7 +1656,7 @@ class ProfessionalDevelopmentDashboardView(AdminAccessMixin, TemplateView):
         
         # Education without skill connections
         education_without_skills = Education.objects.filter(
-            skill_developments__isnull=True
+            skills_learned__isnull=True
         ).count()
         
         if education_without_skills > 0:
@@ -1670,7 +1670,7 @@ class ProfessionalDevelopmentDashboardView(AdminAccessMixin, TemplateView):
         # High proficiency skills without projects
         expert_skills = Skill.objects.filter(
             proficiency__gte=4,
-            technology_relations__technology__systemmodule__isnull=True
+            technology_relations__technology__systems__isnull=True
         ).distinct()
         
         if expert_skills.exists():
@@ -1743,7 +1743,7 @@ class ProfessionalDevelopmentDashboardView(AdminAccessMixin, TemplateView):
             ).order_by('-skill_count')[:5],
             'recent_skill_developments': EducationSkillDevelopment.objects.select_related(
                 'education', 'skill'
-            ).order_by('-created_at')[:5],
+            )[:5],
         })
         
         return context
@@ -1771,13 +1771,13 @@ class SkillDemonstrationView(BaseAdminView, DetailView):
 
         # Blog posts related to this skill (via project connections)
         related_blog_posts = Post.objects.filter(
-            systemlogentry__system__in=projects_using_skill
+            related_systems__in=projects_using_skill
         ).distinct()[:10]
 
         # Education that developed this skill
         education_sources = EducationSkillDevelopment.objects.filter(
             skill=skill
-        ).select_related('education').order_by('-proficiency_gained')
+        ).select_related('education').order_by('-proficiency_after')
 
         # Learning progression timeline
         learning_timeline = self.build_skill_timeline(skill)
@@ -1832,23 +1832,23 @@ class SkillDemonstrationView(BaseAdminView, DetailView):
         timeline_events = []
 
         # Education events
-        for edu_dev in skill.education_development.all():
+        for edu_dev in skill.learned_through_education.all():
             timeline_events.append({
-                'date': edu_dev.education.start_date,
+                'date': edu_dev.start_date,
                 'type': 'education_start',
                 'title': f'Started learning {skill.name}',
-                'source': edu_dev.education.institution,
-                'details': f'{edu_dev.education.degree} - {edu_dev.education.field_of_study}',
-                'proficiency_gained': edu_dev.proficiency_gained,
+                'source': edu_dev.institution,
+                'details': f'{edu_dev.degree} - {edu_dev.field_of_study}',
+                'proficiency_gained': skill.proficiency,
             })
 
-            if edu_dev.education.end_date:
+            if edu_dev.end_date:
                 timeline_events.append({
-                    'date': edu_dev.education.end_date,
+                    'date': edu_dev.end_date,
                     'type': 'education_complete',
                     'title': f'Completed {skill.name} training',
-                    'source': edu_dev.education.institution,
-                    'details': f'Gained {edu_dev.get_proficiency_gained_display()} proficiency',
+                    'source': edu_dev.institution,
+                    'details': f'Gained {skill.proficiency} proficiency',
                 })
 
         # Technology associations
@@ -1884,9 +1884,9 @@ class SkillDemonstrationView(BaseAdminView, DetailView):
         # Suggest technologies commonly used with current ones
         current_tech_ids = tech_relations.values_list('technology_id', flat=True)
         commonly_paired_techs = Technology.objects.filter(
-            systemmodule__technologies__in=current_tech_ids
+            systems__technologies__in=current_tech_ids
         ).exclude(id__in=current_tech_ids).annotate(
-            usage_count=Count('systemmodule')
+            usage_count=Count('systems')
         ).order_by('-usage_count')[:3]
 
         for tech in commonly_paired_techs:
@@ -1910,7 +1910,7 @@ class SkillDemonstrationView(BaseAdminView, DetailView):
 
         # Suggest documentation if no blog posts
         related_posts = Post.objects.filter(
-            systemlogentry__system__in=projects_using_skill
+            related_systems__in=projects_using_skill
         ).distinct()
 
         if not related_posts.exists():
