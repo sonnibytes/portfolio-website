@@ -1,0 +1,792 @@
+{% extends "admin/admin_base.html" %}
+{% load aura_filters %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block page_title %}Professional Growth Timeline{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+/* Growth Timeline Specific Styles */
+.timeline-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.timeline-header {
+    background: linear-gradient(135deg, 
+        rgba(38, 198, 218, 0.1) 0%, 
+        rgba(179, 157, 219, 0.05) 100%);
+    border: 1px solid rgba(38, 198, 218, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.timeline-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+        var(--color-teal) 0%, 
+        var(--color-lavender) 33%, 
+        var(--color-coral) 66%,
+        var(--color-mint) 100%);
+}
+
+.timeline-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.filter-select, .filter-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem 0.75rem;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.filter-select:focus, .filter-input:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+}
+
+.timeline-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-number.education { color: var(--color-teal); }
+.stat-number.skill { color: var(--color-lavender); }
+.stat-number.project { color: var(--color-coral); }
+.stat-number.documentation { color: var(--color-mint); }
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+.timeline-content {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 2rem;
+}
+
+.timeline-years {
+    position: sticky;
+    top: 2rem;
+    height: fit-content;
+}
+
+.year-nav {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1rem;
+}
+
+.year-nav h4 {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.year-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+    font-weight: 500;
+}
+
+.year-link:hover, .year-link.active {
+    background: rgba(38, 198, 218, 0.1);
+    color: var(--color-teal);
+    transform: translateX(5px);
+}
+
+.timeline-main {
+    position: relative;
+}
+
+.timeline-year-section {
+    margin-bottom: 3rem;
+}
+
+.year-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(38, 198, 218, 0.2);
+}
+
+.year-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-teal);
+}
+
+.year-summary {
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+}
+
+.timeline-events {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-events::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, 
+        var(--color-teal), 
+        var(--color-lavender), 
+        var(--color-coral),
+        var(--color-mint));
+    opacity: 0.3;
+}
+
+.timeline-event {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-left: 3rem;
+}
+
+.event-marker {
+    position: absolute;
+    left: -2.25rem;
+    top: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    border: 2px solid;
+    background: var(--color-bg-primary);
+    z-index: 1;
+}
+
+.event-marker.education {
+    color: var(--color-teal);
+    border-color: var(--color-teal);
+    background: rgba(38, 198, 218, 0.1);
+}
+
+.event-marker.skill {
+    color: var(--color-lavender);
+    border-color: var(--color-lavender);
+    background: rgba(179, 157, 219, 0.1);
+}
+
+.event-marker.project {
+    color: var(--color-coral);
+    border-color: var(--color-coral);
+    background: rgba(255, 138, 128, 0.1);
+}
+
+.event-marker.documentation {
+    color: var(--color-mint);
+    border-color: var(--color-mint);
+    background: rgba(165, 214, 167, 0.1);
+}
+
+.event-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+    transition: all var(--transition-fast);
+}
+
+.event-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.event-card.education:hover {
+    border-color: rgba(38, 198, 218, 0.3);
+}
+
+.event-card.skill:hover {
+    border-color: rgba(179, 157, 219, 0.3);
+}
+
+.event-card.project:hover {
+    border-color: rgba(255, 138, 128, 0.3);
+}
+
+.event-card.documentation:hover {
+    border-color: rgba(165, 214, 167, 0.3);
+}
+
+.event-header {
+    display: flex;
+    items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.event-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.event-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.event-category.education {
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+}
+
+.event-category.skill {
+    background: rgba(179, 157, 219, 0.2);
+    color: var(--color-lavender);
+}
+
+.event-category.project {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+}
+
+.event-category.documentation {
+    background: rgba(165, 214, 167, 0.2);
+    color: var(--color-mint);
+}
+
+.event-description {
+    color: var(--color-text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.event-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+}
+
+.event-date {
+    font-family: var(--font-code);
+    font-weight: 500;
+}
+
+.event-skills, .event-technologies, .event-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.skill-tag, .tech-tag, .category-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.skill-tag {
+    background: rgba(179, 157, 219, 0.1);
+    color: var(--color-lavender);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+}
+
+.tech-tag {
+    background: rgba(255, 138, 128, 0.1);
+    color: var(--color-coral);
+    border: 1px solid rgba(255, 138, 128, 0.2);
+}
+
+.category-tag {
+    background: rgba(165, 214, 167, 0.1);
+    color: var(--color-mint);
+    border: 1px solid rgba(165, 214, 167, 0.2);
+}
+
+.empty-timeline {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--color-text-tertiary);
+}
+
+.empty-timeline i {
+    font-size: 4rem;
+    color: var(--color-teal);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+@media (max-width: 1024px) {
+    .timeline-content {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .timeline-years {
+        position: static;
+        order: -1;
+    }
+    
+    .year-nav {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding: 1rem;
+    }
+    
+    .year-nav h4 {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .year-link {
+        padding: 0.5rem 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .timeline-container {
+        padding: 1rem;
+    }
+    
+    .timeline-header {
+        padding: 1.5rem;
+    }
+    
+    .timeline-filters {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .timeline-events {
+        padding-left: 1rem;
+    }
+    
+    .event-marker {
+        left: -1.75rem;
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.75rem;
+    }
+    
+    .timeline-event {
+        padding-left: 2rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="timeline-container">
+    <!-- Timeline Header -->
+    <div class="timeline-header">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-white mb-2">Professional Growth Timeline</h1>
+                <p class="text-lg text-gray-300 mb-4">
+                    Complete chronological view of your learning journey and professional development
+                </p>
+                
+                <div class="grid grid-cols-4 gap-4 mt-6">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-teal-400">{{ total_events }}</div>
+                        <div class="text-xs text-gray-400">Total Events</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-lavender-400">{{ years_active }}</div>
+                        <div class="text-xs text-gray-400">Years Active</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-coral-400">
+                            {% with timeline_events|length as recent_count %}{{ recent_count }}{% endwith %}
+                        </div>
+                        <div class="text-xs text-gray-400">Recent Events</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-mint-400">
+                            {{ timeline_events|length|default:0 }}
+                        </div>
+                        <div class="text-xs text-gray-400">This Period</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 ml-4">
+                <a href="{% url 'aura_admin:professional_dashboard' %}" class="btn btn-lg btn-outline">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Dashboard
+                </a>
+                <a href="{% url 'aura_admin:skill_create' %}" class="btn btn-lg btn-teal">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add Milestone
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Filters -->
+    <div class="timeline-filters">
+        <div class="filter-group">
+            <label class="filter-label">Event Type</label>
+            <select class="filter-select" id="type-filter">
+                <option value="">All Types</option>
+                <option value="education">Education</option>
+                <option value="skill">Skills</option>
+                <option value="project">Projects</option>
+                <option value="documentation">Documentation</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="filter-label">Time Period</label>
+            <select class="filter-select" id="period-filter">
+                <option value="">All Time</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="recent">Last 6 Months</option>
+                <option value="year">Last Year</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="filter-label">Search</label>
+            <input type="text" class="filter-input" id="search-filter" placeholder="Search events...">
+        </div>
+        
+        <div class="filter-group">
+            <label class="filter-label">Category</label>
+            <select class="filter-select" id="category-filter">
+                <option value="">All Categories</option>
+                <option value="Learning">Learning</option>
+                <option value="Achievement">Achievement</option>
+                <option value="Application">Application</option>
+                <option value="Knowledge Sharing">Knowledge Sharing</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Timeline Stats Overview -->
+    <div class="timeline-stats">
+        <div class="stat-card">
+            <div class="stat-number education">
+                {{ timeline_events|length|default:0 }}
+            </div>
+            <div class="stat-label">Education Events</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number skill">
+                {{ timeline_events|length|default:0 }}
+            </div>
+            <div class="stat-label">Skill Development</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number project">
+                {{ timeline_events|length|default:0 }}
+            </div>
+            <div class="stat-label">Project Applications</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number documentation">
+                {{ timeline_events|length|default:0 }}
+            </div>
+            <div class="stat-label">Documentation</div>
+        </div>
+    </div>
+
+    <!-- Timeline Content -->
+    <div class="timeline-content">
+        <!-- Year Navigation Sidebar -->
+        <div class="timeline-years">
+            <div class="year-nav">
+                <h4>Jump to Year</h4>
+                {% for year, events in grouped_timeline.items %}
+                    <a href="#year-{{ year }}" class="year-link">
+                        {{ year }}
+                        <span class="text-xs ml-2">({{ events|length }})</span>
+                    </a>
+                {% empty %}
+                    <p class="text-sm text-gray-500">No timeline data yet</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Main Timeline -->
+        <div class="timeline-main">
+            {% if grouped_timeline %}
+                {% for year, events in grouped_timeline.items %}
+                <div class="timeline-year-section" id="year-{{ year }}">
+                    <div class="year-header">
+                        <h2 class="year-title">{{ year }}</h2>
+                        <div class="year-summary">
+                            {{ events|length }} {% if events|length == 1 %}milestone{% else %}milestones{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-events">
+                        {% for event in events %}
+                        <div class="timeline-event" data-type="{{ event.type }}" data-category="{{ event.category }}">
+                            <div class="event-marker {{ event.type }}">
+                                <i class="fas fa-{{ event.icon }}"></i>
+                            </div>
+                            
+                            <div class="event-card {{ event.type }}">
+                                <div class="event-header">
+                                    <div class="flex-1">
+                                        <h3 class="event-title">{{ event.title }}</h3>
+                                        <div class="event-metadata">
+                                            <span class="event-date">{{ event.date|date:"F d, Y" }}</span>
+                                            {% if event.category %}
+                                                <span class="event-category {{ event.type }}">
+                                                    <i class="fas fa-{{ event.icon }}"></i>
+                                                    {{ event.category }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% if event.description %}
+                                <div class="event-description">
+                                    {{ event.description }}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Event-specific metadata -->
+                                {% if event.skills_gained %}
+                                <div class="event-skills">
+                                    {% for skill_dev in event.skills_gained %}
+                                    <span class="skill-tag">
+                                        <i class="fas fa-brain"></i>
+                                        {{ skill_dev.skill.name }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if event.technologies_used %}
+                                <div class="event-technologies">
+                                    {% for tech in event.technologies_used %}
+                                    <span class="tech-tag">
+                                        <i class="fas fa-cog"></i>
+                                        {{ tech.name }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if event.category_tag %}
+                                <div class="event-tags">
+                                    <span class="category-tag">
+                                        <i class="fas fa-tag"></i>
+                                        {{ event.category_tag }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-timeline">
+                    <i class="fas fa-timeline"></i>
+                    <h3 class="text-xl font-semibold text-white mb-2">Your Professional Journey Awaits</h3>
+                    <p class="mb-4">Start documenting your learning and achievements to build your timeline</p>
+                    <div class="flex gap-3 justify-center">
+                        <a href="{% url 'aura_admin:education_create' %}" class="btn btn-teal">
+                            <i class="fas fa-graduation-cap mr-2"></i>
+                            Add Education
+                        </a>
+                        <a href="{% url 'aura_admin:skill_create' %}" class="btn btn-outline">
+                            <i class="fas fa-brain mr-2"></i>
+                            Add Skill
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Timeline filtering and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    const typeFilter = document.getElementById('type-filter');
+    const periodFilter = document.getElementById('period-filter');
+    const searchFilter = document.getElementById('search-filter');
+    const categoryFilter = document.getElementById('category-filter');
+    
+    const timelineEvents = document.querySelectorAll('.timeline-event');
+    
+    function filterTimeline() {
+        const typeValue = typeFilter.value.toLowerCase();
+        const periodValue = periodFilter.value.toLowerCase();
+        const searchValue = searchFilter.value.toLowerCase();
+        const categoryValue = categoryFilter.value.toLowerCase();
+        
+        timelineEvents.forEach(event => {
+            const eventType = event.dataset.type;
+            const eventCategory = event.dataset.category;
+            const eventText = event.textContent.toLowerCase();
+            
+            let visible = true;
+            
+            // Type filter
+            if (typeValue && eventType !== typeValue) {
+                visible = false;
+            }
+            
+            // Category filter
+            if (categoryValue && eventCategory.toLowerCase() !== categoryValue) {
+                visible = false;
+            }
+            
+            // Search filter
+            if (searchValue && !eventText.includes(searchValue)) {
+                visible = false;
+            }
+            
+            // Show/hide event
+            event.style.display = visible ? 'block' : 'none';
+        });
+        
+        // Hide empty year sections
+        document.querySelectorAll('.timeline-year-section').forEach(section => {
+            const visibleEvents = section.querySelectorAll('.timeline-event:not([style*="display: none"])');
+            section.style.display = visibleEvents.length > 0 ? 'block' : 'none';
+        });
+    }
+    
+    // Attach event listeners
+    typeFilter.addEventListener('change', filterTimeline);
+    periodFilter.addEventListener('change', filterTimeline);
+    categoryFilter.addEventListener('change', filterTimeline);
+    searchFilter.addEventListener('input', filterTimeline);
+    
+    // Smooth scrolling for year navigation
+    document.querySelectorAll('.year-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Update active state
+                document.querySelectorAll('.year-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Auto-update active year on scroll
+    const yearSections = document.querySelectorAll('.timeline-year-section');
+    const yearLinks = document.querySelectorAll('.year-link');
+    
+    function updateActiveYear() {
+        let currentYear = null;
+        
+        yearSections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            if (rect.top <= 200 && rect.bottom >= 200) {
+                currentYear = section.id;
+            }
+        });
+        
+        if (currentYear) {
+            yearLinks.forEach(link => {
+                link.classList.toggle('active', link.getAttribute('href') === `#${currentYear}`);
+            });
+        }
+    }
+    
+    window.addEventListener('scroll', updateActiveYear);
+    updateActiveYear(); // Initial call
+});
+</script>
+{% endblock %}
