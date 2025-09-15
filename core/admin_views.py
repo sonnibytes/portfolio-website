@@ -31,7 +31,7 @@ from datetime import datetime, timedelta
 from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
 from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
 from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule, Technology
-from blog.models import Post, SystemLogEntry
+from blog.models import Post, Category
 
 # ======= BUTTON STYLE TESTING ========
 def test_admin_styles(request):
@@ -1619,3 +1619,111 @@ class SkillDemonstrationView(BaseAdminView, DetailView):
             })
         
         return suggestions
+    
+
+class EnhancedSkillCreateView(BaseAdminCreateView):
+    """Enahnced skill creation with ecosystem integration"""
+
+    model = Skill
+    form_class = SkillForm
+    template_name = 'core/admin/skill_form_enhanced.html'
+    success_url = reverse_lazy('aura_admin:skill_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Suggest technologies from existing projects
+        suggested_technologies = Technology.objects.filter(
+            systemmodule__status__in=['deployed', 'published', 'in_development']
+        ).annotate(
+            project_count=Count('systemmodule')
+        ).order_by('-project_count')[:12]
+
+        # Suggest related education
+        recent_education = Education.objects.filter(
+            is_current=True
+        ).order_by('-start_date')[:5]
+
+        completed_education = Education.objects.filter(
+            is_current=False,
+            end_date__isnull=False
+        ).order_by('-end_date')[:5]
+
+
+        # Popular skill categories
+        popular_categories = Skill.objects.values('category').annotate(
+            count=Count('category')
+        ).order_by('-count')[:8]
+
+        # Suggest blog categories for documentation
+        blog_categories = Category.objects.annotate(
+            post_count=Count('posts')
+        ).order_by('-post_count')[:8]
+
+        context.update({
+            'title': 'Add New Skill',
+            'subtitle': 'Build your technical competency portfolio',
+
+            # Suggestions for smart form
+            'suggested_technologies': suggested_technologies,
+            'recent_education': recent_education,
+            'completed_education': completed_education,
+            'popular_categories': popular_categories,
+            'blog_categories': blog_categories,
+
+            # Form enhancement data
+            'skill_categories': Skill.CATEGORY_CHOICES,
+            'proficiency_levels': [(i, f'Level {i}') for i in range(1, 6)],
+            'relationship_types': SkillTechnologyRelation.RELATIONSHIHP_TYPE,
+            'relationship_strengths': SkillTechnologyRelation.RELATIONSHIP_STRENGTH,
+        })
+
+        return context
+
+    def form_valid(self, form):
+        """Enhanced form processing with automatic relationship creation"""
+        response = super().form_valid(form)
+        skill = self.object 
+
+        # Auto-create technology relationships if provided
+        technology_ids = self.request.POST.getlist('suggested_technologies')
+        for tech_id in technology_ids:
+            try:
+                technology = Technology.objects.get(id=tech_id)
+                relationship_strength = int(self.request.POST.get(f'tech_strength_{tech_id}', 2))
+                relationship_type = self.request.POST.get(f'tech_type_{tech_id}', 'implementation')
+
+                SkillTechnologyRelation.objects.create(
+                    skill=skill,
+                    technology=technology,
+                    strength=relationship_strength,
+                    relationship_type=relationship_type,
+                    notes=f'Auto-created during skill setup'
+                )
+            except (Technology.DoesNotExist, ValueError):
+                continue
+        
+        # Auto-create education relationships if provided
+        education_ids = self.request.POST.getlist('related_education')
+        for edu_id in education_ids:
+            try:
+                education = Education.objects.get(iid=edu_id)
+                proficiency_gained = int(self.request.POST.get(f'edu_proficiency_{edu_id}', 2))
+
+                EducationSkillDevelopment.objects.create(
+                    education=education,
+                    skill=skill,
+                    proficiency_gained=proficiency_gained,
+                    notes=f'Skill developed through {education.degree}'
+                )
+            except (Education.DoesNotExist, ValueError):
+                continue
+        
+        messages.success(
+            self.request,
+            f'Skill "{skill.name}" created with ecosystem connections!'
+        )
+
+        return response
+
+
