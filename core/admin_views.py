@@ -11,6 +11,7 @@ from django.views.generic import (
     DeleteView,
     ListView,
     TemplateView,
+    DetailView
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
@@ -30,6 +31,7 @@ from datetime import datetime, timedelta
 from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
 from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
 from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule, Technology
+from blog.models import Post, SystemLogEntry
 
 # ======= BUTTON STYLE TESTING ========
 def test_admin_styles(request):
@@ -1430,3 +1432,190 @@ class AnalyticsChartDataView(AdminAccessMixin, TemplateView):
         }
 
         return JsonResponse(chart_data)
+
+# ========= INTEGRATION - REWORK ===========
+
+class SkillDemonstrationView(BaseAdminView, DetailView):
+    """Enhanced skill detail showing ecosystem-wide demonstrations"""
+
+    model = Skill
+    template_name = 'core/admin/skill_demonstration.html'
+    context_object_name = 'skill'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        skill = self.object 
+
+        # Technology Relationships
+        tech_relations = skill.technology_relations.select_related('technology').order_by('-strength')
+
+        # Projects using this skill (via technologies)
+        skill_technologies = tech_relations.values_list('technology', flat=True)
+        projects_using_skill = SystemModule.objects.filter(
+            technologies__in=skill_technologies
+        ).distinct().prefetch_related('technologies')
+
+        # Blog posts related to this skill (via project connections)
+        related_blog_posts = Post.objects.filter(
+            systemlogentry__system__in=projects_using_skill
+        ).distinct()[:10]
+
+        # Education that developed this skill
+        education_sources = EducationSkillDevelopment.objects.filter(
+            skill=skill
+        ).select_related('education').order_by('-proficiency_gained')
+
+        # Learning progression timeline
+        learning_timeline = self.build_skill_timeline(skill)
+
+        # Skill analytics
+        skill_analytics = {
+            'total_projects': projects_using_skill.count(),
+            'primary_technologies': tech_relations.filter(strength__gte=3).count(),
+            'blog_documentation': related_blog_posts.count(),
+            'learning_sources': education_sources.count(),
+            'skill_progression_score': skill.get_mastery_progression_score() if hasattr(skill, 'get_mastery_progression_score') else 0,
+            'practical_applications': projects_using_skill.filter(status__in=['deployed', 'published']).count(),
+        }
+
+        # Related skills (those that share technologies)
+        related_skills = Skill.objects.filter(
+            technology_relations__technology__in=skill_technologies
+        ).exclude(id=skill.id).distinct()[:6]
+
+        # Suggested next steps
+        next_steps = self.get_skill_next_steps(skill, tech_relations, projects_using_skill)
+
+        context.update({
+            'title': f'Skill Overview: {skill.name}',
+            'subtitle': 'Cross-ecosystem skill demonstration and development',
+
+            # Core relationships
+            'tech_relations': tech_relations,
+            'projects_using_skill': projects_using_skill,
+            'related_blog_posts': related_blog_posts,
+            'education_sources': education_sources,
+            'related_skills': related_skills,
+
+            # Analytics and progression
+            'skill_analytics': skill_analytics,
+            'learning_timeline': learning_timeline,
+            'next_steps': next_steps,
+
+            # Available options for new connections
+            'available_technologies': Technology.objects.exclude(
+                id__in=skill_technologies
+            ).order_by('name')[:20],
+            'available_projects': SystemModule.objects.exclude(
+                id__in=projects_using_skill.values_list('id', flat=True)
+            ).filter(status__in=['deployed', 'in_development']).order_by('-updated_at')[:10],
+        })
+
+        return context
+    
+    def build_skill_timeline(self, skill):
+        """Build chronological timeline of skill development"""
+        timeline_events = []
+
+        # Education events
+        for edu_dev in skill.education_development.all():
+            timeline_events.append({
+                'date': edu_dev.education.start_date,
+                'type': 'education_start',
+                'title': f'Started learning {skill.name}',
+                'source': edu_dev.education.institution,
+                'details': f'{edu_dev.education.degree} - {edu_dev.education.field_of_study}',
+                'proficiency_gained': edu_dev.proficiency_gained,
+            })
+
+            if edu_dev.education.end_date:
+                timeline_events.append({
+                    'date': edu_dev.education.end_date,
+                    'type': 'education_complete',
+                    'title': f'Completed {skill.name} training',
+                    'source': edu_dev.education.institution,
+                    'details': f'Gained {edu_dev.get_proficiency_gained_display()} proficiency',
+                })
+
+        # Technology associations
+        for tech_relation in skill.technology_relations.all():
+            if tech_relation.first_used_together:
+                timeline_events.append({
+                    'date': tech_relation.first_used_together,
+                    'type': 'technology_first_use',
+                    'title': f'First used {tech_relation.technology.name}',
+                    'source': 'Practical Application',
+                    'details': f'{tech_relation.get_relationship_type_display()} - {tech_relation.get_strength_display()}',
+                })
+
+        # Project applications (approximate from system creation dates)
+        skill_technologies = skill.technology_relations.values_list('technology', flat=True)
+        for project in SystemModule.objects.filter(technologies__in=skill_technologies).distinct():
+            timeline_events.append({
+                'date': project.created_at.date(),
+                'type': 'project_application',
+                'title': f'Applied {skill.name} in {project.title}',
+                'source': 'Project Development',
+                'details': f'{project.get_status_display()} - {project.system_type}',
+            })
+        
+        # Sort chronologically and return recent events
+        timeline_events.sort(key=lambda x: x['date'])
+        return timeline_events[-10:]  # Last 10 events
+    
+    def get_skill_next_steps(self, skill, tech_relations, projects_using_skill):
+        """Suggest next steps for skill development"""
+        suggestions = []
+
+        # Suggest technologies commonly used with current ones
+        current_tech_ids = tech_relations.values_list('technology_id', flat=True)
+        commonly_paired_techs = Technology.objects.filter(
+            systemmodule__technologies__in=current_tech_ids
+        ).exclude(id__in=current_tech_ids).annotate(
+            usage_count=Count('systemmodule')
+        ).order_by('-usage_count')[:3]
+
+        for tech in commonly_paired_techs:
+            suggestions.append({
+                'type': 'technology',
+                'title': f'Learn {tech.name}',
+                'reason': f'Commonly used with {skill.name}',
+                'action_url': reverse('aura_admin:skill_tech_relation_create') + f'?skill={skill.id}&technology={tech.id}',
+                'priority': 'high' if tech.usage_count > 2 else 'medium'
+            })
+        
+        # Suggest project types if skill isn't heavily used
+        if projects_using_skill.count() < 3:
+            suggestions.append({
+                'type': 'project',
+                'title': f'Build project showcasing {skill.name}',
+                'reason': 'Limited practical demonstrations',
+                'action_url': reverse('aura_admin:projects:system_create'),
+                'priority': 'high'
+            })
+
+        # Suggest documentation if no blog posts
+        related_posts = Post.objects.filter(
+            systemlogentry__system__in=projects_using_skill
+        ).distinct()
+
+        if not related_posts.exists():
+            suggestions.append({
+                'type': 'documentation',
+                'title': f'Document {skill.name} learning journey',
+                'reason': 'No learning documentation found',
+                'action_url': reverse('aura_admin:blog:discovery_create'),
+                'priority': 'medium'
+            })
+        
+        # Suggest certification if proficiency is high but not certified
+        if skill.proficiency >= 4 and not skill.is_certified:
+            suggestions.append({
+                'type': 'certification',
+                'title': f'Get {skill.name} certification',
+                'reason': 'High proficiency without formal recognition',
+                'action_url': reverse('aura_admin:education_create'),
+                'priority': 'low'
+            })
+        
+        return suggestions
