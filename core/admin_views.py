@@ -2061,7 +2061,7 @@ class ProfessionalGrowthTimelineView(AdminAccessMixin, TemplateView):
                 'description': f'{education.field_of_study} at {education.institution}',
                 'icon': 'fa-solid fa-graduation-cap',
                 'color': 'teal',
-                'skills_gained': education.skill_developments.all()[:3]
+                'skills_gained': education.skills_learned.all()[:3]
             })
 
             if education.end_date:
