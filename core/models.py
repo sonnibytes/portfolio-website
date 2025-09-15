@@ -55,17 +55,30 @@ class Skill(models.Model):
         ("other", "Other"),
     )
 
+    PROFICIENCY_CHOICES = (
+        (1, 'Level 1'),
+        (2, 'Level 2'),
+        (3, 'Level 3'),
+        (4, 'Level 4'),
+        (5, 'Level 5'),
+    )
+
     name = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, max_length=100)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='technical_concept')
     description = models.TextField(blank=True)
     proficiency = models.IntegerField(
-        choices=[(i, i) for i in range(1, 6)],
-        help_text="Skill level from 1-5"
+        choices=PROFICIENCY_CHOICES,
+        help_text="Skill level from 1-5",
+        default=1
     )
     icon = models.CharField(max_length=50, blank=True, help_text="Font Awesome icon name (e.g., fa-python)")
     color = models.CharField(max_length=7, default="#00f0ff", help_text="Hex color code")
     display_order = models.PositiveIntegerField(default=0)
+
+    # Adding for timeline tracking
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     # Technology Relationship
     related_technology = models.OneToOneField('projects.Technology', on_delete=models.SET_NULL, null=True, blank=True, related_name='skill_profile', help_text="Link to corresponding technology in projects app")

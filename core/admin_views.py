@@ -1436,7 +1436,7 @@ class AnalyticsChartDataView(AdminAccessMixin, TemplateView):
 
 # ========= INTEGRATION - REWORK ===========
 
-class ProfessionalDevelopmentDashboardView(BaseAdminView, TemplateView):
+class ProfessionalDevelopmentDashboardView(AdminAccessMixin, TemplateView):
     """Enhanced Professional Development Command Center Dashboard"""
 
     template_name = 'core/admin/professional_dashboard.html'
@@ -1490,7 +1490,7 @@ class ProfessionalDevelopmentDashboardView(BaseAdminView, TemplateView):
             'in_development': SystemModule.objects.filter(status='in_development').count(),
             'total_technologies': Technology.objects.count(),
             'technologies_in_use': Technology.objects.filter(
-                systemmodule__isnull=False
+                systems__isnull=False
             ).distinct().count(),
         }
         
@@ -1507,17 +1507,17 @@ class ProfessionalDevelopmentDashboardView(BaseAdminView, TemplateView):
             
             # Skills applied in projects (via shared technologies)
             'skills_in_projects': Skill.objects.filter(
-                technology_relations__technology__systemmodule__isnull=False
+                technology_relations__technology__systems__isnull=False
             ).distinct().count(),
             
             # Learning documented in blog
             'documented_learning': Post.objects.filter(
-                systemlogentry__isnull=False
+                related_systems__isnull=False
             ).distinct().count(),
             
             # Education that led to skills
             'education_with_skills': Education.objects.filter(
-                skill_developments__isnull=False
+                skills_learned__isnull=False
             ).distinct().count(),
             
             # Technologies with skill connections
@@ -2041,7 +2041,7 @@ class EnhancedSkillCreateView(BaseAdminCreateView):
         return response
 
 
-class ProfessionalGrowthTimelineView(BaseAdminView, TemplateView):
+class ProfessionalGrowthTimelineView(AdminAccessMixin, TemplateView):
     """Professional development timeline across all apps"""
     template_name = 'core/admin/growth_timeline.html'
 
@@ -2127,7 +2127,7 @@ class ProfessionalGrowthTimelineView(BaseAdminView, TemplateView):
 
 # ===== ADDITIONAL HELPER VIEWS =====
 
-class SkillTechnologyMatrixView(BaseAdminView, TemplateView):
+class SkillTechnologyMatrixView(AdminAccessMixin, TemplateView):
     """Full skill-technology relationship matrix visualization"""
     template_name = 'core/admin/skill_tech_matrix.html'
 
