@@ -11,7 +11,8 @@ from django.views.generic import (
     DeleteView,
     ListView,
     TemplateView,
-    DetailView
+    DetailView,
+    View
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
@@ -1435,6 +1436,319 @@ class AnalyticsChartDataView(AdminAccessMixin, TemplateView):
 
 # ========= INTEGRATION - REWORK ===========
 
+class ProfessionalDevelopmentDashboardView(BaseAdminView, TemplateView):
+    """Enhanced Professional Development Command Center Dashboard"""
+
+    template_name = 'core/admin/professional_dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Import models to avoid circular imports
+        from blog.models import Post, Category
+        from projects.models import SystemModule, Technology
+
+        # ===== CORE STATISTICS =====
+        
+        # Education Statistics
+        education_stats = {
+            'total_education': Education.objects.count(),
+            'current_education': Education.objects.filter(is_current=True).count(),
+            'completed_courses': Education.objects.filter(
+                learning_type__in=['online_course', 'certification'],
+                end_date__isnull=False,
+            ).count(),
+            'formal_education': Education.objects.filter(
+                learning_type__in=['degree', 'bootcamp']
+            ).count(),
+            'total_learning_hours': Education.objects.aggregate(
+                total=Sum('hours_completed')
+            )['total'] or 0,
+            'recent_completions': Education.objects.filter(
+                end_date__gte=timezone.now() - timedelta(days=90),
+                end_date__isnull=False
+            ).count(),
+        }
+        
+        # Skill Statistics  
+        skill_stats = {
+            'total_skills': Skill.objects.count(),
+            'featured_skills': Skill.objects.filter(is_featured=True).count(),
+            'currently_learning': Skill.objects.filter(is_currently_learning=True).count(),
+            'certified_skills': Skill.objects.filter(is_certified=True).count(),
+            'avg_proficiency': Skill.objects.aggregate(avg=Avg('proficiency'))['avg'] or 0,
+            'high_proficiency': Skill.objects.filter(proficiency__gte=4).count(),
+            'skills_with_tech_links': Skill.objects.filter(
+                technology_relations__isnull=False
+            ).distinct().count(),
+        }
+        
+        # System/Projects Statistics
+        system_stats = {
+            'total_systems': SystemModule.objects.count(),
+            'deployed_systems': SystemModule.objects.filter(status='deployed').count(),
+            'in_development': SystemModule.objects.filter(status='in_development').count(),
+            'total_technologies': Technology.objects.count(),
+            'technologies_in_use': Technology.objects.filter(
+                systemmodule__isnull=False
+            ).distinct().count(),
+        }
+        
+        # ===== INTEGRATION ANALYTICS =====
+        
+        # Cross-app relationship counts
+        integration_stats = {
+            'skill_tech_relations': SkillTechnologyRelation.objects.count(),
+            'education_skill_connections': EducationSkillDevelopment.objects.count(),
+            'total_connections': (
+                SkillTechnologyRelation.objects.count() + 
+                EducationSkillDevelopment.objects.count()
+            ),
+            
+            # Skills applied in projects (via shared technologies)
+            'skills_in_projects': Skill.objects.filter(
+                technology_relations__technology__systemmodule__isnull=False
+            ).distinct().count(),
+            
+            # Learning documented in blog
+            'documented_learning': Post.objects.filter(
+                systemlogentry__isnull=False
+            ).distinct().count(),
+            
+            # Education that led to skills
+            'education_with_skills': Education.objects.filter(
+                skill_developments__isnull=False
+            ).distinct().count(),
+            
+            # Technologies with skill connections
+            'technologies_with_skills': Technology.objects.filter(
+                skill_relations__isnull=False
+            ).distinct().count(),
+        }
+        
+        # ===== FEATURED CONTENT =====
+        
+        # Featured skills for demonstration
+        featured_skills = Skill.objects.filter(
+            is_featured=True
+        ).prefetch_related('technology_relations__technology')[:6]
+        
+        # If no featured skills, get highest proficiency
+        if not featured_skills.exists():
+            featured_skills = Skill.objects.filter(
+                proficiency__gte=3
+            ).prefetch_related('technology_relations__technology').order_by('-proficiency')[:6]
+        
+        # Skills with technology connections for matrix preview
+        skills_with_tech = Skill.objects.filter(
+            technology_relations__isnull=False
+        ).prefetch_related('technology_relations__technology').order_by('-proficiency')[:8]
+        
+        # ===== RECENT ACTIVITY TIMELINE =====
+        
+        recent_activities = []
+        
+        # Recent education completions
+        recent_education = Education.objects.filter(
+            end_date__gte=timezone.now() - timedelta(days=180),
+            end_date__isnull=False
+        ).order_by('-end_date')[:3]
+        
+        for edu in recent_education:
+            recent_activities.append({
+                'date': edu.end_date,
+                'type': 'education',
+                'icon': 'graduation-cap',
+                'title': f'Completed {edu.degree}',
+                'source': edu.institution,
+                'category': 'Learning'
+            })
+        
+        # Recent skill additions
+        recent_skills = Skill.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=90)
+        ).order_by('-created_at')[:3]
+        
+        for skill in recent_skills:
+            recent_activities.append({
+                'date': skill.created_at.date(),
+                'type': 'skill',
+                'icon': 'brain',
+                'title': f'Added {skill.name} skill',
+                'source': f'Level {skill.proficiency}',
+                'category': 'Development'
+            })
+        
+        # Recent project deployments
+        recent_projects = SystemModule.objects.filter(
+            status='deployed',
+            updated_at__gte=timezone.now() - timedelta(days=120)
+        ).order_by('-updated_at')[:3]
+        
+        for project in recent_projects:
+            recent_activities.append({
+                'date': project.updated_at.date(),
+                'type': 'project',
+                'icon': 'rocket',
+                'title': f'Deployed {project.title}',
+                'source': 'Project Application',
+                'category': 'Application'
+            })
+        
+        # Recent blog posts about learning
+        recent_posts = Post.objects.filter(
+            status='published',
+            published_date__gte=timezone.now() - timedelta(days=60)
+        ).order_by('-published_date')[:2]
+        
+        for post in recent_posts:
+            recent_activities.append({
+                'date': post.published_date.date() if post.published_date else post.created_at.date(),
+                'type': 'blog',
+                'icon': 'file-alt',
+                'title': f'Documented: {post.title[:30]}...',
+                'source': 'Learning Blog',
+                'category': 'Documentation'
+            })
+        
+        # Sort activities by date (most recent first)
+        recent_activities.sort(key=lambda x: x['date'], reverse=True)
+        recent_activities = recent_activities[:8]  # Limit to 8 most recent
+        
+        # ===== GROWTH METRICS =====
+        
+        # Calculate learning velocity (skills/education added per month)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        sixty_days_ago = timezone.now() - timedelta(days=60)
+        
+        growth_metrics = {
+            'skills_this_month': Skill.objects.filter(
+                created_at__gte=thirty_days_ago
+            ).count(),
+            'skills_last_month': Skill.objects.filter(
+                created_at__gte=sixty_days_ago,
+                created_at__lt=thirty_days_ago
+            ).count(),
+            'education_this_month': Education.objects.filter(
+                created_at__gte=thirty_days_ago
+            ).count(),
+            'projects_this_month': SystemModule.objects.filter(
+                created_at__gte=thirty_days_ago
+            ).count(),
+        }
+        
+        # ===== SUGGESTED ACTIONS =====
+        
+        suggested_actions = []
+        
+        # Skills without technology connections
+        skills_without_tech = Skill.objects.filter(
+            technology_relations__isnull=True
+        ).count()
+        
+        if skills_without_tech > 0:
+            suggested_actions.append({
+                'type': 'skill_tech_connection',
+                'title': f'Connect {skills_without_tech} skills to technologies',
+                'priority': 'high',
+                'url': reverse_lazy('aura_admin:skill_tech_relation_list')
+            })
+        
+        # Education without skill connections
+        education_without_skills = Education.objects.filter(
+            skill_developments__isnull=True
+        ).count()
+        
+        if education_without_skills > 0:
+            suggested_actions.append({
+                'type': 'education_skill_connection', 
+                'title': f'Link {education_without_skills} education items to skills',
+                'priority': 'medium',
+                'url': reverse_lazy('aura_admin:education_skill_list')
+            })
+        
+        # High proficiency skills without projects
+        expert_skills = Skill.objects.filter(
+            proficiency__gte=4,
+            technology_relations__technology__systemmodule__isnull=True
+        ).distinct()
+        
+        if expert_skills.exists():
+            suggested_actions.append({
+                'type': 'skill_demonstration',
+                'title': f'Create projects for {expert_skills.count()} expert-level skills',
+                'priority': 'high',
+                'url': reverse_lazy('aura_admin:projects:system_create')
+            })
+        
+        # ===== PORTFOLIO READINESS SCORE =====
+        
+        # Calculate overall portfolio readiness based on integrations
+        portfolio_score = 0
+        max_score = 100
+        
+        # Skills documented (20 points)
+        if skill_stats['total_skills'] > 0:
+            portfolio_score += min(20, skill_stats['total_skills'] * 2)
+        
+        # Skills connected to technologies (25 points)  
+        if integration_stats['skill_tech_relations'] > 0:
+            portfolio_score += min(25, integration_stats['skill_tech_relations'] * 2)
+        
+        # Skills applied in projects (25 points)
+        if integration_stats['skills_in_projects'] > 0:
+            portfolio_score += min(25, integration_stats['skills_in_projects'] * 3)
+        
+        # Learning documented (15 points)
+        if integration_stats['documented_learning'] > 0:
+            portfolio_score += min(15, integration_stats['documented_learning'] * 2)
+        
+        # Education linked to skills (15 points)
+        if integration_stats['education_skill_connections'] > 0:
+            portfolio_score += min(15, integration_stats['education_skill_connections'])
+        
+        portfolio_readiness = {
+            'score': min(portfolio_score, max_score),
+            'level': 'Excellent' if portfolio_score >= 80 else 
+                    'Good' if portfolio_score >= 60 else
+                    'Developing' if portfolio_score >= 40 else 'Getting Started'
+        }
+        
+        # ===== CONTEXT ASSEMBLY =====
+        
+        context.update({
+            'title': 'Professional Development Command Center',
+            'subtitle': 'Unified view of learning journey and skill applications',
+            
+            # Core statistics
+            'education_stats': education_stats,
+            'skill_stats': skill_stats,
+            'system_stats': system_stats,
+            'integration_stats': integration_stats,
+            
+            # Featured content
+            'featured_skills': featured_skills,
+            'skills_with_tech': skills_with_tech,
+            'recent_activities': recent_activities,
+            
+            # Analytics
+            'growth_metrics': growth_metrics,
+            'suggested_actions': suggested_actions,
+            'portfolio_readiness': portfolio_readiness,
+            
+            # Additional context for template
+            'current_learning': Education.objects.filter(is_current=True)[:3],
+            'top_technologies': Technology.objects.annotate(
+                skill_count=Count('skill_relations')
+            ).order_by('-skill_count')[:5],
+            'recent_skill_developments': EducationSkillDevelopment.objects.select_related(
+                'education', 'skill'
+            ).order_by('-created_at')[:5],
+        })
+        
+        return context
+
+
 class SkillDemonstrationView(BaseAdminView, DetailView):
     """Enhanced skill detail showing ecosystem-wide demonstrations"""
 
@@ -1809,3 +2123,109 @@ class ProfessionalGrowthTimelineView(BaseAdminView, TemplateView):
         })
 
         return context
+
+
+# ===== ADDITIONAL HELPER VIEWS =====
+
+class SkillTechnologyMatrixView(BaseAdminView, TemplateView):
+    """Full skill-technology relationship matrix visualization"""
+    template_name = 'core/admin/skill_tech_matrix.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Build matrix data
+        skills = Skill.objects.prefetch_related('technology_relations__technology')
+        technologies = Technology.objects.prefetch_related('skill_relations__skill')
+
+        # Create matrix structure
+        matrix_data = []
+        for skill in skills:
+            skill_row = {
+                'skill': skill,
+                'technologies': {},
+                'total_connections': skill.technology_relations.count()
+            }
+
+            for relation in skill.technology_relations.all():
+                skill_row['technologies'][relation.technology.id] = {
+                    'strength': relation.strength,
+                    'type': relation.relationship_type,
+                    'relation': relation
+                }
+            
+            matrix_data.append(skill_row)
+        
+        # Matrix Stats
+        matrix_stats = {
+            'total_relationships': SkillTechnologyRelation.objects.count(),
+            'skills_with_connections': Skill.objects.filter(
+                technology_relations__isnull=False
+            ).distinct().count(),
+            'technologies_with_connections': Technology.objects.filter(
+                skill_relations__isnull=False
+            ).distinct().count(),
+            'avg_connections_per_skill': matrix_data and sum(
+                row['total_connections'] for row in matrix_data 
+            ) / len(matrix_data) or 0,
+        }
+
+        context.update({
+            'title': 'Skill-Technology Matrix',
+            'subtitle': 'Complete overview of skill-technology relationships',
+            'matrix_data': matrix_data,
+            'technologies': technologies,
+            'matrix_stats': matrix_stats,
+            'strength_choices': SkillTechnologyRelation.RELATIONSHIP_STRENGTH,
+            'type_choices': SkillTechnologyRelation.RELATIONSHIHP_TYPE,
+        })
+
+        return context
+
+class QuickSkillTechConnectionView(BaseAdminView, View):
+    """AJAX view for quick skill-technology connections"""
+
+    def post(self, request, *args, **kwargs):
+        skill_id = request.POST.get('skill_id')
+        technology_id = request.POST.get('technology_id')
+        strength = request.POST.get('strength', 2)
+        relationship_type = request.POST.get('type', 'implementation')
+
+        try:
+            skill = Skill.objects.get(id=skill_id)
+            technology = Technology.objects.get(id=technology_id)
+
+            # Create or update relationship
+            relation, created = SkillTechnologyRelation.objects.get_or_create(
+                skill=skill,
+                technology=technology,
+                defaults={
+                    'strength': int(strength),
+                    'relationship_type': relationship_type,
+                    'notes': f'Quick connection via matrix interface'
+                }
+            )
+
+            if not created:
+                # Update exisiting relationship
+                relation.strength = int(strength)
+                relation.relationship_type = relationship_type
+                relation.save()
+            
+            return JsonResponse({
+                'success': True,
+                'created': created,
+                'relationship': {
+                    'id': relation.id,
+                    'strength': relation.strength,
+                    'strength_display': relation.get_strength_display(),
+                    'type': relation.relationship_type,
+                    'type_display': relation.get_relationship_type_display(),
+                }
+            })
+        
+        except (Skill.DoesNotExist, Technology.DoesNotExist, ValueError) as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
