@@ -1948,9 +1948,9 @@ class EnhancedSkillCreateView(BaseAdminCreateView):
 
         # Suggest technologies from existing projects
         suggested_technologies = Technology.objects.filter(
-            systemmodule__status__in=['deployed', 'published', 'in_development']
+            systems__status__in=['deployed', 'published', 'in_development']
         ).annotate(
-            project_count=Count('systemmodule')
+            project_count=Count('systems')
         ).order_by('-project_count')[:12]
 
         # Suggest related education

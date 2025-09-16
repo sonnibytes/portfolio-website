@@ -1,0 +1,1085 @@
+{% extends "admin/admin_base.html" %}
+{% load aura_filters %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block page_title %}{% if object %}Edit Skill{% else %}Add New Skill{% endif %}{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+/* Enhanced Skill Form Styles */
+.skill-form-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    transition: all var(--transition-fast);
+}
+
+.form-section:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.form-section-subtitle {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.form-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.form-label i {
+    font-size: 0.8rem;
+    color: var(--color-teal);
+}
+
+.form-input, .form-select, .form-textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 0.875rem;
+    transition: all var(--transition-fast);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.form-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Proficiency Slider Styles */
+.proficiency-slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.proficiency-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-teal);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.proficiency-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-teal);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.proficiency-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.proficiency-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-teal);
+}
+
+.proficiency-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 0.25rem;
+}
+
+/* Visual Display & Status Section */
+.visual-display-section {
+    background: linear-gradient(135deg, 
+        rgba(179, 157, 219, 0.1) 0%, 
+        rgba(179, 157, 219, 0.05) 100%);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.display-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.display-preview {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+}
+
+.preview-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.skill-preview-card {
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: var(--border-radius-md);
+    padding: 1rem;
+    text-align: center;
+}
+
+.skill-preview-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-lavender);
+    margin-bottom: 0.5rem;
+}
+
+.skill-preview-category {
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    margin-bottom: 0.75rem;
+}
+
+.proficiency-stars {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.proficiency-star {
+    width: 1rem;
+    height: 1rem;
+    color: rgba(255, 255, 255, 0.2);
+    transition: color 0.2s ease;
+}
+
+.proficiency-star.filled {
+    color: var(--color-teal);
+}
+
+.status-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.status-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.status-badge.active {
+    opacity: 1;
+}
+
+.status-badge.featured {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.status-badge.learning {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+}
+
+.status-badge.certified {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--color-teal);
+    cursor: pointer;
+}
+
+.checkbox-item label {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+    cursor: pointer;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-item label i {
+    font-size: 0.8rem;
+    color: var(--color-teal);
+}
+
+/* Suggestions and other enhanced form styles from previous template */
+.suggestions-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+}
+
+.suggestions-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.suggestion-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.suggestion-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(38, 198, 218, 0.3);
+    transform: translateY(-1px);
+}
+
+.suggestion-item.selected {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.5);
+}
+
+.suggestion-item::after {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all var(--transition-fast);
+}
+
+.suggestion-item.selected::after {
+    background: var(--color-teal);
+    border-color: var(--color-teal);
+}
+
+.suggestion-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.suggestion-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.tech-connection-options {
+    display: none;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tech-connection-options.show {
+    display: block;
+}
+
+.connection-option-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.connection-option-row label {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.connection-option-row select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 0.25rem 0.5rem;
+    color: white;
+    font-size: 0.75rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-lg);
+    margin-top: 2rem;
+}
+
+.form-actions-left, .form-actions-right {
+    display: flex;
+    gap: 1rem;
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 0.25rem;
+}
+
+.error-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.error-list li {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 1024px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .display-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .suggestions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .skill-form-container {
+        padding: 1rem;
+    }
+    
+    .form-section, .visual-display-section {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-actions-left,
+    .form-actions-right {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="skill-form-container">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white mb-2">
+            {% if object %}Edit Skill: {{ object.name }}{% else %}Add New Technical Skill{% endif %}
+        </h1>
+        <p class="text-gray-400">
+            {% if object %}Update skill details and ecosystem connections{% else %}Build your technical competency portfolio with smart connections{% endif %}
+        </p>
+    </div>
+
+    <!-- Visual Display & Status Section -->
+    <div class="visual-display-section">
+        <div class="form-section-header">
+            <i class="fas fa-eye text-2xl text-lavender-400"></i>
+            <div>
+                <h3 class="form-section-title">Visual Display & Status</h3>
+                <p class="form-section-subtitle">How this skill appears in your portfolio</p>
+            </div>
+        </div>
+        
+        <div class="display-grid">
+            <div class="display-preview">
+                <div class="preview-title">
+                    <i class="fas fa-desktop"></i>
+                    Portfolio Preview
+                </div>
+                <div class="skill-preview-card">
+                    <div class="skill-preview-name" id="preview-name">
+                        {% if object %}{{ object.name }}{% else %}Skill Name{% endif %}
+                    </div>
+                    <div class="skill-preview-category" id="preview-category">
+                        {% if object %}{{ object.get_category_display }}{% else %}Category{% endif %}
+                    </div>
+                    <div class="proficiency-stars" id="preview-stars">
+                        {% for i in "12345" %}
+                            <i class="fas fa-star proficiency-star {% if object and forloop.counter <= object.proficiency %}filled{% endif %}"></i>
+                        {% endfor %}
+                    </div>
+                    <div class="status-badges">
+                        <span class="status-badge featured {% if object.is_featured %}active{% endif %}" id="preview-featured">
+                            <i class="fas fa-trophy"></i> Featured
+                        </span>
+                        <span class="status-badge learning {% if object.is_currently_learning %}active{% endif %}" id="preview-learning">
+                            <i class="fas fa-clock"></i> Learning
+                        </span>
+                        <span class="status-badge certified {% if object.is_certified %}active{% endif %}" id="preview-certified">
+                            <i class="fas fa-certificate"></i> Certified
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="display-preview">
+                <div class="preview-title">
+                    <i class="fas fa-toggle-on"></i>
+                    Status Options
+                </div>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item" onclick="toggleCheckbox('{{ form.is_featured.id_for_label }}')">
+                        {% render_field form.is_featured %}
+                        <label for="{{ form.is_featured.id_for_label }}">
+                            <i class="fas fa-trophy"></i>
+                            Featured Skill
+                        </label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('{{ form.is_currently_learning.id_for_label }}')">
+                        {% render_field form.is_currently_learning %}
+                        <label for="{{ form.is_currently_learning.id_for_label }}">
+                            <i class="fas fa-clock"></i>
+                            Currently Learning
+                        </label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('{{ form.is_certified.id_for_label }}')">
+                        {% render_field form.is_certified %}
+                        <label for="{{ form.is_certified.id_for_label }}">
+                            <i class="fas fa-certificate"></i>
+                            Certified
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="skill-form">
+        {% csrf_token %}
+        
+        <div class="form-grid">
+            <!-- Main Form Content -->
+            <div class="form-main">
+                <!-- Basic Skill Information -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-brain text-2xl text-teal-400"></i>
+                        <div>
+                            <h3 class="form-section-title">Skill Foundation</h3>
+                            <p class="form-section-subtitle">Core skill information and category</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-tag"></i>
+                                Skill Name
+                            </label>
+                            {% render_field form.name class="form-input" placeholder="e.g., Python, React, PostgreSQL" %}
+                            {% if form.name.help_text %}
+                                <div class="help-text">{{ form.name.help_text }}</div>
+                            {% endif %}
+                            {% if form.name.errors %}
+                                <ul class="error-list">
+                                    {% for error in form.name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-folder"></i>
+                                Category
+                            </label>
+                            {% render_field form.category class="form-select" %}
+                            {% if form.category.help_text %}
+                                <div class="help-text">{{ form.category.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="form-label">
+                            <i class="fas fa-align-left"></i>
+                            Description
+                        </label>
+                        {% render_field form.description class="form-textarea" placeholder="Describe your experience and expertise with this skill..." %}
+                        {% if form.description.help_text %}
+                            <div class="help-text">{{ form.description.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Proficiency & Experience Section -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-chart-line text-2xl text-purple-400"></i>
+                        <div>
+                            <h3 class="form-section-title">Proficiency & Experience</h3>
+                            <p class="form-section-subtitle">Your skill level and practical experience</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="form-label">
+                            <i class="fas fa-chart-line"></i>
+                            Proficiency Level
+                        </label>
+                        <input type="range" id="proficiency-slider" class="proficiency-slider" 
+                               name="proficiency" min="1" max="5" 
+                               value="{{ form.proficiency.value|default:1 }}" />
+                        <div class="proficiency-display">
+                            <div class="proficiency-value">
+                                Level <span id="proficiency-value">{{ form.proficiency.value|default:1 }}</span>
+                            </div>
+                            <div class="text-xs text-gray-400" id="proficiency-description">
+                                Beginner
+                            </div>
+                        </div>
+                        <div class="proficiency-labels">
+                            <span>Beginner</span>
+                            <span>Learning</span>
+                            <span>Competent</span>
+                            <span>Proficient</span>
+                            <span>Expert</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Years of Experience
+                            </label>
+                            {% render_field form.years_experience class="form-input" placeholder="e.g., 2" %}
+                            {% if form.years_experience.help_text %}
+                                <div class="help-text">{{ form.years_experience.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-clock"></i>
+                                Last Used
+                            </label>
+                            {% render_field form.last_used class="form-input" %}
+                            {% if form.last_used.help_text %}
+                                <div class="help-text">{{ form.last_used.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technology Connections -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-cogs text-2xl text-lavender-400"></i>
+                        <div>
+                            <h3 class="form-section-title">Technology Stack</h3>
+                            <p class="form-section-subtitle">Connect this skill to specific technologies and tools</p>
+                        </div>
+                    </div>
+                    
+                    {% if suggested_technologies %}
+                        <div class="suggestions-section">
+                            <div class="suggestions-title">
+                                <i class="fas fa-lightbulb text-yellow-400"></i>
+                                Suggested Technologies (from your projects)
+                            </div>
+                            <div class="suggestions-grid">
+                                {% for tech in suggested_technologies %}
+                                    <div class="suggestion-item tech-suggestion-item" data-tech-id="{{ tech.id }}">
+                                        <div class="suggestion-title">{{ tech.name }}</div>
+                                        <div class="suggestion-meta">
+                                            Used in {{ tech.project_count }} project{{ tech.project_count|pluralize }}
+                                        </div>
+                                        
+                                        <div class="tech-connection-options">
+                                            <div class="connection-option-row">
+                                                <div>
+                                                    <label>Relationship Strength</label>
+                                                    <select name="tech_strength_{{ tech.id }}" class="form-select">
+                                                        {% for value, label in relationship_strengths %}
+                                                            <option value="{{ value }}">{{ label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label>Relationship Type</label>
+                                                    <select name="tech_type_{{ tech.id }}" class="form-select">
+                                                        {% for value, label in relationship_types %}
+                                                            <option value="{{ value }}">{{ label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Education Connections -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-graduation-cap text-2xl text-coral-400"></i>
+                        <div>
+                            <h3 class="form-section-title">Learning Sources</h3>
+                            <p class="form-section-subtitle">Link this skill to your education and training</p>
+                        </div>
+                    </div>
+                    
+                    {% if recent_education %}
+                        <div class="suggestions-section">
+                            <div class="suggestions-title">
+                                <i class="fas fa-clock text-orange-400"></i>
+                                Recent Education
+                            </div>
+                            <div class="suggestions-grid">
+                                {% for education in recent_education %}
+                                    <div class="suggestion-item" data-education-id="{{ education.id }}">
+                                        <div class="suggestion-title">{{ education.degree }}</div>
+                                        <div class="suggestion-meta">
+                                            {{ education.institution }} • 
+                                            {% if education.is_current %}In Progress{% else %}{{ education.start_date|date:"Y" }}{% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if completed_education %}
+                        <div class="suggestions-section mt-4">
+                            <div class="suggestions-title">
+                                <i class="fas fa-certificate text-green-400"></i>
+                                Completed Learning
+                            </div>
+                            <div class="suggestions-grid">
+                                {% for education in completed_education %}
+                                    <div class="suggestion-item" data-education-id="{{ education.id }}">
+                                        <div class="suggestion-title">{{ education.degree }}</div>
+                                        <div class="suggestion-meta">
+                                            {{ education.institution }} • {{ education.end_date|date:"Y" }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Sidebar (same as enhanced form) -->
+            <div class="form-sidebar">
+                <!-- Popular Categories -->
+                {% if popular_categories %}
+                    <div class="suggestions-section">
+                        <div class="suggestions-title">
+                            <i class="fas fa-chart-bar text-teal-400"></i>
+                            Popular Categories
+                        </div>
+                        <div class="space-y-2">
+                            {% for category in popular_categories %}
+                                <div class="flex items-center justify-between p-2 bg-white/5 rounded">
+                                    <span class="text-sm text-white">{{ category.category }}</span>
+                                    <span class="text-xs text-gray-400">{{ category.count }} skill{{ category.count|pluralize }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Blog Documentation Suggestions -->
+                {% if blog_categories %}
+                    <div class="suggestions-section">
+                        <div class="suggestions-title">
+                            <i class="fas fa-file-alt text-mint-400"></i>
+                            Document Learning
+                        </div>
+                        <p class="text-sm text-gray-400 mb-3">
+                            Consider writing about your {{ form.name.value|default:"skill" }} journey
+                        </p>
+                        <div class="space-y-1">
+                            {% for category in blog_categories|slice:":4" %}
+                                <div class="text-xs text-gray-500">
+                                    • {{ category.name }} ({{ category.post_count }} posts)
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <a href="{% url 'aura_admin:blog:discovery_create' %}" 
+                           class="btn btn-xs btn-mint mt-3">
+                            <i class="fas fa-plus mr-1"></i>
+                            Create Learning Post
+                        </a>
+                    </div>
+                {% endif %}
+                
+                <!-- Quick Actions -->
+                <div class="suggestions-section">
+                    <div class="suggestions-title">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        Quick Actions
+                    </div>
+                    <div class="space-y-2">
+                        <a href="{% url 'aura_admin:education_create' %}" 
+                           class="btn btn-sm btn-outline w-full">
+                            <i class="fas fa-graduation-cap mr-2"></i>
+                            Add Education
+                        </a>
+                        <a href="{% url 'aura_admin:projects:system_create' %}" 
+                           class="btn btn-sm btn-outline w-full">
+                            <i class="fas fa-rocket mr-2"></i>
+                            Create Project
+                        </a>
+                        <a href="{% url 'aura_admin:skill_tech_relation_list' %}" 
+                           class="btn btn-sm btn-outline w-full">
+                            <i class="fas fa-network-wired mr-2"></i>
+                            View Matrix
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Form Help -->
+                <div class="suggestions-section">
+                    <div class="suggestions-title">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                        Tips
+                    </div>
+                    <div class="text-sm text-gray-400 space-y-2">
+                        <p>• Be specific with skill names for better organization</p>
+                        <p>• Connect technologies to show practical application</p>
+                        <p>• Link education to demonstrate learning progression</p>
+                        <p>• Featured skills appear prominently in your portfolio</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hidden inputs for selected technologies and education -->
+        <input type="hidden" name="suggested_technologies" id="selected-technologies" value="">
+        <input type="hidden" name="related_education" id="selected-education" value="">
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <div class="form-actions-left">
+                <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Skills
+                </a>
+                {% if object %}
+                    <a href="{% url 'aura_admin:skill_demonstration' object.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-eye mr-2"></i>
+                        View Demonstration
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions-right">
+                <button type="button" class="btn btn-outline" onclick="previewSkill()">
+                    <i class="fas fa-eye mr-2"></i>
+                    Preview
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if object %}Update Skill{% else %}Create Skill{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// Combined enhanced skill form functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const proficiencySlider = document.getElementById('proficiency-slider');
+    const proficiencyValue = document.getElementById('proficiency-value');
+    const proficiencyDescription = document.getElementById('proficiency-description');
+    
+    const descriptions = {
+        1: 'Beginner - Basic understanding',
+        2: 'Learning - Developing skills',
+        3: 'Competent - Can work independently',
+        4: 'Proficient - Advanced capabilities',
+        5: 'Expert - Can teach others'
+    };
+    
+    // Update proficiency display and preview
+    function updateProficiencyDisplay() {
+        const value = parseInt(proficiencySlider.value);
+        proficiencyValue.textContent = value;
+        proficiencyDescription.textContent = descriptions[value];
+        
+        // Update preview stars
+        const previewStars = document.querySelectorAll('#preview-stars .proficiency-star');
+        previewStars.forEach((star, index) => {
+            star.classList.toggle('filled', index < value);
+        });
+    }
+    
+    proficiencySlider.addEventListener('input', updateProficiencyDisplay);
+    updateProficiencyDisplay(); // Initial call
+    
+    // Real-time preview updates
+    const nameField = document.querySelector('input[name="name"]');
+    const categoryField = document.querySelector('select[name="category"]');
+    const previewName = document.getElementById('preview-name');
+    const previewCategory = document.getElementById('preview-category');
+    
+    if (nameField) {
+        nameField.addEventListener('input', function() {
+            previewName.textContent = this.value || 'Skill Name';
+        });
+    }
+    
+    if (categoryField) {
+        categoryField.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            previewCategory.textContent = selectedOption.text || 'Category';
+        });
+    }
+    
+    // Checkbox toggle functionality
+    const checkboxes = {
+        'is_featured': document.getElementById('preview-featured'),
+        'is_currently_learning': document.getElementById('preview-learning'),
+        'is_certified': document.getElementById('preview-certified')
+    };
+    
+    Object.keys(checkboxes).forEach(fieldName => {
+        const checkbox = document.querySelector(`input[name="${fieldName}"]`);
+        const preview = checkboxes[fieldName];
+        
+        if (checkbox && preview) {
+            checkbox.addEventListener('change', function() {
+                preview.classList.toggle('active', this.checked);
+            });
+        }
+    });
+    
+    // Technology suggestion selection (from enhanced form)
+    const techSuggestions = document.querySelectorAll('.tech-suggestion-item');
+    const selectedTechsInput = document.getElementById('selected-technologies');
+    const selectedTechs = [];
+    
+    techSuggestions.forEach(item => {
+        item.addEventListener('click', function() {
+            const techId = this.dataset.techId;
+            const connectionOptions = this.querySelector('.tech-connection-options');
+            
+            if (this.classList.contains('selected')) {
+                // Deselect
+                this.classList.remove('selected');
+                connectionOptions.classList.remove('show');
+                const index = selectedTechs.indexOf(techId);
+                if (index > -1) selectedTechs.splice(index, 1);
+            } else {
+                // Select
+                this.classList.add('selected');
+                connectionOptions.classList.add('show');
+                selectedTechs.push(techId);
+            }
+            
+            selectedTechsInput.value = selectedTechs.join(',');
+        });
+    });
+    
+    // Education suggestion selection (from enhanced form)
+    const educationSuggestions = document.querySelectorAll('[data-education-id]');
+    const selectedEducationInput = document.getElementById('selected-education');
+    const selectedEducation = [];
+    
+    educationSuggestions.forEach(item => {
+        item.addEventListener('click', function() {
+            const educationId = this.dataset.educationId;
+            
+            if (this.classList.contains('selected')) {
+                // Deselect
+                this.classList.remove('selected');
+                const index = selectedEducation.indexOf(educationId);
+                if (index > -1) selectedEducation.splice(index, 1);
+            } else {
+                // Select
+                this.classList.add('selected');
+                selectedEducation.push(educationId);
+            }
+            
+            selectedEducationInput.value = selectedEducation.join(',');
+        });
+    });
+    
+    // Auto-generate slug from name
+    const slugField = document.querySelector('input[name="slug"]');
+    
+    if (nameField && slugField && !slugField.value) {
+        nameField.addEventListener('input', function() {
+            const slug = this.value.toLowerCase()
+                .replace(/[^\w\s-]/g, '') // Remove special characters
+                .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+                .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+            slugField.value = slug;
+        });
+    }
+});
+
+// Checkbox toggle helper function
+function toggleCheckbox(checkboxId) {
+    const checkbox = document.getElementById(checkboxId);
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+    }
+}
+
+// Preview functionality
+function previewSkill() {
+    const formData = new FormData(document.getElementById('skill-form'));
+    const skillName = formData.get('name') || 'New Skill';
+    const proficiency = formData.get('proficiency') || 1;
+    const description = formData.get('description') || 'No description provided';
+    
+    alert(`Skill Preview:
+Name: ${skillName}
+Proficiency: Level ${proficiency}
+Description: ${description}
+
+This would show in your portfolio as a professional skill demonstration.`);
+}
+</script>
+{% endblock %}
