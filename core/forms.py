@@ -145,6 +145,7 @@ class SkillForm(forms.ModelForm):
         model = Skill
         fields = [
             'name',
+            'slug',
             'category',
             'description',
             'proficiency',
@@ -164,6 +165,12 @@ class SkillForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "placeholder": "e.g., Machine Learning, API Design",
+                }
+            ),
+            "slug": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "auto-generated-from-name",
                 }
             ),
             "category": forms.Select(attrs={"class": "form-control"}),

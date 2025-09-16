@@ -2021,14 +2021,15 @@ class EnhancedSkillCreateView(BaseAdminCreateView):
         education_ids = self.request.POST.getlist('related_education')
         for edu_id in education_ids:
             try:
-                education = Education.objects.get(iid=edu_id)
-                proficiency_gained = int(self.request.POST.get(f'edu_proficiency_{edu_id}', 2))
+                education = Education.objects.get(id=edu_id)
+                proficiency_after = int(self.request.POST.get(f'edu_proficiency_{edu_id}', 2))
 
                 EducationSkillDevelopment.objects.create(
                     education=education,
                     skill=skill,
-                    proficiency_gained=proficiency_gained,
-                    notes=f'Skill developed through {education.degree}'
+                    proficiency_before=max(proficiency_after - 1, 1),
+                    proficiency_after=proficiency_after,
+                    learning_notes=f'Skill developed through {education.degree}'
                 )
             except (Education.DoesNotExist, ValueError):
                 continue
@@ -2039,6 +2040,19 @@ class EnhancedSkillCreateView(BaseAdminCreateView):
         )
 
         return response
+    
+    def form_invalid(self, form):
+        """Debug form validation errors."""
+        print(f"🔴 FORM IS INVALID")
+        print(f"🔴 Form errors: {form.errors}")
+        print(f"🔴 Form non_field_errors: {form.non_field_errors}")
+        return super().form_invalid(form)
+    
+    def post(self, request, *args, **kwargs):
+        """Debug the entire POST process."""
+        print(f"🔵 POST request received")
+        print(f"🔵 POST data: {request.POST}")
+        return super().post(request, *args, **kwargs)
 
 
 class ProfessionalGrowthTimelineView(AdminAccessMixin, TemplateView):
