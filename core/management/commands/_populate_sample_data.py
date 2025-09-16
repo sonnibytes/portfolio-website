@@ -6,8 +6,6 @@ Creates comprehensive sample data across all apps with correct skill-technology 
 - Core: Pages, Skills (conceptual), Education, Experience, Contacts, Social Links, SkillTechnologyRelations
 - Projects: Technologies (concrete), Systems, Features, GitHub repos, Architecture, SystemSkillGains with technologies_used
 - Blog: Categories, Tags, Posts, Comments, Series, System Connections  
-
-NOTE TO SELF: Commented out any GitHub models, can populate those with sync command. Also removed imports for these in case I missed one.
 """
 
 from django.core.management.base import BaseCommand, CommandError
@@ -31,7 +29,8 @@ from blog.models import (
 )
 from projects.models import (
     Technology, SystemModule, SystemImage, SystemFeature,
-    SystemSkillGain, LearningMilestone, ArchitectureComponent,
+    SystemSkillGain, SystemCommitData, GitHubRepository,
+    GitHubCommitWeek, LearningMilestone, ArchitectureComponent,
     ArchitectureConnection
 )
 
@@ -79,8 +78,8 @@ class Command(BaseCommand):
         self.create_system_features()
         self.create_system_images()
         self.create_system_skill_gains()  # Updated with technologies_used
-        # self.create_github_repos()
-        # self.create_system_commit_data()
+        self.create_github_repos()
+        self.create_system_commit_data()
         self.create_learning_milestones()
         self.create_architecture_components()
         self.create_architecture_connections()
@@ -117,8 +116,8 @@ class Command(BaseCommand):
         SystemFeature.objects.all().delete()
         SystemImage.objects.all().delete()
         SystemSkillGain.objects.all().delete()
-        # GitHubCommitWeek.objects.all().delete()
-        # SystemCommitData.objects.all().delete()
+        GitHubCommitWeek.objects.all().delete()
+        SystemCommitData.objects.all().delete()
         LearningMilestone.objects.all().delete()
         ArchitectureComponent.objects.all().delete()
         
@@ -126,7 +125,7 @@ class Command(BaseCommand):
         Post.objects.all().delete()
         Series.objects.all().delete()
         SystemModule.objects.all().delete()
-        # GitHubRepository.objects.all().delete()
+        GitHubRepository.objects.all().delete()
         Contact.objects.all().delete()
         Experience.objects.all().delete()
         Education.objects.all().delete()
@@ -287,8 +286,8 @@ class Command(BaseCommand):
                     'slug': slugify(tech['name']),
                     'category': tech['category'],
                     'color': tech['color'],
-                    'icon': tech['icon'],
-                    'description': fake.text(150)
+                    'description': fake.text(150),
+                    'icon': f"fab fa-{tech['name'].lower().replace('.', '').replace('/', '')}",
                 }
             )
             technologies.append(technology)
@@ -422,7 +421,8 @@ class Command(BaseCommand):
                     'end_date': edu_data['end_date'],
                     'description': fake.text(300),
                     'learning_type': edu_data['learning_type'],
-                    'is_current': False,
+                    'is_completed': True,
+                    'grade': choice(['A', 'A-', 'B+', 'Pass', 'Distinction']),
                     'certificate_url': fake.url() if randint(0, 1) else '',
                     'hours_completed': edu_data['hours'],
                     'learning_intensity': randint(2, 5),
@@ -468,7 +468,7 @@ class Command(BaseCommand):
                     defaults={
                         'proficiency_before': randint(0, 2),
                         'proficiency_after': randint(3, 5),
-                        'learning_focus': choice(['foundation', 'advanced', 'practical', 'introduction', 'mastery']),
+                        'learning_focus': choice(['foundation', 'advanced', 'practical', 'theoretical']),
                         'importance_level': randint(1, 5),
                         'learning_notes': f"Developed {skill.name.lower()} skills through {education.degree}"
                     }
@@ -559,27 +559,23 @@ class Command(BaseCommand):
                 self.stdout.write(f'Created social link: {link.name}')
 
     def create_contacts(self):
-        """Create sample contact form submissions"""
-        inquiry_types = ['project', 'hiring', 'collaboration', 'question', 'feedback']
-        priorities = ['low', 'normal', 'high']
+        """Create contact information"""
+        contact_data = [
+            {'type': 'email', 'value': 'developer@example.com', 'icon': 'fas fa-envelope'},
+            {'type': 'phone', 'value': '+1 (555) 123-4567', 'icon': 'fas fa-phone'},
+            {'type': 'location', 'value': 'San Francisco, CA', 'icon': 'fas fa-map-marker-alt'},
+        ]
         
-        for i in range(15):
-            contact = Contact.objects.create(
-                name=fake.name(),
-                email=fake.email(),
-                subject=fake.sentence(6),
-                message=fake.text(500),
-                created_at=fake.date_time_between(start_date='-3m', end_date='now', tzinfo=timezone.get_current_timezone()),
-                is_read=choice([True, False, False]),  # Most unread
-                referrer_page=choice(['/projects/', '/blog/', '/about/', '/']),
-                user_agent=fake.user_agent(),
-                ip_address=fake.ipv4(),
-                response_sent=choice([True, False, False, False]),  # Few responses sent
-                inquiry_category=choice(inquiry_types),
-                priority=choice(priorities)
+        for contact_info in contact_data:
+            contact, created = Contact.objects.get_or_create(
+                contact_type=contact_info['type'],
+                defaults={
+                    'value': contact_info['value'],
+                    'icon': contact_info['icon'],
+                }
             )
-            
-        self.stdout.write('Created 15 contact form submissions')
+            if created:
+                self.stdout.write(f'Created contact: {contact.contact_type}')
 
     def create_systems(self):
         """Create system modules with required fields"""
@@ -588,28 +584,28 @@ class Command(BaseCommand):
                 'title': 'Portfolio Website',
                 'description': 'Django-based portfolio website with HUD theme',
                 'status': 'deployed',
-                'priority': 5,
+                'priority': 4,
                 'completion_percent': 85,
             },
             {
                 'title': 'Task Management API',
                 'description': 'REST API for task management with authentication',
                 'status': 'deployed',
-                'priority': 4,
+                'priority': 3,
                 'completion_percent': 90,
             },
             {
                 'title': 'Data Analysis Dashboard',
                 'description': 'Interactive dashboard for environmental data visualization',
                 'status': 'in_development',
-                'priority': 4,
+                'priority': 3,
                 'completion_percent': 60,
             },
             {
                 'title': 'Machine Learning Classifier',
                 'description': 'ML model for predicting environmental compliance',
-                'status': 'planning',
-                'priority': 3,
+                'status': 'in_development',
+                'priority': 2,
                 'completion_percent': 25,
             },
         ]
@@ -683,21 +679,21 @@ class Command(BaseCommand):
 
     def create_system_images(self):
         """Create placeholder system images"""
-        image_types = ['screenshot', 'diagram', 'mockup', 'logo']
-        
         images_created = 0
+        
         for system in self.systems:
-            num_images = randint(1, 4)
+            # Create 1-3 images per system
+            num_images = randint(1, 3)
             
             for i in range(num_images):
                 image, created = SystemImage.objects.get_or_create(
                     system=system,
-                    image='placeholder.jpg',  # Would replace with actual images
+                    title=f"{system.title} Screenshot {i+1}",
                     defaults={
-                        'caption': fake.sentence(8),
-                        'alt_text': f'{system.name} {choice(image_types)}',
-                        'image_type': choice(image_types),
-                        'order': i + 1,
+                        'image': f'systems/placeholder_{i+1}.jpg',  # Placeholder path
+                        'description': fake.text(100),
+                        'is_featured': i == 0,  # First image is featured
+                        'display_order': i + 1,
                     }
                 )
                 if created:
@@ -742,61 +738,51 @@ class Command(BaseCommand):
                         
         self.stdout.write(f'Created {gains_created} system skill gains with technology relationships')
 
-    # ==== Handle GitHub Data via sync command ====
-    # def create_github_repos(self):
-    #     """Create GitHub repository records"""
-    #     repos_created = 0
+    def create_github_repos(self):
+        """Create GitHub repository data"""
+        repos_created = 0
         
-    #     for system in self.systems:
-    #         if system.github_url:
-    #             repo_name = system.github_url.split('/')[-1]
-    #             repo, created = GitHubRepository.objects.get_or_create(
-    #                 system=system,
-    #                 name=repo_name,
-    #                 defaults={
-    #                     'github_url': system.github_url,
-    #                     'description': system.description,
-    #                     'stars': randint(0, 50),
-    #                     'forks': randint(0, 10),
-    #                     'watchers': randint(0, 20),
-    #                     'issues_open': randint(0, 5),
-    #                     'language': choice(['Python', 'JavaScript', 'TypeScript']),
-    #                     'size': randint(100, 10000),
-    #                     'created_at': fake.date_time_between(start_date='-2y', end_date='now', tzinfo=timezone.get_current_timezone()),
-    #                     'updated_at': fake.date_time_between(start_date='-1m', end_date='now', tzinfo=timezone.get_current_timezone()),
-    #                     'is_private': False,
-    #                     'is_active': True,
-    #                 }
-    #             )
-    #             if created:
-    #                 repos_created += 1
-                    
-    #     self.stdout.write(f'Created {repos_created} GitHub repositories')
+        for system in self.systems:
+            repo, created = GitHubRepository.objects.get_or_create(
+                name=slugify(system.title),
+                defaults={
+                    'full_name': f'username/{slugify(system.title)}',
+                    'description': system.description,
+                    'url': f'https://github.com/username/{slugify(system.title)}',
+                    'language': choice(['Python', 'JavaScript', 'TypeScript']),
+                    'stars': randint(0, 50),
+                    'forks': randint(0, 10),
+                    'open_issues': randint(0, 5),
+                    'size': randint(100, 10000),
+                    'created_at': fake.date_time_between(start_date='-2y', end_date='now', tzinfo=timezone.utc),
+                    'updated_at': fake.date_time_between(start_date='-1m', end_date='now', tzinfo=timezone.utc),
+                    'pushed_at': fake.date_time_between(start_date='-1w', end_date='now', tzinfo=timezone.utc),
+                }
+            )
+            if created:
+                repos_created += 1
+                
+        self.stdout.write(f'Created {repos_created} GitHub repositories')
 
-    # def create_system_commit_data(self):
-    #     """Create commit tracking data"""
-    #     commit_data_created = 0
+    def create_system_commit_data(self):
+        """Create commit data for systems"""
+        commits_created = 0
         
-    #     for system in self.systems:
-    #         if hasattr(system, 'github_repository'):
-    #             # Create weekly commit data for the last 12 weeks
-    #             for week in range(12):
-    #                 week_date = timezone.now().date() - timedelta(weeks=week)
-                    
-    #                 commit_data, created = SystemCommitData.objects.get_or_create(
-    #                     system=system,
-    #                     date=week_date,
-    #                     defaults={
-    #                         'commits': randint(0, 20),
-    #                         'additions': randint(0, 500),
-    #                         'deletions': randint(0, 200),
-    #                         'files_changed': randint(0, 15),
-    #                     }
-    #                 )
-    #                 if created:
-    #                     commit_data_created += 1
-                        
-    #     self.stdout.write(f'Created {commit_data_created} commit data entries')
+        for system in self.systems:
+            commit, created = SystemCommitData.objects.get_or_create(
+                system=system,
+                defaults={
+                    'total_commits': randint(20, 200),
+                    'commits_last_month': randint(5, 50),
+                    'last_commit_date': fake.date_between(start_date='-1m', end_date='today'),
+                    'commit_frequency': choice(['daily', 'weekly', 'monthly']),
+                    'last_updated': timezone.now(),
+                }
+            )
+            if created:
+                commits_created += 1
+                
+        self.stdout.write(f'Created {commits_created} system commit data entries')
 
     def create_learning_milestones(self):
         """Create learning milestone entries"""
@@ -888,14 +874,13 @@ class Command(BaseCommand):
         self.stdout.write(f'Created {connections_created} architecture connections')
 
     def create_blog_categories(self):
-        """Create blog categories"""
+        """Create blog categories with required fields"""
         category_data = [
-            {'name': 'Machine Learning', 'code': 'ML', 'color': '#e91e63', 'icon': 'fas fa-robot'},
-            {'name': 'Web Development', 'code': 'WD', 'color': '#2196f3', 'icon': 'fas fa-code'},
-            {'name': 'Data Science', 'code': 'DS', 'color': '#ff9800', 'icon': 'fas fa-chart-line'},
-            {'name': 'DevOps', 'code': 'DO', 'color': '#4caf50', 'icon': 'fas fa-server'},
-            {'name': 'Tutorials', 'code': 'TU', 'color': '#9c27b0', 'icon': 'fas fa-book'},
-            {'name': 'Project Updates', 'code': 'PU', 'color': '#00bcd4', 'icon': 'fas fa-project-diagram'},
+            {'name': 'Development', 'code': 'DEV', 'color': '#26c6da', 'icon': 'fas fa-code'},
+            {'name': 'Machine Learning', 'code': 'ML', 'color': '#b39ddb', 'icon': 'fas fa-robot'},
+            {'name': 'DevOps', 'code': 'OPS', 'color': '#ff8a80', 'icon': 'fas fa-server'},
+            {'name': 'Learning', 'code': 'LRN', 'color': '#fff59d', 'icon': 'fas fa-graduation-cap'},
+            {'name': 'Projects', 'code': 'PRJ', 'color': '#a5d6a7', 'icon': 'fas fa-project-diagram'},
         ]
         
         categories = []
@@ -919,23 +904,21 @@ class Command(BaseCommand):
     def create_blog_tags(self):
         """Create blog tags"""
         tag_names = [
-            'python', 'django', 'javascript', 'react', 'api', 'database',
-            'postgresql', 'docker', 'aws', 'machine-learning', 'data-analysis',
-            'web-scraping', 'automation', 'testing', 'deployment', 'performance',
-            'security', 'tutorial', 'beginner', 'advanced'
+            'Python', 'Django', 'JavaScript', 'API', 'Database', 'Machine Learning',
+            'Tutorial', 'Best Practices', 'Performance', 'Security', 'Testing',
+            'Deployment', 'AWS', 'Docker', 'PostgreSQL'
         ]
         
         tags = []
-        for tag_name in tag_names:
+        for name in tag_names:
             tag, created = Tag.objects.get_or_create(
-                name=tag_name,
-                defaults={'slug': slugify(tag_name)}
+                name=name,
+                defaults={'slug': slugify(name)}
             )
             tags.append(tag)
             if created:
                 self.stdout.write(f'Created tag: {tag.name}')
                 
-        self.stdout.write(f'Created {len(tags)} blog tags')
         return tags
 
     def create_blog_posts(self):
@@ -973,7 +956,6 @@ class Command(BaseCommand):
                 posts.append(post)
                 self.stdout.write(f'Created post: {post.title}')
                 
-        self.stdout.write(f'Created {len(posts)} blog posts')
         return posts
 
     def create_comments(self):
@@ -981,22 +963,20 @@ class Command(BaseCommand):
         comments_created = 0
         
         for post in self.posts:
-            if post.status == 'published':
-                num_comments = randint(0, 8)
-                
-                for _ in range(num_comments):
-                    comment = Comment.objects.create(
-                        post=post,
-                        name=fake.name(),
-                        email=fake.email(),
-                        content=fake.text(300),
-                        created_at=fake.date_time_between(
-                            start_date=post.created_at.date(),
-                            end_date='now',
-                            tzinfo=timezone.get_current_timezone()
-                        ),
-                        approved=choice([True, True, True, False])  # Most approved
-                    )
+            # Each post gets 0-5 comments
+            num_comments = randint(0, 5)
+            
+            for i in range(num_comments):
+                comment, created = Comment.objects.get_or_create(
+                    post=post,
+                    name=fake.name(),
+                    defaults={
+                        'email': fake.email(),
+                        'content': fake.text(300),
+                        'approved': randint(0, 1) == 1,
+                    }
+                )
+                if created:
                     comments_created += 1
                     
         self.stdout.write(f'Created {comments_created} comments')
