@@ -417,7 +417,7 @@ class SkillTechnologyRelation(models.Model):
         (4, 'Primary Implementation'),
     ]
 
-    RELATIONSHIHP_TYPE = [
+    RELATIONSHIP_TYPE = [
         ('implementation', 'Primary Implementation Tool'),
         ('supporting', 'Supporting Technology'),
         ('alternative', 'Alternative Implementation'),
@@ -431,7 +431,7 @@ class SkillTechnologyRelation(models.Model):
 
     # Relationship metadata
     strength = models.IntegerField(choices=RELATIONSHIP_STRENGTH, default=2, help_text='How essential is this technology for this skill?')
-    relationship_type = models.CharField(max_length=20, choices=RELATIONSHIHP_TYPE, default='implementation')
+    relationship_type = models.CharField(max_length=20, choices=RELATIONSHIP_TYPE, default='implementation')
     notes = models.TextField(blank=True, help_text='Context about how this technology relates to the skill')
 
     # Learning Context

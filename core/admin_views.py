@@ -1988,7 +1988,7 @@ class EnhancedSkillCreateView(BaseAdminCreateView):
             # Form enhancement data
             'skill_categories': Skill.CATEGORY_CHOICES,
             'proficiency_levels': [(i, f'Level {i}') for i in range(1, 6)],
-            'relationship_types': SkillTechnologyRelation.RELATIONSHIHP_TYPE,
+            'relationship_types': SkillTechnologyRelation.RELATIONSHIP_TYPE,
             'relationship_strengths': SkillTechnologyRelation.RELATIONSHIP_STRENGTH,
         })
 
@@ -2191,7 +2191,7 @@ class SkillTechnologyMatrixView(AdminAccessMixin, TemplateView):
             'technologies': technologies,
             'matrix_stats': matrix_stats,
             'strength_choices': SkillTechnologyRelation.RELATIONSHIP_STRENGTH,
-            'type_choices': SkillTechnologyRelation.RELATIONSHIHP_TYPE,
+            'type_choices': SkillTechnologyRelation.RELATIONSHIP_TYPE,
         })
 
         return context
