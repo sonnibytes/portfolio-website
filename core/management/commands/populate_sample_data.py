@@ -96,7 +96,7 @@ class Command(BaseCommand):
         self.create_system_log_entries()
         
         # Analytics
-        self.create_portfolio_analytics()
+        # self.create_portfolio_analytics()
         
         self.stdout.write(
             self.style.SUCCESS('Successfully populated database with sample data!')
@@ -615,6 +615,7 @@ class Command(BaseCommand):
         ]
         
         systems = []
+        author = self.users[0]  # Use first user as author
         for sys_data in system_data:
             system, created = SystemModule.objects.get_or_create(
                 title=sys_data['title'],
@@ -630,6 +631,7 @@ class Command(BaseCommand):
                     'github_url': fake.url(),
                     'live_url': fake.url() if randint(0, 1) else '',
                     'learning_stage': choice(['tutorial', 'guided', 'independent', 'refactoring', 'contributing', 'teaching']),
+                    'author': author,
                 }
             )
             systems.append(system)
@@ -695,7 +697,7 @@ class Command(BaseCommand):
                     image='placeholder.jpg',  # Would replace with actual images
                     defaults={
                         'caption': fake.sentence(8),
-                        'alt_text': f'{system.name} {choice(image_types)}',
+                        'alt_text': f'{system.title} {choice(image_types)}',
                         'image_type': choice(image_types),
                         'order': i + 1,
                     }
@@ -809,6 +811,12 @@ class Command(BaseCommand):
         ]
         
         milestones_created = 0
+
+        # for system in self.systems:
+        #     # Create 0-2 milestones per system
+        #     num_milestones = randint(0, 2)
+
+        #     for i in range(num_milestones):
         for milestone in milestone_data:
             obj, created = LearningMilestone.objects.get_or_create(
                 title=milestone['title'],
@@ -818,6 +826,7 @@ class Command(BaseCommand):
                     'milestone_type': choice(['first_time', 'breakthrough', 'completion', 'deployment', 'debugging', 'teaching']),
                     'difficulty_level': randint(1, 5),
                     'confidence_boost': randint(1, 5),
+                    'system': choice(self.systems),
                 }
             )
             if created:
@@ -958,17 +967,19 @@ class Command(BaseCommand):
                     'featured_code_format': choice(['python', 'javascript', 'html']),
                     'reading_time': randint(3, 15),
                     'show_toc': randint(0, 1) == 1,
-                    'published_date': fake.date_time_between(start_date='-1y', end_date='now', tzinfo=timezone.utc) if choice(['published', 'draft']) == 'published' else None,
+                    'published_date': fake.date_time_between(start_date='-1y', end_date='now') if choice(['published', 'draft']) == 'published' else None,
                 }
             )
             
             if created:
                 # Add random tags
                 post.tags.set(sample(self.tags, randint(1, 4)))
+                self.stdout.write(f"Added {post.tags.count()} tags")
                 
                 # Add random system connections
                 if randint(0, 1):
                     post.related_systems.set(sample(self.systems, randint(1, 2)))
+                    self.stdout.write(f"Added {post.related_systems.count()} related systems")
                 
                 posts.append(post)
                 self.stdout.write(f'Created post: {post.title}')
@@ -1014,7 +1025,7 @@ class Command(BaseCommand):
                     post=post,
                     ip_address=fake.ipv4(),
                     defaults={
-                        'viewed_on': fake.date_time_between(start_date='-6m', end_date='now', tzinfo=timezone.utc)
+                        'viewed_on': fake.date_time_between(start_date='-6m', end_date='now')
                     }
                 )
                 if created:
@@ -1088,18 +1099,19 @@ class Command(BaseCommand):
                         
         self.stdout.write(f'Created {entries_created} system log entries')
 
-    def create_portfolio_analytics(self):
-        """Create portfolio analytics data"""
-        analytics, created = PortfolioAnalytics.objects.get_or_create(
-            date=date.today(),
-            defaults={
-                'page_views': randint(500, 2000),
-                'unique_visitors': randint(100, 500),
-                'bounce_rate': round(random.uniform(0.2, 0.8), 2),
-                'avg_session_duration': randint(120, 600),
-                'top_pages': ['/', '/projects/', '/blog/', '/about/'],
-                'referral_sources': ['google.com', 'github.com', 'linkedin.com'],
-            }
-        )
-        if created:
-            self.stdout.write('Created portfolio analytics data')
+    ## TODO: Dial in when using these metrics
+    # def create_portfolio_analytics(self):
+    #     """Create portfolio analytics data"""
+    #     analytics, created = PortfolioAnalytics.objects.get_or_create(
+    #         date=date.today(),
+    #         defaults={
+    #             'page_views': randint(500, 2000),
+    #             'unique_visitors': randint(100, 500),
+    #             'bounce_rate': round(random.uniform(0.2, 0.8), 2),
+    #             'avg_session_duration': randint(120, 600),
+    #             'top_pages': ['/', '/projects/', '/blog/', '/about/'],
+    #             'referral_sources': ['google.com', 'github.com', 'linkedin.com'],
+    #         }
+    #     )
+    #     if created:
+    #         self.stdout.write('Created portfolio analytics data')
