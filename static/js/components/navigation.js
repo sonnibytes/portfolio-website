@@ -497,7 +497,7 @@ function navigateToHome() {
 }
 
 function navigateToDataLogs() {
-    const datalogsLink = document.querySelector('a[href*="blog"], a[href*="datalog"]');
+    const datalogsLink = document.querySelector('a[href*="blog"], a[href*="datalogs"]');
     if (datalogsLink) datalogsLink.click();
 }
 
@@ -798,13 +798,13 @@ const NavigationUtils = {
     getCurrentPageType() {
         const path = window.location.pathname;
         
-        if (path.includes('/blog/') || path.includes('/datalog')) {
+        if (path.includes('/blog/') || path.includes('/datalogs/')) {
             return 'datalogs';
         } else if (path.includes('/projects/') || path.includes('/systems/')) {
             return 'systems';
         } else if (path.includes('/about/') || path.includes('/profile/')) {
             return 'profile';
-        } else if (path.includes('/contact/')) {
+        } else if (path.includes('/contact/')  || path.includes('/communication/')) {
             return 'contact';
         } else if (path === '/' || path.includes('/home/')) {
             return 'home';
@@ -824,8 +824,8 @@ const NavigationUtils = {
             const href = link.getAttribute('href');
             if (href) {
                 if ((currentPage === 'home' && href.includes('home')) ||
-                    (currentPage === 'datalogs' && href.includes('blog')) ||
-                    (currentPage === 'systems' && href.includes('projects')) ||
+                    (currentPage === 'datalogs' && href.includes('datalogs')) ||
+                    (currentPage === 'systems' && href.includes('systems')) ||
                     (currentPage === 'profile' && href.includes('about')) ||
                     (currentPage === 'contact' && href.includes('contact'))) {
                     link.classList.add('active');
