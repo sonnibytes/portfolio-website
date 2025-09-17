@@ -12,8 +12,9 @@ from django.template.loader import render_to_string
 from django.conf import settings
 import os
 import calendar
+from collections import defaultdict
 
-from .models import CorePage, Skill, Education, Experience, SocialLink, Contact, LearningJourneyManager, PortfolioAnalytics
+from .models import CorePage, Skill, Education, Experience, SocialLink, Contact, LearningJourneyManager, PortfolioAnalytics, SkillTechnologyRelation
 from .forms import ContactForm
 from blog.models import Post, Category
 from projects.models import SystemModule, Technology, LearningMilestone
@@ -89,35 +90,139 @@ class HomeView(TemplateView):
 class DeveloperProfileView(TemplateView):
     """
     Enhanced Developer Profile with Dynamic Learning Journey
+    Updated to use new Skill-Technology relationship model
     """
     template_name = 'core/developer-profile.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Dynamic Skills by category
+        # ========== ENHANCED SKILL CATEGORIES WITH TECHNOLOGY RELATIONSHIPS ==========
         skill_categories = {}
         for category, label in Skill.CATEGORY_CHOICES:
-            skills = Skill.objects.filter(category=category).order_by(
-                "-proficiency", "name"
-            )
+            skills = Skill.objects.filter(category=category).prefetch_related(
+                'technology_relations__technology',
+                'project_gains__system'
+            ).order_by('-proficiency', 'name')
+
             if skills.exists():
+                # Enhance each skill with its tech relationships
+                enhanced_skills = []
+                for skill in skills:
+                    # Get primary (strongest) technologies for this skill
+                    primary_technologies = skill.technology_relations.filter(
+                        strength__in=[3, 4]  # Essential Technology, Primary Implementation
+                    ).select_related('technology').order_by('-strength')
+
+                    # Get supporting technologies
+                    supporting_technologies = skill.technology_relations.filter(
+                        strength__in=[1, 2]  # Occasionally used, Commonly used
+                    ).select_related('technology').order_by('-strength')
+
+                    # Calcuclate skill-specific metrics
+                    project_applications = skill.project_gains.count()
+                    last_used = None
+                    if skill.project_gains.exists():
+                        last_used = skill.project_gains.order_by('-system__created_at').first().system.created_at
+
+                    # Try to get mastery progression score, fallback to simple calculation
+                    try:
+                        mastery_score = skill.get_mastery_progression_score()
+                    except AttributeError:
+                        mastery_score = skill.proficiency * 20
+
+                    enhanced_skills.append({
+                        'skill': skill,
+                        'primary_technologies': primary_technologies,
+                        'supporting_technologies': supporting_technologies,
+                        'total_tech_count': skill.technology_relations.count(),
+                        'project_applications': project_applications,
+                        'last_used': last_used,
+                        'mastery_score': mastery_score,
+                    })
+
                 skill_categories[category] = {
                     "label": label,
-                    "skills": skills,
-                    "mastery_count": skills.filter(proficiency__gte=4).count(),
-                    "learning_count": skills.filter(is_currently_learning=True).count(),
+                    "skills": enhanced_skills,
+                    "skill_count": len(enhanced_skills),
+                    "mastery_count": len([s for s in enhanced_skills if s['skill'].proficiency >= 4]),
+                    "learning_count": len([s for s in enhanced_skills if getattr(s['skill'], 'is_currently_learning', False)]),
+                    "avg_proficiency": sum(s['skill'].proficiency for s in enhanced_skills) / len(enhanced_skills) if enhanced_skills else 0,
+                    "total_technologies": sum(s['total_tech_count'] for s in enhanced_skills),
                 }
         context["skill_categories"] = skill_categories
+
+        # ========== TECHNOLOGY-SKILL RELATIONSHIP OVERVIEW ==========
+        # Get the most connected techs (techs used w many skills)
+        top_technologies = Technology.objects.annotate(
+            skill_connections=Count('skill_relations'),
+            primary_skill_connections=Count('skill_relations', filter=Q(skill_relations__strength__in=[3, 4]))
+        ).filter(skill_connections__gt=0).order_by('-primary_skill_connections', '-skill_connections')[:8]
+
+        context["top_technologies"] = [{
+            'technology': tech,
+            'total_connections': tech.skill_connections,
+            'primary_connections': tech.primary_skill_connections,
+            'supporting_connections': tech.skill_connections - tech.primary_skill_connections,
+        } for tech in top_technologies]
+
+        # ========== SKILL LEARNING PROGRESSION ANALYSIS ==========
+        # Get skills by learning timeline if available
+        skills_with_timeline = []
+        for skill in Skill.objects.all():
+            try:
+                timeline = skill.get_learning_timeline_events()
+                if timeline:
+                    skills_with_timeline.append({
+                        'skill': skill,
+                        'first_learned': min(event['date'] for event in timeline),
+                        'latest_application': max(event['date'] for event in timeline),
+                        'learning_events': len(timeline),
+                        'progression_score': skill.get_mastery_progression_score() if hasattr(skill, 'get_mastery_progression_score') else skill.proficiency * 20,
+                    })
+            except AttributeError:
+                # Skip if skill doesn't have timeline methods
+                pass
+        
+        # Sort by learning progression
+        skills_with_timeline.sort(key=lambda x: x['progression_score'], reverse=True)
+        context["learning_progression_skills"] = skills_with_timeline[:10]  # Top 10 most developed
+
+        # ========== SKILL-TECHNOLOGY RELATIONSHIP INSIGHTS ==========
+        # Calculate relationship type distribution
+        relationship_stats = defaultdict(int)
+
+        for relation in SkillTechnologyRelation.objects.all():
+            relationship_stats[relation.relationship_type] += 1
+        
+        context["relationship_insights"] = {
+            'total_relationships': SkillTechnologyRelation.objects.count(),
+            'relationship_types': dict(relationship_stats),
+            'avg_strength': SkillTechnologyRelation.objects.aggregate(
+                avg_strength=Avg('strength')
+            )['avg_strength'] or 0,
+            'strong_relationships': SkillTechnologyRelation.objects.filter(strength__in=[3, 4]).count(),
+        }
 
         # Educational background w learning context
         education_with_skills = []
         for edu in Education.objects.all().order_by('-end_date'):
+            # Try to get learning summary and skills with fallbacks
+            try:
+                summary = edu.get_learning_summary()
+            except AttributeError:
+                summary = {}
+            
+            try:
+                skills_gained = edu.skills_learned.all()[:5]
+            except AttributeError:
+                skills_gained = []
+            
+
             education_with_skills.append({
                 'education': edu,
-                'summary': edu.get_learning_summary(),
-                # Top 5 skills
-                'skills_gained': edu.skills_learned.all()[:5],
+                'summary': summary,
+                'skills_gained': skills_gained,
             })
         context['education_enhanced'] = education_with_skills
 
@@ -128,8 +233,19 @@ class DeveloperProfileView(TemplateView):
         context["social_links"] = SocialLink.objects.all().order_by('display_order')
 
         # Dynamic Portfolio Metrics using LearningJourneyManager
-        journey_manager = LearningJourneyManager()
-        learning_overview = journey_manager.get_journey_overview()
+        try:
+            journey_manager = LearningJourneyManager()
+            learning_overview = journey_manager.get_journey_overview()
+        except (AttributeError, NameError):
+            # Fallback if LearningJourneyManager is not available
+            learning_overview = {
+                'systems_built': SystemModule.objects.count(),
+                'current_projects': SystemModule.objects.filter(status='in_development').count(),
+                'duration_years': '2+',
+                'skills_mastered': Skill.objects.filter(proficiency__gte=4).count(),
+                'certificates_earned': 6,
+                'learning_hours': '500+',
+            }
 
         context["portfolio_metrics"] = {
             'total_systems': learning_overview['systems_built'],
@@ -142,6 +258,8 @@ class DeveloperProfileView(TemplateView):
             'skills_mastered': learning_overview['skills_mastered'],
             'certificates_earned': learning_overview['certificates_earned'],
             'learning_hours': learning_overview['learning_hours'],
+            'skill_technology_connections': SkillTechnologyRelation.objects.count(),
+            'primary_tech_relationships': SkillTechnologyRelation.objects.filter(strength__in=[3, 4]).count(),
         }
 
         # Recent Activity Timeline (dynamic)
@@ -153,13 +271,15 @@ class DeveloperProfileView(TemplateView):
             "-published_date"
         )[:3]
 
-        # Technology breakdown by category (dynamic)
+        # Technology breakdown by category (dynamic) - Enhanced w skill connections
         context["tech_by_category"] = {}
         for category, label in Technology.CATEGORY_CHOICES:
             techs = (
                 Technology.objects.filter(category=category)
-                .annotate(system_count=Count("systems"))
-                .order_by("-system_count")
+                .annotate(
+                    system_count=Count("systems"),
+                    skill_connections=Count('skill_relations')
+                ).order_by("-skill_connections", "-system_count")
             )
             if techs.exists():
                 context["tech_by_category"][category] = {
@@ -167,14 +287,17 @@ class DeveloperProfileView(TemplateView):
                     "technologies": techs[:8],  # Top 8 most used
                 }
 
-        # Learning progression summary
+        # Enhanced Learning progression summary w skill-tech relationships
         context["learning_progression"] = {
             'skills_categories': len(skill_categories),
             'total_skills': Skill.objects.count(),
             'mastered_skills': Skill.objects.filter(proficiency__gte=4).count(),
-            'learning_skills': Skill.objects.filter(is_currently_learning=True).count(),
-            'portfolio_ready_projects': SystemModule.objects.filter(portfolio_ready=True).count(),
-            'learning_milestones': LearningMilestone.objects.count(),
+            'learning_skills': Skill.objects.filter(is_currently_learning=True).count() if hasattr(Skill, 'is_currently_learning') else 0,
+            'portfolio_ready_projects': SystemModule.objects.filter(portfolio_ready=True).count() if hasattr(SystemModule, 'portfolio_ready') else 0,
+            'total_technologies': Technology.objects.count(),
+            'skill_tech_relationships': SkillTechnologyRelation.objects.count(),
+            'strong_relationships': SkillTechnologyRelation.objects.filter(strength__in=[3, 4]).count(),
+            'learning_milestones': LearningMilestone.objects.count() if LearningMilestone else 0,
         }
 
         return context
