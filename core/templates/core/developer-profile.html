@@ -243,68 +243,174 @@
     </div>
 </section>
 
-<!-- ========== TECHNICAL SKILLS SECTION ========== -->
+<!-- ========== ENHANCED TECHNICAL SKILLS SECTION ========== -->
 {% if skill_categories %}
 <section class="skills-dashboard-section">
-    {% comment %} <div class="container"> {% endcomment %}
     <div class="section-header">
-        <h2 class="section-title">Technical Skills & Proficiencies</h2>
-        <p class="section-subtitle">Comprehensive skill assessment across technology domains</p>
+        <h2 class="section-title">Technical Skills & Technology Proficiencies</h2>
+        <p class="section-subtitle">Comprehensive skill assessment with technology relationship mapping</p>
     </div>
-   <div class="unified-dashboard-container lavender">
-         {% comment %} <div class="unified-container-header">
-            <h2 class="unified-container-title">
-                <i class="fas fa-cogs"></i>
-                Technical Skills & Learning Progression
-            </h2>
-            <p class="container-subtitle">
-                {{ learning_progression.total_skills }} skills across {{ learning_progression.skill_categories }} categories with documented learning progression
-            </p>
-        </div> {% endcomment %}
+    
+    <div class="unified-dashboard-container lavender">
+        <div class="unified-container-header">
+            <h3 class="unified-container-title">
+                <i class="fas fa-network-wired"></i>
+                Skills ↔ Technology Relationships
+            </h3>
+            <div class="container-stats-bar">
+                <div class="stat-item">
+                    <span class="stat-value">{{ learning_progression.total_skills }}</span>
+                    <span class="stat-label">Skills</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ learning_progression.total_technologies }}</span>
+                    <span class="stat-label">Technologies</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ learning_progression.skill_tech_relationships }}</span>
+                    <span class="stat-label">Connections</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ learning_progression.strong_relationships }}</span>
+                    <span class="stat-label">Primary Links</span>
+                </div>
+            </div>
+        </div>
         
-        <div class="skills-overview-grid grid-2-col">
+        <div class="skills-categories-grid">
             {% for category, data in skill_categories.items %}
-            <div class="skill-category-section">
-                <div class="category-header">
-                    <h3 class="category-title">
-                        {{ data.label }}
-                    </h3>
-                    <div class="category-stats">
-                        <span class="stat mastered">{{ data.skills.count }} skill{{ data.skills.count|pluralize }}</span>
-                        {% if data.learning_count %}
-                        <span class="stat learning">{{ data.learning_count }} learning</span>
-                        {% endif %}
+            <div class="skill-category-container">
+                <div class="category-header-enhanced">
+                    <div class="category-title-section">
+                        <h4 class="category-title">{{ data.label }}</h4>
+                        <div class="category-metrics">
+                            <span class="metric-badge skills">{{ data.skill_count }} skill{{ data.skill_count|pluralize }}</span>
+                            <span class="metric-badge technologies">{{ data.total_technologies }} tech{{ data.total_technologies|pluralize:"nologies,nologies" }}</span>
+                            {% if data.mastery_count %}
+                                <span class="metric-badge mastered">{{ data.mastery_count }} mastered</span>
+                            {% endif %}
+                            {% if data.learning_count %}
+                                <span class="metric-badge learning">{{ data.learning_count }} learning</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="category-progress-indicator">
+                        <div class="progress-circle" data-progress="{{ data.avg_proficiency|floatformat:0|mul:20 }}">
+                            <div class="progress-text">{{ data.avg_proficiency|floatformat:1 }}/5</div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="skills-grid">
-                    {% for skill in data.skills|slice:":5" %}
-                    <div class="skill-item skill-level-{{ skill.proficiency }} skill-indicator">
-                        <div class="skill-info">
-                            <span class="skill-name"><i class="{{ skill.icon|default:'fas fa-code' }}"></i> {{ skill.name }}</span>
-                            
-                            {% comment %} {% if skill.is_currently_learning %}
-                        <div class="learning-indicator">
-                            <i class="fas fa-book-open"></i>
-                            <span>Currently Learning</span>
-                        </div>
-                        <span class="skill-level">{{ skill.proficiency }}/5</span>
-                        {% endif %} {% endcomment %}
-                            
-                        </div>
-                        <div class="skill-level">
-                            <div class="skill-progress">
-                                <div class="progress-bar" style="width: {{ skill.proficiency|mul:20 }}%; background-color: {{ skill.color }};"></div>
+                <div class="skills-with-tech-grid">
+                    {% for skill_data in data.skills %}
+                    <div class="skill-tech-card glass-card">
+                        <div class="skill-header">
+                            <div class="skill-main-info">
+                                <h5 class="skill-name">
+                                    <i class="{{ skill_data.skill.icon|default:'fas fa-code' }}"></i>
+                                    {{ skill_data.skill.name }}
+                                </h5>
+                                <div class="skill-proficiency">
+                                    <div class="proficiency-bar">
+                                        <div class="proficiency-fill" 
+                                             style="width: {{ skill_data.skill.proficiency|mul:20 }}%; 
+                                                    background-color: {{ skill_data.skill.color|default:'#2196F3' }};"></div>
+                                    </div>
+                                    <span class="proficiency-text">{{ skill_data.skill.proficiency }}/5</span>
+                                </div>
                             </div>
-                            <div class="skill-level-text">{{ skill.proficiency }}/5</div>
+                            
+                            {% if skill_data.skill.is_currently_learning %}
+                                <div class="learning-badge pulse-effect">
+                                    <i class="fas fa-book-open"></i>
+                                    Learning
+                                </div>
+                            {% endif %}
                         </div>
                         
-                        {% comment %} {% if skill.is_currently_learning %}
-                        <div class="learning-indicator">
-                            <i class="fas fa-book-open"></i>
-                            <span>Currently Learning</span>
+                        {% if skill_data.primary_technologies or skill_data.supporting_technologies %}
+                        <div class="technology-relationships">
+                            {% if skill_data.primary_technologies %}
+                            <div class="tech-relationship-group primary">
+                                <div class="relationship-label">
+                                    <i class="fas fa-star"></i>
+                                    Primary Technologies
+                                </div>
+                                <div class="tech-tags-container">
+                                    {% for relation in skill_data.primary_technologies %}
+                                    <div class="tech-relationship-tag primary" 
+                                         data-strength="{{ relation.strength }}"
+                                         data-type="{{ relation.get_relationship_type_display }}"
+                                         style="border-color: {{ relation.get_strength_color }};">
+                                        <span class="tech-name">{{ relation.technology.name }}</span>
+                                        <div class="relationship-indicators">
+                                            <div class="strength-indicator strength-{{ relation.strength }}"
+                                                 style="background-color: {{ relation.get_strength_color }};"></div>
+                                            <div class="relationship-type-indicator">
+                                                {% if relation.relationship_type == 'implementation' %}
+                                                    <i class="fas fa-cogs" title="Implementation Tool"></i>
+                                                {% elif relation.relationship_type == 'data_source' %}
+                                                    <i class="fas fa-database" title="Data Source"></i>
+                                                {% elif relation.relationship_type == 'visualization' %}
+                                                    <i class="fas fa-chart-bar" title="Visualization"></i>
+                                                {% elif relation.relationship_type == 'deployment' %}
+                                                    <i class="fas fa-cloud" title="Deployment"></i>
+                                                {% else %}
+                                                    <i class="fas fa-link" title="Supporting"></i>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if skill_data.supporting_technologies %}
+                            <div class="tech-relationship-group supporting">
+                                <div class="relationship-label">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Supporting Technologies
+                                </div>
+                                <div class="tech-tags-container">
+                                    {% for relation in skill_data.supporting_technologies %}
+                                    <div class="tech-relationship-tag supporting" 
+                                         data-strength="{{ relation.strength }}"
+                                         style="border-color: {{ relation.get_strength_color }};">
+                                        <span class="tech-name">{{ relation.technology.name }}</span>
+                                        <div class="strength-indicator strength-{{ relation.strength }}"
+                                             style="background-color: {{ relation.get_strength_color }};"></div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %} {% endcomment %}
+                        {% endif %}
+                        
+                        <div class="skill-application-metrics">
+                            {% if skill_data.project_applications %}
+                            <div class="application-count">
+                                <i class="fas fa-project-diagram"></i>
+                                Applied in {{ skill_data.project_applications }} project{{ skill_data.project_applications|pluralize }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if skill_data.last_used %}
+                            <div class="last-used">
+                                <i class="fas fa-clock"></i>
+                                Last applied: {{ skill_data.last_used|date:"M Y" }}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mastery-progress">
+                                <div class="mastery-label">Learning Progress</div>
+                                <div class="mastery-bar">
+                                    <div class="mastery-fill" style="width: {{ skill_data.mastery_score }}%;"></div>
+                                </div>
+                                <div class="mastery-text">{{ skill_data.mastery_score }}%</div>
+                            </div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -313,6 +419,106 @@
         </div>
     </div>
 </section>
+
+<!-- ========== TECHNOLOGY RELATIONSHIP OVERVIEW ========== -->
+{% if top_technologies %}
+<section class="tech-relationships-overview">
+    <div class="unified-dashboard-container navy">
+        <div class="unified-container-header">
+            <h3 class="unified-container-title">
+                <i class="fas fa-sitemap"></i>
+                Most Connected Technologies
+            </h3>
+            <p class="container-subtitle">
+                Technologies used across multiple skill areas, showing versatility and integration capability
+            </p>
+        </div>
+        
+        <div class="connected-technologies-grid grid-4-col">
+            {% for tech_data in top_technologies %}
+            <div class="connected-tech-card glass-card">
+                <div class="tech-card-header">
+                    <div class="tech-icon">
+                        <i class="{{ tech_data.technology.icon|default:'fas fa-microchip' }}"></i>
+                    </div>
+                    <h4 class="tech-name">{{ tech_data.technology.name }}</h4>
+                </div>
+                
+                <div class="connection-metrics">
+                    <div class="connection-stat primary">
+                        <span class="stat-number">{{ tech_data.primary_connections }}</span>
+                        <span class="stat-label">Primary Skills</span>
+                    </div>
+                    <div class="connection-stat supporting">
+                        <span class="stat-number">{{ tech_data.supporting_connections }}</span>
+                        <span class="stat-label">Supporting Skills</span>
+                    </div>
+                </div>
+                
+                <div class="connection-visualization">
+                    <div class="connection-bar">
+                        <div class="primary-portion" 
+                             style="width: {% widthratio tech_data.primary_connections tech_data.total_connections 100 %}%;"></div>
+                        <div class="supporting-portion" 
+                             style="width: {% widthratio tech_data.supporting_connections tech_data.total_connections 100 %}%;"></div>
+                    </div>
+                    <div class="total-connections">
+                        {{ tech_data.total_connections }} total skill connection{{ tech_data.total_connections|pluralize }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ========== RELATIONSHIP INSIGHTS SUMMARY ========== -->
+{% if relationship_insights %}
+<div class="skills-insights-summary">
+    <div class="insights-cards grid-4-col">
+        <div class="insight-card">
+            <div class="insight-icon">
+                <i class="fas fa-link"></i>
+            </div>
+            <div class="insight-content">
+                <div class="insight-number">{{ relationship_insights.total_relationships }}</div>
+                <div class="insight-label">Skill-Tech Links</div>
+            </div>
+        </div>
+        
+        <div class="insight-card">
+            <div class="insight-icon">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="insight-content">
+                <div class="insight-number">{{ relationship_insights.strong_relationships }}</div>
+                <div class="insight-label">Primary Relations</div>
+            </div>
+        </div>
+        
+        <div class="insight-card">
+            <div class="insight-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="insight-content">
+                <div class="insight-number">{{ relationship_insights.avg_strength|floatformat:1 }}</div>
+                <div class="insight-label">Avg Strength</div>
+            </div>
+        </div>
+        
+        <div class="insight-card">
+            <div class="insight-icon">
+                <i class="fas fa-network-wired"></i>
+            </div>
+            <div class="insight-content">
+                <div class="insight-number">{{ relationship_insights.relationship_types|length }}</div>
+                <div class="insight-label">Relation Types</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endif %}
 
 <!-- ========== ENHANCED PROFESSIONAL TIMELINE ========== -->
