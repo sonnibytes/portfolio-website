@@ -1225,7 +1225,7 @@ class ResumePreviewView(TemplateView):
 
         # Get the same resume data used for downloads
         download_view = EnhancedResumeDownloadView()
-        resume_data = download_view.get_context_data()
+        resume_data = download_view.get_resume_data()
 
         context.update(resume_data)
         context['page_title'] = 'Resume - Sonni Gunnels'
