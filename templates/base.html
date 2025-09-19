@@ -5,6 +5,7 @@
 ---->
 
 {% load static %}
+{% load aura_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -112,6 +113,10 @@
                     <i class="fas fa-user-astronaut nav-icon"></i>
                     <span class="nav-text">Profile</span>
                 </a>
+                <a href="{% url 'core:resume_preview' %}" class="nav-link {% if request.resolver_match.view_name == 'core:resume_preview' %}active{% endif %}">
+                    <i class="fas fa-paperclip nav-icon"></i>
+                    <span class="nav-text">Resume</span>
+                </a>
                 <a href="{% url 'core:contact' %}" class="nav-link {% if request.resolver_match.view_name == 'core:contact' %}active{% endif %}">
                     <i class="fas fa-satellite-dish nav-icon"></i>
                     <span class="nav-text">Contact</span>
@@ -195,7 +200,10 @@
                             <i class="fas fa-chevron-right me-2"></i>Systems
                         </a>
                         <a href="{% url 'core:about' %}" class="footer-link">
-                            <i class="fas fa-chevron-right me-2"></i>Profile
+                            <i class="fas fa-chevron-right me-2"></i>Developer Profile
+                        </a>
+                        <a href="{% url 'core:resume_preview' %}" class="footer-link">
+                            <i class="fas fa-chevron-right me-2"></i>Resume
                         </a>
                     </div>
                 </div>
@@ -203,13 +211,13 @@
                 <!-- Data Categories -->
                 <div class="footer-section">
                     <h3 class="footer-title">
-                        <i class="fas fa-tags me-2"></i>
+                        <i class="fas fa-icons me-2"></i>
                         Categories
                     </h3>
                     <div class="footer-categories">
                         {% for category in categories %}
                         <a href="{% url 'blog:category' slug=category.slug %}" class="category-tag">
-                            <i class="fas fa-tag me-1"></i>{{ category.name }}
+                            <i class="{{ category.icon|safe_icon|default:'fas fa-tag' }} me-1"></i>{{ category.name }}
                         </a>
                         {% empty %}
                         <a href="{% url 'blog:post_list' %}" class="category-tag">
