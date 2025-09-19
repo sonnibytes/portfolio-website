@@ -1,4 +1,4 @@
-from django.views.generic import TemplateView, DetailView, FormView, ListView
+from django.views.generic import TemplateView, DetailView, FormView, View
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse, HttpResponseNotFound, HttpResponseServerError, HttpResponseForbidden, Http404
@@ -1232,3 +1232,29 @@ class ResumePreviewView(TemplateView):
         context['is_preview'] = True
 
         return context
+
+
+# API View for Resume Download Tracking
+class TrackDownloadAPIView(View):
+    """API endpoint for tracking resume downloads"""
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            format_type = data.get('format', 'unknown')
+            timestamp = data.get('timestamp')
+
+            # Track in analytics if available
+            try:
+                from .models import PortfolioAnalytics
+                today = timezone.now().date()
+                analytics, created = PortfolioAnalytics.objects.get_or_create(date=today)
+                analytics.resume_downloads += 1
+                analytics.save()
+            except (ImportError, AttributeError):
+                pass
+
+            return JsonResponse({'status': 'tracked', 'format': format_type})
+        
+        except Exception as e:
+            return JsonResponse({'error': 'tracking failed'}, status=400)
