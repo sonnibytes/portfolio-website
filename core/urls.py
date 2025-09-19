@@ -12,13 +12,13 @@ urlpatterns = [
     path('communication/success/', views.ContactSuccessView.as_view(), name='contact_success'),
 
     # # Resume download routes
-    path('resume/download/', views.ResumeDownloadView.as_view(), name='resume_download'),
-    path('resume/download/<str:format>/', views.ResumeDownloadView.as_view(), name='resume_download_format'),
+    # path('resume/download/', views.ResumeDownloadView.as_view(), name='resume_download'),
+    # path('resume/download/<str:format>/', views.ResumeDownloadView.as_view(), name='resume_download_format'),
 
     # Enhanced Resume System
-    # path('resume/', views.ResumePreviewView.as_view(), name='resume_preview'),
-    # path('resume/download/', views.EnhancedResumeDownloadView.as_view(), name='resume_download'),
-    # path('resume/download/<str:format>/', views.EnhancedResumeDownloadView.as_view(), name='resume_download_format'),
+    path('resume/', views.ResumePreviewView.as_view(), name='resume_preview'),
+    path('resume/download/', views.EnhancedResumeDownloadView.as_view(), name='resume_download'),
+    path('resume/download/<str:format>/', views.EnhancedResumeDownloadView.as_view(), name='resume_download_format'),
 
     # Static pages
     path('privacy/', views.PrivacyView.as_view(), name='privacy'),
