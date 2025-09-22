@@ -408,7 +408,7 @@ class EnhancedLearningSystemListView(ListView):
                 default=Value(0),
                 output_field=IntegerField(),
             )
-            queryset = queryset.order_by(stage_order=stage_order).order_by('-stage_order', '-updated_at')
+            queryset = queryset.annotate(stage_order=stage_order).order_by('-stage_order', '-updated_at')
 
         else:  # default: recent_activity
             # Sort by most recent GitHub activity or system updates
