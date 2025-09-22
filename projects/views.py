@@ -24,7 +24,7 @@ import json
 from .models import SystemModule, SystemType, Technology, SystemFeature, SystemMetric, SystemDependency, SystemImage, SystemSkillGain, LearningMilestone, GitHubRepository, GitHubLanguage, GitHubCommitWeek, GitHubRepositoryManager
 from core.services.github_api import GitHubAPIService, GitHubAPIError
 from blog.models import Post, SystemLogEntry
-from core.models import Skill, PortfolioAnalytics
+from core.models import Skill, PortfolioAnalytics, SkillTechnologyRelation
 
 
 class LearningJourneyDashboardView(TemplateView):
@@ -443,6 +443,10 @@ class EnhancedLearningSystemListView(ListView):
 
                 # Quick Stats for header
                 'quick_stats': self.get_learning_quick_stats(),
+
+                # NEW: Skill-tech insights
+                'skill_tech_insights': self.get_skill_technology_insights(),
+                'skill_tech_matrix_stats': self.get_skill_tech_matrix_summary(),
             }
         )
 
@@ -461,8 +465,30 @@ class EnhancedLearningSystemListView(ListView):
 
             # Skill summary for cards without GH data
             system.skill_summary = self.get_skill_summary(system)
+
+            # NEW: Skill-technology relationship enhancements
+            system = self.enhance_system_with_skill_tech_data(system)
         
         return context
+    
+    def get_skill_tech_matrix_summary(self):
+        """NEW: Summary stats for skill-technology matrix"""
+        
+        total_skills = Skill.objects.count()
+        total_technologies = Technology.objects.count()
+        defined_relationships = SkillTechnologyRelation.objects.count()
+        possible_relationships = total_skills * total_technologies
+
+        return {
+            'coverage_percentage': (defined_relationships / possible_relationships) * 100 if possible_relationships > 0 else 0,
+            'total_skills': total_skills,
+            'total_technologies': total_technologies,
+            'defined_relationships': defined_relationships,
+            'strong_relationships': SkillTechnologyRelation.objects.filter(strength__gte=3).count(),
+            'primary_implementations': SkillTechnologyRelation.objects.filter(
+                relationship_type='implementation'
+            ).count()
+        }
     
     def get_active_learning_filters(self):
         """Get currently active learning-focused filters"""
@@ -919,21 +945,104 @@ class EnhancedLearningSystemListView(ListView):
         }
 
     def get_learning_quick_stats(self):
-        """Quick stats for header using learning metrics"""
+        """Enhanced quick stats for header leveraging new skill-technology relationships"""
+        from core.models import Skill, SkillTechnologyRelation
+
         # Exclude drafts, archived
         total_systems = SystemModule.objects.exclude(
             status__in=['draft', 'archived']
         ).count()
 
+        # NEW: Enhanced Skills metrics using new skill-technology relationships
+        unique_skills_applied = SystemSkillGain.objects.values('skill').distinct().count()
+        unique_technologies_used = SystemSkillGain.objects.values('technologies_used').distinct().count()
+        skill_tech_connections = SkillTechnologyRelation.objects.count()
+
+        # NEW: Technology mastery indicators
+        technologies_with_multiple_projects = SystemSkillGain.objects.values('technologies_used').annotate(
+            system_count=Count('system', distinct=True)
+        ).filter(system_count__gte=2).count()
+
         return {
             'total_systems': total_systems,
             'portfolio_ready_count': SystemModule.objects.filter(portfolio_ready=True).count(),
-            'skills_gained_count': SystemSkillGain.objects.count(),
+
+            # ENHANCED: Replace simple skills_gained_count with richer metrics
+            # How many different skills practiced
+            'unique_skills_applied': unique_skills_applied,
+            # How many unique tech used
+            'unique_technologies_used': unique_technologies_used,
+            # How many skill-tech relationships defined
+            'skill_tech_connections': skill_tech_connections,
+            # Technologies used in 2+ projects
+            'technologies_mastered': technologies_with_multiple_projects,
+
+
             'learning_stages_count': SystemModule.objects.values('learning_stage').distinct().count(),
             'recent_milestones_count': LearningMilestone.objects.filter(
                 date_achieved__gte=timezone.now() - timezone.timedelta(days=30)
             ).count()
         }
+    
+    def get_skill_technology_insights(self):
+        """NEW: Get insights about skill-technology relationships across all systems"""
+        from core.models import SkillTechnologyRelation
+
+        # Most common skill-tech pairings
+        common_pairings = SkillTechnologyRelation.objects.values(
+            'skill__name', 'technology__name'
+        ).annotate(
+            strength=Avg('strength'),
+            usage_count=Count('id')
+        ).order_by('-strength', '-usage_count')[:10]
+
+        # Skills with most technology diversity
+        skills_by_tech_diversity = SkillTechnologyRelation.objects.values(
+            'skill__name'
+        ).annotate(
+            tech_count=Count('technology', distinct=True),
+            avg_strength=Avg('strength')
+        ).order_by('-tech_count')[:5]
+
+        return {
+            'common_pairings': common_pairings,
+            'diverse_skills': skills_by_tech_diversity,
+            'total_relationships': SkillTechnologyRelation.objects.count(),
+            'strong_relationships': SkillTechnologyRelation.objects.filter(strength__gte=3).count()
+        }
+    
+    def enhance_system_with_skill_tech_data(self, system):
+        """NEW: Enhanced each system w skill-technology relationship data"""
+        # Get unique skills applied in this system
+        skills_applied = system.skill_gains.values('skill__name').distinct()
+
+        # Get technologies used acorss all skill applications in this system
+        technologies_used = system.skill_gains.values('technologies_used__name').distinct()
+
+        # Calculate skill-technology alignment score for this system
+        # High score = skills and technologies are well-matched according to SkillTechnologyRelation
+        alignment_score = 0
+        total_connections = 0
+
+        for skill_gain in system.skill_gains.all():
+            for tech in skill_gain.technologies_used.all():
+                try:
+                    relation = SkillTechnologyRelation.objects.get(
+                        skill=skill_gain.skill,
+                        technology=tech
+                    )
+                    alignment_score += relation.strength
+                    total_connections += 1
+                except SkillTechnologyRelation.DoesNotExist:
+                    # Skill-tech pair used but not formally defined
+                    total_connections += 1
+
+        system.skill_tech_alignment = (alignment_score / total_connections) if total_connections > 0 else 0
+        system.skills_applied_count = skills_applied.count()
+        system.technologies_used_count = technologies_used.count()
+        system.skill_tech_diversity_score = skills_applied.count() * technologies_used.count()
+
+        return system
 
     def get_learning_stage_color(self, stage_code):
         """Get color for learning stage badges"""

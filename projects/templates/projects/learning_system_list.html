@@ -670,20 +670,80 @@
         </div>
         </div>
 
-        <!-- Learning Journey Quick Stats -->
+        <!-- Enhanced Header Metrics for learning_system_list.html -->
+<!-- Replace the existing quick stats section with these updated metrics -->
+
+<div class="metrics-overview">
+    <!-- Total Systems (Keep existing) -->
+    <div class="metric-card unified-dashboard-container teal">
+        <div class="metric-content">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fa-solid fa-cubes"></i>
+                </div>
+            </div>
+            <div class="metric-value" data-target="{{ quick_stats.total_systems }}">{{ quick_stats.total_systems }}</div>
+            <div class="metric-label">Learning Systems</div>
+        </div>
+    </div>
+    
+    <!-- UPDATED: Skills Applied (instead of just "Skills Gained") -->
+    <div class="metric-card unified-dashboard-container lavender">
+        <div class="metric-content">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+            </div>
+            <div class="metric-value" data-target="{{ quick_stats.unique_skills_applied }}">{{ quick_stats.unique_skills_applied }}</div>
+            <div class="metric-label">Skills Applied</div>
+            <div class="metric-sub-label">{{ quick_stats.skill_tech_connections }} skill-tech connections</div>
+        </div>
+    </div>
+    
+    <!-- NEW: Technology Mastery -->
+    <div class="metric-card unified-dashboard-container coral">
+        <div class="metric-content">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fa-solid fa-code"></i>
+                </div>
+            </div>
+            <div class="metric-value" data-target="{{ quick_stats.technologies_mastered }}">{{ quick_stats.technologies_mastered }}</div>
+            <div class="metric-label">Technologies Mastered</div>
+            <div class="metric-sub-label">Used in 2+ projects</div>
+        </div>
+    </div>
+
+    <!-- Time Invested (Keep existing but enhance label) -->
+    <div class="metric-card unified-dashboard-container mint">
+        <div class="metric-content">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </div>
+            </div>
+            <div class="metric-value" data-target="{{ time_investment_distribution.total_hours|floatformat:0 }}">{{ time_investment_distribution.total_hours|floatformat:0 }}h</div>
+            <div class="metric-label">Learning Hours</div>
+            <div class="metric-sub-label">Hands-on development time</div>
+        </div>
+    </div>
+</div>
+</div>
+
+        {% comment %} <!-- Learning Journey Quick Stats -->
         <div class="metrics-overview">
 
             <!-- Skills Gained -->
             <div class="metric-card unified-dashboard-container teal">
                 <div class="metric-content">
-                {% comment %} <div class="dashboard-grid grid-4-col" style="margin: 0;"> {% endcomment %}
                     <div class="metric-header">
                         <div class="metric-icon">
                             <i class="fa-solid fa-award"></i>
                         </div>
                     </div>
                     <div class="metric-value" data-target="{{ quick_stats.skills_gained_count }}">{{ quick_stats.skills_gained_count }}</div>
-                    <div class="metric-label">Skills Gained {{ quick_stats.skills_gained_count }}</div>
+                    <div class="metric-label">Skills Gained</div>
                 </div>
             </div>
             
@@ -697,7 +757,7 @@
                         </div>
                     </div>
                     <div class="metric-value" data-target="{{ quick_stats.portfolio_ready_count }}">{{ quick_stats.portfolio_ready_count }}</div>
-                    <div class="metric-label">Portfolio Ready {{ quick_stats.portfolio_ready_count }}</div>
+                    <div class="metric-label">Portfolio Ready</div>
                 </div>
             </div>
                 
@@ -728,7 +788,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> {% endcomment %}
 
     <div class="systems-list-layout">
         
@@ -1090,9 +1150,10 @@
                     <p class="system-description">{{ system.excerpt|default:system.description|truncatewords:20 }}</p>
                     
                     <div class="github-metrics">
-        <h4><i class="fab fa-github"></i> Development Activity</h4>
+        {% comment %} <h4><i class="fab fa-github"></i> Development Activity</h4> {% endcomment %}
         
         {% if system.commit_stats.repository_count > 0 %}
+        <h4><i class="fab fa-github"></i> Development Activity</h4>
         <div class="metrics-grid">
             <!-- Total Commits (Real Data) -->
             <div class="metric-item">
@@ -1139,59 +1200,39 @@
 
         {% else %}
         <!-- No GitHub Data -->
+        <h4><i class="fas fa-chart-line"></i> Skill-Technology Metrics</h4>
+        
         <div class="metrics-grid">
-            <!-- Total Commits (Real Data) -->
+            <!-- Skill-Technology Alignment Score -->
             <div class="metric-item">
-                {% if system.skill_summary.flags.has_proficiency %}
-                    {% if system.skill_summary.skill_proficiency.new_skills  %}
-                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.new_skills }}</span>
-                    <span class="metric-label">Skills Gained</span>
-                    {% elif system.skill_summary.skill_proficiency.improved_skills %}
-                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.improved_skills }}</span>
-                    <span class="metric-label">Skills Improved</span>
-                    {% elif system.skill_summary.skill_proficiency.mastered_skills %}
-                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.mastered_skills }}</span>
-                    <span class="metric-label">Skills Mastered</span>
-                    {% else %}
-                    <span class="metric-value">{{ system.skills_developed.count }}</span>
-                    <span class="metric-label">Skills</span>
-                    {% endif %}
-                {% endif %}
-                
+                <span class="metric-value">{{ system.skill_tech_alignment|floatformat:1 }}/4</span>
+                <span class="metric-label">Alignment Score</span>
+                <span class="metric-sublabel">Skill-tech match</span>
             </div>
+            
+            <!-- Skills Applied (not just skills gained) -->
             <div class="metric-item">
-                {% if system.skill_summary.flags.has_milestones %}
-                    {% if system.skill_summary.milestones.major_milestones  %}
-                    <span class="metric-value">{{ system.skill_summary.milestones.major_milestones }}</span>
-                    <span class="metric-label">Major Milestones</span>
-                    {% else %}
-                    <span class="metric-value">{{ system.skill_summary.milestones.total_milestones }}</span>
-                    <span class="metric-label">Milestones</span>
-                    {% endif %}
-                {% endif %}
+                <span class="metric-value">{{ system.skills_applied_count }}</span>
+                <span class="metric-label">Skills Applied</span>
+                <span class="metric-sublabel">Unique skill areas</span>
             </div>
 
+            <!-- Technologies Used -->
             <div class="metric-item">
-                <span class="metric-value">
-                    {% if system.actual_dev_hours %}
-                        {{ system.actual_dev_hours }}h
-                    {% elif system.estimated_dev_hours %}
-                        ~{{ system.estimated_dev_hours }}h
-                    {% else %}
-                        0h
-                    {% endif %}
-                </span>
-                <span class="metric-label">Time Invested</span>
+                <span class="metric-value">{{ system.technologies_used_count }}</span>
+                <span class="metric-label">Tech Stack</span>
+                <span class="metric-sublabel">Tools utilized</span>
             </div>
 
-            <!-- Complexity Score (Now with Real GitHub Data) -->
+            <!-- Skill-Tech Diversity Score -->
             <div class="metric-item">
-                <span class="metric-value">{{ system.real_complexity_score }}/20</span>
-                <span class="metric-label">Complexity Score</span>
+                <span class="metric-value">{{ system.skill_tech_diversity_score }}</span>
+                <span class="metric-label">Diversity Score</span>
+                <span class="metric-sublabel">Skills × Technologies</span>
             </div>
 
         </div>
-        <div class="no-github-data">
+         <div class="no-github-data">
             <i class="fas fa-info-circle"></i>
             <small class="text-muted">Manually tracked data: No GitHub repositories linked</small>
         </div>

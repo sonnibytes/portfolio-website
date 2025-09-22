@@ -1,0 +1,62 @@
+{% comment %} Used with get_skill_tech_matrix_summary context data  {% endcomment %}
+
+<!-- NEW: Skill-Technology Relationship Insights Panel -->
+<!-- Add this after the existing hero metrics -->
+<div class="unified-dashboard-container navy" style="margin-top: 2rem;">
+    <div class="container-header">
+        <h3><i class="fas fa-network-wired"></i> Skill-Technology Ecosystem</h3>
+        <p class="header-subtitle">How skills and technologies connect across learning projects</p>
+    </div>
+    
+    <div class="ecosystem-stats-grid">
+        <div class="stat-item">
+            <div class="stat-value">{{ skill_tech_insights.total_relationships }}</div>
+            <div class="stat-label">Total Connections</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ skill_tech_insights.strong_relationships }}</div>
+            <div class="stat-label">Strong Relationships</div>
+            <div class="stat-sublabel">Strength 3-4</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ skill_tech_matrix_stats.coverage_percentage|floatformat:0 }}%</div>
+            <div class="stat-label">Matrix Coverage</div>
+            <div class="stat-sublabel">Skills-tech defined</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ skill_tech_matrix_stats.primary_implementations }}</div>
+            <div class="stat-label">Primary Tools</div>
+            <div class="stat-sublabel">Go-to implementations</div>
+        </div>
+    </div>
+    
+    <!-- Top Skill-Technology Pairings -->
+    {% if skill_tech_insights.common_pairings %}
+    <div class="top-pairings">
+        <h4><i class="fas fa-star"></i> Most Effective Skill-Technology Combinations</h4>
+        <div class="pairings-grid">
+            {% for pairing in skill_tech_insights.common_pairings|slice:":6" %}
+            <div class="pairing-item">
+                <div class="pairing-connection">
+                    <span class="skill-name">{{ pairing.skill__name }}</span>
+                    <span class="connection-arrow">→</span>
+                    <span class="tech-name">{{ pairing.technology__name }}</span>
+                </div>
+                <div class="strength-indicator">
+                    <div class="strength-stars">
+                        {% for i in "1234" %}
+                            {% if forloop.counter <= pairing.strength %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="strength-value">{{ pairing.strength|floatformat:1 }}/4</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
