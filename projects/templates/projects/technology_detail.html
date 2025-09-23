@@ -1,540 +1,498 @@
 {% extends "projects/systems_base.html" %}
 {% load static %}
-{% load aura_filters %}
-{% load aura_components %}
-{% load system_tags %}
+{% load aura_filters aura_components %}
 
-{% block systems_title %}{{ technology.name }} - Learning Journey{% endblock %}
-
-{% block systems_css %}
+{% block extra_css %}
+{{ block.super }}
 <style>
-    /* Technology Detail Specific Styles - Unified Container Compatible */
-    .technology-hero {
-        background: linear-gradient(135deg, 
-            rgba(var(--tech-color-rgb, 38, 198, 218), 0.15), 
-            rgba(var(--tech-color-rgb, 38, 198, 218), 0.05)
-        );
-        border: 1px solid rgba(var(--tech-color-rgb, 38, 198, 218), 0.3);
+    /* Streamlined Glass Card System */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
     }
 
-    .tech-icon-large {
-        width: 80px;
-        height: 80px;
-        border-radius: var(--border-radius-lg, 12px);
+    .glass-card:hover {
+        background: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .glass-card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.5rem;
+        background: var(--tech-color, var(--color-teal));
         color: var(--color-bg-primary);
+    }
+
+    .glass-card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white;
+        margin: 0;
+    }
+
+    .glass-card-subtitle {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin: 0.25rem 0 0 0;
+    }
+
+    /* Technology Hero */
+    .tech-hero {
+        background: linear-gradient(135deg, 
+            rgba(var(--tech-color-rgb, 38, 198, 218), 0.15), 
+            rgba(var(--tech-color-rgb, 38, 198, 218), 0.05));
+        border: 1px solid rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
+        margin-bottom: 2rem;
+    }
+
+    .tech-hero-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .tech-hero-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 16px;
+        background: var(--tech-color, var(--color-teal));
+        color: var(--color-bg-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 2.5rem;
-        font-weight: bold;
-        margin-bottom: var(--spacing-lg, 1.5rem);
+        margin-right: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
-    .skill-progression-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-left: 4px solid var(--color-teal); /* Default color, overridden inline */
-        border-radius: var(--border-radius-lg, 12px);
-        padding: var(--spacing-xl, 2rem);
-        margin-bottom: var(--spacing-xl, 2rem);
+    .tech-hero-info h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.5rem 0;
     }
 
-    .progression-header {
+    .tech-hero-info p {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+    }
+
+    /* Quick Stats */
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .quick-stat {
+        text-align: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .quick-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--tech-color, var(--color-teal));
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .quick-stat-label {
+        color: white;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    /* Skill Connections */
+    .skill-connections {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    .skill-connection-card {
+        background: rgba(179, 157, 219, 0.1);
+        border: 1px solid rgba(179, 157, 219, 0.2);
+        border-radius: 8px;
+        padding: 1rem;
+        min-width: 200px;
+        flex: 1;
+    }
+
+    .skill-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-lavender);
+        margin-bottom: 0.5rem;
+    }
+
+    .skill-relationship {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: var(--spacing-lg, 1.5rem);
+        margin-bottom: 0.5rem;
     }
 
-    .skill-level-badge {
-        padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem);
-        color: var(--color-bg-primary);
-        border-radius: var(--border-radius-lg, 12px);
-        font-weight: 600;
-        font-size: 1.1rem;
+    .relationship-type {
+        background: rgba(255, 138, 128, 0.2);
+        color: var(--color-coral);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
     }
 
-    .progression-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: var(--spacing-lg, 1.5rem);
-        margin-bottom: var(--spacing-lg, 1.5rem);
+    .strength-stars {
+        display: flex;
+        gap: 0.2rem;
     }
 
-    .progression-stat {
-        text-align: center;
-        padding: var(--spacing-lg, 1.5rem);
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: var(--border-radius-md, 8px);
-    }
-
-    .progression-stat-value {
-        display: block;
-        font-size: 2rem;
-        font-weight: 600;
-        margin-bottom: var(--spacing-sm, 0.75rem);
-    }
-
-    .progression-stat-label {
-        color: var(--color-text-secondary);
+    .strength-stars i {
+        color: var(--color-yellow);
         font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    }
+
+    .skill-notes {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.7);
+        font-style: italic;
+    }
+
+    /* System Cards */
+    .systems-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .system-card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .system-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        border-color: var(--tech-color, var(--color-teal));
+    }
+
+    .system-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .system-status {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+
+    .system-status.deployed { background: var(--color-mint); }
+    .system-status.in-development { background: var(--color-yellow); }
+    .system-status.published { background: var(--color-teal); }
+
+    .system-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: white;
+        margin: 0;
+    }
+
+    .system-description {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin: 1rem 0;
+    }
+
+    .system-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .system-metric {
+        text-align: center;
+    }
+
+    .system-metric-value {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--tech-color, var(--color-teal));
+    }
+
+    .system-metric-label {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 0.25rem;
     }
 
     /* Learning Timeline */
     .learning-timeline {
         position: relative;
-        padding-left: var(--spacing-xl, 2rem);
+        padding-left: 2rem;
     }
 
     .learning-timeline::before {
         content: '';
         position: absolute;
-        left: 12px;
+        left: 1rem;
         top: 0;
         bottom: 0;
         width: 2px;
-        background: linear-gradient(to bottom, var(--tech-readable-color, var(--color-teal)), transparent);
+        background: var(--tech-color, var(--color-teal));
+        opacity: 0.3;
     }
 
     .timeline-item {
         position: relative;
-        margin-bottom: var(--spacing-xl, 2rem);
-        padding: var(--spacing-lg, 1.5rem);
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--border-radius-md, 8px);
-        margin-left: var(--spacing-lg, 1.5rem);
+        margin-bottom: 2rem;
+        padding-left: 2rem;
     }
 
     .timeline-item::before {
         content: '';
         position: absolute;
-        left: calc(-1.5rem - 6px);
-        top: var(--spacing-lg, 1.5rem);
+        left: -0.5rem;
+        top: 0.5rem;
         width: 12px;
         height: 12px;
-        background: var(--tech-readable-color, var(--color-teal));
         border-radius: 50%;
-        border: 3px solid var(--color-bg-primary);
-    }
-
-    .timeline-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--spacing-md, 1rem);
-    }
-
-    .timeline-title {
-        color: var(--color-text);
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin: 0;
+        background: var(--tech-color, var(--color-teal));
+        box-shadow: 0 0 0 4px var(--color-bg-primary);
     }
 
     .timeline-date {
-        color: var(--color-text-secondary);
-        font-size: 0.9rem;
-        font-family: var(--font-code);
+        font-size: 0.8rem;
+        color: var(--tech-color, var(--color-teal));
+        font-weight: 600;
+        margin-bottom: 0.5rem;
     }
 
-    .timeline-complexity {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--spacing-xs, 0.5rem);
-        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
-        color: var(--tech-color, var(--color-teal));
-        border-radius: var(--border-radius-sm, 4px);
-        font-size: 0.8rem;
-        font-weight: 500;
-        margin-bottom: var(--spacing-md, 1rem);
+    .timeline-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 0.5rem;
     }
 
     .timeline-description {
-        color: var(--color-text-secondary);
-        line-height: 1.6;
-        margin-bottom: var(--spacing-md, 1rem);
-    }
-
-    .timeline-actions {
-        display: flex;
-        gap: var(--spacing-sm, 0.75rem);
-    }
-
-    .timeline-action-btn {
-        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.1);
-        border: 1px solid rgba(var(--tech-color-rgb, 38, 198, 218), 0.3);
-        color: var(--tech-color, var(--color-teal));
-        border-radius: var(--border-radius-sm, 4px);
-        text-decoration: none;
-        font-size: 0.8rem;
-        transition: all 0.3s ease;
-    }
-
-    .timeline-action-btn:hover {
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
-        transform: translateY(-1px);
-    }
-
-    /* Systems Grid (like filtered DataLogs) */
-    .tech-systems-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: var(--spacing-lg, 1.5rem);
-    }
-
-    .tech-system-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--border-radius-lg, 12px);
-        padding: var(--spacing-lg, 1.5rem);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .tech-system-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: var(--tech-readable-color, var(--color-teal));
-    }
-
-    .tech-system-card:hover {
-        transform: translateY(-4px);
-        border-color: rgba(255, 255, 255, 0.2);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
-
-    .system-card-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: var(--spacing-lg, 1.5rem);
-    }
-
-    .system-card-title {
-        color: var(--color-text);
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin: 0 0 var(--spacing-xs, 0.5rem) 0;
-        line-height: 1.3;
-    }
-
-    .system-card-title a {
-        color: inherit;
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-
-    .system-card-title a:hover {
-        color: var(--tech-color, var(--color-teal));
-    }
-
-    .system-type-badge {
-        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--color-text-secondary);
-        border-radius: var(--border-radius-sm, 4px);
-        font-size: 0.8rem;
-        white-space: nowrap;
-    }
-
-    .system-card-meta {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-md, 1rem);
-        margin-bottom: var(--spacing-lg, 1.5rem);
-        flex-wrap: wrap;
-    }
-
-    .complexity-indicator {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xs, 0.5rem);
+        color: rgba(255, 255, 255, 0.8);
         font-size: 0.9rem;
-        color: var(--color-text-secondary);
-    }
-
-    .complexity-dots {
-        display: flex;
-        gap: 2px;
-    }
-
-    .complexity-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-    }
-
-    .complexity-dot.active {
-        background: var(--tech-color, var(--color-teal));
-    }
-
-    .status-badge {
-        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
-        border-radius: var(--border-radius-sm, 4px);
-        font-size: 0.8rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .status-deployed {
-        background: rgba(165, 214, 167, 0.2);
-        color: var(--color-mint);
-    }
-
-    .status-published {
-        background: rgba(38, 198, 218, 0.2);
-        color: var(--color-teal);
-    }
-
-    .status-in_development {
-        background: rgba(255, 245, 157, 0.2);
-        color: var(--color-yellow);
-    }
-
-    .system-card-description {
-        color: var(--color-text-secondary);
-        line-height: 1.6;
-        margin-bottom: var(--spacing-lg, 1.5rem);
-    }
-
-    .system-card-technologies {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--spacing-xs, 0.5rem);
-        margin-bottom: var(--spacing-lg, 1.5rem);
-    }
-
-    .tech-tag {
-        padding: var(--spacing-xs, 0.5rem);
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.1);
-        color: var(--tech-color, var(--color-teal));
-        border-radius: var(--border-radius-sm, 4px);
-        font-size: 0.7rem;
-        font-weight: 500;
-    }
-
-    .tech-tag.current {
-        background: var(--tech-color, var(--color-teal));
-        color: var(--color-bg-primary);
-    }
-
-    .system-card-actions {
-        display: flex;
-        gap: var(--spacing-sm, 0.75rem);
-    }
-
-    .system-action-btn {
-        flex: 1;
-        padding: var(--spacing-sm, 0.75rem);
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.1);
-        border: 1px solid rgba(var(--tech-color-rgb, 38, 198, 218), 0.3);
-        color: var(--tech-color, var(--color-teal));
-        border-radius: var(--border-radius-md, 8px);
-        text-decoration: none;
-        text-align: center;
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .system-action-btn:hover {
-        background: rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
-        transform: translateY(-1px);
+        line-height: 1.4;
     }
 
     /* Related Technologies */
     .related-tech-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: var(--spacing-lg, 1.5rem);
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
     }
 
-    .related-tech-card {
-        background: rgba(255, 255, 255, 0.03);
+    .related-tech-item {
+        background: rgba(255, 255, 255, 0.06);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--border-radius-md, 8px);
-        padding: var(--spacing-lg, 1.5rem);
+        border-radius: 8px;
+        padding: 1rem;
         text-align: center;
         transition: all 0.3s ease;
         text-decoration: none;
-        color: var(--color-text);
+        color: inherit;
     }
 
-    .related-tech-card:hover {
+    .related-tech-item:hover {
+        background: rgba(255, 255, 255, 0.1);
         transform: translateY(-2px);
-        border-color: rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        border-color: var(--item-color, var(--color-coral));
     }
 
     .related-tech-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: var(--border-radius-md, 8px);
-        background: var(--related-tech-color, var(--color-teal));
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: var(--item-color, var(--color-coral));
+        color: var(--color-bg-primary);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--color-bg-primary);
-        font-size: 1.5rem;
-        margin: 0 auto var(--spacing-md, 1rem);
+        margin: 0 auto 0.5rem;
+        font-size: 1rem;
     }
 
     .related-tech-name {
-        font-weight: 600;
-        margin-bottom: var(--spacing-xs, 0.5rem);
-    }
-
-    .related-tech-projects {
-        color: var(--color-text-secondary);
         font-size: 0.9rem;
+        font-weight: 500;
+        color: white;
     }
 
     /* Responsive */
     @media (max-width: 768px) {
-        .progression-stats {
+        .tech-hero-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .tech-hero-icon {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+        
+        .quick-stats {
             grid-template-columns: repeat(2, 1fr);
         }
         
-        .tech-systems-grid {
+        .systems-grid {
             grid-template-columns: 1fr;
         }
         
         .learning-timeline {
-            padding-left: var(--spacing-lg, 1.5rem);
-        }
-        
-        .timeline-item {
-            margin-left: var(--spacing-md, 1rem);
+            padding-left: 1rem;
         }
     }
 </style>
 {% endblock %}
 
 {% block systems_breadcrumbs %}
-<i class="fas fa-chevron-right breadcrumb-separator"></i>
-{% if technology %}
 <a href="{% url 'projects:technologies_overview' %}" class="breadcrumb-item">Technologies</a>
 <i class="fas fa-chevron-right breadcrumb-separator"></i>
 <span class="breadcrumb-item active">{{ technology.name }}</span>
-{% else %}
-<span class="breadcrumb-item active">Technologies Overview</span>
-{% endif %}
 {% endblock %}
 
 {% block systems_content %}
-<div class="systems-content-container container" style="--tech-color: {{ technology.color }}; --tech-color-rgb: {{ technology.color|hex_to_rgb }};">
+<div class="systems-content-container container" style="--tech-color: {{ technology.color|default:'#26c6da' }}; --tech-color-rgb: {{ technology.color|hex_to_rgb|default:'38, 198, 218' }};">
     
-    <!-- Technology Hero Section -->
-    <div class="unified-dashboard-container teal technology-hero" style="--tech-color: {{ technology.color|lighten_if_dark }}; --tech-color-rgb: {{ technology.color|lighten_if_dark|hex_to_rgb }}; --tech-readable-color: {{ technology.color|readable_color }};">
-        <div class="unified-container-header">
-            <div class="tech-icon-large" style="background: {{ technology.color|readable_color }};">
+    <!-- Technology Hero -->
+    <div class="glass-card tech-hero">
+        <div class="tech-hero-header">
+            <div class="tech-hero-icon">
                 {% if technology.icon %}
                     <i class="{{ technology.icon }}"></i>
                 {% else %}
                     {{ technology.name|first|upper }}
                 {% endif %}
             </div>
-            
-            <h1 class="unified-container-title">{{ technology.name }}</h1>
-            <p class="unified-container-subtitle">{{ page_subtitle }}</p>
-            
-            <div style="margin-top: var(--spacing-lg, 1.5rem);">
-                <span style="display: inline-block; padding: var(--spacing-sm, 0.75rem) var(--spacing-lg, 1.5rem); background: {{ technology.color|readable_color }}; color: var(--color-bg-primary); border-radius: var(--border-radius-md, 8px); font-weight: 600;">
-                    {{ technology_category }}
-                </span>
-                {% if technology.description %}
-                <p style="margin-top: var(--spacing-md, 1rem); color: var(--color-text-secondary); max-width: 600px; margin-left: auto; margin-right: auto;">
-                    {{ technology.description }}
-                </p>
-                {% endif %}
+            <div class="tech-hero-info">
+                <h1>{{ technology.name }}</h1>
+                <p>{{ technology.description|default:"Learning and applying this technology across multiple projects" }}</p>
+            </div>
+        </div>
+        
+        <div class="quick-stats">
+            <div class="quick-stat">
+                <span class="quick-stat-value">{{ total_projects }}</span>
+                <div class="quick-stat-label">Projects</div>
+            </div>
+            <div class="quick-stat">
+                <span class="quick-stat-value">{{ skill_progression.current_level|floatformat:1 }}/5</span>
+                <div class="quick-stat-label">Skill Level</div>
+            </div>
+            <div class="quick-stat">
+                <span class="quick-stat-value">{{ skill_connections_count|default:0 }}</span>
+                <div class="quick-stat-label">Skill Links</div>
+            </div>
+            <div class="quick-stat">
+                <span class="quick-stat-value">{{ complexity_progression.avg_complexity|floatformat:1 }}/5</span>
+                <div class="quick-stat-label">Avg Complexity</div>
             </div>
         </div>
     </div>
 
-    <!-- Skill Progression Overview -->
-    <div class="skill-progression-card" style="border-left-color: {{ technology.color|readable_color }};">
-        <div class="progression-header">
-            <h2 style="margin: 0; color: var(--color-text);">
-                <i class="fas fa-chart-line" style="color: {{ technology.color|readable_color }}; margin-right: var(--spacing-sm, 0.75rem);"></i>
-                Learning Progression
-            </h2>
-            {% if skill_progression %}
-            <div class="skill-level-badge" style="background: {{ technology.color|readable_color }};">{{ skill_progression.level }}</div>
-            {% endif %}
-        </div>
-        
-        {% if skill_progression %}
-        <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg, 1.5rem);">
-            {{ skill_progression.description }}
-        </p>
-        
-        <div class="progression-stats">
-            <div class="progression-stat">
-                <span class="progression-stat-value" style="color: {{ technology.color|readable_color }};">{{ total_projects }}</span>
-                <span class="progression-stat-label">Total Projects</span>
+    <!-- Skill-Technology Connections -->
+    {% if skill_connections %}
+    <div class="glass-card">
+        <div class="glass-card-header">
+            <div class="glass-card-icon" style="--accent-color: var(--color-lavender);">
+                <i class="fas fa-link"></i>
             </div>
-            <div class="progression-stat">
-                <span class="progression-stat-value" style="color: {{ technology.color|readable_color }};">{{ completed_projects }}</span>
-                <span class="progression-stat-label">Completed</span>
-            </div>
-            <div class="progression-stat">
-                <span class="progression-stat-value" style="color: {{ technology.color|readable_color }};">{{ skill_progression.avg_complexity }}</span>
-                <span class="progression-stat-label">Avg Complexity</span>
-            </div>
-            <div class="progression-stat">
-                <span class="progression-stat-value" style="color: {{ technology.color|readable_color }};">{{ skill_progression.completion_rate }}%</span>
-                <span class="progression-stat-label">Success Rate</span>
+            <div>
+                <h2 class="glass-card-title">Skill Connections</h2>
+                <p class="glass-card-subtitle">How {{ technology.name }} connects to different skill areas</p>
             </div>
         </div>
-        {% endif %}
+        
+        <div class="skill-connections">
+            {% for connection in skill_connections %}
+            <div class="skill-connection-card">
+                <div class="skill-name">{{ connection.skill.name }}</div>
+                <div class="skill-relationship">
+                    <span class="relationship-type">{{ connection.get_relationship_type_display }}</span>
+                    <div class="strength-stars">
+                        {% for i in "1234" %}
+                            {% if forloop.counter <= connection.strength %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if connection.notes %}
+                <div class="skill-notes">{{ connection.notes|truncatewords:20 }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
     </div>
+    {% endif %}
 
     <!-- Learning Timeline -->
     {% if learning_timeline %}
-    <div class="unified-dashboard-container navy">
-        <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
-                <i class="fas fa-history" style="margin-right: var(--spacing-sm, 0.75rem); color: #5c6bc0;"></i>
-                Learning Timeline
-            </h3>
-            <p class="unified-container-subtitle">My progression with {{ technology.name }} over time</p>
+    <div class="glass-card">
+        <div class="glass-card-header">
+            <div class="glass-card-icon" style="--accent-color: var(--color-mint);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div>
+                <h2 class="glass-card-title">Learning Timeline</h2>
+                <p class="glass-card-subtitle">My progression with {{ technology.name }} over time</p>
+            </div>
         </div>
         
         <div class="learning-timeline">
-            {% for item in learning_timeline %}
-            <div class="timeline-item" style="border-left-color: {{ technology.color|lighten_if_dark }};">
-                <div class="timeline-header">
-                    <h4 class="timeline-title">{{ item.title }}</h4>
-                    <span class="timeline-date">{{ item.date|date:"M Y" }}</span>
-                </div>
-                
-                <div class="timeline-complexity" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.2); color: {{ technology.color|readable_color }};">
-                    <i class="fas fa-layer-group"></i>
-                    {{ item.complexity }}/5 - {% if item.complexity <= 2 %}Learning{% elif item.complexity <= 3 %}Intermediate{% else %}Advanced{% endif %}
-                </div>
-                
-                <div class="timeline-description">{{ item.description }}</div>
-                
-                <div class="timeline-actions">
-                    <a href="{{ item.url }}" class="timeline-action-btn" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.1); border-color: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.3); color: {{ technology.color|readable_color }};">
-                        <i class="fas fa-eye"></i> View Project
-                    </a>
-                    <span class="timeline-action-btn" style="background: rgba(var(--color-{{ item.status }}-rgb, 255, 255, 255), 0.1); border-color: var(--color-{{ item.status }}, var(--color-text-secondary));">
-                        {{ item.status|title }}
-                    </span>
-                </div>
+            {% for milestone in learning_timeline %}
+            <div class="timeline-item">
+                <div class="timeline-date">{{ milestone.date|date:"M Y" }}</div>
+                <div class="timeline-title">{{ milestone.title }}</div>
+                <div class="timeline-description">{{ milestone.description }}</div>
             </div>
             {% endfor %}
         </div>
@@ -542,96 +500,96 @@
     {% endif %}
 
     <!-- Projects Using This Technology -->
-    <div class="unified-dashboard-container teal">
-        <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
-                <i class="fas fa-project-diagram" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-teal);"></i>
-                Projects Built with {{ technology.name }}
-            </h3>
-            <p class="unified-container-subtitle">
-                {{ total_projects }} project{{ total_projects|pluralize }} showcasing my {{ technology.name }} skills
-            </p>
+    {% if systems %}
+    <div class="glass-card">
+        <div class="glass-card-header">
+            <div class="glass-card-icon" style="--accent-color: var(--color-teal);">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div>
+                <h2 class="glass-card-title">Projects Using {{ technology.name }}</h2>
+                <p class="glass-card-subtitle">{{ systems|length }} project{{ systems|length|pluralize }} demonstrating this technology</p>
+            </div>
         </div>
         
-        {% if systems %}
-        <div class="tech-systems-grid">
+        <div class="systems-grid">
             {% for system in systems %}
-            <div class="tech-system-card">
-                <div class="system-card-header">
-                    <div style="flex: 1;">
-                        <h4 class="system-card-title">
-                            <a href="{{ system.get_absolute_url }}">{{ system.title }}</a>
-                        </h4>
-                        {% if system.system_type %}
-                        <span class="system-type-badge">{{ system.system_type.name }}</span>
-                        {% endif %}
+            <a href="{{ system.get_absolute_url }}" class="system-card">
+                <div class="system-header">
+                    <div class="system-status {{ system.status }}"></div>
+                    <div>
+                        <h3 class="system-title">{{ system.title }}</h3>
+                        <div class="glass-card-subtitle">{{ system.get_status_display }}</div>
                     </div>
                 </div>
                 
-                <div class="system-card-meta">
-                    <div class="complexity-indicator">
-                        <span>Complexity:</span>
-                        <div class="complexity-dots">
-                            {% for i in "12345" %}
-                            <div class="complexity-dot {% if system.complexity >= i|add:0 %}active{% endif %}" style="{% if system.complexity >= i|add:0 %}background: {{ technology.color|readable_color }};{% endif %}"></div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <span class="status-badge status-{{ system.status }}">{{ system.get_status_display }}</span>
-                </div>
-                
-                {% if system.excerpt %}
-                <div class="system-card-description">{{ system.excerpt }}</div>
+                {% if system.description %}
+                <div class="system-description">{{ system.description|truncatewords:20 }}</div>
                 {% endif %}
                 
-                <div class="system-card-technologies">
-                    {% for tech in system.technologies.all %}
-                    <span class="tech-tag {% if tech == technology %}current{% endif %}" style="{% if tech == technology %}background: {{ technology.color|readable_color }}; color: var(--color-bg-primary);{% else %}background: rgba({{ tech.color|readable_color|hex_to_rgb }}, 0.1); color: {{ tech.color|readable_color }};{% endif %}">{{ tech.name }}</span>
-                    {% endfor %}
+                <div class="system-metrics">
+                    <div class="system-metric">
+                        <div class="system-metric-value">{{ system.complexity|floatformat:1 }}/5</div>
+                        <div class="system-metric-label">Complexity</div>
+                    </div>
+                    <div class="system-metric">
+                        <div class="system-metric-value">{{ system.completion_percent|floatformat:0 }}%</div>
+                        <div class="system-metric-label">Complete</div>
+                    </div>
+                    <div class="system-metric">
+                        <div class="system-metric-value">{{ system.technologies.count }}</div>
+                        <div class="system-metric-label">Technologies</div>
+                    </div>
                 </div>
-                
-                <div class="system-card-actions">
-                    <a href="{{ system.get_absolute_url }}" class="system-action-btn" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.1); border-color: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.3); color: {{ technology.color|readable_color }};">
-                        <i class="fas fa-eye"></i> View Details
-                    </a>
-                    {% if system.github_url %}
-                    <a href="{{ system.github_url }}" target="_blank" class="system-action-btn" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.1); border-color: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.3); color: {{ technology.color|readable_color }};">
-                        <i class="fab fa-github"></i> Code
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
+            </a>
             {% endfor %}
         </div>
-        {% else %}
-        <div style="text-align: center; padding: var(--spacing-xl, 2rem); color: var(--color-text-secondary);">
-            <i class="fas fa-code" style="font-size: 3rem; margin-bottom: var(--spacing-lg, 1.5rem); opacity: 0.5;"></i>
-            <p>No projects found using {{ technology.name }} yet.</p>
-        </div>
-        {% endif %}
     </div>
+    {% endif %}
 
     <!-- Related DataLogs -->
     {% if related_datalogs %}
-    <div class="unified-dashboard-container lavender">
-        <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
-                <i class="fas fa-file-alt" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-lavender);"></i>
-                Related Learning Notes
-            </h3>
-            <p class="unified-container-subtitle">
-                DataLog entries documenting my {{ technology.name }} learning journey
-            </p>
+    <div class="glass-card">
+        <div class="glass-card-header">
+            <div class="glass-card-icon" style="--accent-color: var(--color-lavender);">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div>
+                <h2 class="glass-card-title">Learning Documentation</h2>
+                <p class="glass-card-subtitle">DataLog entries about {{ technology.name }}</p>
+            </div>
         </div>
         
-        <div class="related-datalogs-list">
+        <div class="systems-grid">
             {% for post in related_datalogs %}
-            <div style="padding: var(--spacing-lg, 1.5rem); background: rgba(179, 157, 219, 0.1); border-radius: var(--border-radius-md, 8px); margin-bottom: var(--spacing-md, 1rem);">
-                <h4 style="margin: 0 0 var(--spacing-sm, 0.75rem) 0;">
-                    <a href="{{ post.get_absolute_url }}" style="color: var(--color-lavender); text-decoration: none;">{{ post.title }}</a>
-                </h4>
-                <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.9rem;">{{ post.excerpt|truncatewords:20 }}</p>
-            </div>
+            <a href="{{ post.get_absolute_url }}" class="system-card">
+                <div class="system-header">
+                    <div class="system-status deployed"></div>
+                    <div>
+                        <h3 class="system-title">{{ post.title }}</h3>
+                        <div class="glass-card-subtitle">{{ post.created_at|date:"M d, Y" }}</div>
+                    </div>
+                </div>
+                
+                {% if post.excerpt %}
+                <div class="system-description">{{ post.excerpt|truncatewords:15 }}</div>
+                {% endif %}
+                
+                <div class="system-metrics">
+                    <div class="system-metric">
+                        <div class="system-metric-value">{{ post.reading_time }}</div>
+                        <div class="system-metric-label">Min Read</div>
+                    </div>
+                    <div class="system-metric">
+                        <div class="system-metric-value">{{ post.category.code }}</div>
+                        <div class="system-metric-label">Category</div>
+                    </div>
+                    <div class="system-metric">
+                        <div class="system-metric-value">{{ post.tags.count }}</div>
+                        <div class="system-metric-label">Tags</div>
+                    </div>
+                </div>
+            </a>
             {% endfor %}
         </div>
     </div>
@@ -639,20 +597,20 @@
 
     <!-- Similar Technologies -->
     {% if similar_technologies %}
-    <div class="unified-dashboard-container gunmetal">
-        <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
-                <i class="fas fa-layer-group" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-gunmetal);"></i>
-                Similar Technologies
-            </h3>
-            <p class="unified-container-subtitle">
-                Other {{ technology_category|lower }} technologies in my toolkit
-            </p>
+    <div class="glass-card">
+        <div class="glass-card-header">
+            <div class="glass-card-icon" style="--accent-color: var(--color-coral);">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div>
+                <h2 class="glass-card-title">Similar Technologies</h2>
+                <p class="glass-card-subtitle">Other {{ technology.get_category_display|lower }} tools in my stack</p>
+            </div>
         </div>
         
         <div class="related-tech-grid">
             {% for tech in similar_technologies %}
-            <a href="{% url 'projects:technology_detail' tech.slug %}" class="related-tech-card" style="--related-tech-color: {{ tech.color|readable_color }};">
+            <a href="{% url 'projects:technology_detail' tech.slug %}" class="related-tech-item" style="--item-color: {{ tech.color|default:'#ff8a80' }};">
                 <div class="related-tech-icon">
                     {% if tech.icon %}
                         <i class="{{ tech.icon }}"></i>
@@ -661,7 +619,6 @@
                     {% endif %}
                 </div>
                 <div class="related-tech-name">{{ tech.name }}</div>
-                <div class="related-tech-projects">{{ tech.project_count }} project{{ tech.project_count|pluralize }}</div>
             </a>
             {% endfor %}
         </div>
