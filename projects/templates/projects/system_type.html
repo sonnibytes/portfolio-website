@@ -11,6 +11,19 @@
 <link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
 <style>
+    .related-tech-icon {
+        width: 36px;
+        height: 36px;
+        {% comment %} border-radius: var(--border-radius-md, 8px);
+        background: var(--related-tech-color, var(--color-teal)); {% endcomment %}
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--related-tech-color, var(--color-teal));
+        font-size: 1.5rem;
+        margin: 0 auto var(--spacing-md, 1rem);
+    }
+
     /* System Type Detail Specific Styles - Unified Container Compatible */
     .system-type-hero {
         background: linear-gradient(135deg, 
@@ -534,13 +547,13 @@
 
     <!-- Learning Timeline -->
     {% if learning_timeline %}
-    <div class="unified-dashboard-container navy">
+    <div class="section-container">
         <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
+            <h3 class="container-title teal" style="font-size: 1.8rem;">
                 <i class="fas fa-history" style="margin-right: var(--spacing-sm, 0.75rem); color: #5c6bc0;"></i>
                 Development Timeline
             </h3>
-            <p class="unified-container-subtitle">My progression building {{ system_type.name|lower }} systems over time</p>
+            <p class="container-subtitle">My progression building {{ system_type.name|lower }} systems over time</p>
         </div>
         
         <div class="learning-timeline">
@@ -581,14 +594,15 @@
     {% endif %}
 
     <!-- Projects of This Type -->
-    <div class="unified-dashboard-container teal">
+    <div class="section-container">
+        <div class="container">
         <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
+            <h3 class="container-title mint" style="font-size: 1.8rem;">
                 <i class="fas fa-project-diagram" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-teal);"></i>
                 {{ system_type.name }} Projects
             </h3>
-            <p class="unified-container-subtitle">
-                {{ total_systems }} {{ system_type.name|lower }} project{{ total_systems|pluralize }} in my portfolio
+            <p class="container-subtitle">
+                {{ total_systems }} {{ system_type.name|lower }} project{{ total_systems|pluralize }} in portfolio
             </p>
         </div>
         
@@ -645,17 +659,19 @@
             <p>No {{ system_type.name|lower }} projects found yet.</p>
         </div>
         {% endif %}
+        </div>
     </div>
 
     <!-- Technology Usage in This Type -->
     {% if technology_usage %}
-    <div class="unified-dashboard-container coral">
+    <div class="section-container">
+        <div class="container">
         <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
+            <h3 class="container-title coral" style="font-size: 1.8rem;">
                 <i class="fas fa-code" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-coral);"></i>
-                Technology Stack
+                Tech Stack
             </h3>
-            <p class="unified-container-subtitle">
+            <p class="container-subtitle">
                 Technologies most used in {{ system_type.name|lower }} projects
             </p>
         </div>
@@ -663,26 +679,37 @@
         <div class="technology-usage-grid">
             {% for usage in technology_usage %}
             <div class="tech-usage-item">
+                <a href="{% url 'projects:technology_detail' usage.technology.slug %}" class="related-tech-card" style="--related-tech-color: {{ usage.technology.color|readable_color }};">
+                <div class="related-tech-icon">
+                    {% if usage.technology.icon %}
+                        <i class="{{ usage.technology.icon|safe_icon }}"></i>
+                    {% else %}
+                        {{ usage.technology.name|first|upper }}
+                    {% endif %}
+                </div>
                 <div class="tech-usage-name">{{ usage.technology.name }}</div>
                 <div class="tech-usage-stats">
                     <span>{{ usage.count }} project{{ usage.count|pluralize }}</span>
                     <span>{{ usage.percentage }}%</span>
-                </div>
+                </div>            
+            </a>
             </div>
             {% endfor %}
+        </div>
         </div>
     </div>
     {% endif %}
 
     <!-- Related DataLogs -->
-    {% if related_datalogs %}
-    <div class="unified-dashboard-container lavender">
+    {% comment %} {% if related_datalogs %} {% endcomment %}
+    <div class="section-container">
+        <div class="container">
         <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
+            <h3 class="container-title lavender" style="font-size: 1.8rem;">
                 <i class="fas fa-file-alt" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-lavender);"></i>
-                Related Learning Notes
+                Related Learning Documentation
             </h3>
-            <p class="unified-container-subtitle">
+            <p class="container-subtitle">
                 DataLog entries about {{ system_type.name|lower }} development
             </p>
         </div>
@@ -697,18 +724,20 @@
             </div>
             {% endfor %}
         </div>
+        </div>
     </div>
-    {% endif %}
+    {% comment %} {% endif %} {% endcomment %}
 
     <!-- Similar System Types -->
-    {% if similar_types %}
-    <div class="unified-dashboard-container gunmetal">
+    {% comment %} {% if similar_types %} {% endcomment %}
+    <div class="section-container">
+        <div class="container">
         <div class="unified-container-header">
-            <h3 class="unified-container-title" style="font-size: 1.8rem;">
+            <h3 class="container-title gunmetal" style="font-size: 1.8rem;">
                 <i class="fas fa-th-large" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-gunmetal);"></i>
                 Similar Project Types
             </h3>
-            <p class="unified-container-subtitle">
+            <p class="container-subtitle">
                 Other project types with similar complexity and scope
             </p>
         </div>
@@ -728,8 +757,9 @@
             </a>
             {% endfor %}
         </div>
+        </div>
     </div>
-    {% endif %}
+    {% comment %} {% endif %} {% endcomment %}
 
 </div>
 {% endblock %}
