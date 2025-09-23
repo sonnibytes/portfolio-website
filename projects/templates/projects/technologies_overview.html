@@ -1,10 +1,169 @@
 {% extends "projects/systems_base.html" %}
 {% load static %}
 {% load aura_filters aura_components %}
+{% load system_tags %}
 
-{% block extra_css %}
-{{ block.super }}
+{% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+
+{% comment %} {{ block.super }} {% endcomment %}
 <style>
+.system-type-progression {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--spacing-md, 1rem);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-md, 8px);
+        margin-bottom: var(--spacing-lg, 1.5rem);
+    }
+
+    .progression-text {
+        font-size: 0.9rem;
+        color: var(--color-text-secondary);
+    }
+
+    .complexity-indicator {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs, 0.5rem);
+    }
+
+    .complexity-dots {
+        display: flex;
+        gap: 3px;
+    }
+
+    .complexity-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .complexity-dot.active {
+        /* Color set inline via template filter */
+    }
+
+    .system-type-actions {
+        display: flex;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+
+    .type-action-btn {
+        flex: 1;
+        padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+        border-radius: var(--border-radius-md, 8px);
+        text-decoration: none;
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .type-action-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .section-header-glass {
+  text-align: center;
+  margin-bottom: var(--spacing-xxl);
+}
+
+.section-title-glass {
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  position: relative;
+  font-weight: 200;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: var(--gradient-primary);
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.section-title-glass::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 2px;
+  background: var(--gradient-primary);
+  opacity: 0.8;
+}
+
+.section-subtitle-glass {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+    .metric-value {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: 600;
+        {% comment %} color: var(--system-color, var(--color-coral)); {% endcomment %}
+        margin-bottom: var(--spacing-xs, 0.5rem);
+        font-family: var(--font-heading);
+    }
+
+    .metric-label {
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Portfolio Insights */
+    .portfolio-insights {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+    }
+
+    .insight-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-lg, 12px);
+        padding: var(--spacing-xl, 2rem);
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .insight-card:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .insight-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--insight-color, var(--color-coral));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-bg-primary);
+        font-size: 1.8rem;
+        margin: 0 auto var(--spacing-lg, 1.5rem);
+    }
+
+    .insight-title {
+        color: var(--color-text);
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm, 0.75rem);
+    }
+
+    .insight-description {
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+    }
+
     /* Streamlined Glass Card System */
     .glass-card {
         background: rgba(255, 255, 255, 0.08);
@@ -196,7 +355,7 @@
         margin: 2rem 0;
     }
 
-    .insight-card {
+    {% comment %} .insight-card {
         background: rgba(255, 255, 255, 0.06);
         border: 1px solid rgba(179, 157, 219, 0.2);
         border-radius: 12px;
@@ -228,7 +387,7 @@
         color: rgba(255, 255, 255, 0.8);
         font-size: 0.9rem;
         line-height: 1.4;
-    }
+    } {% endcomment %}
 
     /* Responsive */
     @media (max-width: 768px) {
@@ -248,12 +407,74 @@
 {% endblock %}
 
 {% block systems_breadcrumbs %}
-<span class="breadcrumb-item active">Technology Skills</span>
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+{% if technology %}
+<a href="{% url 'projects:technologies_overview' %}" class="breadcrumb-item">Technologies</a>
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+<span class="breadcrumb-item active">{{ technology.name }}</span>
+{% else %}
+<span class="breadcrumb-item active">Technologies Overview</span>
+{% endif %}
 {% endblock %}
 
 {% block systems_content %}
 <div class="systems-content-container container">
-    
+
+    <section class="overview-section">
+    <div class="container">
+        <div class="overview-header">
+            <div class="overview-title-section" style="flex: 1;">
+            <h3 class="overview-title">Technology & Skills Overview</h3>
+            <p class="overview-subtitle">Learning progression across my development tech stack</p>
+            </div>
+        </div>
+        
+        <!-- Portfolio Overview Stats -->
+        <div class="dashboard-grid grid-4-col metrics-overview">
+            <div class="metric-card unified-dashboard-container teal">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ total_technologies_learned }}</span>
+                <span class="metric-label">Technologies</span>
+                {% comment %} <span class="metric-sublabel">Learned & Applied</span> {% endcomment %}
+            </div>
+            <div class="metric-card unified-dashboard-container coral">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-ranking-star"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ total_projects_built }}</span>
+                <span class="metric-label">Systems Built</span>
+                {% comment %} <span class="metric-sublabel">Built with these tools</span> {% endcomment %}
+            </div>
+            <div class="metric-card unified-dashboard-container lavender">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-cogs"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ advanced_technologies }}</span>
+                <span class="metric-label">Advanced</span>
+                {% comment %} <span class="metric-sublabel">Complex implementations</span> {% endcomment %}
+            </div>
+            <div class="metric-card unified-dashboard-container mint">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-timeline"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ skill_tech_connections|default:0 }}</span>
+                <span class="metric-label">Skill Connections</span>
+                {% comment %} <span class="metric-sublabel">Skill-Tech relationships</span> {% endcomment %}
+            </div>
+        </div>
+    </div>
+</section>
+{% comment %}     
     <!-- Hero Section -->
     <div class="glass-card tech-hero">
         <div class="glass-card-header">
@@ -288,9 +509,35 @@
                 <div class="hero-stat-sublabel">Skill-tech relationships</div>
             </div>
         </div>
-    </div>
+    </div> {% endcomment %}
 
-    <!-- Skill-Technology Insights -->
+    <!-- Learning Journey Insights -->
+    {% if learning_insights %}
+    <div class="section-container">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-lightbulb"></i>
+                    Learning Journey Insights</h2>
+                <p class="section-subtitle">Key highlights from my technology learning progression</p>
+            </div>
+            
+            <div class="portfolio-insights">
+                {% for insight in learning_insights %}
+                <div class="insight-card">
+                    <div class="insight-icon" style="--insight-color: var(--color-{{ insight.color }});">
+                        <i class="fas fa-{{ insight.icon }}"></i>
+                    </div>
+                    <h3 class="insight-title">{{ insight.title }}</h3>
+                    <p class="insight-description">{{ insight.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% comment %} <!-- Skill-Technology Insights -->
     {% if learning_insights %}
     <div class="glass-card">
         <div class="glass-card-header">
@@ -315,60 +562,148 @@
             {% endfor %}
         </div>
     </div>
-    {% endif %}
+    {% endif %} {% endcomment %}
+
+
 
     <!-- Technology Categories -->
-    <div class="glass-card">
-        <div class="glass-card-header">
-            <div class="glass-card-icon" style="--accent-color: var(--color-coral);">
-                <i class="fas fa-layer-group"></i>
+    <div class="section-container">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-layer-group"></i>
+                    Technology Categories</h2>
+                <p class="section-subtitle">Explore skills across different technology areas</p>
             </div>
-            <div>
-                <h2 class="glass-card-title">Technology Categories</h2>
-                <p class="glass-card-subtitle">Explore skills across different technology areas</p>
-            </div>
-        </div>
         
-        <div class="tech-categories">
-            {% for category in technology_categories %}
-            <a href="#{{ category.code }}" class="tech-category-card" style="--category-color: {{ category.color }};">
-                <div class="category-header">
-                    <div class="category-icon">
-                        <i class="fas fa-{{ category.icon }}"></i>
+            <div class="tech-categories">
+                {% for category in technology_categories %}
+                <a href="#{{ category.code }}" class="tech-category-card" style="--category-color: {{ category.color }};">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-{{ category.icon }}"></i>
+                        </div>
+                        <div class="category-name">{{ category.name }}</div>
                     </div>
-                    <div class="category-name">{{ category.name }}</div>
-                </div>
-                
-                <div class="category-stats">
-                    <div class="category-stat">
-                        <div class="category-stat-value">{{ category.tech_count }}</div>
-                        <div class="category-stat-label">Technologies</div>
+                    
+                    <div class="category-stats">
+                        <div class="category-stat">
+                            <div class="category-stat-value">{{ category.tech_count }}</div>
+                            <div class="category-stat-label">Technologies</div>
+                        </div>
+                        <div class="category-stat">
+                            <div class="category-stat-value">{{ category.project_count }}</div>
+                            <div class="category-stat-label">Projects</div>
+                        </div>
+                        <div class="category-stat">
+                            <div class="category-stat-value">{{ category.skill_level|floatformat:1 }}/5</div>
+                            <div class="category-stat-label">Skill Level</div>
+                        </div>
                     </div>
-                    <div class="category-stat">
-                        <div class="category-stat-value">{{ category.project_count }}</div>
-                        <div class="category-stat-label">Projects</div>
+                    
+                    <!-- Show some technologies in this category -->
+                    <div class="category-technologies">
+                        {% for tech in category.technologies|slice:":5" %}
+                        <span class="tech-tag">{{ tech.name }}</span>
+                        {% endfor %}
+                        {% if category.tech_count > 5 %}
+                        <span class="tech-tag">+{{ category.tech_count|add:"-5" }} more</span>
+                        {% endif %}
                     </div>
-                    <div class="category-stat">
-                        <div class="category-stat-value">{{ category.skill_level|floatformat:1 }}/5</div>
-                        <div class="category-stat-label">Skill Level</div>
-                    </div>
-                </div>
-                
-                <!-- Show some technologies in this category -->
-                <div class="category-technologies">
-                    {% for tech in category.technologies|slice:":5" %}
-                    <span class="tech-tag">{{ tech.name }}</span>
-                    {% endfor %}
-                    {% if category.tech_count > 5 %}
-                    <span class="tech-tag">+{{ category.tech_count|add:"-5" }} more</span>
-                    {% endif %}
-                </div>
-            </a>
-            {% endfor %}
+                </a>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
-    <!-- Individual Technology Grid -->
+    <!-- Individual Technologies Grid RESTYLED-->
+    <section class="technologies-section">
+    <div class="container">
+        <div class="section-header-glass">
+            <h2 class="section-title-glass">Technologies Portfolio</h2>
+            <p class="section-subtitle-glass">Complete overview with learning progression</p>
+        </div>
+        
+        <div class="tech-categories">
+            {% for technology in technologies %}
+            <div class="tech-category-card" style="--category-color: {{ technology.color|lighten_if_dark }}; --system-type-readable: {{ technology.color|readable_color }};" data-type="{{ technology.slug }}">                
+                <!-- Tech Header -->
+                <div class="category-header">
+                    <div class="category-icon" style="background: {{ technology.color|readable_color }};" data-code="{{ technology.slug }}">
+                        {% if technology.icon %}
+                            <i class="{{ technology.icon|safe_icon }}"></i>
+                        {% else %}
+                            {{ technology.name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="category-name">{{ technology.name }}</div>
+                        <div class="glass-card-subtitle">{{ technology.get_category_display }}</div>
+                    </div>
+                </div>
+
+                {% comment %} <!-- Description -->
+                {% if technology.description %}
+                <div class="technology-description">
+                    {{ technology.description|truncatewords:25 }}
+                </div>
+                {% endif %} {% endcomment %}
+
+                
+                <div class="category-stats">
+                    <div class="category-stat">
+                        <div class="category-stat-value" style="color: {{ technology.color|readable_color }};">{{ technology.total_projects }}</div>
+                        <div class="category-stat-label">Systems</div>
+                    </div>
+                    <div class="category-stat">
+                        <div class="category-stat-value" style="color: {{ technology.color|readable_color }};">{{ technology.skill_level|floatformat:1 }}/5</div>
+                        <div class="category-stat-label">Skill Level</div>
+                    </div>
+                    <div class="category-stat">
+                        <div class="category-stat-value" style="color: {{ technology.color|readable_color }};">{{ technology.skill_connections|default:0 }}</div>
+                        <div class="category-stat-label">Skill Links</div>
+                    </div>
+                </div>
+
+                <!-- Complexity Progression -->
+                <div class="system-type-progression">
+                    <span class="progression-text">
+                        {% if technology.skill_level >= 4 %}Advanced Implementation
+                        {% elif technology.skill_level >= 3 %}Intermediate Proficiency
+                        {% elif technology.skill_level >= 2 %}Learning & Building
+                        {% else %}Getting Started
+                        {% endif %}
+                    </span>
+                    <div class="complexity-indicator">
+                        <div class="complexity-dots">
+                            {% for i in "12345" %}
+                            <div class="complexity-dot {% if technology.skill_level >= i|add:0 %}active{% endif %}" style="{% if technology.skill_level >= i|add:0 %}background: {{ technology.color|readable_color }};{% endif %}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="system-type-actions">
+                    <a href="{% url 'projects:technology_detail' technology.slug %}" class="type-action-btn" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.1); border: 1px solid rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.3); color: {{ technology.color|readable_color }};">
+                        <i class="fas fa-eye" style="margin-right: var(--spacing-xs, 0.5rem);"></i>
+                        View Systems ({{ technology.total_systems }})
+                    </a>
+                    {% if technology.featured_systems > 0 %}
+                    <a href="{% url 'projects:technology_detail' technology.slug %}#featured" class="type-action-btn" style="background: rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.1); border: 1px solid rgba({{ technology.color|readable_color|hex_to_rgb }}, 0.3); color: {{ technology.color|readable_color }};">
+                        <i class="fas fa-star" style="margin-right: var(--spacing-xs, 0.5rem);"></i>
+                        Featured ({{ technology.featured_systems }})
+                    </a>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    </section>
+
+    {% comment %} <!-- Individual Technology Grid -->
     <div class="glass-card">
         <div class="glass-card-header">
             <div class="glass-card-icon" style="--accent-color: var(--color-mint);">
@@ -422,7 +757,7 @@
             </div>
             {% endfor %}
         </div>
-    </div>
+    </div> {% endcomment %}
 
 </div>
 {% endblock %}
