@@ -2916,7 +2916,7 @@ class TechnologyDetailView(DetailView):
                 'date': system.created_at,
                 'project': system.title,
                 'complexity': system.complexity,
-                'skills_gained': system.skill_developed.count(),
+                'skills_gained': system.skills_developed.count(),
             })
         
         return {
@@ -2962,9 +2962,9 @@ class TechnologyDetailView(DetailView):
         # Add system milestones
         for system in systems:
             timeline.append({
-                'date': system.created_at,
+                'date': system.created_at.date(),
                 'title': f'Built {system.title}',
-                'description': f'Applied {technology.name} in a {system.get_system_type_display().lower()} project',
+                'description': f'Applied {technology.name} in a {system.system_type.name.lower()} project',
                 'type': 'project',
                 'complexity': system.complexity,
                 'url': system.get_absolute_url(),
