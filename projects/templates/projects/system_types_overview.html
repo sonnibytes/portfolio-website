@@ -7,7 +7,108 @@
 {% block systems_title %}Project Types{% endblock %}
 
 {% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/dashboard.css' %}">
+
 <style>
+    .section-header-glass {
+  text-align: center;
+  margin-bottom: var(--spacing-xxl);
+}
+
+.section-title-glass {
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  position: relative;
+  font-weight: 200;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: var(--gradient-primary);
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.section-title-glass::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 2px;
+  background: var(--gradient-primary);
+  opacity: 0.8;
+}
+
+.section-subtitle-glass {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+    .metric-value {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: 600;
+        {% comment %} color: var(--system-color, var(--color-coral)); {% endcomment %}
+        margin-bottom: var(--spacing-xs, 0.5rem);
+        font-family: var(--font-heading);
+    }
+
+    .metric-label {
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Portfolio Insights */
+    .portfolio-insights {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--spacing-lg, 1.5rem);
+    }
+
+    .insight-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-lg, 12px);
+        padding: var(--spacing-xl, 2rem);
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .insight-card:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .insight-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--insight-color, var(--color-coral));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-bg-primary);
+        font-size: 1.8rem;
+        margin: 0 auto var(--spacing-lg, 1.5rem);
+    }
+
+    .insight-title {
+        color: var(--color-text);
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm, 0.75rem);
+    }
+
+    .insight-description {
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+    }
+
     /* System Types Overview Styles - Following technology pattern */
     .system-types-grid {
         display: grid;
@@ -245,75 +346,98 @@
 
 {% block systems_content %}
 <div class="systems-content-container container">
-    
-    <!-- Page Header with Learning Journey Stats -->
-    <div class="unified-dashboard-container teal">
-        <div class="unified-container-header">
-            <h1 class="unified-container-title">
-                <i class="fas fa-layer-group" style="margin-right: var(--spacing-md, 1rem); color: var(--color-teal);"></i>
-                System Types Overview
-            </h1>
-            <p class="unified-container-subtitle">{{ page_subtitle }}</p>
+    <section class="overview-section">
+    <div class="container">
+        <div class="overview-header">
+            <div class="overview-title-section" style="flex: 1;">
+            <h3 class="overview-title">System Types Overview</h3>
+            <p class="overview-subtitle">{{ page_subtitle }}</p>
+            </div>
         </div>
         
-        <!-- Learning Journey Quick Stats -->
-        <div class="dashboard-grid grid-4-col">
-            <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
-                <span class="metric-value" style="font-size: 2.5rem; color: var(--color-teal);">{{ total_project_types }}</span>
+        <!-- Portfolio Overview Stats -->
+        <div class="dashboard-grid grid-4-col metrics-overview">
+            <div class="metric-card unified-dashboard-container teal">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ total_project_types }}</span>
                 <span class="metric-label">System Types</span>
             </div>
-            <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
-                <span class="metric-value" style="font-size: 2.5rem; color: var(--color-teal);">{{ total_systems_built }}</span>
+            <div class="metric-card unified-dashboard-container coral">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-ranking-star"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ total_systems_built }}</span>
                 <span class="metric-label">Systems Built</span>
             </div>
-            <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
-                <span class="metric-value" style="font-size: 2.5rem; color: var(--color-teal);">{{ advanced_project_types }}</span>
+            <div class="metric-card unified-dashboard-container lavender">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-cogs"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ advanced_project_types }}</span>
                 <span class="metric-label">Advanced Types</span>
             </div>
-            <div style="text-align: center; padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
-                <span class="metric-value" style="font-size: 2.5rem; color: var(--color-teal);">{{ types_in_progress }}</span>
+            <div class="metric-card unified-dashboard-container mint">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="fa-solid fa-timeline"></i>
+                    </div>
+                </div>
+                <span class="metric-value">{{ types_in_progress }}</span>
                 <span class="metric-label">Currently Developing</span>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Learning Insights -->
+<!-- Learning Journey Insights -->
     {% if type_insights %}
-    <div class="unified-dashboard-container lavender">
-        <div class="unified-container-header">
-            <h2 class="unified-container-title" style="font-size: 1.8rem;">
-                <i class="fas fa-lightbulb" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-lavender);"></i>
-                System Type Insights
-            </h2>
-            <p class="unified-container-subtitle">Key patterns in my development focus and progression</p>
-        </div>
-        
-        <div class="dashboard-grid grid-3-col">
-            {% for insight in type_insights %}
-            <div style="display: flex; align-items: center; gap: var(--spacing-md, 1rem); padding: var(--spacing-lg, 1.5rem); background: rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md, 8px);">
-                <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--color-{{ insight.color }}); display: flex; align-items: center; justify-content: center; color: var(--color-bg-primary); font-size: 1.3rem; flex-shrink: 0;">
-                    <i class="fas fa-{{ insight.icon }}"></i>
-                </div>
-                <div>
-                    <h4 style="margin: 0 0 var(--spacing-xs, 0.5rem) 0; color: var(--color-text); font-size: 1.1rem;">{{ insight.title }}</h4>
-                    <p style="margin: 0; color: var(--color-text-secondary); font-size: 0.9rem;">{{ insight.description }}</p>
-                </div>
+    <div class="section-container">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-lightbulb"></i>
+                    System Type Insights</h2>
+                <p class="section-subtitle">Key patterns in my development focus and progression</p>
             </div>
-            {% endfor %}
+            
+            <div class="portfolio-insights">
+                {% for insight in type_insights %}
+                <div class="insight-card">
+                    <div class="insight-icon" style="--insight-color: var(--color-{{ insight.color }});">
+                        <i class="fas fa-{{ insight.icon }}"></i>
+                    </div>
+                    <h3 class="insight-title">{{ insight.title }}</h3>
+                    <p class="insight-description">{{ insight.description }}</p>
+                    {% if insight.project_url %}
+                    <a href="{{ insight.project_url }}" style="color: var(--color-{{ insight.color }}); text-decoration: none; font-weight: 500; margin-top: var(--spacing-sm, 0.75rem); display: inline-block;">
+                        View Project →
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
     {% endif %}
 
     <!-- Complexity Distribution -->
     {% if complexity_distribution %}
-    <div class="unified-dashboard-container navy">
-        <div class="unified-container-header">
-            <h2 class="unified-container-title" style="font-size: 1.8rem;">
-                <i class="fas fa-chart-bar" style="margin-right: var(--spacing-sm, 0.75rem); color: #5c6bc0;"></i>
-                Complexity Progression
-            </h2>
-            <p class="unified-container-subtitle">Distribution of project complexity across my portfolio</p>
-        </div>
+    <div class="section-container">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Complexity Progression</h2>
+                <p class="section-subtitle">Distribution of project complexity across my portfolio</p>
+            </div>
         
         <div class="complexity-chart">
             <div class="complexity-bar">
@@ -338,22 +462,21 @@
                 <span class="complexity-percent">{{ complexity_distribution.advanced_percent }}%</span>
             </div>
         </div>
+        </div>
     </div>
     {% endif %}
 
     <!-- System Types Grid -->
-    <div class="unified-dashboard-container gunmetal">
-        <div class="unified-container-header">
-            <h2 class="unified-container-title" style="font-size: 1.8rem;">
-                <i class="fas fa-th-large" style="margin-right: var(--spacing-sm, 0.75rem); color: var(--color-gunmetal);"></i>
-                System Types Portfolio
-            </h2>
-            <p class="unified-container-subtitle">Explore projects/systems organized by system type and purpose</p>
+     <section class="system-types-section">
+    <div class="container">
+        <div class="section-header-glass">
+            <h2 class="section-title-glass">System Types Portfolio</h2>
+            <p class="section-subtitle-glass">Explore projects/systems organized by system type and purpose</p>
         </div>
         
         <div class="system-types-grid">
             {% for system_type in system_types %}
-            <div class="system-type-card" style="--system-type-color: {{ system_type.color|lighten_if_dark }}; --system-type-readable: {{ system_type.color|readable_color }};" data-type="{{ system_type.slug }}">
+            <div class="system-type-card glass-card" style="--system-type-color: {{ system_type.color|lighten_if_dark }}; --system-type-readable: {{ system_type.color|readable_color }};" data-type="{{ system_type.slug }}">
                 <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: {{ system_type.color|readable_color }};"></div>
                 
                 <!-- System Type Header -->
@@ -425,6 +548,7 @@
             {% endfor %}
         </div>
     </div>
+    </section>
 
 </div>
 {% endblock %}
