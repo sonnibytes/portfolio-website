@@ -2580,23 +2580,28 @@ class LearningSystemControlInterfaceView(DetailView):
 
 class TechnologiesOverviewView(ListView):
     """
-    Technologies Overview - Shows all technologies with learning progression
-    Similar to datalogs tag_list.html structure but learning-focused
+    Enhanced Technologies Overview - Streamlined glass-card design
+    Shows skill-technology relationships and learning progression
     """
     model = Technology
     template_name = "projects/technologies_overview.html"
     context_object_name = "technologies"
 
     def get_queryset(self):
-        """Get technologies w learning-focused annotations."""
+        """Get technologies w enhanced skill-relationship annotations."""
         return Technology.objects.annotate(
-            # Learning focused metrics instead of enterprise metrics
-            total_projects=Count('systems'),
-            completed_projects=Count('systems', filter=Q(systems__status__in=['deployed', 'published'])),
-            learning_projects=Count('systems', filter=Q(systems__status='in_development')),
-            featured_projects=Count('systems', filter=Q(systems__featured=True)),
-            avg_complexity=Avg('systems__completion_percent'),  # May change this to avg_completion?
-            skill_level=Avg('systems__complexity'),  # Avg complexity as skill indicator
+            # Learning focused metrics
+            total_projects=Count('systems', distinct=True),
+            completed_projects=Count('systems', filter=Q(systems__status__in=['deployed', 'published']), distinct=True),
+            learning_projects=Count('systems', filter=Q(systems__status='in_development'), distinct=True),
+            featured_projects=Count('systems', filter=Q(systems__featured=True), distinct=True),
+
+            # Skill level based on project complexity
+            skill_level=Avg('systems__complexity'),
+
+            # NEW: Skill-Technology relationship count
+            skill_connections=Count('skill_relations', distinct=True),
+            strong_skill_connections=Count('skill_relations', filter=Q(skill_relations__strength__gte=3), distinct=True),
         ).filter(
             total_projects__gt=0  # Only show technologies actually used
         ).order_by('category', '-total_projects')
@@ -2606,49 +2611,64 @@ class TechnologiesOverviewView(ListView):
 
         # Learning journey overview stats
         all_systems = SystemModule.objects.all()
-        all_technologies = Technology.objects.filter(systems__isnull=False).distinct()
+        all_technologies = self.get_queryset()
+
+        # NEW: Skill-technology relationship insights
+        skill_tech_relations = SkillTechnologyRelation.objects.all()
 
         context.update({
             'page_title': 'Technology Skills Overview',
-            'page_subtitle': 'Learning progression across technologies in my development journey',
+            'page_subtitle': 'Learning progression across my development tech stack',
             'show_breadcrumbs': True,
 
             # Learning Journey Metrics
             'total_technologies_learned': all_technologies.count(),
             'total_projects_built': all_systems.count(),
-            'technologies_in_progress': all_technologies.filter(
-                systems__status='in_development'
-            ).distinct().count(),
-            'advanced_technologies': all_technologies.annotate(
-                avg_complexity=Avg('systems__complexity')
-            ).filter(avg_complexity__gte=3.5).count(),
+            'technologies_in_progress': all_technologies.filter(learning_projects__gt=0).count(),
+            'advanced_technologies': all_technologies.filter(skill_level__gte=4).count(),
 
-            # Technology categories for navigation (like category hexagons)
-            'technology_categories': self.get_technology_categories(),
+            # NEW: Skill-technology relationship metrics
+            'skill_tech_connecctions': skill_tech_relations.count(),
+            'strong_relationships': skill_tech_relations.filter(strength__gte=3).count(),
 
-            # Learning progression insights
-            'learning_insights': self.get_learning_insights(),
+            # Enhanced category navigation
+            'technology_categories': self.get_enhanced_technology_categories(),
+
+            # NEW: Learning insights w skill connections
+            'learning_insights': self.get_skill_tech_learning_insights(),
         })
 
         return context
     
-    def get_technology_categories(self):
-        """Get technology categories w stats - like category hexagons"""
+    def get_enhanced_technology_categories(self):
+        """Get technology categories w skill relationship data"""
         categories = []
 
         for category_code, category_name in Technology.CATEGORY_CHOICES:
             category_techs = Technology.objects.filter(category=category_code)
+
             if category_techs.exists():
-                # Calculate category learning metrics
+                # Calculate enhanced category metrics
                 total_projects = SystemModule.objects.filter(
                     technologies__category=category_code
                 ).distinct().count()
 
+                # Avg skill level for this category
                 avg_skill_level = category_techs.annotate(
                     avg_complexity=Avg('systems__complexity')
                 ).aggregate(
                     overall_avg=Avg('avg_complexity')
                 )['overall_avg'] or 0
+
+                # NEW: Skill connections for this category
+                skill_connections = SkillTechnologyRelation.objects.filter(
+                    technology__category=category_code
+                ).count()
+
+                # Get sample technologies for display
+                sample_technologies = category_techs.annotate(
+                    project_count=Count('systems')
+                ).order_by('-project_count')[:5]
 
                 categories.append({
                     'code': category_code,
@@ -2658,8 +2678,89 @@ class TechnologiesOverviewView(ListView):
                     'tech_count': category_techs.count(),
                     'project_count': total_projects,
                     'skill_level': round(avg_skill_level, 1),
+                    'skill_connections': skill_connections,
+                    # For display in template
+                    'technologies': sample_technologies,
                 })
+
         return categories
+    
+    def get_skill_tech_learning_insights(self):
+        """Generate learning insights incorporating skill-tech relationships"""
+        insights = []
+
+        # Most connected technology (has most skill relationships)
+        most_connected_tech = Technology.objects.annotate(
+            connection_count=Count('skill_relations')
+        ).order_by('-connection_count').first()
+
+        if most_connected_tech and most_connected_tech.connection_count > 0:
+            insights.append({
+                'type': 'most_connected',
+                'title': f'Most Versatile: {most_connected_tech.name}',
+                'description': f'Connected to {most_connected_tech.connection_count} different skill areas',
+                'icon': 'network-wired',
+                'color': 'teal'
+            })
+        
+        # Strongest skill-tech relationship
+        strongest_relation = SkillTechnologyRelation.objects.select_related(
+            'skill', 'technology'
+        ).order_by('-strength').first()
+
+        if strongest_relation:
+            insights.append({
+                'type': 'strongest_connection',
+                'title': f'{strongest_relation.skill.name} + {strongest_relation.technology.name}',
+                'description': f'Strongest skill-technology combination (strength {strongest_relation.strength}/4)',
+                'icon': 'star',
+                'color': 'lavender'
+            })
+        
+        # Most recent technology w skill development
+        newest_skill_tech = SkillTechnologyRelation.objects.select_related(
+            'skill', 'technology'
+        ).order_by('-created_at').first()
+
+        if newest_skill_tech:
+            insights.append({
+                'type': 'latest_connection',
+                'title': f'Latest Connection: {newest_skill_tech.technology.name}',
+                'description': f'Recently connected to {newest_skill_tech.skill.name}',
+                'icon': 'seedling',
+                'color': 'mint'
+            })
+        
+        return insights
+    
+    # def get_technology_categories(self):
+    #     """Get technology categories w stats - like category hexagons"""
+    #     categories = []
+
+    #     for category_code, category_name in Technology.CATEGORY_CHOICES:
+    #         category_techs = Technology.objects.filter(category=category_code)
+    #         if category_techs.exists():
+    #             # Calculate category learning metrics
+    #             total_projects = SystemModule.objects.filter(
+    #                 technologies__category=category_code
+    #             ).distinct().count()
+
+    #             avg_skill_level = category_techs.annotate(
+    #                 avg_complexity=Avg('systems__complexity')
+    #             ).aggregate(
+    #                 overall_avg=Avg('avg_complexity')
+    #             )['overall_avg'] or 0
+
+    #             categories.append({
+    #                 'code': category_code,
+    #                 'name': category_name,
+    #                 'color': self.get_category_color(category_code),
+    #                 'icon': self.get_category_icon(category_code),
+    #                 'tech_count': category_techs.count(),
+    #                 'project_count': total_projects,
+    #                 'skill_level': round(avg_skill_level, 1),
+    #             })
+    #     return categories
     
     def get_category_color(self, category):
         """Get color for each technology category."""
@@ -2669,6 +2770,8 @@ class TechnologiesOverviewView(ListView):
             "database": "#26c6da",  # Teal for databases
             "cloud": "#fff59d",  # Yellow for cloud
             "tool": "#a5d6a7",  # Mint for tools
+            "os": "#ffb6c1",  # Light pink for os
+            "ai": "#20b2aa",  # Light sea green for ai
             "other": "#90a4ae",  # Gunmetal for other
         }
         return colors.get(category, "#90a4ae")
@@ -2681,9 +2784,11 @@ class TechnologiesOverviewView(ListView):
             "database": "database",
             "cloud": "cloud",
             "tool": "tools",
-            "other": "cog",
+            "os": "gears",
+            "ai": "brain",
+            "other": "cube",
         }
-        return icons.get(category, "cog")
+        return icons.get(category, "cube")
     
     def get_learning_insights(self):
         """Generate learning progression insights."""
