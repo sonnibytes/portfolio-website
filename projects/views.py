@@ -2842,8 +2842,8 @@ class TechnologiesOverviewView(ListView):
 
 class TechnologyDetailView(DetailView):
     """
-    Enhanced Technology Detail - Shows learning progression with this technology
-    Similar to datalogs tag.html but learning-focused, shows filtered systems
+    Enhanced Technology Detail - Streamlined glass-card design
+    Shows skill connections, learning timeline, and related projects
     """
 
     model = Technology
@@ -2854,119 +2854,190 @@ class TechnologyDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         technology = self.object
 
-        # Get systems using this technology w learning focus
+        # Get systems using this technology w enhanced data (Chronological for learning progression)
         tech_systems = SystemModule.objects.filter(technologies=technology).select_related(
             'system_type', 'author'
-        ).prefetch_related('technologies')
+        ).prefetch_related('technologies', 'skills_developed').order_by('created_at')
 
-        # Learning progression: order by complexity and date to show growth
-        context["systems"] = tech_systems.order_by('complexity', 'created_at')
-
-        # Learning-focused stats (not enterprise metrics)
         context.update({
             'page_title': f'{technology.name} - Learning Journey',
-            'page_subtitle': f'Projects and progression using {technology.name}',
+            'page_subtitle': f'Projects and skill development with {technology.name}',
             'show_breadcrumbs': True,
 
-            # Learning Journey Stats
+            # Basic metrics
             'total_projects': tech_systems.count(),
             'completed_projects': tech_systems.filter(status__in=['deployed', 'published']).count(),
             'learning_projects': tech_systems.filter(status='in_development').count(),
             'featured_projects': tech_systems.filter(featured=True).count(),
 
-            # Skill progression metrics
-            'skill_progression': self.get_skill_progression(tech_systems),
-            'learning_timeline': self.get_learning_timeline(tech_systems),
+            # NEW: Skill-technology relationship data
+            'skill_connections': self.get_skill_connections(technology),
+            'skill_connections_count': technology.skill_relations.count(),
+
+            # Enhanced progression metrics
+            'skill_progression': self.get_enhanced_skill_progression(tech_systems, technology),
+            'learning_timeline': self.get_enhanced_learning_timeline(tech_systems, technology),
             'complexity_progression': self.get_complexity_progression(tech_systems),
 
-            # Related learning (DataLogs integration)
-            'related_datalogs': self.get_related_datalogs(technology),
+            # Systems using this technology
+            'systems': tech_systems,
 
-            # Technology context
-            'technology_category': technology.get_category_display(),
+            # Related content
+            'related_datalogs': self.get_related_datalogs(technology),
             'similar_technologies': self.get_similar_technologies(technology),
         })
 
         return context
     
-    def get_skill_progression(self, systems):
-        """Calculate skill level progression w this technology."""
+    def get_skill_connections(self, technology):
+        """Get skill-technology relationships for this tech"""
+        return SkillTechnologyRelation.objects.filter(
+            technology=technology
+        ).select_related('skill').order_by('-strength', 'skill__name')
+    
+    def get_enhanced_skill_progression(self, systems, technology):
+        """Calculate skill progression incorporating skill-tech relationships"""
         if not systems.exists():
-            return {'level': 'Beginner', 'description': 'Getting started'}
+            return {'current_level': 0, 'progression_data': []}
         
+        # Calculate skill level based on project complexity and skill relationships
         avg_complexity = systems.aggregate(avg=Avg('complexity'))['avg'] or 1
-        project_count = systems.count()
-        completion_rate = (systems.filter(
-            status__in=['deployed', 'published']
-        ).count() / project_count) * 100 if project_count > 0 else 0
 
-        # Determine skill level based on complexity and experience
-        if avg_complexity >= 4 and project_count >= 3:
-            level = 'Advanced'
-            description = f'Confident with complex implementation ({project_count} projects)'
-        elif avg_complexity >= 3 and project_count >= 2:
-            level = 'Intermediate'
-            description = f'Growing proficiency through practice ({project_count} projects)'
-        else:
-            level = 'Learning'
-            description = f'Building foundational skills ({project_count} project{"s" if project_count > 1 else ""})'
+        # Boost score based on number of strong skill connections
+        strong_connections = technology.skill_relations.filter(strength__gte=3).count()
+        skill_boost = min(strong_connections * 0.2, 1.0)  # Max boost of 1 pt
+
+        current_level = min(avg_complexity + skill_boost, 5.0)
+
+        # Create progression timeline
+        progression_data = []
+        for system in systems:
+            progression_data.append({
+                'date': system.created_at,
+                'project': system.title,
+                'complexity': system.complexity,
+                'skills_gained': system.skill_developed.count(),
+            })
+        
         return {
-            'level': level,
-            'description': description,
-            'avg_complexity': round(avg_complexity, 1),
-            'project_count': project_count,
-            'completion_rate': round(completion_rate, 1),
+            'current_level': current_level,
+            'progression_data': progression_data,
+            'skill_boost': skill_boost,
+            'strong_connections': strong_connections,
         }
     
-    def get_learning_timeline(self, systems):
-        """Create a learning timeline for this technology."""
-        timeline_items = []
+    # def get_skill_progression(self, systems):
+    #     """Calculate skill level progression w this technology."""
+    #     if not systems.exists():
+    #         return {'level': 'Beginner', 'description': 'Getting started'}
+        
+    #     avg_complexity = systems.aggregate(avg=Avg('complexity'))['avg'] or 1
+    #     project_count = systems.count()
+    #     completion_rate = (systems.filter(
+    #         status__in=['deployed', 'published']
+    #     ).count() / project_count) * 100 if project_count > 0 else 0
 
-        for system in systems.order_by('created_at'):
-            timeline_items.append({
+    #     # Determine skill level based on complexity and experience
+    #     if avg_complexity >= 4 and project_count >= 3:
+    #         level = 'Advanced'
+    #         description = f'Confident with complex implementation ({project_count} projects)'
+    #     elif avg_complexity >= 3 and project_count >= 2:
+    #         level = 'Intermediate'
+    #         description = f'Growing proficiency through practice ({project_count} projects)'
+    #     else:
+    #         level = 'Learning'
+    #         description = f'Building foundational skills ({project_count} project{"s" if project_count > 1 else ""})'
+    #     return {
+    #         'level': level,
+    #         'description': description,
+    #         'avg_complexity': round(avg_complexity, 1),
+    #         'project_count': project_count,
+    #         'completion_rate': round(completion_rate, 1),
+    #     }
+    
+    def get_enhanced_learning_timeline(self, systems, technology):
+        """Create enhanced learning timeline with skill milestones."""
+        timeline = []
+
+        # Add system milestones
+        for system in systems:
+            timeline.append({
                 'date': system.created_at,
-                'title': system.title,
+                'title': f'Built {system.title}',
+                'description': f'Applied {technology.name} in a {system.get_system_type_display().lower()} project',
                 'type': 'project',
                 'complexity': system.complexity,
-                'status': system.status,
-                'description': system.excerpt or f'{system.get_complexity_display()} {system.system_type.name if system.system_type else "project"}',
                 'url': system.get_absolute_url(),
             })
-        return timeline_items
+        
+        # NEW: Add skill connections and milestones
+        skill_connections = technology.skill_relations.all()
+        for connection in skill_connections:
+            if connection.first_used_together:
+                timeline.append({
+                    'date': connection.first_used_together,
+                    'title': f'Connected to {connection.skill.name}',
+                    'description': f'First applied {technology.name} for {connection.skill.name} ({connection.get_relationship_type_display().lower()})',
+                    'type': 'skill_connection',
+                    'strength': connection.strength,
+                })
+        
+        # Sort by date and return
+        timeline.sort(key=lambda x: x['date'])
+        return timeline
+
+    # def get_learning_timeline(self, systems):
+    #     """Create a learning timeline for this technology."""
+    #     timeline_items = []
+
+    #     for system in systems.order_by('created_at'):
+    #         timeline_items.append({
+    #             'date': system.created_at,
+    #             'title': system.title,
+    #             'type': 'project',
+    #             'complexity': system.complexity,
+    #             'status': system.status,
+    #             'description': system.excerpt or f'{system.get_complexity_display()} {system.system_type.name if system.system_type else "project"}',
+    #             'url': system.get_absolute_url(),
+    #         })
+    #     return timeline_items
     
     def get_complexity_progression(self, systems):
-        """Show how complexity has grown over time."""
-        progression = []
+        """Calculate complexity progression over time."""
+        if not systems.exists():
+            return {'avg_complexity': 0, 'progression': []}
+        
+        complexities = list(systems.values_list('complexity', flat=True))
 
-        for system in systems.order_by('created_at'):
-            progression.append({
-                'title': system.title,
-                'complexity': system.complexity,
-                'complexity_display': system.get_complexity_display(),
-                'date': system.created_at,
-                'completion': system.completion_percent,
-            })
-        return progression
+        return {
+            'avg_complexity': sum(complexities) / len(complexities),
+            'min_complexity': min(complexities),
+            'max_complexity': max(complexities),
+            'progression': complexities,  # Ordered by creation date
+            'growth': max(complexities) - min(complexities) if len(complexities) > 1 else 0,
+        }
     
     def get_related_datalogs(self, technology):
-        """Find DataLogs related to this technology."""
-        # Import here to avoid circular imports
-        # from blog.models import Post
+        """Get DataLogs related to this technology."""
+        try:
+            from blog.models import Post
 
-        # Search for posts that mention this tech
-        related_posts = Post.objects.filter(
-            Q(title__icontains=technology.name) |
-            Q(content__icontains=technology.name) |
-            Q(tags__name__icontains=technology.name)
-        ).filter(status='published').distinct()[:5]
+            # Search for posts that mention this tech
+            related_posts = Post.objects.filter(
+                Q(title__icontains=technology.name) |
+                Q(content__icontains=technology.name) |
+                Q(tags__name__icontains=technology.name)
+            ).filter(status='published').distinct()[:6]
 
-        return related_posts
+            return related_posts
+        except ImportError:
+            return []
     
     def get_similar_technologies(self, technology):
-        """Find similar technologies in same category."""
+        """Get similar technologies (same category, excluding current)."""
         return Technology.objects.filter(
             category=technology.category
-        ).exclude(id=technology.id).annotate(project_count=Count('systems')).filter(project_count__gt=0)[:4]
+        ).exclude(id=technology.id).annotate(project_count=Count('systems')).filter(project_count__gt=0)[:8]
 
 
 # ===================== ENHANCED SYSTEM TYPE VIEWS =====================
