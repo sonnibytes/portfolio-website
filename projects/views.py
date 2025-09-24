@@ -1089,7 +1089,8 @@ class LearningSystemControlInterfaceView(DetailView):
             "github_repositories",
             "github_repositories__languages",
             "architecture_components",
-            "architecture_connections",
+            "architecture_components__outgoing_connections",
+            "architecture_components__incoming_connections",
         )
 
     def get_context_data(self, **kwargs):
@@ -1335,12 +1336,17 @@ class LearningSystemControlInterfaceView(DetailView):
     # Panel 5 - Architecture Panel
     def get_architecture_panel_data(self, system):
         """Architecture visualization panel."""
+        # incoming = system.architecture_components.incoming_connections
+        # outgoing = system.architecture_components.outgoing_connections
+
+        
         return {
             'has_architecture': system.has_architecture_diagram(),
             'components': system.architecture_components.all(),
-            'connections': system.architecture_connections.all(),
+            # 'incoming_connections': incoming,
+            # 'outgoing_connections': outgoing,
             'component_count': system.architecture_components.count(),
-            'connection_count': system.architecture_connections.count(),
+            # 'connection_count': incoming + outgoing,
             'architecture_complexity': self.calculate_architecture_complexity(system),
         }
     
@@ -1383,10 +1389,11 @@ class LearningSystemControlInterfaceView(DetailView):
             return 0
         
         components = system.architecture_components.count()
-        connections = system.architecture_connections.count()
+        # connections = system.architecture_connections.count()
 
-        # Simple complexity calculation
-        return min(components + (connections * 0.5), 10)
+        # # Simple complexity calculation
+        # return min(components + (connections * 0.5), 10)
+        return min(components, 10)
 
     # ======= FROM OLD VIEW from here down to end of view class
     # Only keeping here for now in case I want to preserve charts 
