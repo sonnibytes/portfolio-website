@@ -6,7 +6,8 @@
 {% load github_tags %}
 
 
-{% block extra_css %}
+{% block systems_css %}
+<link rel="stylesheet" href="{% static 'projects/css/streamlined_interface.css' %}">
 {{ block.super }}
 <style>
     /* Clean HUD Interface Styling */
@@ -308,7 +309,7 @@
         margin: 1rem 0;
     }
 
-    .stat-item {
+    .system-stat-item {
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 8px;
@@ -317,7 +318,7 @@
         transition: all 0.3s ease;
     }
 
-    .stat-item:hover {
+    .system-stat-item:hover {
         background: rgba(255, 255, 255, 0.08);
         border-color: rgba(255, 255, 255, 0.15);
     }
@@ -472,6 +473,61 @@
         color: rgba(255, 255, 255, 0.6);
     }
 
+    .datalog-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md, 1rem);
+    }
+
+    .connection-type {
+        padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+        background: rgba(179, 157, 219, 0.2);
+        color: var(--color-lavender);
+        border-radius: var(--border-radius-sm, 4px);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .datalog-tags {
+        display: flex;
+        gap: var(--spacing-xs, 0.5rem);
+    }
+
+    .tag {
+        padding: var(--spacing-xs, 0.5rem);
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--color-text-secondary);
+        border-radius: var(--border-radius-sm, 4px);
+        font-size: 0.7rem;
+    }
+
+    .datalog-actions {
+        display: flex;
+        gap: var(--spacing-sm, 0.75rem);
+    }
+
+    .datalog-action {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs, 0.5rem);
+        padding: var(--spacing-sm, 0.75rem);
+        background: rgba(179, 157, 219, 0.1);
+        color: var(--color-lavender);
+        text-decoration: none;
+        border-radius: var(--border-radius-sm, 4px);
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .datalog-action:hover {
+        background: rgba(179, 157, 219, 0.2);
+        color: var(--color-lavender);
+        transform: translateY(-1px);
+    }
+
     /* Responsive Design */
     @media (max-width: 1024px) {
         .control-interface {
@@ -526,13 +582,21 @@
     <header class="system-header">
         <div class="system-title-section">
             <h1 class="system-title">{{ system.title }}</h1>
-            <div class="system-status-badge" style="--status-color: {{ system.get_status_badge_color }};">
+            <div class="system-status-badge" style="--status-color: var(--color-{{ system.get_status_badge_color }});">
                 {{ system.get_status_display }}
             </div>
         </div>
         
         <!-- System Meta Information -->
         <div class="system-meta-grid">
+            <div class="system-meta-item">
+                <span class="meta-value">{{ system.system_type.name }}</span>
+                <span class="meta-label">System Type</span>
+            </div>
+            <div class="system-meta-item">
+                <span class="meta-value">{{ system.get_learning_stage_display }}</span>
+                <span class="meta-label">Learning Stage</span>
+            </div>
             <div class="system-meta-item">
                 <span class="meta-value">{{ system.completion_percent|floatformat:0 }}%</span>
                 <span class="meta-label">Complete</span>
@@ -601,6 +665,64 @@
                 
                 {% if active_panel == 'overview' %}
                 <!-- Overview Panel -->
+
+                <!-- Basic Info Card -->
+                <div class="glass-card">
+                    <div class="glass-card-header">
+                        <div class="glass-card-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div>
+                            <h3 class="glass-card-title">Project Overview</h3>
+                            <p class="glass-card-subtitle">Essential information and timeline</p>
+                        </div>
+                    </div>
+
+                    <!-- Project Description -->
+                    {% if system.excerpt %}
+                    <div style="margin-bottom: 1.5rem;">
+                        <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.05rem; line-height: 1.6; margin: 0;">
+                        {{ system.excerpt }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Project Timeline & Info -->
+                    <div class="stats-grid">
+                        <div class="system-stat-item">
+                            <span class="stat-value">{{ system.created_at|date:"M d, Y" }}</span>
+                            <div class="stat-label">Created</div>
+                            <div class="stat-sublabel">Project started</div>
+                        </div>
+                        <div class="system-stat-item">
+                            <span class="stat-value">{{ system.updated_at|date:"M d, Y" }}</span>
+                            <div class="stat-label">Last Updated</div>
+                            <div class="stat-sublabel">Most recent changes</div>
+                        </div>
+                        {% if system.author %}
+                        <div class="system-stat-item">
+                            <span class="stat-value">{{ system.author.first_name|default:system.author.username }}</span>
+                            <div class="stat-label">Developer</div>
+                            <div class="stat-sublabel">Project author</div>
+                        </div>
+                        {% endif %}
+                        {% if system.start_date and system.end_date %}
+                        <div class="system-stat-item">
+                            <span class="stat-value">{{ system.end_date|timeuntil:system.start_date }}</span>
+                            <div class="stat-label">Duration</div>
+                            <div class="stat-sublabel">Development time</div>
+                        </div>
+                        {% elif system.actual_dev_hours or system.estimated_dev_hours %}
+                        <div class="system-stat-item">
+                            <span class="stat-value">{{ system.actual_dev_hours|default:system.estimated_dev_hours }}h</span>
+                            <div class="stat-label">Time Invested</div>
+                            <div class="stat-sublabel">Development hours</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- System Metrics Card -->
                 <div class="glass-card">
                     <div class="glass-card-header">
                         <div class="glass-card-icon">
@@ -613,22 +735,22 @@
                     </div>
                     
                     <div class="stats-grid">
-                        <div class="stat-item">
+                        <div class="system-stat-item">
                             <span class="stat-value">{{ panel_data.skill_tech_stats.alignment_score|floatformat:1 }}/4</span>
                             <div class="stat-label">Skill-Tech Alignment</div>
                             <div class="stat-sublabel">How well skills match technologies</div>
                         </div>
-                        <div class="stat-item">
+                        <div class="system-stat-item">
                             <span class="stat-value">{{ panel_data.learning_metrics.skills_gained }}</span>
                             <div class="stat-label">Skills Applied</div>
                             <div class="stat-sublabel">Different skill areas practiced</div>
                         </div>
-                        <div class="stat-item">
+                        <div class="system-stat-item">
                             <span class="stat-value">{{ panel_data.learning_metrics.technologies_used }}</span>
                             <div class="stat-label">Technologies</div>
                             <div class="stat-sublabel">Tools & frameworks used</div>
                         </div>
-                        <div class="stat-item">
+                        <div class="system-stat-item">
                             <span class="stat-value">{{ panel_data.system_metrics.time_invested|default:"0" }}h</span>
                             <div class="stat-label">Time Invested</div>
                             <div class="stat-sublabel">Development hours logged</div>
@@ -648,13 +770,37 @@
                             <p class="glass-card-subtitle">GitHub repository statistics</p>
                         </div>
                     </div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem; margin-top: 1.5rem;">
+                                <span>Connected Repository</span>
+                            {% for repo in system.github_repositories.all|slice:":4" %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; margin-bottom: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 6px;">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">
+                                        <a href="{{ repo.html_url }}" target="_blank" style="color: var(--color-text-primary); text-decoration: none;">
+                                            <i class="fab fa-github"></i> {{ repo.name }}
+                                        </a>
+                                    </div>
+                                    {% with commit_stats=system.get_commit_stats %}
+                                    {% if commit_stats.last_commit_date %}
+                                    <span class="github-commit-badge">
+                                        <i class="fa-solid fa-code-commit"></i> {{ commit_stats.last_commit_date|days_since_commit }}
+                                    </span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                                <div>
+                                    {{ repo.commit_frequency_rating|commit_frequency_badge }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            </div>  
                     
                     <div class="stats-grid">
-                        <div class="stat-item">
+                        <div class="system-stat-item">
                             <span class="stat-value">{{ panel_data.github_stats.total_commits }}</span>
                             <div class="stat-label">Total Commits</div>
                         </div>
-                        <div class="stat-item">
+                        <div class="system-stat-item">
                             <span class="stat-value">{{ panel_data.github_stats.commits_last_30_days }}</span>
                             <div class="stat-label">Recent Activity</div>
                             <div class="stat-sublabel">Last 30 days</div>
@@ -739,20 +885,20 @@
                 </div>
                 {% endif %}
 
-                {% if panel_data.descriptions.technical_details %}
+                {% if panel_data.descriptions.usage_examples %}
                 <div class="glass-card">
                     <div class="glass-card-header">
                         <div class="glass-card-icon">
                             <i class="fas fa-wrench"></i>
                         </div>
                         <div>
-                            <h3 class="glass-card-title">Technical Details</h3>
+                            <h3 class="glass-card-title">Usage Examples</h3>
                             <p class="glass-card-subtitle">Implementation specifics</p>
                         </div>
                     </div>
                     
                     <div class="markdown-content">
-                        {{ panel_data.descriptions.technical_details|markdownify }}
+                        {{ panel_data.descriptions.usage_examples|markdownify }}
                     </div>
                 </div>
                 {% endif %}
@@ -776,7 +922,7 @@
                         <div class="tech-header">
                             <div class="tech-icon">
                                 {% if tech_rel.technology.icon %}
-                                    <i class="{{ tech_rel.technology.icon }}"></i>
+                                    <i class="{{ tech_rel.technology.icon|safe_icon }}"></i>
                                 {% else %}
                                     {{ tech_rel.technology.name|first|upper }}
                                 {% endif %}
@@ -817,7 +963,7 @@
                         </div>
                         <div>
                             <h3 class="glass-card-title">Learning Documentation</h3>
-                            <p class="glass-card-subtitle">{{ panel_data.total_entries }} DataLog entries</p>
+                            <p class="glass-card-subtitle">{{ panel_data.total_entries }} DataLog entr{{ panel_data.total_entries|pluralize:'y,ies'}}</p>
                         </div>
                     </div>
                     
@@ -828,16 +974,36 @@
                             <h4 class="datalog-title">
                                 <a href="{{ entry.post.get_absolute_url }}" style="color: var(--color-lavender); text-decoration: none;">
                                     {{ entry.post.title }}
+                                    
                                 </a>
+                                
                             </h4>
                             <span class="datalog-date">{{ entry.post.created_at|date:"M d, Y" }}</span>
                         </div>
+                        <span class="connection-type">{{ entry.connection_type|title }}</span>
                         
                         {% if entry.post.excerpt %}
                         <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem; line-height: 1.4; margin: 0;">
                             {{ entry.post.excerpt|truncatewords:20 }}
                         </p>
                         {% endif %}
+
+                        <div class="datalog-meta">
+                            
+                            {% if entry.post.tags.all %}
+                            <div class="datalog-tags">
+                                {% for tag in entry.post.tags.all %}
+                                <span class="tag">{{ tag.name }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="datalog-actions">
+                            <a href="{% url 'blog:post_detail' entry.post.slug %}" class="datalog-action">
+                                <i class="fas fa-external-link-alt"></i> Read Full Post
+                            </a>
+                        </div>
                     </div>
                     {% empty %}
                     <div style="text-align: center; color: rgba(255, 255, 255, 0.6); padding: 2rem;">
@@ -868,15 +1034,15 @@
                     
                     <!-- Architecture Stats -->
                     <div class="stats-grid">
-                        <div class="stat-item">
+                        <div class="system-stat-item">
                             <span class="stat-value">{{ panel_data.component_count }}</span>
                             <div class="stat-label">Components</div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-value">{{ panel_data.connection_count }}</span>
-                            <div class="stat-label">Connections</div>
+                        <div class="system-stat-item">
+                            <span class="stat-value">{{ panel_data.core_components_count }}</span>
+                            <div class="stat-label">Core Components</div>
                         </div>
-                        <div class="stat-item">
+                        <div class="system-stat-item">
                             <span class="stat-value">{{ panel_data.architecture_complexity|floatformat:1 }}/10</span>
                             <div class="stat-label">Complexity</div>
                         </div>

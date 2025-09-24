@@ -1258,7 +1258,7 @@ class LearningSystemControlInterfaceView(DetailView):
             'descriptions': {
                 'main_description': system.description,
                 'brief_description': system.excerpt,
-                'technical_details': getattr(system, 'technical_details', None),
+                # 'technical_details': getattr(system, 'technical_details', None),
                 # Leaving bc might add setup and usage - (updating to use existing tech details and features overview content fields)
                 'setup_instructions': getattr(system, 'technical_details', None),
                 'usage_examples': getattr(system, 'features_overview', None),
@@ -1346,6 +1346,7 @@ class LearningSystemControlInterfaceView(DetailView):
             # 'incoming_connections': incoming,
             # 'outgoing_connections': outgoing,
             'component_count': system.architecture_components.count(),
+            'core_components_count': system.architecture_components.filter(is_core=True).count(),
             # 'connection_count': incoming + outgoing,
             'architecture_complexity': self.calculate_architecture_complexity(system),
         }
