@@ -10,6 +10,11 @@
 {% block admin_css %}
 {{ block.super }}
 <style>
+/* Hide Django-generated tags field since using custom system */
+#id_tags {
+    display: none !important;
+}
+
 .learning-form-container {
     max-width: 1000px;
     margin: 0 auto;
@@ -660,8 +665,11 @@
                 <div class="selected-tags" id="selected-tags"></div>
                 <div class="help-text">Press Enter or comma to add tags. Use specific, searchable terms.</div>
                 
-                <!-- Hidden field for form submission -->
+                <!-- Hidden Django field for form submission -->
                 {% render_field form.tags style="display: none;" %}
+
+                <!-- Hidden field for JavaScript tag system -->
+                <input type="hidden" id="tags_input" name="tags_input" value="">
             </div>
         </div>
 
@@ -984,10 +992,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateTagsField() {
-        // Update the actual form field
-        const tagsField = document.getElementById('{{ form.tags.id_for_label }}');
-        if (tagsField) {
-            tagsField.value = currentTags.join(',');
+        // Update our custom hidden field, NOT Django form field
+        const tagsInputField = document.getElementById('tags_input');
+        if (tagsInputField) {
+            tagsInputField.value = currentTags.join(',');
+            console.log('Updated tags_input field:', tagsInputField.value);
         }
     }
     

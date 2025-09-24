@@ -14,6 +14,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import TemplateView, DetailView
 from django.db import models
+from django.conf import settings
 
 from datetime import timedelta
 
@@ -438,7 +439,6 @@ class PostUpdateAdminView(BaseAdminUpdateView):
                     connection_type=self.request.POST.get(f'connection_type_{system_id}', 'development'),
                     priority=int(self.request.POST.get(f'priority_{system_id}', 2)),
                     log_entry_id=log_entry_id
-                    }
                 )
             except (SystemModule.DoesNotExist, ValueError):
                 continue
@@ -510,7 +510,7 @@ class PostUpdateAdminView(BaseAdminUpdateView):
 
         # Calculate difficulty based on content length and complexity (simple)
         if post.content:
-            word_count = len(post.content.spilt())
+            word_count = len(post.content.split())
             if word_count < 300:
                 progression['difficulty_level'] = 'beginner'
             elif word_count > 1000:
