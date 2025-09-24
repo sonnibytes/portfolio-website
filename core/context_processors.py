@@ -77,6 +77,10 @@ def admin_navigation_context(request):
             'total_technologies': Technology.objects.count(),
         }
 
+        system_type_stats = {
+            
+        }
+
         ## ADDED Architecture context
         architecture_stats = {
             'total_components': ArchitectureComponent.objects.count(),
@@ -89,8 +93,13 @@ def admin_navigation_context(request):
 
         technology_stats = {
             'total_technologies': Technology.objects.count(),
-            'languages': Technology.objects.filter(category='language').count(),
-            'frameworks': Technology.objects.filter(category='framework').count(),
+            'language_count': Technology.objects.filter(category='language').count(),
+            'framework_count': Technology.objects.filter(category='framework').count(),
+            'database_count': Technology.objects.filter(category='database').count(),
+            'cloud_count': Technology.objects.filter(category='cloud').count(),
+            'tool_count': Technology.objects.filter(category='tool').count(),
+            'os_count': Technology.objects.filter(category='os').count(),
+            'ai_count': Technology.objects.filter(category='ai').count(),
         }
 
         # DataLogs Stats

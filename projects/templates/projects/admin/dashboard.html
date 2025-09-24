@@ -461,25 +461,26 @@
                     Manage
                 </a>
             </div>
-            
+            {% with technology_stats as stats %}
             <div class="space-y-4">
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Programming Languages</span>
-                    <span class="text-blue-400 font-medium">{{ language_count|default:0 }}</span>
+                    <span class="text-blue-400 font-medium">{{ stats.language_count|default:0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Frameworks</span>
-                    <span class="text-purple-400 font-medium">{{ framework_count|default:0 }}</span>
+                    <span class="text-purple-400 font-medium">{{ stats.framework_count|default:0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Databases</span>
-                    <span class="text-green-400 font-medium">{{ database_count|default:0 }}</span>
+                    <span class="text-green-400 font-medium">{{ stats.database_count|default:0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Total Technologies</span>
-                    <span class="text-orange-400 font-medium">{{ total_technologies|default:0 }}</span>
+                    <span class="text-orange-400 font-medium">{{ stats.total_technologies|default:0 }}</span>
                 </div>
             </div>
+            {% endwith %}
             
             <div class="action-buttons">
                 <a href="{% url 'aura_admin:projects:technology_create' %}" class="btn btn-xs btn-outline">
@@ -511,18 +512,20 @@
                     <span class="text-gray-400">System Types</span>
                     <span class="text-purple-400 font-medium">{{ total_system_types|default:0 }}</span>
                 </div>
+                {% for type in popular_system_types|slice:':3' %}
                 <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-400">Web Applications</span>
-                    <span class="text-cyan-400 font-medium">{{ web_app_count|default:0 }}</span>
+                    <span class="text-gray-400">{{ type.name|title }}</span>
+                    <span class="text-cyan-400 font-medium">{{ type.systems.count }}</span>
                 </div>
-                <div class="flex items-center justify-between text-sm">
+                {% endfor %}
+                {% comment %} <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Data Analytics</span>
                     <span class="text-green-400 font-medium">{{ data_analytics_count|default:0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Automation Tools</span>
                     <span class="text-purple-400 font-medium">{{ automation_count|default:0 }}</span>
-                </div>
+                </div> {% endcomment %}
             </div>
             
             <div class="action-buttons">

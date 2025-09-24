@@ -239,26 +239,70 @@
 
 .system-suggestions {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.5rem;
-    margin-top: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin: 0.75rem 0;
 }
 
 .system-suggestion {
+    padding: 0.75rem;
     background: rgba(38, 198, 218, 0.1);
     border: 1px solid rgba(38, 198, 218, 0.2);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-align: center;
-    font-size: 0.75rem;
-    color: #26c6da;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .system-suggestion:hover {
     background: rgba(38, 198, 218, 0.2);
+    border-color: rgba(38, 198, 218, 0.4);
     transform: translateY(-1px);
+}
+
+.system-suggestion.selected {
+    background: rgba(38, 198, 218, 0.3);
+    border-color: #26c6da;
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.3);
+}
+
+.selected-systems {
+    margin-top: 1rem;
+}
+
+.selected-systems-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.selected-system-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(38, 198, 218, 0.2);
+    border: 1px solid #26c6da;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    color: white;
+}
+
+.remove-system {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0;
+    margin-left: 0.25rem;
+}
+
+.remove-system:hover {
+    color: #ff8a80;
 }
 
 .checkbox-group {
@@ -670,6 +714,10 @@
 
                 <!-- Hidden field for JavaScript tag system -->
                 <input type="hidden" id="tags_input" name="tags_input" value="">
+
+                <!-- Hidden fields for system connections -->
+                <input type="hidden" id="system_connections_input" name="system_connections_input" value="">
+                <input type="hidden" id="selected_systems_data" name="selected_systems_data" value="">
             </div>
         </div>
 
@@ -736,12 +784,17 @@
                 <label class="form-label">Click systems related to this discovery</label>
                 <div class="system-suggestions">
                     {% for system in active_systems %}
-                    <div class="system-suggestion" data-system-id="{{ system.id }}">
+                    <div class="system-suggestion" 
+                        data-system-id="{{ system.id }}" 
+                        data-system-name="{{ system.title }}"
+                        onclick="toggleSystemConnection({{ system.id }}, '{{ system.title }}')">
+                        <i class="fas fa-cube"></i>
                         {{ system.title }}
                     </div>
                     {% endfor %}
                 </div>
-                <div class="help-text">These will be referenced in your discovery content for cross-linking</div>
+                <div class="selected-systems" id="selected-systems"></div>
+                <div class="help-text">Selected systems will be connected to this discovery</div>
             </div>
         </div>
         {% endif %}
@@ -1163,5 +1216,104 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('- Journey suggestions found:', document.querySelectorAll('.suggestion-item').length);
     console.log('- Tag system initialized:', !!tagInput);
 });
+
+// System Connection Management
+let selectedSystems = [];
+
+function toggleSystemConnection(systemId, systemName) {
+    const systemIndex = selectedSystems.findIndex(s => s.id === systemId);
+    
+    if (systemIndex > -1) {
+        // Remove system
+        selectedSystems.splice(systemIndex, 1);
+        console.log('Removed system:', systemName);
+    } else {
+        // Add system
+        selectedSystems.push({
+            id: systemId,
+            name: systemName,
+            connection_type: 'development', // Default
+            priority: 2 // Default
+        });
+        console.log('Added system:', systemName);
+    }
+    
+    updateSystemsDisplay();
+    updateSystemsFields();
+}
+
+function updateSystemsDisplay() {
+    const selectedSystemsContainer = document.getElementById('selected-systems');
+    const systemSuggestions = document.querySelectorAll('.system-suggestion');
+    
+    if (!selectedSystemsContainer) return;
+    
+    // Update visual state of suggestions
+    systemSuggestions.forEach(suggestion => {
+        const systemId = parseInt(suggestion.dataset.systemId);
+        const isSelected = selectedSystems.some(s => s.id === systemId);
+        
+        if (isSelected) {
+            suggestion.classList.add('selected');
+        } else {
+            suggestion.classList.remove('selected');
+        }
+    });
+    
+    // Display selected systems
+    if (selectedSystems.length > 0) {
+        selectedSystemsContainer.innerHTML = '<div class="selected-systems-list">' +
+            selectedSystems.map(system => `
+                <div class="selected-system-chip">
+                    <i class="fas fa-cube"></i>
+                    <span>${system.name}</span>
+                    <button type="button" onclick="toggleSystemConnection(${system.id}, '${system.name}')" class="remove-system">×</button>
+                </div>
+            `).join('') +
+            '</div>';
+    } else {
+        selectedSystemsContainer.innerHTML = '';
+    }
+}
+
+function updateSystemsFields() {
+    const systemConnectionsField = document.getElementById('system_connections_input');
+    const selectedSystemsField = document.getElementById('selected_systems_data');
+    
+    if (systemConnectionsField) {
+        // Send just the IDs for backend processing
+        systemConnectionsField.value = selectedSystems.map(s => s.id).join(',');
+        console.log('Updated system_connections_input:', systemConnectionsField.value);
+    }
+    
+    if (selectedSystemsField) {
+        // Send full data for more complex processing if needed
+        selectedSystemsField.value = JSON.stringify(selectedSystems);
+        console.log('Updated selected_systems_data:', selectedSystemsField.value);
+    }
+}
+
+// Initialize existing systems if editing
+{% if object and existing_system_connections %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Load existing system connections
+    const existingSystems = [
+        {% for connection in existing_system_connections %}
+        {
+            id: {{ connection.system.id }},
+            name: "{{ connection.system.title|default:connection.system.name }}",
+            connection_type: "{{ connection.connection_type }}",
+            priority: {{ connection.priority }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    selectedSystems = existingSystems;
+    updateSystemsDisplay();
+    updateSystemsFields();
+    
+    console.log('Loaded existing systems:', selectedSystems);
+});
+{% endif %}
 </script>
 {% endblock %}

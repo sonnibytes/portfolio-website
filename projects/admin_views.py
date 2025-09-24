@@ -111,6 +111,7 @@ class ProjectsAdminDashboardView(BaseAdminListView):
         deployed_systems = SystemModule.objects.filter(status='deployed').count()
         published_systems = SystemModule.objects.filter(status='published').count()
         in_dev_systems = SystemModule.objects.filter(status='in_development').count()
+        featured_systems = SystemModule.objects.featured().count()
         
         # Performance metrics
         avg_completion = SystemModule.objects.aggregate(
@@ -148,6 +149,8 @@ class ProjectsAdminDashboardView(BaseAdminListView):
             'in_dev_systems': in_dev_systems,
             'total_technologies': Technology.objects.count(),
             'total_system_types': SystemType.objects.count(),
+            'operational_systems': deployed_systems + published_systems,
+            'featured_systems': featured_systems,
             
             # Performance metrics
             'avg_completion': round(avg_completion, 1),

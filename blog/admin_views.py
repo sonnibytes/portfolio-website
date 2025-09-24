@@ -410,38 +410,52 @@ class PostUpdateAdminView(BaseAdminUpdateView):
                     self.object.tags.add(tag)
         
     def process_system_connections(self):
-        """Process system connections from the form."""
+        """Process system connections from the custom JavaScript system."""
+        print("DEBUG: Processing system connections...")
 
-        # Clear system connections
+        # Clear existing system connections
         SystemLogEntry.objects.filter(post=self.object).delete()
 
-        # Get system IDs from POST data
-        system_ids = self.request.POST.getlist('system_connections', [])
-        system_ids.extend([
-            key.replace('system_', '')
-            for key in self.request.POST.keys()
-            if key.startswith('system_') and self.request.POST[key] == 'on'
-        ])
+        # Get system IDs from custom field
+        system_ids_data = self.request.POST.get('system_connections_input', '').strip()
+        print(f"DEBUG: System connections input: '{system_ids_data}'")
 
-        # Create new connections
-        for system_id in system_ids:
-            try:
-                system = SystemModule.objects.get(id=system_id)
+        if system_ids_data:
+            # Split by comma and clean up
+            system_ids = [
+                int(sid.strip())
+                for sid in system_ids_data.split(",")
+                if sid.strip().isdigit()
+            ]
+            print(f"DEBUG: Parsed system IDs: {system_ids}")
 
-                # Generate log entry ID
-                existing_count = SystemLogEntry.objects.filter(system=system).count()
-                log_entry_id = f"SYS-{system.id:03d}-LOG-{existing_count + 1:03d}"
+            # Create new connections
+            for system_id in system_ids:
+                try:
+                    system = SystemModule.objects.get(id=system_id)
 
-                # Create system connection
-                SystemLogEntry.objects.create(
-                    post=self.object,
-                    system=system,
-                    connection_type=self.request.POST.get(f'connection_type_{system_id}', 'development'),
-                    priority=int(self.request.POST.get(f'priority_{system_id}', 2)),
-                    log_entry_id=log_entry_id
-                )
-            except (SystemModule.DoesNotExist, ValueError):
-                continue
+                    # Generate log entry ID
+                    existing_count = SystemLogEntry.objects.filter(system=system).count()
+                    log_entry_id = f"SYS-{system.id:03d}-LOG-{existing_count + 1:03d}"
+
+                    # Create system connection
+                    connection = SystemLogEntry.objects.create(
+                        post=self.object,
+                        system=system,
+                        connection_type=self.request.POST.get(f'connection_type_{system_id}', 'development'),
+                        priority=int(self.request.POST.get(f'priority_{system_id}', 2)),
+                        log_entry_id=log_entry_id
+                    )
+                    print(f"DEBUG: Created system connection: {system.title} -> {connection.log_entry_id}")
+                
+                except SystemModule.DoesNotExist:
+                    print(f"DEBUG: System with ID {system_id} not found")
+                    continue
+                except ValueError as e:
+                    print(f"DEBUG: Error creating connection for system {system_id}: {e}")
+                    continue
+        else:
+            print("DEBUG: No system connections found")
 
     def process_learning_journey_update(self):
         """Handle learning journey (series) alignment updates."""
