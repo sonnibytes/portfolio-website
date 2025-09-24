@@ -232,7 +232,7 @@ class PostListAdminView(BaseAdminListView, BulkActionMixin):
 
 
 class PostUpdateAdminView(BaseAdminUpdateView):
-    """Enhanced DataLog entry editing with learning journey integration."""
+    """Enhanced DataLog entry editing aligned with enhanced create view."""
     
     model = Post
     form_class = PostForm
@@ -321,78 +321,8 @@ class PostUpdateAdminView(BaseAdminUpdateView):
 
         return context
     
-    def get_suggested_topics(self, post):
-        """Generate topic suggestions based on current post content and category."""
-        suggestions = []
-
-        # Get other posts in same category for topics ideas
-        related_posts = Post.objects.filter(
-            category=post.category
-        ).exclude(id=post.id).values_list('title', flat=True)[:3]
-
-
-        # Get common tags from same category
-        common_tags = Tag.objects.filter(
-            posts__category=post.category
-        ).annotate(
-            usage_count=Count('posts')
-        ).exclude(
-            posts=post
-        ).order_by('-usage_count')[:5]
-
-        suggestions.extend(related_posts)
-        suggestions.extend([f"#{tag.name}" for tag in common_tags])
-
-        return suggestions[:6]
-    
-    def get_learning_progression(self, post):
-        """Analyze learning progression for this post."""
-        progression = {
-            'current_level': 'intermediate',  # Could calculate this?
-            'next_steps': [],
-            'skills_demonstrated': [],
-            'knowledge_gaps': []
-        }
-
-        # Get series progression if post is in a series
-        series_post = SeriesPost.objects.filter(post=post).first()
-        if series_post:
-            series = series_post.series
-            total_posts = series.posts.count()
-            current_position = series_post.order
-
-            progression['series_progress'] = {
-                'position': current_position,
-                'total': total_posts,
-                'percentage': round((current_position / total_posts) * 100) if total_posts > 0 else 0
-            }
-
-            # Suggest next steps based on series
-            next_posts = SeriesPost.objects.filter(
-                series=series,
-                order__gt=current_position
-            ).order_by('order')[:2]
-
-            progression['next_steps'] = [
-                f"Continue with: {sp.post.title}" for sp in next_posts
-            ]
-
-        # Analyze tags for skill demonstration
-        current_tags = post.tags.all()
-        technical_tags = [tag.name for tag in current_tags if any(
-            tech.tag.name.lower()
-            for tech in ['python', 'django', 'js', 'css', 'sql', 'api', 'git']
-        )]
-
-        progression['skills_demonstrated'] = technical_tags
-
-        return progression
-    
     def form_valid(self, form):
-        """Enhanced form validation with learning journey features."""
-        # Ensure author is preserved or set
-        if not form.instance.author:
-            form.instance.author = self.request.user
+        """Enhanced form validation with learning journey features and proper POST processing."""
         
         # Store the old status to check if we're publishing for the first time
         old_status = None
@@ -402,6 +332,10 @@ class PostUpdateAdminView(BaseAdminUpdateView):
                 old_status = old_post.status
             except Post.DoesNotExist:
                 old_status = 'draft'
+        
+        # Ensure author is preserved or set
+        if not form.instance.author:
+            form.instance.author = self.request.user
         
         # Handle save button actions
         if 'save_draft' in self.request.POST:
@@ -424,60 +358,226 @@ class PostUpdateAdminView(BaseAdminUpdateView):
             content_words = len(form.instance.content.split())
             form.instance.reading_time = max(1, content_words // 200)  # 200 WPM
 
-        # Handle series assignment
-        series_id = self.request.POST.get('series')
-        if series_id:
-            try:
-                series = Series.objects.get(id=series_id)
-                # Update or create series association
-                series_post, created = SeriesPost.objects.get_or_create(
-                    post=form.instance,
-                    defaults={'series': series, 'order': series.posts.count() + 1}
-                )
-                if not created and series_post.series != series:
-                    # Moving to different series
-                    series_post.series = series
-                    series_post.order = series.post.count() + 1
-                    series_post.save()
-            except Series.DoesNotExist:
-                pass
-        
-        # Handle system connections
-        system_id = self.request.POST.get('system_connection')
-        connection_type = self.request.POST.get('connection_type', 'documentation')
+        try:
+            # Save the post first
+            response = super().form_valid(form)
 
-        if system_id:
+            # Process tags from the custom tag input
+            self.process_tags()
+
+            # Process system connections
+            self.process_system_connections()
+
+            # Handle learning journey updates
+            self.process_learning_journey_update()
+
+            messages.success(
+                self.request,
+                f'DataLog "{self.object.title}" updated successfully!'
+            )
+
+            # Handle continue learning redirect
+            if hasattr(self, 'continue_learning') and self.continue_learning:
+                return redirect('aura_admin:blog:post_create')
+            
+            return response
+        
+        except Exception as e:
+            messages.error(
+                self.request,
+                f'Error updating post: {str(e)}'
+            )
+            return self.form_invalid(form)
+    
+    def process_tags(self):
+        """Process tags from the custom tag input field."""
+        tags_data = self.request.POST.get('tags_input', '') or self.request.POST.get('tags', '')
+
+        if tags_data:
+            # Clear existing tags
+            self.object.tags.clear()
+
+            # Split tags by comma and clean them up
+            tag_names = [tag.strip().lower().replace(' ', '-') for tag in tags_data.split(',') if tag.strip()]
+
+            for tag_name in tag_names:
+                if tag_name:
+                    tag, created = Tag.objects.get_or_create(
+                        name=tag_name,
+                        defaults={'slug': slugify(tag_name)}
+                    )
+                    self.object.tags.add(tag)
+        
+    def process_system_connections(self):
+        """Process system connections from the form."""
+
+        # Clear system connections
+        SystemLogEntry.objects.filter(post=self.object).delete()
+
+        # Get system IDs from POST data
+        system_ids = self.request.POST.getlist('system_connections', [])
+        system_ids.extend([
+            key.replace('system_', '')
+            for key in self.request.POST.keys()
+            if key.startswith('system_') and self.request.POST[key] == 'on'
+        ])
+
+        # Create new connections
+        for system_id in system_ids:
             try:
                 system = SystemModule.objects.get(id=system_id)
-                # Create or update system connection
-                SystemLogEntry.objects.get_or_create(
-                    post=form.instance,
+
+                # Generate log entry ID
+                existing_count = SystemLogEntry.objects.filter(system=system).count()
+                log_entry_id = f"SYS-{system.id:03d}-LOG-{existing_count + 1:03d}"
+
+                # Create system connection
+                SystemLogEntry.objects.create(
+                    post=self.object,
                     system=system,
-                    defaults={
-                        'connection_type': connection_type,
-                        'priority': 3,  # default,
-                        'log_entry_id': f"SYS-{system.id:03d}-LOG-{form.instance.id:03d}"
+                    connection_type=self.request.POST.get(f'connection_type_{system_id}', 'development'),
+                    priority=int(self.request.POST.get(f'priority_{system_id}', 2)),
+                    log_entry_id=log_entry_id
                     }
                 )
-            except SystemModule.DoesNotExist:
-                pass
-        
-        response = super().form_valid(form)
+            except (SystemModule.DoesNotExist, ValueError):
+                continue
 
-        # Success message with learning context
-        if hasattr(self, 'contunue_learning') and self.continue_learning:
-            messages.success(
-                self.request,
-                f'Discovery "{self.object.title}" updated and published! Ready to document your next learning milestone?'
-            )
-            # Redirect to create new post in same series
-            return redirect('aura_admin:blog:discovery_create')
-        else:
-            messages.success(
-                self.request,
-                f'Learning discovery "{self.object.title}" updated successfully!'
-            )
-        return response
+    def process_learning_journey_update(self):
+        """Handle learning journey (series) alignment updates."""
+
+        journey_id = self.request.POST.get('learning_journey')
+
+        # Remove existing series associations
+        SeriesPost.objects.filter(post=self.object).delete()
+
+        # Handle series assignment
+        if journey_id:
+            try:
+                journey = Series.objects.get(id=journey_id)
+
+                # Create series association
+                last_order = journey.posts.aggregate(
+                    max_order=Max('order')
+                )['max_order'] or 0
+
+
+                SeriesPost.objects.create(
+                    series=journey,
+                    post=self.object,
+                    order=last_order + 1
+                )
+
+                messages.success(
+                    self.request,
+                    f'Post updated in learning journey: {journey.title}'
+                )
+                # if not created and series_post.series != series:
+                #     # Moving to different series
+                #     series_post.series = series
+                #     series_post.order = series.post.count() + 1
+                #     series_post.save()
+            except Series.DoesNotExist:
+                pass
+    
+    def get_suggested_topics(self, post):
+        """Generate topic suggestions based on current post content and category."""
+        suggestions = []
+
+        if post.category:
+            # Get other posts in same category for topics ideas
+            related_posts = Post.objects.filter(
+                category=post.category,
+                status='published'
+            ).exclude(id=post.id)[:3]
+
+            suggestions.extend([
+                f"Deep dive into {post.category.name}",
+                f"Advanced {post.category.name} techniques",
+                f"Common {post.category.name} pitfalls"
+            ])
+        
+        return suggestions
+    
+    def get_learning_progression(self, post):
+        """Analyze learning progression for this post."""
+        progression = {
+            'difficulty_level': 'intermediate',  # Could calculate this?
+            'estimated_time': '15-30 minutes',
+            'next_steps': [],
+            'prerequisites': []
+        }
+
+        # Calculate difficulty based on content length and complexity (simple)
+        if post.content:
+            word_count = len(post.content.spilt())
+            if word_count < 300:
+                progression['difficulty_level'] = 'beginner'
+            elif word_count > 1000:
+                progression['difficulty_level'] = 'advanced'
+
+        # # Get series progression if post is in a series
+        # series_post = SeriesPost.objects.filter(post=post).first()
+        # if series_post:
+        #     series = series_post.series
+        #     total_posts = series.posts.count()
+        #     current_position = series_post.order
+
+        #     progression['series_progress'] = {
+        #         'position': current_position,
+        #         'total': total_posts,
+        #         'percentage': round((current_position / total_posts) * 100) if total_posts > 0 else 0
+        #     }
+
+        #     # Suggest next steps based on series
+        #     next_posts = SeriesPost.objects.filter(
+        #         series=series,
+        #         order__gt=current_position
+        #     ).order_by('order')[:2]
+
+        #     progression['next_steps'] = [
+        #         f"Continue with: {sp.post.title}" for sp in next_posts
+        #     ]
+
+        # # Analyze tags for skill demonstration
+        # current_tags = post.tags.all()
+        # technical_tags = [tag.name for tag in current_tags if any(
+        #     tech.lower()
+        #     for tech in ['python', 'django', 'js', 'css', 'sql', 'api', 'git']
+        # )]
+
+        # progression['skills_demonstrated'] = technical_tags
+
+        return progression
+    
+    # Additional Helper Methods
+    def get_success_url(self) -> str:
+        """Overrise success URL to handle continue learning flow."""
+        if hasattr(self, 'continue_learning') and self.continue_learning:
+            # Redirect to create new post with context from current post
+            return reverse_lazy('aura_admin:blog:post_create') + f'?continue_from{self.object.id}'
+        return self.success_url
+    
+    def form_invalid(self, form):
+        """Enhanced form invalid with debugging."""
+        # Debug form errors if needed
+        if settings.DEBUG:
+            print(f"Form validation failed for post update:")
+            print(f"Form errors: {form.errors}")
+            print(f"Form non-field errors: {form.non_field_errors}")
+        
+        messages.error(
+            self.request,
+            'Please correct errors below and try again'
+        )
+        return super().form_invalid(form)
+    
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests w optional debugging - handle AJAX requests for dynamic features."""
+        if settings.DEBUG and 'debug_post' in request.GET:
+            print(f"POST data received: {dict(request.POST)}")
+        
+        return super().post(request, *args, **kwargs)
 
 
 class PostDeleteAdminView(BaseAdminDeleteView):
