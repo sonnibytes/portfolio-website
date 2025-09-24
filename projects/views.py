@@ -2919,8 +2919,18 @@ class TechnologyDetailView(DetailView):
                 'skills_gained': system.skills_developed.count(),
             })
         
+        if current_level >= 4:
+            level_display = 'Advanced'
+        elif current_level >= 3:
+            level_display = 'Intermediate'
+        elif current_level >= 2:
+            level_display = 'Learning'
+        else:
+            level_display = 'Beginner'
+        
         return {
             'current_level': current_level,
+            'level_display': level_display,
             'progression_data': progression_data,
             'skill_boost': skill_boost,
             'strong_connections': strong_connections,

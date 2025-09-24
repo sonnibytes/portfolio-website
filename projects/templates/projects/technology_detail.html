@@ -250,13 +250,13 @@
         margin-top: 1rem;
     }
 
-    /* Technology Hero */
+    /* Technology Hero - Restyled to match system type hero*/
     .tech-hero {
         background: linear-gradient(135deg, 
-            rgba(var(--tech-color-rgb, 38, 198, 218), 0.15), 
-            rgba(var(--tech-color-rgb, 38, 198, 218), 0.05));
-        border: 1px solid rgba(var(--tech-color-rgb, 38, 198, 218), 0.2);
-        margin-bottom: 2rem;
+            rgba(var(--type-color-rgb, 38, 198, 218), 0.15), 
+            rgba(var(--type-color-rgb, 38, 198, 218), 0.05)
+        );
+        border: 1px solid rgba(var(--type-color-rgb, 38, 198, 218), 0.3);
     }
 
     .tech-hero-header {
@@ -268,15 +268,29 @@
     .tech-hero-icon {
         width: 80px;
         height: 80px;
-        border-radius: 16px;
-        background: var(--tech-color, var(--color-teal));
-        color: var(--color-bg-primary);
+        border-radius: var(--border-radius-lg, 12px);
         display: flex;
         align-items: center;
         justify-content: center;
+        color: var(--color-bg-primary);
         font-size: 2.5rem;
-        margin-right: 1.5rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        font-weight: bold;
+        margin-bottom: var(--spacing-lg, 1.5rem);
+        position: relative;
+    }
+
+    .tech-hero-icon::after {
+        content: attr(data-code);
+        position: absolute;
+        bottom: -8px;
+        right: -8px;
+        background: var(--color-bg-primary);
+        color: var(--type-readable-color);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 4px 6px;
+        border-radius: var(--border-radius-sm, 4px);
+        border: 2px solid var(--type-readable-color);
     }
 
     .tech-hero-info h1 {
@@ -594,7 +608,7 @@
     .learning-timeline {
         position: relative;
         padding-left: var(--spacing-xl, 2rem);
-        width: auto;
+        width: 70%;
     }
 
     .learning-timeline::before {
@@ -766,9 +780,34 @@
 {% endblock %}
 
 {% block systems_content %}
-<div class="systems-content-container container" style="--tech-color: {{ technology.color|default:'#26c6da' }}; --tech-color-rgb: {{ technology.color|hex_to_rgb|default:'38, 198, 218' }};">
+<div class="systems-content-container container" style="--tech-color: {{ technology.color|lighten_if_dark }}; --tech-color-rgb: {{ technology.color|lighten_if_dark|hex_to_rgb }};">
     
-    <!-- Technology Hero -->
+    <!-- System Type Hero Section -->
+    <div class="unified-dashboard-container teal tech-hero">
+        <div class="unified-container-header">
+            <div class="tech-hero-icon" style="background: {{ technology.color|readable_color }};">
+                {% if technology.icon %}
+                    <i class="{{ technology.icon|safe_icon }}"></i>
+                {% else %}
+                    {{ technology.name|first|upper }}
+                {% endif %}
+            </div>
+            
+            <h1 class="unified-container-title">{{ technology.name }}</h1>
+            <p class="unified-container-subtitle">{{ page_subtitle }}</p>
+            
+            {% if system_type.description %}
+            <div style="margin-top: var(--spacing-lg, 1.5rem);">
+                <p style="color: var(--color-text-secondary); max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+                    {{ technology.description|default:"Learning and applying this technology across multiple projects" }}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+
+    {% comment %} <!-- Technology Hero -->
     <div class="unified-dashboard-container tech-hero">
         <div class="tech-hero-header">
             <div class="tech-hero-icon">
@@ -802,18 +841,56 @@
                 <div class="quick-stat-label">Avg Complexity</div>
             </div>
         </div>
-    </div>
+    </div> {% endcomment %}
+
+    <!-- Skill-Technology Connections - Reworked -->
+    <div class="skill-progression-card" style="border-left-color: {{ technology.color|readable_color }};">
+        <div class="progression-header">
+            <h2 style="margin: 0; color: var(--color-text);">
+                <i class="fas fa-chart-line" style="color: {{ technology.color|readable_color }}; margin-right: var(--spacing-sm, 0.75rem);"></i>
+                {{ technology.name }} Development Progression
+            </h2>
+            {% if skill_progression %}
+            <div class="skill-level-badge" style="background: {{ technology.color|readable_color }};">{{ skill_progression.level_display }}</div>
+            {% endif %}
+        </div>
+        
+        {% if skill_progression %}
+        {% comment %} <p style="color: var(--color-text-secondary); margin-bottom: var(--spacing-lg, 1.5rem);">
+            {{ skill_progression.description }}
+        </p> {% endcomment %}
+        
+        <div class="progression-stats">
+            <div class="progression-stat">
+                <span class="progression-stat-value" style="color: {{ technology.color|readable_color }};">{{ total_projects }}</span>
+                <span class="progression-stat-label">Total Projects</span>
+            </div>
+            <div class="progression-stat">
+                <span class="progression-stat-value" style="color: {{ technology.color|readable_color }};">{{ skill_progression.current_level|floatformat:1 }}/5</span>
+                <span class="progression-stat-label">Skill Level</span>
+            </div>
+            <div class="progression-stat">
+                <span class="progression-stat-value" style="color: {{ technology.color|readable_color }};">{{ skill_connections_count|default:0 }}</span>
+                <span class="progression-stat-label">Skill Links</span>
+            </div>
+            <div class="progression-stat">
+                <span class="progression-stat-value" style="color: {{ technology.color|readable_color }};">{{ complexity_progression.avg_complexity|floatformat:1 }}/5</span>
+                <span class="progression-stat-label">Avg Complexity</span>
+            </div>
+        </div>
+        {% endif %}
+    
 
     <!-- Skill-Technology Connections -->
-    <div class="skill-progression-card" style="border-left-color: var(--color-lavender);">
+    {% comment %} <div class="skill-progression-card" style="border-left-color: var(--color-lavender);"> {% endcomment %}
         <div class="progression-header">
             <h2 style="margin: 0; color: var(--color-text);">
                 <i class="fas fa-link" style="color: var(--color-lavender);; margin-right: var(--spacing-sm, 0.75rem);"></i>
                 Skill Connections
             </h2>
             <p class="glass-card-subtitle">How {{ technology.name }} connects to different skill areas</p>
-            {% comment %} {% if skill_progression %}
-            <div class="skill-level-badge" style="background: var(--color-lavender);">{{ skill_progression.level }}</div>
+             {% comment %} {% if skill_progression %}
+            <div class="skill-level-badge" style="background: var(--color-lavender);">{{ skill_progression.level_display }}</div>
             {% endif %} {% endcomment %}
         </div>
         {% if skill_connections %}
@@ -840,6 +917,7 @@
             {% endfor %}
         </div>
         {% endif %}
+    {% comment %} </div> {% endcomment %}
     </div>
     
     <!-- Learning Timeline -->
