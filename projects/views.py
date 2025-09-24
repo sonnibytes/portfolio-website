@@ -3037,7 +3037,13 @@ class TechnologyDetailView(DetailView):
         """Get similar technologies (same category, excluding current)."""
         return Technology.objects.filter(
             category=technology.category
-        ).exclude(id=technology.id).annotate(project_count=Count('systems')).filter(project_count__gt=0)[:8]
+        ).exclude(id=technology.id).annotate(
+            project_count=Count('systems'),
+            # Skill level based on project complexity
+            skill_level=Avg('systems__complexity'),
+            # Skill-Tech relationship count
+            skill_connections=Count('skill_relations', distinct=True)
+            ).filter(project_count__gt=0)[:8]
 
 
 # ===================== ENHANCED SYSTEM TYPE VIEWS =====================
