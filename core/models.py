@@ -48,9 +48,9 @@ class Skill(models.Model):
     """Dev skills with proficiency values for visualization."""
 
     CATEGORY_CHOICES = (
-        ("technical_concept", "Technical Concept"),
-        ("methodology", "Methodology/Process"),
-        ('soft_skill', 'Soft Skill'),
+        ("technical_concept", "Technical Concepts"),
+        ("methodology", "Methodologies & Processes"),
+        ('soft_skill', 'Soft Skills'),
         ('domain_knowledge', 'Domain Knowledge'),
         ("other", "Other"),
     )
@@ -750,9 +750,9 @@ class SocialLink(models.Model):
     CATEGORY_CHOICES = [
         ('professional', 'Professional & Coding-Centric'),
         ('community', 'Discussion & Community'),
-        ('media', 'Media & Video'),
         ('chat', 'Messaging & Chat'),
         ('blog', 'Blogging & Content'),
+        ('media', 'Media & Video'),
         ('other', 'Other Socials')
     ]
 
