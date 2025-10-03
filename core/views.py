@@ -471,49 +471,179 @@ class ResumeDownloadView(TemplateView):
 
 
 class CommTerminalView(FormView):
-    """AURA Communication Terminal - Enhanced Contact Interface."""
+    """
+    AURA Communication Terminal - Enhanced Contact Interface.
+    Captures user-submitted data + request metadata automatically.
+    """
     template_name = 'core/communication.html'
     form_class = ContactForm
     success_url = reverse_lazy('core:contact_success')
 
+    def get_client_ip(self, request):
+        """
+        Extract client IP address from request.
+        Handles proxies and load balancers properly.
+
+        Best Practice: Check X-Forwarded-For header first (for proxies),
+        then fall back to REMOTE_ADDR.
+        """
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            # X-Forwarded-For can contain multiple IPs, first one is client
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+    
+    def get_user_agent(self, request):
+        """
+        Extract user agent string from request.
+
+        Best Practice: Get from HTTP_USER_AGENT header.
+        Returns empty string if not avail.
+        """
+        return request.META.get('HTTP_USER_AGENT', '')
+    
+    def get_referrer(self, request):
+        """
+        Extract referrer/referring page from reuqest.
+
+        Best Practice: Check HTTP_REFERER header.
+        Note: 'Referer' intentionally mispelled in HTTP spec.
+        """
+        return request.META.get('HTTP_REFERER', '')
+    
+    def categorize_inquiry(self, form_data):
+        """
+        Automatically categorize inquiry based on subject/message content.
+
+        Best Practice: Simple keyword matching for initial categorization.
+        Can be reviewed/changed by admin later.
+        """
+        subject = form_data.get('subject', '').lower()
+        message = form_data.get('message', '').lower()
+        combined = f"{subject} {message}"
+
+        # Keyword-based categorization
+        if any(word in combined for word in ['hire', 'hiring', 'job', 'position', 'opportunity', 'employment']):
+            return 'hiring'
+        elif any(word in combined for word in ['project', 'build', 'develop', 'create']):
+            return 'project'
+        elif any(word in combined for word in ['collaborate', 'partnership', 'work together', 'team up']):
+            return 'collaboration'
+        elif any(word in combined for word in ['feedback', 'suggestion', 'improve']):
+            return 'feedback'
+        elif any(word in combined for word in ['question', 'how', 'what', 'why', 'when']):
+            return 'question'
+        else:
+            return 'other'
+        
+    def determine_priority(self, form_data):
+        """
+        Automatically determine priority based on content.
+        
+        Best Practice: Conservative priority assignment.
+        Most messages start as 'normal', can be escalated by admin.
+        """
+        subject = form_data.get('subject', '').lower()
+        message = form_data.get('message', '').lower()
+        combined = f"{subject} {message}"
+
+        # Check for urgent keywords
+        urgent_keywords = ['urgent', 'asap', 'immediately', 'emergency', 'critical']
+        if any(keyword in combined for keyword in urgent_keywords):
+            return 'high'  # Start at high, admin can escalate to urgent if needed
+        
+        # Check for high priority indicators
+        high_priority_keywords = ['hiring', 'job offer', 'deadline', 'time-sensitive']
+        if any(keyword in combined for keyword in high_priority_keywords):
+            return 'high'
+        
+        # Default to normal priority
+        return 'normal'
+
     def form_valid(self, form):
-        # Save the contact submission
-        contact = form.save()
+        """
+        Save form with additional metadata.
+        
+        Best Practice: Don't modify the form's save() method.
+        Instead, save with commit=False, add metadata, then save.
+        """
+
+        # Save the contact submission but don't commit to db yet
+        contact = form.save(commit=False)
+
+        # Add request metadata(Best Practice: Capture at submission time)
+        contact.ip_address = self.get_client_ip(self.request)
+        contact.user_agent = self.get_user_agent(self.request)
+        contact.referrer_page = self.get_referrer(self.request)
+
+        # Auto-Categorize and prioritize
+        contact.inquiry_category = self.categorize_inquiry(form.cleaned_data)
+        contact.priority = self.determine_priority(form.cleaned_data)
+
+        # Set initial status flags (Best Practice: Set defaults explicitly)
+        contact.is_read = False
+        contact.response_sent = False
+        contact.response_date = None
+
+        # Now save to db
+        contact.save()
+
+
         # Add AURA-themed success message
         messages.success(
             self.request,
-            f"TRANSMISSION_COMPLETE: Message #{contact.id:04d} received. "
-            f"Response protocol initiated. Expected delivery: 24-48 hours.",
+            f"✓ TRANSMISSION_COMPLETE: Message #{contact.id:04d} received and logged. "
+            f"Response protocol initiated. Expected delivery: 24-48 hours."
         )
         return super().form_valid(form)
 
     def form_invalid(self, form):
-
-        """Debug form validation errors."""
-        print(f"🔴 FORM IS INVALID")
-        print(f"🔴 Form errors: {form.errors}")
-        print(f"🔴 Form non_field_errors: {form.non_field_errors}")
-        # Add AURA-themed error message
+        """
+        Handle form validation errors with debugging.
+        
+        Best Practice: Log errors for debugging but show user-friendly messages.
+        """
+        # Debug logging (in production, use proper logging)
+        print(f"🔴 CONTACT FORM VALIDATION FAILED")
+        print(f"🔴 Errors: {form.errors}")
+        print(f"🔴 Non-field errors: {form.non_field_errors()}")
+        
+        # User-friendly error message
         messages.error(
             self.request,
-            "TRANSMISSION_ERROR: Data validation failed. "
-            "Please verify input parameters and retry transmission.",
-        )
+            "⚠ TRANSMISSION_ERROR: Data validation failed. "
+            "Please verify all required fields are completed correctly."
         return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
+        """Add terminal HUD context data."""
         context = super().get_context_data(**kwargs)
 
         # Add social links for network connections
-        context['social_links'] = SocialLink.objects.all().order_by(
-            'display_order')
+        try:
+            context['social_links'] = SocialLink.objects.all().order_by('display_order')
+        except Exception:
+            context['social_links'] = []
         
-        # Professional Links - 
-        # TODO: Throws error page if not in db
-        context['pro_links'] = {
-            'github': SocialLink.objects.get(name__iexact='github') or 'https://github.com',
-            'linkedin': SocialLink.objects.get(name__iexact='linkedin') or 'https://linkedin.com',
-        }
+        # Professional Links - w error handling
+        context['pro_links'] = {}
+        try:
+            github = SocialLink.objects.filter(name__iexact='github').first()
+            if github:
+                context['pro_links']['github'] = github
+        except Exception:
+            pass
+            
+        try:
+            linkedin = SocialLink.objects.filter(name__iexact='linkedin').first()
+            if linkedin:
+                context['pro_links']['linkedin'] = linkedin
+        except Exception:
+            pass
+            
+            
 
         # Add system metrics for HUD display
         # Can get System Specs for this feed?

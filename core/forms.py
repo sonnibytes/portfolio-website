@@ -545,77 +545,109 @@ class ExperienceForm(forms.ModelForm):
 
 
 class ContactForm(forms.ModelForm):
-    """Enhanced contact form with all tracking fields."""
+    """
+    Public-facing contact form.
+    Only includes fields that users should fill out.
+    Metadata and admin fields are handled by the view.
+    """
 
     class Meta:
         model = Contact
-        fields = [
-            "name",
-            "email",
-            "subject",
-            "message",
-            "is_read",
-            "referrer_page",
-            "user_agent",
-            "ip_address",
-            "response_sent",
-            "response_date",
-            "inquiry_category",
-            "priority",
-        ]
+        fields = ['name', 'email', 'subject', 'message']
+        
         widgets = {
-            "name": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Contact Name"}
-            ),
-            "email": forms.EmailInput(
-                attrs={"class": "form-control", "placeholder": "email@example.com"}
-            ),
-            "subject": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Inquiry Subject"}
-            ),
-            "message": forms.Textarea(
+            'name': forms.TextInput(
                 attrs={
-                    "class": "form-control",
-                    "rows": 6,
-                    "placeholder": "Contact message...",
+                    'class': 'terminal-input',
+                    'placeholder': 'IDENTITY_VERIFICATION: Enter your name',
+                    'required': True,
                 }
             ),
-            "is_read": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "referrer_page": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Page visitor came from"}
-            ),
-            "user_agent": forms.Textarea(
+            'email': forms.EmailInput(
                 attrs={
-                    "class": "form-control",
-                    "rows": 2,
-                    "placeholder": "Browser/device info",
+                    'class': 'terminal-input',
+                    'placeholder': 'CONTACT_PROTOCOL: your.email@domain.com',
+                    'required': True,
                 }
             ),
-            "ip_address": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "192.168.1.1"}
+            'subject': forms.TextInput(
+                attrs={
+                    'class': 'terminal-input',
+                    'placeholder': 'TRANSMISSION_SUBJECT: Brief topic summary',
+                    'required': True,
+                }
             ),
-            "response_sent": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "response_date": forms.DateTimeInput(
-                attrs={"class": "form-control", "type": "datetime-local"}
+            'message': forms.Textarea(
+                attrs={
+                    'class': 'terminal-textarea',
+                    'rows': 8,
+                    'placeholder': 'MESSAGE_PAYLOAD: Enter your message...\n\nProvide details about:\n- Project requirements\n- Timeline expectations\n- Collaboration interests\n- Technical questions',
+                    'required': True,
+                }
             ),
-            "inquiry_category": forms.Select(attrs={"class": "form-control"}),
-            "priority": forms.Select(attrs={"class": "form-control"}),
+        }
+
+        labels = {
+            'name': 'Identification',
+            'email': 'Contact Vector',
+            'subject': 'Transmission Subject',
+            'message': 'Message Payload',
+        }
+
+        help_texts = {
+            'name': 'Your full name or organization',
+            'email': 'Primary contact email address',
+            'subject': 'Brief summary of your inquiry',
+            'message': 'Detailed message about your inquiry, project, or question',
         }
     
-    def clean_response_date(self):
-        """Validate response date logic."""
-        response_sent = self.cleaned_data.get("response_sent")
-        response_date = self.cleaned_data.get("response_date")
+    def clean_email(self):
+        """Validate and normalize email address."""
+        email = self.cleaned_data.get('email')
+        if email:
+            email = email.lower().strip()
+        return email
+    
+    def clean_name(self):
+        """Validate and normalize name."""
+        name = self.cleaned_data.get('name')
+        if name:
+            name = name.strip()
+            if len(name) < 2:
+                raise forms.ValidationError("Name must be at least 2 characters.")
+        return name
+    
+    def clean_subject(self):
+        """Validate subject length."""
+        subject = self.cleaned_data.get('subject')
+        if subject:
+            subject = subject.strip()
+            if len(subject) < 5:
+                raise forms.ValidationError("Subject must be at least 5 characters.")
+        return subject
+    
+    def clean_message(self):
+        """Validate message content."""
+        message = self.cleaned_data.get('message')
+        if message:
+            message = message.strip()
+            if len(message) < 20:
+                raise forms.ValidationError("Message must be at least 20 characters.")
+        return message
+    
+class ContactAdminForm(forms.ModelForm):
+    """
+    Admin-only contact form with all fields.
+    Used in Django admin for managing contact submissions.
+    """
 
-        if response_sent and not response_date:
-            raise ValidationError(
-                "Response date is required when response is marked as sent."
-            )
-
-        if response_date and response_date > timezone.now():
-            raise ValidationError("Response date cannot be in the future.")
-
-        return response_date
+    class Meta:
+        model = Contact
+        fields = '__all__'
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 6}),
+            'user_agent': forms.Textarea(attrs={'rows': 2}),
+        }
 
 
 class SocialLinkForm(forms.ModelForm):
