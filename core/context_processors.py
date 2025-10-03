@@ -52,6 +52,7 @@ def admin_navigation_context(request):
             'total_contacts': Contact.objects.count(),
             'unread_contacts': Contact.objects.filter(is_read=False).count(),
             'high_priority_contacts': Contact.objects.filter(priority='high').count(),
+            'top_priority_contacts': Contact.objects.filter(priority__in=['high', 'urgent']).count(),
             'pending_responses': Contact.objects.filter(
                 is_read=True,
                 response_sent=False

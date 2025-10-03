@@ -615,6 +615,7 @@ class CommTerminalView(FormView):
             self.request,
             "⚠ TRANSMISSION_ERROR: Data validation failed. "
             "Please verify all required fields are completed correctly."
+        )
         return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):

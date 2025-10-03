@@ -1,8 +1,11 @@
 from django.contrib import admin
+from django.db.models.query import QuerySet
+from django.http import HttpRequest
 from django.utils.html import format_html
 from django.urls import reverse
 
 from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
+from .forms import ContactAdminForm
 
 
 # ========== NEW: SKILL-TECHNOLOGY RELATIONSHIP MANAGEMENT ==========
@@ -268,101 +271,182 @@ class ExperienceAdmin(admin.ModelAdmin):
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "email",
-        "inquiry_category",
-        "priority_display",
-        "response_status",
-        "created_at",
-        "response_time_display",
-    )
-    list_filter = (
-        "inquiry_category",
-        "priority",
-        "response_sent",
-        "created_at",
-        "is_read",
-    )
-    search_fields = ("name", "email", "subject", "message")
-    readonly_fields = ("created_at", "response_time_hours", "ip_address")
-    date_hierarchy = "created_at"
-    ordering = ("-created_at",)
-    actions = ["mark_as_responded", "mark_as_high_priority"]
+    """
+    Enhanced Contact admin with metadata display and filtering.
+    Uses ContactAdminForm for admin-only fields.
+    """
+    form = ContactAdminForm
+
+    list_display = [
+        'id',
+        'name',
+        'email',
+        'subject_preview',
+        'inquiry_category',
+        'priority_badge',
+        'created_at',
+        'is_read',
+        'response_status',
+    ]
+    
+    list_filter = [
+        'inquiry_category',
+        'priority',
+        'is_read',
+        'response_sent',
+        'created_at',
+    ]
+    
+    search_fields = [
+        'name',
+        'email',
+        'subject',
+        'message',
+    ]
+    
+    readonly_fields = [
+        'created_at',
+        'response_time_display',
+        'formatted_metadata',
+    ]
 
     fieldsets = (
-        ("Contact Information", {"fields": ("name", "email", "subject")}),
-        ("Message Content", {"fields": ("message", "inquiry_category", "priority")}),
-        (
-            "Response Tracking",
-            {
-                "fields": (
-                    "is_read",
-                    "response_sent",
-                    "response_date",
-                    "response_time_hours",
-                )
-            },
-        ),
-        (
-            "Metadata",
-            {
-                "fields": ("referrer_page", "user_agent", "ip_address", "created_at"),
-                "classes": ("collapse",),
-            },
-        ),
+        ('Contact Information', {
+            'fields': ('name', 'email', 'subject', 'message')
+        }),
+        ('Categorization', {
+            'fields': ('inquiry_category', 'priority')
+        }),
+        ('Status', {
+            'fields': ('is_read', 'response_sent', 'response_date', 'response_time_display')
+        }),
+        ('Request Metadata', {
+            'fields': ('formatted_metadata', 'ip_address', 'user_agent', 'referrer_page'),
+            'classes': ('collapse',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+            'classes': ('collapse',),
+        }),
     )
 
-    def priority_display(self, obj):
-        colors = {
-            "urgent": "#f44336",
-            "high": "#ff8a80",
-            "normal": "#ffbd2e",
-            "low": "#808080",
-        }
-        return format_html(
-            '<span style="color: {}; font-weight: bold;">{}</span>',
-            colors.get(obj.priority, "#808080"),
-            obj.get_priority_display(),
-        )
+    actions = [
+        'mark_as_read',
+        'mark_as_unread',
+        'mark_as_responded',
+        'set_priority_high',
+        'set_priority_normal',
+    ]
 
-    priority_display.short_description = "Priority"
+    date_hierarchy = 'created_at'
+
+    def subject_preview(self, obj):
+        """Show truncated subject in list view."""
+        if len(obj.subject) > 50:
+            return f"{obj.subject[:50]}..."
+        return obj.subject
+    subject_preview.short_description = 'Subject'
+
+    def priority_badge(self, obj):
+        """Show priority with color coding."""
+        colors = {
+            'urgent': '#dc3545',  # Red
+            'high': '#fd7e14',    # Orange
+            'normal': '#28a745',  # Green
+            'low': '#6c757d',     # Gray
+        }
+        color = colors.get(obj.priority, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; '
+            'border-radius: 3px; font-size: 11px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_priority_display().upper()
+        )
+    priority_badge.short_description = 'Priority'
 
     def response_status(self, obj):
+        """Show response status with icon."""
         if obj.response_sent:
-            return format_html('<span style="color: #27c93f;">✓ Responded</span>')
-        else:
-            return format_html('<span style="color: #ff8a80;">⏳ Pending</span>')
-
-    response_status.short_description = "Status"
+            return format_html(
+                '<span style="color: green;">✓ Sent</span>'
+            )
+        return format_html(
+            '<span style="color: orange;">⏳ Pending</span>'
+        )
+    response_status.short_description = 'Response'
 
     def response_time_display(self, obj):
+        """Display response time in human-readable format."""
         hours = obj.response_time_hours()
-        if hours:
-            if hours <= 24:
-                color = "#27c93f"
-            elif hours <= 72:
-                color = "#ffbd2e"
-            else:
-                color = "#ff8a80"
-            formatted_hours = "{:.1f}".format(hours)
-            return format_html('<span style="color: {};">{}h</span>', color, formatted_hours)
-        return "-"
+        if hours is None:
+            return "Not yet responded"
+        
+        if hours < 1:
+            minutes = int(hours * 60)
+            return f"{minutes} minutes"
+        elif hours < 24:
+            return f"{hours:.1f} hours"
+        else:
+            days = hours / 24
+            return f"{days:.1f} days"
+    response_time_display.short_description = 'Response Time'
 
-    response_time_display.short_description = "Response Time"
+    def formatted_metadata(self, obj):
+        """Display all metadata in a formatted way."""
+        return format_html(
+            '<div style="font-family: monospace; font-size: 12px;">'
+            '<strong>IP Address:</strong> {}<br>'
+            '<strong>Referrer:</strong> {}<br>'
+            '<strong>User Agent:</strong> {}<br>'
+            '<strong>Submitted:</strong> {}'
+            '</div>',
+            obj.ip_address or 'Not captured',
+            obj.referrer_page or 'Direct visit',
+            obj.user_agent[:100] + '...' if len(obj.user_agent) > 100 else obj.user_agent or 'Not captured',
+            obj.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        )
+    formatted_metadata.short_description = 'Request Metadata'
+
+    # ADMIN ACTIONS
+
+    def mark_as_read(self, request, queryset):
+        """Mark selected contacts as read."""
+        updated = queryset.update(is_read=True)
+        self.message_user(request, f"{updated} contact(s) marked as read.")
+    mark_as_read.short_description = "Mark select as read"
+
+    def mark_as_unread(self, request, queryset):
+        """Mark selected contacts as unread."""
+        updated = queryset.update(is_read=False)
+        self.message_user(request, f"{updated} contact(s) marked as unread.")
+    mark_as_unread.short_description = "Mark selected as unread"
 
     def mark_as_responded(self, request, queryset):
+        """Mark selected contacts as responded."""
+        updated = 0
         for contact in queryset:
-            contact.mark_as_responded()
-        self.message_user(request, f"Marked {queryset.count()} contacts as responded.")
-
+            if not contact.response_sent:
+                contact.mark_as_responded()
+                updated += 1
+        self.message_user(request, f"{updated} contact(s) marked as responded.")
     mark_as_responded.short_description = "Mark selected as responded"
 
-    def mark_as_high_priority(self, request, queryset):
-        queryset.update(priority="high")
-        self.message_user(request, f"Set {queryset.count()} contacts to high priority.")
+    def set_priority_high(self, request, queryset):
+        """Set priority to high for selected contacts."""
+        updated = queryset.update(priority="high")
+        self.message_user(request, f"{updated} contact(s) set to high priority.")
+    set_priority_high.short_description = "Set priority to HIGH"
 
-    mark_as_high_priority.short_description = "Set to high priority"
+    def set_priority_normal(self, request, queryset):
+        """Set priority to normal for selected contacts."""
+        updated = queryset.update(priority='normal')
+        self.message_user(request, f"{updated} contact(s) set to normal priority.")
+    set_priority_normal.short_description = "Set priority to NORMAL"
+
+    def get_queryset(self, request):
+        """Optimize queryset for list view."""
+        qs = super().get_queryset(request)
+        return qs
 
 
 @admin.register(SocialLink)
