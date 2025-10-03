@@ -313,8 +313,8 @@ class SystemModuleAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "description",
-                    "features_overview",
-                    "technical_details",
+                    "usage_examples",
+                    "setup_instructions",
                     "challenges",
                     "future_enhancements",
                 )

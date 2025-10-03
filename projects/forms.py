@@ -79,23 +79,23 @@ class SystemModuleForm(forms.ModelForm):
         })
     )
     
-    features_overview = MarkdownxFormField(
-        help_text="Key features and capabilities overview",
+    usage_examples = MarkdownxFormField(
+        help_text="Usage examples and key features",
         required=False,
         widget=forms.Textarea(attrs={
             'rows': 8,
             'class': 'markdownx-editor form-control',
-            'placeholder': 'List the main features and capabilities...'
+            'placeholder': 'Provide usage examples...'
         })
     )
     
-    technical_details = MarkdownxFormField(
-        help_text="Technical implementation details",
+    setup_instructions = MarkdownxFormField(
+        help_text="Setup instructions and implementation details",
         required=False,
         widget=forms.Textarea(attrs={
             'rows': 10,
             'class': 'markdownx-editor form-control',
-            'placeholder': 'Technical architecture, frameworks, databases, APIs...'
+            'placeholder': 'List setup instructions...'
         })
     )
     
@@ -132,7 +132,7 @@ class SystemModuleForm(forms.ModelForm):
         model = SystemModule
         fields = [
             'title', 'slug', 'system_id', 'subtitle', 'excerpt',
-            'description', 'features_overview', 'technical_details', 'challenges', 'future_enhancements',
+            'description', 'usage_examples', 'setup_instructions', 'challenges', 'future_enhancements',
             'system_type', 'technologies', 'complexity', 'priority',
             'status', 'featured', 'completion_percent',
             'performance_score', 'uptime_percentage', 'response_time_ms', 'daily_users',

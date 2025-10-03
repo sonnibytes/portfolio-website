@@ -2051,7 +2051,7 @@ Custom Django admin isn't just about pretty interfaces—it's about creating too
             'classes': ['wide']
         }),
         ('Content', {
-            'fields': ['description', 'features_overview', 'technical_details'],
+            'fields': ['description', 'usage_examples', 'setup_instructions'],
             'classes': ['wide']
         }),
         ('Links & Resources', {

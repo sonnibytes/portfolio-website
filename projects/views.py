@@ -1260,8 +1260,8 @@ class LearningSystemControlInterfaceView(DetailView):
                 'brief_description': system.excerpt,
                 # 'technical_details': getattr(system, 'technical_details', None),
                 # Leaving bc might add setup and usage - (updating to use existing tech details and features overview content fields)
-                'setup_instructions': getattr(system, 'technical_details', None),
-                'usage_examples': getattr(system, 'features_overview', None),
+                'setup_instructions': getattr(system, 'setup_instructions', None),
+                'usage_examples': getattr(system, 'usage_examples', None),
             },
             'project_info': {
                 'system_type': system.system_type.name,
@@ -1895,7 +1895,7 @@ class LearningSystemControlInterfaceView(DetailView):
 
         # For now, use other content fields
         # Has Technical Details
-        if system.technical_details:
+        if system.setup_instructions:
             score += 25
 
         # Has Challenges
