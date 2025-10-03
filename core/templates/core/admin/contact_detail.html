@@ -1,0 +1,475 @@
+{% extends "admin/admin_base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load aura_filters %}
+
+{% block admin_title %}Contact #{{ contact.id|stringformat:"04d" }} | AURA Admin{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+    .contact-detail-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+    
+    .terminal-output-admin {
+        font-family: 'Courier New', monospace;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(38, 198, 218, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        color: #26c6da;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    
+    .metadata-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .metadata-item {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.75rem;
+        border-radius: 6px;
+        border-left: 3px solid var(--color-teal);
+    }
+    
+    .metadata-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #26c6da;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .metadata-value {
+        color: white;
+        font-weight: 500;
+    }
+    
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .priority-low { background: #6c757d; color: white; }
+    .priority-normal { background: #28a745; color: white; }
+    .priority-high { background: #fd7e14; color: white; }
+    .priority-urgent { background: #dc3545; color: white; }
+    
+    .quick-action-btn {
+        transition: all 0.2s;
+    }
+    
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(38, 198, 218, 0.3);
+    }
+    
+    .message-box {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(38, 198, 218, 0.2);
+        border-radius: 8px;
+        padding: 1.5rem;
+        color: #e8eaf6;
+        line-height: 1.8;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .inline-edit-form {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .inline-select {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(38, 198, 218, 0.3);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+    }
+    
+    .related-contact-item {
+        background: rgba(0, 0, 0, 0.2);
+        border-left: 3px solid rgba(38, 198, 218, 0.3);
+        padding: 0.75rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    
+    .related-contact-item:hover {
+        background: rgba(0, 0, 0, 0.3);
+        border-left-color: #26c6da;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center space-x-3 mb-2">
+                <h1 class="text-2xl font-bold text-white">
+                    <i class="fas fa-envelope mr-2 text-teal-400"></i>
+                    CONTACT_#{{ contact.id|stringformat:"04d" }}
+                </h1>
+                
+                <!-- Status Badges -->
+                <span class="priority-badge priority-{{ contact.priority }}">
+                    <i class="fas fa-flag mr-1"></i>
+                    {{ contact.get_priority_display }}
+                </span>
+                
+                {% if contact.is_read %}
+                    <span class="badge badge-success">
+                        <i class="fas fa-envelope-open mr-1"></i>Read
+                    </span>
+                {% else %}
+                    <span class="badge badge-warning">
+                        <i class="fas fa-envelope mr-1"></i>Unread
+                    </span>
+                {% endif %}
+                
+                {% if contact.response_sent %}
+                    <span class="badge badge-info">
+                        <i class="fas fa-reply mr-1"></i>Responded
+                    </span>
+                {% endif %}
+            </div>
+            
+            <p class="text-gray-400">
+                {{ contact.get_inquiry_category_display }} • 
+                Received {{ contact.created_at|date:"M d, Y g:i A" }}
+            </p>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'aura_admin:contact_list' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to List
+            </a>
+            <a href="{% url 'aura_admin:contact_update' contact.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit mr-2"></i>
+                Full Edit
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions Bar -->
+    <div class="glass-card p-4">
+        <h3 class="text-white font-semibold mb-3 flex items-center">
+            <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+            Quick Actions
+        </h3>
+        
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Mark Read/Unread -->
+            <form method="post" class="inline" id="readForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="{% if contact.is_read %}mark_unread{% else %}mark_read{% endif %}">
+                <button type="submit" class="btn btn-sm btn-{% if contact.is_read %}outline{% else %}emerald{% endif %} quick-action-btn">
+                    <i class="fas fa-eye{% if contact.is_read %}-slash{% endif %} mr-1"></i>
+                    Mark as {% if contact.is_read %}Unread{% else %}Read{% endif %}
+                </button>
+            </form>
+            
+            <!-- Mark Responded -->
+            {% if not contact.response_sent %}
+            <form method="post" class="inline" id="respondedForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_responded">
+                <button type="submit" class="btn btn-sm btn-blue quick-action-btn">
+                    <i class="fas fa-check mr-1"></i>
+                    Mark as Responded
+                </button>
+            </form>
+            {% endif %}
+            
+            <!-- Email Reply -->
+            <a href="mailto:{{ contact.email }}?subject=Re: {{ contact.subject|urlencode }}&body=Hi {{ contact.name }},%0D%0A%0D%0AThank you for reaching out!" 
+               class="btn btn-sm btn-coral quick-action-btn"
+               target="_blank">
+                <i class="fas fa-reply mr-1"></i>
+                Reply via Email
+            </a>
+            
+            <!-- Copy Email -->
+            <button onclick="copyToClipboard('{{ contact.email }}')" class="btn btn-sm btn-outline quick-action-btn">
+                <i class="fas fa-copy mr-1"></i>
+                Copy Email
+            </button>
+            
+            <!-- Delete -->
+            <a href="{% url 'aura_admin:contact_delete' contact.pk %}" 
+               class="btn btn-sm btn-red quick-action-btn"
+               onclick="return confirm('Delete this contact?')">
+                <i class="fas fa-trash mr-1"></i>
+                Delete
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content (Left - 2 columns) -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Contact Information -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-user text-emerald-400 mr-2"></i>
+                    Contact Information
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <span class="text-teal-400 font-mono w-24">NAME:</span>
+                        <span class="text-white font-medium">{{ contact.name }}</span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-teal-400 font-mono w-24">EMAIL:</span>
+                        <a href="mailto:{{ contact.email }}" class="text-coral-400 hover:underline">
+                            {{ contact.email }}
+                        </a>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-teal-400 font-mono w-24">SUBJECT:</span>
+                        <span class="text-white">{{ contact.subject }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Message Content -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-comment-alt text-lavender-400 mr-2"></i>
+                    Message Content
+                </h3>
+                
+                <div class="message-box">
+                    {{ contact.message }}
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-400">
+                    Character count: {{ contact.message|length }} • 
+                    Word count: {{ contact.message|wordcount }}
+                </div>
+            </div>
+            
+            <!-- Request Metadata -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-server text-blue-400 mr-2"></i>
+                    Request Metadata
+                </h3>
+                
+                <div class="terminal-output-admin">
+                    <div class="mb-2">
+                        <span class="text-teal-400">&gt;&gt;</span> SYSTEM_LOG: Contact submission received
+                    </div>
+                    <div class="space-y-1 ml-4 text-sm">
+                        <div><span class="text-yellow-400">TIMESTAMP:</span> {{ contact.created_at|date:"Y-m-d H:i:s.u" }}</div>
+                        <div><span class="text-yellow-400">IP_ADDRESS:</span> {{ contact.ip_address|default:"Not captured" }}</div>
+                        <div><span class="text-yellow-400">REFERRER:</span> {{ contact.referrer_page|default:"Direct visit" }}</div>
+                        {% if contact.user_agent %}
+                        <div><span class="text-yellow-400">USER_AGENT:</span> {{ contact.user_agent|truncatechars:80 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Related Contacts -->
+            {% if related_contacts %}
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-link text-purple-400 mr-2"></i>
+                    Related Contacts
+                    <span class="ml-2 text-sm text-gray-400">({{ related_contacts.count }} from same email)</span>
+                </h3>
+                
+                <div class="space-y-2">
+                    {% for related in related_contacts %}
+                    <a href="{% url 'aura_admin:contact_detail' related.pk %}" class="block related-contact-item">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-white font-medium">{{ related.subject|truncatechars:50 }}</div>
+                                <div class="text-sm text-gray-400">
+                                    {{ related.created_at|date:"M d, Y" }} • 
+                                    {{ related.get_inquiry_category_display }}
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-500"></i>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar (Right - 1 column) -->
+        <div class="space-y-6">
+            <!-- Status Management -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-sliders-h text-teal-400 mr-2"></i>
+                    Manage Status
+                </h3>
+                
+                <div class="space-y-4">
+                    <!-- Priority -->
+                    <div>
+                        <label class="text-sm text-gray-400 mb-2 block">Priority Level</label>
+                        <form method="post" id="priorityForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_priority">
+                            <select name="priority" 
+                                    class="inline-select w-full"
+                                    onchange="this.form.submit()">
+                                {% for value, label in priority_levels %}
+                                <option value="{{ value }}" {% if contact.priority == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+                    
+                    <!-- Category -->
+                    <div>
+                        <label class="text-sm text-gray-400 mb-2 block">Inquiry Category</label>
+                        <form method="post" id="categoryForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_category">
+                            <select name="category" 
+                                    class="inline-select w-full"
+                                    onchange="this.form.submit()">
+                                {% for value, label in inquiry_categories %}
+                                <option value="{{ value }}" {% if contact.inquiry_category == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Metrics -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-emerald-400 mr-2"></i>
+                    Contact Metrics
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="metadata-item">
+                        <div class="metadata-label">Contact ID</div>
+                        <div class="metadata-value">#{{ contact.id|stringformat:"04d" }}</div>
+                    </div>
+                    
+                    <div class="metadata-item">
+                        <div class="metadata-label">Submitted</div>
+                        <div class="metadata-value">{{ contact.created_at|timesince }} ago</div>
+                    </div>
+                    
+                    {% if response_time %}
+                    <div class="metadata-item">
+                        <div class="metadata-label">Response Time</div>
+                        <div class="metadata-value">
+                            {% if response_time < 1 %}
+                                {{ response_time|floatformat:0 }} minutes
+                            {% elif response_time < 24 %}
+                                {{ response_time|floatformat:1 }} hours
+                            {% else %}
+                                {{ response_time|floatformat:1|div:24 }} days
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="metadata-item">
+                        <div class="metadata-label">Message Length</div>
+                        <div class="metadata-value">{{ contact.message|length }} chars</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Response Tracking -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-clock text-coral-400 mr-2"></i>
+                    Response Status
+                </h3>
+                
+                {% if contact.response_sent %}
+                    <div class="text-emerald-400 mb-3">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        Response Sent
+                    </div>
+                    {% if contact.response_date %}
+                    <div class="text-sm text-gray-400">
+                        Responded: {{ contact.response_date|date:"M d, Y g:i A" }}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-yellow-400 mb-3">
+                        <i class="fas fa-clock mr-2"></i>
+                        Awaiting Response
+                    </div>
+                    <div class="text-sm text-gray-400 mb-4">
+                        Submitted {{ contact.created_at|timesince }} ago
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="mark_responded">
+                        <button type="submit" class="btn btn-sm btn-primary w-full">
+                            <i class="fas fa-check mr-2"></i>
+                            Mark as Responded
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show temporary success message
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+        }, 2000);
+    });
+}
+
+// Auto-submit forms with smooth feedback
+document.querySelectorAll('form[id]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
+        }
+    });
+});
+</script>
+{% endblock %}

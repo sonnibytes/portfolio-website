@@ -45,6 +45,7 @@ from .admin_views import (
     ContactDeleteAdminView,
     ContactMarkReadView,
     ContactMarkResponseSentView,
+    ContactDetailAdminView,
     # Social Link Management
     SocialLinkListAdminView,
     SocialLinkCreateAdminView,
@@ -140,6 +141,7 @@ urlpatterns = [
     
     path("contacts/", ContactListAdminView.as_view(), name="contact_list"),
     path("contacts/create/", ContactCreateAdminView.as_view(), name="contact_create"),
+    path("contacts/<int:pk>/", ContactDetailAdminView.as_view(), name="contact_detail"),
     path("contacts/<int:pk>/edit/", ContactUpdateAdminView.as_view(), name="contact_update"),
     path("contacts/<int:pk>/delete/", ContactDeleteAdminView.as_view(), name="contact_delete"),
     
