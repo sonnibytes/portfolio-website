@@ -26,6 +26,29 @@
   .priority-urgent { border-left: 4px solid #ef4444; }
   .unread-indicator { background: #ef4444; }
   .read-indicator { background: #10b981; }
+
+  .contact-card a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.contact-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(38, 198, 218, 0.2);
+    border-color: rgba(38, 198, 218, 0.5);
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
   </style>
   {% endblock %}
   
@@ -159,7 +182,9 @@
           {% if contacts %}
               {% for contact in contacts %}
                   <div class="glass-card contact-card p-6 {% if contact.priority == 'high' %}priority-high{% elif contact.priority == 'urgent' %}priority-urgent{% endif %}">
-                      <div class="flex items-center justify-between">
+                    <!-- Make entire card clickable to detail view -->
+                    <a href="{% url 'aura_admin:contact_detail' contact.pk %}" class="block">  
+                        <div class="flex items-center justify-between">
                           <!-- Contact Info -->
                           <div class="flex items-start space-x-4 flex-1">
                               <!-- Checkbox -->
@@ -186,10 +211,10 @@
                                           </span>
                                       {% endif %}
                                       
-                                      <!-- Category Badge -->
+                                      {% comment %} <!-- Category Badge -->
                                       <span class="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">
                                           {{ contact.get_inquiry_category_display }}
-                                      </span>
+                                      </span> {% endcomment %}
                                       
                                       <!-- Response Status -->
                                       {% if contact.response_sent %}
@@ -203,72 +228,95 @@
                                       {% endif %}
                                   </div>
                                   
-                                  <div class="text-sm text-gray-400 mb-1">
-                                      <i class="fas fa-envelope mr-1"></i>{{ contact.email }}
-                                  </div>
+                                  <!-- Email and Subject -->
+                                    <div class="space-y-1 mb-3">
+                                        <div class="flex items-center text-sm text-gray-300">
+                                            <i class="fas fa-envelope text-teal-400 mr-2 w-4"></i>
+                                            <span>{{ contact.email }}</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-white">
+                                            <i class="fas fa-comment-alt text-lavender-400 mr-2 w-4"></i>
+                                            <span class="font-medium">{{ contact.subject }}</span>
+                                        </div>
+                                    </div>
                                   
-                                  <div class="text-white font-medium mb-2">{{ contact.subject }}</div>
+                                  <!-- Message Preview -->
+                                    <div class="text-sm text-gray-400 mb-3 line-clamp-2" style="max-width: 90%;">
+                                        {{ contact.message|truncatewords:30 }}
+                                    </div>
                                   
-                                  <div class="text-gray-400 text-sm mb-3">
-                                      {{ contact.message|truncatechars:150 }}
-                                  </div>
-                                  
-                                  <div class="flex items-center space-x-4 text-xs text-gray-500">
-                                      <span>
-                                          <i class="fas fa-calendar mr-1"></i>
-                                          {{ contact.created_at|date:"M d, Y g:i A" }}
-                                      </span>
-                                      {% if contact.referrer_page %}
-                                          <span>
-                                              <i class="fas fa-link mr-1"></i>
-                                              From: {{ contact.referrer_page|truncatechars:30 }}
-                                          </span>
-                                      {% endif %}
-                                      {% if contact.response_date %}
-                                          <span class="text-green-400">
-                                              <i class="fas fa-reply mr-1"></i>
-                                              Responded {{ contact.response_date|timesince }} ago
-                                          </span>
-                                      {% endif %}
-                                  </div>
-                              </div>
+                                  <!-- Meta Info -->
+                                    <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                                        <span>
+                                            <i class="fas fa-clock mr-1"></i>
+                                            {{ contact.created_at|date:"M d, Y g:i A" }}
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-tag mr-1"></i>
+                                            {{ contact.get_inquiry_category_display }}
+                                        </span>
+                                        {% if contact.ip_address %}
+                                        <span>
+                                            <i class="fas fa-network-wired mr-1"></i>
+                                            {{ contact.ip_address }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
                           </div>
                           
-                          <!-- Actions -->
-                          <div class="flex items-center space-x-2 ml-4">
-                              <!-- Quick Actions -->
-                              {% if not contact.is_read %}
-                                  <button 
-                                      class="btn btn-xs btn-emerald mark-read-btn" 
-                                      data-contact-id="{{ contact.pk }}"
-                                      title="Mark as Read"
-                                  >
-                                      <i class="fas fa-eye"></i>
-                                  </button>
-                              {% endif %}
-                              
-                              {% if not contact.response_sent %}
-                                  <button 
-                                      class="btn btn-xs btn-blue mark-response-btn" 
-                                      data-contact-id="{{ contact.pk }}"
-                                      title="Mark Response Sent"
-                                  >
-                                      <i class="fas fa-reply"></i>
-                                  </button>
-                              {% endif %}
-                              
-                              <!-- Main Actions -->
-                              <a href="{% url 'aura_admin:contact_update' contact.pk %}" class="btn btn-xs btn-outline" title="Edit Contact">
-                                  <i class="fas fa-edit"></i>
-                              </a>
-                              
-                              <a href="{% url 'aura_admin:contact_delete' contact.pk %}" class="btn btn-xs btn-red" title="Delete Contact">
-                                  <i class="fas fa-trash"></i>
-                              </a>
-                          </div>
-                      </div>
-                  </div>
-              {% endfor %}
+                          <!-- Action Buttons (stop propagation so they don't trigger card click) -->
+                            <div class="flex items-center space-x-2" onclick="event.stopPropagation(); event.preventDefault();">
+                                <!-- Quick Actions -->
+                                {% if not contact.is_read %}
+                                    <button 
+                                        class="btn btn-xs btn-emerald mark-read-btn" 
+                                        data-contact-id="{{ contact.pk }}"
+                                        title="Mark as Read"
+                                        onclick="event.stopPropagation(); event.preventDefault();">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                {% endif %}
+                                
+                                {% if not contact.response_sent %}
+                                    <button 
+                                        class="btn btn-xs btn-blue mark-response-btn" 
+                                        data-contact-id="{{ contact.pk }}"
+                                        title="Mark Response Sent"
+                                        onclick="event.stopPropagation(); event.preventDefault();">
+                                        <i class="fas fa-reply"></i>
+                                    </button>
+                                {% endif %}
+                                
+                                <!-- View Detail Button -->
+                                <a href="{% url 'aura_admin:contact_detail' contact.pk %}" 
+                                class="btn btn-xs btn-primary" 
+                                title="View Details"
+                                onclick="event.stopPropagation();">
+                                    <i class="fas fa-eye"></i>
+                                    View
+                                </a>
+                                
+                                <!-- Edit Button -->
+                                <a href="{% url 'aura_admin:contact_update' contact.pk %}" 
+                                class="btn btn-xs btn-outline" 
+                                title="Edit Contact"
+                                onclick="event.stopPropagation();">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <!-- Delete Button -->
+                                <a href="{% url 'aura_admin:contact_delete' contact.pk %}" 
+                                class="btn btn-xs btn-red" 
+                                title="Delete Contact"
+                                onclick="event.stopPropagation();">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
           {% else %}
               <!-- Empty State -->
               <div class="glass-card p-12 text-center">
