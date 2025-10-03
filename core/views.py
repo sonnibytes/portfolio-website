@@ -642,8 +642,7 @@ class CommTerminalView(FormView):
                 context['pro_links']['linkedin'] = linkedin
         except Exception:
             pass
-            
-            
+
 
         # Add system metrics for HUD display
         # Can get System Specs for this feed?
@@ -667,7 +666,6 @@ class CommTerminalView(FormView):
         }
 
         # Communication history metrics
-        # TODO: Maybe move this to admin dashboard only
         context['comm_metrics'] = {
             'total_messages': Contact.objects.count(),
             'messages_today': Contact.objects.filter(
