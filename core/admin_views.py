@@ -30,7 +30,7 @@ from django.http import HttpResponse
 from datetime import datetime, timedelta
 
 from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
-from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
+from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactAdminForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
 from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule, Technology
 from blog.models import Post, Category
 
@@ -1146,11 +1146,96 @@ class ContactListAdminView(BaseAdminListView, BulkActionMixin):
         return context
 
 
+class ContactDetailAdminView(AdminAccessMixin, BaseAdminView, DetailView):
+    """
+    Detailed contact view with inline quick actions.
+    Enhanced terminal-style contact viewer.
+    """
+    
+    model = Contact
+    template_name = "core/admin/contact_detail.html"
+    context_object_name = "contact"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contact = self.object 
+
+        # Calculate response time if applicable
+        response_time = None
+        if contact.response_sent and contact.response_date:
+            response_time = contact.response_time_hours()
+        
+        # Get related contacts (same email or similar subject)
+        related_contacts = Contact.objects.filter(
+            email=contact.email
+        ).exclude(pk=contact.pk).order_by('-created_at')[:5]
+
+        context.update({
+            'title': f'Contact #{contact.id:04d}',
+            'subtitle': f'From {contact.name}',
+            'response_time': response_time,
+            'related_contacts': related_contacts,
+            'inquiry_categories': Contact._meta.get_field("inquiry_category").choices,
+            'priority_levels': Contact._meta.get_field("priority").choices,
+        })
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle quick actions via POST.
+        Supports: mark_read, mark_unread, mark_responded, update_priority, update_category
+        """
+        contact = self.get_object()
+        action = request.POST.get('action')
+
+        if action == 'mark_read':
+            contact.is_read = True
+            contact.save()
+            messages.success(request, f"Contact #{contact.id:04d} marked as read.")
+
+        elif action == 'mark_unread':
+            contact.is_read = False 
+            contact.save()
+            messages.success(request, f"Contact #{contact.id:04d} marked as unread.")
+
+        elif action == 'mark_responded':
+            contact.mark_as_responded()
+            messages.success(request, f"Contact #{contact.id:04d} marked as responded.")
+
+        elif action == 'update_priority':
+            new_priority = request.POST.get('priority')
+            if new_priority in dict(Contact._meta.get_field("priority").choices):
+                contact.priority = new_priority
+                contact.save()
+                messages.success(request, f"Priority updated to {contact.get_priority_display()}.")
+        
+        elif action == 'update_category':
+            new_category = request.POST.get('category')
+            if new_category in dict(Contact._meta.get_field("inquiry_category").choices):
+                contact.inquiry_category = new_category
+                contact.save()
+                messages.success(request, f"Category updated to {contact.get_inquiry_category_display()}.")
+        
+        # Return JSON for AJAX requests, redirect for regular POST
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'is_read': contact.is_read,
+                'response_sent': contact.response_sent,
+                'priority': contact.priority,
+                'priority_display': contact.get_priority_display(),
+                'category': contact.inquiry_category,
+                'category_display': contact.get_inquiry_category_display(),
+            })
+        
+        return self.get(request, *args, **kwargs)
+
+
 class ContactCreateAdminView(BaseAdminCreateView):
     """Create new contact (admin use)."""
 
     model = Contact
-    form_class = ContactForm
+    form_class = ContactAdminForm
     template_name = "core/admin/contact_form.html"
     success_url = reverse_lazy("aura_admin:contact_list")
 
@@ -1159,9 +1244,13 @@ class ContactUpdateAdminView(BaseAdminUpdateView):
     """Edit existing contact."""
 
     model = Contact
-    form_class = ContactForm
+    form_class = ContactAdminForm
     template_name = "core/admin/contact_form.html"
     success_url = reverse_lazy("aura_admin:contact_list")
+
+    def get_success_url(self):
+        """Return to detail view after edit."""
+        return reverse('aura_admin:contact_detail', kwargs={'pk': self.object.pk})
 
 
 class ContactDeleteAdminView(BaseAdminDeleteView):
