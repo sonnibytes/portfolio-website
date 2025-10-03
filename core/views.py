@@ -488,6 +488,11 @@ class CommTerminalView(FormView):
         return super().form_valid(form)
 
     def form_invalid(self, form):
+
+        """Debug form validation errors."""
+        print(f"🔴 FORM IS INVALID")
+        print(f"🔴 Form errors: {form.errors}")
+        print(f"🔴 Form non_field_errors: {form.non_field_errors}")
         # Add AURA-themed error message
         messages.error(
             self.request,
