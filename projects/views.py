@@ -425,6 +425,7 @@ class EnhancedLearningSystemListView(ListView):
         # Add learning-focused sidebar data
         context.update(
             {
+                "show_breadcrumbs": True,
                 "learning_stage_distribution": self.get_learning_stage_distribution(),
                 
                 # Filters lists and options
@@ -2916,6 +2917,7 @@ class FeaturedSystemsView(ListView):
         context.update({
             'page_title': 'Featured Project Portfolio',
             'page_subtitle': 'Showcasing my best work and learning progression across 2+ years of development',
+            'show_breadcrumbs': True,
 
             # Learning Journey Portfolio Stats
             'portfolio_stats': self.get_portfolio_stats(all_featured),
@@ -3217,6 +3219,11 @@ class GitHubIntegrationView(TemplateView):
 
             context.update(
                 {
+                    # Page Flags
+                    'page_title': 'GitHub Repository Integration',
+                    'page_subtitle': 'Live development metrics and project synchronization',
+                    'show_breadcrumbs': True,
+
                     "github_stats": github_stats,
                     "recent_repos": local_repos.filter(is_archived=False)[:6],
                     "top_languages": self.get_top_languages(local_repos),
@@ -3269,6 +3276,14 @@ class GitHubIntegrationView(TemplateView):
             repository__in=repos_with_tracking,
             year=current_year,
             month=current_month
+        ).values('repository__name').annotate(
+            total_commits=Sum('commit_count')
+        ).order_by('-total_commits').first()
+
+        if not most_active_repo:
+            most_active_repo = GitHubCommitWeek.objects.filter(
+            repository__in=repos_with_tracking,
+            year=current_year
         ).values('repository__name').annotate(
             total_commits=Sum('commit_count')
         ).order_by('-total_commits').first()

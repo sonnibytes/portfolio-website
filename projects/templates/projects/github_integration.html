@@ -6,7 +6,8 @@
 
 {% block title %}GitHub Integration - AURA Systems{% endblock %}
 
-{% block extra_css %}
+{% block systems_css %}
+{{ block.super }}
 <link rel="stylesheet" href="{% static 'projects/css/github-integration.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/system-interface.css' %}">
 
@@ -335,11 +336,20 @@
     </style>
 {% endblock %}
 
-{% block content %}
+{% block systems_breadcrumbs %}
+<i class="fas fa-chevron-right breadcrumb-separator"></i>
+<span class="breadcrumb-item active">GitHub Integration</span>
+{% endblock %}
+
+{% block systems_content %}
 <div class="github-integration-container container">
     <!-- Header Section with AURA Styling -->
-    <div class="aura-section-header">
-        {% section_header title="GitHub Repository Integration" subtitle="Live development metrics and project synchronization" icon="fab fa-github" %}
+    <div class="overview-header">
+        <div class="overview-title-section" style="flex: 1;">
+            <h3 class="overview-title">{{ page_title }}</h3>
+            <p class="overview-subtitle">{{ page_subtitle }}</p>
+        </div>
+        {% comment %} {% section_header title="GitHub Repository Integration" subtitle="Live development metrics and project synchronization" icon="fab fa-github" %} {% endcomment %}
         
         <!-- Integration Status Indicator -->
         <div class="integration-status-panel">
@@ -363,7 +373,7 @@
                 <h3><i class="fas fa-chart-line"></i> Repository Overview</h3>
             </div>
             <div class="metrics-grid">
-                {% metric_card github_stats.total_repositories "Total Repos" icon="fas fa-folder" color="teal" %}
+                {% metric_card github_stats.total_repositories "Synced Repos" icon="fas fa-folder" color="teal" %}
                 {% metric_card github_stats.public_repositories "Public" icon="fas fa-globe" color="green" %}
                 {% metric_card github_stats.private_repositories "Private" icon="fas fa-lock" color="orange" %}
                 {% metric_card github_stats.active_repositories "Active" icon="fas fa-code-branch" color="lavender" %}
@@ -411,7 +421,7 @@
                 <div class="language-item">
                     <div class="language-info">
                         {% tech_badge lang.language color="#3776ab" %}
-                        <span class="repo-count">{{ lang.repo_count }} repos</span>
+                        <span class="repo-count">{{ lang.repo_count }} repo{{ lang.repo_count|pluralize }}</span>
                     </div>
                     <div class="language-size">
                         {{ lang.total_bytes|format_number }} bytes
@@ -446,6 +456,7 @@
                     </h4>
                     {% if repo.related_system %}
                         <a href="{% url 'projects:system_detail' repo.related_system.slug %}" class="system-link">
+                            <span class="stat-label">Linked System </span>
                             <i class="fas fa-link"></i> {{ repo.related_system.name }}
                         </a>
                     {% endif %}
@@ -553,7 +564,7 @@
     {% if recent_activity %}
     <div class="activity-feed-section">
         <h2 class="section-title">
-            <i class="fas fa-activity"></i> Recent Activity
+            <i class="fa-solid fa-clock-rotate-left"></i> Recent Activity
             <span class="section-subtitle">Latest GitHub updates</span>
         </h2>
         
@@ -585,8 +596,8 @@
     <!-- Enhanced GitHub Analytics Section -->
     {% if show_weekly_panels %}
     <div class="github-analytics-section">
-        <div class="section-header">
-            <h2>📊 Development Analytics</h2>
+        <div class="section-header" style="display: block;">
+            <h2><i class="fa-solid fa-chart-column"></i> Development Analytics</h2>
             <p>Weekly commit tracking and development insights</p>
             
             <!-- Quick Stats Overview -->
@@ -604,12 +615,12 @@
                     <div class="stat-value">{{ weekly_stats.avg_commits_per_week }}</div>
                     <div class="stat-label">Avg/Week</div>
                 </div>
-                {% if weekly_stats.most_active_repo %}
+                {% comment %} {% if weekly_stats.most_active_repo %} {% endcomment %}
                 <div class="quick-stat-item">
-                    <div class="stat-value">{{ weekly_stats.most_active_repo.repository__name|truncatechars:12 }}</div>
+                    <div class="stat-value">{{ weekly_stats.most_active_repo.repository__name|truncatechars:20 }}</div>
                     <div class="stat-label">Most Active</div>
                 </div>
-                {% endif %}
+                {% comment %} {% endif %} {% endcomment %}
             </div>
             {% endif %}
         </div>
@@ -622,7 +633,7 @@
         <!-- Top Active Projects -->
         {% if repos_with_tracking.count > 1 %}
         <div class="top-repos-section">
-            <h3>🏆 Most Active Projects</h3>
+            <h3 class="section-title"><i class="fa-solid fa-fire"></i> Most Active Projects</h3>
             <div class="repo-analytics-grid">
                 {% for repo in repos_with_tracking|slice:":3" %}
                     {% github_weekly_panel repo=repo weeks_back=12 panel_style="component" %}
@@ -633,7 +644,7 @@
         
         <!-- Enhanced Repository Cards -->
         <div class="enhanced-repos-section">
-            <h3>📈 Repository Development Insights</h3>
+            <h3 class="section-title"><i class="fa-solid fa-chart-line"></i> Repository Development Insights</h3>
             <div class="enhanced-repo-grid">
                 {% for repo in repos_with_tracking %}
                     {% github_repo_card repo=repo show_weekly_summary=True %}
@@ -644,7 +655,7 @@
         <!-- Development Timeline -->
         {% if recent_weekly_activity %}
         <div class="dev-timeline-section">
-            <h3>🕒 Recent Development Timeline</h3>
+            <h3 class="section-title"><i class="fa-solid fa-chart-gantt"></i> Recent Development Timeline</h3>
             <div class="timeline-grid">
                 {% for week in recent_weekly_activity|slice:":8" %}
                 <div class="timeline-item {% if week.total_commits > 0 %}active{% else %}quiet{% endif %}">
@@ -685,7 +696,7 @@
             <div class="setup-icon">
                 <i class="fas fa-chart-line"></i>
             </div>
-            <h3>🚀 Advanced Development Analytics</h3>
+            <h3 class="section-title"><i class="fa-solid fa-magnifying-glass-chart"></i> Advanced Development Analytics</h3>
             <p>This portfolio features detailed commit analytics and development insights for active projects.</p>
             <div class="setup-features">
                 <div class="feature-item">📊 Weekly commit tracking</div>
