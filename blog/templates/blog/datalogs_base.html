@@ -16,6 +16,7 @@
 {% block extra_css %}
 <!-- DataLogs App Specific Styles -->
 <link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/interactions.css' %}">
 {% pygments_css %}
 {% block datalogs_css %}{% endblock %}
 {% endblock %}
@@ -54,6 +55,11 @@
                     <i class="fas fa-icons subnav-icon"></i>
                     <span>Categories</span>
                     <span class="stat-badge">{{ total_categories|default:"5" }}</span>
+                </a>
+                <a href="{% url 'blog:bookmarks' %}" class="subnav-action-btn {% if 'bookmarks' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-bookmark"></i>
+                    My Bookmarks
+                    <span id="navBookmarkCount" class="badge" style="display: none;"></span>
                 </a>
             </div>
         </div>
@@ -447,4 +453,45 @@ window.DATALOG_DEBUG = {
 console.log('🔧 DataLog debug helpers available at window.DATALOG_DEBUG');
 {% endif %}
 </script>
+
+<script>
+// Update bookmark count in navigation
+function updateNavBookmarkCount() {
+    if (typeof window.AURAInteractions !== 'undefined') {
+        const count = window.AURAInteractions.getBookmarkCount();
+        const badge = document.getElementById('navBookmarkCount');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+}
+
+// Update on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateNavBookmarkCount);
+} else {
+    updateNavBookmarkCount();
+}
+
+// Update when bookmarks change
+window.addEventListener('bookmarkChanged', updateNavBookmarkCount);
+</script>
+
+<style>
+/* Badge styling for bookmark count */
+#navBookmarkCount {
+    background: var(--color-lavender);
+    color: var(--color-bg-primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 4px;
+}
+</style>
 {% endblock %}

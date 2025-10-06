@@ -1687,7 +1687,7 @@ def send_verification_email(request, subscriber):
     """
 
     verification_url = request.build_absolute_uri(
-        reverse('datalogs:verify_subscription', args=[subscriber.verification_token])
+        reverse('blog:verify_subscription', args=[subscriber.verification_token])
     )
 
     subject = 'Verify your AURA DataLogs subscription'
@@ -1729,7 +1729,7 @@ def verify_subscription(request, token):
         subscriber.verify_email()
         messages.success(request, 'Email verified! You\'re all set to receive updates.')
     
-    return redirect('datalogs:post_list')
+    return redirect('blog:post_list')
 
 
 def unsubscribe(request, token):
@@ -1743,7 +1743,7 @@ def unsubscribe(request, token):
     if request.method == 'POST':
         subscriber.unsubscribe()
         messages.success(request, 'You have been unsubscribed. Sorry to see you go!')
-        return redirect('datalogs:post_list')
+        return redirect('blog:post_list')
     
     # Show confirmation page
     return render(request, 'blog/unsubscribe_confirm.html', {
@@ -1820,7 +1820,7 @@ def bookmarks_page(request):
     The actual bookmarks are loaded in via JS from localStorage.
     This view just provides page template.
     """
-    return render(request, 'datalogs/bookmarks.html', {
+    return render(request, 'blog/bookmarks.html', {
         'page_title': 'My Bookmarks',
     })
 
