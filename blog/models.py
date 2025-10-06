@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.validators import EmailValidator
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
 import re
@@ -653,3 +654,49 @@ class SystemLogEntry(models.Model):
 
     def get_absolute_url(self):
         return f"{self.post.get_absolute_url()}#log-{self.pk}"
+
+
+class Subscriber(models.Model):
+    """
+    Model to track email subscribers for blog updates.
+    No authentication needed - just email collection.
+    """
+
+    email = models.EmailField(unique=True, validators=[EmailValidator()], help_text="Subscriber's email address")
+
+    # Subscription preferences
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True, help_text="Whether the subscription is active")
+
+    # Track what they want to subscribe to
+    subscribed_to_all = models.BooleanField(default=True, help_text="Receive notifications for all new posts")
+    subscribed_categories = models.ManyToManyField('Category', blank=True, related_name='subscribers', help_text="Specific categories to subscribe to")
+    subscribed_tags = models.ManyToManyField('Tag', blank=True, related_name='subscribers', help_text='Specific tags to subscribe to')
+
+    # Verification for security
+    verification_token = models.CharField(max_length=100, blank=True, help_text='Token for email verification')
+    is_verified = models.BooleanField(default=False, help_text='Whether email has been verified')
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    # Tracking
+    last_email_sent = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-subscribed_at']
+        verbose_name = 'Subscriber'
+        verbose_name_plural = 'Subscribers'
+    
+    def __str__(self):
+        status = "✓" if self.is_verified else "?"
+        return f"{status} {self.email}"
+    
+    def verify_email(self):
+        """Mark email as verified"""
+        self.is_verified = True
+        self.verified_at = timezone.now()
+        self.save()
+    
+    def unsubscribe(self):
+        """Unsubscribe user"""
+        self.is_active = False
+        self.save()
