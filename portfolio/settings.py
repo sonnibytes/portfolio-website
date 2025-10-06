@@ -281,3 +281,16 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 CSRF_COOKIE_HTTPONLY = False  # Changed to allow contact list in aura admin to use cookies to get csrf token for quick actions
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+# For development (emails print to console)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# For production (use real email service)
+# TODO: Update w email service info
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your email provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-email@gmail.com'
+EMAIL_HOST_PASSWORD = 'your-app-password'
+DEFAULT_FROM_EMAIL = 'AURA DataLogs <noreply@yourdomain.com>'

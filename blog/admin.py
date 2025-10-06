@@ -1,7 +1,9 @@
 from django.contrib import admin
 from .models import Post, Category, Tag, Comment, Series, SeriesPost, SystemLogEntry, PostView, Subscriber
+from django.utils import timezone
 from django.utils.html import format_html
 from django.db.models import Q
+from django.urls import reverse
 
 
 @admin.register(Category)
@@ -59,7 +61,7 @@ class PostAdmin(admin.ModelAdmin):
             is_active=True,
             is_verified=True
         ).filter(
-            Q(subscribe_to_all=True) |
+            Q(subscribed_to_all=True) |
             Q(subscribed_categories=obj.category) |
             Q(subscribed_tags__in=obj.tags.all())
         ).distinct().count()
@@ -338,7 +340,7 @@ class SubscriberAdmin(admin.ModelAdmin):
     list_filter = [
         'is_active',
         'is_verified',
-        'subscribe_to_all',
+        'subscribed_to_all',
         'subscribed_at',
     ]
     
@@ -378,7 +380,7 @@ class SubscriberAdmin(admin.ModelAdmin):
     
     def subscription_type(self, obj):
         """Show what user is subscribed to."""
-        if obj.subscribe_to_all:
+        if obj.subscribed_to_all:
             return format_html('<span style="color: #26c6da;">All Posts</span>')
         
         categories = obj.subscribed_categories.count()
