@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import Post, Category, Tag, Comment, Series, SeriesPost, SystemLogEntry, PostView
+from .models import Post, Category, Tag, Comment, Series, SeriesPost, SystemLogEntry, PostView, Subscriber
 from django.utils.html import format_html
+from django.db.models import Q
 
 
 @admin.register(Category)
@@ -51,6 +52,25 @@ class PostAdmin(admin.ModelAdmin):
     filter_horizontal = ("tags",)
     readonly_fields = ("reading_time", "created_at", "updated_at")
     date_hierarchy = "created_at"
+
+    def subscriber_count(self, obj):
+        """Show how many subscribers would be notified."""
+        count = Subscriber.objects.filter(
+            is_active=True,
+            is_verified=True
+        ).filter(
+            Q(subscribe_to_all=True) |
+            Q(subscribed_categories=obj.category) |
+            Q(subscribed_tags__in=obj.tags.all())
+        ).distinct().count()
+        
+        if count > 0:
+            return format_html(
+                '<span style="color: #26c6da;">{} subscribers</span>',
+                count
+            )
+        return 'None'
+    subscriber_count.short_description = 'Would notify'
 
 
 @admin.register(Comment)
@@ -289,6 +309,152 @@ class PostViewAdmin(admin.ModelAdmin):
     list_filter = ("viewed_on",)
     search_fields = ("post__title", "ip_address")
     readonly_fields = ("viewed_on",)
+
+
+# ======== Subscriber Admin ===================
+
+@admin.register(Subscriber)
+class SubscriberAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing blog subscribers.
+    
+    Features:
+    - View all subscribers
+    - Filter by verification status, active status
+    - Search by email
+    - Bulk actions for managing subscriptions
+    - Export subscriber list
+    """
+    
+    list_display = [
+        'email_with_status',
+        'subscribed_at',
+        'is_active',
+        'is_verified',
+        'subscription_type',
+        'action_buttons',
+    ]
+    
+    list_filter = [
+        'is_active',
+        'is_verified',
+        'subscribe_to_all',
+        'subscribed_at',
+    ]
+    
+    search_fields = [
+        'email',
+    ]
+    
+    readonly_fields = [
+        'subscribed_at',
+        'verified_at',
+        'last_email_sent',
+        'verification_token',
+    ]
+    
+    filter_horizontal = [
+        'subscribed_categories',
+        'subscribed_tags',
+    ]
+    
+    date_hierarchy = 'subscribed_at'
+    
+    actions = [
+        'activate_subscriptions',
+        'deactivate_subscriptions',
+        'mark_as_verified',
+        'export_emails',
+    ]
+
+    def email_with_status(self, obj):
+        """Display email with verification badge."""
+        if obj.is_verified:
+            badge = '<span style="color: green;">✓</span>'
+        else:
+            badge = '<span style="color: orange;">?</span>'
+        return format_html(f'{badge} {obj.email}')
+    email_with_status.short_description = 'Email'
+    
+    def subscription_type(self, obj):
+        """Show what user is subscribed to."""
+        if obj.subscribe_to_all:
+            return format_html('<span style="color: #26c6da;">All Posts</span>')
+        
+        categories = obj.subscribed_categories.count()
+        tags = obj.subscribed_tags.count()
+        
+        if categories > 0 or tags > 0:
+            return f"{categories} categories, {tags} tags"
+        
+        return "None"
+    subscription_type.short_description = 'Subscribed To'
+    
+    def action_buttons(self, obj):
+        """Show action buttons for each subscriber."""
+        unsubscribe_url = reverse('blog:unsubscribe', args=[obj.verification_token])
+        
+        buttons = []
+        
+        if not obj.is_verified:
+            buttons.append(
+                f'<a href="#" style="color: #26c6da; margin-right: 10px;">'
+                f'Send Verification</a>'
+            )
+        
+        buttons.append(
+            f'<a href="{unsubscribe_url}" target="_blank" '
+            f'style="color: #ff8a80;">Unsubscribe Link</a>'
+        )
+        
+        return format_html(' | '.join(buttons))
+    action_buttons.short_description = 'Actions'
+    
+    def activate_subscriptions(self, request, queryset):
+        """Bulk action to activate subscriptions."""
+        updated = queryset.update(is_active=True)
+        self.message_user(
+            request,
+            f'{updated} subscription(s) activated.'
+        )
+    activate_subscriptions.short_description = 'Activate selected subscriptions'
+    
+    def deactivate_subscriptions(self, request, queryset):
+        """Bulk action to deactivate subscriptions."""
+        updated = queryset.update(is_active=False)
+        self.message_user(
+            request,
+            f'{updated} subscription(s) deactivated.'
+        )
+    deactivate_subscriptions.short_description = 'Deactivate selected subscriptions'
+    
+    def mark_as_verified(self, request, queryset):
+        """Bulk action to mark subscriptions as verified."""
+        updated = queryset.update(
+            is_verified=True,
+            verified_at=timezone.now()
+        )
+        self.message_user(
+            request,
+            f'{updated} subscription(s) marked as verified.'
+        )
+    mark_as_verified.short_description = 'Mark as verified'
+    
+    def export_emails(self, request, queryset):
+        """Export selected email addresses as comma-separated list."""
+        emails = list(queryset.values_list('email', flat=True))
+        email_list = ', '.join(emails)
+        
+        self.message_user(
+            request,
+            f'Emails ({len(emails)}): {email_list}'
+        )
+    export_emails.short_description = 'Export email addresses'
+    
+    def get_queryset(self, request):
+        """Optimize queryset with prefetch."""
+        qs = super().get_queryset(request)
+        return qs.prefetch_related('subscribed_categories', 'subscribed_tags')
 
 
 # Customize admin site
