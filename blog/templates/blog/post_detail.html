@@ -15,6 +15,7 @@
 
 {% block datalogs_css %}
 <link rel="stylesheet" href="{% static 'blog/css/datalogs-detail.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/interactions.css' %}">
 {% pygments_css %}
 {% endblock %}
 
@@ -177,10 +178,10 @@
                     </div>
                     
                     <div class="unified-footer-actions">
-                        <button class="unified-footer-action-btn" title="Bookmark">
+                        <button class="unified-footer-action-btn" title="Bookmark" data-bookmark-id="{{ post.id }}">
                             <i class="fas fa-bookmark"></i>
                         </button>
-                        <button class="unified-footer-action-btn" title="Share">
+                        <button class="unified-footer-action-btn" title="Share" data-share-url="{{ request.build_absolute_uri }}" data-share-title="{{ post.title }}" data-share-text="{{ post.excerpt|default:'Check out this post!' }}">
                             <i class="fas fa-share-alt"></i>
                         </button>
                         {% if post.featured_code %}
@@ -211,7 +212,11 @@
             <div class="social-share-section glass-effect">
                 {% include 'blog/includes/social_share.html' with post=post %}
             </div>
-            
+
+            <!-- SUBSCRIBE WIDGET -->
+            <div class="subscribe-section" style="margin-top: var(--spacing-xl);">
+                {% include 'blog/includes/subscribe_widget.html' %}
+            </div>
         </div>
     </div>
     
@@ -242,6 +247,7 @@
 {% endblock %}
 
 {% block datalogs_js %}
+<script src="{% static 'blog/js/interactions.js' %}"></script>
 <script>
 console.log('🚀 Post detail page loading...');
 
