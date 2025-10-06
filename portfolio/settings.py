@@ -279,5 +279,5 @@ CACHES = {
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Changed to allow contact list in aura admin to use cookies to get csrf token for quick actions
 CSRF_COOKIE_SAMESITE = 'Lax'

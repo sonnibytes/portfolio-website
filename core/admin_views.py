@@ -1094,7 +1094,7 @@ class ExperienceDeleteAdminView(BaseAdminDeleteView):
 
 
 class ContactListAdminView(BaseAdminListView, BulkActionMixin):
-    """Manage contact form submissions."""
+    """Manage contact form submissions w bulk actions."""
 
     model = Contact
     template_name = "core/admin/contact_list.html"
@@ -1144,6 +1144,82 @@ class ContactListAdminView(BaseAdminListView, BulkActionMixin):
             }
         )
         return context
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle both AJAX and form-based bulk actions.
+        Extends BulkActionMixin with contact-specific actions.
+        """
+        # Check if this is an AJAX request (for the updated JS)
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+        if is_ajax:
+            # Handle AJAX Bulk Actions (JSON body)
+            import json
+            try:
+                data = json.loads(request.body)
+                action = data.get('action')
+                selected_ids = data.get('contact_ids', [])
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid JSON'
+                }, status=400)
+        else:
+            # Handle form-based bulk-action (POST data)
+            action = request.POST.get("action")
+            selected_ids = request.POST.getList("selected_items")
+        
+        # Validate we have action and items
+        if not action or not selected_ids:
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No action or items selected'
+                }, status=400)
+            messages.error(request, "No action or items selected.")
+            return redirect(request.path)
+        
+        # Get the queryset for selected contacts
+        queryset = Contact.objects.filter(id__in=selected_ids)
+        count = queryset.count()
+
+        # Handle contact-specific bulk actions
+        if action == "mark_read":
+            queryset.update(is_read=True)
+            message = f"Marked {count} contact(s) as read."
+
+        elif action == "mark_unread":
+            queryset.update(is_read=False)
+            message = f"Marked {count} contact(s) as unread."
+
+        elif action == "set_priority_high":
+            queryset.update(priority='high')
+            message = f"Set {count} contact(s) to HIGH priority."
+
+        elif action == "set_priority_normal":
+            queryset.update(priority='normal')
+            message = f"Set {count} contact(s) to NORMAL priority."
+        
+        elif action == "mark_responded":
+            # Mark all as responded with current timestamp
+            for contact in queryset:
+                contact.mark_as_responded()
+            message = f"Marked {count} contact(s) as responded."
+        
+        else:
+            # For other actions (delete, etc) use parent BulkActionMixin
+            return super().post(request, *args, **kwargs)
+        
+        # Return appropriate response
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'message': message
+            })
+        else:
+            messages.success(request, message)
+            return redirect(request.path)
 
 
 class ContactDetailAdminView(AdminAccessMixin, BaseAdminView, DetailView):
