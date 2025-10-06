@@ -1,0 +1,640 @@
+{% extends "admin/admin_base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block admin_title %}{{ learning_journey.title }} - Learning Journey{% endblock %}
+
+{% block admin_breadcrumb %}DataLogs › Learning Journeys › {{ learning_journey.title }}{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+/* Learning Journey Detail Specific Styles */
+.journey-detail-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Accent variations for cards */
+.mint-accent {
+    --accent-color: var(--color-mint);
+    --accent-rgb: 165, 214, 167;
+}
+
+.mint-accent .glass-card::before {
+    background: linear-gradient(135deg, 
+        rgba(165, 214, 167, 0.05) 0%, 
+        rgba(165, 214, 167, 0.1) 100%);
+}
+
+.mint-accent .glass-card {
+    border-color: rgba(165, 214, 167, 0.2);
+}
+
+.lavender-accent {
+    --accent-color: var(--color-lavender);
+    --accent-rgb: 179, 157, 219;
+}
+
+.lavender-accent .glass-card::before {
+    background: linear-gradient(135deg, 
+        rgba(179, 157, 219, 0.05) 0%, 
+        rgba(179, 157, 219, 0.1) 100%);
+}
+
+.lavender-accent .glass-card {
+    border-color: rgba(179, 157, 219, 0.2);
+}
+
+/* Button variations */
+.btn-lavender {
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    color: var(--color-lavender);
+}
+
+.btn-lavender:hover {
+    background: rgba(179, 157, 219, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(179, 157, 219, 0.2);
+}
+
+.btn-teal {
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+}
+
+.btn-teal:hover {
+    background: rgba(38, 198, 218, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(38, 198, 218, 0.2);
+}
+
+/* Color utility classes */
+.text-lavender-400 { color: var(--color-lavender); }
+.text-teal-400 { color: var(--color-teal); }
+.text-coral-400 { color: var(--color-coral); }
+.text-mint-400 { color: var(--color-mint); }
+
+.journey-header {
+    background: linear-gradient(135deg, 
+        rgba(179, 157, 219, 0.1) 0%, 
+        rgba(179, 157, 219, 0.05) 100%);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.journey-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+        var(--color-lavender) 0%, 
+        var(--color-teal) 50%, 
+        var(--color-coral) 100%);
+}
+
+.journey-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.journey-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-lavender), var(--color-teal));
+    border-radius: 4px;
+    transition: width 0.8s ease;
+}
+
+.journey-posts-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.post-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.post-item:hover {
+    background: rgba(179, 157, 219, 0.05);
+    border-color: rgba(179, 157, 219, 0.3);
+    transform: translateY(-2px);
+}
+
+.post-order-badge {
+    position: absolute;
+    top: -8px;
+    left: 1rem;
+    background: var(--color-lavender);
+    color: var(--color-bg-primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-family: var(--font-code);
+}
+
+.post-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.post-status.published {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.post-status.draft {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.add-post-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed rgba(179, 157, 219, 0.3);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+    text-align: center;
+    transition: all var(--transition-fast);
+}
+
+.add-post-section:hover {
+    border-color: rgba(179, 157, 219, 0.5);
+    background: rgba(179, 157, 219, 0.02);
+}
+
+.available-post-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.available-post-item:hover {
+    background: rgba(38, 198, 218, 0.05);
+    border-color: rgba(38, 198, 218, 0.3);
+}
+
+.available-post-item.selected {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.5);
+}
+
+.system-connection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: rgba(255, 138, 128, 0.1);
+    border: 1px solid rgba(255, 138, 128, 0.3);
+    color: var(--color-coral);
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.knowledge-domain-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.empty-journey-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--color-text-tertiary);
+}
+
+.empty-journey-state i {
+    font-size: 4rem;
+    color: var(--color-lavender);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    color: var(--color-text-tertiary);
+}
+
+.empty-state i {
+    opacity: 0.4;
+}
+
+@media (max-width: 1024px) {
+    .journey-posts-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .journey-detail-container {
+        padding: 1rem;
+    }
+    
+    .journey-header {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="journey-detail-container">
+    <!-- Journey Header -->
+    <div class="journey-header">
+        <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                    <i class="fas fa-route text-2xl text-lavender-400"></i>
+                    <h1 class="text-3xl font-bold text-white">{{ learning_journey.title }}</h1>
+                    {% if learning_journey.is_complete %}
+                        <span class="inline-flex items-center px-3 py-1 text-sm font-medium bg-green-500/20 border border-green-500/30 rounded-full text-green-400">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Completed
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center px-3 py-1 text-sm font-medium bg-orange-500/20 border border-orange-500/30 rounded-full text-orange-400">
+                            <i class="fas fa-clock mr-1"></i>
+                            In Progress
+                        </span>
+                    {% endif %}
+                </div>
+                {% if learning_journey.description %}
+                    <p class="text-gray-300 text-lg mb-4">{{ learning_journey.description }}</p>
+                {% endif %}
+                
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-400">Learning Progress</span>
+                        <span class="text-sm font-bold text-lavender-400">
+                            {{ completion_percentage|default:0 }}% Complete
+                        </span>
+                    </div>
+                    <div class="journey-progress-bar">
+                        <div class="journey-progress-fill" style="width: {{ completion_percentage|default:0 }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Journey Metrics -->
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-lavender-400">{{ journey_posts|length }}</div>
+                        <div class="text-xs text-gray-400">Discoveries</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-teal-400">{{ total_reading_time|default:0 }}</div>
+                        <div class="text-xs text-gray-400">Minutes</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-coral-400">{{ system_connections|length }}</div>
+                        <div class="text-xs text-gray-400">Systems</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-mint-400">{{ knowledge_domains|length }}</div>
+                        <div class="text-xs text-gray-400">Domains</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-2 ml-4">
+                <a href="{% url 'aura_admin:blog:series_edit' learning_journey.pk %}" 
+                   class="btn btn-sm btn-outline">
+                    <i class="fas fa-edit mr-1"></i>
+                    Edit Journey
+                </a>
+                <a href="{% url 'aura_admin:blog:discovery_create' %}?series={{ learning_journey.pk }}" 
+                   class="btn btn-sm btn-lavender">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add Discovery
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="journey-posts-container">
+        <!-- Journey Posts Section -->
+        <div class="glass-card lavender-accent p-6">
+            <div class="card-content">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-list-ol mr-2 text-lavender-400"></i>
+                        Learning Sequence
+                    </h3>
+                    <span class="text-sm text-gray-400">
+                        {{ journey_posts|length }} {% if journey_posts|length != 1 %}discoveries{% else %}discovery{% endif %}
+                    </span>
+                </div>
+                
+                {% if journey_posts %}
+                    <div class="space-y-3">
+                        {% for journey_post in journey_posts %}
+                            <div class="post-item">
+                                <div class="post-order-badge">{{ journey_post.order }}</div>
+                                
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 pt-2">
+                                        <h4 class="font-semibold text-white mb-1">
+                                            <a href="{% url 'aura_admin:blog:post_edit' journey_post.post.pk %}" 
+                                               class="text-white hover:text-lavender-400 transition-colors">
+                                                {{ journey_post.post.title }}
+                                            </a>
+                                        </h4>
+                                        
+                                        {% if journey_post.post.excerpt %}
+                                            <p class="text-sm text-gray-400 mb-2">
+                                                {{ journey_post.post.excerpt|truncatechars:120 }}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                                            <span>{{ journey_post.post.created_at|date:"M d, Y" }}</span>
+                                            {% if journey_post.post.reading_time %}
+                                                <span>•</span>
+                                                <span>{{ journey_post.post.reading_time }} min read</span>
+                                            {% endif %}
+                                            {% if journey_post.post.category %}
+                                                <span>•</span>
+                                                <span class="knowledge-domain-badge">
+                                                    <i class="fas fa-tag"></i>
+                                                    {{ journey_post.post.category.name }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2">
+                                        <span class="post-status {{ journey_post.post.status }}">
+                                            <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                                            {{ journey_post.post.status }}
+                                        </span>
+                                        <button type="button" 
+                                                class="text-gray-400 hover:text-red-400 transition-colors"
+                                                onclick="removeFromJourney({{ journey_post.post.pk }})"
+                                                title="Remove from journey">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-journey-state">
+                        <i class="fas fa-route"></i>
+                        <h4 class="text-lg font-semibold text-white mb-2">Journey Awaits</h4>
+                        <p class="mb-4">This learning journey is ready for discoveries.</p>
+                        <a href="{% url 'aura_admin:blog:discovery_create' %}?series={{ learning_journey.pk }}" 
+                           class="btn btn-sm btn-lavender">
+                            <i class="fas fa-plus mr-1"></i>
+                            Document First Discovery
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar: Add Posts & Connections -->
+        <div class="space-y-6">
+            <!-- Add Discovery Section -->
+            <div class="glass-card teal-accent p-6">
+                <div class="card-content">
+                    <h3 class="text-lg font-bold text-white flex items-center mb-4">
+                        <i class="fas fa-plus-circle mr-2 text-teal-400"></i>
+                        Add Discovery
+                    </h3>
+                    
+                    {% if available_posts %}
+                        <form method="post" id="add-post-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add_post">
+                            <input type="hidden" name="post_id" id="selected-post-id">
+                            
+                            <div class="mb-4">
+                                <label class="text-sm font-medium text-gray-300 mb-2 block">
+                                    Available Discoveries
+                                </label>
+                                <div class="max-h-64 overflow-y-auto space-y-2">
+                                    {% for post in available_posts %}
+                                        <div class="available-post-item" 
+                                             data-post-id="{{ post.pk }}"
+                                             onclick="selectPost(this, {{ post.pk }})">
+                                            <div class="font-medium text-white text-sm">{{ post.title }}</div>
+                                            <div class="text-xs text-gray-400 mt-1">
+                                                {{ post.created_at|date:"M d, Y" }}
+                                                {% if post.category %}
+                                                    • {{ post.category.name }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle text-3xl text-green-400 mb-2"></i>
+                            <p class="text-sm text-gray-400">All published discoveries are already in learning journeys</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="action-buttons">
+                    <button type="submit" 
+                            form="add-post-form"
+                            class="btn btn-sm btn-teal"
+                            id="add-post-btn"
+                            disabled>
+                        <i class="fas fa-plus mr-1"></i>
+                        Add to Journey
+                    </button>
+                    <a href="{% url 'aura_admin:blog:discovery_create' %}?series={{ learning_journey.pk }}" 
+                       class="btn btn-sm btn-outline">
+                        <i class="fas fa-edit mr-1"></i>
+                        Create New
+                    </a>
+                </div>
+            </div>
+            
+            <!-- System Connections -->
+                <div class="glass-card coral-accent p-6">
+                    <div class="card-content">
+                        <h3 class="text-lg font-bold text-white flex items-center mb-4">
+                            <i class="fas fa-network-wired mr-2 text-coral-400"></i>
+                            Connected Systems
+                        </h3>
+                        
+                    {% if system_connections %}
+                        <div class="space-y-3">
+                            {% for connection in system_connections %}
+                                <div class="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                                    <div>
+                                        <div class="font-medium text-white">{{ connection.system__title }}</div>
+                                        <div class="text-xs text-gray-400">
+                                            {{ connection.connection_count }} {% if connection.connection_count != 1 %}connections{% else %}connection{% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="system-connection-badge">
+                                        <i class="fas fa-link"></i>
+                                        Connected
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="text-center">
+                                <i class="fas fa-link text-4xl text-gray-600 mb-2"></i>
+                                <p class="text-sm text-gray-400 mb-2">No system connections yet</p>
+                                <p class="text-xs text-gray-500">Link discoveries to practical projects</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    </div>
+                    
+                    <div class="action-buttons">
+                    <a href="{% url 'aura_admin:projects:dashboard' %}" class="btn btn-sm btn-outline">
+                        <i class="fas fa-eye mr-1"></i>
+                        View Systems
+                    </a>
+                    {% if system_connections %}
+                        <a href="#" class="btn btn-sm btn-outline">
+                            <i class="fas fa-cogs mr-1"></i>
+                            Manage Links
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Knowledge Domains -->
+                <div class="glass-card mint-accent p-6">
+                    <div class="card-content">
+                        <h3 class="text-lg font-bold text-white flex items-center mb-4">
+                            <i class="fas fa-brain mr-2 text-mint-400"></i>
+                            Knowledge Domains
+                        </h3>
+                        
+                    {% if knowledge_domains %}
+                        <div class="flex flex-wrap gap-2">
+                            {% for domain in knowledge_domains %}
+                                <span class="knowledge-domain-badge">
+                                    <i class="fas fa-tag"></i>
+                                    {{ domain.name }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="text-center">
+                                <i class="fas fa-tags text-4xl text-gray-600 mb-2"></i>
+                                <p class="text-sm text-gray-400 mb-2">No knowledge domains yet</p>
+                                <p class="text-xs text-gray-500">Add discoveries to categorize learning</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-cogs mr-1"></i>
+                            Manage Domains
+                        </a>
+                    {% if not knowledge_domains %}
+                        <a href="{% url 'aura_admin:blog:category_create' %}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-plus mr-1"></i>
+                            Create Domain
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Post selection functionality
+function selectPost(element, postId) {
+    // Remove previous selection
+    document.querySelectorAll('.available-post-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Select current item
+    element.classList.add('selected');
+    document.getElementById('selected-post-id').value = postId;
+    document.getElementById('add-post-btn').disabled = false;
+}
+
+// Remove post from journey
+function removeFromJourney(postId) {
+    if (confirm('Remove this discovery from the learning journey?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="remove_post">
+            <input type="hidden" name="post_id" value="${postId}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Auto-scroll to newly added posts
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('added') === 'true') {
+        // Scroll to bottom of posts list
+        const postsContainer = document.querySelector('.space-y-3');
+        if (postsContainer) {
+            postsContainer.lastElementChild.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+});
+</script>
+{% endblock %}

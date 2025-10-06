@@ -18,8 +18,12 @@
 <link rel="stylesheet" href="{% static 'projects/css/systems_list.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-unified.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/systems-components.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/backup/archived_home.css' %}">
 <link rel="stylesheet" href="{% static 'projects/css/system-interface.css' %}">
 <style>
+.system-header {
+    display: block;
+}
 /* Learning-Specific Enhancements */
 
     /* Learning Stage Badges */
@@ -666,20 +670,80 @@
         </div>
         </div>
 
-        <!-- Learning Journey Quick Stats -->
+        <!-- Enhanced Header Metrics for learning_system_list.html -->
+<!-- Replace the existing quick stats section with these updated metrics -->
+
+<div class="metrics-overview">
+    <!-- Total Systems (Keep existing) -->
+    <div class="metric-card unified-dashboard-container teal">
+        <div class="metric-content">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fa-solid fa-cubes"></i>
+                </div>
+            </div>
+            <div class="metric-value" data-target="{{ quick_stats.total_systems }}">{{ quick_stats.total_systems }}</div>
+            <div class="metric-label">Learning Systems</div>
+        </div>
+    </div>
+    
+    <!-- UPDATED: Skills Applied (instead of just "Skills Gained") -->
+    <div class="metric-card unified-dashboard-container lavender">
+        <div class="metric-content">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+            </div>
+            <div class="metric-value" data-target="{{ quick_stats.unique_skills_applied }}">{{ quick_stats.unique_skills_applied }}</div>
+            <div class="metric-label">Skills Applied</div>
+            <div class="metric-sub-label">{{ quick_stats.skill_tech_connections }} skill-tech connections</div>
+        </div>
+    </div>
+    
+    <!-- NEW: Technology Mastery -->
+    <div class="metric-card unified-dashboard-container coral">
+        <div class="metric-content">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fa-solid fa-code"></i>
+                </div>
+            </div>
+            <div class="metric-value" data-target="{{ quick_stats.technologies_mastered }}">{{ quick_stats.technologies_mastered }}</div>
+            <div class="metric-label">Technologies Mastered</div>
+            <div class="metric-sub-label">Used in 2+ projects</div>
+        </div>
+    </div>
+
+    <!-- Time Invested (Keep existing but enhance label) -->
+    <div class="metric-card unified-dashboard-container mint">
+        <div class="metric-content">
+            <div class="metric-header">
+                <div class="metric-icon">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </div>
+            </div>
+            <div class="metric-value" data-target="{{ time_investment_distribution.total_hours|floatformat:0 }}">{{ time_investment_distribution.total_hours|floatformat:0 }}h</div>
+            <div class="metric-label">Learning Hours</div>
+            <div class="metric-sub-label">Hands-on development time</div>
+        </div>
+    </div>
+</div>
+</div>
+
+        {% comment %} <!-- Learning Journey Quick Stats -->
         <div class="metrics-overview">
 
             <!-- Skills Gained -->
             <div class="metric-card unified-dashboard-container teal">
                 <div class="metric-content">
-                {% comment %} <div class="dashboard-grid grid-4-col" style="margin: 0;"> {% endcomment %}
                     <div class="metric-header">
                         <div class="metric-icon">
                             <i class="fa-solid fa-award"></i>
                         </div>
                     </div>
                     <div class="metric-value" data-target="{{ quick_stats.skills_gained_count }}">{{ quick_stats.skills_gained_count }}</div>
-                    <div class="metric-label">Skills Gained {{ quick_stats.skills_gained_count }}</div>
+                    <div class="metric-label">Skills Gained</div>
                 </div>
             </div>
             
@@ -693,7 +757,7 @@
                         </div>
                     </div>
                     <div class="metric-value" data-target="{{ quick_stats.portfolio_ready_count }}">{{ quick_stats.portfolio_ready_count }}</div>
-                    <div class="metric-label">Portfolio Ready {{ quick_stats.portfolio_ready_count }}</div>
+                    <div class="metric-label">Portfolio Ready</div>
                 </div>
             </div>
                 
@@ -724,7 +788,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> {% endcomment %}
 
     <div class="systems-list-layout">
         
@@ -1044,67 +1108,52 @@
             <!-- Learning-Enhanced Systems Grid -->
             {% if systems %}
 <div class="systems-grid">
-    {% for system in systems %}
-    <article class="system-card learning-card {{ system.learning_stage }}">
-        
-        <!-- Card Header -->
-        <header class="system-card-header">
-            <div class="system-card-badges">
-                <span class="system-id-badge">{{ system.system_id }}</span>
-                
-                {% comment %} <!-- Learning Stage Badge -->
-                <div class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
-                    <span class="stage-dot"></span>
-                    {{ system.get_learning_stage_display }}
-                </div> {% endcomment %}
-
-                {% comment %} <!-- GitHub Activity Indicator -->
-                {% if system.commit_stats.repository_count > 0 %}
-                <span class="activity-indicator" 
-                    style="background-color: {{ system.github_activity_level.color }}"
-                    title="{{ system.github_activity_level.label }}">
-                    <i class="fab fa-github"></i>
-                </span>
-                {% endif %} {% endcomment %}
-
-                <!-- Complexity Indicator (replaces portfolio-ready badge) -->
-                <div class="complexity-indicator" title="Complexity: {{ system.complexity|default:1 }}/5" data-complexity="{{ system.complexity|default:1 }}">
-                    <div class="complexity-bars">
-                        {% with complexity=system.complexity|default:1 %}
-                        {% for i in "12345" %}
-                            <div class="complexity-bar {% if complexity >= forloop.counter %}filled{% endif %}"></div>
-                        {% endfor %}
-                        {% endwith %}
+    <!-- <div class="container"> -->
+    
+        {% for system in systems %}
+            <div class="glass-card system-card">
+                <div class="system-card-header">
+                    <div class="system-badge">{{ system.system_id|default:"SYS-001" }}</div>
+                    <div class="system-status">
+                        <div class="status-indicator {{ system.status|get_status_indicator }}"></div>
+                        <span>{{ system.get_status_display|default:"Published" }}</span>
                     </div>
-                    <span class="complexity-label">{{ system.complexity|default:1 }}/5</span>
                 </div>
                 
-            </div>
-            
-            <h3 class="system-card-title">{{ system.title }}</h3>
-            {% if system.system_type %}
-            <p class="system-card-subtitle">
-                <i class="fas fa-{{ system.system_type.icon|default:'apps' }}"></i> 
-                {{ system.system_type.name }}
-            </p>
-            {% endif %}
-            <!-- Learning Stage Badge -->
-            <div class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
-                {{ system.get_learning_stage_display }}
-            </div>
-        </header>
+                {% comment %} {% if system.thumbnail %}
+                <div class="system-image">
+                    <img src="{{ system.thumbnail.url }}" alt="{{ system.title }}">
+                </div>
+                {% else %}
+                <div class="system-image">
+                    <div class="system-image-placeholder">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                </div>
+                {% endif %} {% endcomment %}
+                
+                <div class="system-card-content">
+                    <div class="system-header">
+                    <h3 class="system-card-title">{{ system.title }}</h3>
+                    {% if system.system_type %}
+                        <p class="system-card-subtitle">
+                            <i class="fas fa-{{ system.system_type.icon|default:'apps' }}"></i> 
+                            {{ system.system_type.name }}
+                        </p>
+                    {% endif %}
+                    <!-- Learning Stage Badge -->
+                    <div class="learning-stage-badge learning-stage-{{ system.learning_stage }}">
+                        {{ system.get_learning_stage_display }}
+                    </div>
+                </div>
 
-        <!-- Card Body -->
-        <div class="system-card-body">
-            {% if system.excerpt %}
-            <p class="system-card-excerpt">{{ system.excerpt|truncatewords:25 }}</p>
-            {% endif %}
-
-             <!-- Real GitHub Metrics (Enhanced) -->
-    <div class="github-metrics">
-        <h4><i class="fab fa-github"></i> Development Activity</h4>
+                    <p class="system-description">{{ system.excerpt|default:system.description|truncatewords:20 }}</p>
+                    
+                    <div class="github-metrics">
+        {% comment %} <h4><i class="fab fa-github"></i> Development Activity</h4> {% endcomment %}
         
         {% if system.commit_stats.repository_count > 0 %}
+        <h4><i class="fab fa-github"></i> Development Activity</h4>
         <div class="metrics-grid">
             <!-- Total Commits (Real Data) -->
             <div class="metric-item">
@@ -1149,207 +1198,291 @@
         </div>
         {% endif %}
 
-        {% comment %} <!-- Last Commit Info (Real Data) -->
-        {% if system.commit_stats.last_commit_date %}
-        <div class="last-commit">
-            <small class="text-muted">
-                <i class="fas fa-clock"></i>
-                Last commit: {{ system.commit_stats.last_commit_date|timesince }} ago
-                {% if system.commit_stats.most_active_repo %}
-                in {{ system.commit_stats.most_active_repo.name }}
-                {% endif %}
-            </small>
-        </div>
-        {% endif %} {% endcomment %}
-
         {% else %}
         <!-- No GitHub Data -->
+        <h4><i class="fas fa-chart-line"></i> Skill-Technology Metrics</h4>
+        
         <div class="metrics-grid">
-            <!-- Total Commits (Real Data) -->
+            <!-- Skill-Technology Alignment Score -->
             <div class="metric-item">
-                {% if system.skill_summary.flags.has_proficiency %}
-                    {% if system.skill_summary.skill_proficiency.new_skills  %}
-                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.new_skills }}</span>
-                    <span class="metric-label">Skills Gained</span>
-                    {% elif system.skill_summary.skill_proficiency.improved_skills %}
-                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.improved_skills }}</span>
-                    <span class="metric-label">Skills Improved</span>
-                    {% elif system.skill_summary.skill_proficiency.mastered_skills %}
-                    <span class="metric-value">{{ system.skill_summary.skill_proficiency.mastered_skills }}</span>
-                    <span class="metric-label">Skills Mastered</span>
-                    {% else %}
-                    <span class="metric-value">{{ system.skills_developed.count }}</span>
-                    <span class="metric-label">Skills</span>
-                    {% endif %}
-                {% endif %}
-                
+                <span class="metric-value">{{ system.skill_tech_alignment|floatformat:1 }}/4</span>
+                <span class="metric-label">Alignment Score</span>
+                <span class="metric-sublabel">Skill-tech match</span>
             </div>
+            
+            <!-- Skills Applied (not just skills gained) -->
             <div class="metric-item">
-                {% if system.skill_summary.flags.has_milestones %}
-                    {% if system.skill_summary.milestones.major_milestones  %}
-                    <span class="metric-value">{{ system.skill_summary.milestones.major_milestones }}</span>
-                    <span class="metric-label">Major Milestones</span>
-                    {% else %}
-                    <span class="metric-value">{{ system.skill_summary.milestones.total_milestones }}</span>
-                    <span class="metric-label">Milestones</span>
-                    {% endif %}
-                {% endif %}
+                <span class="metric-value">{{ system.skills_applied_count }}</span>
+                <span class="metric-label">Skills Applied</span>
+                <span class="metric-sublabel">Unique skill areas</span>
             </div>
 
+            <!-- Technologies Used -->
             <div class="metric-item">
-                <span class="metric-value">
-                    {% if system.actual_dev_hours %}
-                        {{ system.actual_dev_hours }}h
-                    {% elif system.estimated_dev_hours %}
-                        ~{{ system.estimated_dev_hours }}h
-                    {% else %}
-                        0h
-                    {% endif %}
-                </span>
-                <span class="metric-label">Time Invested</span>
+                <span class="metric-value">{{ system.technologies_used_count }}</span>
+                <span class="metric-label">Tech Stack</span>
+                <span class="metric-sublabel">Tools utilized</span>
             </div>
 
-            <!-- Complexity Score (Now with Real GitHub Data) -->
+            <!-- Skill-Tech Diversity Score -->
             <div class="metric-item">
-                <span class="metric-value">{{ system.real_complexity_score }}/20</span>
-                <span class="metric-label">Complexity Score</span>
+                <span class="metric-value">{{ system.skill_tech_diversity_score }}</span>
+                <span class="metric-label">Diversity Score</span>
+                <span class="metric-sublabel">Skills × Technologies</span>
             </div>
 
         </div>
-        <div class="no-github-data">
+         <div class="no-github-data">
             <i class="fas fa-info-circle"></i>
             <small class="text-muted">Manually tracked data: No GitHub repositories linked</small>
         </div>
         {% endif %}
     </div>
 
-            <!-- Skills Pills -->
-            {% if system.skills_developed.all %}
-            
-            <div class="skills-pills-container">
-                <div class="metric-label" style="padding-top: 1rem; padding-bottom: 0.5rem;">
-                    Skills
-                </div>
-                <div class="skills-pills">
-                {% for skill in system.skills_developed.all|slice:":4" %}
-                <span class="skill-pill">{{ skill.name }}</span>
-                {% endfor %}
-                {% if system.skills_developed.count > 4 %}
-                <span class="skill-pill more">+{{ system.skills_developed.count|add:"-4" }} more</span>
-                {% endif %}
-                </div>
-                
-            </div>
-            
-            {% endif %}
+                <!-- Skills Pills -->
+                   {% if system.skills_developed.all %}
+                    
+                    <div class="skills-pills-container">
+                        <div class="metric-label" style="padding-top: 1rem; padding-bottom: 0.5rem;">
+                            Skills
+                        </div>
+                        <div class="skills-pills">
+                        {% for skill in system.skills_developed.all|slice:":4" %}
+                        <span class="skill-pill">{{ skill.name }}</span>
+                        {% endfor %}
+                        {% if system.skills_developed.count > 4 %}
+                        <span class="skill-pill more">+{{ system.skills_developed.count|add:"-4" }} more</span>
+                        {% endif %}
+                        </div>
+                        
+                    </div>
+                    
+                    {% endif %}
 
-            {% comment %} <!-- Learning Progress Bar -->
-            <div class="learning-progress">
-                <div class="progress-info">
-                    <span>Learning Progress</span>
-                    <span>{{ system.completion_percent|default:0 }}%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill learning-progress-{{ system.learning_stage }}" 
-                         style="width: {{ system.completion_percent|default:0 }}%;"></div>
-                </div>
-            </div> {% endcomment %}
-
-                        <!-- Technology Stack -->
-            {% if system.technologies.all %}
-            <div class="tech-stack-container">
-                <div class="metric-label" style="padding-top: 1rem; padding-bottom: 0.5rem;">
-                    Tech Stack
-                </div>
-            <div class="tech-stack">
-                {% for tech in system.technologies.all|slice:":5" %}
-                <span class="tech-tag {{ tech.category|lower }}">{{ tech.name }}</span>
-                {% endfor %}
-                {% if system.technologies.count > 5 %}
-                <span class="tech-tag more">+{{ system.technologies.count|add:"-5" }}</span>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-    
-
-        <div class="system-meta">
-            <div class="meta-item">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Last Updated: {{ system.updated_at|date:"M d, Y" }}</span>
-            </div>
-            <!-- Last Commit Info (Real Data) -->
-            {% if system.github_url %}
-            <div class="github-info">
-                <div class="meta-item">
-                    <i class="fab fa-github"></i>
-                    <span>{{ system.commit_stats.total_commits|default:0 }} commit{{ system.commit_stats.total_commits|pluralize }}</span>
-                </div>
-                {% if system.commit_stats.last_commit_date %}
-                    <div class="meta-item">
-                        <i class="fas fa-clock"></i>
-                        Last commit: {{ system.commit_stats.last_commit_date|timesince }} ago
-                        {% if system.commit_stats.most_active_repo %}
-                        in {{ system.commit_stats.most_active_repo.name }}
+    <!-- Enhanced Tech Stack Display with Skill Relationships -->
+        <div class="tech-stack-container">
+            <div class="metric-label">Technology Stack</div>
+            <div class="system-tech-stack-enhanced">
+                {% for skill_gain in system.skill_gains.all %}
+                    {% for tech in skill_gain.technologies_used.all|slice:":4" %}
+                    <div class="tech-tag-enhanced">
+                        <span class="tech-name">{{ tech.name }}</span>
+                        <span class="skill-connection">for {{ skill_gain.skill.name }}</span>
+                        {% if skill_gain.skill.technology_relations.get.strength >= 3 %}
+                        <i class="fas fa-star strength-indicator" title="Strong relationship"></i>
                         {% endif %}
                     </div>
-                {% endif %}
+                    {% endfor %}
+                {% empty %}
+                    <!-- Fallback to existing display -->
+                    {% for tech in system.technologies.all|slice:":4" %}
+                    <span class="tech-tag">{{ tech.name }}</span>
+                    {% endfor %}
+                {% endfor %}
             </div>
-            {% endif %}
         </div>
-    </div>
-
-<!-- Card Footer -->
-<footer class="system-card-footer">
-    <div class="learning-progress progress-section">
-        <div class="progress-info">
-            <span>Progress</span>
-            <span>{{ system.completion_percent|default:0 }}%</span>
-        </div>
-        <div class="progress-bar">
-            <div class="progress-fill learning-progress-{{ system.learning_stage }}" 
-                 style="width: {{ system.completion_percent|default:0 }}%;"></div>
-        </div>
-    </div>
-    
-    <div class="system-actions">
-        <a href="{{ system.get_absolute_url }}" class="action-btn primary">
-            <i class="fas fa-eye"></i>
-            <span>View</span>
-        </a>
-        {% if system.github_url %}
-        <a href="{{ system.github_url }}" target="_blank" class="action-btn">
-            <i class="fab fa-github"></i>
-        </a>
-        {% endif %}
-        {% if system.live_url %}
-        <a href="{{ system.live_url }}" target="_blank" class="action-btn">
-            <i class="fas fa-external-link-alt"></i>
-        </a>
-        {% endif %}
-    </div>
-</footer>
-
-
-        {% comment %} <!-- Card Footer -->
-        <footer class="system-card-footer">
-            <div class="system-actions">
-                <!-- Learning Milestones Indicator -->
-                {% if system.milestones.count > 0 %}
-                <div class="milestones-indicator">
-                    <i class="fas fa-trophy"></i>
-                    <span>{{ system.milestones.count }} milestone{{ system.milestones.count|pluralize }}</span>
-                </div>
-                {% endif %}
+        
+                    {% comment %} <!-- Technology Stack -->
+                    <div class="tech-stack-container">
+                        <div class="metric-label" style="padding-top: 1rem; padding-bottom: 0.5rem;">
+                            Tech Stack
+                        </div>
+                        <div class="system-tech-stack">
+                            {% for tech in system.technologies.all|slice:":4" %}
+                            <span class="tech-tag">{{ tech.name }}</span>
+                            {% empty %}
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">Django</span>
+                            <span class="tech-tag">PostgreSQL</span>
+                            {% endfor %}
+                        </div>
+                    </div> {% endcomment %}
+                    
+                </div> 
                 
-                <a href="{% url 'projects:system_detail' system.slug %}" class="action-btn primary">
-                    <i class="fas fa-terminal"></i>
-                    View Learning Details
-                </a>
+                <div class="system-card-footer">
+                    <div class="learning-progress progress-section">
+                        <div class="progress-info">
+                            <span>Progress</span>
+                            <span>{{ system.completion_percent|default:0 }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill learning-progress-{{ system.learning_stage }}" 
+                                 style="width: {{ system.completion_percent|default:0 }}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="system-actions">
+                        <a href="{{ system.get_absolute_url }}" title="View System Details" class="action-btn">
+                            <i class="fas fa-eye"></i>
+                            <span>View</span>
+                        </a>
+                        {% if system.github_url %}
+                        <a href="{{ system.github_url }}" target="_blank" title="View on GitHub" class="action-btn">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        {% endif %}
+                        {% if system.live_url %}
+                        <a href="{{ system.live_url }}" target="_blank" title="View Demo/Live" class="action-btn">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        </footer> {% endcomment %}
-    </article>
-    {% endfor %}
+            {% empty %}
+            <!-- Fallback featured systems -->
+            <div class="glass-card system-card">
+                <div class="system-card-header">
+                    <div class="system-badge">SYS-001</div>
+                    <div class="system-status">
+                        <div class="status-indicator operational"></div>
+                        <span>Deployed</span>
+                    </div>
+                </div>
+                
+                <div class="system-image">
+                    <div class="system-image-placeholder">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                </div>
+                
+                <div class="system-card-content">
+                    <h3 class="system-title">ML Classification System</h3>
+                    <p class="system-description">Advanced machine learning pipeline for data classification with real-time prediction capabilities and automated model optimization.</p>
+                    
+                    <div class="system-metrics">
+                        <div class="system-metric">
+                            <span class="system-metric-value">100%</span>
+                            <span class="system-metric-label">Complete</span>
+                        </div>
+                        <div class="system-metric">
+                            <span class="system-metric-value">4/5</span>
+                            <span class="system-metric-label">Complexity</span>
+                        </div>
+                        <div class="system-metric">
+                            <span class="system-metric-value">6</span>
+                            <span class="system-metric-label">Tech Stack</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-tech-stack">
+                        <span class="tech-tag">Python</span>
+                        <span class="tech-tag">TensorFlow</span>
+                        <span class="tech-tag">FastAPI</span>
+                        <span class="tech-tag">Docker</span>
+                    </div>
+                </div>
+                
+                <div class="system-card-footer">
+                    <a href="{% url 'projects:system_list' %}" class="system-link">
+                        <i class="fas fa-external-link-alt"></i>
+                        View System
+                    </a>
+                </div>
+            </div>
+            
+            <div class="glass-card system-card">
+                <div class="system-card-header">
+                    <div class="system-badge">SYS-002</div>
+                    <div class="system-status">
+                        <div class="status-indicator operational"></div>
+                        <span>Deployed</span>
+                    </div>
+                </div>
+                
+                <div class="system-image">
+                    <div class="system-image-placeholder">
+                        <i class="fas fa-database"></i>
+                    </div>
+                </div>
+                
+                <div class="system-card-content">
+                    <h3 class="system-title">Data Pipeline Engine</h3>
+                    <p class="system-description">Scalable data processing pipeline with automated ETL operations, real-time monitoring, and intelligent error recovery mechanisms.</p>
+                    
+                    <div class="system-metrics">
+                        <div class="system-metric">
+                            <span class="system-metric-value">95%</span>
+                            <span class="system-metric-label">Complete</span>
+                        </div>
+                        <div class="system-metric">
+                            <span class="system-metric-value">3/5</span>
+                            <span class="system-metric-label">Complexity</span>
+                        </div>
+                        <div class="system-metric">
+                            <span class="system-metric-value">5</span>
+                            <span class="system-metric-label">Tech Stack</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-tech-stack">
+                        <span class="tech-tag">Python</span>
+                        <span class="tech-tag">Apache Airflow</span>
+                        <span class="tech-tag">PostgreSQL</span>
+                        <span class="tech-tag">Redis</span>
+                    </div>
+                </div>
+                
+                <div class="system-card-footer">
+                    <a href="{% url 'projects:system_list' %}" class="system-link">
+                        <i class="fas fa-external-link-alt"></i>
+                        View System
+                    </a>
+                </div>
+            </div>
+            
+            <div class="glass-card system-card">
+                <div class="system-card-header">
+                    <div class="system-badge">SYS-003</div>
+                    <div class="system-status">
+                        <div class="status-indicator warning"></div>
+                        <span>In Development</span>
+                    </div>
+                </div>
+                
+                <div class="system-image">
+                    <div class="system-image-placeholder">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                
+                <div class="system-card-content">
+                    <h3 class="system-title">Analytics Dashboard</h3>
+                    <p class="system-description">Real-time analytics platform with interactive visualizations, automated reporting, and predictive insights for business intelligence.</p>
+                    
+                    <div class="system-metrics">
+                        <div class="system-metric">
+                            <span class="system-metric-value">75%</span>
+                            <span class="system-metric-label">Complete</span>
+                        </div>
+                        <div class="system-metric">
+                            <span class="system-metric-value">3/5</span>
+                            <span class="system-metric-label">Complexity</span>
+                        </div>
+                        <div class="system-metric">
+                            <span class="system-metric-value">4</span>
+                            <span class="system-metric-label">Tech Stack</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-tech-stack">
+                        <span class="tech-tag">Django</span>
+                        <span class="tech-tag">Chart.js</span>
+                        <span class="tech-tag">Celery</span>
+                        <span class="tech-tag">WebSocket</span>
+                    </div>
+                </div>
+                
+                <div class="system-card-footer">
+                    <a href="{% url 'projects:system_list' %}" class="system-link">
+                        <i class="fas fa-external-link-alt"></i>
+                        View System
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+   
 </div>
 
             <!-- Pagination -->

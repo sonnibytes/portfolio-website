@@ -1,388 +1,475 @@
-<!-- 
-  *blog/templates/blog/admin/dashboard.html
-  *Version 2.0
-  -->
-{% extends 'admin/admin_base.html' %}
+<!-- blog/templates/blog/admin/dashboard.html -->
+{% extends "admin/admin_base.html" %}
 {% load static %}
 
-{% block admin_content %}
-  <div class="blog-admin-dashboard">
-    
-    <!-- DataLogs Overview Metrics -->
-    <div class="metrics-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      
-      <!-- Total DataLogs -->
-      <div class="admin-metric-card glass-card">
-        <div class="metric-header">
-          <div class="metric-icon text-purple-400">
-            <i class="fas fa-database"></i>
-          </div>
-          <div class="metric-value text-right">
-            <div class="value">{{ total_posts }}</div>
-            <div class="metric-title">Total DataLogs</div>
-          </div>
-        </div>
-        <div class="metric-breakdown text-sm text-gray-400 mt-4">
-          <div class="flex justify-between">
-            <span>Published:</span>
-            <span class="text-green-400">{{ published_posts }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span>Drafts:</span>
-            <span class="text-yellow-400">{{ draft_posts }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span>Featured:</span>
-            <span class="text-purple-400">{{ featured_posts }}</span>
-          </div>
-        </div>
-      </div>
+{% block admin_title %}DataLogs Dashboard - AURA Admin{% endblock %}
 
-      <!-- Content Statistics -->
-      <div class="admin-metric-card glass-card">
-        <div class="metric-header">
-          <div class="metric-icon text-blue-400">
-            <i class="fas fa-file-alt"></i>
-          </div>
-          <div class="metric-value text-right">
-            <div class="value">{{ total_words|floatformat:0 }}</div>
-            <div class="metric-title">Total Words</div>
-          </div>
-        </div>
-        <div class="metric-breakdown text-sm text-gray-400 mt-4">
-          <div class="flex justify-between">
-            <span>Avg Reading Time:</span>
-            <span class="text-blue-400">{{ avg_reading_time }}min</span>
-          </div>
-          <div class="flex justify-between">
-            <span>Total Reading:</span>
-            <span class="text-blue-400">{{ total_reading_time }}min</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Organization -->
-      <div class="admin-metric-card glass-card">
-        <div class="metric-header">
-          <div class="metric-icon text-orange-400">
-            <i class="fas fa-tags"></i>
-          </div>
-          <div class="metric-value text-right">
-            <div class="value">{{ total_categories }}</div>
-            <div class="metric-title">Categories</div>
-          </div>
-        </div>
-        <div class="metric-breakdown text-sm text-gray-400 mt-4">
-          <div class="flex justify-between">
-            <span>Tags:</span>
-            <span class="text-orange-400">{{ total_tags }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span>Series:</span>
-            <span class="text-orange-400">{{ total_series }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Performance -->
-      <div class="admin-metric-card glass-card">
-        <div class="metric-header">
-          <div class="metric-icon text-green-400">
-            <i class="fas fa-chart-line"></i>
-          </div>
-          <div class="metric-value text-right">
-            <div class="value">{{ published_percentage }}%</div>
-            <div class="metric-title">Published Rate</div>
-          </div>
-        </div>
-        <div class="metric-breakdown text-sm text-gray-400 mt-4">
-          <div class="flex justify-between">
-            <span>Featured Rate:</span>
-            <span class="text-green-400">{{ featured_percentage }}%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Actions & Management -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-      
-      <!-- Quick Actions -->
-      <div class="glass-card p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white flex items-center">
-            <i class="fas fa-bolt mr-2 text-purple-400"></i>
-            Quick Actions
-          </h3>
-        </div>
-        
-        <div class="space-y-4">
-          <a href="{% url 'aura_admin:blog:post_create' %}" class="admin-quick-action w-full">
-            <i class="fas fa-plus-circle text-green-400 mb-2"></i>
-            <span>New DataLog Entry</span>
-          </a>
-          <a href="{% url 'aura_admin:blog:category_create' %}" class="admin-quick-action w-full">
-            <i class="fas fa-folder-plus text-orange-400 mb-2"></i>
-            <span>New Category</span>
-          </a>
-          <a href="{% url 'aura_admin:blog:series_create' %}" class="admin-quick-action w-full">
-            <i class="fas fa-layer-group text-blue-400 mb-2"></i>
-            <span>New Series</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Popular Categories -->
-      <div class="glass-card p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white flex items-center">
-            <i class="fas fa-fire mr-2 text-orange-400"></i>
-            Popular Categories
-          </h3>
-          <a href="{% url 'aura_admin:blog:category_list' %}" class="text-orange-400 hover:text-orange-300 text-sm">
-            View All
-          </a>
-        </div>
-        
-        {% if popular_categories %}
-          <div class="space-y-3">
-            {% for category in popular_categories %}
-              <div class="flex items-center justify-between p-3 bg-black bg-opacity-20 rounded-lg">
-                <div class="flex items-center">
-                  <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mr-3"
-                       style="background-color: {{ category.color }}20; color: {{ category.color }};">
-                    {{ category.code }}
-                  </div>
-                  <div>
-                    <div class="font-medium text-white">{{ category.name }}</div>
-                    <div class="text-xs text-gray-400">{{ category.post_count }} posts</div>
-                  </div>
-                </div>
-                <a href="{% url 'aura_admin:blog:category_edit' category.pk %}" class="text-blue-400 hover:text-blue-300">
-                  <i class="fas fa-edit"></i>
-                </a>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="text-gray-400 text-center py-4">No categories yet</p>
-        {% endif %}
-      </div>
-
-      <!-- Popular Tags -->
-      <div class="glass-card p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white flex items-center">
-            <i class="fas fa-hashtag mr-2 text-purple-400"></i>
-            Popular Tags
-          </h3>
-          <a href="{% url 'aura_admin:blog:tag_list' %}" class="text-purple-400 hover:text-purple-300 text-sm">
-            View All
-          </a>
-        </div>
-        
-        {% if popular_tags %}
-          <div class="flex flex-wrap gap-2">
-            {% for tag in popular_tags %}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-400 bg-opacity-20 text-purple-400 border border-purple-400 border-opacity-30">
-                {{ tag.name }}
-                <span class="ml-2 text-purple-300">{{ tag.post_count }}</span>
-              </span>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="text-gray-400 text-center py-4">No tags yet</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Recent Activity & Management Links -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      
-      <!-- Recent DataLogs -->
-      <div class="glass-card p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white flex items-center">
-            <i class="fas fa-clock mr-2 text-purple-400"></i>
-            Recent DataLogs
-          </h3>
-          <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-sm btn-purple">
-            <i class="fas fa-list mr-1"></i>
-            Manage All
-          </a>
-        </div>
-        
-        {% if recent_posts %}
-          <div class="space-y-4">
-            {% for post in recent_posts %}
-              <div class="admin-recent-item">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <h4 class="font-medium text-white">{{ post.title }}</h4>
-                    <p class="text-sm text-gray-400 mt-1">
-                      {{ post.category.name }} • {{ post.created_at|date:"M j, Y" }}
-                      {% if post.reading_time %}• {{ post.reading_time }}min read{% endif %}
-                    </p>
-                    {% if post.tags.exists %}
-                      <div class="flex flex-wrap gap-1 mt-2">
-                        {% for tag in post.tags.all|slice:":3" %}
-                          <span class="inline-block px-2 py-1 text-xs bg-purple-400 bg-opacity-20 text-purple-300 rounded">
-                            {{ tag.name }}
-                          </span>
-                        {% endfor %}
-                      </div>
-                    {% endif %}
-                  </div>
-                  <div class="flex items-center space-x-2 ml-4">
-                    {% if post.featured %}
-                      <i class="fas fa-star text-yellow-400" title="Featured"></i>
-                    {% endif %}
-                    <span class="status-badge status-{{ post.status }}">
-                      {{ post.get_status_display }}
-                    </span>
-                    <a href="{% url 'aura_admin:blog:post_edit' post.pk %}" class="text-blue-400 hover:text-blue-300">
-                      <i class="fas fa-edit"></i>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="text-center py-8">
-            <i class="fas fa-database text-4xl text-gray-600 mb-4"></i>
-            <p class="text-gray-400 mb-4">No DataLogs yet</p>
-            <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-purple">
-              <i class="fas fa-plus mr-2"></i>
-              Create Your First DataLog
-            </a>
-          </div>
-        {% endif %}
-      </div>
-
-      <!-- Management Links -->
-      <div class="glass-card p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white flex items-center">
-            <i class="fas fa-cogs mr-2 text-cyan-400"></i>
-            Management Center
-          </h3>
-        </div>
-        
-        <div class="grid grid-cols-1 gap-4">
-          <!-- Posts Management -->
-          <div class="admin-management-card">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <i class="fas fa-file-alt text-purple-400 text-xl mr-3"></i>
-                <div>
-                  <h4 class="font-medium text-white">DataLog Posts</h4>
-                  <p class="text-sm text-gray-400">{{ total_posts }} total posts</p>
-                </div>
-              </div>
-              <div class="flex space-x-2">
-                <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-sm btn-secondary">
-                  <i class="fas fa-list"></i>
-                </a>
-                <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-sm btn-purple">
-                  <i class="fas fa-plus"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Categories Management -->
-          <div class="admin-management-card">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <i class="fas fa-folder text-orange-400 text-xl mr-3"></i>
-                <div>
-                  <h4 class="font-medium text-white">Categories</h4>
-                  <p class="text-sm text-gray-400">{{ total_categories }} categories</p>
-                </div>
-              </div>
-              <div class="flex space-x-2">
-                <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-sm btn-secondary">
-                  <i class="fas fa-list"></i>
-                </a>
-                <a href="{% url 'aura_admin:blog:category_create' %}" class="btn btn-sm btn-secondary" style="background: #f97316;">
-                  <i class="fas fa-plus"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tags Management -->
-          <div class="admin-management-card">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <i class="fas fa-tags text-blue-400 text-xl mr-3"></i>
-                <div>
-                  <h4 class="font-medium text-white">Tags</h4>
-                  <p class="text-sm text-gray-400">{{ total_tags }} tags</p>
-                </div>
-              </div>
-              <div class="flex space-x-2">
-                <a href="{% url 'aura_admin:blog:tag_list' %}" class="btn btn-sm btn-secondary">
-                  <i class="fas fa-list"></i>
-                </a>
-                <a href="{% url 'aura_admin:blog:tag_create' %}" class="btn btn-sm btn-secondary" style="background: #3b82f6;">
-                  <i class="fas fa-plus"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Series Management -->
-          <div class="admin-management-card">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <i class="fas fa-layer-group text-green-400 text-xl mr-3"></i>
-                <div>
-                  <h4 class="font-medium text-white">Series</h4>
-                  <p class="text-sm text-gray-400">{{ total_series }} series</p>
-                </div>
-              </div>
-              <div class="flex space-x-2">
-                <a href="{% url 'aura_admin:blog:series_list' %}" class="btn btn-sm btn-secondary">
-                  <i class="fas fa-list"></i>
-                </a>
-                <a href="{% url 'aura_admin:blog:series_create' %}" class="btn btn-sm btn-secondary" style="background: #10b981;">
-                  <i class="fas fa-plus"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-{% endblock %}
+{% block admin_breadcrumb %}DataLogs Dashboard{% endblock %}
 
 {% block admin_css %}
+{{ block.super }}
 <style>
-.admin-management-card {
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  transition: all 0.3s ease;
+.admin-nav-link.active {
+    background: rgba(var(--color-emerald-rgb), 0.2);
+    color: var(--color-emerald);
 }
-
-.admin-management-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  transform: translateX(5px);
+.glass-card.emerald-accent {
+    border: 1px solid rgba(52, 211, 153, 0.2);
 }
-
-.admin-quick-action.w-full {
-  width: 100%;
-  justify-content: flex-start;
-  text-align: left;
+.glass-card.emerald-accent:hover {
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.15);
 }
-
-.admin-quick-action.w-full i {
-  margin-right: 0.75rem;
-  margin-bottom: 0;
+.management-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+.quick-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin-top: 1rem;
+}
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+.post-item {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+}
+.post-item:hover {
+    background: rgba(0, 0, 0, 0.3);
+    transform: translateX(2px);
+}
+.post-header {
+    display: flex;
+    align-items: center;
+    justify-content: between;
+    margin-bottom: 0.5rem;
+}
+.post-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+.post-meta {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+.tag-item {
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: rgba(179, 157, 219, 0.2);
+    color: var(--color-lavender);
+}
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+.status-published { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.status-draft { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+.status-featured { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.category-item {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: between;
+}
+.category-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-right: 0.75rem;
+}
+@media (max-width: 768px) {
+    .management-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- DataLogs Dashboard Header -->
+    <div class="text-center">
+        <h1 class="text-3xl font-bold text-white mb-2">
+            <i class="fas fa-database text-lavender-400 mr-3"></i>
+            DataLogs Archive Management
+        </h1>
+        <p class="text-gray-400">Technical documentation, learning logs, and knowledge base administration</p>
+    </div>
+
+    <!-- DataLogs Metrics Overview -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <!-- Total Posts Metric -->
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-emerald-400 mb-1">{{ total_posts|default:0 }}</div>
+            <div class="text-sm text-gray-400">Total Entries</div>
+            <div class="mt-1 text-xs">
+                <span class="text-green-400">{{ published_posts|default:0 }} published</span>
+            </div>
+        </div>
+
+        <!-- Published Posts Metric -->
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-purple-400 mb-1">{{ published_posts|default:0 }}</div>
+            <div class="text-sm text-gray-400">Published</div>
+            {% if total_posts > 0 %}
+                <div class="mt-1 text-xs">
+                    <span class="text-green-400">{{ published_percentage }}% live</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Draft Posts Metric -->
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-cyan-400 mb-1">{{ draft_posts|default:0 }}</div>
+            <div class="text-sm text-gray-400">Drafts</div>
+            <div class="mt-1 text-xs">
+                <span class="text-blue-400">{{ avg_reading_time|floatformat:1 }}min avg read</span>
+            </div>
+        </div>
+
+        <!-- Categories Metric -->
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-orange-400 mb-1">{{ total_categories|default:0 }}</div>
+            <div class="text-sm text-gray-400">Categories</div>
+            <div class="mt-1 text-xs">
+                <span class="text-yellow-400">{{ total_tags|default:0 }} tags</span>
+            </div>
+        </div>
+
+        <!-- Featured Content Metric -->
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-teal-400 mb-1">{{ featured_posts|default:0 }}</div>
+            <div class="text-sm text-gray-400">Featured</div>
+            <div class="mt-1 text-xs">
+                <span class="text-yellow-400">{{ total_series|default:0 }} series</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Interface Grid -->
+    <div class="management-grid">
+        
+        <!-- Post Management -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-file-alt mr-2 text-emerald-400"></i>
+                    Post Management
+                </h3>
+                <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-sm btn-emerald">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    Manage
+                </a>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Published Posts</span>
+                    <span class="text-emerald-400 font-medium">{{ published_posts|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Draft Posts</span>
+                    <span class="text-blue-400 font-medium">{{ draft_posts|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Featured Posts</span>
+                    <span class="text-yellow-400 font-medium">{{ featured_posts|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Total Words</span>
+                    <span class="text-emerald-400 font-medium">{{ total_words|default:0|floatformat:0 }}</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    New Post
+                </a>
+                <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-list mr-1"></i>
+                    View All
+                </a>
+            </div>
+        </div>
+
+        <!-- Categories Management -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-tags mr-2 text-purple-400"></i>
+                    Content Organization
+                </h3>
+                <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-sm btn-purple">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    Manage
+                </a>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Categories</span>
+                    <span class="text-purple-400 font-medium">{{ total_categories|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Tags</span>
+                    <span class="text-blue-400 font-medium">{{ total_tags|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Series</span>
+                    <span class="text-green-400 font-medium">{{ total_series|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Avg Reading Time</span>
+                    <span class="text-purple-400 font-medium">{{ avg_reading_time|floatformat:1 }}min</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:blog:category_create' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    New Category
+                </a>
+                <a href="{% url 'aura_admin:blog:tag_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-tags mr-1"></i>
+                    Manage Tags
+                </a>
+            </div>
+        </div>
+
+        <!-- Series & Collections -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-layer-group mr-2 text-orange-400"></i>
+                    Series & Collections
+                </h3>
+                <a href="{% url 'aura_admin:blog:series_list' %}" class="btn btn-sm btn-orange">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    Manage
+                </a>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Active Series</span>
+                    <span class="text-orange-400 font-medium">{{ total_series|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Posts in Series</span>
+                    <span class="text-cyan-400 font-medium">{{ posts_in_series|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Standalone Posts</span>
+                    <span class="text-green-400 font-medium">{{ standalone_posts|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Learning Journeys</span>
+                    <span class="text-orange-400 font-medium">{{ learning_series|default:0 }}</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:blog:series_create' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    New Series
+                </a>
+                <a href="{% url 'aura_admin:blog:series_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-layer-group mr-1"></i>
+                    Collections
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Posts Activity -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-clock mr-2 text-cyan-400"></i>
+                    Recent Activity
+                </h3>
+                <a href="{% url 'aura_admin:blog:post_list' %}?sort=-created_at" class="btn btn-sm btn-cyan">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    View All
+                </a>
+            </div>
+            
+            {% if recent_posts %}
+                <div class="space-y-3">
+                    {% for post in recent_posts|slice:":5" %}
+                        <div class="post-item">
+                            <div class="post-header">
+                                <div class="flex items-center flex-1">
+                                    <h4 class="post-title">{{ post.title|truncatechars:30 }}</h4>
+                                </div>
+                                <span class="status-badge status-{{ post.status }}">
+                                    {{ post.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="post-meta">
+                                {% if post.category %}{{ post.category.name }} • {% endif %}
+                                {% if post.reading_time %}{{ post.reading_time }}min read • {% endif %}
+                                {{ post.created_at|timesince }} ago
+                            </div>
+                            {% if post.tags.exists %}
+                                <div class="post-tags">
+                                    {% for tag in post.tags.all|slice:":3" %}
+                                        <span class="tag-item">{{ tag.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-gray-400">
+                    <i class="fas fa-file-alt text-2xl mb-2"></i>
+                    <p class="text-sm">No recent posts</p>
+                </div>
+            {% endif %}
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:blog:post_create' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    New Post
+                </a>
+                <a href="{% url 'aura_admin:blog:post_list' %}?status=draft" class="btn btn-xs btn-outline">
+                    <i class="fas fa-edit mr-1"></i>
+                    Drafts
+                </a>
+            </div>
+        </div>
+
+        <!-- Popular Categories -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-fire mr-2 text-orange-400"></i>
+                    Popular Categories
+                </h3>
+                <a href="{% url 'aura_admin:blog:category_list' %}?sort=-post_count" class="btn btn-sm btn-orange">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    View All
+                </a>
+            </div>
+            
+            {% if popular_categories %}
+                <div class="space-y-3">
+                    {% for category in popular_categories|slice:":5" %}
+                        <div class="category-item">
+                            <div class="category-icon" style="background-color: {{ category.color }}20; color: {{ category.color }};">
+                                {{ category.code }}
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="post-title">{{ category.name }}</h4>
+                                <div class="text-xs text-gray-400">
+                                    {{ category.post_count|default:0 }} post{{ category.post_count|pluralize }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-gray-400">
+                    <i class="fas fa-tags text-2xl mb-2"></i>
+                    <p class="text-sm">No categories yet</p>
+                </div>
+            {% endif %}
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:blog:category_create' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add Category
+                </a>
+                <a href="{% url 'aura_admin:blog:category_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-chart-bar mr-1"></i>
+                    Analytics
+                </a>
+            </div>
+        </div>
+
+        <!-- Content Integration Status -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-network-wired mr-2 text-emerald-400"></i>
+                    Content Integration
+                </h3>
+                <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-sm btn-emerald">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    Systems
+                </a>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Posts ↔ Systems</span>
+                    <span class="text-emerald-400 font-medium">{{ system_connections|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Code Examples</span>
+                    <span class="text-cyan-400 font-medium">{{ posts_with_code|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Learning Docs</span>
+                    <span class="text-purple-400 font-medium">{{ learning_posts|default:0 }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Total Documentation</span>
+                    <span class="text-emerald-400 font-medium">{{ total_reading_time|default:0 }}min</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:blog:post_list' %}?has_code=true" class="btn btn-xs btn-outline">
+                    <i class="fas fa-code mr-1"></i>
+                    Code Posts
+                </a>
+                <a href="{% url 'blog:post_list' %}" target="_blank" class="btn btn-xs btn-outline">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    Live Blog
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
 {% endblock %}

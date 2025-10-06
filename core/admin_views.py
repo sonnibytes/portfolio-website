@@ -11,6 +11,8 @@ from django.views.generic import (
     DeleteView,
     ListView,
     TemplateView,
+    DetailView,
+    View
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
@@ -27,9 +29,10 @@ from django.http import HttpResponse
 
 from datetime import datetime, timedelta
 
-from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics
-from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactForm, SocialLinkForm, PortfolioAnalyticsForm
-from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule
+from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
+from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactAdminForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
+from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule, Technology
+from blog.models import Post, Category
 
 # ======= BUTTON STYLE TESTING ========
 def test_admin_styles(request):
@@ -499,17 +502,22 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             "total_learning_hours": Education.objects.aggregate(
                 total=Sum("hours_completed")
             )["total"] or 0,
-            "avg_career_relevance": Education.objects.aggregate(
-                avg=Avg("career_relevance")
-            )["avg"] or 0,
+            # "avg_career_relevance": Education.objects.aggregate(
+            #     avg=Avg("career_relevance")
+            # )["avg"] or 0,
+            "formal_education": Education.objects.filter(
+                learning_type__in=['degree', 'bootcamp']
+            ).count(),
         }
 
         # Experience Analytics
         experience_stats = {
-            "total_positions": Experience.objects.count(),
-            "current_positions": Experience.objects.filter(is_current=True).count(),
-            "total_companies": Experience.objects.values("company").distinct().count(),
             "years_experience": self.calculate_total_experience(),
+            "total_companies": Experience.objects.values('company').distinct().count(),
+            "current_positions": Experience.objects.filter(is_current=True).count(),
+            "unique_industries": 4,  # Placeholder for now
+            # TODO: Enhance Experience model w industry?
+            # "unique_industries": Experience.objects.values('industry').distinct().count(),
         }
 
         # Contact Analytics
@@ -517,38 +525,57 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             "total_contacts": Contact.objects.count(),
             "unread_contacts": Contact.objects.filter(is_read=False).count(),
             "this_month_contacts": Contact.objects.filter(
-                created_at__gte=timezone.now().replace(day=1)
+                created_at__month=timezone.now().month,
+                created_at__year=timezone.now().year
             ).count(),
-            "pending_responses": Contact.objects.filter(response_sent=False).count(),
+            "pending_responses": Contact.objects.filter(is_read=True, response_sent=False).count(),
             "high_priority_contacts": Contact.objects.filter(priority="high").count(),
         }
 
-        # Portfolio Analytics
-        analytics_stats = {
-            "total_analytics_days": PortfolioAnalytics.objects.count(),
-            "avg_learning_hours": PortfolioAnalytics.objects.aggregate(
-                avg=Avg("learning_hours_logged")
-            )["avg"] or 0,
-            "total_visitors_month": PortfolioAnalytics.objects.filter(
-                date__gte=timezone.now().date().replace(day=1)
-            ).aggregate(total=Sum("unique_visitors"))["total"] or 0,
-            "last_analytics_date": PortfolioAnalytics.objects.order_by("-date").first(),
+        # NEW: Social Links Analytics
+        social_stats = {
+            "total_social_links": SocialLink.objects.count(),
+            "professional_links": SocialLink.objects.filter(category='professional').count(),
+            "community_links": SocialLink.objects.filter(category='community').count(),
+            "media_links": SocialLink.objects.filter(category='media').count(),
+            "chat_links": SocialLink.objects.filter(category='chat').count(),
+            "blog_links": SocialLink.objects.filter(category='blog').count(),
+            "other_links": SocialLink.objects.filter(category='other').count(),
+            # Category breakdown for dashboard display
+            "category_breakdown": {
+                category[0]: SocialLink.objects.filter(category=category[0]).count()
+                for category in SocialLink.CATEGORY_CHOICES
+            }
         }
+
+        # Portfolio Analytics
+        # analytics_stats = {
+        #     "total_analytics_days": PortfolioAnalytics.objects.count(),
+        #     "avg_learning_hours": PortfolioAnalytics.objects.aggregate(
+        #         avg=Avg("learning_hours_logged")
+        #     )["avg"] or 0,
+        #     "total_visitors_month": PortfolioAnalytics.objects.filter(
+        #         date__gte=timezone.now().date().replace(day=1)
+        #     ).aggregate(total=Sum("unique_visitors"))["total"] or 0,
+        #     "last_analytics_date": PortfolioAnalytics.objects.order_by("-date").first(),
+        # }
 
         # Cross-app integration stats
         integration_stats = {
             "education_skill_connections": EducationSkillDevelopment.objects.count(),
             "skills_linked_to_projects": Skill.objects.filter(
-                developed_in_projects__isnull=False
-            )
-            .distinct()
-            .count(),
-            "education_with_projects": Education.objects.filter(
-                related_systems__isnull=False
-            )
-            .distinct()
-            .count(),
+                related_technology__systems__isnull=False
+            ).distinct().count(),
+            # "education_with_projects": Education.objects.filter(
+            #     related_systems__isnull=False
+            # )
+            # .distinct()
+            # .count(),
+            "total_skill_tech_relations": SkillTechnologyRelation.objects.count(),
         }
+
+        # Recent Analytics (Portfolio Analytics) - replacing analytics above
+        recent_analytics = PortfolioAnalytics.objects.order_by('-date')[:7]
 
         context.update(
             {
@@ -559,11 +586,17 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
                 "education_stats": education_stats,
                 "experience_stats": experience_stats,
                 "contact_stats": contact_stats,
-                "analytics_stats": analytics_stats,
+                "social_stats": social_stats,
+                "recent_analytics": recent_analytics,
+                # "analytics_stats": analytics_stats,
                 "integration_stats": integration_stats,
-                "recent_contacts": Contact.objects.order_by("-created_at")[:5],
-                "recent_education": Education.objects.order_by("-end_date", "-start_date")[:5],
-                "recent_analytics": PortfolioAnalytics.objects.order_by("-date")[:7],
+                # "recent_contacts": Contact.objects.order_by("-created_at")[:5],
+                # "recent_education": Education.objects.order_by("-end_date", "-start_date")[:5],
+                # "recent_analytics": PortfolioAnalytics.objects.order_by("-date")[:7],
+
+                # Meta information
+                'dashboard_title': 'Core System Management',
+                'dashboard_subtitle': 'Portfolio foundation, skills, and learning journey administration',
             }
         )
 
@@ -628,7 +661,7 @@ class CorePageCreateAdminView(SlugAdminCreateView):
     model = CorePage
     form_class = CorePageForm
     template_name = "core/admin/corepage_form.html"
-    success_url = reverse_lazy("aura_admin:core:corepage_list")
+    success_url = reverse_lazy("aura_admin:corepage_list")
 
 
 class CorePageUpdateAdminView(BaseAdminUpdateView):
@@ -637,14 +670,14 @@ class CorePageUpdateAdminView(BaseAdminUpdateView):
     model = CorePage
     form_class = CorePageForm
     template_name = "core/admin/corepage_form.html"
-    success_url = reverse_lazy("aura_admin:core:corepage_list")
+    success_url = reverse_lazy("aura_admin:corepage_list")
 
 
 class CorePageDeleteAdminView(BaseAdminDeleteView):
     """Delete core page."""
 
     model = CorePage
-    success_url = reverse_lazy("aura_admin:core:corepage_list")
+    success_url = reverse_lazy("aura_admin:corepage_list")
 
 
 # ===================
@@ -660,7 +693,7 @@ class SkillListAdminView(BaseAdminListView, BulkActionMixin):
     context_object_name = "skills"
 
     def get_queryset(self):
-        queryset = Skill.objects.select_related("related_technology").order_by(
+        queryset = Skill.objects.prefetch_related('related_technologies').order_by(
             "category", "display_order"
         )
 
@@ -702,6 +735,11 @@ class SkillListAdminView(BaseAdminListView, BulkActionMixin):
                 "featured": Skill.objects.filter(is_featured=True).count(),
                 "is_learning": Skill.objects.filter(is_currently_learning=True).count(),
                 "certified": Skill.objects.filter(is_certified=True).count(),
+                # NEW: Technology relationship stats
+                'skills_with_tech': Skill.objects.filter(
+                    related_technologies__isnull=False
+                ).distinct().count(),
+                'total_tech_relationships': SkillTechnologyRelation.objects.count(),
             }
         )
         return context
@@ -713,7 +751,39 @@ class SkillCreateAdminView(SlugAdminCreateView):
     model = Skill
     form_class = SkillForm
     template_name = "core/admin/skill_form.html"
-    success_url = reverse_lazy("aura_admin:core:skill_list")
+    success_url = reverse_lazy("aura_admin:skill_list")
+
+    # ADD THIS METHOD FOR DEBUGGING:
+    def form_valid(self, form):
+        """Debug the form submission."""
+        print(f"🟢 FORM IS VALID")
+        print(f"🟢 Form cleaned_data: {form.cleaned_data}")
+        
+        try:
+            # Call the parent form_valid which should save the object
+            response = super().form_valid(form)
+            print(f"🟢 Object created successfully: {self.object}")
+            print(f"🟢 Object ID: {self.object.pk}")
+            print(f"🟢 Redirecting to: {self.get_success_url()}")
+            return response
+        except Exception as e:
+            print(f"🔴 ERROR in form_valid: {e}")
+            import traceback
+            traceback.print_exc()
+            return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        """Debug form validation errors."""
+        print(f"🔴 FORM IS INVALID")
+        print(f"🔴 Form errors: {form.errors}")
+        print(f"🔴 Form non_field_errors: {form.non_field_errors}")
+        return super().form_invalid(form)
+    
+    def post(self, request, *args, **kwargs):
+        """Debug the entire POST process."""
+        print(f"🔵 POST request received")
+        print(f"🔵 POST data: {request.POST}")
+        return super().post(request, *args, **kwargs)
 
 
 class SkillUpdateAdminView(BaseAdminUpdateView):
@@ -722,14 +792,98 @@ class SkillUpdateAdminView(BaseAdminUpdateView):
     model = Skill
     form_class = SkillForm
     template_name = "core/admin/skill_form.html"
-    success_url = reverse_lazy("aura_admin:core:skill_list")
+    success_url = reverse_lazy("aura_admin:skill_list")
 
 
 class SkillDeleteAdminView(BaseAdminDeleteView):
     """Delete skill."""
 
     model = Skill
-    success_url = reverse_lazy("aura_admin:core:skill_list")
+    success_url = reverse_lazy("aura_admin:skill_list")
+
+
+# ========== NEW: SKILL-TECHNOLOGY RELATIONSHIP VIEWS ==========
+
+class SkillTechnologyRelationListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage skill-technology relationships."""
+
+    model = SkillTechnologyRelation
+    template_name = "core/admin/skill_technology_relation_list.html"
+    context_object_name = "relationships"
+
+    def get_queryset(self):
+        queryset = SkillTechnologyRelation.objects.select_related(
+            'skill', 'technology'
+        ).order_by('skill__category', 'skill__name', '-strength')
+
+        # Filter by skill
+        skill_filter = self.request.GET.get('skill', '')
+        if skill_filter:
+            queryset = queryset.filter(skill__slug=skill_filter)
+        
+        # Filter by technology
+        tech_filter = self.request.GET.get('technology', '')
+        if tech_filter:
+            queryset = queryset.filter(technology__slug=tech_filter)
+        
+        # Filter by strength
+        strength_filter = self.request.GET.get('strength', '')
+        if strength_filter:
+            queryset = queryset.filter(strength=int(strength_filter))
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'Skill-Technology Relationships',
+            'subtitle': 'Manage connections between skills and technologies',
+            'skills': Skill.objects.all().order_by('name'),
+            'technologies': Technology.objects.all().order_by('name'),
+            'strength_choices': SkillTechnologyRelation.RELATIONSHIP_STRENGTH,
+            'relationship_stats': self.get_relationship_stats(),
+        })
+        return context
+    
+    def get_relationship_stats(self):
+        """Get stats for the dashboard"""
+        relationships = SkillTechnologyRelation.objects.all()
+        return {
+            'total_relationships': relationships.count(),
+            'primary_relationships': relationships.filter(strength=4).count(),
+            'essential_relationships': relationships.filter(strength=3).count(),
+            'skills_with_tech': Skill.objects.filter(
+                related_technologies__isnull=False
+            ).distinct().count(),
+            'technologies_with_skills': Technology.objects.filter(
+                related_skills__isnull=False
+            ).distinct().count(),
+        }
+
+
+class SkillTechnologyRelationCreateAdminView(BaseAdminCreateView):
+    """Create a new skill-technology relationship."""
+
+    model = SkillTechnologyRelation
+    form_class = SkillTechnologyRelationForm
+    template_name = "core/admin/skill_technology_relation_form.html"
+    success_url = reverse_lazy("aura_admin:skill_tech_relation_list")
+
+
+class SkillTechnologyRelationUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing skill-technology relationship."""
+
+    model = SkillTechnologyRelation
+    form_class = SkillTechnologyRelationForm
+    template_name = "core/admin/skill_technology_relation_form.html"
+    success_url = reverse_lazy("aura_admin:skill_tech_relation_list")
+
+
+class SkillTechnologyRelationDeleteAdminView(BaseAdminDeleteView):
+    """Delete skill-technology relationship."""
+
+    model = SkillTechnologyRelation
+    success_url = reverse_lazy("aura_admin:skill_tech_relation_list")
 
 
 # ===================
@@ -793,7 +947,7 @@ class EducationCreateAdminView(SlugAdminCreateView):
     model = Education
     form_class = EducationForm
     template_name = "core/admin/education_form.html"
-    success_url = reverse_lazy("aura_admin:core:education_list")
+    success_url = reverse_lazy("aura_admin:education_list")
 
 
 class EducationUpdateAdminView(BaseAdminUpdateView):
@@ -802,14 +956,14 @@ class EducationUpdateAdminView(BaseAdminUpdateView):
     model = Education
     form_class = EducationForm
     template_name = "core/admin/education_form.html"
-    success_url = reverse_lazy("aura_admin:core:education_list")
+    success_url = reverse_lazy("aura_admin:education_list")
 
 
 class EducationDeleteAdminView(BaseAdminDeleteView):
     """Delete education entry."""
 
     model = Education
-    success_url = reverse_lazy("aura_admin:core:education_list")
+    success_url = reverse_lazy("aura_admin:education_list")
 
 
 # ===================
@@ -846,7 +1000,7 @@ class EducationSkillCreateAdminView(BaseAdminCreateView):
     model = EducationSkillDevelopment
     form_class = EducationSkillDevelopmentForm
     template_name = "core/admin/education_skill_form.html"
-    success_url = reverse_lazy("aura_admin:core:education_skill_list")
+    success_url = reverse_lazy("aura_admin:education_skill_list")
 
 
 class EducationSkillUpdateAdminView(BaseAdminUpdateView):
@@ -855,14 +1009,14 @@ class EducationSkillUpdateAdminView(BaseAdminUpdateView):
     model = EducationSkillDevelopment
     form_class = EducationSkillDevelopmentForm
     template_name = "core/admin/education_skill_form.html"
-    success_url = reverse_lazy("aura_admin:core:education_skill_list")
+    success_url = reverse_lazy("aura_admin:education_skill_list")
 
 
 class EducationSkillDeleteAdminView(BaseAdminDeleteView):
     """Delete education-skill connection."""
 
     model = EducationSkillDevelopment
-    success_url = reverse_lazy("aura_admin:core:education_skill_list")
+    success_url = reverse_lazy("aura_admin:education_skill_list")
 
 
 # ===================
@@ -915,7 +1069,7 @@ class ExperienceCreateAdminView(SlugAdminCreateView):
     model = Experience
     form_class = ExperienceForm
     template_name = "core/admin/experience_form.html"
-    success_url = reverse_lazy("aura_admin:core:experience_list")
+    success_url = reverse_lazy("aura_admin:experience_list")
 
 
 class ExperienceUpdateAdminView(BaseAdminUpdateView):
@@ -924,14 +1078,14 @@ class ExperienceUpdateAdminView(BaseAdminUpdateView):
     model = Experience
     form_class = ExperienceForm
     template_name = "core/admin/experience_form.html"
-    success_url = reverse_lazy("aura_admin:core:experience_list")
+    success_url = reverse_lazy("aura_admin:experience_list")
 
 
 class ExperienceDeleteAdminView(BaseAdminDeleteView):
     """Delete experience entry."""
 
     model = Experience
-    success_url = reverse_lazy("aura_admin:core:experience_list")
+    success_url = reverse_lazy("aura_admin:experience_list")
 
 
 # ===================
@@ -940,7 +1094,7 @@ class ExperienceDeleteAdminView(BaseAdminDeleteView):
 
 
 class ContactListAdminView(BaseAdminListView, BulkActionMixin):
-    """Manage contact form submissions."""
+    """Manage contact form submissions w bulk actions."""
 
     model = Contact
     template_name = "core/admin/contact_list.html"
@@ -990,31 +1144,196 @@ class ContactListAdminView(BaseAdminListView, BulkActionMixin):
             }
         )
         return context
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle both AJAX and form-based bulk actions.
+        Extends BulkActionMixin with contact-specific actions.
+        """
+        # Check if this is an AJAX request (for the updated JS)
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+        if is_ajax:
+            # Handle AJAX Bulk Actions (JSON body)
+            import json
+            try:
+                data = json.loads(request.body)
+                action = data.get('action')
+                selected_ids = data.get('contact_ids', [])
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid JSON'
+                }, status=400)
+        else:
+            # Handle form-based bulk-action (POST data)
+            action = request.POST.get("action")
+            selected_ids = request.POST.getList("selected_items")
+        
+        # Validate we have action and items
+        if not action or not selected_ids:
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No action or items selected'
+                }, status=400)
+            messages.error(request, "No action or items selected.")
+            return redirect(request.path)
+        
+        # Get the queryset for selected contacts
+        queryset = Contact.objects.filter(id__in=selected_ids)
+        count = queryset.count()
+
+        # Handle contact-specific bulk actions
+        if action == "mark_read":
+            queryset.update(is_read=True)
+            message = f"Marked {count} contact(s) as read."
+
+        elif action == "mark_unread":
+            queryset.update(is_read=False)
+            message = f"Marked {count} contact(s) as unread."
+
+        elif action == "set_priority_high":
+            queryset.update(priority='high')
+            message = f"Set {count} contact(s) to HIGH priority."
+
+        elif action == "set_priority_normal":
+            queryset.update(priority='normal')
+            message = f"Set {count} contact(s) to NORMAL priority."
+        
+        elif action == "mark_responded":
+            # Mark all as responded with current timestamp
+            for contact in queryset:
+                contact.mark_as_responded()
+            message = f"Marked {count} contact(s) as responded."
+        
+        else:
+            # For other actions (delete, etc) use parent BulkActionMixin
+            return super().post(request, *args, **kwargs)
+        
+        # Return appropriate response
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'message': message
+            })
+        else:
+            messages.success(request, message)
+            return redirect(request.path)
+
+
+class ContactDetailAdminView(AdminAccessMixin, BaseAdminView, DetailView):
+    """
+    Detailed contact view with inline quick actions.
+    Enhanced terminal-style contact viewer.
+    """
+    
+    model = Contact
+    template_name = "core/admin/contact_detail.html"
+    context_object_name = "contact"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contact = self.object 
+
+        # Calculate response time if applicable
+        response_time = None
+        if contact.response_sent and contact.response_date:
+            response_time = contact.response_time_hours()
+        
+        # Get related contacts (same email or similar subject)
+        related_contacts = Contact.objects.filter(
+            email=contact.email
+        ).exclude(pk=contact.pk).order_by('-created_at')[:5]
+
+        context.update({
+            'title': f'Contact #{contact.id:04d}',
+            'subtitle': f'From {contact.name}',
+            'response_time': response_time,
+            'related_contacts': related_contacts,
+            'inquiry_categories': Contact._meta.get_field("inquiry_category").choices,
+            'priority_levels': Contact._meta.get_field("priority").choices,
+        })
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        """
+        Handle quick actions via POST.
+        Supports: mark_read, mark_unread, mark_responded, update_priority, update_category
+        """
+        contact = self.get_object()
+        action = request.POST.get('action')
+
+        if action == 'mark_read':
+            contact.is_read = True
+            contact.save()
+            messages.success(request, f"Contact #{contact.id:04d} marked as read.")
+
+        elif action == 'mark_unread':
+            contact.is_read = False 
+            contact.save()
+            messages.success(request, f"Contact #{contact.id:04d} marked as unread.")
+
+        elif action == 'mark_responded':
+            contact.mark_as_responded()
+            messages.success(request, f"Contact #{contact.id:04d} marked as responded.")
+
+        elif action == 'update_priority':
+            new_priority = request.POST.get('priority')
+            if new_priority in dict(Contact._meta.get_field("priority").choices):
+                contact.priority = new_priority
+                contact.save()
+                messages.success(request, f"Priority updated to {contact.get_priority_display()}.")
+        
+        elif action == 'update_category':
+            new_category = request.POST.get('category')
+            if new_category in dict(Contact._meta.get_field("inquiry_category").choices):
+                contact.inquiry_category = new_category
+                contact.save()
+                messages.success(request, f"Category updated to {contact.get_inquiry_category_display()}.")
+        
+        # Return JSON for AJAX requests, redirect for regular POST
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'is_read': contact.is_read,
+                'response_sent': contact.response_sent,
+                'priority': contact.priority,
+                'priority_display': contact.get_priority_display(),
+                'category': contact.inquiry_category,
+                'category_display': contact.get_inquiry_category_display(),
+            })
+        
+        return self.get(request, *args, **kwargs)
 
 
 class ContactCreateAdminView(BaseAdminCreateView):
     """Create new contact (admin use)."""
 
     model = Contact
-    form_class = ContactForm
+    form_class = ContactAdminForm
     template_name = "core/admin/contact_form.html"
-    success_url = reverse_lazy("aura_admin:core:contact_list")
+    success_url = reverse_lazy("aura_admin:contact_list")
 
 
 class ContactUpdateAdminView(BaseAdminUpdateView):
     """Edit existing contact."""
 
     model = Contact
-    form_class = ContactForm
+    form_class = ContactAdminForm
     template_name = "core/admin/contact_form.html"
-    success_url = reverse_lazy("aura_admin:core:contact_list")
+    success_url = reverse_lazy("aura_admin:contact_list")
+
+    def get_success_url(self):
+        """Return to detail view after edit."""
+        return reverse('aura_admin:contact_detail', kwargs={'pk': self.object.pk})
 
 
 class ContactDeleteAdminView(BaseAdminDeleteView):
     """Delete contact."""
 
     model = Contact
-    success_url = reverse_lazy("aura_admin:core:contact_list")
+    success_url = reverse_lazy("aura_admin:contact_list")
 
 
 # ===================
@@ -1030,7 +1349,21 @@ class SocialLinkListAdminView(BaseAdminListView, BulkActionMixin):
     context_object_name = "social_links"
 
     def get_queryset(self):
-        return SocialLink.objects.order_by("display_order")
+        queryset = SocialLink.objects.order_by("display_order")
+
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(url__icontains=search_query) |
+                Q(handle__icontains=search_query)
+            )
+        
+        category_filter = self.request.GET.get('category', '')
+        if category_filter:
+            queryset = queryset.filter(category=category_filter)
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1038,9 +1371,28 @@ class SocialLinkListAdminView(BaseAdminListView, BulkActionMixin):
             {
                 "title": "Manage Social Links",
                 "subtitle": "Social media and external profile links",
+                "category_choices": SocialLink.CATEGORY_CHOICES,
+                "categories_count": self.get_sociallink_categories(),
+                "current_filters": {
+                    'search': self.request.GET.get('search', ''),
+                    'category': self.request.GET.get('category', ''),
+                }
             }
         )
         return context
+    
+    def get_sociallink_categories(self):
+        """Get SocialLinks grouped by category"""
+        links = SocialLink.objects.all()
+
+        categories = {}
+        for l in links:
+            link_cat = l.category
+            if link_cat not in categories:
+                categories[link_cat] = []
+            categories[link_cat].append(l)
+        
+        return categories
 
 
 class SocialLinkCreateAdminView(BaseAdminCreateView):
@@ -1049,7 +1401,7 @@ class SocialLinkCreateAdminView(BaseAdminCreateView):
     model = SocialLink
     form_class = SocialLinkForm
     template_name = "core/admin/sociallink_form.html"
-    success_url = reverse_lazy("aura_admin:core:sociallink_list")
+    success_url = reverse_lazy("aura_admin:sociallink_list")
 
 
 class SocialLinkUpdateAdminView(BaseAdminUpdateView):
@@ -1058,14 +1410,14 @@ class SocialLinkUpdateAdminView(BaseAdminUpdateView):
     model = SocialLink
     form_class = SocialLinkForm
     template_name = "core/admin/sociallink_form.html"
-    success_url = reverse_lazy("aura_admin:core:sociallink_list")
+    success_url = reverse_lazy("aura_admin:sociallink_list")
 
 
 class SocialLinkDeleteAdminView(BaseAdminDeleteView):
     """Delete social link."""
 
     model = SocialLink
-    success_url = reverse_lazy("aura_admin:core:sociallink_list")
+    success_url = reverse_lazy("aura_admin:sociallink_list")
 
 
 # ===================
@@ -1139,7 +1491,7 @@ class PortfolioAnalyticsCreateAdminView(BaseAdminCreateView):
     model = PortfolioAnalytics
     form_class = PortfolioAnalyticsForm
     template_name = "core/admin/analytics_form.html"
-    success_url = reverse_lazy("aura_admin:core:analytics_list")
+    success_url = reverse_lazy("aura_admin:analytics_list")
 
 
 class PortfolioAnalyticsUpdateAdminView(BaseAdminUpdateView):
@@ -1148,14 +1500,14 @@ class PortfolioAnalyticsUpdateAdminView(BaseAdminUpdateView):
     model = PortfolioAnalytics
     form_class = PortfolioAnalyticsForm
     template_name = "core/admin/analytics_form.html"
-    success_url = reverse_lazy("aura_admin:core:analytics_list")
+    success_url = reverse_lazy("aura_admin:analytics_list")
 
 
 class PortfolioAnalyticsDeleteAdminView(BaseAdminDeleteView):
     """Delete analytics entry."""
 
     model = PortfolioAnalytics
-    success_url = reverse_lazy("aura_admin:core:analytics_list")
+    success_url = reverse_lazy("aura_admin:analytics_list")
 
 
 # ===================
@@ -1246,3 +1598,813 @@ class AnalyticsChartDataView(AdminAccessMixin, TemplateView):
         }
 
         return JsonResponse(chart_data)
+
+# ========= INTEGRATION - REWORK ===========
+
+class ProfessionalDevelopmentDashboardView(AdminAccessMixin, TemplateView):
+    """Enhanced Professional Development Command Center Dashboard"""
+
+    template_name = 'core/admin/professional_dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Import models to avoid circular imports
+        from blog.models import Post, Category
+        from projects.models import SystemModule, Technology
+
+        # ===== CORE STATISTICS =====
+        
+        # Education Statistics
+        education_stats = {
+            'total_education': Education.objects.count(),
+            'current_education': Education.objects.filter(is_current=True).count(),
+            'completed_courses': Education.objects.filter(
+                learning_type__in=['online_course', 'certification'],
+                end_date__isnull=False,
+            ).count(),
+            'formal_education': Education.objects.filter(
+                learning_type__in=['degree', 'bootcamp']
+            ).count(),
+            'total_learning_hours': Education.objects.aggregate(
+                total=Sum('hours_completed')
+            )['total'] or 0,
+            'recent_completions': Education.objects.filter(
+                end_date__gte=timezone.now() - timedelta(days=90),
+                end_date__isnull=False
+            ).count(),
+        }
+        
+        # Skill Statistics  
+        skill_stats = {
+            'total_skills': Skill.objects.count(),
+            'featured_skills': Skill.objects.filter(is_featured=True).count(),
+            'currently_learning': Skill.objects.filter(is_currently_learning=True).count(),
+            'certified_skills': Skill.objects.filter(is_certified=True).count(),
+            'avg_proficiency': Skill.objects.aggregate(avg=Avg('proficiency'))['avg'] or 0,
+            'high_proficiency': Skill.objects.filter(proficiency__gte=4).count(),
+            'skills_with_tech_links': Skill.objects.filter(
+                technology_relations__isnull=False
+            ).distinct().count(),
+        }
+        
+        # System/Projects Statistics
+        system_stats = {
+            'total_systems': SystemModule.objects.count(),
+            'deployed_systems': SystemModule.objects.filter(status='deployed').count(),
+            'in_development': SystemModule.objects.filter(status='in_development').count(),
+            'total_technologies': Technology.objects.count(),
+            'technologies_in_use': Technology.objects.filter(
+                systems__isnull=False
+            ).distinct().count(),
+        }
+        
+        # ===== INTEGRATION ANALYTICS =====
+        
+        # Cross-app relationship counts
+        integration_stats = {
+            'skill_tech_relations': SkillTechnologyRelation.objects.count(),
+            'education_skill_connections': EducationSkillDevelopment.objects.count(),
+            'total_connections': (
+                SkillTechnologyRelation.objects.count() + 
+                EducationSkillDevelopment.objects.count()
+            ),
+            
+            # Skills applied in projects (via shared technologies)
+            'skills_in_projects': Skill.objects.filter(
+                technology_relations__technology__systems__isnull=False
+            ).distinct().count(),
+            
+            # Learning documented in blog
+            'documented_learning': Post.objects.filter(
+                related_systems__isnull=False
+            ).distinct().count(),
+            
+            # Education that led to skills
+            'education_with_skills': Education.objects.filter(
+                skills_learned__isnull=False
+            ).distinct().count(),
+            
+            # Technologies with skill connections
+            'technologies_with_skills': Technology.objects.filter(
+                skill_relations__isnull=False
+            ).distinct().count(),
+        }
+        
+        # ===== FEATURED CONTENT =====
+        
+        # Featured skills for demonstration
+        featured_skills = Skill.objects.filter(
+            is_featured=True
+        ).prefetch_related('technology_relations__technology')[:6]
+        
+        # If no featured skills, get highest proficiency
+        if not featured_skills.exists():
+            featured_skills = Skill.objects.filter(
+                proficiency__gte=3
+            ).prefetch_related('technology_relations__technology').order_by('-proficiency')[:6]
+        
+        # Skills with technology connections for matrix preview
+        skills_with_tech = Skill.objects.filter(
+            technology_relations__isnull=False
+        ).prefetch_related('technology_relations__technology').order_by('-proficiency')[:8]
+        
+        # ===== RECENT ACTIVITY TIMELINE =====
+        
+        recent_activities = []
+        
+        # Recent education completions
+        recent_education = Education.objects.filter(
+            end_date__gte=timezone.now() - timedelta(days=180),
+            end_date__isnull=False
+        ).order_by('-end_date')[:3]
+        
+        for edu in recent_education:
+            recent_activities.append({
+                'date': edu.end_date,
+                'type': 'education',
+                'icon': 'graduation-cap',
+                'title': f'Completed {edu.degree}',
+                'source': edu.institution,
+                'category': 'Learning'
+            })
+        
+        # Recent skill additions
+        recent_skills = Skill.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=90)
+        ).order_by('-created_at')[:3]
+        
+        for skill in recent_skills:
+            recent_activities.append({
+                'date': skill.created_at.date(),
+                'type': 'skill',
+                'icon': 'brain',
+                'title': f'Added {skill.name} skill',
+                'source': f'Level {skill.proficiency}',
+                'category': 'Development'
+            })
+        
+        # Recent project deployments
+        recent_projects = SystemModule.objects.filter(
+            status='deployed',
+            updated_at__gte=timezone.now() - timedelta(days=120)
+        ).order_by('-updated_at')[:3]
+        
+        for project in recent_projects:
+            recent_activities.append({
+                'date': project.updated_at.date(),
+                'type': 'project',
+                'icon': 'rocket',
+                'title': f'Deployed {project.title}',
+                'source': 'Project Application',
+                'category': 'Application'
+            })
+        
+        # Recent blog posts about learning
+        recent_posts = Post.objects.filter(
+            status='published',
+            published_date__gte=timezone.now() - timedelta(days=60)
+        ).order_by('-published_date')[:2]
+        
+        for post in recent_posts:
+            recent_activities.append({
+                'date': post.published_date.date() if post.published_date else post.created_at.date(),
+                'type': 'blog',
+                'icon': 'file-alt',
+                'title': f'Documented: {post.title[:30]}...',
+                'source': 'Learning Blog',
+                'category': 'Documentation'
+            })
+        
+        # Sort activities by date (most recent first)
+        recent_activities.sort(key=lambda x: x['date'], reverse=True)
+        recent_activities = recent_activities[:8]  # Limit to 8 most recent
+        
+        # ===== GROWTH METRICS =====
+        
+        # Calculate learning velocity (skills/education added per month)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        sixty_days_ago = timezone.now() - timedelta(days=60)
+        
+        growth_metrics = {
+            'skills_this_month': Skill.objects.filter(
+                created_at__gte=thirty_days_ago
+            ).count(),
+            'skills_last_month': Skill.objects.filter(
+                created_at__gte=sixty_days_ago,
+                created_at__lt=thirty_days_ago
+            ).count(),
+            'education_this_month': Education.objects.filter(
+                start_date__gte=thirty_days_ago
+            ).count(),
+            'projects_this_month': SystemModule.objects.filter(
+                created_at__gte=thirty_days_ago
+            ).count(),
+        }
+        
+        # ===== SUGGESTED ACTIONS =====
+        
+        suggested_actions = []
+        
+        # Skills without technology connections
+        skills_without_tech = Skill.objects.filter(
+            technology_relations__isnull=True
+        ).count()
+        
+        if skills_without_tech > 0:
+            suggested_actions.append({
+                'type': 'skill_tech_connection',
+                'title': f'Connect {skills_without_tech} skills to technologies',
+                'priority': 'high',
+                'url': reverse_lazy('aura_admin:skill_tech_relation_list')
+            })
+        
+        # Education without skill connections
+        education_without_skills = Education.objects.filter(
+            skills_learned__isnull=True
+        ).count()
+        
+        if education_without_skills > 0:
+            suggested_actions.append({
+                'type': 'education_skill_connection', 
+                'title': f'Link {education_without_skills} education items to skills',
+                'priority': 'medium',
+                'url': reverse_lazy('aura_admin:education_skill_list')
+            })
+        
+        # High proficiency skills without projects
+        expert_skills = Skill.objects.filter(
+            proficiency__gte=4,
+            technology_relations__technology__systems__isnull=True
+        ).distinct()
+        
+        if expert_skills.exists():
+            suggested_actions.append({
+                'type': 'skill_demonstration',
+                'title': f'Create projects for {expert_skills.count()} expert-level skills',
+                'priority': 'high',
+                'url': reverse_lazy('aura_admin:projects:system_create')
+            })
+        
+        # ===== PORTFOLIO READINESS SCORE =====
+        
+        # Calculate overall portfolio readiness based on integrations
+        portfolio_score = 0
+        max_score = 100
+        
+        # Skills documented (20 points)
+        if skill_stats['total_skills'] > 0:
+            portfolio_score += min(20, skill_stats['total_skills'] * 2)
+        
+        # Skills connected to technologies (25 points)  
+        if integration_stats['skill_tech_relations'] > 0:
+            portfolio_score += min(25, integration_stats['skill_tech_relations'] * 2)
+        
+        # Skills applied in projects (25 points)
+        if integration_stats['skills_in_projects'] > 0:
+            portfolio_score += min(25, integration_stats['skills_in_projects'] * 3)
+        
+        # Learning documented (15 points)
+        if integration_stats['documented_learning'] > 0:
+            portfolio_score += min(15, integration_stats['documented_learning'] * 2)
+        
+        # Education linked to skills (15 points)
+        if integration_stats['education_skill_connections'] > 0:
+            portfolio_score += min(15, integration_stats['education_skill_connections'])
+        
+        portfolio_readiness = {
+            'score': min(portfolio_score, max_score),
+            'level': 'Excellent' if portfolio_score >= 80 else 
+                    'Good' if portfolio_score >= 60 else
+                    'Developing' if portfolio_score >= 40 else 'Getting Started'
+        }
+        
+        # ===== CONTEXT ASSEMBLY =====
+        
+        context.update({
+            'title': 'Professional Development Command Center',
+            'subtitle': 'Unified view of learning journey and skill applications',
+            
+            # Core statistics
+            'education_stats': education_stats,
+            'skill_stats': skill_stats,
+            'system_stats': system_stats,
+            'integration_stats': integration_stats,
+            
+            # Featured content
+            'featured_skills': featured_skills,
+            'skills_with_tech': skills_with_tech,
+            'recent_activities': recent_activities,
+            
+            # Analytics
+            'growth_metrics': growth_metrics,
+            'suggested_actions': suggested_actions,
+            'portfolio_readiness': portfolio_readiness,
+            
+            # Additional context for template
+            'current_learning': Education.objects.filter(is_current=True)[:3],
+            'top_technologies': Technology.objects.annotate(
+                skill_count=Count('skill_relations')
+            ).order_by('-skill_count')[:5],
+            'recent_skill_developments': EducationSkillDevelopment.objects.select_related(
+                'education', 'skill'
+            )[:5],
+        })
+        
+        return context
+
+
+class SkillDemonstrationView(BaseAdminView, DetailView):
+    """Enhanced skill detail showing ecosystem-wide demonstrations"""
+
+    model = Skill
+    template_name = 'core/admin/skill_demonstration.html'
+    context_object_name = 'skill'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        skill = self.object 
+
+        # Technology Relationships
+        tech_relations = skill.technology_relations.select_related('technology').order_by('-strength')
+
+        # Projects using this skill (via technologies)
+        skill_technologies = tech_relations.values_list('technology', flat=True)
+        projects_using_skill = SystemModule.objects.filter(
+            technologies__in=skill_technologies
+        ).distinct().prefetch_related('technologies')
+
+        # Blog posts related to this skill (via project connections)
+        related_blog_posts = Post.objects.filter(
+            related_systems__in=projects_using_skill
+        ).distinct()[:10]
+
+        # Education that developed this skill
+        education_sources = EducationSkillDevelopment.objects.filter(
+            skill=skill
+        ).select_related('education').order_by('-proficiency_after')
+
+        # Learning progression timeline
+        learning_timeline = self.build_skill_timeline(skill)
+
+        # Skill analytics
+        skill_analytics = {
+            'total_projects': projects_using_skill.count(),
+            'primary_technologies': tech_relations.filter(strength__gte=3).count(),
+            'blog_documentation': related_blog_posts.count(),
+            'learning_sources': education_sources.count(),
+            'skill_progression_score': skill.get_mastery_progression_score() if hasattr(skill, 'get_mastery_progression_score') else 0,
+            'practical_applications': projects_using_skill.filter(status__in=['deployed', 'published']).count(),
+        }
+
+        # Related skills (those that share technologies)
+        related_skills = Skill.objects.filter(
+            technology_relations__technology__in=skill_technologies
+        ).exclude(id=skill.id).distinct()[:6]
+
+        # Suggested next steps
+        next_steps = self.get_skill_next_steps(skill, tech_relations, projects_using_skill)
+
+        context.update({
+            'title': f'Skill Overview: {skill.name}',
+            'subtitle': 'Cross-ecosystem skill demonstration and development',
+
+            # Core relationships
+            'tech_relations': tech_relations,
+            'projects_using_skill': projects_using_skill,
+            'related_blog_posts': related_blog_posts,
+            'education_sources': education_sources,
+            'related_skills': related_skills,
+
+            # Analytics and progression
+            'skill_analytics': skill_analytics,
+            'learning_timeline': learning_timeline,
+            'next_steps': next_steps,
+
+            # Available options for new connections
+            'available_technologies': Technology.objects.exclude(
+                id__in=skill_technologies
+            ).order_by('name')[:20],
+            'available_projects': SystemModule.objects.exclude(
+                id__in=projects_using_skill.values_list('id', flat=True)
+            ).filter(status__in=['deployed', 'in_development']).order_by('-updated_at')[:10],
+        })
+
+        return context
+    
+    def build_skill_timeline(self, skill):
+        """Build chronological timeline of skill development"""
+        timeline_events = []
+
+        # Education events
+        for edu_dev in skill.learned_through_education.all():
+            timeline_events.append({
+                'date': edu_dev.start_date,
+                'type': 'education_start',
+                'title': f'Started learning {skill.name}',
+                'source': edu_dev.institution,
+                'details': f'{edu_dev.degree} - {edu_dev.field_of_study}',
+                'proficiency_gained': skill.proficiency,
+            })
+
+            if edu_dev.end_date:
+                timeline_events.append({
+                    'date': edu_dev.end_date,
+                    'type': 'education_complete',
+                    'title': f'Completed {skill.name} training',
+                    'source': edu_dev.institution,
+                    'details': f'Gained {skill.proficiency} proficiency',
+                })
+
+        # Technology associations
+        for tech_relation in skill.technology_relations.all():
+            if tech_relation.first_used_together:
+                timeline_events.append({
+                    'date': tech_relation.first_used_together,
+                    'type': 'technology_first_use',
+                    'title': f'First used {tech_relation.technology.name}',
+                    'source': 'Practical Application',
+                    'details': f'{tech_relation.get_relationship_type_display()} - {tech_relation.get_strength_display()}',
+                })
+
+        # Project applications (approximate from system creation dates)
+        skill_technologies = skill.technology_relations.values_list('technology', flat=True)
+        for project in SystemModule.objects.filter(technologies__in=skill_technologies).distinct():
+            timeline_events.append({
+                'date': project.created_at.date(),
+                'type': 'project_application',
+                'title': f'Applied {skill.name} in {project.title}',
+                'source': 'Project Development',
+                'details': f'{project.get_status_display()} - {project.system_type}',
+            })
+        
+        # Sort chronologically and return recent events
+        timeline_events.sort(key=lambda x: x['date'])
+        return timeline_events[-10:]  # Last 10 events
+    
+    def get_skill_next_steps(self, skill, tech_relations, projects_using_skill):
+        """Suggest next steps for skill development"""
+        suggestions = []
+
+        # Suggest technologies commonly used with current ones
+        current_tech_ids = tech_relations.values_list('technology_id', flat=True)
+        commonly_paired_techs = Technology.objects.filter(
+            systems__technologies__in=current_tech_ids
+        ).exclude(id__in=current_tech_ids).annotate(
+            usage_count=Count('systems')
+        ).order_by('-usage_count')[:3]
+
+        for tech in commonly_paired_techs:
+            suggestions.append({
+                'type': 'technology',
+                'title': f'Learn {tech.name}',
+                'reason': f'Commonly used with {skill.name}',
+                'action_url': reverse('aura_admin:skill_tech_relation_create') + f'?skill={skill.id}&technology={tech.id}',
+                'priority': 'high' if tech.usage_count > 2 else 'medium'
+            })
+        
+        # Suggest project types if skill isn't heavily used
+        if projects_using_skill.count() < 3:
+            suggestions.append({
+                'type': 'project',
+                'title': f'Build project showcasing {skill.name}',
+                'reason': 'Limited practical demonstrations',
+                'action_url': reverse('aura_admin:projects:system_create'),
+                'priority': 'high'
+            })
+
+        # Suggest documentation if no blog posts
+        related_posts = Post.objects.filter(
+            related_systems__in=projects_using_skill
+        ).distinct()
+
+        if not related_posts.exists():
+            suggestions.append({
+                'type': 'documentation',
+                'title': f'Document {skill.name} learning journey',
+                'reason': 'No learning documentation found',
+                'action_url': reverse('aura_admin:blog:discovery_create'),
+                'priority': 'medium'
+            })
+        
+        # Suggest certification if proficiency is high but not certified
+        if skill.proficiency >= 4 and not skill.is_certified:
+            suggestions.append({
+                'type': 'certification',
+                'title': f'Get {skill.name} certification',
+                'reason': 'High proficiency without formal recognition',
+                'action_url': reverse('aura_admin:education_create'),
+                'priority': 'low'
+            })
+        
+        return suggestions
+    
+
+class EnhancedSkillCreateView(BaseAdminCreateView):
+    """Enahnced skill creation with ecosystem integration"""
+
+    model = Skill
+    form_class = SkillForm
+    template_name = 'core/admin/skill_form_enhanced.html'
+    success_url = reverse_lazy('aura_admin:skill_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Suggest technologies from existing projects
+        suggested_technologies = Technology.objects.filter(
+            systems__status__in=['deployed', 'published', 'in_development']
+        ).annotate(
+            project_count=Count('systems')
+        ).order_by('-project_count')[:12]
+
+        # Suggest related education
+        recent_education = Education.objects.filter(
+            is_current=True
+        ).order_by('-start_date')[:5]
+
+        completed_education = Education.objects.filter(
+            is_current=False,
+            end_date__isnull=False
+        ).order_by('-end_date')[:5]
+
+
+        # Popular skill categories
+        popular_categories = Skill.objects.values('category').annotate(
+            count=Count('category')
+        ).order_by('-count')[:8]
+
+        # Suggest blog categories for documentation
+        blog_categories = Category.objects.annotate(
+            post_count=Count('posts')
+        ).order_by('-post_count')[:8]
+
+        context.update({
+            'title': 'Add New Skill',
+            'subtitle': 'Build your technical competency portfolio',
+
+            # Suggestions for smart form
+            'suggested_technologies': suggested_technologies,
+            'recent_education': recent_education,
+            'completed_education': completed_education,
+            'popular_categories': popular_categories,
+            'blog_categories': blog_categories,
+
+            # Form enhancement data
+            'skill_categories': Skill.CATEGORY_CHOICES,
+            'proficiency_levels': [(i, f'Level {i}') for i in range(1, 6)],
+            'relationship_types': SkillTechnologyRelation.RELATIONSHIP_TYPE,
+            'relationship_strengths': SkillTechnologyRelation.RELATIONSHIP_STRENGTH,
+        })
+
+        return context
+
+    def form_valid(self, form):
+        """Enhanced form processing with automatic relationship creation"""
+        response = super().form_valid(form)
+        skill = self.object 
+
+        # Auto-create technology relationships if provided
+        technology_ids = self.request.POST.getlist('suggested_technologies')
+        for tech_id in technology_ids:
+            try:
+                technology = Technology.objects.get(id=tech_id)
+                relationship_strength = int(self.request.POST.get(f'tech_strength_{tech_id}', 2))
+                relationship_type = self.request.POST.get(f'tech_type_{tech_id}', 'implementation')
+
+                SkillTechnologyRelation.objects.create(
+                    skill=skill,
+                    technology=technology,
+                    strength=relationship_strength,
+                    relationship_type=relationship_type,
+                    notes=f'Auto-created during skill setup'
+                )
+            except (Technology.DoesNotExist, ValueError):
+                continue
+        
+        # Auto-create education relationships if provided
+        education_ids = self.request.POST.getlist('related_education')
+        for edu_id in education_ids:
+            try:
+                education = Education.objects.get(id=edu_id)
+                proficiency_after = int(self.request.POST.get(f'edu_proficiency_{edu_id}', 2))
+
+                EducationSkillDevelopment.objects.create(
+                    education=education,
+                    skill=skill,
+                    proficiency_before=max(proficiency_after - 1, 1),
+                    proficiency_after=proficiency_after,
+                    learning_notes=f'Skill developed through {education.degree}'
+                )
+            except (Education.DoesNotExist, ValueError):
+                continue
+        
+        messages.success(
+            self.request,
+            f'Skill "{skill.name}" created with ecosystem connections!'
+        )
+
+        return response
+    
+    def form_invalid(self, form):
+        """Debug form validation errors."""
+        print(f"🔴 FORM IS INVALID")
+        print(f"🔴 Form errors: {form.errors}")
+        print(f"🔴 Form non_field_errors: {form.non_field_errors}")
+        return super().form_invalid(form)
+    
+    def post(self, request, *args, **kwargs):
+        """Debug the entire POST process."""
+        print(f"🔵 POST request received")
+        print(f"🔵 POST data: {request.POST}")
+        return super().post(request, *args, **kwargs)
+
+
+class ProfessionalGrowthTimelineView(AdminAccessMixin, TemplateView):
+    """Professional development timeline across all apps"""
+    template_name = 'core/admin/growth_timeline.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Build comprehensive timeline
+        timeline_events = []
+
+        # Education milestones
+        for education in Education.objects.all().order_by('start_date'):
+            timeline_events.append({
+                'date': education.start_date,
+                'type': 'education_start',
+                'category': 'Learning',
+                'title': f'Started {education.degree}',
+                'description': f'{education.field_of_study} at {education.institution}',
+                'icon': 'fa-solid fa-graduation-cap',
+                'color': 'teal',
+                'skills_gained': education.skills_learned.all()[:3]
+            })
+
+            if education.end_date:
+                timeline_events.append({
+                    'date': education.end_date,
+                    'type': 'education_complete',
+                    'category': 'Achievement',
+                    'title': f'Completed {education.degree}',
+                    'description': f'Gained expertise in {education.field_of_study}',
+                    'icon': 'fa-solid fa-certificate',
+                    'color': 'green',
+                })
+
+        
+        # Project milestones
+        for project in SystemModule.objects.filter(status='deployed').order_by('created_at'):
+            timeline_events.append({
+                'date': project.created_at.date(),
+                'type': 'project_deployed',
+                'category': 'Application',
+                'title': f'Deployed {project.title}',
+                'description': project.description[:100] + '...' if len(project.description) > 100 else project.description,
+                'icon': 'fa-solid fa-rocket',
+                'color': 'coral',
+                'technologies_used': project.technologies.all()[:4]
+            })
+        
+
+        # Blog documentation milestones
+        for post in Post.objects.filter(status='published').order_by('published_date')[:20]:
+            timeline_events.append({
+                'date': post.published_date.date() if post.published_date else post.created_at.date(),
+                'type': 'documentation',
+                'category': 'Knowledge Sharing',
+                'description': post.excerpt or (post.content[:100] + '...' if len(post.content) > 100 else post.content),
+                'icon': 'fa-solid fa-file-alt',
+                'color': 'lavender',
+                'category_tag': post.category.name if post.category else None
+            })
+        
+        # Sort chronologically
+        timeline_events.sort(key=lambda x: x['date'])
+
+        # Group by year for display
+        grouped_timeline = {}
+        for event in timeline_events:
+            year = event['date'].year
+            if year not in grouped_timeline:
+                grouped_timeline[year] = []
+            grouped_timeline[year].append(event)
+        
+        context.update({
+            'title': 'Professional Growth Timeline',
+            'subtitle': 'Complete development journey across all learning and projects',
+            'timeline_events': timeline_events[-50:],  # Last 50 events
+            'grouped_timeline': grouped_timeline,
+            'total_events': len(timeline_events),
+            'years_active': len(grouped_timeline),
+        })
+
+        return context
+
+
+# ===== ADDITIONAL HELPER VIEWS =====
+
+class SkillTechnologyMatrixView(AdminAccessMixin, TemplateView):
+    """Full skill-technology relationship matrix visualization"""
+    template_name = 'core/admin/skill_tech_matrix.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Build matrix data
+        skills = Skill.objects.prefetch_related('technology_relations__technology')
+        technologies = Technology.objects.prefetch_related('skill_relations__skill')
+
+        # Create matrix structure
+        matrix_data = []
+        for skill in skills:
+            skill_row = {
+                'skill': skill,
+                'technologies': {},
+                'total_connections': skill.technology_relations.count()
+            }
+
+            for relation in skill.technology_relations.all():
+                skill_row['technologies'][relation.technology.id] = {
+                    'strength': relation.strength,
+                    'type': relation.relationship_type,
+                    'relation': relation
+                }
+            
+            matrix_data.append(skill_row)
+        
+        # Matrix Stats
+        matrix_stats = {
+            'total_relationships': SkillTechnologyRelation.objects.count(),
+            'skills_with_connections': Skill.objects.filter(
+                technology_relations__isnull=False
+            ).distinct().count(),
+            'technologies_with_connections': Technology.objects.filter(
+                skill_relations__isnull=False
+            ).distinct().count(),
+            'avg_connections_per_skill': matrix_data and sum(
+                row['total_connections'] for row in matrix_data 
+            ) / len(matrix_data) or 0,
+        }
+
+        context.update({
+            'title': 'Skill-Technology Matrix',
+            'subtitle': 'Complete overview of skill-technology relationships',
+            'matrix_data': matrix_data,
+            'technologies': technologies,
+            'matrix_stats': matrix_stats,
+            'strength_choices': SkillTechnologyRelation.RELATIONSHIP_STRENGTH,
+            'type_choices': SkillTechnologyRelation.RELATIONSHIP_TYPE,
+        })
+
+        return context
+
+class QuickSkillTechConnectionView(BaseAdminView, View):
+    """AJAX view for quick skill-technology connections"""
+
+    def post(self, request, *args, **kwargs):
+        skill_id = request.POST.get('skill_id')
+        technology_id = request.POST.get('technology_id')
+        strength = request.POST.get('strength', 2)
+        relationship_type = request.POST.get('type', 'implementation')
+
+        try:
+            skill = Skill.objects.get(id=skill_id)
+            technology = Technology.objects.get(id=technology_id)
+
+            # Create or update relationship
+            relation, created = SkillTechnologyRelation.objects.get_or_create(
+                skill=skill,
+                technology=technology,
+                defaults={
+                    'strength': int(strength),
+                    'relationship_type': relationship_type,
+                    'notes': f'Quick connection via matrix interface'
+                }
+            )
+
+            if not created:
+                # Update exisiting relationship
+                relation.strength = int(strength)
+                relation.relationship_type = relationship_type
+                relation.save()
+            
+            return JsonResponse({
+                'success': True,
+                'created': created,
+                'relationship': {
+                    'id': relation.id,
+                    'strength': relation.strength,
+                    'strength_display': relation.get_strength_display(),
+                    'type': relation.relationship_type,
+                    'type_display': relation.get_relationship_type_display(),
+                }
+            })
+        
+        except (Skill.DoesNotExist, Technology.DoesNotExist, ValueError) as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)

@@ -759,14 +759,14 @@ class SystemModule(models.Model):
     description = MarkdownxField(
         help_text="Full project description in Markdown"
     )
-    # TODO: Remove/use instead for usage examples - Redundant to SystemFeatures
-    features_overview = MarkdownxField(
-        blank=True, help_text="Key features and usage examples"
+    # Formerly features_overview
+    usage_examples = MarkdownxField(
+        blank=True, help_text="Usage examples and key features"
     )
-    # TODO: Remove/use instead for setup instructions - Redundant to other related fields like tech, skills
-    technical_details = MarkdownxField(
+    # Formerly technical_details
+    setup_instructions = MarkdownxField(
         blank=True,
-        help_text="Technical implementation details and setup instructions"
+        help_text="Setup instructions and implementation details"
     )
     # TODO: May remove? Redundant and just another field to complete. Can address challenges w related DataLogs
     challenges = MarkdownxField(
@@ -965,9 +965,13 @@ class SystemModule(models.Model):
 
         return str(soup)
 
-    def render_technical_details(self):
-        """Return technical details as HTML."""
-        return markdownify(self.technical_details)
+    def render_usage_examples(self):
+        """Return usage examples as HTML."""
+        return markdownify(self.usage_examples)
+    
+    def rendered_setup_instructions(self):
+        """Return setup instructions field as HTML."""
+        return markdownify(self.setup_instructions)
 
     def rendered_challenges(self):
         """Return challenges field as HTML."""
@@ -1181,7 +1185,7 @@ class SystemModule(models.Model):
         # Basic information completeness (2 pt)
         if self.description and self.title:
             score += 1
-        if self.technical_details:
+        if self.usage_examples:
             score += 1
 
         # Development progress (3 pt)
@@ -2186,6 +2190,14 @@ class SystemSkillGain(models.Model):
     # Optional before/after tracking
     skill_level_before = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level before project (1-5, optional)")
     skill_level_after = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level after project (1-5, optional)")
+
+    # === New for Skill-Tech Models Rework ===
+    technologies_used = models.ManyToManyField(
+        'Technology',
+        blank=True,
+        related_name='skill_applications',
+        help_text='Which technologies were used to apply this skill in this project?'
+    )
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

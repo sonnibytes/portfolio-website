@@ -1,0 +1,663 @@
+{% extends "admin/admin_base.html" %}
+{% load aura_filters %}
+{% load widget_tweaks %}
+
+{% load static %}
+
+{% block page_title %}Professional Development Command Center{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+/* Professional Development Dashboard Styles */
+.professional-dashboard-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.integration-overview {
+    background: linear-gradient(135deg, 
+        rgba(38, 198, 218, 0.1) 0%, 
+        rgba(179, 157, 219, 0.1) 50%,
+        rgba(255, 138, 128, 0.1) 100%);
+    border: 1px solid rgba(38, 198, 218, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.integration-overview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+        var(--color-teal) 0%, 
+        var(--color-lavender) 50%, 
+        var(--color-coral) 100%);
+}
+
+.skill-progression-matrix {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.progression-stage {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+    text-align: center;
+    transition: all var(--transition-fast);
+}
+
+.progression-stage:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.progression-stage.foundation {
+    border-color: rgba(38, 198, 218, 0.3);
+}
+
+.progression-stage.application {
+    border-color: rgba(179, 157, 219, 0.3);
+}
+
+.progression-stage.mastery {
+    border-color: rgba(255, 138, 128, 0.3);
+}
+
+.progression-flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--color-teal);
+    margin: 0 1rem;
+}
+
+.cross-app-connections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.connection-flow-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+    transition: all var(--transition-fast);
+}
+
+.connection-flow-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.flow-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.flow-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.flow-step:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.step-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.step-icon.education {
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+}
+
+.step-icon.skill {
+    background: rgba(179, 157, 219, 0.2);
+    color: var(--color-lavender);
+}
+
+.step-icon.project {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+}
+
+.step-icon.blog {
+    background: rgba(165, 214, 167, 0.2);
+    color: var(--color-mint);
+}
+
+.skill-matrix-preview {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.matrix-header {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.skill-tech-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.skill-cell, .tech-cell {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.75rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.skill-cell {
+    font-weight: 600;
+    background: rgba(179, 157, 219, 0.05);
+}
+
+.tech-connections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tech-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.tech-badge.strength-1 {
+    background: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+}
+
+.tech-badge.strength-2 {
+    background: rgba(23, 162, 184, 0.2);
+    color: #17a2b8;
+}
+
+.tech-badge.strength-3 {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.tech-badge.strength-4 {
+    background: rgba(0, 123, 255, 0.2);
+    color: #007bff;
+}
+
+.quick-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+.stat-detail {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 1024px) {
+    .skill-progression-matrix {
+        grid-template-columns: 1fr;
+    }
+    
+    .cross-app-connections {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-stats-row {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="professional-dashboard-container">
+    <!-- Page Header -->
+      <div class="flex items-center justify-between mb-3">
+          <div>
+              <h1 class="text-2xl font-bold text-white mb-2">
+                  <i class="fas fa-network-wired text-emerald-400 mr-3"></i>
+                  Professional Development Command Center
+              </h1>
+              <p class="text-gray-400">Manage your skills, education, and their practical applications across all projects</p>
+          </div>
+          <div class="flex gap-3">
+                <a href="{% url 'aura_admin:skill_create' %}" class="btn btn-lg btn-emerald">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add Skill
+                </a>
+                <a href="{% url 'aura_admin:education_create' %}" class="btn btn-lg btn-outline">
+                    <i class="fas fa-graduation-cap mr-2"></i>
+                    Log Learning
+                </a>
+            </div>
+      </div>
+    <!-- Integration Overview Header -->
+    <div class="integration-overview">
+        <div class="justify-between mb-6">
+            <div>
+                <!-- Professional Development Flow -->
+                <div class="skill-progression-matrix">
+                    <div class="progression-stage foundation">
+                        <div class="step-icon education">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-teal-400 mt-3 mb-2">Foundation</h3>
+                        <p class="text-sm text-gray-400">Education & Learning</p>
+                        <div class="text-2xl font-bold text-teal-400 mt-3">
+                            {{ education_stats.total_education|default:0 }}
+                        </div>
+                        <div class="text-xs text-gray-500">Courses & Certifications</div>
+                    </div>
+                    
+                    <div class="progression-stage application">
+                        <div class="step-icon skill">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-violet-400 mt-3 mb-2">Development</h3>
+                        <p class="text-sm text-gray-400">Skills & Technologies</p>
+                        <div class="text-2xl font-bold text-violet-400 mt-3">
+                            {{ skill_stats.total_skills|default:0 }}
+                        </div>
+                        <div class="text-xs text-gray-500">Technical Competencies</div>
+                    </div>
+                    
+                    <div class="progression-stage mastery">
+                        <div class="step-icon project">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-rose-400 mt-3 mb-2">Application</h3>
+                        <p class="text-sm text-gray-400">Projects & Systems</p>
+                        <div class="text-2xl font-bold text-rose-400 mt-3">
+                            {{ system_stats.total_systems|default:0 }}
+                        </div>
+                        <div class="text-xs text-gray-500">Practical Implementations</div>
+                    </div>
+                </div>
+            </div>
+            
+            
+        </div>
+    </div>
+
+    <!-- Quick Stats Overview -->
+    <div class="quick-stats-row">
+        <div class="stat-card">
+            <div class="stat-number text-teal-400">{{ integration_stats.skill_tech_relations|default:0 }}</div>
+            <div class="stat-label">Skill-Tech Connections</div>
+            <div class="stat-detail">Technologies mapped to skills</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number text-violet-400">{{ integration_stats.education_skill_connections|default:0 }}</div>
+            <div class="stat-label">Learning Progressions</div>
+            <div class="stat-detail">Education linked to skills</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number text-rose-400">{{ integration_stats.skills_in_projects|default:0 }}</div>
+            <div class="stat-label">Skills in Practice</div>
+            <div class="stat-detail">Applied in live systems</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number text-emerald-400">{{ integration_stats.documented_learning|default:0 }}</div>
+            <div class="stat-label">Learning Documented</div>
+            <div class="stat-detail">Blog posts about growth</div>
+        </div>
+    </div>
+
+    <!-- Cross-App Connection Flows -->
+    <div class="cross-app-connections">
+        <!-- Education → Skills → Projects Flow -->
+        <div class="connection-flow-card">
+            <div class="flow-header">
+                <i class="fas fa-route text-teal-400 text-xl"></i>
+                <div>
+                    <h3 class="text-lg font-semibold text-white">Learning → Application Flow</h3>
+                    <p class="text-sm text-gray-400">Education to practical implementation</p>
+                </div>
+            </div>
+            
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="step-icon education">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-white">Complete Course/Certification</div>
+                        <div class="text-xs text-gray-400">{{ skill_stats.currently_learning|default:0 }} in progress</div>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="step-icon skill">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-white">Develop Technical Skill</div>
+                        <div class="text-xs text-gray-400">Link technologies and proficiency</div>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="step-icon project">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-white">Apply in Project</div>
+                        <div class="text-xs text-gray-400">Build systems using learned skills</div>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="step-icon blog">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-white">Document Learning</div>
+                        <div class="text-xs text-gray-400">Share insights and challenges</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills Demonstration Matrix -->
+        <div class="connection-flow-card">
+            <div class="flow-header">
+                <i class="fas fa-network-wired text-violet-400 text-xl"></i>
+                <div>
+                    <h3 class="text-lg font-semibold text-white">Skills Demonstration</h3>
+                    <p class="text-sm text-gray-400">Where skills are actively used</p>
+                </div>
+            </div>
+            
+            <div class="flow-steps">
+                {% for skill in featured_skills|slice:":4" %}
+                <div class="flow-step">
+                    <div class="step-icon skill">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-white">{{ skill.name }}</div>
+                        <div class="text-xs text-gray-400">
+                            Level {{ skill.proficiency }} • 
+                            {% if skill.technology_relations.count %}
+                                {{ skill.technology_relations.count }} technologies
+                            {% else %}
+                                Ready for application
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4">
+                    <i class="fas fa-plus-circle text-3xl text-gray-600 mb-2"></i>
+                    <p class="text-sm text-gray-400">Add skills to see demonstrations</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Professional Growth Timeline -->
+        <div class="connection-flow-card">
+            <div class="flow-header">
+                <i class="fas fa-chart-line text-rose-400 text-xl"></i>
+                <div>
+                    <h3 class="text-lg font-semibold text-white">Recent Growth</h3>
+                    <p class="text-sm text-gray-400">Latest learning activities</p>
+                </div>
+            </div>
+            
+            <div class="flow-steps">
+                {% for activity in recent_activities|slice:":4" %}
+                <div class="flow-step">
+                    <div class="step-icon {{ activity.type }}">
+                        <i class="fas fa-{{ activity.icon }}"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-white">{{ activity.title }}</div>
+                        <div class="text-xs text-gray-400">{{ activity.date|date:"M d" }} • {{ activity.source }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4">
+                    <i class="fas fa-timeline text-3xl text-gray-600 mb-2"></i>
+                    <p class="text-sm text-gray-400">Learning timeline will appear here</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill-Technology Matrix Preview -->
+    <div class="glass-card p-0">
+        <div class="matrix-header">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-table mr-2 text-teal-400"></i>
+                        Skill-Technology Matrix
+                    </h3>
+                    <p class="text-sm text-gray-400 mt-1">Visual overview of skill demonstrations</p>
+                </div>
+                <a href="{% url 'aura_admin:skill_tech_relation_list' %}" class="btn btn-sm btn-teal">
+                    <i class="fas fa-expand mr-1"></i>
+                    Full Matrix
+                </a>
+            </div>
+        </div>
+        
+        <div class="skill-matrix-preview">
+            {% for skill in skills_with_tech|slice:":5" %}
+            <div class="skill-tech-grid">
+                <div class="skill-cell">
+                    <div class="font-semibold text-white">{{ skill.name }}</div>
+                    <div class="text-xs text-gray-400">Level {{ skill.proficiency }}</div>
+                </div>
+                <div class="tech-cell">
+                    <div class="tech-connections">
+                        {% for relation in skill.technology_relations.all|slice:":6" %}
+                        <span class="tech-badge strength-{{ relation.strength }}">
+                            {{ relation.technology.name }}
+                        </span>
+                        {% empty %}
+                        <span class="text-xs text-gray-500 italic">No technologies linked yet</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-12">
+                <i class="fas fa-link text-6xl text-gray-600 mb-4"></i>
+                <h4 class="text-lg text-gray-400 mb-2">No Skill-Technology Relationships</h4>
+                <p class="text-gray-500 mb-4">Start connecting your skills to technologies</p>
+                <a href="{% url 'aura_admin:skill_tech_relation_create' %}" class="btn btn-teal">
+                    <i class="fas fa-plus mr-2"></i>Create First Connection
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Action Cards Grid -->
+    <div class="cross-app-connections mt-8">
+        <!-- Skills Management -->
+        <div class="glass-card teal-accent p-6">
+            <div class="card-content">
+                <h3 class="text-lg font-bold text-white flex items-center mb-4">
+                    <i class="fas fa-brain mr-2 text-teal-400"></i>
+                    Skills Portfolio
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Total Skills</span>
+                        <span class="text-teal-400 font-medium">{{ skill_stats.total_skills|default:0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Currently Learning</span>
+                        <span class="text-orange-400 font-medium">{{ skill_stats.currently_learning|default:0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Certified</span>
+                        <span class="text-green-400 font-medium">{{ skill_stats.certified_skills|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-list mr-1"></i>
+                    Manage Skills
+                </a>
+                <a href="{% url 'aura_admin:skill_create' %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add Skill
+                </a>
+            </div>
+        </div>
+
+        <!-- Education Tracking -->
+        <div class="glass-card lavender-accent p-6">
+            <div class="card-content">
+                <h3 class="text-lg font-bold text-white flex items-center mb-4">
+                    <i class="fas fa-graduation-cap mr-2 text-lavender-400"></i>
+                    Learning Journey
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Total Education</span>
+                        <span class="text-lavender-400 font-medium">{{ education_stats.total_education|default:0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Current Studies</span>
+                        <span class="text-orange-400 font-medium">{{ education_stats.current_education|default:0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Completed Courses</span>
+                        <span class="text-green-400 font-medium">{{ education_stats.completed_courses|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:education_list' %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-list mr-1"></i>
+                    View Education
+                </a>
+                <a href="{% url 'aura_admin:education_create' %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Log Learning
+                </a>
+            </div>
+        </div>
+
+        <!-- Relationship Management -->
+        <div class="glass-card coral-accent p-6">
+            <div class="card-content">
+                <h3 class="text-lg font-bold text-white flex items-center mb-4">
+                    <i class="fas fa-network-wired mr-2 text-coral-400"></i>
+                    Connections
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Skill-Tech Links</span>
+                        <span class="text-coral-400 font-medium">{{ integration_stats.skill_tech_relations|default:0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Education-Skill Links</span>
+                        <span class="text-teal-400 font-medium">{{ integration_stats.education_skill_connections|default:0 }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-400">Cross-App Links</span>
+                        <span class="text-mint-400 font-medium">{{ integration_stats.total_connections|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:skill_tech_relation_list' %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-link mr-1"></i>
+                    Skill-Tech Matrix
+                </a>
+                <a href="{% url 'aura_admin:education_skill_list' %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-graduation-cap mr-1"></i>
+                    Education Links
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

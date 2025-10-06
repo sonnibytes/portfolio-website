@@ -26,6 +26,61 @@
   .priority-urgent { border-left: 4px solid #ef4444; }
   .unread-indicator { background: #ef4444; }
   .read-indicator { background: #10b981; }
+
+  .contact-card a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.contact-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(38, 198, 218, 0.2);
+    border-color: rgba(38, 198, 218, 0.5);
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Bulk Actions Toolbar Styling */
+#bulkActionsToolbar {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Checkbox styling */
+.contact-checkbox {
+    cursor: pointer;
+}
+
+.contact-checkbox:checked {
+    background-color: #26c6da;
+    border-color: #26c6da;
+}
+
+/* Contact card hover when checkbox is checked */
+.contact-card:has(.contact-checkbox:checked) {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.3);
+}
   </style>
   {% endblock %}
   
@@ -65,11 +120,9 @@
           </div>
           <div class="glass-card p-4 text-center border-l-4 border-orange-400">
               <div class="text-2xl font-bold text-orange-400">
-                  {% for contact in contacts %}
-                      {% if contact.priority == 'high' or contact.priority == 'urgent' %}1{% endif %}
-                  {% empty %}0{% endfor %}
+                  {{ contact_stats.top_priority_contacts }}
               </div>
-              <div class="text-sm text-gray-400">High Priority</div>
+              <div class="text-sm text-gray-400">Top Priority</div>
           </div>
       </div>
   
@@ -137,23 +190,73 @@
                           Clear
                       </a>
                   </div>
-                  
-                  <!-- Bulk Actions -->
-                  <div class="flex items-center space-x-2">
-                      <select id="bulkAction" class="form-control w-auto">
-                          <option value="">Bulk Actions</option>
-                          <option value="mark_read">Mark as Read</option>
-                          <option value="mark_unread">Mark as Unread</option>
-                          <option value="set_priority_high">Set High Priority</option>
-                          <option value="set_priority_normal">Set Normal Priority</option>
-                          <option value="delete">Delete Selected</option>
-                      </select>
-                      <button type="button" id="applyBulkAction" class="btn btn-orange">
-                          Apply
-                      </button>
                   </div>
-              </div>
+                  </div>
           </form>
+                  
+                  <!-- Bulk Actions Toolbar -->
+                    <div class="glass-card p-4 mb-6" id="bulkActionsToolbar" style="display: none;">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <span class="text-teal-400 font-medium">
+                                    <i class="fas fa-check-square mr-2"></i>
+                                    <span id="selectedCount">0</span> selected
+                                </span>
+                                
+                                <div class="flex items-center space-x-2">
+                                    <!-- Bulk Action Dropdown -->
+                                    <select id="bulkAction" class="form-control w-auto bg-gray-800 border-gray-600">
+                                        <option value="">-- Select Action --</option>
+                                        <optgroup label="Status">
+                                            <option value="mark_read">Mark as Read</option>
+                                            <option value="mark_unread">Mark as Unread</option>
+                                            <option value="mark_responded">Mark as Responded</option>
+                                        </optgroup>
+                                        <optgroup label="Priority">
+                                            <option value="set_priority_high">Set High Priority</option>
+                                            <option value="set_priority_normal">Set Normal Priority</option>
+                                        </optgroup>
+                                        <optgroup label="Danger Zone">
+                                            <option value="delete" class="text-red-400">Delete Selected</option>
+                                        </optgroup>
+                                    </select>
+                                    
+                                    <!-- Apply Button -->
+                                    <button type="button" id="applyBulkAction" class="btn btn-primary">
+                                        <i class="fas fa-check mr-2"></i>
+                                        Apply
+                                    </button>
+                                    
+                                    <!-- Clear Selection Button -->
+                                    <button type="button" id="clearSelection" class="btn btn-outline">
+                                        <i class="fas fa-times mr-2"></i>
+                                        Clear Selection
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Select Options -->
+                            <div class="flex items-center space-x-2 text-sm">
+                                <span class="text-gray-400">Quick select:</span>
+                                <button type="button" onclick="selectAll()" class="text-teal-400 hover:text-teal-300">
+                                    All
+                                </button>
+                                <span class="text-gray-600">|</span>
+                                <button type="button" onclick="selectUnread()" class="text-teal-400 hover:text-teal-300">
+                                    Unread
+                                </button>
+                                <span class="text-gray-600">|</span>
+                                <button type="button" onclick="selectPriority('high')" class="text-teal-400 hover:text-teal-300">
+                                    High Priority
+                                </button>
+                                <span class="text-gray-600">|</span>
+                                <button type="button" onclick="deselectAll()" class="text-teal-400 hover:text-teal-300">
+                                    None
+                                </button>
+                            </div>
+                        </div>
+                    
+              
       </div>
   
       <!-- Contact List -->
@@ -161,11 +264,20 @@
           {% if contacts %}
               {% for contact in contacts %}
                   <div class="glass-card contact-card p-6 {% if contact.priority == 'high' %}priority-high{% elif contact.priority == 'urgent' %}priority-urgent{% endif %}">
-                      <div class="flex items-center justify-between">
+                    <!-- Make entire card clickable to detail view -->
+                    <a href="{% url 'aura_admin:contact_detail' contact.pk %}" class="block">  
+                        <div class="flex items-center justify-between">
                           <!-- Contact Info -->
                           <div class="flex items-start space-x-4 flex-1">
-                              <!-- Checkbox -->
-                              <input type="checkbox" class="contact-checkbox mt-2" value="{{ contact.pk }}">
+                              <!-- Checkbox for bulk selection -->
+                                <div class="mr-4 pt-1">
+                                    <input type="checkbox" 
+                                        class="contact-checkbox w-5 h-5 rounded border-gray-600 text-teal-500 focus:ring-teal-500 focus:ring-offset-gray-900"
+                                        value="{{ contact.pk }}"
+                                        data-priority="{{ contact.priority }}"
+                                        data-is-read="{{ contact.is_read|yesno:'true,false' }}"
+                                        onchange="updateBulkActionsToolbar()">
+                                </div>
                               
                               <!-- Status Indicator -->
                               <div class="mt-2">
@@ -188,10 +300,10 @@
                                           </span>
                                       {% endif %}
                                       
-                                      <!-- Category Badge -->
+                                      {% comment %} <!-- Category Badge -->
                                       <span class="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">
                                           {{ contact.get_inquiry_category_display }}
-                                      </span>
+                                      </span> {% endcomment %}
                                       
                                       <!-- Response Status -->
                                       {% if contact.response_sent %}
@@ -204,73 +316,92 @@
                                           </span>
                                       {% endif %}
                                   </div>
+                                  </a>
                                   
-                                  <div class="text-sm text-gray-400 mb-1">
-                                      <i class="fas fa-envelope mr-1"></i>{{ contact.email }}
-                                  </div>
+                                  <!-- Email and Subject -->
+                                    <div class="space-y-1 mb-3">
+                                        <div class="flex items-center text-sm text-gray-300">
+                                            <i class="fas fa-envelope text-teal-400 mr-2 w-4"></i>
+                                            <span>{{ contact.email }}</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-white">
+                                            <i class="fas fa-comment-alt text-lavender-400 mr-2 w-4"></i>
+                                            <span class="font-medium">{{ contact.subject }}</span>
+                                        </div>
+                                    </div>
                                   
-                                  <div class="text-white font-medium mb-2">{{ contact.subject }}</div>
+                                  <!-- Message Preview -->
+                                    <div class="text-sm text-gray-400 mb-3 line-clamp-2" style="max-width: 90%;">
+                                        {{ contact.message|truncatewords:30 }}
+                                    </div>
                                   
-                                  <div class="text-gray-400 text-sm mb-3">
-                                      {{ contact.message|truncatechars:150 }}
-                                  </div>
-                                  
-                                  <div class="flex items-center space-x-4 text-xs text-gray-500">
-                                      <span>
-                                          <i class="fas fa-calendar mr-1"></i>
-                                          {{ contact.created_at|date:"M d, Y g:i A" }}
-                                      </span>
-                                      {% if contact.referrer_page %}
-                                          <span>
-                                              <i class="fas fa-link mr-1"></i>
-                                              From: {{ contact.referrer_page|truncatechars:30 }}
-                                          </span>
-                                      {% endif %}
-                                      {% if contact.response_date %}
-                                          <span class="text-green-400">
-                                              <i class="fas fa-reply mr-1"></i>
-                                              Responded {{ contact.response_date|timesince }} ago
-                                          </span>
-                                      {% endif %}
-                                  </div>
-                              </div>
+                                  <!-- Meta Info -->
+                                    <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                                        <span>
+                                            <i class="fas fa-clock mr-1"></i>
+                                            {{ contact.created_at|date:"M d, Y g:i A" }}
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-tag mr-1"></i>
+                                            {{ contact.get_inquiry_category_display }}
+                                        </span>
+                                        {% if contact.ip_address %}
+                                        <span>
+                                            <i class="fas fa-network-wired mr-1"></i>
+                                            {{ contact.ip_address }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
                           </div>
                           
-                          <!-- Actions -->
-                          <div class="flex items-center space-x-2 ml-4">
-                              <!-- Quick Actions -->
-                              {% if not contact.is_read %}
-                                  <button 
-                                      class="btn btn-xs btn-emerald mark-read-btn" 
-                                      data-contact-id="{{ contact.pk }}"
-                                      title="Mark as Read"
-                                  >
-                                      <i class="fas fa-eye"></i>
-                                  </button>
-                              {% endif %}
-                              
-                              {% if not contact.response_sent %}
-                                  <button 
-                                      class="btn btn-xs btn-blue mark-response-btn" 
-                                      data-contact-id="{{ contact.pk }}"
-                                      title="Mark Response Sent"
-                                  >
-                                      <i class="fas fa-reply"></i>
-                                  </button>
-                              {% endif %}
-                              
-                              <!-- Main Actions -->
-                              <a href="{% url 'aura_admin:contact_update' contact.pk %}" class="btn btn-xs btn-outline" title="Edit Contact">
-                                  <i class="fas fa-edit"></i>
-                              </a>
-                              
-                              <a href="{% url 'aura_admin:contact_delete' contact.pk %}" class="btn btn-xs btn-red" title="Delete Contact">
-                                  <i class="fas fa-trash"></i>
-                              </a>
-                          </div>
-                      </div>
-                  </div>
-              {% endfor %}
+                          <!-- Action Buttons -->
+                            <div class="flex items-center space-x-2">
+                                <!-- Quick Actions -->
+                                {% if not contact.is_read %}
+                                    <button 
+                                        class="btn btn-xs btn-emerald mark-read-btn" 
+                                        data-contact-id="{{ contact.pk }}"
+                                        title="Mark as Read">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                {% endif %}
+                                
+                                {% if not contact.response_sent %}
+                                    <button 
+                                        class="btn btn-xs btn-blue mark-response-btn" 
+                                        data-contact-id="{{ contact.pk }}"
+                                        title="Mark Response Sent">
+                                        <i class="fas fa-reply"></i>
+                                    </button>
+                                {% endif %}
+                                
+                                <!-- View Detail Button -->
+                                <a href="{% url 'aura_admin:contact_detail' contact.pk %}" 
+                                class="btn btn-xs btn-primary" 
+                                title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                    View
+                                </a>
+                                
+                                <!-- Edit Button -->
+                                <a href="{% url 'aura_admin:contact_update' contact.pk %}" 
+                                class="btn btn-xs btn-outline" 
+                                title="Edit Contact">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <!-- Delete Button -->
+                                <a href="{% url 'aura_admin:contact_delete' contact.pk %}" 
+                                class="btn btn-xs btn-red" 
+                                title="Delete Contact">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    
+                </div>
+                {% endfor %}
           {% else %}
               <!-- Empty State -->
               <div class="glass-card p-12 text-center">
@@ -330,123 +461,236 @@
   
   <!-- AJAX Scripts -->
   <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      // Mark as Read functionality
-      document.querySelectorAll('.mark-read-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
-              const contactId = this.dataset.contactId;
-              
-              fetch(`{% url 'aura_admin:contact_mark_read' 0 %}`.replace('0', contactId), {
-                  method: 'POST',
-                  headers: {
-                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                      'Content-Type': 'application/json',
-                  },
-              })
-              .then(response => response.json())
-              .then(data => {
-                  if (data.success) {
-                      // Update UI to show as read
-                      const card = this.closest('.contact-card');
-                      const indicator = card.querySelector('.unread-indicator');
-                      if (indicator) {
-                          indicator.className = 'w-3 h-3 rounded-full read-indicator';
-                      }
-                      this.remove(); // Remove the mark-as-read button
-                      
-                      // Show success message
-                      showNotification(data.message, 'success');
-                  }
-              })
-              .catch(error => {
-                  showNotification('Error marking contact as read', 'error');
-              });
-          });
-      });
-  
-      // Mark Response Sent functionality
-      document.querySelectorAll('.mark-response-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
-              const contactId = this.dataset.contactId;
-              
-              fetch(`{% url 'aura_admin:contact_mark_response_sent' 0 %}`.replace('0', contactId), {
-                  method: 'POST',
-                  headers: {
-                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                      'Content-Type': 'application/json',
-                  },
-              })
-              .then(response => response.json())
-              .then(data => {
-                  if (data.success) {
-                      // Update UI to show as responded
-                      const card = this.closest('.contact-card');
-                      // You could update badges here
-                      this.remove(); // Remove the response button
-                      
-                      // Show success message
-                      showNotification(data.message, 'success');
-                  }
-              })
-              .catch(error => {
-                  showNotification('Error marking response as sent', 'error');
-              });
-          });
-      });
-  
-      // Bulk Actions
-      document.getElementById('applyBulkAction').addEventListener('click', function() {
-          const action = document.getElementById('bulkAction').value;
-          const selectedContacts = Array.from(document.querySelectorAll('.contact-checkbox:checked'))
-              .map(cb => cb.value);
-          
-          if (!action) {
-              showNotification('Please select an action', 'warning');
-              return;
-          }
-          
-          if (selectedContacts.length === 0) {
-              showNotification('Please select contacts to perform action on', 'warning');
-              return;
-          }
-          
-          if (action === 'delete' && !confirm('Are you sure you want to delete the selected contacts?')) {
-              return;
-          }
-          
-          // Implement bulk action logic here
-          showNotification(`${action} applied to ${selectedContacts.length} contacts`, 'info');
-      });
-  
-      // Select All functionality
-      const selectAllCheckbox = document.getElementById('selectAll');
-      if (selectAllCheckbox) {
-          selectAllCheckbox.addEventListener('change', function() {
-              document.querySelectorAll('.contact-checkbox').forEach(cb => {
-                  cb.checked = this.checked;
-              });
-          });
-      }
-  });
-  
-  // Notification helper function
-  function showNotification(message, type) {
-      // Create a simple notification
-      const notification = document.createElement('div');
-      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
-          type === 'success' ? 'bg-green-500' :
-          type === 'error' ? 'bg-red-500' :
-          type === 'warning' ? 'bg-yellow-500' :
-          'bg-blue-500'
-      }`;
-      notification.textContent = message;
-      
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-          notification.remove();
-      }, 3000);
-  }
-  </script>
+// Helper function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Helper function to show notifications
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 
+        type === 'warning' ? 'bg-yellow-500' : 
+        'bg-blue-500'
+    } text-white`;
+    notification.innerHTML = `
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.classList.add('opacity-100'), 10);
+    setTimeout(() => {
+        notification.classList.add('opacity-0');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Bulk selection helper functions
+function updateBulkActionsToolbar() {
+    const checkedBoxes = document.querySelectorAll('.contact-checkbox:checked');
+    const toolbar = document.getElementById('bulkActionsToolbar');
+    const countSpan = document.getElementById('selectedCount');
+    
+    if (checkedBoxes.length > 0) {
+        toolbar.style.display = 'block';
+        countSpan.textContent = checkedBoxes.length;
+    } else {
+        toolbar.style.display = 'none';
+    }
+}
+
+function selectAll() {
+    document.querySelectorAll('.contact-checkbox').forEach(cb => cb.checked = true);
+    updateBulkActionsToolbar();
+}
+
+function deselectAll() {
+    document.querySelectorAll('.contact-checkbox').forEach(cb => cb.checked = false);
+    updateBulkActionsToolbar();
+}
+
+function selectUnread() {
+    document.querySelectorAll('.contact-checkbox').forEach(cb => {
+        cb.checked = cb.dataset.isRead === 'false';
+    });
+    updateBulkActionsToolbar();
+}
+
+function selectPriority(priority) {
+    document.querySelectorAll('.contact-checkbox').forEach(cb => {
+        cb.checked = cb.dataset.priority === priority;
+    });
+    updateBulkActionsToolbar();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark as Read functionality (single contact quick action)
+    document.querySelectorAll('.mark-read-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const contactId = this.dataset.contactId;
+            
+            fetch(`{% url 'aura_admin:contact_mark_read' 0 %}`.replace('0', contactId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const card = this.closest('.contact-card');
+                    const indicator = card.querySelector('.unread-indicator');
+                    if (indicator) {
+                        indicator.classList.remove('unread-indicator');
+                        indicator.classList.add('read-indicator');
+                        indicator.title = 'Read';
+                    }
+                    this.remove();
+                    showNotification(data.message || 'Contact marked as read', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error marking contact as read', 'error');
+            });
+        });
+    });
+
+    // Mark Response Sent functionality (single contact quick action)
+    document.querySelectorAll('.mark-response-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const contactId = this.dataset.contactId;
+            
+            fetch(`{% url 'aura_admin:contact_mark_response_sent' 0 %}`.replace('0', contactId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const card = this.closest('.contact-card');
+                    this.remove();
+                    
+                    const statusContainer = card.querySelector('.flex.items-center.space-x-3');
+                    if (statusContainer) {
+                        const respondedBadge = document.createElement('span');
+                        respondedBadge.className = 'badge badge-info';
+                        respondedBadge.innerHTML = '<i class="fas fa-reply mr-1"></i>Responded';
+                        statusContainer.appendChild(respondedBadge);
+                    }
+                    
+                    showNotification(data.message || 'Response marked as sent', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error marking response as sent', 'error');
+            });
+        });
+    });
+
+    // Bulk Actions
+    const bulkActionBtn = document.getElementById('applyBulkAction');
+    if (bulkActionBtn) {
+        bulkActionBtn.addEventListener('click', function() {
+            const action = document.getElementById('bulkAction').value;
+            const selectedContacts = Array.from(document.querySelectorAll('.contact-checkbox:checked'))
+                .map(cb => cb.value);
+            
+            if (!action) {
+                showNotification('Please select an action', 'warning');
+                return;
+            }
+            
+            if (selectedContacts.length === 0) {
+                showNotification('Please select contacts to perform action on', 'warning');
+                return;
+            }
+            
+            // Confirm delete action
+            if (action === 'delete') {
+                if (!confirm(`Are you sure you want to delete ${selectedContacts.length} contact(s)? This cannot be undone.`)) {
+                    return;
+                }
+            }
+            
+            // Show loading state
+            bulkActionBtn.disabled = true;
+            bulkActionBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            
+            // Send bulk action request to the same page
+            fetch(window.location.pathname, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    action: action,
+                    contact_ids: selectedContacts
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    // Reload page after successful bulk action
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(data.message || 'Error performing bulk action', 'error');
+                    bulkActionBtn.disabled = false;
+                    bulkActionBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Apply';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error performing bulk action', 'error');
+                bulkActionBtn.disabled = false;
+                bulkActionBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Apply';
+            });
+        });
+    }
+
+    // Clear selection button
+    const clearSelectionBtn = document.getElementById('clearSelection');
+    if (clearSelectionBtn) {
+        clearSelectionBtn.addEventListener('click', deselectAll);
+    }
+    
+    // Update toolbar when checkboxes change
+    document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActionsToolbar);
+    });
+});
+</script>
   
   {% endblock %}

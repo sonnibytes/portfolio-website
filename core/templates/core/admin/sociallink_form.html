@@ -1,0 +1,422 @@
+<!-- core/templates/core/admin/sociallink_form.html -->
+{% extends "admin/admin_base.html" %}
+{% load widget_tweaks %}
+{% load static %}
+{% load aura_filters %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.icon-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.icon-display {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--preview-color, #60a5fa);
+}
+
+.color-preview {
+    width: 30px;
+    height: 30px;
+    border-radius: 0.25rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.color-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.color-swatch.active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.social-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.category-option {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.category-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #26c6da;
+}
+
+.category-option.active {
+    background: rgba(38, 198, 218, 0.2);
+    border-color: #26c6da;
+    color: #26c6da;
+}
+
+.link-preview-card {
+    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.preview-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.25rem;
+    text-decoration: none;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.preview-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+}
+
+.form-help {
+    background: rgba(38, 198, 218, 0.1);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-share-alt text-teal-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <a href="{% url 'aura_admin:sociallink_list' %}" class="btn btn-sm btn-outline">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Social Links
+        </a>
+    </div>
+
+    <!-- Help Text -->
+    <div class="form-help">
+        <div class="flex items-start">
+            <i class="fas fa-info-circle text-teal-400 mr-2 mt-1"></i>
+            <div>
+                <h4 class="font-medium text-white mb-1">Social Link Guidelines</h4>
+                <p class="text-sm text-gray-300">
+                    Add your professional and social profiles to build your network presence. 
+                    Use appropriate categories and brand colors for consistent theming.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="glass-card p-6">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Basic Information Section -->
+            <div class="form-section">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-teal-400 mr-2"></i>
+                    Basic Information
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name -->
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Platform Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="form-error">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- URL -->
+                    <div>
+                        <label for="{{ form.url.id_for_label }}" class="form-label">Profile URL</label>
+                        {{ form.url }}
+                        {% if form.url.errors %}
+                            <div class="form-error">{{ form.url.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Handle -->
+                    <div>
+                        <label for="{{ form.handle.id_for_label }}" class="form-label">Username/Handle</label>
+                        {{ form.handle }}
+                        <div class="help-text">Your username or handle on this platform</div>
+                        {% if form.handle.errors %}
+                            <div class="form-error">{{ form.handle.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Display Order -->
+                    <div>
+                        <label for="{{ form.display_order.id_for_label }}" class="form-label">Display Order</label>
+                        {{ form.display_order }}
+                        <div class="help-text">Lower numbers appear first (0-999)</div>
+                        {% if form.display_order.errors %}
+                            <div class="form-error">{{ form.display_order.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Selection Section -->
+            <div class="form-section">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-tags text-yellow-400 mr-2"></i>
+                    Category & Type
+                </h3>
+                
+                <div>
+                    <label class="form-label">Platform Category</label>
+                    {{ form.category }}
+                    <div class="help-text">Choose the category that best describes this social platform</div>
+                    {% if form.category.errors %}
+                        <div class="form-error">{{ form.category.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Visual Styling Section -->
+            <div class="form-section">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-palette text-pink-400 mr-2"></i>
+                    Visual Styling
+                </h3>
+                
+                <div class="space-y-6">
+                    <!-- Color Selection -->
+                    <div>
+                        <label class="form-label">Brand Color</label>
+                        {{ form.color }}
+                        <div class="help-text">Hex color code for this platform (e.g., #1da1f2 for Twitter)</div>
+                        
+                        <!-- Color Preview -->
+                        <div class="icon-preview">
+                            <div class="color-preview" id="colorPreview">#60a5fa</div>
+                            <span class="text-sm text-gray-400">Preview</span>
+                        </div>
+                        
+                        <!-- Color Swatches for Popular Social Platforms -->
+                        <div class="color-swatches">
+                            <div class="color-swatch" style="background: #1da1f2" data-color="#1da1f2" title="Twitter"></div>
+                            <div class="color-swatch" style="background: #0077b5" data-color="#0077b5" title="LinkedIn"></div>
+                            <div class="color-swatch" style="background: #333" data-color="#333333" title="GitHub"></div>
+                            <div class="color-swatch" style="background: #e4405f" data-color="#e4405f" title="Instagram"></div>
+                            <div class="color-swatch" style="background: #1877f2" data-color="#1877f2" title="Facebook"></div>
+                            <div class="color-swatch" style="background: #ff0000" data-color="#ff0000" title="YouTube"></div>
+                            <div class="color-swatch" style="background: #bd081c" data-color="#bd081c" title="Pinterest"></div>
+                            <div class="color-swatch" style="background: #7289da" data-color="#7289da" title="Discord"></div>
+                            <div class="color-swatch" style="background: #ff6600" data-color="#ff6600" title="Reddit"></div>
+                            <div class="color-swatch" style="background: #25d366" data-color="#25d366" title="WhatsApp"></div>
+                            <div class="color-swatch" style="background: #0088cc" data-color="#0088cc" title="Telegram"></div>
+                            <div class="color-swatch" style="background: #738bd7" data-color="#738bd7" title="Slack"></div>
+                        </div>
+                        
+                        {% if form.color.errors %}
+                            <div class="form-error">{{ form.color.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Icon Selection -->
+                    <div>
+                        <label class="form-label">FontAwesome Icon</label>
+                        {{ form.icon }}
+                        <div class="help-text">FontAwesome icon class (e.g., fab fa-github, fab fa-linkedin)</div>
+                        
+                        <!-- Icon Preview -->
+                        <div class="icon-preview">
+                            <div class="icon-display" id="iconPreview">
+                                <i class="fas fa-share-alt" id="iconElement"></i>
+                            </div>
+                            <span class="text-sm text-gray-400">Icon preview</span>
+                        </div>
+                        
+                        {% if form.icon.errors %}
+                            <div class="form-error">{{ form.icon.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Preview Section -->
+            <div class="form-section">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-eye text-purple-400 mr-2"></i>
+                    Live Preview
+                </h3>
+                
+                <div class="link-preview-card">
+                    <h4 class="text-sm font-medium text-gray-400 mb-2">How this will appear:</h4>
+                    <div class="preview-link" id="livePreview">
+                        <div class="icon-display" style="width: 32px; height: 32px; font-size: 1rem;">
+                            <i class="fas fa-share-alt" id="previewIcon"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-white" id="previewName">Social Platform</div>
+                            <div class="text-xs text-gray-400" id="previewHandle">@username</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-700">
+                <a href="{% url 'aura_admin:sociallink_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+                
+                <div class="flex space-x-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if object %}Update{% else %}Create{% endif %} Social Link
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colorInput = document.getElementById('{{ form.color.id_for_label }}');
+    const colorPreview = document.getElementById('colorPreview');
+    const iconPreview = document.getElementById('iconPreview');
+    const iconElement = document.getElementById('iconElement');
+    const iconInput = document.getElementById('{{ form.icon.id_for_label }}');
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const handleInput = document.getElementById('{{ form.handle.id_for_label }}');
+    
+    // Preview elements
+    const previewIcon = document.getElementById('previewIcon');
+    const previewName = document.getElementById('previewName');
+    const previewHandle = document.getElementById('previewHandle');
+    const livePreview = document.getElementById('livePreview');
+    
+    // Color swatches
+    const colorSwatches = document.querySelectorAll('.color-swatch');
+    
+    function updateColorPreview(color) {
+        colorPreview.style.background = color;
+        colorPreview.textContent = color;
+        iconPreview.style.setProperty('--preview-color', color);
+        livePreview.style.setProperty('--preview-color', color);
+        
+        // Update active swatch
+        colorSwatches.forEach(swatch => {
+            swatch.classList.remove('active');
+            if (swatch.dataset.color === color) {
+                swatch.classList.add('active');
+            }
+        });
+    }
+    
+    function updateIconPreview(iconClass) {
+        if (iconClass) {
+            iconElement.className = iconClass;
+            previewIcon.className = iconClass;
+        }
+    }
+    
+    function updateTextPreviews() {
+        const name = nameInput.value || 'Social Platform';
+        const handle = handleInput.value || '@username';
+        
+        previewName.textContent = name;
+        previewHandle.textContent = handle;
+    }
+    
+    // Initial preview updates
+    updateColorPreview(colorInput.value || '#60a5fa');
+    updateIconPreview(iconInput.value || 'fas fa-share-alt');
+    updateTextPreviews();
+    
+    // Event listeners
+    colorInput.addEventListener('input', function() {
+        updateColorPreview(this.value);
+    });
+    
+    iconInput.addEventListener('input', function() {
+        updateIconPreview(this.value);
+    });
+    
+    nameInput.addEventListener('input', updateTextPreviews);
+    handleInput.addEventListener('input', updateTextPreviews);
+    
+    // Color swatch clicks
+    colorSwatches.forEach(swatch => {
+        swatch.addEventListener('click', function() {
+            const color = this.dataset.color;
+            colorInput.value = color;
+            updateColorPreview(color);
+        });
+    });
+});
+</script>
+{% endblock %}

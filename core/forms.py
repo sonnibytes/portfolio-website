@@ -10,9 +10,9 @@ from django.utils.text import slugify
 
 from datetime import date
 
-from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink
+from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink, SkillTechnologyRelation
 from markdownx.fields import MarkdownxFormField  # pyright: ignore[reportMissingImports]
-
+from projects.models import Technology, SystemModule
 
 # Existing Contact Form
 # class ContactForm(forms.ModelForm):
@@ -40,6 +40,55 @@ from markdownx.fields import MarkdownxFormField  # pyright: ignore[reportMissing
 #                 'rows': 5
 #             }),
 #         }
+
+class SkillTechnologyRelationForm(forms.ModelForm):
+    """Form for managing skill-technology relationships"""
+
+    class Meta:
+        model = SkillTechnologyRelation
+        fields = [
+            'skill',
+            'technology',
+            'strength',
+            'relationship_type',
+            'notes',
+            'first_used_together',
+            'last_used_together'
+        ]
+
+        widgets = {
+            'skill': forms.Select(attrs={'class': 'form-control'}),
+            'technology': forms.Select(attrs={'class': 'form-control'}),
+            'strength': forms.Select(attrs={'class': 'form-control'}),
+            'relationship_type': forms.Select(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Context about how this technology relates to the skill...'
+            }),
+            'first_used_together': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'last_used_together': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            })
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Order skills by category and name
+        self.fields['skill'].queryset = Skill.objects.order_by('category', 'name')
+
+        # Order technologies by category and name
+        self.fields['technology'].queryset = Technology.objects.order_by('category', 'name')
+
+        # Make some fields optional
+        self.fields['notes'].required = False
+        self.fields['first_used_together'].required = False
+        self.fields['last_used_together'].required = False
 
 
 class CorePageForm(forms.ModelForm):
@@ -90,7 +139,7 @@ class CorePageForm(forms.ModelForm):
 
 
 class SkillForm(forms.ModelForm):
-    """Enhanced skill form with technology relationship support."""
+    """Enhanced skill form - relationships handled separately."""
 
     class Meta:
         model = Skill
@@ -108,14 +157,14 @@ class SkillForm(forms.ModelForm):
             'color',
             'display_order',
             'is_featured',
-            'related_technology'
+             # Note: related_technologies handled via SkillTechnologyRelation views
         ]
 
         widgets = {
             "name": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Skill Name (e.g., Python, Django, React)",
+                    "placeholder": "e.g., Machine Learning, API Design",
                 }
             ),
             "slug": forms.TextInput(
@@ -137,24 +186,24 @@ class SkillForm(forms.ModelForm):
                     "class": "form-control",
                 }
             ),
+            "years_experience": forms.NumberInput(
+                attrs={"class": "form-control", "min": 0, "max": 50, "step": 0.5}
+            ),
+            "last_used": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
             "icon": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "fa-python (FontAwesome icon name)",
+                    "placeholder": "FontAwesome icon name (fa-cogs, fa-chart-simple, etc)",
                 }
             ),
             "color": forms.TextInput(attrs={"class": "form-control", "type": "color"}),
             "display_order": forms.NumberInput(
                 attrs={"class": "form-control", "min": 0}
             ),
-            "related_technology": forms.Select(attrs={"class": "form-control"}),
-            "years_experience": forms.NumberInput(
-                attrs={"class": "form-control", "min": 0, "max": 50, "step": 0.5}
-            ),
+            # "related_technology": forms.Select(attrs={"class": "form-control"}),
             "is_featured": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "last_used": forms.DateInput(
-                attrs={"class": "form-control", "type": "date"}
-            ),
             "is_currently_learning": forms.CheckboxInput(
                 attrs={"class": "form-check-input"}
             ),
@@ -164,14 +213,18 @@ class SkillForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Populate related_technology choices
-        try:
-            from projects.models import Technology
-            self.fields['related_technology'].queryset = Technology.objects.all()
-            self.fields['related_technology'].empty_label = "Select related technology..."
-        except ImportError:
-            # If projects app isn't available, hide the field
-            self.fields['related_technology'].widget = forms.HiddenInput()
+        self.fields['last_used'].required = False
+        self.fields['icon'].required = False
+        self.fields['color'].required = False
+
+        # # Populate related_technology choices
+        # try:
+        #     from projects.models import Technology
+        #     self.fields['related_technology'].queryset = Technology.objects.all()
+        #     self.fields['related_technology'].empty_label = "Select related technology..."
+        # except ImportError:
+        #     # If projects app isn't available, hide the field
+        #     self.fields['related_technology'].widget = forms.HiddenInput()
     
     def clean_slug(self):
         """Auto-generate slug from name if not provided."""
@@ -206,7 +259,6 @@ class EducationForm(forms.ModelForm):
         model = Education
         fields = [
             'institution',
-            'slug',
             'degree',
             'field_of_study',
             'start_date',
@@ -219,32 +271,27 @@ class EducationForm(forms.ModelForm):
             'hours_completed',
             'related_systems',
             'learning_intensity',
-            'career_relevance'
+            'career_relevance',
+            # Note: skills_learned handled via EducationSkillDevelopment views
         ]
 
         widgets = {
             "institution": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Institution/Platform Name",
-                }
-            ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "auto-generated-from-degree-institution",
+                    "placeholder": "University, Company, Platform name",
                 }
             ),
             "degree": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Degree/Certification/Course Name",
+                    "placeholder": "Degree name or course title",
                 }
             ),
             "field_of_study": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Field of Study/Subject Area",
+                    "placeholder": "Computer Science, Web Development, etc.",
                 }
             ),
             "start_date": forms.DateInput(
@@ -257,7 +304,7 @@ class EducationForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "rows": 4,
-                    "placeholder": "Describe what you learned and achieved...",
+                    "placeholder": "Key topics covered, skills gained, final projects...",
                 }
             ),
             "is_current": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -265,7 +312,7 @@ class EducationForm(forms.ModelForm):
             "platform": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "e.g., edX HarvardX, Udemy, University of Alabama",
+                    "placeholder": "e.g., Coursera, Udemy, edX, etc.",
                 }
             ),
             "certificate_url": forms.URLInput(
@@ -281,8 +328,8 @@ class EducationForm(forms.ModelForm):
                     "placeholder": "Total hours of instruction/study",
                 }
             ),
-            "related_systems": forms.SelectMultiple(
-                attrs={"class": "form-control", "size": 4}
+            "related_systems": forms.CheckboxSelectMultiple(
+                attrs={"class": "form-control"}
             ),
             "learning_intensity": forms.Select(attrs={"class": "form-control"}),
             "career_relevance": forms.Select(attrs={"class": "form-control"}),
@@ -295,10 +342,18 @@ class EducationForm(forms.ModelForm):
         try:
             from projects.models import SystemModule
             # Not going to filter systems by status so able to link drafts, testing, etc
-            self.fields['related_systems'].queryset = SystemModule.objects.all()
+            self.fields['related_systems'].queryset = SystemModule.objects.order_by('title')
         except ImportError:
             # If projects app not available, hide field
             self.fields['related_systems'].widget = forms.HiddenInput()
+        
+        # Make optional fields clearly optional
+        self.fields['end_date'].required = False
+        self.fields['platform'].required = False
+        self.fields['certificate_url'].required = False
+        self.fields['description'].required = False
+
+        self.fields['related_systems'].help_text = "Projects where you applied knowledge from this education"
     
     def clean_slug(self):
         """Auto-generate slug from degree and institution."""
@@ -366,11 +421,17 @@ class EducationSkillDevelopmentForm(forms.ModelForm):
             "learning_notes": forms.Textarea(
                 attrs={
                     "class": "form-control",
-                    "rows": 3,
-                    "placeholder": "Specific learning outcomes or projects...",
+                    "rows": 4,
+                    "placeholder": "Specific learning outcomes, projects completed, key concepts mastered...",
                 }
             ),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['education'].queryset = Education.objects.order_by('-start_date')
+        self.fields['skill'].queryset = Skill.objects.order_by('category', 'name')
+        self.fields['learning_notes'].required = False
     
     def clean(self):
         """Cross-field validation for proficiency progression."""
@@ -395,7 +456,6 @@ class ExperienceForm(forms.ModelForm):
         model = Experience
         fields = [
             "company",
-            "slug",
             "position",
             "location",
             "description",
@@ -408,12 +468,6 @@ class ExperienceForm(forms.ModelForm):
             "company": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Company Name"}
             ),
-            "slug": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "auto-generated-from-position-company",
-                }
-            ),
             "position": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Job Title/Position"}
             ),
@@ -424,7 +478,7 @@ class ExperienceForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "rows": 6,
-                    "placeholder": "Describe your role, responsibilities, and achievements...",
+                    "placeholder": "Role responsibilities, key achievements, impact made...",
                 }
             ),
             "start_date": forms.DateInput(
@@ -441,6 +495,12 @@ class ExperienceForm(forms.ModelForm):
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['end_date'].required = False
+        self.fields['location'].required = False
+        self.fields['technologies'].required = False
     
     def clean_slug(self):
         """Auto-generate slug from position and company."""
@@ -485,109 +545,160 @@ class ExperienceForm(forms.ModelForm):
 
 
 class ContactForm(forms.ModelForm):
-    """Enhanced contact form with all tracking fields."""
+    """
+    Public-facing contact form.
+    Only includes fields that users should fill out.
+    Metadata and admin fields are handled by the view.
+    """
 
     class Meta:
         model = Contact
-        fields = [
-            "name",
-            "email",
-            "subject",
-            "message",
-            "is_read",
-            "referrer_page",
-            "user_agent",
-            "ip_address",
-            "response_sent",
-            "response_date",
-            "inquiry_category",
-            "priority",
-        ]
+        fields = ['name', 'email', 'subject', 'message']
+        
         widgets = {
-            "name": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Contact Name"}
-            ),
-            "email": forms.EmailInput(
-                attrs={"class": "form-control", "placeholder": "email@example.com"}
-            ),
-            "subject": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Inquiry Subject"}
-            ),
-            "message": forms.Textarea(
+            'name': forms.TextInput(
                 attrs={
-                    "class": "form-control",
-                    "rows": 6,
-                    "placeholder": "Contact message...",
+                    'class': 'terminal-input',
+                    'placeholder': 'IDENTITY_VERIFICATION: Enter your name',
+                    'required': True,
                 }
             ),
-            "is_read": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "referrer_page": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Page visitor came from"}
-            ),
-            "user_agent": forms.Textarea(
+            'email': forms.EmailInput(
                 attrs={
-                    "class": "form-control",
-                    "rows": 2,
-                    "placeholder": "Browser/device info",
+                    'class': 'terminal-input',
+                    'placeholder': 'CONTACT_PROTOCOL: your.email@domain.com',
+                    'required': True,
                 }
             ),
-            "ip_address": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "192.168.1.1"}
+            'subject': forms.TextInput(
+                attrs={
+                    'class': 'terminal-input',
+                    'placeholder': 'TRANSMISSION_SUBJECT: Brief topic summary',
+                    'required': True,
+                }
             ),
-            "response_sent": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "response_date": forms.DateTimeInput(
-                attrs={"class": "form-control", "type": "datetime-local"}
+            'message': forms.Textarea(
+                attrs={
+                    'class': 'terminal-textarea',
+                    'rows': 8,
+                    'placeholder': 'MESSAGE_PAYLOAD: Enter your message...\n\nProvide details about:\n- Project requirements\n- Timeline expectations\n- Collaboration interests\n- Technical questions',
+                    'required': True,
+                }
             ),
-            "inquiry_category": forms.Select(attrs={"class": "form-control"}),
-            "priority": forms.Select(attrs={"class": "form-control"}),
+        }
+
+        labels = {
+            'name': 'Identification',
+            'email': 'Contact Vector',
+            'subject': 'Transmission Subject',
+            'message': 'Message Payload',
+        }
+
+        help_texts = {
+            'name': 'Your full name or organization',
+            'email': 'Primary contact email address',
+            'subject': 'Brief summary of your inquiry',
+            'message': 'Detailed message about your inquiry, project, or question',
         }
     
-    def clean_response_date(self):
-        """Validate response date logic."""
-        response_sent = self.cleaned_data.get("response_sent")
-        response_date = self.cleaned_data.get("response_date")
+    def clean_email(self):
+        """Validate and normalize email address."""
+        email = self.cleaned_data.get('email')
+        if email:
+            email = email.lower().strip()
+        return email
+    
+    def clean_name(self):
+        """Validate and normalize name."""
+        name = self.cleaned_data.get('name')
+        if name:
+            name = name.strip()
+            if len(name) < 2:
+                raise forms.ValidationError("Name must be at least 2 characters.")
+        return name
+    
+    def clean_subject(self):
+        """Validate subject length."""
+        subject = self.cleaned_data.get('subject')
+        if subject:
+            subject = subject.strip()
+            if len(subject) < 5:
+                raise forms.ValidationError("Subject must be at least 5 characters.")
+        return subject
+    
+    def clean_message(self):
+        """Validate message content."""
+        message = self.cleaned_data.get('message')
+        if message:
+            message = message.strip()
+            if len(message) < 20:
+                raise forms.ValidationError("Message must be at least 20 characters.")
+        return message
+    
+class ContactAdminForm(forms.ModelForm):
+    """
+    Admin-only contact form with all fields.
+    Used in Django admin for managing contact submissions.
+    """
 
-        if response_sent and not response_date:
-            raise ValidationError(
-                "Response date is required when response is marked as sent."
-            )
-
-        if response_date and response_date > timezone.now():
-            raise ValidationError("Response date cannot be in the future.")
-
-        return response_date
+    class Meta:
+        model = Contact
+        fields = '__all__'
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 6}),
+            'user_agent': forms.Textarea(attrs={'rows': 2}),
+        }
 
 
 class SocialLinkForm(forms.ModelForm):
-    """Form for managing social media links."""
+    """Enhanced Form for managing social media links."""
 
     class Meta:
         model = SocialLink
-        fields = ["name", "url", "handle", "icon", "display_order"]
+        fields = ["name", "url", "handle", "icon", "display_order", "category", "color"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
-                    "class": "form-control",
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
                     "placeholder": "Platform Name (e.g., GitHub, LinkedIn)",
                 }
             ),
             "url": forms.URLInput(
                 attrs={
-                    "class": "form-control",
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
                     "placeholder": "https://github.com/yourusername",
                 }
             ),
             "handle": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "@username or handle"}
+                attrs={
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none", 
+                    "placeholder": "@username or handle"
+                }
             ),
             "icon": forms.TextInput(
                 attrs={
-                    "class": "form-control",
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
                     "placeholder": "fa-github (FontAwesome icon name)",
                 }
             ),
             "display_order": forms.NumberInput(
-                attrs={"class": "form-control", "min": 0}
+                attrs={
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
+                    "min": 0
+                }
+            ),
+            "category": forms.Select(
+                attrs={
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none"
+                }
+            ),
+            "color": forms.TextInput(
+                attrs={
+                    "class": "w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none",
+                    "placeholder": "#60a5fa",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "title": "Enter a valid hex color code (e.g., #60a5fa)"
+                }
             ),
         }
 
@@ -597,6 +708,18 @@ class SocialLinkForm(forms.ModelForm):
         if url and not url.startswith(("http://", "https://")):
             url = "https://" + url
         return url
+    
+    def clean_color(self):
+        """Validate hex color format."""
+        color = self.cleaned_data.get("color")
+        if color:
+            # Remove # if present and add it back
+            color = color.lstrip('#')
+            if len(color) == 6 and all(c in '0123456789abcdefABCDEF' for c in color):
+                return f"#{color.lower()}"
+            else:
+                raise ValidationError("Please enter a valid hex color code (e.g., #60a5fa)")
+        return color or "#60a5fa"  # Default color
 
 
 class PortfolioAnalyticsForm(forms.ModelForm):

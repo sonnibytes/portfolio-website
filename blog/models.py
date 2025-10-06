@@ -397,7 +397,7 @@ class Series(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.title)
         super(Series, self).save(*args, **kwargs)
 
     def update_metrics(self):

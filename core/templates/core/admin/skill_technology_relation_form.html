@@ -1,0 +1,163 @@
+{% extends "admin/admin_base.html" %}
+{% load widget_tweaks %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.strength-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+    border-left: 4px solid #00ffff;
+}
+
+.relationship-preview {
+    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.date-field {
+    max-width: 200px;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-link text-purple-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <a href="{% url 'aura_admin:skill_tech_relation_list' %}" class="btn btn-sm btn-outline">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Relationships
+        </a>
+    </div>
+
+    <!-- Form Container -->
+    <div class="glass-card p-6">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Basic Relationship Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-purple-400 flex items-center">
+                    <i class="fas fa-link mr-2"></i>
+                    Relationship Definition
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Skill *</label>
+                        {{ form.skill|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.skill.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.skill.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Technology *</label>
+                        {{ form.technology|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.technology.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.technology.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Relationship Strength *</label>
+                        {{ form.strength|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.strength.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.strength.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.strength.help_text %}
+                            <div class="text-gray-400 text-sm mt-1">{{ form.strength.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Relationship Type *</label>
+                        {{ form.relationship_type|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.relationship_type.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.relationship_type.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Context Section -->
+            <div class="form-section space-y-6">
+                <h3 class="text-lg font-bold text-teal-400 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Context & Notes
+                </h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+                    {{ form.notes|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                    {% if form.notes.errors %}
+                        <div class="text-red-400 text-sm mt-1">{{ form.notes.errors.0 }}</div>
+                    {% endif %}
+                    {% if form.notes.help_text %}
+                        <div class="text-gray-400 text-sm mt-1">{{ form.notes.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="date-field">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">First Used Together</label>
+                        {{ form.first_used_together|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.first_used_together.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.first_used_together.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="date-field">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Last Used Together</label>
+                        {{ form.last_used_together|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.last_used_together.errors %}
+                            <div class="text-red-400 text-sm mt-1">{{ form.last_used_together.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-700">
+                <a href="{% url 'aura_admin:skill_tech_relation_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if object %}Update Relationship{% else %}Create Relationship{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

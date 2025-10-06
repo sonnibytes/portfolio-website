@@ -21,10 +21,75 @@ from core.admin_views import (
     BaseAdminDeleteView,
     SlugAdminCreateView,
     BaseAdminView,
-    BulkActionMixin
+    BulkActionMixin,
+    AdminAccessMixin
 )
-from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection
-from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm, ArchitectureComponentForm, ArchitectureConnectionForm
+from .models import SystemModule, Technology, SystemType, ArchitectureComponent, ArchitectureConnection, SystemSkillGain
+from .forms import SystemModuleForm, TechnologyForm, SystemTypeForm, ArchitectureComponentForm, ArchitectureConnectionForm, SystemSkillGainForm
+from core.models import Skill
+
+# NEW: SystemSkillGain Mangement
+class SystemSkillGainListAdminView(BaseAdminListView, BulkActionMixin):
+    """Manage system skill gains."""
+
+    model = SystemSkillGain
+    template_name = "projects/admin/system_skill_gain_list.html"
+    context_object_name = "skill_gains"
+
+    def get_queryset(self):
+        queryset = SystemSkillGain.objects.select_related(
+            'system', 'skill'
+        ).prefetch_related('technologies_used').order_by(
+            '-system__created_at', 'skill__name'
+        )
+
+        # Filter by system
+        system_filter = self.request.GET.get('system', '')
+        if system_filter:
+            queryset = queryset.filter(system__slug=system_filter)
+        
+        # Filter by skill
+        skill_filter = self.request.GET.get('skill', '')
+        if skill_filter:
+            queryset = queryset.filter(skill__slug=skill_filter)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'System Skill Gains',
+            'subtitle': 'Skills ddeveloped through projects',
+            'systems': SystemModule.objects.order_by('title'),
+            'skills': Skill.objects.order_by('name'),
+            'proficiency_choices': SystemSkillGain.PROFICIENCY_GAINED_CHOICES,
+        })
+        return context
+
+
+class SystemSkillGainCreateAdminView(BaseAdminCreateView):
+    """Create new system skill gain relationship"""
+
+    model = SystemSkillGain
+    form_class = SystemSkillGainForm
+    template_name = "projects/admin/system_skill_gain_form.html"
+    success_url = reverse_lazy("aura_admin:projects:system_skill_gain_list")
+
+
+class SystemSkillGainUpdateAdminView(BaseAdminUpdateView):
+    """Edit existing system skill gain relationship"""
+
+    model = SystemSkillGain
+    form_class = SystemSkillGainForm
+    template_name = "projects/admin/system_skill_gain_form.html"
+    success_url = reverse_lazy("aura_admin:projects:system_skill_gain_list")
+
+
+class SystemSkillGainDeleteAdminView(BaseAdminDeleteView):
+    """Delete system skill gain relationship"""
+
+    model = SystemSkillGain
+    success_url = reverse_lazy("aura_admin:projects:system_skill_gain_list")
 
 
 class ProjectsAdminDashboardView(BaseAdminListView):
@@ -46,6 +111,7 @@ class ProjectsAdminDashboardView(BaseAdminListView):
         deployed_systems = SystemModule.objects.filter(status='deployed').count()
         published_systems = SystemModule.objects.filter(status='published').count()
         in_dev_systems = SystemModule.objects.filter(status='in_development').count()
+        featured_systems = SystemModule.objects.featured().count()
         
         # Performance metrics
         avg_completion = SystemModule.objects.aggregate(
@@ -83,6 +149,8 @@ class ProjectsAdminDashboardView(BaseAdminListView):
             'in_dev_systems': in_dev_systems,
             'total_technologies': Technology.objects.count(),
             'total_system_types': SystemType.objects.count(),
+            'operational_systems': deployed_systems + published_systems,
+            'featured_systems': featured_systems,
             
             # Performance metrics
             'avg_completion': round(avg_completion, 1),
@@ -746,3 +814,131 @@ class CreateDefaultArchitectureView(BaseAdminUpdateView):
                 'success': False,
                 'error': str(e)
             })
+
+
+# ============================================================================
+# ARCHITECTURE DASHBOARD REWORK VIEWS
+# May replace architecture connections and components views above, testing workflow.
+# ============================================================================
+
+class ArchitectureDashboardView(AdminAccessMixin, TemplateView):
+    """Unified architecture management dashboard"""
+
+    template_name = "projects/admin/architecture_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # To avoid circular imports/no model issues
+        from .models import ArchitectureComponent, ArchitectureConnection, SystemModule
+
+        # Architecture Overview Stats
+        total_components = ArchitectureComponent.objects.count()
+        total_connections = ArchitectureConnection.objects.count()
+        systems_with_architecture = SystemModule.objects.filter(
+            architecture_components__isnull=False
+        ).distinct().count()
+        core_components = ArchitectureComponent.objects.filter(is_core=True).count()
+
+        # Component breakdown by type
+        component_types_stats = list(ArchitectureComponent.objects.values(
+            'component_type'
+        ).annotate(count=Count('id')).order_by('-count'))
+
+        # Connection breakdown by type
+        connection_types_stats = list(ArchitectureConnection.objects.values(
+            'connection_type'
+        ).annotate(count=Count('id')).order_by('-count'))
+
+        # Systems with the most architecture complexity
+        systems_by_architecture = SystemModule.objects.annotate(
+            component_count=Count('architecture_components'),
+            connection_count=Count('architecture_components__outgoing_connections')
+        ).filter(component_count__gt=0).order_by('-component_count')[:6]
+
+        # Recent architecture activity
+        recent_components = ArchitectureComponent.objects.select_related(
+            'system', 'technology'
+        ).order_by('-id')[:8]
+
+        recent_connections = ArchitectureConnection.objects.select_related(
+            'from_component__system', 'to_component__system'
+        ).order_by('-id')[:8]
+
+        # Architecture Health Metrics
+        systems_needing_architecture = SystemModule.objects.filter(
+            architecture_components__isnull=True,
+            status__in=['deployed', 'published', 'in_development']
+        ).count()
+
+        orphaned_components = ArchitectureComponent.objects.filter(
+            outgoing_connections__isnull=True,
+            incoming_connections__isnull=True
+        ).count()
+
+        context.update({
+            'title': 'Architecture & Design Dashboard',
+            'subtitle': 'System architecture components, connections, and visual diagrams',
+
+            # Main Overview Stats
+            'total_components': total_components,
+            'total_connections': total_connections,
+            'systems_with_architecture': systems_with_architecture,
+            'core_components': core_components,
+            'systems_needing_architecture': systems_needing_architecture,
+            'orphaned_components': orphaned_components,
+
+            # Architecture Breakdowns
+            'component_types_stats': component_types_stats,
+            'connection_types_stats': connection_types_stats,
+            'systems_by_architecture': systems_by_architecture,
+
+            # Recent Activity
+            'recent_components': recent_components,
+            'recent_connections': recent_connections,
+
+            # Health Metrics
+            'architecture_completion': (
+                (systems_with_architecture / max(SystemModule.objects.count(), 1)) * 100
+            ) if SystemModule.objects.count() > 0 else 0,
+
+            'avg_components_per_system': (
+                total_components / max(systems_with_architecture, 1)
+            ) if systems_with_architecture > 0 else 0,
+
+            'avg_connections_per_system': (
+                total_connections / max(systems_with_architecture, 1)
+            ) if systems_with_architecture > 0 else 0,
+        })
+
+        return context
+
+# NEW URL: Systems w Architecture
+
+class SystemsWithArchitectureView(BaseAdminListView):
+    """List systems that have architecture diagrams"""
+
+    model = SystemModule
+    template_name = "projects/admin/systems_with_architecture.html"
+    context_object_name = 'systems'
+
+    def get_queryset(self):
+        return SystemModule.objects.filter(
+            architecture_components__isnull=False
+        ).distinct().annotate(
+            component_count=Count('architecture_components'),
+            connection_count=Count('architecture_components__outgoing_connections'),
+            core_component_count=Count(
+                'architecture_components',
+                filter=Q(architecture_components__is_core=True)
+            )
+        ).order_by('-component_count')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update({
+            'title': 'Systems with Architecture',
+            'subtitle': 'Browse and manage system architecture diagrams',
+        })
+        return context

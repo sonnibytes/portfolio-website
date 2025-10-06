@@ -1,0 +1,384 @@
+<!-- core/templates/core/admin/contact_form.html -->
+{% extends "admin/admin_base.html" %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+.form-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.priority-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.priority-low { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.priority-medium { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.priority-high { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+.priority-urgent { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-unread { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.status-read { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+
+.contact-metadata {
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+}
+
+.response-section {
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.form-help {
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.textarea-large {
+    min-height: 120px;
+    resize: vertical;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-envelope text-emerald-400 mr-3"></i>
+                {{ title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+            {% if object %}
+                <div class="flex items-center gap-2 mt-2">
+                    <div class="status-badge {% if object.is_read %}status-read{% else %}status-unread{% endif %}">
+                        <i class="fas {% if object.is_read %}fa-envelope-open{% else %}fa-envelope{% endif %}"></i>
+                        {% if object.is_read %}Read{% else %}Unread{% endif %}
+                    </div>
+                    <div class="priority-indicator priority-{{ object.priority }}">
+                        <i class="fas fa-flag"></i>
+                        {{ object.get_priority_display }} Priority
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        <i class="fas fa-clock mr-1"></i>
+                        {{ object.created_at|date:"M d, Y g:i A" }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <a href="{% url 'aura_admin:contact_list' %}" class="btn btn-sm btn-outline">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Contacts
+        </a>
+    </div>
+
+    <!-- Help Text for New Contacts -->
+    {% if not object %}
+    <div class="form-help">
+        <div class="flex items-start">
+            <i class="fas fa-info-circle text-yellow-400 mr-2 mt-1"></i>
+            <div>
+                <h4 class="font-medium text-white mb-1">Admin Contact Entry</h4>
+                <p class="text-sm text-gray-300">
+                    This form is for administrative contact management. For tracking visitor inquiries, 
+                    most contacts will be submitted through the public contact form.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Contact Metadata (Edit Mode Only) -->
+    {% if object %}
+    <div class="contact-metadata">
+        <h4 class="text-teal-400 font-bold mb-3">
+            <i class="fas fa-info-circle mr-2"></i>
+            CONTACT_METADATA
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
+            <div>
+                <span class="text-teal-400">CONTACT_ID:</span> #{{ object.id|stringformat:"04d" }}
+            </div>
+            <div>
+                <span class="text-teal-400">TIMESTAMP:</span> {{ object.created_at|date:"Y-m-d H:i:s" }}
+            </div>
+            {% if object.referrer_page %}
+            <div>
+                <span class="text-teal-400">REFERRER:</span> {{ object.referrer_page|truncatechars:50 }}
+            </div>
+            {% endif %}
+            {% if object.ip_address %}
+            <div>
+                <span class="text-teal-400">IP_ADDRESS:</span> {{ object.ip_address }}
+            </div>
+            {% endif %}
+            {% if object.user_agent %}
+            <div class="md:col-span-2">
+                <span class="text-teal-400">USER_AGENT:</span> {{ object.user_agent|truncatechars:80 }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Form Container -->
+    <div class="glass-card p-6">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+            
+            <!-- Contact Information Section -->
+            <div class="form-section">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-user text-emerald-400 mr-2"></i>
+                    Contact Information
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name -->
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Full Name *</label>
+                        {{ form.name|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.name.errors %}
+                            <div class="form-error">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="form-label">Email Address *</label>
+                        {{ form.email|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.email.errors %}
+                            <div class="form-error">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Subject -->
+                <div class="mt-6">
+                    <label for="{{ form.subject.id_for_label }}" class="form-label">Subject *</label>
+                    {{ form.subject|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                    {% if form.subject.errors %}
+                        <div class="form-error">{{ form.subject.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Message -->
+                <div class="mt-6">
+                    <label for="{{ form.message.id_for_label }}" class="form-label">Message *</label>
+                    {{ form.message|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                    {% if form.message.errors %}
+                        <div class="form-error">{{ form.message.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Categorization & Management Section -->
+            <div class="form-section">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-tags text-yellow-400 mr-2"></i>
+                    Categorization & Management
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Inquiry Category -->
+                    <div>
+                        <label for="{{ form.inquiry_category.id_for_label }}" class="form-label">Inquiry Category</label>
+                        {{ form.inquiry_category|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.inquiry_category.errors %}
+                            <div class="form-error">{{ form.inquiry_category.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Priority -->
+                    <div>
+                        <label for="{{ form.priority.id_for_label }}" class="form-label">Priority Level</label>
+                        {{ form.priority|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.priority.errors %}
+                            <div class="form-error">{{ form.priority.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Read Status -->
+                    <div>
+                        <label class="form-label">Status</label>
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center">
+                                {{ form.is_read|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                                <span class="ml-2 text-gray-300" style="text-wrap-mode: nowrap;">Mark as Read</span>
+                            </label>
+                        </div>
+                        {% if form.is_read.errors %}
+                            <div class="form-error">{{ form.is_read.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Information Section -->
+            <div class="form-section">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-server text-blue-400 mr-2"></i>
+                    Technical Information
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Referrer Page -->
+                    <div>
+                        <label for="{{ form.referrer_page.id_for_label }}" class="form-label">Referrer Page</label>
+                        {{ form.referrer_page|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        <div class="help-text">Page the visitor came from</div>
+                        {% if form.referrer_page.errors %}
+                            <div class="form-error">{{ form.referrer_page.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- IP Address -->
+                    <div>
+                        <label for="{{ form.ip_address.id_for_label }}" class="form-label">IP Address</label>
+                        {{ form.ip_address|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        {% if form.ip_address.errors %}
+                            <div class="form-error">{{ form.ip_address.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- User Agent -->
+                <div class="mt-6">
+                    <label for="{{ form.user_agent.id_for_label }}" class="form-label">User Agent</label>
+                    {{ form.user_agent|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                    <div class="help-text">Browser and device information</div>
+                    {% if form.user_agent.errors %}
+                        <div class="form-error">{{ form.user_agent.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Response Management Section -->
+            <div class="form-section response-section">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-reply text-emerald-400 mr-2"></i>
+                    Response Management
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Response Sent -->
+                    <div>
+                        <label class="form-label">Response Status</label>
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center">
+                                {{ form.response_sent|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                                <span class="ml-2 text-gray-300" style="text-wrap-mode: nowrap;">Response Sent</span>
+                            </label>
+                        </div>
+                        {% if form.response_sent.errors %}
+                            <div class="form-error">{{ form.response_sent.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Response Date -->
+                    <div>
+                        <label for="{{ form.response_date.id_for_label }}" class="form-label">Response Date</label>
+                        {{ form.response_date|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                        <div class="help-text">When response was sent</div>
+                        {% if form.response_date.errors %}
+                            <div class="form-error">{{ form.response_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-700">
+                <a href="{% url 'aura_admin:contact_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+                
+                <div class="flex space-x-3">
+                    {% if object %}
+                        <a href="{{ object.email|urlencode }}" 
+                           class="btn btn-outline"
+                           onclick="this.href='mailto:{{ object.email }}?subject=Re: {{ object.subject|urlencode }}'"
+                           target="_blank">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Reply via Email
+                        </a>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if object %}Update Contact{% else %}Create Contact{% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Quick Actions (Edit Mode Only) -->
+    {% if object %}
+    <div class="glass-card p-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <h4 class="text-white font-medium">Quick Actions:</h4>
+                
+                {% if not object.is_read %}
+                <form method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="mark_read" value="true">
+                    <button type="submit" class="btn btn-sm btn-emerald">
+                        <i class="fas fa-check mr-1"></i>Mark as Read
+                    </button>
+                </form>
+                {% endif %}
+                
+                <a href="mailto:{{ object.email }}?subject=Re: {{ object.subject|urlencode }}" 
+                   class="btn btn-sm btn-outline">
+                    <i class="fas fa-reply mr-1"></i>Quick Reply
+                </a>
+            </div>
+            
+            <div class="text-sm text-gray-400">
+                Contact #{{ object.id|stringformat:"04d" }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

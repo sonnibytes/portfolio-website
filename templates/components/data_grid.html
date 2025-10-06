@@ -120,6 +120,19 @@
                         </span>
                         {% endif %}
                     </div>
+                    <div class="item-metadata">
+                        {% if item.tags.exists %}
+                            {% for tag in item.tags.all|slice:":3" %}
+                            <span class="meta-item">
+                                <i class="fas fa-tag"></i>
+                                {{ tag.name }}
+                            </span>
+                            {% endfor %}
+                            {% if item.tags.count > 3 %}
+                                <span class="meta-item more">+{{ item.tags.count|add:"-3" }} more</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
                 
                 <div class="item-footer">
@@ -139,6 +152,17 @@
             <article class="grid-item project-grid-item" data-status="{{ item.status|default:'active' }}">
                 <div class="item-header">
                     <div class="item-id">{{ item.system_id|default:"SYS-001" }}</div>
+                    <!-- Complexity Indicator (replaces portfolio-ready badge) -->
+                <div class="complexity-indicator" title="Complexity: {{ item.complexity|default:1 }}/5" data-complexity="{{ item.complexity|default:1 }}">
+                    <div class="complexity-bars">
+                        {% with complexity=item.complexity|default:1 %}
+                        {% for i in "12345" %}
+                            <div class="complexity-bar {% if complexity >= forloop.counter %}filled{% endif %}"></div>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <span class="complexity-label">{{ item.complexity|default:1 }}/5</span>
+                </div>
                     <div class="item-status">
                         <div class="status-indicator {{ item.status|default:'operational' }}"></div>
                         <span class="status-text">{{ item.get_status_display|default:"ACTIVE" }}</span>
@@ -146,20 +170,33 @@
                 </div>
                 
                 {% if item.thumbnail %}
-                <div class="item-visual">
+                <div class="system-image">
                     <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}">
-                    <div class="visual-overlay">
-                        <div class="overlay-icon">
-                            <i class="fas fa-eye"></i>
-                        </div>
+                </div>
+                {% else %}
+                <div class="system-image">
+                    <div class="system-image-placeholder">
+                        <i class="fas fa-project-diagram"></i>
                     </div>
                 </div>
                 {% endif %}
                 
                 <div class="item-content">
-                    <h3 class="item-title">
-                        <a href="{{ item.get_absolute_url }}">{{ item.title }}</a>
-                    </h3>
+                    <div class="system-header">
+                        <h3 class="item-title">
+                            <a href="{{ item.get_absolute_url }}">{{ item.title }}</a>
+                        </h3>
+                        {% if item.system_type %}
+                        <p class="system-card-subtitle">
+                            <i class="fas fa-{{ item.system_type.icon|default:'apps' }}"></i> 
+                            {{ item.system_type.name }}
+                        </p>
+                    {% endif %}
+                    <!-- Learning Stage Badge -->
+                    <div class="learning-stage-badge learning-stage-{{ item.learning_stage }}">
+                        {{ item.get_learning_stage_display }}
+                    </div>
+                    </div>
                     <p class="item-excerpt">{{ item.excerpt|default:item.description|truncate_smart:80 }}</p>
                     
                     <div class="item-progress">

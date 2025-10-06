@@ -1,0 +1,431 @@
+<!-- 
+  *blog/templates/blog/admin/post_form.html
+  *Version 2.0
+  -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_actions %}
+  <div class="flex items-center space-x-4">
+    <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      Back to DataLogs
+    </a>
+  </div>
+{% endblock %}
+
+{% block admin_content %}
+  <div class="blog-post-form">
+    <form method="post" enctype="multipart/form-data" class="space-y-8">
+      {% csrf_token %}
+      
+      <!-- Basic Information -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-info-circle mr-2 text-purple-400"></i>
+            Basic Information
+          </h3>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Title -->
+            <div class="admin-form-field lg:col-span-2">
+              <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.title.label }}
+                <span class="text-red-400">*</span>
+              </label>
+              {{ form.title }}
+              {% if form.title.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.title.help_text }}</p>
+              {% endif %}
+              {% if form.title.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.title.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Slug -->
+            <div class="admin-form-field">
+              <label for="{{ form.slug.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.slug.label }}
+              </label>
+              {{ form.slug }}
+              {% if form.slug.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.slug.help_text }}</p>
+              {% endif %}
+              {% if form.slug.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.slug.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Category -->
+            <div class="admin-form-field">
+              <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.category.label }}
+                <span class="text-red-400">*</span>
+              </label>
+              {{ form.category }}
+              {% if form.category.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.category.help_text }}</p>
+              {% endif %}
+              {% if form.category.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.category.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Excerpt -->
+          <div class="admin-form-field">
+            <label for="{{ form.excerpt.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+              {{ form.excerpt.label }}
+            </label>
+            {{ form.excerpt }}
+            {% if form.excerpt.help_text %}
+              <p class="mt-1 text-sm text-gray-400">{{ form.excerpt.help_text }}</p>
+            {% endif %}
+            {% if form.excerpt.errors %}
+              <div class="mt-1 text-sm text-red-400">
+                {% for error in form.excerpt.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-edit mr-2 text-purple-400"></i>
+            DataLog Content
+          </h3>
+          
+          <div class="admin-form-field">
+            <label for="{{ form.content.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+              {{ form.content.label }}
+              <span class="text-red-400">*</span>
+            </label>
+            {{ form.content }}
+            {% if form.content.help_text %}
+              <p class="mt-1 text-sm text-gray-400">{{ form.content.help_text }}</p>
+            {% endif %}
+            {% if form.content.errors %}
+              <div class="mt-1 text-sm text-red-400">
+                {% for error in form.content.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Featured Code -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-code mr-2 text-purple-400"></i>
+            Featured Code Snippet
+          </h3>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="admin-form-field lg:col-span-2">
+              <label for="{{ form.featured_code.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.featured_code.label }}
+              </label>
+              {{ form.featured_code }}
+              {% if form.featured_code.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.featured_code.help_text }}</p>
+              {% endif %}
+              {% if form.featured_code.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.featured_code.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="admin-form-field">
+              <label for="{{ form.featured_code_format.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.featured_code_format.label }}
+              </label>
+              {{ form.featured_code_format }}
+              {% if form.featured_code_format.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.featured_code_format.help_text }}</p>
+              {% endif %}
+              {% if form.featured_code_format.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.featured_code_format.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Organization & Tags -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-tags mr-2 text-purple-400"></i>
+            Organization & Tags
+          </h3>
+          
+          <div class="admin-form-field">
+            <label class="block text-sm font-medium text-white mb-2">
+              {{ form.tags.label }}
+            </label>
+            <div class="tag-selection-grid">
+              {{ form.tags }}
+            </div>
+            {% if form.tags.help_text %}
+              <p class="mt-2 text-sm text-gray-400">{{ form.tags.help_text }}</p>
+            {% endif %}
+            {% if form.tags.errors %}
+              <div class="mt-2 text-sm text-red-400">
+                {% for error in form.tags.errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Media & Visual Assets -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-image mr-2 text-purple-400"></i>
+            Visual Assets
+          </h3>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Thumbnail -->
+            <div class="admin-form-field">
+              <label for="{{ form.thumbnail.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.thumbnail.label }}
+              </label>
+              {% if object.thumbnail %}
+                <div class="mb-3">
+                  <img src="{{ object.thumbnail.url }}" alt="Current thumbnail" class="w-32 h-24 object-cover rounded border border-gray-600">
+                  <p class="text-xs text-gray-400 mt-1">Current thumbnail</p>
+                </div>
+              {% endif %}
+              {{ form.thumbnail }}
+              {% if form.thumbnail.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.thumbnail.help_text }}</p>
+              {% endif %}
+              {% if form.thumbnail.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.thumbnail.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Banner Image -->
+            <div class="admin-form-field">
+              <label for="{{ form.banner_image.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.banner_image.label }}
+              </label>
+              {% if object.banner_image %}
+                <div class="mb-3">
+                  <img src="{{ object.banner_image.url }}" alt="Current banner" class="w-full h-24 object-cover rounded border border-gray-600">
+                  <p class="text-xs text-gray-400 mt-1">Current banner image</p>
+                </div>
+              {% endif %}
+              {{ form.banner_image }}
+              {% if form.banner_image.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.banner_image.help_text }}</p>
+              {% endif %}
+              {% if form.banner_image.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.banner_image.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Publishing Options -->
+      <div class="admin-form-container">
+        <div class="form-section">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <i class="fas fa-cog mr-2 text-purple-400"></i>
+            Publishing Options
+          </h3>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Status -->
+            <div class="admin-form-field">
+              <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-white mb-2">
+                {{ form.status.label }}
+              </label>
+              {{ form.status }}
+              {% if form.status.help_text %}
+                <p class="mt-1 text-sm text-gray-400">{{ form.status.help_text }}</p>
+              {% endif %}
+              {% if form.status.errors %}
+                <div class="mt-1 text-sm text-red-400">
+                  {% for error in form.status.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Checkboxes -->
+            <div class="admin-form-field">
+              <label class="block text-sm font-medium text-white mb-4">Options</label>
+              <div class="space-y-3">
+                <label class="flex items-center">
+                  {{ form.featured }}
+                  <span class="ml-2 text-sm text-gray-300">{{ form.featured.label }}</span>
+                </label>
+                <label class="flex items-center">
+                  {{ form.show_toc }}
+                  <span class="ml-2 text-sm text-gray-300">{{ form.show_toc.label }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="admin-form-actions">
+        <div class="flex justify-between items-center">
+          <div class="flex space-x-4">
+            {% if object %}
+              <a href="{{ object.get_absolute_url }}" target="_blank" class="btn btn-secondary">
+                <i class="fas fa-external-link-alt mr-2"></i>
+                Preview DataLog
+              </a>
+            {% endif %}
+          </div>
+          
+          <div class="flex space-x-4">
+            <a href="{% url 'aura_admin:blog:post_list' %}" class="btn btn-secondary">
+              Cancel
+            </a>
+            <button type="submit" name="save_draft" class="btn btn-secondary">
+              <i class="fas fa-save mr-2"></i>
+              Save as Draft
+            </button>
+            <button type="submit" name="save_publish" class="btn btn-purple">
+              <i class="fas fa-paper-plane mr-2"></i>
+              {% if form_mode == 'create' %}Publish DataLog{% else %}Update & Publish{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+{% block admin_css %}
+<style>
+.form-section {
+  position: relative;
+}
+
+.tag-checkbox-item {
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.3s ease;
+}
+
+.tag-checkbox-item:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: #8b5cf6;
+}
+
+.tag-checkbox-item input:checked + span {
+  color: #8b5cf6;
+}
+
+.markdownx-editor {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-primary) !important;
+  min-height: 400px;
+}
+
+.markdownx-editor:focus {
+  border-color: var(--purple-400) !important;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3) !important;
+}
+
+.admin-form-field input[type="file"] {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-form-field input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #8b5cf6;
+}
+</style>
+{% endblock %}
+
+{% block admin_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-generate slug from title
+    const titleField = document.getElementById('{{ form.title.id_for_label }}');
+    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
+    
+    if (titleField && slugField && !slugField.value) {
+        titleField.addEventListener('input', function() {
+            if (!slugField.dataset.modified) {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                slugField.value = slug;
+            }
+        });
+        
+        slugField.addEventListener('input', function() {
+            this.dataset.modified = 'true';
+        });
+    }
+    
+    // Handle save buttons
+    const saveButtons = document.querySelectorAll('button[type="submit"]');
+    saveButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const statusField = document.getElementById('{{ form.status.id_for_label }}');
+            
+            if (this.name === 'save_draft' && statusField) {
+                statusField.value = 'draft';
+            } else if (this.name === 'save_publish' && statusField) {
+                statusField.value = 'published';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

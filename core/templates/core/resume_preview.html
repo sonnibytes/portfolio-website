@@ -1,0 +1,258 @@
+<!-- templates/core/resume_preview.html -->
+<!-- Glass Card Resume Preview - Minimal Styling -->
+{% extends "core/core_base.html" %}
+{% load static %}
+
+{% block title %}Resume - {{ personal_info.name }}{% endblock %}
+{% block meta_description %}Professional resume for {{ personal_info.name }}, {{ personal_info.title }} with technical skills and portfolio projects.{% endblock %}
+
+{% block core_css %}
+<link rel="stylesheet" href="{% static 'core/css/resume-preview.css' %}">
+{% endblock %}
+
+{% block core_content %}
+<div class="resume-preview-container">
+    <!-- Resume Header -->
+    <header class="resume-header-section">
+        <div class="glass-card resume-header-card">
+            <div class="resume-header-content">
+                <div class="resume-identity">
+                    <h1 class="resume-name">{{ personal_info.name }}</h1>
+                    <p class="resume-title">{{ personal_info.title }}</p>
+                    <p class="resume-subtitle">{{ personal_info.subtitle }}</p>
+                </div>
+                
+                <div class="resume-contact-grid">
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <a href="mailto:{{ personal_info.email }}">{{ personal_info.email }}</a>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-globe"></i>
+                        <a href="{{ personal_info.website }}" target="_blank">{{ personal_info.website }}</a>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>{{ personal_info.location }}</span>
+                    </div>
+                </div>
+                
+                <div class="resume-header-actions">
+                    <a href="{% url 'core:resume_download_format' 'pdf' %}" class="glass-btn primary">
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                    <a href="{% url 'core:about' %}" class="glass-btn secondary">
+                        <i class="fas fa-user"></i> Full Portfolio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Professional Summary -->
+    <section class="resume-section">
+        <div class="glass-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-user-tie"></i>
+                    Professional Summary
+                </h2>
+            </div>
+            <p class="summary-text">{{ summary }}</p>
+        </div>
+    </section>
+    
+    <!-- Key Metrics -->
+    <section class="resume-section">
+        <div class="glass-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    Portfolio Metrics
+                </h2>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-number">{{ metrics.total_skills }}</div>
+                    <div class="metric-label">Technical Skills</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-number">{{ metrics.total_projects }}</div>
+                    <div class="metric-label">Portfolio Projects</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-number">{{ metrics.technologies }}</div>
+                    <div class="metric-label">Technologies</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-number">{{ metrics.blog_posts }}</div>
+                    <div class="metric-label">Technical Articles</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Technical Skills -->
+    <section class="resume-section">
+        <div class="glass-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-code"></i>
+                    Technical Skills
+                </h2>
+            </div>
+            <div class="skills-grid">
+                {% for category, data in skills_by_category.items %}
+                <div class="skill-category-card">
+                    <h3 class="skill-category-title">{{ data.label }}</h3>
+                    <div class="skills-list">
+                        {% for skill in data.skills %}
+                        <div class="skill-item">
+                            <div class="skill-main">
+                                <span class="skill-name">{{ skill.name }}</span>
+                                <span class="skill-proficiency">{{ skill.proficiency_text }}</span>
+                            </div>
+                            {% if skill.technologies %}
+                            <div class="skill-technologies">
+                                {% for tech in skill.technologies|slice:":3" %}
+                                <span class="tech-tag">{{ tech }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    
+    <!-- Portfolio Projects -->
+    {% if portfolio_projects %}
+    <section class="resume-section">
+        <div class="glass-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-project-diagram"></i>
+                    Portfolio Projects
+                </h2>
+            </div>
+            <div class="projects-grid">
+                {% for project in portfolio_projects %}
+                <div class="project-item">
+                    <div class="project-header">
+                        <h3 class="project-title">{{ project.name }}</h3>
+                        {% if project.completion_date %}
+                        <span class="project-date">{{ project.completion_date }}</span>
+                        {% endif %}
+                    </div>
+                    <p class="project-description">{{ project.description }}</p>
+                    {% if project.technologies %}
+                    <div class="project-technologies">
+                        {% for tech in project.technologies %}
+                        <span class="tech-tag">{{ tech }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if project.live_url or project.github_url %}
+                    <div class="project-links">
+                        {% if project.live_url %}
+                        <a href="{{ project.live_url }}" target="_blank" class="project-link">
+                            <i class="fas fa-external-link-alt"></i> Live Demo
+                        </a>
+                        {% endif %}
+                        {% if project.github_url %}
+                        <a href="{{ project.github_url }}" target="_blank" class="project-link">
+                            <i class="fab fa-github"></i> Source Code
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+    
+    <!-- Education & Experience Grid -->
+    <div class="two-column-grid">
+        <!-- Education -->
+        {% if education %}
+        <section class="resume-section">
+            <div class="glass-card">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-graduation-cap"></i>
+                        Education
+                    </h2>
+                </div>
+                <div class="timeline-items">
+                    {% for edu in education %}
+                    <div class="timeline-item">
+                        <h3 class="item-title">{{ edu.degree }}</h3>
+                        <p class="item-subtitle">{{ edu.institution }}</p>
+                        <p class="item-date">{{ edu.start_date }} to {{ edu.end_date }}</p>
+                        {% if edu.description %}
+                        <p class="item-description">{{ edu.description }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
+        
+        <!-- Professional Experience -->
+        {% if experience %}
+        <section class="resume-section">
+            <div class="glass-card">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-briefcase"></i>
+                        Professional Experience
+                    </h2>
+                </div>
+                <div class="timeline-items">
+                    {% for exp in experience %}
+                    <div class="timeline-item">
+                        <h3 class="item-title">{{ exp.position }}</h3>
+                        <p class="item-subtitle">{{ exp.company }}{% if exp.location %}, {{ exp.location }}{% endif %}</p>
+                        <p class="item-date">{{ exp.start_date }} to {{ exp.end_date }}</p>
+                        <p class="item-description">{{ exp.description }}</p>
+                        {% if exp.technologies %}
+                        <div class="experience-technologies">
+                            {% for tech in exp.technologies %}
+                            <span class="tech-tag">{{ tech }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+    
+    <!-- Footer -->
+    <footer class="resume-footer">
+        <div class="glass-card footer-card">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p><i class="fas fa-sync-alt"></i> This resume is automatically updated with the latest portfolio information</p>
+                    <p class="download-formats">
+                        <i class="fas fa-download"></i> 
+                        Available formats: 
+                        <a href="{% url 'core:resume_download_format' 'pdf' %}" class="format-link">PDF</a>
+                        <a href="{% url 'core:resume_download_format' 'json' %}" class="format-link">JSON</a>
+                        <a href="{% url 'core:resume_download_format' 'txt' %}" class="format-link">TXT</a>
+                    </p>
+                </div>
+                <p class="generated-date">Generated {{ generated_date }}</p>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock %}

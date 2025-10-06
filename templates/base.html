@@ -5,6 +5,7 @@
 ---->
 
 {% load static %}
+{% load aura_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -112,6 +113,10 @@
                     <i class="fas fa-user-astronaut nav-icon"></i>
                     <span class="nav-text">Profile</span>
                 </a>
+                <a href="{% url 'core:resume_preview' %}" class="nav-link {% if request.resolver_match.view_name == 'core:resume_preview' %}active{% endif %}">
+                    <i class="fas fa-paperclip nav-icon"></i>
+                    <span class="nav-text">Resume</span>
+                </a>
                 <a href="{% url 'core:contact' %}" class="nav-link {% if request.resolver_match.view_name == 'core:contact' %}active{% endif %}">
                     <i class="fas fa-satellite-dish nav-icon"></i>
                     <span class="nav-text">Contact</span>
@@ -126,7 +131,7 @@
                 </div>
                 <div class="timestamp-display">
                     <i class="fas fa-clock"></i>
-                    <span data-timestamp="time">--:--:-- UTC</span>
+                    <span id="live-time" data-timestamp="time">--:--:-- UTC</span>
                 </div>
             </div>
             
@@ -195,7 +200,10 @@
                             <i class="fas fa-chevron-right me-2"></i>Systems
                         </a>
                         <a href="{% url 'core:about' %}" class="footer-link">
-                            <i class="fas fa-chevron-right me-2"></i>Profile
+                            <i class="fas fa-chevron-right me-2"></i>Developer Profile
+                        </a>
+                        <a href="{% url 'core:resume_preview' %}" class="footer-link">
+                            <i class="fas fa-chevron-right me-2"></i>Resume
                         </a>
                     </div>
                 </div>
@@ -203,13 +211,13 @@
                 <!-- Data Categories -->
                 <div class="footer-section">
                     <h3 class="footer-title">
-                        <i class="fas fa-tags me-2"></i>
+                        <i class="fas fa-icons me-2"></i>
                         Categories
                     </h3>
                     <div class="footer-categories">
                         {% for category in categories %}
                         <a href="{% url 'blog:category' slug=category.slug %}" class="category-tag">
-                            <i class="fas fa-tag me-1"></i>{{ category.name }}
+                            <i class="{{ category.icon|safe_icon|default:'fas fa-tag' }} me-1"></i>{{ category.name }}
                         </a>
                         {% empty %}
                         <a href="{% url 'blog:post_list' %}" class="category-tag">
@@ -241,9 +249,11 @@
                     </div>
                 </div>
             </div>
+            </div>
             
             <!-- System Status Bar -->
-            <div class="footer-status-bar">
+            <div class="footer-status-bar-container">
+                <div class="footer-status-bar container">
                 <div class="status-left">
                     <div class="system-status">
                         <div class="status-indicator operational"></div>
@@ -265,6 +275,7 @@
                     </div>
                 </div>
             </div>
+            </div>
             
             <!-- Legal Links -->
             <div class="footer-legal">
@@ -272,7 +283,7 @@
                 <span class="legal-separator">|</span>
                 <a href="{% url 'core:terms' %}" class="legal-link">Terms of Service</a>
             </div>
-        </div>
+        
     </footer>
 
     <!-- Bootstrap JavaScript Bundle with Popper -->
@@ -351,6 +362,31 @@
                 });
             }
         }
+
+        // Update live time
+        function updateLiveTimestamp() {
+            const now = new Date();
+            const timeElement = document.getElementById('live-time');
+            if (timeElement) {
+                // Format date and time
+                const options = {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                };
+                timeElement.textContent = now.toLocaleString("en-US", options);
+            }
+        }
+
+        // Call function immediately to show time on load
+        updateLiveTimestamp();
+
+        // Update the time every second
+        setInterval(updateLiveTimestamp, 1000);
     </script>
 </body>
 </html>

@@ -1,0 +1,356 @@
+<!-- projects/templates/projects/admin/architecture_dashboard.html -->
+{% extends "admin/admin_base.html" %}
+{% load static %}
+{% load aura_filters %}
+
+{% block admin_title %}Architecture Dashboard - AURA Admin{% endblock %}
+
+{% block admin_breadcrumb %}Architecture › Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-project-diagram text-teal-400 mr-3"></i>
+                Architecture & Design Dashboard
+            </h1>
+            <p class="text-gray-400">System architecture components, connections, and visual diagrams</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'aura_admin:projects:architecture_component_create' %}" 
+               class="inline-flex items-center px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/25">
+                <i class="fas fa-plus mr-2"></i>
+                Add Component
+            </a>
+            <a href="{% url 'aura_admin:projects:architecture_connection_create' %}" 
+               class="inline-flex items-center px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white font-medium rounded-lg transition-all duration-300">
+                <i class="fas fa-arrows-alt mr-2"></i>
+                Add Connection
+            </a>
+        </div>
+    </div>
+
+    <!-- Architecture Overview Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-emerald-400 mb-1">{{ total_components|default:0 }}</div>
+            <div class="text-sm text-gray-400">Components</div>
+            <div class="mt-1 text-xs">
+                <span class="text-yellow-400">{{ core_components|default:0 }} core</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-purple-400 mb-1">{{ total_connections|default:0 }}</div>
+            <div class="text-sm text-gray-400">Connections</div>
+            <div class="mt-1 text-xs">
+                <span class="text-cyan-400">{{ avg_connections_per_system|floatformat:1|default:0 }} avg/system</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-cyan-400 mb-1">{{ systems_with_architecture|default:0 }}</div>
+            <div class="text-sm text-gray-400">Systems</div>
+            <div class="mt-1 text-xs">
+                <span class="text-green-400">{{ architecture_completion|floatformat:1|default:0 }}% complete</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-orange-400 mb-1">{{ avg_components_per_system|floatformat:1|default:0 }}</div>
+            <div class="text-sm text-gray-400">Avg Components</div>
+            <div class="mt-1 text-xs">
+                <span class="text-purple-400">Per System</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-red-400 mb-1">{{ systems_needing_architecture|default:0 }}</div>
+            <div class="text-sm text-gray-400">Need Architecture</div>
+            <div class="mt-1 text-xs">
+                <span class="text-red-400">Missing diagrams</span>
+            </div>
+        </div>
+        <div class="glass-card emerald-accent p-4 text-center">
+            <div class="text-2xl font-bold text-gray-400 mb-1">{{ orphaned_components|default:0 }}</div>
+            <div class="text-sm text-gray-400">Orphaned</div>
+            <div class="mt-1 text-xs">
+                <span class="text-gray-400">No connections</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Interface Grid -->
+    <div class="management-grid">
+        
+        <!-- Architecture Overview -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-sitemap mr-2 text-emerald-400"></i>
+                    Architecture Overview
+                </h3>
+                <a href="{% url 'aura_admin:projects:systems_with_architecture' %}" class="btn btn-sm btn-emerald">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    View All
+                </a>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Architecture Completion</span>
+                    <span class="text-emerald-400 font-medium">{{ architecture_completion|floatformat:1 }}%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                    <div class="bg-gradient-to-r from-emerald-400 to-teal-400 h-2 rounded-full" 
+                         style="width: {{ architecture_completion }}%"></div>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Systems with Diagrams</span>
+                    <span class="text-teal-400 font-medium">{{ systems_with_architecture }} systems</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Total Components</span>
+                    <span class="text-purple-400 font-medium">{{ total_components }} components</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:projects:systems_with_architecture' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-compass-drafting mr-1"></i>
+                    System Diagrams
+                </a>
+                <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add Architecture
+                </a>
+            </div>
+        </div>
+
+        <!-- Component Management -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-microchip mr-2 text-teal-400"></i>
+                    Component Management
+                </h3>
+                <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-sm btn-teal">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    Manage
+                </a>
+            </div>
+            
+            <div class="space-y-3">
+                {% for type_stat in component_types_stats|slice:":5" %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-{% if type_stat.component_type == 'frontend' %}desktop{% elif type_stat.component_type == 'backend' %}server{% elif type_stat.component_type == 'database' %}database{% elif type_stat.component_type == 'api' %}plug{% else %}cube{% endif %} text-teal-400 mr-2"></i>
+                            <span class="text-gray-300 text-sm">{{ type_stat.component_type|title }}</span>
+                        </div>
+                        <span class="text-teal-400 font-medium text-sm">{{ type_stat.count }}</span>
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500 text-sm">No components yet</p>
+                {% endfor %}
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:projects:architecture_component_create' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add Component
+                </a>
+                <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-list mr-1"></i>
+                    View All
+                </a>
+            </div>
+        </div>
+
+        <!-- Connection Management -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-arrows-alt mr-2 text-purple-400"></i>
+                    Connection Management
+                </h3>
+                <a href="{% url 'aura_admin:projects:architecture_connection_list' %}" class="btn btn-sm btn-purple">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    Manage
+                </a>
+            </div>
+            
+            <div class="space-y-3">
+                {% for type_stat in connection_types_stats|slice:":5" %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-{% if type_stat.connection_type == 'data_flow' %}stream{% elif type_stat.connection_type == 'api_call' %}plug{% elif type_stat.connection_type == 'dependency' %}link{% else %}arrow-right{% endif %} text-purple-400 mr-2"></i>
+                            <span class="text-gray-300 text-sm">{{ type_stat.connection_type|sub_space:'_'|title }}</span>
+                        </div>
+                        <span class="text-purple-400 font-medium text-sm">{{ type_stat.count }}</span>
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500 text-sm">No connections yet</p>
+                {% endfor %}
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:projects:architecture_connection_create' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add Connection
+                </a>
+                <a href="{% url 'aura_admin:projects:architecture_connection_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-list mr-1"></i>
+                    View All
+                </a>
+            </div>
+        </div>
+
+        <!-- Systems by Architecture Complexity -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-chart-bar mr-2 text-cyan-400"></i>
+                    Architecture Complexity
+                </h3>
+                <a href="{% url 'aura_admin:projects:systems_with_architecture' %}" class="btn btn-sm btn-cyan">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    View All
+                </a>
+            </div>
+            
+            <div class="space-y-3">
+                {% for system in systems_by_architecture|slice:":5" %}
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-white text-sm font-medium">{{ system.title|truncatechars:20 }}</div>
+                            <div class="text-gray-400 text-xs">
+                                {{ system.component_count }} components, {{ system.connection_count }} connections
+                            </div>
+                        </div>
+                        <a href="{% url 'aura_admin:projects:system_architecture' system.pk %}" 
+                           class="text-cyan-400 hover:text-cyan-300">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500 text-sm">No systems with architecture yet</p>
+                {% endfor %}
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Design System
+                </a>
+                <a href="{% url 'aura_admin:projects:systems_with_architecture' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-compass-drafting mr-1"></i>
+                    Browse Diagrams
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Architecture Activity -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-history mr-2 text-orange-400"></i>
+                    Recent Activity
+                </h3>
+            </div>
+            
+            <div class="space-y-3">
+                {% for component in recent_components|slice:":4" %}
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-white text-sm">{{ component.name|truncatechars:25 }}</div>
+                            <div class="text-gray-400 text-xs">
+                                {{ component.system.title|truncatechars:20 }} • {{ component.get_component_type_display }}
+                            </div>
+                        </div>
+                        <span class="text-orange-400 text-xs">
+                            <i class="fas fa-plus mr-1"></i>
+                            Component
+                        </span>
+                    </div>
+                {% endfor %}
+                
+                {% for connection in recent_connections|slice:":2" %}
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-white text-sm">{{ connection.from_component.name|truncatechars:15 }} → {{ connection.to_component.name|truncatechars:15 }}</div>
+                            <div class="text-gray-400 text-xs">
+                                {{ connection.get_connection_type_display }}
+                            </div>
+                        </div>
+                        <span class="text-purple-400 text-xs">
+                            <i class="fas fa-arrows-alt mr-1"></i>
+                            Connection
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-history mr-1"></i>
+                    All Activity
+                </a>
+            </div>
+        </div>
+
+        <!-- Architecture Health -->
+        <div class="glass-card emerald-accent p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-heartbeat mr-2 text-red-400"></i>
+                    Architecture Health
+                </h3>
+            </div>
+            
+            <div class="space-y-4">
+                {% if systems_needing_architecture > 0 %}
+                    <div class="p-3 bg-red-500 bg-opacity-20 border border-red-500 border-opacity-30 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-red-400 font-medium text-sm">Systems Need Architecture</span>
+                            <span class="text-red-400 font-bold">{{ systems_needing_architecture }}</span>
+                        </div>
+                        <p class="text-gray-400 text-xs">Active systems without architecture diagrams</p>
+                    </div>
+                {% endif %}
+                
+                {% if orphaned_components > 0 %}
+                    <div class="p-3 bg-yellow-500 bg-opacity-20 border border-yellow-500 border-opacity-30 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-yellow-400 font-medium text-sm">Orphaned Components</span>
+                            <span class="text-yellow-400 font-bold">{{ orphaned_components }}</span>
+                        </div>
+                        <p class="text-gray-400 text-xs">Components with no connections</p>
+                    </div>
+                {% endif %}
+                
+                {% if systems_needing_architecture == 0 and orphaned_components == 0 %}
+                    <div class="p-3 bg-green-500 bg-opacity-20 border border-green-500 border-opacity-30 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                            <span class="text-green-400 font-medium text-sm">Architecture Health Good</span>
+                        </div>
+                        <p class="text-gray-400 text-xs">No critical architecture issues detected</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add Architecture
+                </a>
+                <a href="{% url 'aura_admin:projects:architecture_component_list' %}" class="btn btn-xs btn-outline">
+                    <i class="fas fa-link mr-1"></i>
+                    Fix Orphans
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

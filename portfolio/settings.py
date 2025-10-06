@@ -35,6 +35,7 @@ SECRET_KEY = os.getenv("SECRET_KEY") or get_random_secret_key()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "0") == "1"
 
+
 # Hosts & CSRF come from env so can add custom domain later
 def env_list(name: str, default: str = "") -> list[str]:
     raw = os.getenv(name, default)
@@ -112,6 +113,7 @@ TEMPLATES = [
                 "core.context_processors.global_context",
                 "projects.context_processors.systems_context",
                 "core.context_processors.admin_context",
+                "core.context_processors.admin_navigation_context",
             ],
         },
     },
@@ -277,5 +279,5 @@ CACHES = {
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Changed to allow contact list in aura admin to use cookies to get csrf token for quick actions
 CSRF_COOKIE_SAMESITE = 'Lax'

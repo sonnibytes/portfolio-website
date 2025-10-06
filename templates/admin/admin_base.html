@@ -1,138 +1,860 @@
-<!-- 
- * templates/admin/admin_base.html
- * Version 2.0 - FIXED URL Namespaces
- -->
+<!-- templates/admin/admin_base.html -->
+<!-- AURA Portfolio - Enhanced Admin Base Template -->
+<!-- Version 3.0 - Unified Navigation System -->
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}
-  {{ title }} | AURA Admin
-{% endblock %}
+{% block title %}{% block admin_title %}Admin{% endblock %} | AURA Command Center{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/admin.css' %}">
-  {% block admin_css %}{% endblock %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>
+/* Enhanced Admin Navigation Styles */
+.admin-layout {
+    display: flex;
+    min-height: calc(100vh - 80px); /* Account for main header */
+    background: var(--color-bg-primary);
+}
+
+.admin-sidebar {
+    width: 280px;
+    background: rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    position: fixed;
+    left: 0;
+    top: 80px; /* Below main header */
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.admin-sidebar.collapsed {
+    transform: translateX(-280px);
+}
+
+.admin-main {
+    flex: 1;
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+    min-height: calc(100vh - 80px);
+}
+
+.admin-main.expanded {
+    margin-left: 0;
+}
+
+/* Admin Header */
+.admin-header {
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: between;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    backdrop-filter: blur(10px);
+}
+
+.admin-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.sidebar-toggle {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-teal);
+}
+
+.admin-breadcrumbs {
+    color: #9ca3af;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-breadcrumbs a {
+    color: var(--color-teal);
+    text-decoration: none;
+}
+
+.admin-breadcrumbs a:hover {
+    color: white;
+}
+
+/* Sidebar Navigation */
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sidebar-subtitle {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+}
+
+.sidebar-nav {
+    padding: 1rem 0;
+}
+
+.nav-section {
+    margin-bottom: 2rem;
+}
+
+.nav-section:last-child {
+    margin-bottom: 1rem;
+}
+
+.nav-section-header {
+    padding: 0.5rem 1.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-link-item {
+    margin: 0;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    color: #d1d5db;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    text-decoration: none;
+    border-left-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-link.active {
+    background: rgba(38, 198, 218, 0.15);
+    color: var(--color-teal);
+    border-left-color: var(--color-teal);
+}
+
+.nav-link.active:hover {
+    background: rgba(38, 198, 218, 0.2);
+}
+
+.nav-icon {
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.nav-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.375rem;
+    border-radius: 9999px;
+    margin-left: auto;
+    animation: pulse 2s infinite;
+}
+
+.nav-count {
+    background: rgba(255, 255, 255, 0.15);
+    color: #9ca3af;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 9999px;
+    margin-left: auto;
+}
+
+.nav-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: auto;
+}
+
+.nav-status.online { background: #10b981; }
+.nav-status.warning { background: #f59e0b; }
+.nav-status.offline { background: #6b7280; }
+
+/* Content Area */
+.admin-content {
+    padding: 2rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 1024px) {
+    .admin-sidebar {
+        transform: translateX(-280px);
+    }
+    
+    .admin-sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    
+    .admin-main {
+        margin-left: 0;
+    }
+    
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        padding: 1rem;
+    }
+    
+    .admin-content {
+        padding: 1rem;
+    }
+    
+    .admin-breadcrumbs {
+        display: none;
+    }
+}
+
+/* Quick Stats Cards */
+.quick-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.quick-stat {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    flex: 1;
+    text-align: center;
+}
+
+.quick-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.quick-stat-label {
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+/* Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar Styling */
+.admin-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* NEW -- Architecture Section Highlighting */
+.nav-section:has([href*="architecture"]) {
+    background: rgba(38, 198, 218, 0.05);
+    border-radius: 0.5rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0;
+}
+
+.nav-section:has([href*="architecture"]) .nav-section-header {
+    color: #26c6da;
+    font-weight: 600;
+}
+
+/* System Section Enhancement */
+.nav-section:has([href*="projects"]) {
+    background: rgba(76, 175, 80, 0.05);
+    border-radius: 0.5rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0;
+}
+
+.nav-section:has([href*="projects"]) .nav-section-header {
+    color: #4caf50;
+    font-weight: 600;
+}
+
+/* DataLogs Section Enhancement */
+.nav-section:has([href*="blog"]) {
+    background: rgba(179, 157, 219, 0.05);
+    border-radius: 0.5rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0;
+}
+
+.nav-section:has([href*="blog"]) .nav-section-header {
+    color: #b39ddb;
+    font-weight: 600;
+}
+
+/* Enhanced hover effects for section groupings */
+.nav-section:hover {
+    background-opacity: 0.1;
+    transition: all 0.3s ease;
+}
+
+/* Count badges with section-specific colors */
+.nav-section:has([href*="architecture"]) .nav-count {
+    background: rgba(38, 198, 218, 0.2);
+    color: #26c6da;
+}
+
+.nav-section:has([href*="projects"]) .nav-count {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+}
+
+.nav-section:has([href*="blog"]) .nav-count {
+    background: rgba(179, 157, 219, 0.2);
+    color: #b39ddb;
+}
+</style>
+{% block admin_css %}{% endblock %}
 {% endblock %}
 
 {% block body_class %}admin-interface{% endblock %}
 
 {% block subnav %}
-  <div class="admin-interface">
-    <!-- Admin Header -->
-    <header class="admin-header">
-      <div class="container mx-auto px-6">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <h1 class="text-2xl font-bold text-white">
-              <i class="fas fa-shield-alt mr-2 text-{{ app_color|default:'cyan' }}"></i>
-              AURA Admin
-            </h1>
-
-            <!-- Admin Navigation -->
-            <nav class="admin-nav">
-              <div class="container mx-auto px-6">
-                <div class="flex space-x-6">
-                  <a href="{% url 'aura_admin:dashboard' %}" class="admin-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <i class="fas fa-tachometer-alt mr-2"></i>
-                    Dashboard
-                    <div class="link-indicator bg-emerald-500"></div>
-                  </a>
-
-                  <a href="{% url 'aura_admin:core_dashboard' %}" class="admin-nav-link {% if request.resolver_match.url_name == 'core_dashboard' %}active{% endif %}">
-                    <i class="fas fa-sprout mr-2"></i>
-                    Core
-                    <div class="link-indicator bg-emerald-500"></div>
-                  </a>
-                  
-                  <a href="{% url 'aura_admin:blog:dashboard' %}" class="admin-nav-link {% if 'blog' in request.path %}active{% endif %}">
-                    <i class="fas fa-database mr-2"></i>
-                    DataLogs
-                    <div class="link-indicator bg-purple-500"></div>
-                  </a>
-                  
-                  <a href="{% url 'aura_admin:projects:dashboard' %}" class="admin-nav-link {% if 'projects' in request.path %}active{% endif %}">
-                    <i class="fas fa-project-diagram mr-2"></i>
-                    Systems
-                    <div class="link-indicator bg-cyan-500"></div>
-                  </a>
-                </div>
-              </div>
-            </nav>
-          </div>
-
-          <div class="flex items-center space-x-4">
-            <a href="{% url 'core:home' %}" class="admin-nav-link">
-              <i class="fas fa-home mr-2"></i>
-              View Site
-            </a>
-            <span class="text-gray-400">{{ user.username }}</span>
-          </div>
-          
-        </div>
-        {% if breadcrumbs %}
-          <nav class="breadcrumbs">
-            <div class="flex items-center space-x-2 text-sm text-gray-400">
-              {% for breadcrumb in breadcrumbs %}
-                {% if breadcrumb.url %}
-                  <a href="{{ breadcrumb.url }}" class="hover:text-white transition-colors">
-                    {{ breadcrumb.name }}
-                  </a>
-                {% else %}
-                  <span class="text-{{ app_color|default:'cyan' }}">{{ breadcrumb.name }}</span>
-                {% endif %}
-                {% if not forloop.last %}
-                  <i class="fas fa-chevron-right text-gray-600"></i>
-                {% endif %}
-              {% endfor %}
+<!-- Admin Layout Container -->
+<div class="admin-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        
+        <!-- Sidebar Header -->
+        <div class="sidebar-header">
+            <div class="sidebar-title">
+                <i class="fas fa-shield-alt text-teal-400"></i>
+                AURA Command
             </div>
-          </nav>
-        {% endif %}
-      </div>
-    </header>
-
-    {% endblock %}
-
-    {% block content %}
-    <!-- Admin Content -->
-    <div class="admin-content">
-      <div class="container mx-auto px-6 py-8">
-        <!-- Messages -->
-        {% if messages %}
-          <div class="messages mb-6">
-            {% for message in messages %}
-              <div class="alert alert-{{ message.tags }} mb-4">
-                <div class="flex items-center">
-                  {% if message.tags == 'success' %}
-                     <i class="fas fa-check-circle mr-2"></i>
-                  {% elif message.tags == 'error' %}
-                     <i class="fas fa-exclamation-triangle mr-2"></i>
-                  {% elif message.tags == 'warning' %}
-                     <i class="fas fa-exclamation-circle mr-2"></i>
-                  {% else %}
-                     <i class="fas fa-info-circle mr-2"></i>
-                  {% endif %}
-                   {{ message }}
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-
-         <!-- Admin Content -->
-         {% block admin_content %}
-           <div class="text-center py-12">
-             <i class="fas fa-shield-alt text-6xl text-cyan-400 mb-4"></i>
-             <h2 class="text-2xl font-bold text-white mb-2">AURA Admin System</h2>
-             <p class="text-gray-400">Advanced User Repository & Archive Management</p>
-          </div>
-        {% endblock %}
-      </div>
+            <div class="sidebar-subtitle">System Administration</div>
+        </div>
+        
+        <!-- Navigation Menu -->
+<nav class="sidebar-nav">
+    
+    <!-- Main Dashboard -->
+    <div class="nav-section">
+        <div class="nav-section-header">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Control Center</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:dashboard' %}" 
+                   class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-home nav-icon"></i>
+                    <span>Main Dashboard</span>
+                    <div class="nav-status online"></div>
+                </a>
+            </li>
+        </ul>
     </div>
-  </div>
+    
+    <!-- ============== REORGANIZED CORE & Professional Development ============== -->
+
+    <!-- Professional Development & Connections -->
+    <div class="nav-section">
+        <div class="nav-section-header">
+            <i class="fas fa-user-circle"></i>
+            <span>Professional Development</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:professional_dashboard' %}" 
+                   class="nav-link {% if 'professional_dashboard' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-chart-pie nav-icon"></i>
+                    <span>Development Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:skill_tech_matrix' %}" 
+                   class="nav-link {% if 'skill_tech_matrix' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-brain nav-icon"></i>
+                    <span>Skill-Tech Matrix</span>
+                    <span class="nav-count">{{ skill_stats.total_skills|default:0 }}</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:growth_timeline' %}" 
+                   class="nav-link {% if 'growth_timeline' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-graduation-cap nav-icon"></i>
+                    <span>Growth Timeline</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Core System Management -->
+    <div class="nav-section">
+        <div class="nav-section-header">
+            <i class="fas fa-user-circle"></i>
+            <span>Core Portfolio</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:core_dashboard' %}" 
+                   class="nav-link {% if 'core' in request.resolver_match.namespace and 'dashboard' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-chart-pie nav-icon"></i>
+                    <span>Core Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:skill_list' %}" 
+                   class="nav-link {% if 'skill' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-brain nav-icon"></i>
+                    <span>Skills & Expertise</span>
+                    <span class="nav-count">{{ skill_stats.total_skills|default:0 }}</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:education_list' %}" 
+                   class="nav-link {% if 'education' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-graduation-cap nav-icon"></i>
+                    <span>Education</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:experience_list' %}" 
+                   class="nav-link {% if 'experience' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-briefcase nav-icon"></i>
+                    <span>Experience</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:contact_list' %}" 
+                   class="nav-link {% if 'contact' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-envelope nav-icon"></i>
+                    <span>Contact Messages</span>
+                    {% if contact_stats.unread_contacts > 0 %}
+                        <span class="nav-badge">{{ contact_stats.unread_contacts }}</span>
+                    {% endif %}
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- ============== REORGANIZED PROJECTS & SYSTEMS ============== -->
+    <div class="nav-section">
+        <div class="nav-section-header">
+            <i class="fas fa-server"></i>
+            <span>Systems & Projects</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:projects:dashboard' %}" 
+                   class="nav-link {% if 'projects' in request.resolver_match.namespace and 'dashboard' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span>Projects Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:projects:system_list' %}" 
+                   class="nav-link {% if 'system_list' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-cubes nav-icon"></i>
+                    <span>System Modules</span>
+                    <span class="nav-count">{{ system_stats.total_systems|default:0 }}</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:projects:system_type_list' %}" 
+                   class="nav-link {% if 'system_type' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-layer-group nav-icon"></i>
+                    <span>System Types</span>
+                    <span class="nav-count">{{ system_stats.total_system_types|default:0 }}</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:projects:technology_list' %}" 
+                   class="nav-link {% if 'technology' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-tools nav-icon"></i>
+                    <span>Technologies</span>
+                    <span class="nav-count">{{ system_stats.total_technologies|default:0 }}</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- ============== NEW UNIFIED ARCHITECTURE SECTION ============== -->
+    <div class="nav-section">
+        <div class="nav-section-header">
+            <i class="fas fa-project-diagram"></i>
+            <span>Architecture & Design</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:projects:architecture_dashboard' %}" 
+                   class="nav-link {% if 'architecture_dashboard' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-sitemap nav-icon"></i>
+                    <span>Architecture Overview</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:projects:architecture_component_list' %}" 
+                   class="nav-link {% if 'architecture_component' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-microchip nav-icon"></i>
+                    <span>Components</span>
+                    <span class="nav-count">{{ architecture_stats.total_components|default:0 }}</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:projects:architecture_connection_list' %}" 
+                   class="nav-link {% if 'architecture_connection' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-arrows-alt nav-icon"></i>
+                    <span>Connections</span>
+                    <span class="nav-count">{{ architecture_stats.total_connections|default:0 }}</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:projects:systems_with_architecture' %}" 
+                   class="nav-link {% if 'systems_with_architecture' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-compass-drafting nav-icon"></i>
+                    <span>System Diagrams</span>
+                    <span class="nav-count">{{ architecture_stats.systems_with_architecture|default:0 }}</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- DataLogs & Content -->
+    <div class="nav-section">
+        <div class="nav-section-header">
+            <i class="fas fa-database"></i>
+            <span>DataLogs & Content</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:blog:dashboard' %}" 
+                   class="nav-link {% if 'blog' in request.resolver_match.namespace and 'dashboard' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-chart-bar nav-icon"></i>
+                    <span>DataLogs Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:blog:post_list' %}" 
+                   class="nav-link {% if 'post_list' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-file-alt nav-icon"></i>
+                    <span>DataLog Entries</span>
+                    <span class="nav-count">{{ datalog_stats.total_posts|default:0 }}</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:blog:category_list' %}" 
+                   class="nav-link {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-tags nav-icon"></i>
+                    <span>Categories & Knowledge Domains</span>
+                    <span class="nav-count">{{ datalog_stats.total_categories|default:0 }}</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+            <a href="{% url 'aura_admin:blog:tag_list' %}" 
+            class="nav-link {% if 'tag' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-tags nav-icon"></i>
+                <span>Knowledge Tags</span>
+                <span class="nav-count">{{ datalog_stats.total_tags|default:0 }}</span>
+            </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:blog:series_list' %}" 
+                   class="nav-link {% if 'series' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-list-ol nav-icon"></i>
+                    <span>Series & Collections</span>
+                    <span class="nav-count">{{ datalog_stats.total_series|default:0 }}</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Analytics & Insights -->
+    <div class="nav-section">
+        <div class="nav-section-header">
+            <i class="fas fa-chart-line"></i>
+            <span>Analytics & Insights</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:analytics_list' %}" 
+                   class="nav-link {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-chart-column nav-icon"></i>
+                    <span>Portfolio Analytics</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                 {% comment %} <a href="{% url 'aura_admin:performance_monitoring' %}" {% endcomment %}
+                 <a href="#" 
+                   class="nav-link {% if 'performance' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    <span>Performance Monitor</span>
+                    <div class="nav-status online"></div>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="{% url 'aura_admin:professional_dashboard' %}"
+                   class="nav-link {% if 'professional_dashboard' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-road nav-icon"></i>
+                    <span>Professional Development</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- System Administration -->
+    <div class="nav-section">
+        <div class="nav-section-header">
+            <i class="fas fa-cogs"></i>
+            <span>System Administration</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-link-item">
+                {% comment %} <a href="{% url 'aura_admin:backup_management' %}" {% endcomment %}
+                 <a href="#" 
+                   class="nav-link {% if 'backup' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-hdd nav-icon"></i>
+                    <span>Backup & Export</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                {% comment %} <a href="{% url 'aura_admin:site_settings' %}" {% endcomment %}
+                 <a href="#" 
+                   class="nav-link {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-sliders-h nav-icon"></i>
+                    <span>Site Settings</span>
+                </a>
+            </li>
+            <li class="nav-link-item">
+                <a href="/admin/" 
+                   class="nav-link" target="_blank">
+                    <i class="fas fa-tools nav-icon"></i>
+                    <span>Django Admin</span>
+                    <i class="fas fa-external-link-alt ml-auto text-xs"></i>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+</nav>
+
+    </aside>
+    
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <!-- Main Content Area -->
+    <main class="admin-main" id="adminMain">
+        
+        <!-- Admin Header -->
+        <header class="admin-header">
+            <div class="admin-header-left">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="admin-breadcrumbs">
+                    <a href="{% url 'aura_admin:dashboard' %}">
+                        <i class="fas fa-home"></i>
+                    </a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>{% block admin_breadcrumb %}Admin{% endblock %}</span>
+                </div>
+            </div>
+            
+            <div class="admin-header-right">
+                <div class="quick-stats">
+                    {% if contact_stats.unread_contacts > 0 %}
+                        <div class="quick-stat">
+                            <div class="quick-stat-value text-red-400">{{ contact_stats.unread_contacts }}</div>
+                            <div class="quick-stat-label">Unread</div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if skill_stats.currently_learning > 0 %}
+                        <div class="quick-stat">
+                            <div class="quick-stat-value text-blue-400">{{ skill_stats.currently_learning }}</div>
+                            <div class="quick-stat-label">Learning</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+        
+        <!-- Admin Content -->
+        <div class="admin-content fade-in">
+            {% block admin_content %}
+                <div class="text-center py-12">
+                    <i class="fas fa-shield-alt text-6xl text-teal-400 mb-4"></i>
+                    <h1 class="text-2xl font-bold text-white mb-2">AURA Administration</h1>
+                    <p class="text-gray-400">Select a management section from the sidebar</p>
+                </div>
+            {% endblock %}
+        </div>
+        
+    </main>
+    
+</div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Admin Base js utils -->
-<script src="{% static 'js/components/admin.js' %}"></script>
-  {% block admin_js %}{% endblock %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('adminSidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const adminMain = document.getElementById('adminMain');
+    
+    let isCollapsed = window.innerWidth <= 1024;
+    
+    function toggleSidebar() {
+        if (window.innerWidth <= 1024) {
+            // Mobile behavior
+            sidebar.classList.toggle('mobile-open');
+            sidebarOverlay.classList.toggle('active');
+        } else {
+            // Desktop behavior
+            sidebar.classList.toggle('collapsed');
+            adminMain.classList.toggle('expanded');
+        }
+    }
+    
+    function closeMobileSidebar() {
+        if (window.innerWidth <= 1024) {
+            sidebar.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('active');
+        }
+    }
+    
+    // Toggle sidebar
+    sidebarToggle.addEventListener('click', toggleSidebar);
+    
+    // Close mobile sidebar on overlay click
+    sidebarOverlay.addEventListener('click', closeMobileSidebar);
+    
+    // Close mobile sidebar on nav link click
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 1024) {
+                setTimeout(closeMobileSidebar, 100);
+            }
+        });
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 1024) {
+            sidebar.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('active');
+            adminMain.classList.remove('expanded');
+            sidebar.classList.remove('collapsed');
+        } else {
+            sidebar.classList.add('collapsed');
+            adminMain.classList.add('expanded');
+        }
+    });
+    
+    // Initialize responsive state
+    if (window.innerWidth <= 1024) {
+        sidebar.classList.add('collapsed');
+        adminMain.classList.add('expanded');
+    }
+    
+    // Add smooth fade-in animation to content changes
+    const content = document.querySelector('.admin-content');
+    if (content) {
+        content.classList.add('fade-in');
+    }
+});
+</script>
+{% block admin_js %}{% endblock %}
 {% endblock %}

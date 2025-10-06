@@ -1,8 +1,55 @@
 from django.contrib import admin
+from django.db.models.query import QuerySet
+from django.http import HttpRequest
 from django.utils.html import format_html
 from django.urls import reverse
 
-from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics
+from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
+from .forms import ContactAdminForm
+
+
+# ========== NEW: SKILL-TECHNOLOGY RELATIONSHIP MANAGEMENT ==========
+
+class SkillTechnologyRelationInline(admin.TabularInline):
+    """Inline editing of skill-technology relationships with Skill admin"""
+    model = SkillTechnologyRelation
+    extra = 1
+    fields = ['technology', 'strength', 'relationship_type', 'notes']
+    autocomplete_fields = ['technology']
+    verbose_name = "Related Technology"
+    verbose_name_plural = "Related Technologies"
+
+
+@admin.register(SkillTechnologyRelation)
+class SkillTechnologyRelationAdmin(admin.ModelAdmin):
+    """Standalone management of skill-technology relationships"""
+    list_display = ['skill', 'technology', 'strength_display', 'relationship_type', 'strength_color']
+    list_filter = ['strength', 'relationship_type', 'skill__category']
+    search_fields = ['skill__name', 'technology__name', 'notes']
+    autocomplete_fields = ['skill', 'technology']
+    list_select_related = ['skill', 'technology']
+
+    fieldsets = (
+        ('Relationship', {
+            'fields': ('skill', 'technology', 'strength', 'relationship_type')
+        }),
+        ('Context & Notes', {
+            'fields': ('notes', 'first_used_together', 'last_used_together'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def strength_display(self, obj):
+        return obj.get_strength_display()
+    strength_display.short_description = "Strength"
+
+    def strength_color(self, obj):
+        color = obj.get_strength_color()
+        return format_html(
+            '<span style="color: {}; font-size: 16px;">●</span>', 
+            color
+        )
+    strength_color.short_description = "Level"
 
 
 @admin.register(PortfolioAnalytics)
@@ -96,19 +143,23 @@ class CorePageAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
 
+# ========== UPDATED: SKILL ADMIN ==========
+
 @admin.register(Skill)
 class SkillAdmin(admin.ModelAdmin):
+    """Enhanced Skill admin w technology relationships"""
     list_display = (
         "name",
         "category",
         "proficiency_stars",
         "experience_level",
-        "technology_link",
+        "technology_count",
         "featured_status",
         "recency_status",
         "display_order",
         "is_featured",
     )
+
     list_filter = (
         "category",
         "proficiency",
@@ -119,6 +170,9 @@ class SkillAdmin(admin.ModelAdmin):
     search_fields = ("name", "description")
     list_editable = ("display_order", "is_featured")
     prepopulated_fields = {"slug": ("name",)}
+
+    # Add inline for tech relationships
+    inlines = [SkillTechnologyRelationInline]
 
     fieldsets = (
         ("Basic Information", {"fields": ("name", "slug", "category", "description")}),
@@ -137,13 +191,6 @@ class SkillAdmin(admin.ModelAdmin):
         (
             "Visual & Display",
             {"fields": ("icon", "color", "display_order", "is_featured")},
-        ),
-        (
-            "Technology Connection",
-            {
-                "fields": ("related_technology",),
-                "description": "Link this skill to a technology in the projects app",
-            },
         ),
     )
 
@@ -169,18 +216,19 @@ class SkillAdmin(admin.ModelAdmin):
 
     experience_level.short_description = "Experience"
 
-    def technology_link(self, obj):
-        if obj.related_technology:
+    # Updated function for new many-to-many relationship
+    def technology_count(self, obj):
+        """Show count of related technologies"""
+        count = obj.related_technologies.count()
+        if count > 0:
             return format_html(
-                '<a href="{}">{}</a>',
-                reverse(
-                    "admin:projects_technology_change", args=[obj.related_technology.pk]
-                ),
-                obj.related_technology.name,
+                '<span style="color: #00f0ff; font-weight: bold;">{} tech{}</span>',
+                count,
+                's' if count != 1 else ''
             )
-        return "-"
+        return format_html('<span style="color: #999;">No tech</span>')
 
-    technology_link.short_description = "Technology"
+    technology_count.short_description = "Technologies"
 
     def featured_status(self, obj):
         if obj.is_featured:
@@ -223,109 +271,207 @@ class ExperienceAdmin(admin.ModelAdmin):
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "email",
-        "inquiry_category",
-        "priority_display",
-        "response_status",
-        "created_at",
-        "response_time_display",
-    )
-    list_filter = (
-        "inquiry_category",
-        "priority",
-        "response_sent",
-        "created_at",
-        "is_read",
-    )
-    search_fields = ("name", "email", "subject", "message")
-    readonly_fields = ("created_at", "response_time_hours", "ip_address")
-    date_hierarchy = "created_at"
-    ordering = ("-created_at",)
-    actions = ["mark_as_responded", "mark_as_high_priority"]
+    """
+    Enhanced Contact admin with metadata display and filtering.
+    Uses ContactAdminForm for admin-only fields.
+    """
+    form = ContactAdminForm
+
+    list_display = [
+        'id',
+        'name',
+        'email',
+        'subject_preview',
+        'inquiry_category',
+        'priority_badge',
+        'created_at',
+        'is_read',
+        'response_status',
+    ]
+    
+    list_filter = [
+        'inquiry_category',
+        'priority',
+        'is_read',
+        'response_sent',
+        'created_at',
+    ]
+    
+    search_fields = [
+        'name',
+        'email',
+        'subject',
+        'message',
+    ]
+    
+    readonly_fields = [
+        'created_at',
+        'response_time_display',
+        'formatted_metadata',
+    ]
 
     fieldsets = (
-        ("Contact Information", {"fields": ("name", "email", "subject")}),
-        ("Message Content", {"fields": ("message", "inquiry_category", "priority")}),
-        (
-            "Response Tracking",
-            {
-                "fields": (
-                    "is_read",
-                    "response_sent",
-                    "response_date",
-                    "response_time_hours",
-                )
-            },
-        ),
-        (
-            "Metadata",
-            {
-                "fields": ("referrer_page", "user_agent", "ip_address", "created_at"),
-                "classes": ("collapse",),
-            },
-        ),
+        ('Contact Information', {
+            'fields': ('name', 'email', 'subject', 'message')
+        }),
+        ('Categorization', {
+            'fields': ('inquiry_category', 'priority')
+        }),
+        ('Status', {
+            'fields': ('is_read', 'response_sent', 'response_date', 'response_time_display')
+        }),
+        ('Request Metadata', {
+            'fields': ('formatted_metadata', 'ip_address', 'user_agent', 'referrer_page'),
+            'classes': ('collapse',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+            'classes': ('collapse',),
+        }),
     )
 
-    def priority_display(self, obj):
-        colors = {
-            "urgent": "#f44336",
-            "high": "#ff8a80",
-            "normal": "#ffbd2e",
-            "low": "#808080",
-        }
-        return format_html(
-            '<span style="color: {}; font-weight: bold;">{}</span>',
-            colors.get(obj.priority, "#808080"),
-            obj.get_priority_display(),
-        )
+    actions = [
+        'mark_as_read',
+        'mark_as_unread',
+        'mark_as_responded',
+        'set_priority_high',
+        'set_priority_normal',
+    ]
 
-    priority_display.short_description = "Priority"
+    date_hierarchy = 'created_at'
+
+    def subject_preview(self, obj):
+        """Show truncated subject in list view."""
+        if len(obj.subject) > 50:
+            return f"{obj.subject[:50]}..."
+        return obj.subject
+    subject_preview.short_description = 'Subject'
+
+    def priority_badge(self, obj):
+        """Show priority with color coding."""
+        colors = {
+            'urgent': '#dc3545',  # Red
+            'high': '#fd7e14',    # Orange
+            'normal': '#28a745',  # Green
+            'low': '#6c757d',     # Gray
+        }
+        color = colors.get(obj.priority, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; '
+            'border-radius: 3px; font-size: 11px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_priority_display().upper()
+        )
+    priority_badge.short_description = 'Priority'
 
     def response_status(self, obj):
+        """Show response status with icon."""
         if obj.response_sent:
-            return format_html('<span style="color: #27c93f;">✓ Responded</span>')
-        else:
-            return format_html('<span style="color: #ff8a80;">⏳ Pending</span>')
-
-    response_status.short_description = "Status"
+            return format_html(
+                '<span style="color: green;">✓ Sent</span>'
+            )
+        return format_html(
+            '<span style="color: orange;">⏳ Pending</span>'
+        )
+    response_status.short_description = 'Response'
 
     def response_time_display(self, obj):
+        """Display response time in human-readable format."""
         hours = obj.response_time_hours()
-        if hours:
-            if hours <= 24:
-                color = "#27c93f"
-            elif hours <= 72:
-                color = "#ffbd2e"
-            else:
-                color = "#ff8a80"
-            formatted_hours = "{:.1f}".format(hours)
-            return format_html('<span style="color: {};">{}h</span>', color, formatted_hours)
-        return "-"
+        if hours is None:
+            return "Not yet responded"
+        
+        if hours < 1:
+            minutes = int(hours * 60)
+            return f"{minutes} minutes"
+        elif hours < 24:
+            return f"{hours:.1f} hours"
+        else:
+            days = hours / 24
+            return f"{days:.1f} days"
+    response_time_display.short_description = 'Response Time'
 
-    response_time_display.short_description = "Response Time"
+    def formatted_metadata(self, obj):
+        """Display all metadata in a formatted way."""
+        return format_html(
+            '<div style="font-family: monospace; font-size: 12px;">'
+            '<strong>IP Address:</strong> {}<br>'
+            '<strong>Referrer:</strong> {}<br>'
+            '<strong>User Agent:</strong> {}<br>'
+            '<strong>Submitted:</strong> {}'
+            '</div>',
+            obj.ip_address or 'Not captured',
+            obj.referrer_page or 'Direct visit',
+            obj.user_agent[:100] + '...' if len(obj.user_agent) > 100 else obj.user_agent or 'Not captured',
+            obj.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        )
+    formatted_metadata.short_description = 'Request Metadata'
+
+    # ADMIN ACTIONS
+
+    def mark_as_read(self, request, queryset):
+        """Mark selected contacts as read."""
+        updated = queryset.update(is_read=True)
+        self.message_user(request, f"{updated} contact(s) marked as read.")
+    mark_as_read.short_description = "Mark select as read"
+
+    def mark_as_unread(self, request, queryset):
+        """Mark selected contacts as unread."""
+        updated = queryset.update(is_read=False)
+        self.message_user(request, f"{updated} contact(s) marked as unread.")
+    mark_as_unread.short_description = "Mark selected as unread"
 
     def mark_as_responded(self, request, queryset):
+        """Mark selected contacts as responded."""
+        updated = 0
         for contact in queryset:
-            contact.mark_as_responded()
-        self.message_user(request, f"Marked {queryset.count()} contacts as responded.")
-
+            if not contact.response_sent:
+                contact.mark_as_responded()
+                updated += 1
+        self.message_user(request, f"{updated} contact(s) marked as responded.")
     mark_as_responded.short_description = "Mark selected as responded"
 
-    def mark_as_high_priority(self, request, queryset):
-        queryset.update(priority="high")
-        self.message_user(request, f"Set {queryset.count()} contacts to high priority.")
+    def set_priority_high(self, request, queryset):
+        """Set priority to high for selected contacts."""
+        updated = queryset.update(priority="high")
+        self.message_user(request, f"{updated} contact(s) set to high priority.")
+    set_priority_high.short_description = "Set priority to HIGH"
 
-    mark_as_high_priority.short_description = "Set to high priority"
+    def set_priority_normal(self, request, queryset):
+        """Set priority to normal for selected contacts."""
+        updated = queryset.update(priority='normal')
+        self.message_user(request, f"{updated} contact(s) set to normal priority.")
+    set_priority_normal.short_description = "Set priority to NORMAL"
+
+    def get_queryset(self, request):
+        """Optimize queryset for list view."""
+        qs = super().get_queryset(request)
+        return qs
 
 
 @admin.register(SocialLink)
 class SocialLinkAdmin(admin.ModelAdmin):
-    list_display = ("name", "url", "handle", "display_order")
-    search_fields = ("name", "handle", "url")
+    list_display = ("name", "url", "handle", "display_order", "category", "color_preview", "icon_preview")
+    search_fields = ("name", "handle", "url", "category")
     list_editable = ("display_order",)
     ordering = ("display_order", "name")
+
+    def color_preview(self, obj):
+        if obj.color:
+            return format_html(
+                '<div style="width: 20px; height: 20px; background-color: {}; border-radius: 3px; display: inline-block;"></div>',
+                obj.color,
+            )
+        return "-"
+    
+    color_preview.short_description = "Color"
+
+    def icon_preview(self, obj):
+        if obj.icon:
+            return format_html('<i class="fas {}"></i> {}', obj.icon, obj.icon)
+        return "-"
+
+    icon_preview.short_description = "Icon"
 
 
 # Customize admin site

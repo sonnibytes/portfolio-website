@@ -45,6 +45,7 @@ from .admin_views import (
     ContactDeleteAdminView,
     ContactMarkReadView,
     ContactMarkResponseSentView,
+    ContactDetailAdminView,
     # Social Link Management
     SocialLinkListAdminView,
     SocialLinkCreateAdminView,
@@ -56,8 +57,21 @@ from .admin_views import (
     PortfolioAnalyticsUpdateAdminView,
     PortfolioAnalyticsDeleteAdminView,
     AnalyticsChartDataView,
+    # SkillTechnologyRelation Management
+    SkillTechnologyRelationListAdminView,
+    SkillTechnologyRelationCreateAdminView,
+    SkillTechnologyRelationUpdateAdminView,
+    SkillTechnologyRelationDeleteAdminView,
 
     test_admin_styles,
+
+    # New Enhanced Views
+    ProfessionalDevelopmentDashboardView,
+    SkillDemonstrationView,
+    SkillTechnologyMatrixView,
+    EnhancedSkillCreateView,
+    ProfessionalGrowthTimelineView,
+    QuickSkillTechConnectionView
 )
 
 app_name = "admin"
@@ -127,6 +141,7 @@ urlpatterns = [
     
     path("contacts/", ContactListAdminView.as_view(), name="contact_list"),
     path("contacts/create/", ContactCreateAdminView.as_view(), name="contact_create"),
+    path("contacts/<int:pk>/", ContactDetailAdminView.as_view(), name="contact_detail"),
     path("contacts/<int:pk>/edit/", ContactUpdateAdminView.as_view(), name="contact_update"),
     path("contacts/<int:pk>/delete/", ContactDeleteAdminView.as_view(), name="contact_delete"),
     
@@ -154,7 +169,38 @@ urlpatterns = [
     
     # Analytics AJAX functionality
     path("analytics/chart-data/", AnalyticsChartDataView.as_view(), name="analytics_chart_data"),
-    
+
+    # ===================
+    # SKILL-TECHNOLOGY RELATIONSHIP MANAGEMENT
+    # ===================
+
+    path("skill-tech-relations/", SkillTechnologyRelationListAdminView.as_view(), name="skill_tech_relation_list"),
+    path("skill-tech-relations/create/", SkillTechnologyRelationCreateAdminView.as_view(), name="skill_tech_relation_create"),
+    path("skill-tech-relations/<int:pk>/edit/", SkillTechnologyRelationUpdateAdminView.as_view(), name="skill_tech_relation_update"),
+    path("skill-tech-relations/<int:pk>/delete/", SkillTechnologyRelationDeleteAdminView.as_view(), name="skill_tech_relation_delete"),
+
+    # ===================
+    # EDUCATION-SKILL DEVELOPMENT MANAGEMENT
+    # ===================
+
+    path("education-skills/", EducationSkillListAdminView.as_view(), name="education_skill_list"),
+    path("education-skills/create/", EducationSkillCreateAdminView.as_view(), name="education_skill_create"),
+    path("education-skills/<int:pk>/edit/", EducationSkillUpdateAdminView.as_view(), name="education_skill_update"),
+    path("education-skills/<int:pk>/delete/", EducationSkillDeleteAdminView.as_view(), name="education_skill_delete"),
+
+
+    # ===================
+    # NEW ENHANCEMENT VIEWS TO TEST
+    # ===================
+    path("professional-development/", ProfessionalDevelopmentDashboardView.as_view(), name="professional_dashboard"),
+    path("skills/<int:pk>/demonstration/", SkillDemonstrationView.as_view(), name="skill_demonstration"),
+    path("skills/matrix/", SkillTechnologyMatrixView.as_view(), name="skill_tech_matrix"),
+    path("skills/create-enhanced/", EnhancedSkillCreateView.as_view(), name="skill_create_enhanced"),
+    path("growth-timeline/", ProfessionalGrowthTimelineView.as_view(), name="growth_timeline"),
+
+    # AJAX Endpoints
+    path("api/quick-connection/", QuickSkillTechConnectionView.as_view(), name="quick_skill_tech_connection"),
+
     # ===================
     # APP ADMIN INCLUDES
     # ===================

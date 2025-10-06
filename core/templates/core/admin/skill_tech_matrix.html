@@ -1,0 +1,869 @@
+{% extends "admin/admin_base.html" %}
+{% load aura_filters %}
+{% load widget_tweaks %}
+
+{% load static %}
+
+{% block page_title %}Skill-Technology Matrix{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+/* Skill-Technology Matrix Styles */
+.matrix-container {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.matrix-header {
+    background: linear-gradient(135deg, 
+        rgba(38, 198, 218, 0.1) 0%, 
+        rgba(179, 157, 219, 0.05) 100%);
+    border: 1px solid rgba(38, 198, 218, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.matrix-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+        var(--color-teal) 0%, 
+        var(--color-lavender) 50%, 
+        var(--color-coral) 100%);
+}
+
+.matrix-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.control-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.control-input, .control-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem 0.75rem;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.control-input:focus, .control-select:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+}
+
+.matrix-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-number.relationships { color: var(--color-teal); }
+.stat-number.skills { color: var(--color-lavender); }
+.stat-number.technologies { color: var(--color-coral); }
+.stat-number.average { color: var(--color-mint); }
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+}
+
+.matrix-grid-container {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+}
+
+.matrix-grid-header {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.matrix-grid-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+}
+
+.matrix-legend {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.legend-color {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 2px;
+}
+
+.legend-color.strength-1 { background: rgba(108, 117, 125, 0.8); }
+.legend-color.strength-2 { background: rgba(23, 162, 184, 0.8); }
+.legend-color.strength-3 { background: rgba(40, 167, 69, 0.8); }
+.legend-color.strength-4 { background: rgba(0, 123, 255, 0.8); }
+
+.matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.matrix-table-header {
+    background: rgba(255, 255, 255, 0.03);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.matrix-table-header th {
+    padding: 1rem 0.75rem;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.matrix-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all var(--transition-fast);
+}
+
+.matrix-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.skill-cell {
+    padding: 1rem 0.75rem;
+    background: rgba(179, 157, 219, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    min-width: 200px;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+}
+
+.skill-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.skill-name {
+    font-weight: 600;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.skill-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.proficiency-indicator {
+    display: flex;
+    gap: 2px;
+    margin-top: 0.25rem;
+}
+
+.proficiency-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.proficiency-dot.filled {
+    background: var(--color-lavender);
+}
+
+.technologies-cell {
+    padding: 1rem 0.75rem;
+    min-height: 60px;
+}
+
+.tech-connections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.tech-connection {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.tech-connection:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tech-connection.strength-1 {
+    background: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+    border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.tech-connection.strength-2 {
+    background: rgba(23, 162, 184, 0.2);
+    color: #17a2b8;
+    border: 1px solid rgba(23, 162, 184, 0.3);
+}
+
+.tech-connection.strength-3 {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.tech-connection.strength-4 {
+    background: rgba(0, 123, 255, 0.2);
+    color: #007bff;
+    border: 1px solid rgba(0, 123, 255, 0.3);
+}
+
+.tech-name {
+    font-weight: 600;
+}
+
+.tech-details {
+    font-size: 0.65rem;
+    opacity: 0.8;
+}
+
+.add-tech-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-tertiary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.add-tech-btn:hover {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.3);
+    color: var(--color-teal);
+}
+
+.quick-add-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.quick-add-modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--color-bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--color-text-tertiary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--color-coral);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.form-group select, .form-group input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.form-group select:focus, .form-group input:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-modal-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--color-text-secondary);
+}
+
+.btn-modal-save {
+    background: var(--color-teal);
+    border: 1px solid var(--color-teal);
+    color: white;
+}
+
+.empty-matrix {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--color-text-tertiary);
+}
+
+.empty-matrix i {
+    font-size: 4rem;
+    color: var(--color-teal);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+@media (max-width: 1024px) {
+    .matrix-controls {
+        grid-template-columns: 1fr;
+    }
+    
+    .matrix-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .matrix-legend {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .matrix-container {
+        padding: 1rem;
+    }
+    
+    .matrix-header {
+        padding: 1.5rem;
+    }
+    
+    .skill-cell {
+        min-width: 150px;
+    }
+    
+    .tech-connections {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="matrix-container">
+    <!-- Matrix Header -->
+    <div class="matrix-header">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-white mb-2">Skill-Technology Matrix</h1>
+                <p class="text-lg text-gray-300 mb-4">
+                    Visual relationship management between your skills and technologies
+                </p>
+                
+                <div class="grid grid-cols-4 gap-4 mt-6">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-teal-400">{{ matrix_stats.total_relationships }}</div>
+                        <div class="text-xs text-gray-400">Total Connections</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-lavender-400">{{ matrix_stats.skills_with_connections }}</div>
+                        <div class="text-xs text-gray-400">Connected Skills</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-coral-400">{{ matrix_stats.technologies_with_connections }}</div>
+                        <div class="text-xs text-gray-400">Connected Technologies</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-mint-400">{{ matrix_stats.avg_connections_per_skill|floatformat:1 }}</div>
+                        <div class="text-xs text-gray-400">Avg per Skill</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 ml-4">
+                <a href="{% url 'aura_admin:professional_dashboard' %}" class="btn btn-lg btn-outline">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Dashboard
+                </a>
+                <button onclick="openQuickAddModal()" class="btn btn-lg btn-teal">
+                    <i class="fas fa-plus mr-2"></i>
+                    Quick Add Connection
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matrix Controls -->
+    <div class="matrix-controls">
+        <div class="control-group">
+            <label class="control-label">Filter by Skill</label>
+            <select class="control-select" id="skill-filter">
+                <option value="">All Skills</option>
+                {% for skill in matrix_data %}
+                    <option value="{{ skill.skill.id }}">{{ skill.skill.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Filter by Technology</label>
+            <select class="control-select" id="tech-filter">
+                <option value="">All Technologies</option>
+                {% for tech in technologies %}
+                    <option value="{{ tech.id }}">{{ tech.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Minimum Strength</label>
+            <select class="control-select" id="strength-filter">
+                <option value="">Any Strength</option>
+                {% for value, label in strength_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Search</label>
+            <input type="text" class="control-input" id="search-filter" placeholder="Search skills or technologies...">
+        </div>
+    </div>
+
+    <!-- Matrix Statistics -->
+    <div class="matrix-stats">
+        <div class="stat-card">
+            <div class="stat-number relationships">{{ matrix_stats.total_relationships }}</div>
+            <div class="stat-label">Total Relationships</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number skills">{{ matrix_stats.skills_with_connections }}</div>
+            <div class="stat-label">Connected Skills</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number technologies">{{ matrix_stats.technologies_with_connections }}</div>
+            <div class="stat-label">Connected Technologies</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number average">{{ matrix_stats.avg_connections_per_skill|floatformat:1 }}</div>
+            <div class="stat-label">Avg per Skill</div>
+        </div>
+    </div>
+
+    <!-- Matrix Grid -->
+    <div class="matrix-grid-container">
+        <div class="matrix-grid-header">
+            <h3 class="matrix-grid-title">Skills × Technologies Matrix</h3>
+            <div class="matrix-legend">
+                <span class="text-xs text-gray-400 mr-3">Strength:</span>
+                <div class="legend-item">
+                    <div class="legend-color strength-1"></div>
+                    <span>Occasional</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color strength-2"></div>
+                    <span>Common</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color strength-3"></div>
+                    <span>Essential</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color strength-4"></div>
+                    <span>Primary</span>
+                </div>
+            </div>
+        </div>
+        
+        {% if matrix_data %}
+            <table class="matrix-table">
+                <thead class="matrix-table-header">
+                    <tr>
+                        <th>Skill</th>
+                        <th>Technology Connections</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in matrix_data %}
+                    <tr class="matrix-row" data-skill-id="{{ row.skill.id }}">
+                        <td class="skill-cell">
+                            <div class="skill-info">
+                                <div class="skill-name">
+                                    <a href="{% url 'aura_admin:skill_demonstration' row.skill.pk %}" 
+                                       class="text-white hover:text-lavender-400 transition-colors">
+                                        {{ row.skill.name }}
+                                    </a>
+                                </div>
+                                <div class="skill-meta">
+                                    {{ row.skill.get_category_display }} • Level {{ row.skill.proficiency }}
+                                </div>
+                                <div class="proficiency-indicator">
+                                    {% for i in "12345" %}
+                                        <div class="proficiency-dot {% if forloop.counter <= row.skill.proficiency %}filled{% endif %}"></div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="technologies-cell">
+                            <div class="tech-connections">
+                                {% for tech_id, connection in row.technologies.items %}
+                                    <div class="tech-connection strength-{{ connection.strength }}" 
+                                         data-relation-id="{{ connection.relation.id }}"
+                                         onclick="editConnection({{ connection.relation.id }})">
+                                        <div>
+                                            <div class="tech-name">{{ connection.relation.technology.name }}</div>
+                                            <div class="tech-details">{{ connection.relation.get_relationship_type_display }}</div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-xs text-gray-500 italic">No technology connections yet</div>
+                                {% endfor %}
+                                
+                                <button class="add-tech-btn" onclick="addTechnology({{ row.skill.id }})">
+                                    <i class="fas fa-plus"></i>
+                                    Add Technology
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-matrix">
+                <i class="fas fa-network-wired"></i>
+                <h3 class="text-xl font-semibold text-white mb-2">No Skills or Technologies Yet</h3>
+                <p class="mb-4">Start building your skill-technology matrix by adding skills and connecting them to technologies</p>
+                <div class="flex gap-3 justify-center">
+                    <a href="{% url 'aura_admin:skill_create_enhanced' %}" class="btn btn-teal">
+                        <i class="fas fa-brain mr-2"></i>
+                        Add Skill
+                    </a>
+                    <a href="{% url 'aura_admin:projects:technology_create' %}" class="btn btn-outline">
+                        <i class="fas fa-cogs mr-2"></i>
+                        Add Technology
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Add Connection Modal -->
+<div class="quick-add-modal" id="quick-add-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Add Skill-Technology Connection</h3>
+            <button class="modal-close" onclick="closeQuickAddModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="quick-add-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Skill</label>
+                <select name="skill_id" id="modal-skill-select">
+                    <option value="">Select a skill...</option>
+                    {% for row in matrix_data %}
+                        <option value="{{ row.skill.id }}">{{ row.skill.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Technology</label>
+                <select name="technology_id" id="modal-tech-select">
+                    <option value="">Select a technology...</option>
+                    {% for tech in technologies %}
+                        <option value="{{ tech.id }}">{{ tech.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Relationship Strength</label>
+                <select name="strength" id="modal-strength-select">
+                    {% for value, label in strength_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Relationship Type</label>
+                <select name="type" id="modal-type-select">
+                    {% for value, label in type_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-modal-cancel" onclick="closeQuickAddModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-modal-save">
+                    <i class="fas fa-save mr-2"></i>
+                    Create Connection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Matrix functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const skillFilter = document.getElementById('skill-filter');
+    const techFilter = document.getElementById('tech-filter');
+    const strengthFilter = document.getElementById('strength-filter');
+    const searchFilter = document.getElementById('search-filter');
+    
+    const matrixRows = document.querySelectorAll('.matrix-row');
+    
+    function filterMatrix() {
+        const skillValue = skillFilter.value;
+        const techValue = techFilter.value;
+        const strengthValue = strengthFilter.value;
+        const searchValue = searchFilter.value.toLowerCase();
+        
+        matrixRows.forEach(row => {
+            const skillId = row.dataset.skillId;
+            const skillText = row.textContent.toLowerCase();
+            const techConnections = row.querySelectorAll('.tech-connection');
+            
+            let visible = true;
+            
+            // Skill filter
+            if (skillValue && skillId !== skillValue) {
+                visible = false;
+            }
+            
+            // Technology filter
+            if (techValue && visible) {
+                const hasTech = Array.from(techConnections).some(conn => 
+                    conn.textContent.toLowerCase().includes(techValue)
+                );
+                if (!hasTech) visible = false;
+            }
+            
+            // Strength filter
+            if (strengthValue && visible) {
+                const hasStrength = Array.from(techConnections).some(conn => 
+                    conn.classList.contains(`strength-${strengthValue}`)
+                );
+                if (!hasStrength) visible = false;
+            }
+            
+            // Search filter
+            if (searchValue && visible) {
+                if (!skillText.includes(searchValue)) {
+                    visible = false;
+                }
+            }
+            
+            row.style.display = visible ? '' : 'none';
+        });
+    }
+    
+    // Attach filter listeners
+    skillFilter.addEventListener('change', filterMatrix);
+    techFilter.addEventListener('change', filterMatrix);
+    strengthFilter.addEventListener('change', filterMatrix);
+    searchFilter.addEventListener('input', filterMatrix);
+});
+
+// Modal functions
+function openQuickAddModal(skillId = null) {
+    const modal = document.getElementById('quick-add-modal');
+    const skillSelect = document.getElementById('modal-skill-select');
+    
+    if (skillId) {
+        skillSelect.value = skillId;
+    }
+    
+    modal.classList.add('show');
+}
+
+function closeQuickAddModal() {
+    const modal = document.getElementById('quick-add-modal');
+    modal.classList.remove('show');
+    
+    // Reset form
+    document.getElementById('quick-add-form').reset();
+}
+
+function addTechnology(skillId) {
+    openQuickAddModal(skillId);
+}
+
+function editConnection(relationId) {
+    // In a full implementation, this would open an edit modal
+    // For now, redirect to the edit page
+    window.location.href = `/aura-admin/core/skill-tech-relations/${relationId}/edit/`;
+}
+
+// Quick add form submission
+document.getElementById('quick-add-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('{% url "aura_admin:quick_skill_tech_connection" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the page to show new connection
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to create connection'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to create connection');
+    });
+});
+
+// Close modal on outside click
+document.getElementById('quick-add-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeQuickAddModal();
+    }
+});
+</script>
+{% endblock %}

@@ -48,31 +48,37 @@ class Skill(models.Model):
     """Dev skills with proficiency values for visualization."""
 
     CATEGORY_CHOICES = (
-        ("language", "Programming Language"),
-        ("framework", "Framework/Library"),
-        ("tool", "Development Tool"),
-        ("database", "Database"),
-        ('soft_skill', 'Soft Skill'),
-        ('api', 'API Design/Development'),
-        ('data', 'Data Engineering'),
-        ('system', 'System Design/Development'),
-        ('ml', 'Machine Learning'),
-        ('ui', 'UX/UI & Design'),
-        ('ai', 'AI'),
+        ("technical_concept", "Technical Concepts"),
+        ("methodology", "Methodologies & Processes"),
+        ('soft_skill', 'Soft Skills'),
+        ('domain_knowledge', 'Domain Knowledge'),
         ("other", "Other"),
+    )
+
+    PROFICIENCY_CHOICES = (
+        (1, 'Level 1'),
+        (2, 'Level 2'),
+        (3, 'Level 3'),
+        (4, 'Level 4'),
+        (5, 'Level 5'),
     )
 
     name = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, max_length=100)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='technical_concept')
     description = models.TextField(blank=True)
     proficiency = models.IntegerField(
-        choices=[(i, i) for i in range(1, 6)],
-        help_text="Skill level from 1-5"
+        choices=PROFICIENCY_CHOICES,
+        help_text="Skill level from 1-5",
+        default=1
     )
     icon = models.CharField(max_length=50, blank=True, help_text="Font Awesome icon name (e.g., fa-python)")
     color = models.CharField(max_length=7, default="#00f0ff", help_text="Hex color code")
     display_order = models.PositiveIntegerField(default=0)
+
+    # Adding for timeline tracking
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     # Technology Relationship
     related_technology = models.OneToOneField('projects.Technology', on_delete=models.SET_NULL, null=True, blank=True, related_name='skill_profile', help_text="Link to corresponding technology in projects app")
@@ -91,6 +97,15 @@ class Skill(models.Model):
 
     # Skill Validation
     is_certified = models.BooleanField(default=False, help_text="Have certification in this skill")
+
+    # ===== New Skill -> Technology Relationship =====
+    related_technologies = models.ManyToManyField(
+        'projects.Technology',
+        through='SkillTechnologyRelation',
+        blank=True,
+        related_name='related_skills',
+        help_text='Technologies commonly used with this skill'
+    )
 
     class Meta:
         ordering = ['category', 'display_order']
@@ -390,6 +405,61 @@ class Skill(models.Model):
         return min(100, score)
 
 
+class SkillTechnologyRelation(models.Model):
+    """
+    Through model for Skill ↔ Technology relationships
+    Allows tracking strength of relationship and context
+    """
+    RELATIONSHIP_STRENGTH = [
+        (1, 'Occasionally Used'),
+        (2, 'Commonly Used'),
+        (3, 'Essential Technology'),
+        (4, 'Primary Implementation'),
+    ]
+
+    RELATIONSHIP_TYPE = [
+        ('implementation', 'Primary Implementation Tool'),
+        ('supporting', 'Supporting Technology'),
+        ('alternative', 'Alternative Implementation'),
+        ('data_source', 'Data Source/Storage'),
+        ('visualization', 'Visualization/Display'),
+        ('deployment', 'Deployment/Infrastructure'),
+    ]
+
+    skill = models.ForeignKey('Skill', on_delete=models.CASCADE, related_name='technology_relations')
+    technology = models.ForeignKey('projects.Technology', on_delete=models.CASCADE, related_name='skill_relations')
+
+    # Relationship metadata
+    strength = models.IntegerField(choices=RELATIONSHIP_STRENGTH, default=2, help_text='How essential is this technology for this skill?')
+    relationship_type = models.CharField(max_length=20, choices=RELATIONSHIP_TYPE, default='implementation')
+    notes = models.TextField(blank=True, help_text='Context about how this technology relates to the skill')
+
+    # Learning Context
+    first_used_together = models.DateField(null=True, blank=True)
+    last_used_together = models.DateField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('skill', 'technology')
+        verbose_name = "Skill-Technology Relation"
+        verbose_name_plural = "Skill-Technology Relations"
+    
+    def __str__(self):
+        return f"{self.skill.name} → {self.technology.name}"
+    
+    def get_strength_color(self):
+        """Return color based on relationship strength"""
+        colors = {
+            1: '#6c757d',  # Gray - Occasional
+            2: '#17a2b8',  # Teal - Common  
+            3: '#28a745',  # Green - Essential
+            4: '#007bff',  # Blue - Primary
+        }
+        return colors.get(self.strength, '#6c757d')
+
+
 class Education(models.Model):
     """Enhanced Educational background with learning journey connections"""
 
@@ -677,6 +747,15 @@ class Contact(models.Model):
 class SocialLink(models.Model):
     """Model for social media and external profile links."""
 
+    CATEGORY_CHOICES = [
+        ('professional', 'Professional & Coding-Centric'),
+        ('community', 'Discussion & Community'),
+        ('chat', 'Messaging & Chat'),
+        ('blog', 'Blogging & Content'),
+        ('media', 'Media & Video'),
+        ('other', 'Other Socials')
+    ]
+
     name = models.CharField(max_length=50)
     url = models.URLField()
     handle = models.CharField(max_length=100, blank=True)
@@ -684,6 +763,10 @@ class SocialLink(models.Model):
         max_length=50, blank=True, help_text="Font Awesome icon name (e.g., 'fa-github')"
     )
     display_order = models.PositiveIntegerField(default=0)
+
+    # New SocialLink Category & Color
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
+    color = models.CharField(max_length=7, default="#60a5fa", help_text="Hex color for icon display (e.g., #00f0ff)")
 
     class Meta:
         ordering = ['display_order']
@@ -693,7 +776,7 @@ class SocialLink(models.Model):
 
     def get_absolute_url(self):
         return self.url  # External URL, so just return the actual URL
-
+    
 
 class PortfolioAnalytics(models.Model):
     """
