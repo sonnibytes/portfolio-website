@@ -25,6 +25,7 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
 {% endblock %}
 
 {% block datalogs_css %}
+{{ block.super }}
 <link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
 {% endblock %}
 
@@ -180,10 +181,13 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
                             <i class="fas fa-tags"></i>
                             All Tags
                         </a>
-                        <button class="unified-action-btn" onclick="subscribeToTag('{{ tag.slug }}')">
+                        <a href="{% url 'blog:tag' slug=tag.slug %}#subscribe" class="unified-action-btn">
+                                <i class="fas fa-bell me-2"></i>Subscribe
+                            </a>
+                        {% comment %} <button class="unified-action-btn" onclick="subscribeToTag('{{ tag.slug }}')">
                             <i class="fas fa-bell"></i>
                             Subscribe
-                        </button>
+                        </button> {% endcomment %}
                     </div>
                     
                 </div>
@@ -327,6 +331,16 @@ Explore all DataLog tags - comprehensive technical documentation organized by to
             {% alert_box alert_type="info" message="No Entries Found: No DataLog entries are currently tagged with this topic. Check back later for updates." %}
         </div>
         {% endif %}
+    </div>
+</section>
+
+<!-- Subscribe widget -->
+<section class="tag-subscribe-section" id="subscribe">
+    <div class="container">
+        <div class="subscribe-cta">
+            <h3 class="section-title mt-4">Subscribe to {{ tag.name }} updates</h3>
+            {% include 'blog/includes/subscribe_widget.html' %}
+        </div>
     </div>
 </section>
 
