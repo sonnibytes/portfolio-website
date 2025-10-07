@@ -1052,6 +1052,26 @@ class LearningJourneyDashboardView(AdminAccessMixin, TemplateView):
             journey_count=Count('posts__series_associations__series', distinct=True)
         ).filter(post_count__gt=0).order_by('-post_count')
 
+        # ===== ADD SUBSCRIBER STATS =====
+        from .models import Subscriber
+        
+        subscriber_stats = {
+            'total': Subscriber.objects.count(),
+            'active': Subscriber.objects.filter(is_active=True).count(),
+            'verified': Subscriber.objects.filter(is_verified=True).count(),
+            'pending': Subscriber.objects.filter(
+                is_active=True,
+                is_verified=False
+            ).count(),
+            'all_posts': Subscriber.objects.filter(
+                is_active=True,
+                subscribed_to_all=True
+            ).count(),
+        }
+        
+        # Recent subscribers
+        recent_subscribers = Subscriber.objects.order_by('-subscribed_at')[:5]
+
         context.update({
             'title': 'Learning Journeys Dashboard',
             'subtitle': 'Personal knowledge management and learning progress',
@@ -1080,6 +1100,9 @@ class LearningJourneyDashboardView(AdminAccessMixin, TemplateView):
             'avg_reading_time': Post.objects.aggregate(
                 avg_time=Avg('reading_time')
             )['avg_time'] or 0,
+            # Add sub stats
+            'subscriber_stats': subscriber_stats,
+            'recent_subscribers': recent_subscribers,
         })
 
         return context

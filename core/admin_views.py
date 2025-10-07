@@ -345,7 +345,7 @@ class MainAdminDashboardView(AdminAccessMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         # Import models dynamically to avoid circular imports
-        from blog.models import Post, Category, Tag
+        from blog.models import Post, Category, Tag, Subscriber
         from projects.models import SystemModule, Technology, SystemType
 
         context.update(
@@ -396,6 +396,18 @@ class MainAdminDashboardView(AdminAccessMixin, TemplateView):
             architecture_components__isnull=True,
             status__in=['deployed', 'published', 'in_development', 'testing']
         ).exclude(status__in=['draft', 'archived']).order_by('-updated_at')[:6]
+
+        
+        # Subscriber Stats
+        context['subscriber_stats'] = {
+            'total': Subscriber.objects.count(),
+            'active': Subscriber.objects.filter(is_active=True).count(),
+            'verified': Subscriber.objects.filter(is_verified=True).count(),
+            'pending': Subscriber.objects.filter(
+                is_active=True,
+                is_verified=False
+            ).count(),
+        }
 
         return context
 
@@ -471,7 +483,7 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         # Import models to avoid circular imports
-        from blog.models import Post
+        from blog.models import Post, Subscriber
         from projects.models import SystemModule, Technology
 
         # Core Page Analytics
