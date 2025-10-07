@@ -5,14 +5,14 @@ Extends the global admin system with blog-specific functionality
 Version 2.0
 """
 
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count, Avg, Sum, Max
 from django.contrib import messages
 from django.utils import timezone
 from django.utils.text import slugify
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import TemplateView, DetailView, View
 from django.db import models
 from django.conf import settings
 
@@ -1454,4 +1454,178 @@ class SubscriberListView(BaseAdminListView):
         return context
 
 
+class SubscriberDetailView(AdminAccessMixin, BaseAdminView, DetailView):
+    """
+    View detailed info about a specific subscriber.
+    Shows subscription preferences, activity, and actions.
+    """
 
+    model = Subscriber
+    template_name = 'blog/admin/subscriber_detail.html'
+    context_object_name = 'subscriber'
+
+    def get_object(self):
+        return get_object_or_404(
+            Subscriber.objects.prefetch_related(
+                'subscribed_categories',
+                'subscribed_tags'
+            ),
+            pk=self.kwargs['pk']
+        )
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        subscriber = self.object 
+
+        # Get posts this subscriber would receive
+        if subscriber.subscribed_to_all:
+            relevant_posts = Post.objects.filter(status='published')[:10]
+        else:
+            relevant_posts = Post.objects.filter(
+                Q(cateory__in=subscriber.subscribed_categories.all()) |
+                Q(tags__in=subscriber.subscribed_tags.all())
+            ).filter(status='published').distinct()[:10]
+
+        context.update({
+            'title': f'Subscriber: {subscriber.email}',
+            'relevant_posts': relevant_posts,
+            'unsubscribe_email': self.request.build_absolute_uri(
+                reverse('blog:unsubscribe', args=[subscriber.verification_token])
+            ),
+        })
+        return context
+
+
+class SubscriberUpdateView(BaseAdminUpdateView):
+    """
+    Update subscriber preferences and status.
+    """
+    model = Subscriber
+    template_name = 'blog/admin/subscriber_form.html'
+    fields = [
+        'email',
+        'is_active',
+        'is_verified',
+        'subscribed_to_all',
+        'subscribed_categories',
+        'subscribed_tags',
+    ]
+    success_url = reverse_lazy('aura_admin:blog:subscriber_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Subscriber updated successfully.')
+        return super().form_valid(form)
+
+
+class SubscriberDeleteView(BaseAdminDeleteView):
+    """
+    Delete a subscriber.
+    """
+    model = Subscriber
+    template_name = 'blog/admin/subscriber_confirm_delete.html'
+    success_url = reverse_lazy('aura_admin:blog:subscriber_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Subscriber successfully deleted.')
+        return super().delete(request, *args, **kwargs)
+
+
+# ===================== AJAX ACTIONS =====================
+
+
+class SubscriberBulkActionView(AdminAccessMixin, BulkActionMixin):
+    """
+    Handle bulk actions on subscribers (verify, activate, deactivate, delete).
+    """
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action')
+        subscriber_ids = request.POST.getList('subscriber_ids')
+
+        if not action or not subscriber_ids:
+            return JsonResponse({
+                'success': False,
+                'message': 'No action or subscribers selected.'
+            }, status=400)
+        
+        subscribers = Subscriber.objects.filter(id__in=subscriber_ids)
+        count = subscribers.count()
+
+        if action == 'verify':
+            subscribers.update(is_verified=True, verified_at=timezone.now())
+            message = f'Verified {count} subscriber(s).'
+        
+        elif action == 'activate':
+            subscribers.update(is_active=True)
+            message = f'Activated {count} subscriber(s).'
+            
+        elif action == 'deactivate':
+            subscribers.update(is_active=False)
+            message = f'Deactivated {count} subscriber(s).'
+            
+        elif action == 'delete':
+            subscribers.delete()
+            message = f'Deleted {count} subscriber(s).'
+            
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid action.'
+            }, status=400)
+        
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'count': count
+        })
+
+
+class SubscriberExportView(AdminAccessMixin, View):
+    """
+    Export subscriber emails as CSV.
+    """
+
+    def get(self, request, *args, **kwargs):
+        import csv
+        from django.http import HttpResponse
+
+        # Get filter params
+        status_filter = request.GET.get('status', 'all')
+
+        # Build queryset
+        queryset = Subscriber.objects.all()
+
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True, is_verified=True)
+        elif status_filter == 'verified':
+            queryset = queryset.filter(is_verified=True)
+        elif status_filter == 'all_active':
+            queryset = queryset.filter(is_active=True)
+        
+        # Create CSV response
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="subscribers_{timezone.now().strftime("%Y%m%d")}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Email', 'Status', 'Verified', 'Subscribed To', 'Date Subscribed'])
+
+        for subscriber in queryset.select_related().prefetch_related(
+            'subscribed_categories', 'subscribed_tags'
+        ):
+            # Determin sub type
+            if subscriber.subscribed_to_all:
+                sub_type = 'All Posts'
+            else:
+                categories = list(subscriber.subscribed_categories.values_list('name', flat=True))
+                tags = list(subscriber.subscribed_tags.values_list('name', flat=True))
+                sub_type = f"Categories: {', '.join(categories)} | Tags: {', '.join(tags)}"
+            
+            writer.writerow([
+                subscriber.email,
+                'Active' if subscriber.is_active else 'Inactive',
+                'Yes' if subscriber.is_verified else 'No',
+                sub_type,
+                subscriber.subscribed_at.strftime('%Y-%m-%d')
+            ])
+        
+        return response
