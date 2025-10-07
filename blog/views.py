@@ -1609,17 +1609,24 @@ def subscribe_email(request):
     AJAX endpoint to subscribe an email address to blog updates.
     
     How it works:
-    1. User submits email via AJAX form
+    1. User submits email via AJAX form with subscription scope
     2. We validate the email
-    3. Create or update Subscriber record
+    3. Create or update Subscriber record with appropriate scope
     4. Send verification email (optional but recommended)
     5. Return JSON response
+    
+    Subscription scopes:
+    - 'all': Subscribe to all posts (subscribe_to_all = True)
+    - 'category': Subscribe to specific category
+    - 'tag': Subscribe to specific tag
+    - 'series': Subscribe to specific series
     
     No authentication needed - just email validation.
     """
     try:
-        # Get email from POST data
+        # Get email and scope from POST data
         email = request.POST.get('email', '').strip().lower()
+        scope = request.POST.get('scope', 'all')
 
         # Validate email format
         if not email:
@@ -1642,31 +1649,92 @@ def subscribe_email(request):
             defaults={
                 'verification_token': get_random_string(50),
                 'is_active': True,
+                # Only true if explicitly subscribing to all
+                'subscribed_to_all': (scope == 'all'),
             }
         )
 
         if not created:
-            # Already subscribed
+            # Already subscribed - update their preferences
             if subscriber.is_active:
+                # Update subscription scope
+                if scope == 'all':
+                    subscriber.subscribed_to_all = True
+                    subscriber.save()
+                    message = 'Subscription updated to include all posts!'
+                elif scope == 'category':
+                    category_id = request.POST.get('category_id')
+                    if category_id:
+                        from .models import Category
+                        category = Category.objects.get(id=category_id)
+                        subscriber.subscribed_categories.add(category)
+                        message = f'Subscription updated to include {category.name} posts!'
+                    else:
+                        message = 'This email is already subscribed!'
+                elif scope == 'tag':
+                    tag_id = request.POST.get('tag_id')
+                    if tag_id:
+                        from .models import Tag
+                        tag = Tag.objects.get(id=tag_id)
+                        subscriber.subscribed_tags.add(tag)
+                        message = f'Subscription updated to include {tag.name} posts!'
+                    else:
+                        message = 'This email is already subscribed!'
+                else:
+                    message = 'This email is already subscribed!'
+
                 return JsonResponse({
-                    'success': False,
-                    'message': 'This email is already subscribed!'
-                }, status=400)
+                    'success': True,
+                    'message': message,
+                    'email': email,
+                    'already_subscribed': True
+                })
             else:
                 # Reactivate subscription
                 subscriber.is_active = True
                 subscriber.verification_token = get_random_string(50)
+                subscriber.subscribed_to_all = (scope == 'all')
                 subscriber.save()
+        
+        # Set subscription preferences based on scope
+        if scope == 'category':
+            category_id = request.POST.get('category_id')
+            if category_id:
+                from .models import Category
+                category = Category.objects.get(id=category_id)
+                subscriber.subscribed_categories.add(category)
+                context_name = category.name
+        elif scope == 'tag':
+            tag_id = request.POST.get('tag_id')
+            if tag_id:
+                from .models import Tag
+                tag = Tag.objects.get(id=tag_id)
+                subscriber.subscribed_tags.add(tag)
+                context_name = tag.name
+        # NOTE: Series subscription can be added similarly if needed
         
         # Send verification email
         if not subscriber.is_verified:
             send_verification_email(request, subscriber)
+
+        # Build subscriber message based on scope
+        if scope == 'all':
+            message = 'Successfully subscribed to all DataLog updates.'
+        elif scope == 'category':
+            message = f'Successfully subscribed to {context_name} posts.'
+        elif scope == 'tag':
+            message = f'Succesfully subscribed to {context_name} posts.'
+        else:
+            message = 'Successfully subscribed.'
+        
+        message += ' Check your email to verify.' if not subscriber.is_verified else ''
         
         return JsonResponse({
             'success': True,
-            'message': 'Successfully subscribed! Check your email to verify.',
+            'message': message,
             'email': email,
-            'requires_verification': not subscriber.is_verified
+            'requires_verification': not subscriber.is_verified,
+            'scope': scope
         })
     
     except Exception as e:
@@ -1815,7 +1883,7 @@ def get_bookmarked_posts(request):
 
 def bookmarks_page(request):
     """
-    Render the "My Bookmarks page.
+    Render the 'My Bookmarks' page.
     
     The actual bookmarks are loaded in via JS from localStorage.
     This view just provides page template.
