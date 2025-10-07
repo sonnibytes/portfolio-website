@@ -669,7 +669,7 @@ class Subscriber(models.Model):
     is_active = models.BooleanField(default=True, help_text="Whether the subscription is active")
 
     # Track what they want to subscribe to
-    subscribed_to_all = models.BooleanField(default=True, help_text="Receive notifications for all new posts")
+    subscribed_to_all = models.BooleanField(default=False, help_text="Receive notifications for all new posts")
     subscribed_categories = models.ManyToManyField('Category', blank=True, related_name='subscribers', help_text="Specific categories to subscribe to")
     subscribed_tags = models.ManyToManyField('Tag', blank=True, related_name='subscribers', help_text='Specific tags to subscribe to')
 
