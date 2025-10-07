@@ -207,10 +207,31 @@ function handleSubscribeForm(form) {
         return;
     }
     
+    // Get subscription scope and context
+    const scopeInput = form.querySelector('input[name="subscribe_scope"]:checked');
+    const scope = scopeInput ? scopeInput.value : 'all';
+    
+    // Build form data
+    const formData = new URLSearchParams();
+    formData.append('email', email);
+    formData.append('scope', scope);
+    
+    // Add context-specific data
+    if (scope === 'category') {
+        const categoryId = scopeInput.dataset.categoryId;
+        if (categoryId) formData.append('category_id', categoryId);
+    } else if (scope === 'tag') {
+        const tagId = scopeInput.dataset.tagId;
+        if (tagId) formData.append('tag_id', tagId);
+    } else if (scope === 'series') {
+        const seriesId = scopeInput.dataset.seriesId;
+        if (seriesId) formData.append('series_id', seriesId);
+    }
+    
     // Disable button to prevent double submission
     submitButton.disabled = true;
-    const originalText = submitButton.textContent;
-    submitButton.textContent = 'Subscribing...';
+    const originalHTML = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subscribing...';
     
     // Get CSRF token
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -222,7 +243,7 @@ function handleSubscribeForm(form) {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': csrfToken
         },
-        body: `email=${encodeURIComponent(email)}`
+        body: formData.toString()
     })
     .then(response => response.json())
     .then(data => {
@@ -230,8 +251,13 @@ function handleSubscribeForm(form) {
             showNotification(data.message, 'success');
             emailInput.value = ''; // Clear input
             
-            // Store in localStorage as well for "already subscribed" check
-            localStorage.setItem('aura_subscribed_email', email);
+            // Store in localStorage for "already subscribed" check
+            const subscriptionInfo = {
+                email: email,
+                scope: scope,
+                subscribedAt: new Date().toISOString()
+            };
+            localStorage.setItem('aura_subscribed_email', JSON.stringify(subscriptionInfo));
         } else {
             showNotification(data.message, 'error');
         }
@@ -243,7 +269,7 @@ function handleSubscribeForm(form) {
     .finally(() => {
         // Re-enable button
         submitButton.disabled = false;
-        submitButton.textContent = originalText;
+        submitButton.innerHTML = originalHTML;
     });
 }
 
