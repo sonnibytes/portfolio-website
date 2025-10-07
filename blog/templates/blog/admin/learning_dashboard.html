@@ -708,6 +708,52 @@
             </div>
         </div>
 
+        <!-- Subscriber Management -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-users mr-2 text-purple-400"></i>
+                    Subscriber Community
+                </h3>
+                <a href="{% url 'aura_admin:blog:subscriber_dashboard' %}" class="btn btn-sm btn-purple">
+                    <i class="fas fa-cog mr-1"></i>
+                    Manage
+                </a>
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-white bg-opacity-5 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-white">{{ subscriber_stats.active }}</div>
+                    <div class="text-sm text-gray-400">Active Subscribers</div>
+                </div>
+                <div class="bg-white bg-opacity-5 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-yellow-400">{{ subscriber_stats.pending }}</div>
+                    <div class="text-sm text-gray-400">Pending Verification</div>
+                </div>
+            </div>
+            
+            <!-- Recent Subscribers -->
+            <div class="space-y-2">
+                <h4 class="text-sm font-semibold text-gray-400 mb-2">Recent Subscribers</h4>
+                {% for subscriber in recent_subscribers %}
+                <div class="flex items-center justify-between p-2 bg-white bg-opacity-5 rounded">
+                    <div class="flex items-center gap-2">
+                        {% if subscriber.is_verified %}
+                        <i class="fas fa-check-circle text-emerald-400 text-xs"></i>
+                        {% else %}
+                        <i class="fas fa-clock text-yellow-400 text-xs"></i>
+                        {% endif %}
+                        <span class="text-white text-sm">{{ subscriber.email|truncatechars:30 }}</span>
+                    </div>
+                    <span class="text-xs text-gray-500">{{ subscriber.subscribed_at|timesince }} ago</span>
+                </div>
+                {% empty %}
+                <div class="text-gray-500 text-sm text-center py-4">No subscribers yet</div>
+                {% endfor %}
+            </div>
+        </div>
+
         <!-- System-Knowledge Integration -->
         <div class="glass-card lavender-accent p-6">
             <div class="flex items-center justify-between mb-6">

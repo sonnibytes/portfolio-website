@@ -1556,7 +1556,7 @@ class SubscriberDeleteView(BaseAdminDeleteView):
 # ===================== AJAX ACTIONS =====================
 
 
-class SubscriberBulkActionView(AdminAccessMixin, BulkActionMixin):
+class SubscriberBulkActionView(BaseAdminListView, BulkActionMixin):
     """
     Handle bulk actions on subscribers (verify, activate, deactivate, delete).
     """
