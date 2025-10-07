@@ -55,4 +55,13 @@ urlpatterns = [
     path('api/posts/<int:pk>/toggle-status/', admin_views.PostStatusToggleView.as_view(), name='post_toggle_status'),
     path('api/posts/<int:pk>/toggle-feature/', admin_views.PostFeatureToggleView.as_view(), name='post_toggle_feature'),
 
+    # Subscriber Management
+    path('subscribers/', admin_views.SubscriberDashboardView.as_view(), name='subscriber_dashboard'),
+    path('subscribers/list/', admin_views.SubscriberListView.as_view(), name='subscriber_list'),
+    path('subscribers/<int:pk>/', admin_views.SubscriberDetailView.as_view(), name='subscriber_detail'),
+    path('subscribers/<int:pk>/edit/', admin_views.SubscriberUpdateView.as_view(), name='subscriber_update'),
+    path('subscribers/<int:pk>/delete/', admin_views.SubscriberDeleteView.as_view(), name='subscriber_delete'),
+    path('subscribers/bulk-action/', admin_views.SubscriberBulkActionView.as_view(), name='subscriber_bulk_action'),
+    path('subscribers/export/', admin_views.SubscriberExportView.as_view(), name='subscriber_export'),
+
 ]
