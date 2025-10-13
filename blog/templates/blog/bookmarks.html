@@ -1,0 +1,245 @@
+<!-- blog/templates/blog/bookmarks.html -->
+{% extends 'blog/datalogs_base.html' %}
+{% load static aura_filters aura_components %}
+
+{% block title %}My Bookmarks - DataLogs{% endblock %}
+
+{% block extra_css %}
+{% comment %} {% block datalogs_css %}
+{{ block.super }} {% endcomment %}
+<link rel="stylesheet" href="{% static 'blog/css/interactions.css' %}">
+<link rel="stylesheet" href="{% static 'blog/css/datalogs-consolidated.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="bookmarks-section">
+    <div class="container">
+        
+        <!-- Page Header -->
+        <div class="bookmarks-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-bookmark"></i>
+                    My Bookmarks
+                </h1>
+                <p class="page-subtitle">
+                    Your saved DataLog entries. <span class="bookmarks-count" id="bookmarkCount">0 bookmarks</span>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="loadingState" class="bookmarks-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading your bookmarks...</p>
+        </div>
+        
+        <!-- Empty State (hidden by default, shown if no bookmarks) -->
+        <div id="emptyState" class="bookmarks-empty-state" style="display: none;">
+            <i class="far fa-bookmark"></i>
+            <h2>No Bookmarks Yet</h2>
+            <p>Start exploring DataLogs and bookmark posts you want to read later!</p>
+            <a href="{% url 'blog:post_list' %}" class="btn btn-primary">
+                <i class="fas fa-database"></i>
+                Browse DataLogs
+            </a>
+        </div>
+        
+        <!-- Bookmarked Posts Grid -->
+        <div id="bookmarksGrid" class="data-grid" style="display: none;">
+            <!-- Posts will be dynamically inserted here -->
+        </div>
+        
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'blog/js/interactions.js' %}"></script>
+<script>
+// Load and display bookmarked posts
+document.addEventListener('DOMContentLoaded', function() {
+    loadBookmarks();
+    
+    // Listen for bookmark changes
+    window.addEventListener('bookmarkChanged', function(e) {
+        loadBookmarks(); // Reload when bookmarks change
+    });
+});
+
+function loadBookmarks() {
+    const bookmarks = window.AURAInteractions.getBookmarks();
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const bookmarksGrid = document.getElementById('bookmarksGrid');
+    const bookmarkCount = document.getElementById('bookmarkCount');
+    
+    // Update count
+    bookmarkCount.innerHTML = `
+        <i class="fas fa-bookmark"></i>
+        ${bookmarks.length} bookmark${bookmarks.length !== 1 ? 's' : ''}
+    `;
+    
+    if (bookmarks.length === 0) {
+        // Show empty state
+        loadingState.style.display = 'none';
+        emptyState.style.display = 'block';
+        bookmarksGrid.style.display = 'none';
+        return;
+    }
+    
+    // Fetch post data from server
+    const ids = bookmarks.join(',');
+    fetch(`{% url 'blog:api_bookmarks' %}?ids=${ids}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.posts.length > 0) {
+                renderPosts(data.posts);
+                loadingState.style.display = 'none';
+                emptyState.style.display = 'none';
+                bookmarksGrid.style.display = 'grid';
+            } else {
+                // No posts found
+                loadingState.style.display = 'none';
+                emptyState.style.display = 'block';
+                bookmarksGrid.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading bookmarks:', error);
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'block';
+        });
+}
+
+function renderPosts(posts) {
+    const grid = document.getElementById('bookmarksGrid');
+    grid.innerHTML = '';
+    
+    posts.forEach(post => {
+        const card = createPostCard(post);
+        grid.appendChild(card);
+    });
+    
+    // Reinitialize bookmark buttons
+    window.AURAInteractions.init();
+}
+
+function createPostCard(post) {
+    const card = document.createElement('div');
+    card.className = 'data-card';
+    
+    // Format date
+    const date = new Date(post.published_date);
+    const formattedDate = date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+    
+    card.innerHTML = `
+        <div class="card-header">
+            <div class="card-meta">
+                ${post.category ? `
+                <span class="meta-category">
+                    <i class="fas fa-folder"></i>
+                    ${post.category.name}
+                </span>` : ''}
+                <span class="meta-date">
+                    <i class="fas fa-calendar"></i>
+                    ${formattedDate}
+                </span>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <h3 class="card-title">
+                <a href="${post.url}">${post.title}</a>
+            </h3>
+            ${post.excerpt ? `
+            <p class="card-excerpt">${post.excerpt}</p>
+            ` : ''}
+        </div>
+        
+        <div class="card-footer">
+            <div class="card-tags">
+                ${post.tags.map(tag => `
+                    <span class="tag-badge">${tag.name}</span>
+                `).join('')}
+            </div>
+            
+            <div class="card-actions">
+                ${post.reading_time ? `
+                <span class="reading-time">
+                    <i class="fas fa-clock"></i>
+                    ${post.reading_time} min
+                </span>
+                ` : ''}
+                <button class="footer-action-btn" 
+                        data-bookmark-id="${post.id}"
+                        title="Remove bookmark">
+                    <i class="fas fa-bookmark"></i>
+                </button>
+                <button class="footer-action-btn" 
+                        data-share-url="${post.url}"
+                        data-share-title="${post.title}"
+                        title="Share">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return card;
+}
+</script>
+
+<style>
+.bookmarks-header {
+    margin-bottom: var(--spacing-xl);
+}
+
+.page-title {
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.page-title i {
+    color: var(--color-lavender);
+}
+
+.page-subtitle {
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+}
+
+.bookmarks-loading {
+    text-align: center;
+    padding: var(--spacing-xxl);
+    color: var(--color-text-secondary);
+}
+
+.bookmarks-loading i {
+    font-size: 3rem;
+    color: var(--color-lavender);
+    margin-bottom: var(--spacing-md);
+}
+
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+    .data-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

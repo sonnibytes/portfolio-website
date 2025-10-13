@@ -1,0 +1,451 @@
+<!-- blog/templates/blog/admin/subscriber_detail.html -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_title %}Subscriber Details - {{ subscriber.email }}{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header with Actions -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <h1 class="text-3xl font-bold text-white">
+                    <i class="fas fa-user text-purple-400 mr-3"></i>
+                    Subscriber Details
+                </h1>
+                {% if subscriber.is_verified %}
+                    <span class="px-3 py-1 bg-emerald-500 bg-opacity-20 text-emerald-400 rounded-lg text-sm font-semibold">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Verified
+                    </span>
+                {% else %}
+                    <span class="px-3 py-1 bg-yellow-500 bg-opacity-20 text-yellow-400 rounded-lg text-sm font-semibold">
+                        <i class="fas fa-clock mr-1"></i>
+                        Pending Verification
+                    </span>
+                {% endif %}
+                
+                {% if not subscriber.is_active %}
+                    <span class="px-3 py-1 bg-gray-500 bg-opacity-20 text-gray-400 rounded-lg text-sm font-semibold">
+                        <i class="fas fa-ban mr-1"></i>
+                        Inactive
+                    </span>
+                {% endif %}
+            </div>
+            <p class="text-gray-400">{{ subscriber.email }}</p>
+        </div>
+        
+        <div class="flex gap-3">
+            <a href="{% url 'aura_admin:blog:subscriber_list' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to List
+            </a>
+            <a href="{% url 'aura_admin:blog:subscriber_update' subscriber.pk %}" class="btn btn-purple">
+                <i class="fas fa-edit mr-2"></i>
+                Edit
+            </a>
+            <a href="{% url 'aura_admin:blog:subscriber_delete' subscriber.pk %}" class="btn btn-danger">
+                <i class="fas fa-trash mr-2"></i>
+                Delete
+            </a>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Details -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Subscriber Information -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-info-circle mr-2 text-purple-400"></i>
+                    Subscriber Information
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-start py-3 border-b border-gray-700">
+                        <div class="text-gray-400">Email Address</div>
+                        <div class="text-white font-medium">{{ subscriber.email }}</div>
+                    </div>
+                    
+                    <div class="flex justify-between items-start py-3 border-b border-gray-700">
+                        <div class="text-gray-400">Status</div>
+                        <div>
+                            {% if subscriber.is_active %}
+                                <span class="text-emerald-400">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Active
+                                </span>
+                            {% else %}
+                                <span class="text-gray-400">
+                                    <i class="fas fa-ban mr-1"></i>
+                                    Inactive
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-start py-3 border-b border-gray-700">
+                        <div class="text-gray-400">Email Verified</div>
+                        <div>
+                            {% if subscriber.is_verified %}
+                                <span class="text-emerald-400">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Yes
+                                </span>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    {{ subscriber.verified_at|date:"M d, Y g:i A" }}
+                                </div>
+                            {% else %}
+                                <span class="text-yellow-400">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    No
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-start py-3 border-b border-gray-700">
+                        <div class="text-gray-400">Subscribed On</div>
+                        <div class="text-white">
+                            {{ subscriber.subscribed_at|date:"F d, Y" }}
+                            <div class="text-xs text-gray-500 mt-1">
+                                {{ subscriber.subscribed_at|timesince }} ago
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if subscriber.last_email_sent %}
+                    <div class="flex justify-between items-start py-3 border-b border-gray-700">
+                        <div class="text-gray-400">Last Email Sent</div>
+                        <div class="text-white">
+                            {{ subscriber.last_email_sent|date:"M d, Y g:i A" }}
+                            <div class="text-xs text-gray-500 mt-1">
+                                {{ subscriber.last_email_sent|timesince }} ago
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Subscription Preferences -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-cog mr-2 text-cyan-400"></i>
+                    Subscription Preferences
+                </h3>
+                
+                <div class="space-y-4">
+                    <!-- Subscribe to All -->
+                    <div class="p-4 bg-white bg-opacity-5 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-globe text-2xl {% if subscriber.subscribe_to_all %}text-cyan-400{% else %}text-gray-600{% endif %}"></i>
+                                <div>
+                                    <div class="text-white font-semibold">All Posts</div>
+                                    <div class="text-sm text-gray-400">Receive notifications for all new posts</div>
+                                </div>
+                            </div>
+                            {% if subscriber.subscribe_to_all %}
+                                <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+                            {% else %}
+                                <i class="fas fa-times-circle text-gray-600 text-xl"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Subscribed Categories -->
+                    <div class="p-4 bg-white bg-opacity-5 rounded-lg">
+                        <div class="flex items-center gap-3 mb-3">
+                            <i class="fas fa-folder text-xl text-purple-400"></i>
+                            <div class="text-white font-semibold">Subscribed Categories</div>
+                        </div>
+                        {% if subscriber.subscribed_categories.exists %}
+                            <div class="flex flex-wrap gap-2 ml-8">
+                                {% for category in subscriber.subscribed_categories.all %}
+                                <span class="px-3 py-1 bg-purple-500 bg-opacity-20 text-purple-400 rounded-lg text-sm">
+                                    {{ category.name }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-sm text-gray-500 ml-8">No specific categories</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Subscribed Tags -->
+                    <div class="p-4 bg-white bg-opacity-5 rounded-lg">
+                        <div class="flex items-center gap-3 mb-3">
+                            <i class="fas fa-tags text-xl text-cyan-400"></i>
+                            <div class="text-white font-semibold">Subscribed Tags</div>
+                        </div>
+                        {% if subscriber.subscribed_tags.exists %}
+                            <div class="flex flex-wrap gap-2 ml-8">
+                                {% for tag in subscriber.subscribed_tags.all %}
+                                <span class="px-3 py-1 bg-cyan-500 bg-opacity-20 text-cyan-400 rounded-lg text-sm">
+                                    {{ tag.name }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-sm text-gray-500 ml-8">No specific tags</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Posts They Would Receive -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-paper-plane mr-2 text-emerald-400"></i>
+                    Posts They Would Receive
+                    <span class="ml-2 text-sm text-gray-400 font-normal">(Recent 10)</span>
+                </h3>
+                
+                {% if relevant_posts %}
+                    <div class="space-y-3">
+                        {% for post in relevant_posts %}
+                        <div class="flex items-start gap-4 p-4 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all">
+                            <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-purple-500 bg-opacity-20 flex items-center justify-center">
+                                <i class="fas fa-file-alt text-purple-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                {% comment %} <a href="{% url 'aura_admin:blog:post_detail' post.slug %}"  {% endcomment %}
+                                <a href="#"
+                                   class="text-white font-semibold hover:text-purple-400 transition-colors">
+                                    {{ post.title }}
+                                </a>
+                                <div class="flex items-center gap-3 mt-2 text-sm text-gray-400">
+                                    <span>
+                                        <i class="fas fa-folder text-purple-400 mr-1"></i>
+                                        {{ post.category.name }}
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        {{ post.published_date|date:"M d, Y" }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <i class="fas fa-inbox text-gray-600 text-5xl mb-4"></i>
+                        <p class="text-gray-400">No matching posts found</p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            This subscriber's preferences don't match any published posts
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- Right Column: Actions & Info -->
+        <div class="space-y-6">
+            
+            <!-- Quick Actions -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-bolt mr-2 text-yellow-400"></i>
+                    Quick Actions
+                </h3>
+                
+                <div class="space-y-3">
+                    <a href="{% url 'aura_admin:blog:subscriber_update' subscriber.pk %}" 
+                       class="block p-3 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-purple-500 border-opacity-30">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-edit text-purple-400"></i>
+                            <span class="text-white font-medium">Edit Preferences</span>
+                        </div>
+                    </a>
+                    
+                    {% if not subscriber.is_verified %}
+                    <button onclick="verifySubscriber()" 
+                            class="w-full p-3 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-emerald-500 border-opacity-30">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-emerald-400"></i>
+                            <span class="text-white font-medium">Mark as Verified</span>
+                        </div>
+                    </button>
+                    {% endif %}
+                    
+                    {% if not subscriber.is_active %}
+                    <button onclick="activateSubscriber()" 
+                            class="w-full p-3 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-cyan-500 border-opacity-30">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-toggle-on text-cyan-400"></i>
+                            <span class="text-white font-medium">Activate</span>
+                        </div>
+                    </button>
+                    {% else %}
+                    <button onclick="deactivateSubscriber()" 
+                            class="w-full p-3 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-gray-500 border-opacity-30">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-toggle-off text-gray-400"></i>
+                            <span class="text-white font-medium">Deactivate</span>
+                        </div>
+                    </button>
+                    {% endif %}
+                    
+                    <button onclick="copyUnsubscribeLink()" 
+                            class="w-full p-3 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-gray-500 border-opacity-30">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-link text-gray-400"></i>
+                            <span class="text-white font-medium">Copy Unsubscribe Link</span>
+                        </div>
+                    </button>
+                    
+                    <a href="{% url 'aura_admin:blog:subscriber_delete' subscriber.pk %}" 
+                       class="block p-3 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-red-500 border-opacity-30">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-trash text-red-400"></i>
+                            <span class="text-white font-medium">Delete Subscriber</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Subscription Summary -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-cyan-400"></i>
+                    Summary
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center p-3 bg-white bg-opacity-5 rounded">
+                        <span class="text-gray-400">Subscription Type</span>
+                        <span class="text-white font-semibold">
+                            {% if subscriber.subscribe_to_all %}
+                                All Posts
+                            {% else %}
+                                Selective
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-white bg-opacity-5 rounded">
+                        <span class="text-gray-400">Categories</span>
+                        <span class="text-white font-semibold">
+                            {{ subscriber.subscribed_categories.count }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-white bg-opacity-5 rounded">
+                        <span class="text-gray-400">Tags</span>
+                        <span class="text-white font-semibold">
+                            {{ subscriber.subscribed_tags.count }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-white bg-opacity-5 rounded">
+                        <span class="text-gray-400">Relevant Posts</span>
+                        <span class="text-white font-semibold">
+                            {{ relevant_posts|length }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Info -->
+            <div class="glass-card p-6">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-code mr-2 text-gray-400"></i>
+                    Technical Info
+                </h3>
+                
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between p-2">
+                        <span class="text-gray-400">ID</span>
+                        <span class="text-gray-300 font-mono">{{ subscriber.id }}</span>
+                    </div>
+                    <div class="flex justify-between p-2">
+                        <span class="text-gray-400">Token</span>
+                        <span class="text-gray-300 font-mono text-xs">{{ subscriber.verification_token|truncatechars:16 }}</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const subscriberId = {{ subscriber.id }};
+const unsubscribeUrl = "{{ unsubscribe_url }}";
+
+function verifySubscriber() {
+    if (confirm('Mark this subscriber as verified?')) {
+        fetch(`/admin-suite/blog/subscribers/bulk-action/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=verify&subscriber_ids=${subscriberId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            }
+        });
+    }
+}
+
+function activateSubscriber() {
+    fetch(`/admin-suite/blog/subscribers/bulk-action/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=activate&subscriber_ids=${subscriberId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        }
+    });
+}
+
+function deactivateSubscriber() {
+    if (confirm('Deactivate this subscriber?')) {
+        fetch(`/admin-suite/blog/subscribers/bulk-action/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=deactivate&subscriber_ids=${subscriberId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            }
+        });
+    }
+}
+
+function copyUnsubscribeLink() {
+    navigator.clipboard.writeText(unsubscribeUrl).then(() => {
+        alert('Unsubscribe link copied to clipboard!');
+    });
+}
+</script>
+
+{% endblock %}

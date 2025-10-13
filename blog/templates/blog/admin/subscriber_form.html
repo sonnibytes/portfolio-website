@@ -1,0 +1,262 @@
+<!-- blog/templates/blog/admin/subscriber_form.html -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_title %}
+    {% if object %}Edit Subscriber{% else %}Add Subscriber{% endif %}
+{% endblock %}
+
+{% block admin_content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2">
+                <i class="fas fa-user-edit text-purple-400 mr-3"></i>
+                {% if object %}Edit Subscriber{% else %}Add New Subscriber{% endif %}
+            </h1>
+            {% if object %}
+            <p class="text-gray-400">{{ object.email }}</p>
+            {% endif %}
+        </div>
+        <a href="{% if object %}{% url 'aura_admin:blog:subscriber_detail' object.pk %}{% else %}{% url 'aura_admin:blog:subscriber_list' %}{% endif %}" 
+           class="btn btn-outline">
+            <i class="fas fa-times mr-2"></i>
+            Cancel
+        </a>
+    </div>
+
+    <!-- Form -->
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="glass-card p-6">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-info-circle mr-2 text-purple-400"></i>
+                Basic Information
+            </h3>
+            
+            <div class="space-y-4">
+                <!-- Email -->
+                <div>
+                    <label for="id_email" class="block text-sm font-semibold text-gray-300 mb-2">
+                        Email Address *
+                    </label>
+                    <input type="email" 
+                           name="email" 
+                           id="id_email"
+                           value="{{ form.email.value|default:'' }}"
+                           required
+                           class="w-full px-4 py-3 bg-white bg-opacity-5 border border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-20 transition-all"
+                           placeholder="subscriber@example.com">
+                    {% if form.email.errors %}
+                        <p class="mt-2 text-sm text-red-400">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Settings -->
+        <div class="glass-card p-6">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-toggle-on mr-2 text-emerald-400"></i>
+                Status Settings
+            </h3>
+            
+            <div class="space-y-4">
+                <!-- Active Status -->
+                <div class="flex items-center justify-between p-4 bg-white bg-opacity-5 rounded-lg">
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" 
+                               name="is_active" 
+                               id="id_is_active"
+                               {% if form.is_active.value %}checked{% endif %}
+                               class="mt-1 w-5 h-5 rounded border-gray-600 text-emerald-500 focus:ring-emerald-400 focus:ring-opacity-20">
+                        <label for="id_is_active" class="cursor-pointer">
+                            <div class="text-white font-semibold">Active</div>
+                            <div class="text-sm text-gray-400">Subscriber can receive email notifications</div>
+                        </label>
+                    </div>
+                    <i class="fas fa-check-circle text-emerald-400 text-2xl"></i>
+                </div>
+
+                <!-- Verified Status -->
+                <div class="flex items-center justify-between p-4 bg-white bg-opacity-5 rounded-lg">
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" 
+                               name="is_verified" 
+                               id="id_is_verified"
+                               {% if form.is_verified.value %}checked{% endif %}
+                               class="mt-1 w-5 h-5 rounded border-gray-600 text-cyan-500 focus:ring-cyan-400 focus:ring-opacity-20">
+                        <label for="id_is_verified" class="cursor-pointer">
+                            <div class="text-white font-semibold">Email Verified</div>
+                            <div class="text-sm text-gray-400">Subscriber has confirmed their email address</div>
+                        </label>
+                    </div>
+                    <i class="fas fa-shield-check text-cyan-400 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Preferences -->
+        <div class="glass-card p-6">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-cog mr-2 text-cyan-400"></i>
+                Subscription Preferences
+            </h3>
+            
+            <!-- Subscribe to All -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-500 to-purple-500 bg-opacity-10 rounded-lg border border-cyan-500 border-opacity-30">
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" 
+                               name="subscribe_to_all" 
+                               id="id_subscribe_to_all"
+                               {% if form.subscribe_to_all.value %}checked{% endif %}
+                               class="mt-1 w-5 h-5 rounded border-gray-600 text-cyan-500 focus:ring-cyan-400 focus:ring-opacity-20"
+                               onchange="toggleSpecificSubscriptions(this.checked)">
+                        <label for="id_subscribe_to_all" class="cursor-pointer">
+                            <div class="text-white font-semibold flex items-center gap-2">
+                                <i class="fas fa-globe text-cyan-400"></i>
+                                Subscribe to All Posts
+                            </div>
+                            <div class="text-sm text-gray-300 mt-1">
+                                Receive notifications for every new post regardless of category or tag
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 ml-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    When enabled, category and tag selections below are ignored
+                </p>
+            </div>
+
+            <div id="specificSubscriptions" class="space-y-6">
+                <!-- Categories -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-3">
+                        <i class="fas fa-folder text-purple-400 mr-2"></i>
+                        Subscribed Categories
+                    </label>
+                    <div class="bg-white bg-opacity-5 rounded-lg p-4 max-h-64 overflow-y-auto">
+                        {% for category in form.subscribed_categories.field.queryset %}
+                        <div class="flex items-center p-2 hover:bg-white hover:bg-opacity-5 rounded transition-colors">
+                            <input type="checkbox" 
+                                   name="subscribed_categories" 
+                                   value="{{ category.id }}"
+                                   id="category_{{ category.id }}"
+                                   {% if category in form.subscribed_categories.value %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-600 text-purple-500 focus:ring-purple-400 focus:ring-opacity-20">
+                            <label for="category_{{ category.id }}" class="ml-3 text-white cursor-pointer flex-1">
+                                {{ category.name }}
+                                <span class="text-xs text-gray-400 ml-2">({{ category.posts.count }} posts)</span>
+                            </label>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500 text-sm">No categories available</p>
+                        {% endfor %}
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Select categories to receive notifications for posts in those categories
+                    </p>
+                </div>
+
+                <!-- Tags -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-3">
+                        <i class="fas fa-tags text-cyan-400 mr-2"></i>
+                        Subscribed Tags
+                    </label>
+                    <div class="bg-white bg-opacity-5 rounded-lg p-4 max-h-64 overflow-y-auto">
+                        {% for tag in form.subscribed_tags.field.queryset %}
+                        <div class="flex items-center p-2 hover:bg-white hover:bg-opacity-5 rounded transition-colors">
+                            <input type="checkbox" 
+                                   name="subscribed_tags" 
+                                   value="{{ tag.id }}"
+                                   id="tag_{{ tag.id }}"
+                                   {% if tag in form.subscribed_tags.value %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-600 text-cyan-500 focus:ring-cyan-400 focus:ring-opacity-20">
+                            <label for="tag_{{ tag.id }}" class="ml-3 text-white cursor-pointer flex-1">
+                                {{ tag.name }}
+                                <span class="text-xs text-gray-400 ml-2">({{ tag.posts.count }} posts)</span>
+                            </label>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500 text-sm">No tags available</p>
+                        {% endfor %}
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Select tags to receive notifications for posts with those tags
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Errors -->
+        {% if form.non_field_errors %}
+        <div class="glass-card p-4 border border-red-500 border-opacity-50">
+            <div class="flex items-center gap-3 text-red-400">
+                <i class="fas fa-exclamation-circle text-xl"></i>
+                <div>
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-between gap-4">
+            <a href="{% if object %}{% url 'aura_admin:blog:subscriber_detail' object.pk %}{% else %}{% url 'aura_admin:blog:subscriber_list' %}{% endif %}" 
+               class="btn btn-outline">
+                <i class="fas fa-times mr-2"></i>
+                Cancel
+            </a>
+            
+            <div class="flex gap-3">
+                {% if object %}
+                <a href="{% url 'aura_admin:blog:subscriber_delete' object.pk %}" 
+                   class="btn btn-danger">
+                    <i class="fas fa-trash mr-2"></i>
+                    Delete
+                </a>
+                {% endif %}
+                
+                <button type="submit" class="btn btn-purple">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if object %}Update Subscriber{% else %}Add Subscriber{% endif %}
+                </button>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+// Toggle specific subscriptions based on "subscribe to all"
+function toggleSpecificSubscriptions(subscribeToAll) {
+    const specificDiv = document.getElementById('specificSubscriptions');
+    if (subscribeToAll) {
+        specificDiv.style.opacity = '0.5';
+        specificDiv.style.pointerEvents = 'none';
+    } else {
+        specificDiv.style.opacity = '1';
+        specificDiv.style.pointerEvents = 'auto';
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const subscribeAllCheckbox = document.getElementById('id_subscribe_to_all');
+    if (subscribeAllCheckbox) {
+        toggleSpecificSubscriptions(subscribeAllCheckbox.checked);
+    }
+});
+</script>
+
+{% endblock %}

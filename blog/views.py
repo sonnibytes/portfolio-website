@@ -2,8 +2,8 @@ from django.views.generic import ListView, DetailView, DeleteView, CreateView, U
 from django.views.generic.detail import SingleObjectMixin
 # from django.views.generic.edit import CreateView, UpdateView
 from django.views.decorators.cache import cache_page
-from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
+from django.views.decorators.http import require_http_methods, require_POST
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -13,10 +13,16 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.utils.html import escape
+from django.utils.crypto import get_random_string
 from django.db.models import Count, Q, Avg, Sum, Case, When, IntegerField, Value
 from django.db.models.functions import Extract, Length
 from markdownx.utils import markdownify
 from django.core.paginator import Paginator
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.conf import settings
+
 
 from datetime import datetime, timedelta, date
 import calendar
@@ -25,8 +31,9 @@ import re
 from uuid import uuid4
 import pprint
 from collections import defaultdict, OrderedDict
+import json
 
-from .models import Post, Category, Tag, Series, SeriesPost, PostView
+from .models import Post, Category, Tag, Series, SeriesPost, PostView, Subscriber
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 from .templatetags.datalog_tags import datalog_search_suggestions
 
@@ -1593,3 +1600,315 @@ class DashboardView(LoginRequiredMixin, ListView):
 #                 {"tags": [{"id": tag.id, "name": tag.name} for tag in tags]}
 #             )
 #         return JsonResponse({"tags": []})
+
+# ===================== SUBSCRIPTION VIEWS =====================
+
+@require_POST
+def subscribe_email(request):
+    """
+    AJAX endpoint to subscribe an email address to blog updates.
+    
+    How it works:
+    1. User submits email via AJAX form with subscription scope
+    2. We validate the email
+    3. Create or update Subscriber record with appropriate scope
+    4. Send verification email (optional but recommended)
+    5. Return JSON response
+    
+    Subscription scopes:
+    - 'all': Subscribe to all posts (subscribe_to_all = True)
+    - 'category': Subscribe to specific category
+    - 'tag': Subscribe to specific tag
+    - 'series': Subscribe to specific series
+    
+    No authentication needed - just email validation.
+    """
+    try:
+        # Get email and scope from POST data
+        email = request.POST.get('email', '').strip().lower()
+        scope = request.POST.get('scope', 'all')
+
+        # Validate email format
+        if not email:
+            return JsonResponse({
+                'success': False,
+                'message': 'Email address is required'
+            }, status=400)
+        
+        try:
+            validate_email(email)
+        except ValidationError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Please enter a valid email address'
+            }, status=400)
+        
+        # Check if already subscribed
+        subscriber, created = Subscriber.objects.get_or_create(
+            email=email,
+            defaults={
+                'verification_token': get_random_string(50),
+                'is_active': True,
+                # Only true if explicitly subscribing to all
+                'subscribed_to_all': (scope == 'all'),
+            }
+        )
+
+        if not created:
+            # Already subscribed - update their preferences
+            if subscriber.is_active:
+                # Update subscription scope
+                if scope == 'all':
+                    subscriber.subscribed_to_all = True
+                    subscriber.save()
+                    message = 'Subscription updated to include all posts!'
+                elif scope == 'category':
+                    category_id = request.POST.get('category_id')
+                    if category_id:
+                        from .models import Category
+                        category = Category.objects.get(id=category_id)
+                        subscriber.subscribed_categories.add(category)
+                        message = f'Subscription updated to include {category.name} posts!'
+                    else:
+                        message = 'This email is already subscribed!'
+                elif scope == 'tag':
+                    tag_id = request.POST.get('tag_id')
+                    if tag_id:
+                        from .models import Tag
+                        tag = Tag.objects.get(id=tag_id)
+                        subscriber.subscribed_tags.add(tag)
+                        message = f'Subscription updated to include {tag.name} posts!'
+                    else:
+                        message = 'This email is already subscribed!'
+                else:
+                    message = 'This email is already subscribed!'
+
+                return JsonResponse({
+                    'success': True,
+                    'message': message,
+                    'email': email,
+                    'already_subscribed': True
+                })
+            else:
+                # Reactivate subscription
+                subscriber.is_active = True
+                subscriber.verification_token = get_random_string(50)
+                subscriber.subscribed_to_all = (scope == 'all')
+                subscriber.save()
+        
+        # Set subscription preferences based on scope
+        if scope == 'category':
+            category_id = request.POST.get('category_id')
+            if category_id:
+                from .models import Category
+                category = Category.objects.get(id=category_id)
+                subscriber.subscribed_categories.add(category)
+                context_name = category.name
+        elif scope == 'tag':
+            tag_id = request.POST.get('tag_id')
+            if tag_id:
+                from .models import Tag
+                tag = Tag.objects.get(id=tag_id)
+                subscriber.subscribed_tags.add(tag)
+                context_name = tag.name
+        # NOTE: Series subscription can be added similarly if needed
+        
+        # Send verification email
+        if not subscriber.is_verified:
+            send_verification_email(request, subscriber)
+
+        # Build subscriber message based on scope
+        if scope == 'all':
+            message = 'Successfully subscribed to all DataLog updates.'
+        elif scope == 'category':
+            message = f'Successfully subscribed to {context_name} posts.'
+        elif scope == 'tag':
+            message = f'Succesfully subscribed to {context_name} posts.'
+        else:
+            message = 'Successfully subscribed.'
+        
+        message += ' Check your email to verify.' if not subscriber.is_verified else ''
+        
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'email': email,
+            'requires_verification': not subscriber.is_verified,
+            'scope': scope
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }, status=500)
+
+
+def send_verification_email(request, subscriber):
+    """
+    Send email verification link to new subscriber.
+    
+    Why we do this:
+    - Prevents spam subscriptions
+    - Confirms user owns the email
+    - Required by email regulations (CAN-SPAM, GDPR)
+    """
+
+    verification_url = request.build_absolute_uri(
+        reverse('blog:verify_subscription', args=[subscriber.verification_token])
+    )
+
+    subject = 'Verify your AURA DataLogs subscription'
+    message = f"""
+    Hi there!
+    
+    Thanks for subscribing to AURA DataLogs!
+    
+    Please click the link below to verify your email address:
+    {verification_url}
+    
+    If you didn't subscribe, you can safely ignore this email.
+    
+    Best regards,
+    The AURA Team
+    """
+
+    send_mail(
+        subject=subject,
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[subscriber.email],
+        # Don't crash if email fails
+        fail_silently=True,
+    )
+
+
+def verify_subscription(request, token):
+    """
+    Verify a subscriber's email address via token link.
+    
+    User clicks link in email → This view → Mark as verified → Redirect
+    """
+    subscriber = get_object_or_404(Subscriber, verification_token=token)
+
+    if subscriber.is_verified:
+        messages.info(request, 'Your email was already verified!')
+    else:
+        subscriber.verify_email()
+        messages.success(request, 'Email verified! You\'re all set to receive updates.')
+    
+    return redirect('blog:post_list')
+
+
+def unsubscribe(request, token):
+    """
+    Unsubscribe a user via token link.
+    
+    This is required by law (CAN-SPAM) - must provide easy unsubscribe.
+    """
+    subscriber = get_object_or_404(Subscriber, verification_token=token)
+
+    if request.method == 'POST':
+        subscriber.unsubscribe()
+        messages.success(request, 'You have been unsubscribed. Sorry to see you go!')
+        return redirect('blog:post_list')
+    
+    # Show confirmation page
+    return render(request, 'blog/unsubscribe_confirm.html', {
+        'subscriber': subscriber
+    })
+
+
+# ===================== BOOKMARK VIEWS =====================
+def get_bookmarked_posts(request):
+    """
+    API endpoint to get full post data for bookmarked posts.
+    
+    How it works:
+    1. JavaScript stores bookmark IDs in localStorage
+    2. When user visits "My Bookmarks" page, JS sends those IDs here
+    3. We fetch the actual Post objects
+    4. Return as JSON for display
+    
+    This is just a helper - the actual bookmark storage is in the browser.
+    """
+    try:
+        # Get post IDs from query params (sent by JS)
+        post_ids = request.GET.get('ids', '')
+
+        if not post_ids:
+            return JsonResponse({
+                'success': True,
+                'posts': []
+            })
+        
+        # Convert comma-separated string to list of ints
+        id_list = [int(id.strip()) for id in post_ids.split(',') if id.strip().isdigit()]
+
+        # Fetch posts
+        posts = Post.objects.filter(
+            id__in=id_list,
+            status='published'
+        ).select_related('author', 'category').prefetch_related('tags')
+
+        # Serialize to JSON
+        posts_data = []
+        for post in posts:
+            posts_data.append({
+                'id': post.id,
+                'title': post.title,
+                'slug': post.slug,
+                'excerpt': post.excerpt,
+                'published_date': post.published_date.isoformat() if post.published_date else None,
+                'reading_time': post.reading_time,
+                'category': {
+                    'name': post.category.name,
+                    'slug': post.category.slug,
+                } if post.category else None,
+                'tags': [{'name': tag.name, 'slug': tag.slug} for tag in post.tags.all()],
+                'url': post.get_absolute_url(),
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'posts': posts_data
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+
+
+def bookmarks_page(request):
+    """
+    Render the 'My Bookmarks' page.
+    
+    The actual bookmarks are loaded in via JS from localStorage.
+    This view just provides page template.
+    """
+    return render(request, 'blog/bookmarks.html', {
+        'page_title': 'My Bookmarks',
+    })
+
+
+
+# ===================== HELPER FUNCTION FOR SHARE =====================
+def get_share_data(request, slug):
+    """
+    API Enpoint to get post data for sharing.
+    
+    Returns post title, URL, and excerpt for social sharing.
+    This helps when using Web Share API.
+    """
+    post = get_object_or_404(Post, slug=slug, status='published')
+
+    post_url = request.build_absolute_uri(post.get_absolute_url())
+
+    return JsonResponse({
+        'success': True,
+        'title': post.title,
+        'text': post.excerpt or f'Check out this post: {post.title}',
+        'url': post_url,
+    })

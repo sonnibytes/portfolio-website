@@ -5,14 +5,14 @@ Extends the global admin system with blog-specific functionality
 Version 2.0
 """
 
-from django.urls import reverse_lazy
-from django.db.models import Q, Count, Avg, Sum
+from django.urls import reverse_lazy, reverse
+from django.db.models import Q, Count, Avg, Sum, Max
 from django.contrib import messages
 from django.utils import timezone
 from django.utils.text import slugify
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import TemplateView, DetailView, View
 from django.db import models
 from django.conf import settings
 
@@ -30,7 +30,7 @@ from core.admin_views import (
     BaseAdminView,
     AdminAccessMixin
 )
-from .models import Post, Category, Tag, Series, SeriesPost, SystemLogEntry
+from .models import Post, Category, Tag, Series, SeriesPost, SystemLogEntry, Subscriber
 from projects.models import SystemModule
 from .forms import PostForm, CategoryForm, TagForm, SeriesForm
 
@@ -1052,6 +1052,26 @@ class LearningJourneyDashboardView(AdminAccessMixin, TemplateView):
             journey_count=Count('posts__series_associations__series', distinct=True)
         ).filter(post_count__gt=0).order_by('-post_count')
 
+        # ===== ADD SUBSCRIBER STATS =====
+        from .models import Subscriber
+        
+        subscriber_stats = {
+            'total': Subscriber.objects.count(),
+            'active': Subscriber.objects.filter(is_active=True).count(),
+            'verified': Subscriber.objects.filter(is_verified=True).count(),
+            'pending': Subscriber.objects.filter(
+                is_active=True,
+                is_verified=False
+            ).count(),
+            'all_posts': Subscriber.objects.filter(
+                is_active=True,
+                subscribed_to_all=True
+            ).count(),
+        }
+        
+        # Recent subscribers
+        recent_subscribers = Subscriber.objects.order_by('-subscribed_at')[:5]
+
         context.update({
             'title': 'Learning Journeys Dashboard',
             'subtitle': 'Personal knowledge management and learning progress',
@@ -1080,6 +1100,9 @@ class LearningJourneyDashboardView(AdminAccessMixin, TemplateView):
             'avg_reading_time': Post.objects.aggregate(
                 avg_time=Avg('reading_time')
             )['avg_time'] or 0,
+            # Add sub stats
+            'subscriber_stats': subscriber_stats,
+            'recent_subscribers': recent_subscribers,
         })
 
         return context
@@ -1306,3 +1329,326 @@ class LearningJourneyDetailView(BaseAdminView, DetailView):
             })
         
         return redirect('aura_admin:blog:learning_journey_detail', pk=journey.pk)
+
+
+# ===================== SUBSCRIBER MANAGEMENT VIEWS =====================
+
+
+class SubscriberDashboardView(AdminAccessMixin, TemplateView):
+    """
+    Subscriber management dashboard.
+    Shows overview, stats, and recent subscribers.
+    """
+    template_name = 'blog/admin/subscriber_dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Calculate subscriber stats
+        total_subscribers = Subscriber.objects.count()
+        active_subscribers = Subscriber.objects.filter(is_active=True).count()
+        verified_subscribers = Subscriber.objects.filter(is_verified=True).count()
+        pending_verification = Subscriber.objects.filter(
+            is_active=True,
+            is_verified=False
+        ).count()
+
+        # Subscription type breakdown
+        all_posts_subs = Subscriber.objects.filter(
+            is_active=True,
+            subscribed_to_all=True
+        ).count()
+
+        category_subs = Subscriber.objects.filter(
+            is_active=True,
+            subscribed_categories__isnull=False
+        ).distinct().count()
+
+        tag_subs = Subscriber.objects.filter(
+            is_active=True,
+            subscribed_tags__isnull=False
+        ).distinct().count()
+
+        # Recent subscribers
+        recent_subscribers = Subscriber.objects.select_related(
+        ).prefetch_related(
+            'subscribed_categories',
+            'subscribed_tags'
+        ).order_by('-subscribed_at')[:10]
+
+        # Most popular categories for subscriptions
+        popular_categories = Category.objects.filter(
+            subscribers__is_active=True
+        ).annotate(
+            subscriber_count=Count('subscribers')
+        ).order_by('-subscriber_count')[:5]
+
+        # Most popular tags for subs
+        popular_tags = Tag.objects.filter(
+            subscribers__is_active=True
+        ).annotate(
+            subscriber_count=Count('subscribers')
+        ).order_by('-subscriber_count')[:5]
+
+        # Growth trend (last 30 days)
+        thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+        new_subs_30d = Subscriber.objects.filter(
+            subscribed_at__gte=thirty_days_ago
+        ).count()
+
+        context.update({
+            'title': 'Subscriber Management',
+            'admin_section': True,
+            'subscriber_stats': {
+                'total': total_subscribers,
+                'active': active_subscribers,
+                'verified': verified_subscribers,
+                'pending': pending_verification,
+                'all_posts': all_posts_subs,
+                'category_specific': category_subs,
+                'tag_specific': tag_subs,
+                'new_30d': new_subs_30d,
+            },
+            'recent_subscribers': recent_subscribers,
+            'popular_categories': popular_categories,
+            'popular_tags': popular_tags,   
+        })
+
+        return context
+
+
+class SubscriberListView(BaseAdminListView):
+    """
+    List all subscribers with filtering and search.
+    Extends BaseAdminListView for consistent AURA admin styling.
+    """
+
+    model = Subscriber
+    template_name = 'blog/admin/subscriber_list.html'
+    context_object_name = 'subscribers'
+    paginate_by = 25
+
+    def get_queryset(self):
+        queryset = super().get_queryset().prefetch_related(
+            'subscribed_categories',
+            'subscribed_tags'
+        ).order_by('-subscribed_at')
+
+        # Search functionality
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(email__icontains=search_query)
+        
+        # Filter by status
+        status_filter = self.request.GET.get('status', '')
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status_filter == 'inactive':
+            queryset = queryset.filter(is_active=False)
+        elif status_filter == 'verified':
+            queryset = queryset.filter(is_verified=True)
+        elif status_filter == 'unverified':
+            queryset = queryset.filter(is_verified=False)
+        
+
+        # Filter by sub type
+        sub_filter = self.request.GET.get('subscription', '')
+        if sub_filter == 'all':
+            queryset = queryset.filter(subscribed_to_all=True)
+        elif sub_filter == 'category':
+            queryset = queryset.filter(
+                subscribed_categories__isnull=False
+            ).distinct()
+        elif sub_filter == 'tag':
+            queryset = queryset.filter(
+                subscribed_tags__isnull=False
+            ).distinct()
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'title': 'All Subscribers',
+            'search_query': self.request.GET.get('search', ''),
+            'status_filter': self.request.GET.get('status', ''),
+            'subscription_filter': self.request.GET.get('subscription', ''),  
+        })
+        return context
+
+
+class SubscriberDetailView(AdminAccessMixin, BaseAdminView, DetailView):
+    """
+    View detailed info about a specific subscriber.
+    Shows subscription preferences, activity, and actions.
+    """
+
+    model = Subscriber
+    template_name = 'blog/admin/subscriber_detail.html'
+    context_object_name = 'subscriber'
+
+    def get_object(self):
+        return get_object_or_404(
+            Subscriber.objects.prefetch_related(
+                'subscribed_categories',
+                'subscribed_tags'
+            ),
+            pk=self.kwargs['pk']
+        )
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        subscriber = self.object 
+
+        # Get posts this subscriber would receive
+        if subscriber.subscribed_to_all:
+            relevant_posts = Post.objects.filter(status='published')[:10]
+        else:
+            relevant_posts = Post.objects.filter(
+                Q(category__in=subscriber.subscribed_categories.all()) |
+                Q(tags__in=subscriber.subscribed_tags.all())
+            ).filter(status='published').distinct()[:10]
+
+        context.update({
+            'title': f'Subscriber: {subscriber.email}',
+            'relevant_posts': relevant_posts,
+            'unsubscribe_email': self.request.build_absolute_uri(
+                reverse('blog:unsubscribe', args=[subscriber.verification_token])
+            ),
+        })
+        return context
+
+
+class SubscriberUpdateView(BaseAdminUpdateView):
+    """
+    Update subscriber preferences and status.
+    """
+    model = Subscriber
+    template_name = 'blog/admin/subscriber_form.html'
+    fields = [
+        'email',
+        'is_active',
+        'is_verified',
+        'subscribed_to_all',
+        'subscribed_categories',
+        'subscribed_tags',
+    ]
+    success_url = reverse_lazy('aura_admin:blog:subscriber_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Subscriber updated successfully.')
+        return super().form_valid(form)
+
+
+class SubscriberDeleteView(BaseAdminDeleteView):
+    """
+    Delete a subscriber.
+    """
+    model = Subscriber
+    template_name = 'blog/admin/subscriber_confirm_delete.html'
+    success_url = reverse_lazy('aura_admin:blog:subscriber_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Subscriber successfully deleted.')
+        return super().delete(request, *args, **kwargs)
+
+
+# ===================== AJAX ACTIONS =====================
+
+
+class SubscriberBulkActionView(BaseAdminListView, BulkActionMixin):
+    """
+    Handle bulk actions on subscribers (verify, activate, deactivate, delete).
+    """
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action')
+        subscriber_ids = request.POST.getList('subscriber_ids')
+
+        if not action or not subscriber_ids:
+            return JsonResponse({
+                'success': False,
+                'message': 'No action or subscribers selected.'
+            }, status=400)
+        
+        subscribers = Subscriber.objects.filter(id__in=subscriber_ids)
+        count = subscribers.count()
+
+        if action == 'verify':
+            subscribers.update(is_verified=True, verified_at=timezone.now())
+            message = f'Verified {count} subscriber(s).'
+        
+        elif action == 'activate':
+            subscribers.update(is_active=True)
+            message = f'Activated {count} subscriber(s).'
+            
+        elif action == 'deactivate':
+            subscribers.update(is_active=False)
+            message = f'Deactivated {count} subscriber(s).'
+            
+        elif action == 'delete':
+            subscribers.delete()
+            message = f'Deleted {count} subscriber(s).'
+            
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid action.'
+            }, status=400)
+        
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'count': count
+        })
+
+
+class SubscriberExportView(AdminAccessMixin, View):
+    """
+    Export subscriber emails as CSV.
+    """
+
+    def get(self, request, *args, **kwargs):
+        import csv
+        from django.http import HttpResponse
+
+        # Get filter params
+        status_filter = request.GET.get('status', 'all')
+
+        # Build queryset
+        queryset = Subscriber.objects.all()
+
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True, is_verified=True)
+        elif status_filter == 'verified':
+            queryset = queryset.filter(is_verified=True)
+        elif status_filter == 'all_active':
+            queryset = queryset.filter(is_active=True)
+        
+        # Create CSV response
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="subscribers_{timezone.now().strftime("%Y%m%d")}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Email', 'Status', 'Verified', 'Subscribed To', 'Date Subscribed'])
+
+        for subscriber in queryset.select_related().prefetch_related(
+            'subscribed_categories', 'subscribed_tags'
+        ):
+            # Determin sub type
+            if subscriber.subscribed_to_all:
+                sub_type = 'All Posts'
+            else:
+                categories = list(subscriber.subscribed_categories.values_list('name', flat=True))
+                tags = list(subscriber.subscribed_tags.values_list('name', flat=True))
+                sub_type = f"Categories: {', '.join(categories)} | Tags: {', '.join(tags)}"
+            
+            writer.writerow([
+                subscriber.email,
+                'Active' if subscriber.is_active else 'Inactive',
+                'Yes' if subscriber.is_verified else 'No',
+                sub_type,
+                subscriber.subscribed_at.strftime('%Y-%m-%d')
+            ])
+        
+        return response

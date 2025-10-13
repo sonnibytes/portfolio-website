@@ -1,0 +1,306 @@
+<!-- blog/templates/blog/admin/subscriber_list.html -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_title %}All Subscribers{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    
+    <!-- Header with Actions -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2">
+                <i class="fas fa-users text-purple-400 mr-3"></i>
+                All Subscribers
+            </h1>
+            <p class="text-gray-400">{{ page_obj.paginator.count }} total subscribers</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'aura_admin:blog:subscriber_dashboard' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Dashboard
+            </a>
+            <a href="{% url 'aura_admin:blog:subscriber_export' %}" class="btn btn-purple">
+                <i class="fas fa-download mr-2"></i>
+                Export
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="glass-card p-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <!-- Search -->
+            <div class="flex-1 min-w-64">
+                <label class="block text-sm text-gray-400 mb-2">Search Email</label>
+                <input type="text" 
+                       name="search" 
+                       value="{{ search_query }}"
+                       placeholder="Enter email address..."
+                       class="w-full px-4 py-2 bg-white bg-opacity-5 border border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none">
+            </div>
+
+            <!-- Status Filter -->
+            <div class="min-w-48">
+                <label class="block text-sm text-gray-400 mb-2">Status</label>
+                <select name="status" 
+                        class="w-full px-4 py-2 bg-white bg-opacity-5 border border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified</option>
+                    <option value="unverified" {% if status_filter == 'unverified' %}selected{% endif %}>Unverified</option>
+                </select>
+            </div>
+
+            <!-- Subscription Type Filter -->
+            <div class="min-w-48">
+                <label class="block text-sm text-gray-400 mb-2">Subscription Type</label>
+                <select name="subscription" 
+                        class="w-full px-4 py-2 bg-white bg-opacity-5 border border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none">
+                    <option value="">All Types</option>
+                    <option value="all" {% if subscription_filter == 'all' %}selected{% endif %}>All Posts</option>
+                    <option value="category" {% if subscription_filter == 'category' %}selected{% endif %}>Category-Specific</option>
+                    <option value="tag" {% if subscription_filter == 'tag' %}selected{% endif %}>Tag-Specific</option>
+                </select>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-purple">
+                    <i class="fas fa-search mr-2"></i>
+                    Filter
+                </button>
+                <a href="{% url 'aura_admin:blog:subscriber_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times mr-2"></i>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bulk Actions Bar (shown when items selected) -->
+    <div id="bulkActionsBar" class="hidden glass-card p-4 border border-purple-500">
+        <div class="flex items-center justify-between">
+            <div class="text-white">
+                <span id="selectedCount">0</span> subscriber(s) selected
+            </div>
+            <div class="flex gap-2">
+                <button onclick="bulkAction('verify')" class="btn btn-sm btn-emerald">
+                    <i class="fas fa-check mr-1"></i>
+                    Verify
+                </button>
+                <button onclick="bulkAction('activate')" class="btn btn-sm btn-cyan">
+                    <i class="fas fa-toggle-on mr-1"></i>
+                    Activate
+                </button>
+                <button onclick="bulkAction('deactivate')" class="btn btn-sm btn-outline">
+                    <i class="fas fa-toggle-off mr-1"></i>
+                    Deactivate
+                </button>
+                <button onclick="bulkAction('delete')" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash mr-1"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscriber Table -->
+    <div class="glass-card overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-white bg-opacity-5 border-b border-gray-700">
+                <tr>
+                    <th class="p-4 text-left">
+                        <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" 
+                               class="rounded border-gray-600 text-purple-500">
+                    </th>
+                    <th class="p-4 text-left text-gray-400 font-semibold">Status</th>
+                    <th class="p-4 text-left text-gray-400 font-semibold">Email</th>
+                    <th class="p-4 text-left text-gray-400 font-semibold">Subscribed To</th>
+                    <th class="p-4 text-left text-gray-400 font-semibold">Date Subscribed</th>
+                    <th class="p-4 text-left text-gray-400 font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+                {% for subscriber in subscribers %}
+                <tr class="hover:bg-white hover:bg-opacity-5 transition-colors">
+                    <td class="p-4">
+                        <input type="checkbox" class="subscriber-checkbox rounded border-gray-600 text-purple-500" 
+                               value="{{ subscriber.id }}" onclick="updateBulkActions()">
+                    </td>
+                    <td class="p-4">
+                        <div class="flex items-center gap-2">
+                            {% if subscriber.is_verified %}
+                                <span class="px-2 py-1 bg-emerald-500 bg-opacity-20 text-emerald-400 rounded text-xs font-semibold">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Verified
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-yellow-500 bg-opacity-20 text-yellow-400 rounded text-xs font-semibold">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    Pending
+                                </span>
+                            {% endif %}
+                            
+                            {% if not subscriber.is_active %}
+                                <span class="px-2 py-1 bg-gray-500 bg-opacity-20 text-gray-400 rounded text-xs font-semibold">
+                                    Inactive
+                                </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <div class="text-white font-medium">{{ subscriber.email }}</div>
+                    </td>
+                    <td class="p-4">
+                        <div class="text-sm">
+                            {% if subscriber.subscribe_to_all %}
+                                <span class="text-cyan-400">
+                                    <i class="fas fa-globe mr-1"></i>
+                                    All posts
+                                </span>
+                            {% else %}
+                                <div class="text-gray-400">
+                                    {% if subscriber.subscribed_categories.exists %}
+                                        <div>
+                                            <i class="fas fa-folder text-purple-400 mr-1"></i>
+                                            {{ subscriber.subscribed_categories.count }} categor{{ subscriber.subscribed_categories.count|pluralize:"y,ies" }}
+                                        </div>
+                                    {% endif %}
+                                    {% if subscriber.subscribed_tags.exists %}
+                                        <div>
+                                            <i class="fas fa-tag text-cyan-400 mr-1"></i>
+                                            {{ subscriber.subscribed_tags.count }} tag{{ subscriber.subscribed_tags.count|pluralize }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="p-4 text-gray-400 text-sm">
+                        {{ subscriber.subscribed_at|date:"M d, Y" }}
+                    </td>
+                    <td class="p-4">
+                        <div class="flex gap-2">
+                            <a href="{% url 'aura_admin:blog:subscriber_detail' subscriber.pk %}" 
+                               class="text-cyan-400 hover:text-cyan-300" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'aura_admin:blog:subscriber_update' subscriber.pk %}" 
+                               class="text-purple-400 hover:text-purple-300" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'aura_admin:blog:subscriber_delete' subscriber.pk %}" 
+                               class="text-red-400 hover:text-red-300" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="p-12 text-center">
+                        <i class="fas fa-inbox text-gray-600 text-5xl mb-4"></i>
+                        <p class="text-gray-400 text-lg">No subscribers found</p>
+                        <p class="text-gray-500 text-sm mt-2">Subscribers will appear here once they sign up</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="flex justify-center gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if subscription_filter %}&subscription={{ subscription_filter }}{% endif %}" 
+           class="btn btn-outline">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        {% endif %}
+
+        <span class="px-4 py-2 text-white">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if subscription_filter %}&subscription={{ subscription_filter }}{% endif %}" 
+           class="btn btn-outline">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+// Bulk actions functionality
+function toggleSelectAll() {
+    const checkboxes = document.querySelectorAll('.subscriber-checkbox');
+    const selectAll = document.getElementById('selectAll');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.subscriber-checkbox:checked');
+    const count = checkboxes.length;
+    const bulkBar = document.getElementById('bulkActionsBar');
+    const countSpan = document.getElementById('selectedCount');
+    
+    countSpan.textContent = count;
+    bulkBar.classList.toggle('hidden', count === 0);
+}
+
+function bulkAction(action) {
+    const checkboxes = document.querySelectorAll('.subscriber-checkbox:checked');
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (ids.length === 0) return;
+    
+    const actionNames = {
+        'verify': 'verify',
+        'activate': 'activate',
+        'deactivate': 'deactivate',
+        'delete': 'delete'
+    };
+    
+    if (action === 'delete' && !confirm(`Are you sure you want to delete ${ids.length} subscriber(s)?`)) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', action);
+    ids.forEach(id => formData.append('subscriber_ids', id));
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch("{% url 'aura_admin:blog:subscriber_bulk_action' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+</script>
+
+{% endblock %}
