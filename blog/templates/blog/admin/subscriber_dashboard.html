@@ -1,0 +1,233 @@
+<!-- blog/templates/blog/admin/subscriber_dashboard.html -->
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block admin_title %}Subscriber Management{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2">
+                <i class="fas fa-users text-purple-400 mr-3"></i>
+                Subscriber Management
+            </h1>
+            <p class="text-gray-400">Manage email subscriptions and notifications</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'aura_admin:blog:subscriber_list' %}" class="btn btn-purple">
+                <i class="fas fa-list mr-2"></i>
+                View All Subscribers
+            </a>
+            <a href="{% url 'aura_admin:blog:subscriber_export' %}?status=active" class="btn btn-outline">
+                <i class="fas fa-download mr-2"></i>
+                Export
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-2">
+                <div class="text-sm text-gray-400">Total Subscribers</div>
+                <i class="fas fa-users text-purple-400"></i>
+            </div>
+            <div class="text-3xl font-bold text-white">{{ subscriber_stats.total }}</div>
+            <div class="text-sm text-emerald-400 mt-2">
+                <i class="fas fa-arrow-up mr-1"></i>
+                {{ subscriber_stats.new_30d }} this month
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-2">
+                <div class="text-sm text-gray-400">Active</div>
+                <i class="fas fa-check-circle text-emerald-400"></i>
+            </div>
+            <div class="text-3xl font-bold text-white">{{ subscriber_stats.active }}</div>
+            <div class="text-sm text-gray-400 mt-2">
+                {{ subscriber_stats.verified }} verified
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-2">
+                <div class="text-sm text-gray-400">Pending Verification</div>
+                <i class="fas fa-clock text-yellow-400"></i>
+            </div>
+            <div class="text-3xl font-bold text-white">{{ subscriber_stats.pending }}</div>
+            {% if subscriber_stats.pending > 0 %}
+            <div class="text-sm text-yellow-400 mt-2">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                Need verification
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-2">
+                <div class="text-sm text-gray-400">Subscribe to All</div>
+                <i class="fas fa-globe text-cyan-400"></i>
+            </div>
+            <div class="text-3xl font-bold text-white">{{ subscriber_stats.all_posts }}</div>
+            <div class="text-sm text-gray-400 mt-2">
+                {{ subscriber_stats.category_specific }} category-specific
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Recent Subscribers -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-user-clock mr-2 text-purple-400"></i>
+                    Recent Subscribers
+                </h3>
+                <a href="{% url 'aura_admin:blog:subscriber_list' %}" class="text-cyan-400 hover:text-cyan-300 text-sm">
+                    View All →
+                </a>
+            </div>
+
+            <div class="space-y-3">
+                {% for subscriber in recent_subscribers %}
+                <div class="flex items-center justify-between p-3 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-purple-500 bg-opacity-20 flex items-center justify-center">
+                            {% if subscriber.is_verified %}
+                            <i class="fas fa-check text-emerald-400"></i>
+                            {% else %}
+                            <i class="fas fa-question text-yellow-400"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="text-white font-medium">{{ subscriber.email }}</div>
+                            <div class="text-sm text-gray-400">
+                                {% if subscriber.subscribe_to_all %}
+                                    <i class="fas fa-globe text-xs mr-1"></i> All posts
+                                {% else %}
+                                    <i class="fas fa-tag text-xs mr-1"></i> 
+                                    {{ subscriber.subscribed_categories.count }} categories, 
+                                    {{ subscriber.subscribed_tags.count }} tags
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        {{ subscriber.subscribed_at|timesince }} ago
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-gray-400 py-8">
+                    <i class="fas fa-inbox text-4xl mb-3 opacity-30"></i>
+                    <p>No subscribers yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Popular Subscription Topics -->
+        <div class="glass-card p-6">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-chart-bar mr-2 text-purple-400"></i>
+                Popular Topics
+            </h3>
+
+            <!-- Categories -->
+            <div class="mb-6">
+                <h4 class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wide">
+                    Top Categories
+                </h4>
+                <div class="space-y-2">
+                    {% for category in popular_categories %}
+                    <div class="flex items-center justify-between p-2 bg-white bg-opacity-5 rounded">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-folder text-purple-400 text-sm"></i>
+                            <span class="text-white">{{ category.name }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 text-sm">{{ category.subscriber_count }}</span>
+                            <i class="fas fa-users text-gray-500 text-xs"></i>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-gray-500 text-sm">No category subscriptions yet</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Tags -->
+            <div>
+                <h4 class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wide">
+                    Top Tags
+                </h4>
+                <div class="space-y-2">
+                    {% for tag in popular_tags %}
+                    <div class="flex items-center justify-between p-2 bg-white bg-opacity-5 rounded">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-tag text-cyan-400 text-sm"></i>
+                            <span class="text-white">{{ tag.name }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 text-sm">{{ tag.subscriber_count }}</span>
+                            <i class="fas fa-users text-gray-500 text-xs"></i>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-gray-500 text-sm">No tag subscriptions yet</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="glass-card p-6">
+        <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+            <i class="fas fa-bolt mr-2 text-yellow-400"></i>
+            Quick Actions
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="{% url 'aura_admin:blog:subscriber_list' %}?status=unverified" 
+               class="p-4 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-yellow-500 border-opacity-30">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl"></i>
+                    <div>
+                        <div class="text-white font-semibold">Review Unverified</div>
+                        <div class="text-sm text-gray-400">{{ subscriber_stats.pending }} pending</div>
+                    </div>
+                </div>
+            </a>
+
+            <a href="{% url 'aura_admin:blog:subscriber_export' %}?status=active" 
+               class="p-4 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-emerald-500 border-opacity-30">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-download text-emerald-400 text-2xl"></i>
+                    <div>
+                        <div class="text-white font-semibold">Export Active</div>
+                        <div class="text-sm text-gray-400">Download CSV</div>
+                    </div>
+                </div>
+            </a>
+
+            <a href="{% url 'aura_admin:blog:post_create' %}" 
+               class="p-4 bg-white bg-opacity-5 rounded-lg hover:bg-opacity-10 transition-all border border-purple-500 border-opacity-30">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-paper-plane text-purple-400 text-2xl"></i>
+                    <div>
+                        <div class="text-white font-semibold">Create Post</div>
+                        <div class="text-sm text-gray-400">Notify {{ subscriber_stats.active }} subscribers</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

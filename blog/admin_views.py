@@ -1393,7 +1393,7 @@ class SubscriberDashboardView(AdminAccessMixin, TemplateView):
         # Growth trend (last 30 days)
         thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
         new_subs_30d = Subscriber.objects.filter(
-            subscribed_at__ate=thirty_days_ago
+            subscribed_at__gte=thirty_days_ago
         ).count()
 
         context.update({
@@ -1505,7 +1505,7 @@ class SubscriberDetailView(AdminAccessMixin, BaseAdminView, DetailView):
             relevant_posts = Post.objects.filter(status='published')[:10]
         else:
             relevant_posts = Post.objects.filter(
-                Q(cateory__in=subscriber.subscribed_categories.all()) |
+                Q(category__in=subscriber.subscribed_categories.all()) |
                 Q(tags__in=subscriber.subscribed_tags.all())
             ).filter(status='published').distinct()[:10]
 
