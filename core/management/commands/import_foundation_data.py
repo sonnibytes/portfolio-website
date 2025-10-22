@@ -296,8 +296,8 @@ class Command(BaseCommand):
             'category': row.get('category', 'technical_concept').strip(),
             'description': row.get('description', '').strip(),
             'proficiency': self.parse_int(row.get('proficiency', '1'), 1),
-            'icon': row.get('icon', '').strip(),
-            'color': row.get('color', '#00f0ff').strip(),
+            'icon': row.get('icon', 'fa-solid fa-brain').strip(),
+            'color': row.get('color', '#34d399').strip(),
             'display_order': self.parse_int(row.get('display_order', '0')),
             'years_experience': self.parse_float(row.get('years_experience', '0')),
             'is_featured': self.parse_boolean(row.get('is_featured', 'FALSE')),
@@ -316,8 +316,8 @@ class Command(BaseCommand):
             'slug': slug,
             'description': row.get('description', '').strip(),
             'category': row.get('category', 'other').strip(),
-            'icon': row.get('icon', '').strip(),
-            'color': row.get('color', '#00f0ff').strip(),
+            'icon': row.get('icon', 'fa-solid fa-tools').strip(),
+            'color': row.get('color', '#fb923c').strip(),
         }
 
         return tech_data
@@ -367,8 +367,8 @@ class Command(BaseCommand):
             'name': name,
             'slug': slug,
             'description': row.get('description', '').strip(),
-            'icon': row.get('icon', '').strip(),
-            'color': row.get('color', '#00f0ff').strip(),
+            'icon': row.get('icon', 'fa-solid fa-layer-group').strip(),
+            'color': row.get('color', "#b39ddb").strip(),
             'display_order': self.parse_int(row.get('display_order', '0')),
         }
 
@@ -381,7 +381,7 @@ class Command(BaseCommand):
             'name': name,
             'url': url,
             'handle': row.get('handle', '').strip(),
-            'icon': row.get('icon', '').strip(),
+            'icon': row.get('icon', 'fa-solid fa-share-alt').strip(),
             'display_order': self.parse_int(row.get('display_order', '0')),
             'category': row.get('category', 'other').strip(),
             'color': row.get('color', '#60a5fa').strip(),
