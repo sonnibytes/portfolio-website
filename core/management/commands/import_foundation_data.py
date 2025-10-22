@@ -8,6 +8,7 @@ import csv
 import sys
 from datetime import datetime
 from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.core.exceptions import FieldError
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils.text import slugify
@@ -175,19 +176,19 @@ class Command(BaseCommand):
 
             for row_num, row in enumerate(reader, start=2):
                 try:
-                    if model == 'Series' or model == 'CorePage':
+                    name = row.get('name', '').strip()
+
+                    if not name:
                         name = row.get('title', '').strip()
-                    else:
-                        name = row.get('name', '').strip()
 
                     if not name:
                         self.stdout.write(self.style.WARNING(
-                            f"Row {row_num}: Skipping - no name provided"
+                            f"Row {row_num}: Skipping - no name provided: {name}"
                         ))
                         skipped_count += 1
                         continue
 
-                    if model == 'Category':
+                    if 'Category' in str(model):
                         code = row.get('code', '').strip()
 
                         if not code:
@@ -197,7 +198,7 @@ class Command(BaseCommand):
                             skipped_count += 1
                             continue
 
-                    if model == 'SocialLink':
+                    if 'SocialLink' in str(model):
                         url = row.get('url', '').strip()
 
                         if not url:
@@ -207,7 +208,7 @@ class Command(BaseCommand):
                             skipped_count += 1
                             continue
                     
-                    if model == 'Contact':
+                    if 'Contact' in str(model):
                         email = row.get('email', '').strip()
 
                         if not email:
@@ -217,9 +218,12 @@ class Command(BaseCommand):
                             skipped_count += 1
                             continue
 
-                    # Check if exists
-                    slug = row.get('slug', '').strip() or slugify(name)
-                    existing = model.objects.filter(slug=slug).first()
+                    # Check if exists - special treatment for social links (no slug)
+                    try:
+                        slug = row.get('slug', '').strip() or slugify(name)
+                        existing = model.objects.filter(slug=slug).first()
+                    except FieldError:
+                        existing = model.objects.filter(name=name).first()
 
                     if existing and not update_existing:
                         self.stdout.write(self.style.WARNING(
