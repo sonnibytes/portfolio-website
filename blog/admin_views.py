@@ -708,6 +708,39 @@ class TagListAdminView(BaseAdminListView, BulkActionMixin):
         search_query = self.request.GET.get('search', '')
         if search_query:
             queryset = queryset.filter(name__icontains=search_query)
+
+        # Usage Filter (Can tweak these ranges)
+        usage_filter = self.request.GET.get('usage', '')
+        if usage_filter:
+            # Popular (5+ Uses)
+            if usage_filter == 'popular':
+                queryset = queryset.filter(post_count__gte=5)
+            # Moderate (2-4)
+            elif usage_filter == 'moderate':
+                queryset = queryset.filter(post_count__gte=2)
+            # Rare (1 use)
+            elif usage_filter == 'rare':
+                queryset = queryset.filter(post_count=1)
+            # Unused
+            elif usage_filter == 'unused':
+                queryset = queryset.filter(post_count=0)
+        
+        # Source type filtering
+        source_filter = self.request.GET.get('source', '')
+        if source_filter:
+            from core.models import Skill
+            from projects.models import Technology
+
+            if source_filter == 'skill':
+                skill_slugs = Skill.objects.values_list('slug', flat=True)
+                queryset = queryset.filter(slug__in=skill_slugs)
+            elif source_filter == 'technology':
+                tech_slugs = Technology.objects.values_list('slug', flat=True)
+                queryset = queryset.filter(slug__in=tech_slugs)
+            elif source_filter == 'manual':
+                skill_slugs = Skill.objects.values_list('slug', flat=True)
+                tech_slugs = Technology.objects.values_list('slug', flat=True)
+                queryset = queryset.exclude(slug__in=list(skill_slugs) + list(tech_slugs))
             
         return queryset
     
