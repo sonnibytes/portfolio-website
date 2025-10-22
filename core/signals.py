@@ -23,7 +23,7 @@ def create_skill_tag(sender, instance, created, **kwargs):
                 name=tag_name,
                 slug=tag_slug
             )
-            print(f"Auto-created tah '{tag_name}' from Skill")
+            print(f"Auto-created tag '{tag_name}' from Skill")
 
 
 @receiver(post_save, sender=Technology)

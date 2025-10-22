@@ -714,6 +714,10 @@ class TagListAdminView(BaseAdminListView, BulkActionMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Import here to avoid circular imports
+        from core.models import Skill
+        from projects.models import Technology
+
         popular_tags = Tag.objects.annotate(
                 post_count=Count('posts', filter=Q(posts__status='published'))
             ).filter(post_count__gt=3).order_by('-post_count')
@@ -726,12 +730,58 @@ class TagListAdminView(BaseAdminListView, BulkActionMixin):
 
         avg_tags_per_post = posts.aggregate(avg=Avg("tag_count"))["avg"] or 0
 
+        # Add source_type info to each tag
+        tags = context['tags']
+        for tag in tags:
+            # Check if tag corresponds to a Skill or Technology
+            tag.source_skill = Skill.objects.filter(slug=tag.slug).first()
+            tag.source_tech = Technology.objects.filter(slug=tag.slug).first()
+
+            # Determine source type
+            if tag.source_skill:
+                tag.source_type = 'skill'
+                tag.source_icon = 'fas fa-brain'
+                tag.source_color = 'teal'
+                tag.source_label = 'Skill'
+            elif tag.source_tech:
+                tag.source_type = 'technology'
+                tag.source_icon = 'fas fa-code'
+                tag.source_color = 'blue'
+                tag.source_label = 'Technology'
+            else:
+                tag.source_type = 'manual'
+                tag.source_icon = 'fas fa-pen'
+                tag.source_color = 'lavender'
+                tag.source_label = 'Manual'
+            
+            # Add recent posts for display
+            tag.recent_posts = Post.objects.filter(tags=tag).order_by('-published_date')[:3]
+
+            # Add tag usage percentage here instead of via JS
+            tag.usage_percentage = round((tag.post_count / total_tag_usage) * 100, 0) if total_tag_usage > 0 else 0
+
+            # No Created date so add first used
+            first_use = Post.objects.filter(tags=tag).order_by('published_date').first()
+            tag.first_used = first_use.published_date if first_use else None
+
+        
+
+        # Count tags by source_type
+        skill_tags_count = sum(1 for tag in tags if tag.source_type == 'skill')
+        tech_tags_count = sum(1 for tag in tags if tag.source_type == 'technology')
+        manual_tags_count = sum(1 for tag in tags if tag.source_type == 'manual')
+
 
         context.update({
             'popular_tags': popular_tags[:10],
             'total_tag_usage': total_tag_usage,
             'popular_tags_count': len(popular_tags) if popular_tags else 0,
             'avg_tags_per_post': avg_tags_per_post,
+
+            # New source type stats
+            'skill_tags_count': skill_tags_count,
+            'tech_tags_count': tech_tags_count,
+            'manual_tags_count': manual_tags_count,
 
         })
         return context
