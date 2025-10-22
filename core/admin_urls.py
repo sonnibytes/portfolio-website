@@ -100,7 +100,7 @@ urlpatterns = [
     # ===================
     
     path("skills/", SkillListAdminView.as_view(), name="skill_list"),
-    path("skills/create/", SkillCreateAdminView.as_view(), name="skill_create"),
+    path("skills/create/", EnhancedSkillCreateView.as_view(), name="skill_create"),
     path("skills/<int:pk>/edit/", SkillUpdateAdminView.as_view(), name="skill_update"),
     path("skills/<int:pk>/delete/", SkillDeleteAdminView.as_view(), name="skill_delete"),
     
@@ -195,7 +195,8 @@ urlpatterns = [
     path("professional-development/", ProfessionalDevelopmentDashboardView.as_view(), name="professional_dashboard"),
     path("skills/<int:pk>/demonstration/", SkillDemonstrationView.as_view(), name="skill_demonstration"),
     path("skills/matrix/", SkillTechnologyMatrixView.as_view(), name="skill_tech_matrix"),
-    path("skills/create-enhanced/", EnhancedSkillCreateView.as_view(), name="skill_create_enhanced"),
+    # Moving to main skills create
+    # path("skills/create-enhanced/", EnhancedSkillCreateView.as_view(), name="skill_create_enhanced"),
     path("growth-timeline/", ProfessionalGrowthTimelineView.as_view(), name="growth_timeline"),
 
     # AJAX Endpoints
