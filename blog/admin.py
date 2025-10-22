@@ -32,9 +32,35 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
+    list_display = ['name', 'slug', 'source_type', 'usage_count']
+    list_filter = ['name']
     prepopulated_fields = {'slug': ('name',)}
-    search_fields = ('name',)
+    search_fields = ['name', 'slug']
+    readonly_fields = ['source_type']
+
+    def source_type(self, obj):
+        """Show if tag is auto-generated from Skill/Tech"""
+        from core.models import Skill
+        from projects.models import Technology
+
+        # Check for exact matches
+        if Skill.objects.filter(slug=obj.slug).exists():
+            return "Skill"
+        elif Technology.objects.filter(slug=obj.slug).exists():
+            return "Technology"
+        else:
+            return "Manual"
+    
+    source_type.short_description = "Source"
+
+    def usage_count(self, obj):
+        """Show how many posts use this tag"""
+        count = obj.posts.count()
+        if count == 0:
+            return "-"
+        return f"{count} post{'s' if count !=1 else ''}"
+    
+    usage_count.short_description = "Used In"
 
 
 @admin.register(Post)
