@@ -233,23 +233,23 @@ class Command(BaseCommand):
                         continue
 
                     # Prepare Data
-                    if model == 'Skill':
+                    if 'Skill' in str(model):
                         data = self.prep_skills(row, name, slug)
-                    elif model == 'Technology':
+                    elif 'Technology' in str(model):
                         data = self.prep_technologies(row, name, slug)
-                    elif model == 'Category':
+                    elif 'Category' in str(model):
                         data = self.prep_categories(row, name, code, slug)
-                    elif model == 'Tag':
+                    elif 'Tag' in str(model):
                         data = self.prep_tags(name, slug)
-                    elif model == 'Series':
+                    elif 'Series' in str(model):
                         data = self.prep_series(row, name, slug)
-                    elif model == 'SystemType':
+                    elif 'SystemType' in str(model):
                         data = self.prep_systemtypes(row, name, slug)
-                    elif model == 'CorePage':
+                    elif 'CorePage' in str(model):
                         data = self.prep_corepages(row, name, slug)
-                    elif model == 'SocialLink':
+                    elif 'SocialLink' in str(model):
                         data = self.prep_sociallinks(row, name, url)
-                    elif model == 'Contact':
+                    elif 'Contact' in str(model):
                         data = self.prep_contacts(row, name, email)
                     
 
