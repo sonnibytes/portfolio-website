@@ -4,10 +4,11 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.db.models import Q
 from django.urls import reverse
+from core.admin_mixins import CategoeryCSVImportMixin, TagCSVImportMixin, SeriesCSVImportMixin
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(CategoeryCSVImportMixin, admin.ModelAdmin):
     list_display = ("name", "code", "color_preview", "icon_preview")
     search_fields = ("name", "description")
     prepopulated_fields = {"slug": ("name",)}
@@ -31,7 +32,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(TagCSVImportMixin, admin.ModelAdmin):
     list_display = ['name', 'slug', 'source_type', 'usage_count']
     list_filter = ['name']
     prepopulated_fields = {'slug': ('name',)}
@@ -116,7 +117,7 @@ class CommentAdmin(admin.ModelAdmin):
 
 
 @admin.register(Series)
-class SeriesAdmin(admin.ModelAdmin):
+class SeriesAdmin(SeriesCSVImportMixin, admin.ModelAdmin):
     list_display = (
         "title",
         "post_count_display",
