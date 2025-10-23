@@ -14,7 +14,7 @@ from .models import (
     ArchitectureConnection,
     SystemSkillGain
 )
-
+from core.admin_mixins import TechnologyCSVImportMixin, SystemTypeCSVImportMixin
 
 # ========== NEW: SYSTEM SKILL GAIN ADMIN ==========
 
@@ -148,7 +148,7 @@ class ArchitectureConnectionAdmin(admin.ModelAdmin):
 # =======================================
 
 @admin.register(Technology)
-class TechnologyAdmin(admin.ModelAdmin):
+class TechnologyAdmin(TechnologyCSVImportMixin, admin.ModelAdmin):
     list_display = (
         "name",
         "category",
@@ -186,7 +186,7 @@ class TechnologyAdmin(admin.ModelAdmin):
 
 
 @admin.register(SystemType)
-class SystemTypeAdmin(admin.ModelAdmin):
+class SystemTypeAdmin(SystemTypeCSVImportMixin, admin.ModelAdmin):
     list_display = (
         "name",
         "code",
