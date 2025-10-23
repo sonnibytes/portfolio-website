@@ -231,3 +231,111 @@ class CSVImportMixin:
 
 # Model-specific mixins for custom logic
 
+
+class SkillCSVImportMixin(CSVImportMixin):
+    """Skill-specific CSV import logic"""
+    csv_import_fields = [
+        'name',
+        'slug',
+        'category',
+        'description',
+        'proficiency',
+        'icon',
+        'color',
+        'display_order',
+        'years_experience',
+        'is_featured',
+        'last_used',
+        'is_currently_learning',
+        'is_certified'
+    ]
+    csv_required_fields = ['name', 'category']
+
+
+class TechnologyCSVImportMixin(CSVImportMixin):
+    """Technology-specific CSV import logic"""
+    csv_import_fields = [
+        'name',
+        'slug',
+        'description',
+        'category',
+        'icon',
+        'color'
+    ]
+    csv_required_fields = ['name']
+
+
+class CategoeryCSVImportMixin(CSVImportMixin):
+    """Category-specific CSV import logic"""
+    csv_import_fields = [
+        'name',
+        'slug',
+        'code',
+        'description',
+        'color',
+        'icon'
+    ]
+    csv_required_fields = ['name', 'code']
+
+    def prepare_row_data(self, row):
+        data = super().prepare_row_data(row)
+        if data and 'code' in row:
+            data['code'] = row['code'].strip().upper()[:2]
+        return data
+
+
+class TagCSVImportMixin(CSVImportMixin):
+    """Tag-specific CSV import logic"""
+    csv_import_fields = [
+        'name',
+        'slug'
+    ]
+    csv_required_fields = ['name']
+
+
+class SeriesCSVImportMixin(CSVImportMixin):
+    """Series-spcific CSV import logic"""
+    csv_import_fields = [
+        'title',
+        'slug',
+        'description',
+        'difficulty_level',
+        'is_complete',
+        'is_featured'
+    ]
+    csv_required_fields = ['title']
+
+    def prepare_row_data(self, row):
+        # Series uses 'title' instead of 'name'
+        data = {}
+        title = row.get('title', '').strip()
+        if not title:
+            return None
+        
+        data['title'] = title
+        data['slug'] = slugify(title)
+
+        # Process other fields
+        for field in ['description', 'difficulty_level']:
+            if field in row and row[field].strip():
+                data[field] = row[field].strip()
+
+        # Booleans
+        for field in ['is_complete', 'is_featured']:
+            if field in row:
+                data[field] = self.parse_boolean(row[field])
+        
+        return data
+
+
+class SystemTypeCSVImportMixin(CSVImportMixin):
+    """SystemType-specific CSV import logic"""
+    csv_import_fields = [
+        'name',
+        'slug',
+        'description',
+        'icon',
+        'color',
+        'display_order'
+    ]
+    csv_required_fields = ['name']
