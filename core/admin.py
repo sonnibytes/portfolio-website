@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
 from .forms import ContactAdminForm
+from .admin_mixins import SkillCSVImportMixin
 
 
 # ========== NEW: SKILL-TECHNOLOGY RELATIONSHIP MANAGEMENT ==========
@@ -146,7 +147,7 @@ class CorePageAdmin(admin.ModelAdmin):
 # ========== UPDATED: SKILL ADMIN ==========
 
 @admin.register(Skill)
-class SkillAdmin(admin.ModelAdmin):
+class SkillAdmin(SkillCSVImportMixin, admin.ModelAdmin):
     """Enhanced Skill admin w technology relationships"""
     list_display = (
         "name",

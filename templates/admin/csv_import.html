@@ -1,0 +1,45 @@
+<!-- templates/admin/csv_import.html -->
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url 'admin:'|add:opts.app_label|add:'_'|add:opts.model_name|add:'_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; Import CSV
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Import {{ opts.verbose_name_plural|capfirst }} from CSV</h1>
+    
+    <div class="module">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                {{ form.as_p }}
+            </div>
+            
+            <div class="submit-row">
+                <input type="submit" value="Import CSV" class="default" />
+                <a href="{% url 'admin:'|add:opts.app_label|add:'_'|add:opts.model_name|add:'_changelist' %}" class="button cancel-link">Cancel</a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="module" style="margin-top: 20px;">
+        <h2>CSV Format Requirements</h2>
+        <p>Your CSV file should include the following columns (in any order):</p>
+        <ul>
+            <li><strong>name</strong> or <strong>title</strong> - Required</li>
+            <li><strong>slug</strong> - Optional (auto-generated if blank)</li>
+            <li>Other model-specific fields as needed</li>
+        </ul>
+        <p><strong>Note:</strong> Boolean fields should use TRUE/FALSE, 1/0, YES/NO, or Y/N</p>
+        <p><strong>Note:</strong> Dates should be in YYYY-MM-DD or MM/DD/YYYY format</p>
+    </div>
+</div>
+{% endblock %}
