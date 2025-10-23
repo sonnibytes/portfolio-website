@@ -4,11 +4,11 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.db.models import Q
 from django.urls import reverse
-from core.admin_mixins import CategoeryCSVImportMixin, TagCSVImportMixin, SeriesCSVImportMixin
+from core.admin_mixins import CategoryCSVImportMixin, TagCSVImportMixin, SeriesCSVImportMixin
 
 
 @admin.register(Category)
-class CategoryAdmin(CategoeryCSVImportMixin, admin.ModelAdmin):
+class CategoryAdmin(CategoryCSVImportMixin, admin.ModelAdmin):
     list_display = ("name", "code", "color_preview", "icon_preview")
     search_fields = ("name", "description")
     prepopulated_fields = {"slug": ("name",)}

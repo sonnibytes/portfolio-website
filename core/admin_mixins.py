@@ -265,7 +265,7 @@ class TechnologyCSVImportMixin(CSVImportMixin):
     csv_required_fields = ['name']
 
 
-class CategoeryCSVImportMixin(CSVImportMixin):
+class CategoryCSVImportMixin(CSVImportMixin):
     """Category-specific CSV import logic"""
     csv_import_fields = [
         'name',
