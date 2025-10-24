@@ -769,9 +769,10 @@ class SystemModule(models.Model):
         help_text="Setup instructions and implementation details"
     )
     # TODO: May remove? Redundant and just another field to complete. Can address challenges w related DataLogs
+    # Keep this short, problem system solved, with solution as approach in a nutshell
     challenges = MarkdownxField(
         blank=True,
-        help_text="Development challenges faced and how they were overcome"
+        help_text="Development challenge this system solved, and solution/approach"
     )
     # TODO: lean on connected features w implementation status of 'planned' or 'in progress'
     future_enhancements = MarkdownxField(

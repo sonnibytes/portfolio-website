@@ -3,6 +3,12 @@ Reusable CSV Import Functionality for Django Admin
 Add to any ModelAdmin to enable CSV imports via admin interface
 """
 
+"""
+NOTE TO SELF ON CSV IMPORTS IN PROD: Add data files to /data folder and push to main for version control. 
+ALSO -- csv file import names. Import skips all lines if I use the 2025.10.23 date prefix on file name.
+Just use char for models.
+"""
+
 import csv
 import io
 from django import forms
