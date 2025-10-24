@@ -757,45 +757,45 @@ class SkillListAdminView(BaseAdminListView, BulkActionMixin):
         return context
 
 
-class SkillCreateAdminView(SlugAdminCreateView):
-    """Create new skill."""
+# class SkillCreateAdminView(SlugAdminCreateView):
+#     """Create new skill."""
 
-    model = Skill
-    form_class = SkillForm
-    template_name = "core/admin/skill_form.html"
-    success_url = reverse_lazy("aura_admin:skill_list")
+#     model = Skill
+#     form_class = SkillForm
+#     template_name = "core/admin/skill_form.html"
+#     success_url = reverse_lazy("aura_admin:skill_list")
 
-    # ADD THIS METHOD FOR DEBUGGING:
-    def form_valid(self, form):
-        """Debug the form submission."""
-        print(f"🟢 FORM IS VALID")
-        print(f"🟢 Form cleaned_data: {form.cleaned_data}")
+#     # ADD THIS METHOD FOR DEBUGGING:
+#     def form_valid(self, form):
+#         """Debug the form submission."""
+#         print(f"🟢 FORM IS VALID")
+#         print(f"🟢 Form cleaned_data: {form.cleaned_data}")
         
-        try:
-            # Call the parent form_valid which should save the object
-            response = super().form_valid(form)
-            print(f"🟢 Object created successfully: {self.object}")
-            print(f"🟢 Object ID: {self.object.pk}")
-            print(f"🟢 Redirecting to: {self.get_success_url()}")
-            return response
-        except Exception as e:
-            print(f"🔴 ERROR in form_valid: {e}")
-            import traceback
-            traceback.print_exc()
-            return self.form_invalid(form)
+#         try:
+#             # Call the parent form_valid which should save the object
+#             response = super().form_valid(form)
+#             print(f"🟢 Object created successfully: {self.object}")
+#             print(f"🟢 Object ID: {self.object.pk}")
+#             print(f"🟢 Redirecting to: {self.get_success_url()}")
+#             return response
+#         except Exception as e:
+#             print(f"🔴 ERROR in form_valid: {e}")
+#             import traceback
+#             traceback.print_exc()
+#             return self.form_invalid(form)
     
-    def form_invalid(self, form):
-        """Debug form validation errors."""
-        print(f"🔴 FORM IS INVALID")
-        print(f"🔴 Form errors: {form.errors}")
-        print(f"🔴 Form non_field_errors: {form.non_field_errors}")
-        return super().form_invalid(form)
+#     def form_invalid(self, form):
+#         """Debug form validation errors."""
+#         print(f"🔴 FORM IS INVALID")
+#         print(f"🔴 Form errors: {form.errors}")
+#         print(f"🔴 Form non_field_errors: {form.non_field_errors}")
+#         return super().form_invalid(form)
     
-    def post(self, request, *args, **kwargs):
-        """Debug the entire POST process."""
-        print(f"🔵 POST request received")
-        print(f"🔵 POST data: {request.POST}")
-        return super().post(request, *args, **kwargs)
+#     def post(self, request, *args, **kwargs):
+#         """Debug the entire POST process."""
+#         print(f"🔵 POST request received")
+#         print(f"🔵 POST data: {request.POST}")
+#         return super().post(request, *args, **kwargs)
 
 
 class SkillUpdateAdminView(BaseAdminUpdateView):
@@ -2117,7 +2117,7 @@ class EnhancedSkillCreateView(BaseAdminCreateView):
 
     model = Skill
     form_class = SkillForm
-    template_name = 'core/admin/skill_form_enhanced.html'
+    template_name = 'core/admin/skill_form.html'
     success_url = reverse_lazy('aura_admin:skill_list')
 
     def get_context_data(self, **kwargs):
