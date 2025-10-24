@@ -18,7 +18,6 @@ from .admin_views import (
     CorePageDeleteAdminView,
     # Skill Management
     SkillListAdminView,
-    SkillCreateAdminView,
     SkillUpdateAdminView,
     SkillDeleteAdminView,
     SkillToggleFeaturedView,
