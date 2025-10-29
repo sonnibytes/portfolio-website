@@ -266,12 +266,10 @@ class EducationForm(forms.ModelForm):
             'description',
             'is_current',
             'learning_type',
-            'platform',
             'certificate_url',
             'hours_completed',
             'related_systems',
-            'learning_intensity',
-            'career_relevance',
+            
             # Note: skills_learned handled via EducationSkillDevelopment views
         ]
 
@@ -309,12 +307,6 @@ class EducationForm(forms.ModelForm):
             ),
             "is_current": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "learning_type": forms.Select(attrs={"class": "form-control"}),
-            "platform": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "e.g., Coursera, Udemy, edX, etc.",
-                }
-            ),
             "certificate_url": forms.URLInput(
                 attrs={
                     "class": "form-control",
@@ -331,8 +323,6 @@ class EducationForm(forms.ModelForm):
             "related_systems": forms.CheckboxSelectMultiple(
                 attrs={"class": "form-control"}
             ),
-            "learning_intensity": forms.Select(attrs={"class": "form-control"}),
-            "career_relevance": forms.Select(attrs={"class": "form-control"}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -349,7 +339,6 @@ class EducationForm(forms.ModelForm):
         
         # Make optional fields clearly optional
         self.fields['end_date'].required = False
-        self.fields['platform'].required = False
         self.fields['certificate_url'].required = False
         self.fields['description'].required = False
 

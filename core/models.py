@@ -361,14 +361,14 @@ class Skill(models.Model):
                 'date': edu.start_date,
                 'type': 'education_start',
                 'title': f"Started learning in {edu.degree}",
-                'source': edu.platform or edu.institution,
+                'source': edu.institution,
             })
             if edu.end_date:
                 events.append({
                     'date': edu.end_date,
                     'type': 'education_complete',
                     'title': f"Completed {edu.degree}",
-                    'source': edu.platform or edu.institution,
+                    'source': edu.institution,
                 })
         
         # Project applications
@@ -473,10 +473,10 @@ class Education(models.Model):
     ]
 
     # ========== BASIC INFO ==========
-    institution = models.CharField(max_length=100)
+    institution = models.CharField(max_length=100, help_text="e.g., 'edX HarvardX', 'Udemy', 'University of Alabama'")
     slug = models.SlugField(unique=True, max_length=200)
     degree = models.CharField(max_length=100, help_text='Degree or course name')
-    field_of_study = models.CharField(max_length=100)
+    field_of_study = models.CharField(max_length=100, help_text="Computer Science, Web Development, etc.")
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
@@ -485,7 +485,8 @@ class Education(models.Model):
     # ===== NEW LEARNING JOURNEY FIELDS =====
 
     learning_type = models.CharField(max_length=20, choices=LEARNING_TYPE_CHOICES, default='formal_degree')
-    platform = models.CharField(max_length=100, blank=True, help_text="e.g., 'edX HarvardX', 'Udemy', 'University of Alabama'")
+    # Removed - consolidated w institution
+    # platform = models.CharField(max_length=100, blank=True, help_text="e.g., 'edX HarvardX', 'Udemy', 'University of Alabama'")
     certificate_url = models.URLField(blank=True, help_text='Link to certificate or completion proof')
     hours_completed = models.IntegerField(default=0, help_text="Total hours of instruction/study")
     
@@ -509,17 +510,19 @@ class Education(models.Model):
 
     # ========== LEARNING METRICS ==========
 
-    learning_intensity = models.IntegerField(
-        choices=[(i, f'Level {i}') for i in range(1, 6)],
-        default=3,
-        help_text='Learning intensity/difficulty (1=Easy, 5=Very Intense)'
-    )
+    # Removed - unnecessary
+    # learning_intensity = models.IntegerField(
+    #     choices=[(i, f'Level {i}') for i in range(1, 6)],
+    #     default=3,
+    #     help_text='Learning intensity/difficulty (1=Easy, 5=Very Intense)'
+    # )
 
-    career_relevance = models.IntegerField(
-        choices=[(i, f'{i} stars') for i in range(1, 6)],
-        default=4,
-        help_text='Relevance to software development career (1-5 stars)'
-    )
+    # Removed - unnecessary
+    # career_relevance = models.IntegerField(
+    #     choices=[(i, f'{i} stars') for i in range(1, 6)],
+    #     default=4,
+    #     help_text='Relevance to software development career (1-5 stars)'
+    # )
 
     class Meta:
         ordering = ["-end_date", "-start_date"]
@@ -554,14 +557,15 @@ class Education(models.Model):
     
     def get_learning_summary(self):
         """Get comprehensive learning summary"""
+        # Updated w Model Trimming #122
         return {
             'education_type': self.get_learning_type_display(),
-            'platform': self.platform,
+            'institution': self.institution,
             'duration_months': self.get_duration_months(),
             'skills_gained': self.get_skills_gained_count(),
             'projects_applied': self.get_projects_applied_count(),
             'hours_completed': self.hours_completed,
-            'career_relevance': self.career_relevance,
+            # 'career_relevance': self.career_relevance,
             'has_certificate': bool(self.certificate_url),
             'is_current': self.is_current,
         }
@@ -956,20 +960,20 @@ class LearningJourneyManager:
     @staticmethod
     def get_learning_highlights():
         """Generate learning highlights from Education model"""
+        # Updated EDU fields w trims #122
         highlights = []
 
         # Get featured education entries
         education_entries = Education.objects.filter(
             learning_type__in=['online_course', 'certification'],
-            career_relevance__gte=4
-        ).order_by('-career_relevance', '-end_date')[:6]
+        ).order_by('-end_date')[:6]
 
         color_cycle = ["teal", "coral", "lavender", "mint", "yellow", "navy"]
 
         for i, edu in enumerate(education_entries):
             highlights.append({
                 'title': edu.degree,
-                'platform': edu.platform or edu.institution,
+                'institution': edu.institution,
                 'icon': 'fas fa-university' if edu.learning_type == 'formal_degree' else 'fas fa-certificate',
                 'color': color_cycle[i % len(color_cycle)],
                 'description': edu.description or f"Developed {edu.get_skills_gained_count()} technical skills",
@@ -1029,7 +1033,7 @@ class LearningJourneyManager:
                 'date': edu.end_date,
                 'type': 'education',
                 'title': f"Completed {edu.degree}",
-                'description': f"From {edu.platform or edu.institution}",
+                'description': f"From {edu.institution}",
                 'icon': 'fas fa-graduation_cap',
                 'color': 'teal',
                 'skills_gained': edu.get_skills_gained_count(),

@@ -921,7 +921,6 @@ class EducationListAdminView(BaseAdminListView, BulkActionMixin):
                 Q(institution__icontains=search_query)
                 | Q(degree__icontains=search_query)
                 | Q(field_of_study__icontains=search_query)
-                | Q(platform__icontains=search_query)
             )
 
         # Filter by learning type
