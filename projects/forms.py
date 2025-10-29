@@ -109,15 +109,15 @@ class SystemModuleForm(forms.ModelForm):
         })
     )
     
-    future_enhancements = MarkdownxFormField(
-        help_text="Planned improvements and next steps",
-        required=False,
-        widget=forms.Textarea(attrs={
-            'rows': 6,
-            'class': 'markdownx-editor form-control',
-            'placeholder': 'Future improvements and planned features...'
-        })
-    )
+    # future_enhancements = MarkdownxFormField(
+    #     help_text="Planned improvements and next steps",
+    #     required=False,
+    #     widget=forms.Textarea(attrs={
+    #         'rows': 6,
+    #         'class': 'markdownx-editor form-control',
+    #         'placeholder': 'Future improvements and planned features...'
+    #     })
+    # )
     
     technologies = forms.ModelMultipleChoiceField(
         queryset=Technology.objects.all().order_by('category', 'name'),
@@ -132,12 +132,12 @@ class SystemModuleForm(forms.ModelForm):
         model = SystemModule
         fields = [
             'title', 'slug', 'system_id', 'subtitle', 'excerpt',
-            'description', 'usage_examples', 'setup_instructions', 'challenges', 'future_enhancements',
+            'description', 'usage_examples', 'setup_instructions', 'challenges', 
             'system_type', 'technologies', 'complexity', 'priority',
             'status', 'featured', 'completion_percent',
             'performance_score', 'uptime_percentage', 'response_time_ms', 'daily_users',
             'github_url', 'live_url', 'demo_url', 'documentation_url',
-            'thumbnail', 'banner_image', 'featured_image', 'architecture_diagram',
+            'thumbnail', 'banner_image', 'featured_image', 
             'estimated_dev_hours', 'actual_dev_hours', 'team_size'
         ]
         
@@ -233,10 +233,10 @@ class SystemModuleForm(forms.ModelForm):
                 'class': 'form-control',
                 'accept': 'image/*'
             }),
-            'architecture_diagram': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': 'image/*'
-            }),
+            # 'architecture_diagram': forms.FileInput(attrs={
+            #     'class': 'form-control',
+            #     'accept': 'image/*'
+            # }),
             'estimated_dev_hours': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': 0
@@ -271,7 +271,7 @@ class SystemModuleForm(forms.ModelForm):
             'thumbnail': 'System card thumbnail (400x300px recommended)',
             'banner_image': 'Header banner image (1200x400px recommended)',
             'featured_image': 'Featured image for homepage (800x600px recommended)',
-            'architecture_diagram': 'System architecture diagram',
+            # 'architecture_diagram': 'System architecture diagram',
             'estimated_dev_hours': 'Estimated development hours',
             'actual_dev_hours': 'Actual development hours spent',
             'team_size': 'Number of team members',

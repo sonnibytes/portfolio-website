@@ -774,11 +774,11 @@ class SystemModule(models.Model):
         blank=True,
         help_text="Development challenge this system solved, and solution/approach"
     )
-    # TODO: lean on connected features w implementation status of 'planned' or 'in progress'
-    future_enhancements = MarkdownxField(
-        blank=True,
-        help_text="Planned improvement and next steps"
-    )
+    # # lean on connected features w implementation status of 'planned' or 'in progress'
+    # future_enhancements = MarkdownxField(
+    #     blank=True,
+    #     help_text="Planned improvement and next steps"
+    # )
 
     # ================= CATEGORIZATION =================
     system_type = models.ForeignKey(
@@ -865,12 +865,12 @@ class SystemModule(models.Model):
         blank=True,
         help_text="Featured image for homepage (800x600px recommended)",
     )
-    architecture_diagram = models.ImageField(
-        upload_to="systems/diagrams/",
-        null=True,
-        blank=True,
-        help_text="System architecture diagram",
-    )
+    # architecture_diagram = models.ImageField(
+    #     upload_to="systems/diagrams/",
+    #     null=True,
+    #     blank=True,
+    #     help_text="System architecture diagram",
+    # )
 
     # ================= METADATA =================
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="systems")
@@ -978,9 +978,9 @@ class SystemModule(models.Model):
         """Return challenges field as HTML."""
         return markdownify(self.challenges)
 
-    def rendered_future_enhancements(self):
-        """Return future enhancements field as HTML."""
-        return markdownify(self.future_enhancements)
+    # def rendered_future_enhancements(self):
+    #     """Return future enhancements field as HTML."""
+    #     return markdownify(self.future_enhancements)
 
     # ================= STATUS AND HEALTH METHODS =================
     def get_health_status(self):
