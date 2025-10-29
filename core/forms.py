@@ -10,7 +10,7 @@ from django.utils.text import slugify
 
 from datetime import date
 
-from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink, SkillTechnologyRelation
+from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink, SkillTechnologyRelation, ExperienceSkillApplication
 from markdownx.fields import MarkdownxFormField  # pyright: ignore[reportMissingImports]
 from projects.models import Technology, SystemModule
 
@@ -439,7 +439,14 @@ class EducationSkillDevelopmentForm(forms.ModelForm):
 
 
 class ExperienceForm(forms.ModelForm):
-    """Enhanced experience form with technology tracking."""
+    """Enhanced experience form with technology tracking. NEW: Skill Experience Connections"""
+
+    skills_applied = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all().order_by('name'),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text='Select skills applied in this role'
+    )
 
     class Meta:
         model = Experience
@@ -452,6 +459,7 @@ class ExperienceForm(forms.ModelForm):
             "end_date",
             "is_current",
             "technologies",
+            'skills_applied',  # NEW
         ]
         widgets = {
             "company": forms.TextInput(
@@ -490,6 +498,10 @@ class ExperienceForm(forms.ModelForm):
         self.fields['end_date'].required = False
         self.fields['location'].required = False
         self.fields['technologies'].required = False
+
+        # Pre-populate skills if editing
+        if self.instance.pk:
+            self.fields['skills_applied'].initial = self.instance.skills_applied.all()
     
     def clean_slug(self):
         """Auto-generate slug from position and company."""
@@ -531,6 +543,19 @@ class ExperienceForm(forms.ModelForm):
             raise ValidationError("End date cannot be in the future.")
 
         return end_date
+
+
+# Formset for application levels
+ExperienceSkillApplicationFormSet = forms.inlineformset_factory(
+    Experience,
+    ExperienceSkillApplication,
+    fields=['skill', 'application_level'],
+    extra=3,
+    can_delete=True,
+    widgets={
+        'application_level': forms.RadioSelect(choices=ExperienceSkillApplication.APPLICATION_LEVEL_CHOICES),
+    }
+)
 
 
 class ContactForm(forms.ModelForm):
