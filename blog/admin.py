@@ -218,7 +218,7 @@ class SystemLogEntryAdmin(admin.ModelAdmin):
         "connection_type",
         # "impact_display",
         # "hours_variance_display",
-        "priority_display",
+        "relationship_priority_display",
         # "status_display",
     )
     list_filter = (
