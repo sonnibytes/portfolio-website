@@ -2188,9 +2188,10 @@ class SystemSkillGain(models.Model):
     # Optional Context (keep minimal)
     how_learned = models.TextField(blank=True, help_text="Brief note on how this skill was used/learned in this project")
 
-    # Optional before/after tracking
-    skill_level_before = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level before project (1-5, optional)")
-    skill_level_after = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level after project (1-5, optional)")
+    # Remove - use queries to determine #119
+    # # Optional before/after tracking
+    # skill_level_before = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level before project (1-5, optional)")
+    # skill_level_after = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level after project (1-5, optional)")
 
     # === New for Skill-Tech Models Rework ===
     technologies_used = models.ManyToManyField(
@@ -2235,15 +2236,17 @@ class SystemSkillGain(models.Model):
         }
         return colors.get(self.proficiency_gained, "#64B5F6")
 
-    def get_skill_improvement(self):
-        """Calculate improvement if before/after levels set"""
-        if self.skill_level_before and self.skill_level_after:
-            return self.skill_level_after - self.skill_level_before
-        return None
+    # Remove - use queries to determine #119
+    # def get_skill_improvement(self):
+    #     """Calculate improvement if before/after levels set"""
+    #     if self.skill_level_before and self.skill_level_after:
+    #         return self.skill_level_after - self.skill_level_before
+    #     return None
 
-    def has_improvement_data(self):
-        """Check if before/after tracking is available"""
-        return bool(self.skill_level_before and self.skill_level_after)
+    # Remove - use queries to determine #119
+    # def has_improvement_data(self):
+    #     """Check if before/after tracking is available"""
+    #     return bool(self.skill_level_before and self.skill_level_after)
 
     def get_learning_context(self):
         """Get learning context for dashboard display"""
@@ -2253,7 +2256,7 @@ class SystemSkillGain(models.Model):
             'proficiency_gained': self.get_proficiency_display_short(),
             'color': self.get_proficiency_color(),
             'how_learned': self.how_learned,
-            'improvement': self.get_skill_improvement(),
+            # 'improvement': self.get_skill_improvement(),
             'date': self.created_at,
         }
 
