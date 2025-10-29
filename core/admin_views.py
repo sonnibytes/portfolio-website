@@ -1044,7 +1044,7 @@ class ExperienceListAdminView(BaseAdminListView, BulkActionMixin):
 
     def get_queryset(self):
         queryset = Experience.objects.annotate(
-            skills_count=Count('skills_appliedd', distinct=True)
+            skills_count=Count('skills_applied', distinct=True)
         ).order_by('-start_date')
 
         search_query = self.request.GET.get("search", "")
