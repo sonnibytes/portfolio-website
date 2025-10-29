@@ -500,7 +500,7 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             'currently_learning': Skill.objects.filter(is_currently_learning=True).count(),
             'certified_skills': Skill.objects.filter(is_certified=True).count(),
             'avg_proficiency': Skill.objects.aggregate(avg=Avg('proficiency'))['avg'] or 0,
-            'skills_with_tech_links': Skill.objects.filter(related_technology__isnull=False).count(),
+            'skills_with_tech_links': Skill.objects.filter(related_technologies__isnull=False).count(),
         }
 
         # Education Analytics
@@ -576,7 +576,7 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
         integration_stats = {
             "education_skill_connections": EducationSkillDevelopment.objects.count(),
             "skills_linked_to_projects": Skill.objects.filter(
-                related_technology__systems__isnull=False
+                skill_gains__isnull=False
             ).distinct().count(),
             # "education_with_projects": Education.objects.filter(
             #     related_systems__isnull=False

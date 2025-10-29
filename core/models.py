@@ -80,8 +80,9 @@ class Skill(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # REMOVED: #121 - No need for 1-1 now that we have M2M relationship
     # Technology Relationship
-    related_technology = models.OneToOneField('projects.Technology', on_delete=models.SET_NULL, null=True, blank=True, related_name='skill_profile', help_text="Link to corresponding technology in projects app")
+    # related_technology = models.OneToOneField('projects.Technology', on_delete=models.SET_NULL, null=True, blank=True, related_name='skill_profile', help_text="Link to corresponding technology in projects app")
 
     # Experience Tracking
     years_experience = models.FloatField(default=0.0, help_text="Years of experience with this skill")
