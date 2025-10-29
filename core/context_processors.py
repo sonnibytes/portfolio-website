@@ -5,7 +5,7 @@ Provides navigation statistics and counts for the admin interface
 
 from django.db.models import Count, Avg, Sum
 from django.utils import timezone
-from .models import SocialLink
+from .models import SocialLink, ExperienceSkillApplication
 
 
 # New admin navigation context
@@ -31,6 +31,12 @@ def admin_navigation_context(request):
             'featured_skills': Skill.objects.filter(is_featured=True).count(),
             'currently_learning': Skill.objects.filter(is_currently_learning=True).count(),
             'certified_skills': Skill.objects.filter(is_certified=True).count(),
+            # NEW: Professional experience connections
+            'skills_with_pro_experience': Skill.objects.filter(
+                professional_applications__isnull=False
+            ).distinct().count(),
+            'total_pro_applications': ExperienceSkillApplication.objects.count(),
+            'core_pro_skills': ExperienceSkillApplication.objects.filter(application_level=3).count(),
         }
 
         education_stats = {
@@ -46,6 +52,11 @@ def admin_navigation_context(request):
             'total_experience': Experience.objects.count(),
             'current_positions': Experience.objects.filter(is_current=True).count(),
             'total_companies': Experience.objects.values('company').distinct().count(),
+            # NEW: Skill connections
+            "experiences_with_skills": Experience.objects.annotate(
+                skill_count=Count('skills_applied')
+            ).filter(skill_count__gt=0).count(),
+            "total_experience_skill_connections": ExperienceSkillApplication.objects.count(),
         }
 
         contact_stats = {

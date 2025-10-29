@@ -501,6 +501,12 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             'certified_skills': Skill.objects.filter(is_certified=True).count(),
             'avg_proficiency': Skill.objects.aggregate(avg=Avg('proficiency'))['avg'] or 0,
             'skills_with_tech_links': Skill.objects.filter(related_technologies__isnull=False).count(),
+            # NEW: Professional experience connections
+            'skills_with_pro_experience': Skill.objects.filter(
+                professional_applications__isnull=False
+            ).distinct().count(),
+            'total_pro_applications': ExperienceSkillApplication.objects.count(),
+            'core_pro_skills': ExperienceSkillApplication.objects.filter(application_level=3).count(),
         }
 
         # Education Analytics
@@ -530,6 +536,11 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             "unique_industries": 4,  # Placeholder for now
             # TODO: Enhance Experience model w industry?
             # "unique_industries": Experience.objects.values('industry').distinct().count(),
+            # NEW: Skill connections
+            "experiences_with_skills": Experience.objects.annotate(
+                skill_count=Count('skills_applied')
+            ).filter(skill_count__gt=0).count(),
+            "total_experience_skill_connections": ExperienceSkillApplication.objects.count(),
         }
 
         # Contact Analytics
