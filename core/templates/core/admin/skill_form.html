@@ -1145,7 +1145,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedTechs = [];
     
     techSuggestions.forEach(item => {
-        item.addEventListener('click', function() {
+        // Prevent clicks on connection options from toggling the selection
+        const connectionOptions = item.querySelector('.tech-connection-options');
+        if (connectionOptions) {
+            connectionOptions.addEventListener('click', function(e) {
+                e.stopPropagation();  // Stop the click from bubbling to parent
+            });
+        }
+
+        item.addEventListener('click', function(e) {
+            // Don't toggle if clicking directly on a select element or its options
+            if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+                return;
+            }
+            
             const techId = this.dataset.techId;
             const connectionOptions = this.querySelector('.tech-connection-options');
             
