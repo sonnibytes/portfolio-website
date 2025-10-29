@@ -592,6 +592,7 @@ class EducationSkillDevelopment(models.Model):
     education = models.ForeignKey(Education, on_delete=models.CASCADE)
     skill = models.ForeignKey('Skill', on_delete=models.CASCADE)
 
+    # LEAVING since these are populated via logic on admin_views
     # Learning progression in this education
     proficiency_before = models.IntegerField(
         choices=[(i, i) for i in range(0, 6)],
