@@ -4,12 +4,35 @@ from django.http import HttpRequest
 from django.utils.html import format_html
 from django.urls import reverse
 
-from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
+from .models import CorePage, Skill, Education, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation, ExperienceSkillApplication
 from .forms import ContactAdminForm
 from .admin_mixins import SkillCSVImportMixin
 
 
-# ========== NEW: SKILL-TECHNOLOGY RELATIONSHIP MANAGEMENT ==========
+# ========== NEW: SKILL-EXPERIENCE RELATIONSHIP MANAGEMENT ==========
+
+class ExperienceSkillApplicationInline(admin.TabularInline):
+    """Inline for managing skill applications in experience."""
+    model = ExperienceSkillApplication
+    extra = 1
+    autocomplete_fields = ['skill']
+    fields = ['skill', 'application_level']
+    verbose_name = 'Skill Applied'
+    verbose_name_plural = 'Skill Applied in This Role'
+
+
+class ProfessionalApplicationInline(admin.TabularInline):
+    """Inline for viewing professional applications of a skill."""
+    model = ExperienceSkillApplication
+    extra = 0
+    autocomplete_fields = ['experience']
+    fields = ['experience', 'application_level']
+    verbose_name = 'Professional Application'
+    verbose_name_plural = 'Professional Experience Using This Skill'
+
+
+
+# ========== SKILL-TECHNOLOGY RELATIONSHIP MANAGEMENT ==========
 
 class SkillTechnologyRelationInline(admin.TabularInline):
     """Inline editing of skill-technology relationships with Skill admin"""
@@ -173,7 +196,7 @@ class SkillAdmin(SkillCSVImportMixin, admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
     # Add inline for tech relationships
-    inlines = [SkillTechnologyRelationInline]
+    inlines = [SkillTechnologyRelationInline, ProfessionalApplicationInline]
 
     fieldsets = (
         ("Basic Information", {"fields": ("name", "slug", "category", "description")}),
@@ -264,10 +287,15 @@ class EducationAdmin(admin.ModelAdmin):
 
 @admin.register(Experience)
 class ExperienceAdmin(admin.ModelAdmin):
-    list_display = ("company", "position", "start_date", "end_date", "is_current")
+    list_display = ("company", "position", "start_date", "end_date", "is_current", 'skills_count')
     list_filter = ("is_current", "start_date", "end_date")
     search_fields = ("company", "position", "description", "technologies")
-    prepopulated_fields = {"slug": ("company",)}
+    prepopulated_fields = {"slug": ("position", "company")}
+    inlines = [ExperienceSkillApplicationInline]
+
+    def skills_count(self, obj):
+        return obj.skills_applied.count()
+    skills_count.short_description = 'Skills Applied'
 
 
 @admin.register(Contact)

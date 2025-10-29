@@ -10,7 +10,7 @@ from django.utils.text import slugify
 
 from datetime import date
 
-from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink, SkillTechnologyRelation
+from .models import Contact, CorePage, Skill, Education, Experience, PortfolioAnalytics, EducationSkillDevelopment, SocialLink, SkillTechnologyRelation, ExperienceSkillApplication
 from markdownx.fields import MarkdownxFormField  # pyright: ignore[reportMissingImports]
 from projects.models import Technology, SystemModule
 
@@ -266,12 +266,10 @@ class EducationForm(forms.ModelForm):
             'description',
             'is_current',
             'learning_type',
-            'platform',
             'certificate_url',
             'hours_completed',
             'related_systems',
-            'learning_intensity',
-            'career_relevance',
+            
             # Note: skills_learned handled via EducationSkillDevelopment views
         ]
 
@@ -309,12 +307,6 @@ class EducationForm(forms.ModelForm):
             ),
             "is_current": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "learning_type": forms.Select(attrs={"class": "form-control"}),
-            "platform": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "e.g., Coursera, Udemy, edX, etc.",
-                }
-            ),
             "certificate_url": forms.URLInput(
                 attrs={
                     "class": "form-control",
@@ -331,8 +323,6 @@ class EducationForm(forms.ModelForm):
             "related_systems": forms.CheckboxSelectMultiple(
                 attrs={"class": "form-control"}
             ),
-            "learning_intensity": forms.Select(attrs={"class": "form-control"}),
-            "career_relevance": forms.Select(attrs={"class": "form-control"}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -349,7 +339,6 @@ class EducationForm(forms.ModelForm):
         
         # Make optional fields clearly optional
         self.fields['end_date'].required = False
-        self.fields['platform'].required = False
         self.fields['certificate_url'].required = False
         self.fields['description'].required = False
 
@@ -450,7 +439,14 @@ class EducationSkillDevelopmentForm(forms.ModelForm):
 
 
 class ExperienceForm(forms.ModelForm):
-    """Enhanced experience form with technology tracking."""
+    """Enhanced experience form with technology tracking. NEW: Skill Experience Connections"""
+
+    skills_applied = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all().order_by('name'),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text='Select skills applied in this role'
+    )
 
     class Meta:
         model = Experience
@@ -463,6 +459,7 @@ class ExperienceForm(forms.ModelForm):
             "end_date",
             "is_current",
             "technologies",
+            'skills_applied',  # NEW
         ]
         widgets = {
             "company": forms.TextInput(
@@ -501,6 +498,10 @@ class ExperienceForm(forms.ModelForm):
         self.fields['end_date'].required = False
         self.fields['location'].required = False
         self.fields['technologies'].required = False
+
+        # Pre-populate skills if editing
+        if self.instance.pk:
+            self.fields['skills_applied'].initial = self.instance.skills_applied.all()
     
     def clean_slug(self):
         """Auto-generate slug from position and company."""
@@ -542,6 +543,19 @@ class ExperienceForm(forms.ModelForm):
             raise ValidationError("End date cannot be in the future.")
 
         return end_date
+
+
+# Formset for application levels
+ExperienceSkillApplicationFormSet = forms.inlineformset_factory(
+    Experience,
+    ExperienceSkillApplication,
+    fields=['skill', 'application_level'],
+    extra=3,
+    can_delete=True,
+    widgets={
+        'application_level': forms.RadioSelect(choices=ExperienceSkillApplication.APPLICATION_LEVEL_CHOICES),
+    }
+)
 
 
 class ContactForm(forms.ModelForm):

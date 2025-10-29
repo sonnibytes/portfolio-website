@@ -29,8 +29,8 @@ from django.http import HttpResponse
 
 from datetime import datetime, timedelta
 
-from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
-from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactAdminForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
+from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation, ExperienceSkillApplication
+from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactAdminForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm, ExperienceSkillApplicationFormSet
 from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule, Technology
 from blog.models import Post, Category
 
@@ -500,7 +500,13 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             'currently_learning': Skill.objects.filter(is_currently_learning=True).count(),
             'certified_skills': Skill.objects.filter(is_certified=True).count(),
             'avg_proficiency': Skill.objects.aggregate(avg=Avg('proficiency'))['avg'] or 0,
-            'skills_with_tech_links': Skill.objects.filter(related_technology__isnull=False).count(),
+            'skills_with_tech_links': Skill.objects.filter(related_technologies__isnull=False).count(),
+            # NEW: Professional experience connections
+            'skills_with_pro_experience': Skill.objects.filter(
+                professional_applications__isnull=False
+            ).distinct().count(),
+            'total_pro_applications': ExperienceSkillApplication.objects.count(),
+            'core_pro_skills': ExperienceSkillApplication.objects.filter(application_level=3).count(),
         }
 
         # Education Analytics
@@ -530,6 +536,11 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
             "unique_industries": 4,  # Placeholder for now
             # TODO: Enhance Experience model w industry?
             # "unique_industries": Experience.objects.values('industry').distinct().count(),
+            # NEW: Skill connections
+            "experiences_with_skills": Experience.objects.annotate(
+                skill_count=Count('skills_applied')
+            ).filter(skill_count__gt=0).count(),
+            "total_experience_skill_connections": ExperienceSkillApplication.objects.count(),
         }
 
         # Contact Analytics
@@ -576,7 +587,7 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
         integration_stats = {
             "education_skill_connections": EducationSkillDevelopment.objects.count(),
             "skills_linked_to_projects": Skill.objects.filter(
-                related_technology__systems__isnull=False
+                skill_gains__isnull=False
             ).distinct().count(),
             # "education_with_projects": Education.objects.filter(
             #     related_systems__isnull=False
@@ -757,45 +768,45 @@ class SkillListAdminView(BaseAdminListView, BulkActionMixin):
         return context
 
 
-class SkillCreateAdminView(SlugAdminCreateView):
-    """Create new skill."""
+# class SkillCreateAdminView(SlugAdminCreateView):
+#     """Create new skill."""
 
-    model = Skill
-    form_class = SkillForm
-    template_name = "core/admin/skill_form.html"
-    success_url = reverse_lazy("aura_admin:skill_list")
+#     model = Skill
+#     form_class = SkillForm
+#     template_name = "core/admin/skill_form.html"
+#     success_url = reverse_lazy("aura_admin:skill_list")
 
-    # ADD THIS METHOD FOR DEBUGGING:
-    def form_valid(self, form):
-        """Debug the form submission."""
-        print(f"🟢 FORM IS VALID")
-        print(f"🟢 Form cleaned_data: {form.cleaned_data}")
+#     # ADD THIS METHOD FOR DEBUGGING:
+#     def form_valid(self, form):
+#         """Debug the form submission."""
+#         print(f"🟢 FORM IS VALID")
+#         print(f"🟢 Form cleaned_data: {form.cleaned_data}")
         
-        try:
-            # Call the parent form_valid which should save the object
-            response = super().form_valid(form)
-            print(f"🟢 Object created successfully: {self.object}")
-            print(f"🟢 Object ID: {self.object.pk}")
-            print(f"🟢 Redirecting to: {self.get_success_url()}")
-            return response
-        except Exception as e:
-            print(f"🔴 ERROR in form_valid: {e}")
-            import traceback
-            traceback.print_exc()
-            return self.form_invalid(form)
+#         try:
+#             # Call the parent form_valid which should save the object
+#             response = super().form_valid(form)
+#             print(f"🟢 Object created successfully: {self.object}")
+#             print(f"🟢 Object ID: {self.object.pk}")
+#             print(f"🟢 Redirecting to: {self.get_success_url()}")
+#             return response
+#         except Exception as e:
+#             print(f"🔴 ERROR in form_valid: {e}")
+#             import traceback
+#             traceback.print_exc()
+#             return self.form_invalid(form)
     
-    def form_invalid(self, form):
-        """Debug form validation errors."""
-        print(f"🔴 FORM IS INVALID")
-        print(f"🔴 Form errors: {form.errors}")
-        print(f"🔴 Form non_field_errors: {form.non_field_errors}")
-        return super().form_invalid(form)
+#     def form_invalid(self, form):
+#         """Debug form validation errors."""
+#         print(f"🔴 FORM IS INVALID")
+#         print(f"🔴 Form errors: {form.errors}")
+#         print(f"🔴 Form non_field_errors: {form.non_field_errors}")
+#         return super().form_invalid(form)
     
-    def post(self, request, *args, **kwargs):
-        """Debug the entire POST process."""
-        print(f"🔵 POST request received")
-        print(f"🔵 POST data: {request.POST}")
-        return super().post(request, *args, **kwargs)
+#     def post(self, request, *args, **kwargs):
+#         """Debug the entire POST process."""
+#         print(f"🔵 POST request received")
+#         print(f"🔵 POST data: {request.POST}")
+#         return super().post(request, *args, **kwargs)
 
 
 class SkillUpdateAdminView(BaseAdminUpdateView):
@@ -921,7 +932,6 @@ class EducationListAdminView(BaseAdminListView, BulkActionMixin):
                 Q(institution__icontains=search_query)
                 | Q(degree__icontains=search_query)
                 | Q(field_of_study__icontains=search_query)
-                | Q(platform__icontains=search_query)
             )
 
         # Filter by learning type
@@ -1044,7 +1054,9 @@ class ExperienceListAdminView(BaseAdminListView, BulkActionMixin):
     context_object_name = "experiences"
 
     def get_queryset(self):
-        queryset = Experience.objects.order_by("-start_date")
+        queryset = Experience.objects.annotate(
+            skills_count=Count('skills_applied', distinct=True)
+        ).order_by('-start_date')
 
         search_query = self.request.GET.get("search", "")
         if search_query:
@@ -1070,6 +1082,7 @@ class ExperienceListAdminView(BaseAdminListView, BulkActionMixin):
             {
                 "title": "Manage Experience",
                 "subtitle": "Work history and professional experience",
+                "total_skill_tracked": ExperienceSkillApplication.objects.count(),
             }
         )
         return context
@@ -1083,6 +1096,28 @@ class ExperienceCreateAdminView(SlugAdminCreateView):
     template_name = "core/admin/experience_form.html"
     success_url = reverse_lazy("aura_admin:experience_list")
 
+    # Updated w New Skill-Experience Relationship
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['skill_formset'] = ExperienceSkillApplicationFormSet(self.request.POST)
+        else:
+            context['skill_formset'] = ExperienceSkillApplicationFormSet()
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        skill_formset = context['skill_formset']
+
+        if skill_formset.is_valid():
+            self.object = form.save()
+            skill_formset.instance = self.object
+            skill_formset.save()
+            messages.success(self.request, f'Experience "{self.object}" created successfully!')
+            return redirect(self.success_url)
+        else:
+            return self.form_invalid(form)
+
 
 class ExperienceUpdateAdminView(BaseAdminUpdateView):
     """Edit existing experience."""
@@ -1091,6 +1126,27 @@ class ExperienceUpdateAdminView(BaseAdminUpdateView):
     form_class = ExperienceForm
     template_name = "core/admin/experience_form.html"
     success_url = reverse_lazy("aura_admin:experience_list")
+
+    # Updated w New Skill-Experience Relationship
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['skill_formset'] = ExperienceSkillApplicationFormSet(self.request.POST, instance = self.object)
+        else:
+            context['skill_formset'] = ExperienceSkillApplicationFormSet(instance=self.object)
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        skill_formset = context['skill_formset']
+
+        if skill_formset.is_valid():
+            self.object = form.save()
+            skill_formset.save()
+            messages.success(self.request, f'Experience "{self.object}" updated successfully!')
+            return redirect(self.success_url)
+        else:
+            return self.form_invalid(form)
 
 
 class ExperienceDeleteAdminView(BaseAdminDeleteView):
@@ -2117,7 +2173,7 @@ class EnhancedSkillCreateView(BaseAdminCreateView):
 
     model = Skill
     form_class = SkillForm
-    template_name = 'core/admin/skill_form_enhanced.html'
+    template_name = 'core/admin/skill_form.html'
     success_url = reverse_lazy('aura_admin:skill_list')
 
     def get_context_data(self, **kwargs):

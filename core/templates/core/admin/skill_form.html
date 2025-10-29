@@ -6,59 +6,288 @@
 {% block admin_css %}
 {{ block.super }}
 <style>
-.form-section {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    padding: 1.5rem;
+:root {
+    /* AURA Colors */
+    --color-bg-primary: #070712;
+    --color-bg-secondary: #0d0d1f;
+    --color-navy: #1a237e;
+    --color-teal: #26c6da;
+    --color-lavender: #b39ddb;
+    --color-coral: #ff8a80;
+    --color-yellow: #fff59d;
+    --color-mint: #a5d6a7;
+    --color-gunmetal: #546e7a;
+    --color-text: #ffffff;
+    --color-text-secondary: #e8eaf6;
+    --color-text-tertiary: #9e9e9e;
+    --border-radius-sm: 0.375rem;
+    --border-radius-md: 0.5rem;
+    --border-radius-lg: 0.75rem;
+    --transition-fast: all 0.2s ease;
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.proficiency-preview {
+.skill-form-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.form-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+}
+
+.form-section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.form-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.form-section-subtitle {
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    margin: 0.25rem 0 0 0;
+}
+
+.form-field {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-top: 1rem;
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 0.5rem;
-    border-left: 4px solid #00ffff;
-}
-
-.skill-preview {
-    background: linear-gradient(135deg, #0a0f1c 0%, #1a1d3a 100%);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-top: 1rem;
-    text-align: center;
-}
-
-.color-picker {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
     gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.form-label i {
+    font-size: 0.8rem;
+    color: var(--color-teal);
+}
+
+.form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-md);
+    color: white;
+    font-size: 0.875rem;
+    transition: var(--transition-fast);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 2px rgba(38, 198, 218, 0.2);
+}
+
+.form-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Proficiency Slider */
+.proficiency-slider-container {
+    margin: 1rem 0;
+}
+
+.proficiency-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+.proficiency-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-teal);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.proficiency-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-teal);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.proficiency-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-top: 0.5rem;
 }
 
-.color-option {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
+.proficiency-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-teal);
 }
 
-.color-option:hover {
-    transform: scale(1.1);
-    border-color: rgba(255, 255, 255, 0.5);
+.proficiency-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 0.25rem;
 }
 
-.color-option.selected {
-    border-color: #ffffff;
-    transform: scale(1.2);
+/* Visual Display & Status Section */
+.visual-display-section {
+    background: linear-gradient(135deg, 
+        rgba(179, 157, 219, 0.1) 0%, 
+        rgba(179, 157, 219, 0.05) 100%);
+    border: 1px solid rgba(179, 157, 219, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
 }
 
+.display-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.display-preview {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+}
+
+.preview-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.skill-preview-card {
+    background: rgba(179, 157, 219, 0.1);
+    border: 1px solid rgba(179, 157, 219, 0.3);
+    border-radius: var(--border-radius-md);
+    padding: 1rem;
+    text-align: center;
+}
+
+.skill-preview-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-lavender);
+    margin-bottom: 0.5rem;
+}
+
+.skill-preview-category {
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    margin-bottom: 0.75rem;
+}
+
+.proficiency-stars {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.proficiency-star {
+    width: 1rem;
+    height: 1rem;
+    color: rgba(255, 255, 255, 0.2);
+    transition: color 0.2s ease;
+}
+
+.proficiency-star.filled {
+    color: var(--color-teal);
+}
+
+.status-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.status-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.status-badge.active {
+    opacity: 1;
+}
+
+.status-badge.featured {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.status-badge.learning {
+    background: rgba(255, 138, 128, 0.2);
+    color: var(--color-coral);
+}
+
+.status-badge.certified {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+/* Icon and Color Picker Styles */
 .icon-grid {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -66,6 +295,9 @@
     margin-top: 0.5rem;
     max-height: 150px;
     overflow-y: auto;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-md);
 }
 
 .icon-option {
@@ -85,240 +317,1183 @@
 .icon-option:hover {
     background: rgba(255, 255, 255, 0.2);
     color: #ffffff;
+    transform: scale(1.05);
 }
 
 .icon-option.selected {
-    border-color: #00FFFF;
-    background: rgba(0, 255, 255, 0.2);
-    color: #00FFFF;
+    border-color: var(--color-teal);
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+    transform: scale(1.1);
 }
 
-.technology-connections {
-    background: rgba(179, 157, 219, 0.05);
-    border: 1px solid rgba(179, 157, 219, 0.2);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    margin-top: 1rem;
+.color-picker {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius-md);
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.color-option.selected {
+    border-color: #ffffff;
+    transform: scale(1.2);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.color-option.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--color-teal);
+    cursor: pointer;
+}
+
+.checkbox-item label {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+    cursor: pointer;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-item label i {
+    font-size: 0.8rem;
+    color: var(--color-teal);
+}
+
+/* Suggestions and other enhanced form styles */
+.suggestions-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+}
+
+.suggestions-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.suggestion-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.suggestion-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(38, 198, 218, 0.3);
+    transform: translateY(-1px);
+}
+
+.suggestion-item.selected {
+    background: rgba(38, 198, 218, 0.1);
+    border-color: rgba(38, 198, 218, 0.5);
+}
+
+.suggestion-item::after {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all var(--transition-fast);
+}
+
+.suggestion-item.selected::after {
+    background: var(--color-teal);
+    border-color: var(--color-teal);
+}
+
+.suggestion-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.suggestion-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.tech-connection-options {
+    display: none;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tech-connection-options.show {
+    display: block;
+}
+
+.connection-option-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.connection-option-row label {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
+
+.connection-option-row select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 0.25rem 0.5rem;
+    color: white;
+    font-size: 0.75rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-lg);
+    margin-top: 2rem;
+}
+
+.form-actions-left, .form-actions-right {
+    display: flex;
+    gap: 1rem;
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 0.25rem;
+}
+
+.error-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.error-list li {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 1024px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .display-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .suggestions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .skill-form-container {
+        padding: 1rem;
+    }
+    
+    .form-section, .visual-display-section {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-actions-left,
+    .form-actions-right {
+        justify-content: center;
+    }
 }
 </style>
 {% endblock %}
 
 {% block admin_content %}
-<div class="space-y-8">
-    
-    <!-- Header Section -->
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
-                <i class="fas fa-cogs text-teal-400 mr-3"></i>
-                {{ title }}
-            </h1>
-            <p class="text-gray-400">{{ subtitle }}</p>
-        </div>
-        <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-sm btn-outline">
-            <i class="fas fa-arrow-left mr-2"></i>
-            Back to Skills
-        </a>
+<div class="skill-form-container">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white mb-2">
+            {% if object %}Edit Skill: {{ object.name }}{% else %}Add New Technical Skill{% endif %}
+        </h1>
+        <p class="text-gray-400">
+            {% if object %}Update skill details and ecosystem connections{% else %}Build your technical competency portfolio with smart connections{% endif %}
+        </p>
     </div>
 
-    <!-- Form Container -->
-    <div class="glass-card p-6">
-        <form method="post" class="space-y-8">
-            {% csrf_token %}
-            
-            <!-- Basic Information Section -->
-            <div class="form-section space-y-6">
-                <h3 class="text-lg font-bold text-teal-400 flex items-center">
-                    <i class="fas fa-info-circle mr-2"></i>
-                    Basic Information
-                </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Skill Name *</label>
-                        {{ form.name|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.name.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.name.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Category *</label>
-                        {{ form.category|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.category.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.category.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                    {{ form.description|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                    {% if form.description.errors %}
-                        <div class="text-red-400 text-sm mt-1">{{ form.description.errors.0 }}</div>
-                    {% endif %}
-                    <div class="text-gray-400 text-sm mt-1">Brief description of this skill and how you use it</div>
-                </div>
-            </div>
-            
-            <!-- Proficiency & Experience Section -->
-            <div class="form-section space-y-6">
-                <h3 class="text-lg font-bold text-purple-400 flex items-center">
-                    <i class="fas fa-chart-line mr-2"></i>
-                    Proficiency & Experience
-                </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Proficiency Level *</label>
-                        {{ form.proficiency|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.proficiency.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.proficiency.errors.0 }}</div>
-                        {% endif %}
-                        <div class="text-gray-400 text-sm mt-1">1=Beginner, 5=Expert</div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Years of Experience</label>
-                        {{ form.years_experience|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.years_experience.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.years_experience.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Last Used</label>
-                        {{ form.last_used|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.last_used.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.last_used.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-6">
-                    <label class="flex items-center text-gray-300">
-                        <input type="checkbox" name="is_currently_learning" {% if form.instance.is_currently_learning %}checked{% endif %} 
-                               class="mr-2 accent-teal-400">
-                        Currently Learning
-                    </label>
-                    
-                    <label class="flex items-center text-gray-300">
-                        <input type="checkbox" name="is_certified" {% if form.instance.is_certified %}checked{% endif %} 
-                               class="mr-2 accent-purple-400">
-                        Have Certification
-                    </label>
-                </div>
-            </div>
-            
-            <!-- Visual & Display Section -->
-            <div class="form-section space-y-6">
-                <h3 class="text-lg font-bold text-yellow-400 flex items-center">
-                    <i class="fas fa-palette mr-2"></i>
-                    Visual & Display
-                </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Icon</label>
-                        {{ form.icon|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.icon.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.icon.errors.0 }}</div>
-                        {% endif %}
-                        <div class="text-gray-400 text-sm mt-1">Font Awesome icon name (e.g., fa-solid fa-cogs)</div>
-                        
-                        <!-- Quick icon selector -->
-                        <div class="icon-grid mt-2">
-                            <div class="icon-option" data-icon="fa-code"><i class="fa-solid fa-code"></i></div>
-                            <div class="icon-option" data-icon="fa-globe"><i class="fa-solid fa-globe"></i></div>
-                            <div class="icon-option" data-icon="fa-vials"><i class="fa-solid fa-vials"></i></div>
-                            <div class="icon-option" data-icon="fa-lock"><i class="fa-solid fa-lock"></i></div>
-                            <div class="icon-option" data-icon="fa-brain"><i class="fa-solid fa-brain"></i></div>
-                            <div class="icon-option" data-icon="fa-database"><i class="fa-solid fa-database"></i></div>
-                            <div class="icon-option" data-icon="fa-server"><i class="fa-solid fa-server"></i></div>
-                            <div class="icon-option" data-icon="fa-puzzle-piece"><i class="fa-solid fa-puzzle-piece"></i></div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Color</label>
-                        {{ form.color|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.color.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.color.errors.0 }}</div>
-                        {% endif %}
-                        
-                        <!-- Color picker -->
-                        <div class="color-picker mt-2">
-                            <div class="color-option" style="background-color: #00FFFF;" data-color="#00FFFF"></div>
-                            <div class="color-option" style="background-color: #B39DDB;" data-color="#B39DDB"></div>
-                            <div class="color-option" style="background-color: #FF8A80;" data-color="#FF8A80"></div>
-                            <div class="color-option" style="background-color: #FFBD2E;" data-color="#FFBD2E"></div>
-                            <div class="color-option" style="background-color: #27C93F;" data-color="#27C93F"></div>
-                            <div class="color-option" style="background-color: #FF6B35;" data-color="#FF6B35"></div>
-                            <div class="color-option" style="background-color: #4ECDC4;" data-color="#4ECDC4"></div>
-                            <div class="color-option" style="background-color: #546E7A;" data-color="#546E7A"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Display Order</label>
-                        {{ form.display_order|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
-                        {% if form.display_order.errors %}
-                            <div class="text-red-400 text-sm mt-1">{{ form.display_order.errors.0 }}</div>
-                        {% endif %}
-                        <div class="text-gray-400 text-sm mt-1">Order for displaying in skill lists</div>
-                    </div>
-                    
-                    <div>
-                        <label class="flex items-center text-gray-300 mt-8">
-                            <input type="checkbox" name="is_featured" {% if form.instance.is_featured %}checked{% endif %} 
-                                   class="mr-2 accent-teal-400">
-                            Featured Skill
-                        </label>
-                        <div class="text-gray-400 text-sm mt-1">Show prominently on homepage and profiles</div>
-                    </div>
-                </div>
-            </div>
+    
 
-            <!-- Form Actions -->
-            <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-700">
+    <form method="post" enctype="multipart/form-data" id="skill-form">
+        {% csrf_token %}
+        
+        <div class="form-grid">
+            <!-- Main Form Content -->
+            <div class="form-main">
+                <!-- Basic Skill Information -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-brain text-2xl text-teal-400"></i>
+                        <div>
+                            <h3 class="form-section-title">Skill Foundation</h3>
+                            <p class="form-section-subtitle">Core skill information and proficiency level</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-tag"></i>
+                                Skill Name
+                            </label>
+                            {{ form.name|add_class:"form-input" }}
+                            {% if form.name.help_text %}
+                                <div class="help-text">{{ form.name.help_text }}</div>
+                            {% endif %}
+                            {% if form.name.errors %}
+                                <ul class="error-list">
+                                    {% for error in form.name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-folder"></i>
+                                Category
+                            </label>
+                            {{ form.category|add_class:"form-select" }}
+                            {% if form.category.help_text %}
+                                <div class="help-text">{{ form.category.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="form-label">
+                            <i class="fas fa-align-left"></i>
+                            Description
+                        </label>
+                        {{ form.description|add_class:"form-textarea" }}
+                        {% if form.description.help_text %}
+                            <div class="help-text">{{ form.description.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Proficiency & Experience Section -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-chart-line text-2xl text-purple-400"></i>
+                        <div>
+                            <h3 class="form-section-title">Proficiency & Experience</h3>
+                            <p class="form-section-subtitle">Your skill level and experience details</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="form-label">
+                            <i class="fas fa-signal"></i>
+                            Proficiency Level
+                        </label>
+                        <div class="proficiency-slider-container">
+                            <input type="range" 
+                                   id="proficiency-slider" 
+                                   class="proficiency-slider" 
+                                   name="proficiency" 
+                                   min="1" 
+                                   max="5" 
+                                   value="{{ form.instance.proficiency|default:1 }}"
+                                   step="1">
+                            <div class="proficiency-display">
+                                <span class="proficiency-value" id="proficiency-value">{{ form.instance.proficiency|default:1 }}</span>
+                                <span class="text-sm text-gray-400" id="proficiency-description">Beginner - Basic understanding</span>
+                            </div>
+                            <div class="proficiency-labels">
+                                <span>Beginner</span>
+                                <span>Learning</span>
+                                <span>Competent</span>
+                                <span>Proficient</span>
+                                <span>Expert</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                    <div class="form-field">
+                        <label class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            Years of Experience
+                        </label>
+                        {{ form.years_experience|add_class:"form-input" }}
+                        {% if form.years_experience.help_text %}
+                            <div class="help-text">{{ form.years_experience.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="form-label">
+                            <i class="fas fa-clock"></i>
+                            Last Used
+                        </label>
+                        {{ form.last_used|add_class:"form-input" }}
+                        {% if form.last_used.help_text %}
+                            <div class="help-text">{{ form.last_used.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Details Section -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-cog text-2xl text-yellow-400"></i>
+                        <div>
+                            <h3 class="form-section-title">Additional Details</h3>
+                            <p class="form-section-subtitle">Portfolio organization and display settings</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-sort-numeric-up"></i>
+                                Display Order
+                            </label>
+                            {{ form.display_order|add_class:"form-input" }}
+                            {% if form.display_order.help_text %}
+                                <div class="help-text">{{ form.display_order.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-link"></i>
+                                URL Slug
+                            </label>
+                            {{ form.slug|add_class:"form-input" }}
+                            {% if form.slug.help_text %}
+                                <div class="help-text">{{ form.slug.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual Display & Status Section -->
+                <div class="visual-display-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-eye text-2xl text-violet-400"></i>
+                        <div>
+                            <h3 class="form-section-title">Visual Display & Status</h3>
+                            <p class="form-section-subtitle">How this skill appears in your portfolio</p>
+                        </div>
+                    </div>
+                    
+                    <div class="display-grid">
+                        <!-- Icon and Color Selection -->
+                        <div class="display-preview">
+                            <h4 class="preview-title">
+                                <i class="fas fa-palette"></i>
+                                Visual Identity
+                            </h4>
+                            
+                            <div class="form-field">
+                                <label class="form-label">
+                                    <i class="fas fa-icons"></i>
+                                    Icon
+                                </label>
+                                {{ form.icon|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                                {% if form.icon.help_text %}
+                                    <div class="help-text">{{ form.icon.help_text }}</div>
+                                {% endif %}
+                                {% if form.icon.errors %}
+                                    <ul class="error-list">
+                                        {% for error in form.icon.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                                
+                                <!-- Icon picker -->
+                                <div class="icon-grid">
+                                    <!-- Programming Languages -->
+                                    <div class="icon-option" data-icon="fa-python" title="Python"><i class="fab fa-python"></i></div>
+                                    <div class="icon-option" data-icon="fa-js-square" title="JavaScript"><i class="fab fa-js-square"></i></div>
+                                    <div class="icon-option" data-icon="fa-java" title="Java"><i class="fab fa-java"></i></div>
+                                    <div class="icon-option" data-icon="fa-php" title="PHP"><i class="fab fa-php"></i></div>
+                                    <div class="icon-option" data-icon="fa-swift" title="Swift"><i class="fab fa-swift"></i></div>
+                                    <div class="icon-option" data-icon="fa-rust" title="Rust"><i class="fab fa-rust"></i></div>
+                                    <div class="icon-option" data-icon="fa-golang" title="Go"><i class="fab fa-golang"></i></div>
+                                    <div class="icon-option" data-icon="fa-r-project" title="R"><i class="fab fa-r-project"></i></div>
+                                    
+                                    <!-- Frontend Frameworks -->
+                                    <div class="icon-option" data-icon="fa-react" title="React"><i class="fab fa-react"></i></div>
+                                    <div class="icon-option" data-icon="fa-vue" title="Vue.js"><i class="fab fa-vuejs"></i></div>
+                                    <div class="icon-option" data-icon="fa-angular" title="Angular"><i class="fab fa-angular"></i></div>
+                                    <div class="icon-option" data-icon="fa-html5" title="HTML5"><i class="fab fa-html5"></i></div>
+                                    <div class="icon-option" data-icon="fa-css3" title="CSS3"><i class="fab fa-css3-alt"></i></div>
+                                    <div class="icon-option" data-icon="fa-sass" title="Sass"><i class="fab fa-sass"></i></div>
+                                    <div class="icon-option" data-icon="fa-less" title="Less"><i class="fab fa-less"></i></div>
+                                    <div class="icon-option" data-icon="fa-bootstrap" title="Bootstrap"><i class="fab fa-bootstrap"></i></div>
+                                    
+                                    <!-- Backend & Databases -->
+                                    <div class="icon-option" data-icon="fa-node-js" title="Node.js"><i class="fab fa-node-js"></i></div>
+                                    <div class="icon-option" data-icon="fa-laravel" title="Laravel"><i class="fab fa-laravel"></i></div>
+                                    <div class="icon-option" data-icon="fa-django" title="Django"><i class="fas fa-server"></i></div>
+                                    <div class="icon-option" data-icon="fa-database" title="Database"><i class="fas fa-database"></i></div>
+                                    <div class="icon-option" data-icon="fa-server" title="Server"><i class="fas fa-server"></i></div>
+                                    <div class="icon-option" data-icon="fa-cloud" title="Cloud"><i class="fas fa-cloud"></i></div>
+                                    <div class="icon-option" data-icon="fa-docker" title="Docker"><i class="fab fa-docker"></i></div>
+                                    <div class="icon-option" data-icon="fa-kubernetes" title="Kubernetes"><i class="fas fa-dharmachakra"></i></div>
+                                    
+                                    <!-- Tools & Platforms -->
+                                    <div class="icon-option" data-icon="fa-git-alt" title="Git"><i class="fab fa-git-alt"></i></div>
+                                    <div class="icon-option" data-icon="fa-github" title="GitHub"><i class="fab fa-github"></i></div>
+                                    <div class="icon-option" data-icon="fa-gitlab" title="GitLab"><i class="fab fa-gitlab"></i></div>
+                                    <div class="icon-option" data-icon="fa-aws" title="AWS"><i class="fab fa-aws"></i></div>
+                                    <div class="icon-option" data-icon="fa-microsoft" title="Microsoft"><i class="fab fa-microsoft"></i></div>
+                                    <div class="icon-option" data-icon="fa-google" title="Google"><i class="fab fa-google"></i></div>
+                                    <div class="icon-option" data-icon="fa-linux" title="Linux"><i class="fab fa-linux"></i></div>
+                                    <div class="icon-option" data-icon="fa-ubuntu" title="Ubuntu"><i class="fab fa-ubuntu"></i></div>
+                                    
+                                    <!-- Design & Creative -->
+                                    <div class="icon-option" data-icon="fa-figma" title="Figma"><i class="fab fa-figma"></i></div>
+                                    <div class="icon-option" data-icon="fa-sketch" title="Sketch"><i class="fab fa-sketch"></i></div>
+                                    <div class="icon-option" data-icon="fa-adobe" title="Adobe"><i class="fab fa-adobe"></i></div>
+                                    <div class="icon-option" data-icon="fa-paint-brush" title="Design"><i class="fas fa-paint-brush"></i></div>
+                                    <div class="icon-option" data-icon="fa-palette" title="Creative"><i class="fas fa-palette"></i></div>
+                                    <div class="icon-option" data-icon="fa-camera" title="Photography"><i class="fas fa-camera"></i></div>
+                                    <div class="icon-option" data-icon="fa-video" title="Video"><i class="fas fa-video"></i></div>
+                                    <div class="icon-option" data-icon="fa-music" title="Audio"><i class="fas fa-music"></i></div>
+                                    
+                                    <!-- General Tech -->
+                                    <div class="icon-option" data-icon="fa-code" title="Code"><i class="fas fa-code"></i></div>
+                                    <div class="icon-option" data-icon="fa-terminal" title="Terminal"><i class="fas fa-terminal"></i></div>
+                                    <div class="icon-option" data-icon="fa-laptop-code" title="Development"><i class="fas fa-laptop-code"></i></div>
+                                    <div class="icon-option" data-icon="fa-mobile-alt" title="Mobile"><i class="fas fa-mobile-alt"></i></div>
+                                    <div class="icon-option" data-icon="fa-desktop" title="Desktop"><i class="fas fa-desktop"></i></div>
+                                    <div class="icon-option" data-icon="fa-tablet-alt" title="Tablet"><i class="fas fa-tablet-alt"></i></div>
+                                    <div class="icon-option" data-icon="fa-globe" title="Web"><i class="fas fa-globe"></i></div>
+                                    <div class="icon-option" data-icon="fa-wifi" title="Network"><i class="fas fa-wifi"></i></div>
+                                    
+                                    <!-- Analytics & AI -->
+                                    <div class="icon-option" data-icon="fa-chart-bar" title="Analytics"><i class="fas fa-chart-bar"></i></div>
+                                    <div class="icon-option" data-icon="fa-chart-line" title="Metrics"><i class="fas fa-chart-line"></i></div>
+                                    <div class="icon-option" data-icon="fa-brain" title="AI/ML"><i class="fas fa-brain"></i></div>
+                                    <div class="icon-option" data-icon="fa-robot" title="Automation"><i class="fas fa-robot"></i></div>
+                                    <div class="icon-option" data-icon="fa-microscope" title="Research"><i class="fas fa-microscope"></i></div>
+                                    <div class="icon-option" data-icon="fa-flask" title="Testing"><i class="fas fa-flask"></i></div>
+                                    <div class="icon-option" data-icon="fa-bug" title="Debugging"><i class="fas fa-bug"></i></div>
+                                    <div class="icon-option" data-icon="fa-puzzle-piece" title="Problem Solving"><i class="fas fa-puzzle-piece"></i></div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-field">
+                                <label class="form-label">
+                                    <i class="fas fa-palette"></i>
+                                    Color
+                                </label>
+                                {{ form.color|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
+                                <div class="text-xs text-gray-400 mt-1">
+                                    Current value: <span id="color-field-value">{{ form.instance.color|default:"none" }}</span>
+                                </div>
+                                {% if form.color.help_text %}
+                                    <div class="help-text">{{ form.color.help_text }}</div>
+                                {% endif %}
+                                {% if form.color.errors %}
+                                    <ul class="error-list">
+                                        {% for error in form.color.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                                
+                                <!-- Color picker -->
+                                <div class="color-picker">
+                                    <div class="color-option" style="background-color: #00FFFF;" data-color="#00FFFF" title="Teal"></div>
+                                    <div class="color-option" style="background-color: #B39DDB;" data-color="#B39DDB" title="Lavender"></div>
+                                    <div class="color-option" style="background-color: #FF8A80;" data-color="#FF8A80" title="Coral"></div>
+                                    <div class="color-option" style="background-color: #FFBD2E;" data-color="#FFBD2E" title="Yellow"></div>
+                                    <div class="color-option" style="background-color: #27C93F;" data-color="#27C93F" title="Mint"></div>
+                                    <div class="color-option" style="background-color: #FF6B35;" data-color="#FF6B35" title="Orange"></div>
+                                    <div class="color-option" style="background-color: #4ECDC4;" data-color="#4ECDC4" title="Cyan"></div>
+                                    <div class="color-option" style="background-color: #546E7A;" data-color="#546E7A" title="Gunmetal"></div>
+                                    <div class="color-option" style="background-color: #9C27B0;" data-color="#9C27B0" title="Purple"></div>
+                                    <div class="color-option" style="background-color: #2196F3;" data-color="#2196F3" title="Blue"></div>
+                                    <div class="color-option" style="background-color: #F44336;" data-color="#F44336" title="Red"></div>
+                                    <div class="color-option" style="background-color: #4CAF50;" data-color="#4CAF50" title="Green"></div>
+                                    <div class="color-option" style="background-color: #FF9800;" data-color="#FF9800" title="Amber"></div>
+                                    <div class="color-option" style="background-color: #607D8B;" data-color="#607D8B" title="Blue Grey"></div>
+                                    <div class="color-option" style="background-color: #795548;" data-color="#795548" title="Brown"></div>
+                                    <div class="color-option" style="background-color: #E91E63;" data-color="#E91E63" title="Pink"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Live Preview -->
+                        <div class="display-preview">
+                            <h4 class="preview-title">
+                                <i class="fas fa-eye"></i>
+                                Live Preview
+                            </h4>
+                            
+                            <div class="skill-preview-card" id="skill-preview">
+                                <div class="skill-preview-icon mb-3">
+                                    <i id="preview-icon" class="fas fa-code text-3xl text-teal-400"></i>
+                                </div>
+                                <div class="skill-preview-name" id="preview-name">New Skill</div>
+                                <div class="skill-preview-category" id="preview-category">Select Category</div>
+                                <div class="proficiency-stars" id="preview-proficiency">
+                                    <i class="fas fa-star proficiency-star"></i>
+                                    <i class="fas fa-star proficiency-star"></i>
+                                    <i class="fas fa-star proficiency-star"></i>
+                                    <i class="fas fa-star proficiency-star"></i>
+                                    <i class="fas fa-star proficiency-star"></i>
+                                </div>
+                                <div class="status-badges">
+                                    <span class="status-badge featured" id="preview-featured">Featured</span>
+                                    <span class="status-badge learning" id="preview-learning">Learning</span>
+                                    <span class="status-badge certified" id="preview-certified">Certified</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status checkboxes -->
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item" onclick="toggleCheckbox('id_is_featured')">
+                            <input type="checkbox" id="id_is_featured" name="is_featured" {% if form.instance.is_featured %}checked{% endif %}>
+                            <label for="id_is_featured">
+                                <i class="fas fa-star"></i>
+                                Featured Skill
+                            </label>
+                        </div>
+                        <div class="checkbox-item" onclick="toggleCheckbox('id_is_learning')">
+                            <input type="checkbox" id="id_is_learning" name="is_learning" {% if form.instance.is_learning %}checked{% endif %}>
+                            <label for="id_is_learning">
+                                <i class="fas fa-graduation-cap"></i>
+                                Currently Learning
+                            </label>
+                        </div>
+                        <div class="checkbox-item" onclick="toggleCheckbox('id_is_certified')">
+                            <input type="checkbox" id="id_is_certified" name="is_certified" {% if form.instance.is_certified %}checked{% endif %}>
+                            <label for="id_is_certified">
+                                <i class="fas fa-certificate"></i>
+                                Certified
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar with Smart Suggestions -->
+            <div class="form-sidebar">
+                <!-- Technology Suggestions -->
+                
+                <div class="suggestions-section">
+                    <div class="suggestions-title">
+                        <i class="fas fa-microchip text-coral"></i>
+                        Suggested Technologies
+                    </div>
+                    {% if suggested_technologies %}
+                    <div class="suggestions-grid">
+                        {% for tech in suggested_technologies %}
+                        <div class="suggestion-item tech-suggestion-item" data-tech-id="{{ tech.id }}">
+                            <div class="suggestion-title">{{ tech.name }}</div>
+                            <div class="suggestion-meta">Used in {{ tech.project_count }} project{{ tech.project_count|pluralize }}</div>
+                            <div class="tech-connection-options">
+                                <div class="connection-option-row">
+                                    <label>Relationship:</label>
+                                    <select name="tech_type_{{ tech.id }}">
+                                        <option value="implementation">Implementation</option>
+                                        <option value="framework">Framework</option>
+                                        <option value="library">Library</option>
+                                        <option value="tool">Tool</option>
+                                    </select>
+                                </div>
+                                <div class="connection-option-row">
+                                    <label>Strength:</label>
+                                    <select name="tech_strength_{{ tech.id }}">
+                                        <option value="1">Basic</option>
+                                        <option value="2" selected>Moderate</option>
+                                        <option value="3">Strong</option>
+                                        <option value="4">Expert</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <i class="fas fa-blueprint"></i>
+                        <p>No Suggested Technologies</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                
+                <!-- Education Suggestions -->
+                
+                <div class="suggestions-section">
+                    <div class="suggestions-title">
+                        <i class="fas fa-graduation-cap text-mint"></i>
+                        Related Education
+                    </div>
+                    {% if recent_education or completed_education %}
+                    <div class="suggestions-grid">
+                        {% for edu in recent_education %}
+                        <div class="suggestion-item" data-education-id="{{ edu.id }}">
+                            <div class="suggestion-title">{{ edu.degree }}</div>
+                            <div class="suggestion-meta">{{ edu.institution }} • Current</div>
+                        </div>
+                        {% endfor %}
+                        {% for edu in completed_education %}
+                        <div class="suggestion-item" data-education-id="{{ edu.id }}">
+                            <div class="suggestion-title">{{ edu.degree }}</div>
+                            <div class="suggestion-meta">{{ edu.institution }} • {{ edu.end_date.year }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <i class="fas fa-blueprint"></i>
+                        <p>No Recent Education</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                
+                <!-- Tips -->
+                <div class="suggestions-section">
+                    <div class="suggestions-title">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                        Tips
+                    </div>
+                    <div class="text-sm text-gray-400 space-y-2">
+                        <p>• Be specific with skill names for better organization</p>
+                        <p>• Connect technologies to show practical application</p>
+                        <p>• Link education to demonstrate learning progression</p>
+                        <p>• Featured skills appear prominently in your portfolio</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hidden inputs for selected technologies and education -->
+        <input type="hidden" name="suggested_technologies" id="selected-technologies" value="">
+        <input type="hidden" name="related_education" id="selected-education" value="">
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <div class="form-actions-left">
                 <a href="{% url 'aura_admin:skill_list' %}" class="btn btn-outline">
-                    <i class="fas fa-times mr-2"></i>Cancel
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Skills
                 </a>
+                {% if object %}
+                    <a href="{% url 'aura_admin:skill_demonstration' object.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-eye mr-2"></i>
+                        View Demonstration
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions-right">
+                <button type="button" class="btn btn-outline" onclick="debugFormValues()">
+                    <i class="fas fa-bug mr-2"></i>
+                    Debug Values
+                </button>
+                <button type="button" class="btn btn-outline" onclick="previewSkill()">
+                    <i class="fas fa-eye mr-2"></i>
+                    Preview
+                </button>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save mr-2"></i>
                     {% if object %}Update Skill{% else %}Create Skill{% endif %}
                 </button>
             </div>
-        </form>
-    </div>
-
+        </div>
+    </form>
 </div>
 
 <script>
-// Color picker functionality
-document.querySelectorAll('.color-option').forEach(option => {
-    option.addEventListener('click', function() {
-        const color = this.dataset.color;
-        document.querySelector('input[name="color"]').value = color;
-        
-        // Update selected state
-        document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
-        this.classList.add('selected');
+// Combined enhanced skill form functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Get Django form field references using proper ID selectors
+    const proficiencySlider = document.getElementById('proficiency-slider');
+    const proficiencyValue = document.getElementById('proficiency-value');
+    const proficiencyDescription = document.getElementById('proficiency-description');
+    const nameField = document.getElementById('{{ form.name.id_for_label }}');
+    const categoryField = document.getElementById('{{ form.category.id_for_label }}');
+    const iconInput = document.getElementById('{{ form.icon.id_for_label }}');
+    const colorInput = document.getElementById('{{ form.color.id_for_label }}');
+    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
+    
+    const descriptions = {
+        1: 'Beginner - Basic understanding',
+        2: 'Learning - Developing skills',
+        3: 'Competent - Can work independently',
+        4: 'Proficient - Advanced capabilities',
+        5: 'Expert - Can teach others'
+    };
+    
+    // Update proficiency display
+    function updateProficiencyDisplay() {
+        const value = proficiencySlider.value;
+        proficiencyValue.textContent = value;
+        proficiencyDescription.textContent = descriptions[value];
+        updatePreview();
+    }
+    
+    proficiencySlider.addEventListener('input', updateProficiencyDisplay);
+    updateProficiencyDisplay(); // Initial call
+    
+    // Technology suggestion selection
+    const techSuggestions = document.querySelectorAll('.tech-suggestion-item');
+    const selectedTechsInput = document.getElementById('selected-technologies');
+    const selectedTechs = [];
+    
+    techSuggestions.forEach(item => {
+        item.addEventListener('click', function() {
+            const techId = this.dataset.techId;
+            const connectionOptions = this.querySelector('.tech-connection-options');
+            
+            if (this.classList.contains('selected')) {
+                // Deselect
+                this.classList.remove('selected');
+                connectionOptions.classList.remove('show');
+                const index = selectedTechs.indexOf(techId);
+                if (index > -1) selectedTechs.splice(index, 1);
+            } else {
+                // Select
+                this.classList.add('selected');
+                connectionOptions.classList.add('show');
+                selectedTechs.push(techId);
+            }
+            
+            selectedTechsInput.value = selectedTechs.join(',');
+        });
     });
+    
+    // Education suggestion selection
+    const educationSuggestions = document.querySelectorAll('[data-education-id]');
+    const selectedEducationInput = document.getElementById('selected-education');
+    const selectedEducation = [];
+    
+    educationSuggestions.forEach(item => {
+        item.addEventListener('click', function() {
+            const educationId = this.dataset.educationId;
+            
+            if (this.classList.contains('selected')) {
+                // Deselect
+                this.classList.remove('selected');
+                const index = selectedEducation.indexOf(educationId);
+                if (index > -1) selectedEducation.splice(index, 1);
+            } else {
+                // Select
+                this.classList.add('selected');
+                selectedEducation.push(educationId);
+            }
+            
+            selectedEducationInput.value = selectedEducation.join(',');
+        });
+    });
+    
+    // Icon picker functionality
+    const iconOptions = document.querySelectorAll('.icon-option');
+    
+    iconOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const icon = this.dataset.icon;
+            
+            console.log('Icon clicked:', icon); // Debug
+            console.log('Icon input element:', iconInput); // Debug
+            
+            // Update the form field
+            if (iconInput) {
+                iconInput.value = icon;
+                console.log('Icon input value set to:', iconInput.value); // Debug
+                
+                // Update the debug display
+                const iconFieldValue = document.getElementById('icon-field-value');
+                if (iconFieldValue) {
+                    iconFieldValue.textContent = icon;
+                }
+                
+                // Trigger change event for any other listeners
+                iconInput.dispatchEvent(new Event('change'));
+            } else {
+                console.error('Icon input field not found!');
+            }
+            
+            // Update selected state
+            iconOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            updatePreview();
+        });
+    });
+    
+    // Color picker functionality  
+    const colorOptions = document.querySelectorAll('.color-option');
+    
+    colorOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const color = this.dataset.color;
+            
+            console.log('Color clicked:', color); // Debug
+            console.log('Color input element:', colorInput); // Debug
+            
+            // Update the form field
+            if (colorInput) {
+                colorInput.value = color;
+                console.log('Color input value set to:', colorInput.value); // Debug
+                
+                // Update the debug display
+                const colorFieldValue = document.getElementById('color-field-value');
+                if (colorFieldValue) {
+                    colorFieldValue.textContent = color;
+                }
+                
+                // Trigger change event for any other listeners
+                colorInput.dispatchEvent(new Event('change'));
+            } else {
+                console.error('Color input field not found!');
+            }
+            
+            // Update selected state
+            colorOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            updatePreview();
+        });
+    });
+    
+    // Add input event listeners for manual typing in icon/color fields
+    if (iconInput) {
+        iconInput.addEventListener('input', updatePreview);
+    }
+    
+    if (colorInput) {
+        colorInput.addEventListener('input', updatePreview);
+    }
+    
+    // Auto-generate slug from name
+    if (nameField && slugField && !slugField.value) {
+        nameField.addEventListener('input', function() {
+            const slug = this.value.toLowerCase()
+                .replace(/[^\w\s-]/g, '') // Remove special characters
+                .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+                .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+            slugField.value = slug;
+            updatePreview();
+        });
+    }
+    
+    // Add change listeners for form fields
+    if (nameField) {
+        nameField.addEventListener('input', updatePreview);
+    }
+    
+    if (categoryField) {
+        categoryField.addEventListener('change', updatePreview);
+    }
+    
+    // Checkbox change handlers for preview
+    const featuredCheckbox = document.getElementById('id_is_featured');
+    const learningCheckbox = document.getElementById('id_is_learning');  
+    const certifiedCheckbox = document.getElementById('id_is_certified');
+    
+    if (featuredCheckbox) {
+        featuredCheckbox.addEventListener('change', updatePreview);
+    }
+    if (learningCheckbox) {
+        learningCheckbox.addEventListener('change', updatePreview);
+    }
+    if (certifiedCheckbox) {
+        certifiedCheckbox.addEventListener('change', updatePreview);
+    }
+    
+    // Live preview update function
+    function updatePreview() {
+        const name = nameField ? nameField.value || 'New Skill' : 'New Skill';
+        const category = categoryField ? categoryField.options[categoryField.selectedIndex]?.text || 'Select Category' : 'Select Category';
+        const proficiency = parseInt(proficiencySlider ? proficiencySlider.value : 1) || 1;
+        const icon = iconInput ? iconInput.value || 'fas fa-code' : 'fas fa-code';
+        const color = colorInput ? colorInput.value || '#00FFFF' : '#00FFFF';
+        
+        console.log('Preview Update:', { name, category, proficiency, icon, color }); // Debug
+        
+        // Update preview elements
+        const previewName = document.getElementById('preview-name');
+        const previewCategory = document.getElementById('preview-category');
+        const previewIcon = document.getElementById('preview-icon');
+        const previewProficiency = document.getElementById('preview-proficiency');
+        const previewCard = document.getElementById('skill-preview');
+        
+        if (previewName) previewName.textContent = name;
+        if (previewCategory) previewCategory.textContent = category;
+        
+        if (previewIcon) {
+            // Handle icon format - make sure it starts with 'fas' or 'fab'
+            let iconClass = icon;
+            if (!icon.includes('fa-') && !icon.includes('fas') && !icon.includes('fab')) {
+                iconClass = 'fas fa-code';
+            } else if (icon.startsWith('fa-')) {
+                iconClass = 'fas ' + icon;
+            }
+            
+            previewIcon.className = iconClass + ' text-3xl';
+            previewIcon.style.color = color;
+        }
+        
+        if (previewCard) {
+            previewCard.style.borderColor = color + '80'; // Add transparency
+            previewCard.style.background = `linear-gradient(135deg, ${color}10, ${color}05)`;
+        }
+        
+        if (previewProficiency) {
+            const stars = previewProficiency.querySelectorAll('.proficiency-star');
+            stars.forEach((star, index) => {
+                if (index < proficiency) {
+                    star.classList.add('filled');
+                    star.style.color = color;
+                } else {
+                    star.classList.remove('filled');
+                }
+            });
+        }
+        
+        // Update status badges - find checkboxes here instead of using variables
+        const featuredBadge = document.getElementById('preview-featured');
+        const learningBadge = document.getElementById('preview-learning');
+        const certifiedBadge = document.getElementById('preview-certified');
+        
+        const featuredCheckbox = document.getElementById('id_is_featured');
+        const learningCheckbox = document.getElementById('id_is_learning');  
+        const certifiedCheckbox = document.getElementById('id_is_certified');
+        
+        const isFeatured = featuredCheckbox ? featuredCheckbox.checked : false;
+        const isLearning = learningCheckbox ? learningCheckbox.checked : false;
+        const isCertified = certifiedCheckbox ? certifiedCheckbox.checked : false;
+        
+        if (featuredBadge) featuredBadge.classList.toggle('active', isFeatured);
+        if (learningBadge) learningBadge.classList.toggle('active', isLearning);
+        if (certifiedBadge) certifiedBadge.classList.toggle('active', isCertified);
+    }
+    
+    // Set initial selected states based on current values
+    function setInitialStates() {
+        const currentIcon = iconInput ? iconInput.value : '';
+        const currentColor = colorInput ? colorInput.value : '';
+        
+        console.log('Setting initial states:', { currentIcon, currentColor }); // Debug
+        
+        // Set selected icon if one exists
+        if (currentIcon) {
+            const iconOption = document.querySelector(`[data-icon="${currentIcon}"]`);
+            if (iconOption) {
+                iconOption.classList.add('selected');
+                console.log('Selected icon:', currentIcon); // Debug
+            } else {
+                console.log('Icon not found in picker:', currentIcon); // Debug
+            }
+        }
+        
+        // Set selected color if one exists
+        if (currentColor) {
+            const colorOption = document.querySelector(`[data-color="${currentColor}"]`);
+            if (colorOption) {
+                colorOption.classList.add('selected');
+                console.log('Selected color:', currentColor); // Debug
+            } else {
+                console.log('Color not found in picker:', currentColor); // Debug
+            }
+        }
+    }
+    
+    // Debug: Log all form field IDs and inspect what's actually on the page
+    console.log('=== FORM FIELD DEBUG ===');
+    console.log('All form inputs:', document.querySelectorAll('form input, form select, form textarea'));
+    console.log('Form field elements found:', {
+        nameField: nameField?.id || 'NOT FOUND',
+        categoryField: categoryField?.id || 'NOT FOUND', 
+        iconInput: iconInput?.id || 'NOT FOUND',
+        colorInput: colorInput?.id || 'NOT FOUND',
+        slugField: slugField?.id || 'NOT FOUND'
+    });
+    
+    // Debug form submission to see what gets sent
+    const form = document.getElementById('skill-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const formData = new FormData(this);
+            console.log('=== FORM SUBMISSION DEBUG ===');
+            console.log('Form values being submitted:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+            
+            // Also check individual field values before submission
+            console.log('Individual field values before submit:');
+            console.log('Name:', nameField?.value);
+            console.log('Icon:', iconInput?.value); 
+            console.log('Color:', colorInput?.value);
+            console.log('Slug:', slugField?.value);
+        });
+    }
+    
+    // Initialize
+    setInitialStates();
+    updatePreview();
 });
 
-// Icon picker functionality
-document.querySelectorAll('.icon-option').forEach(option => {
-    option.addEventListener('click', function() {
-        const icon = this.dataset.icon;
-        document.querySelector('input[name="icon"]').value = icon;
-        
-        // Update selected state
-        document.querySelectorAll('.icon-option').forEach(opt => opt.classList.remove('selected'));
-        this.classList.add('selected');
-    });
-});
+// Checkbox toggle helper function
+function toggleCheckbox(checkboxId) {
+    const checkbox = document.getElementById(checkboxId);
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+    }
+}
+
+// Debug form values function
+function debugFormValues() {
+    const nameField = document.getElementById('id_name');
+    const categoryField = document.getElementById('id_category');
+    const iconInput = document.getElementById('id_icon');
+    const colorInput = document.getElementById('id_color');
+    const slugField = document.getElementById('id_slug');
+    
+    const values = {
+        name: nameField?.value || 'FIELD NOT FOUND',
+        category: categoryField?.value || 'FIELD NOT FOUND', 
+        icon: iconInput?.value || 'FIELD NOT FOUND',
+        color: colorInput?.value || 'FIELD NOT FOUND',
+        slug: slugField?.value || 'FIELD NOT FOUND'
+    };
+    
+    console.log('=== CURRENT FORM VALUES ===', values);
+    
+    alert(`Current Form Values:
+Name: ${values.name}
+Category: ${values.category}
+Icon: ${values.icon}
+Color: ${values.color}
+Slug: ${values.slug}
+
+Check console for more details.`);
+}
+
+// Preview functionality
+function previewSkill() {
+    const formData = new FormData(document.getElementById('skill-form'));
+    const nameField = document.getElementById('id_name');
+    const categoryField = document.getElementById('id_category');
+    
+    const skillName = nameField ? nameField.value || 'New Skill' : 'New Skill';
+    const proficiency = formData.get('proficiency') || 1;
+    const description = formData.get('description') || 'No description provided';
+    const category = categoryField ? categoryField.options[categoryField.selectedIndex]?.text || 'No category' : 'No category';
+    
+    alert(`Skill Preview:
+Name: ${skillName}
+Category: ${category}
+Proficiency: Level ${proficiency}
+Description: ${description}
+
+This skill will appear in your portfolio with the selected visual styling and connections.`);
+}
 </script>
 {% endblock %}

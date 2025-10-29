@@ -232,6 +232,46 @@ def priority_tag(priority, show_icon=True):
 
 
 @register.simple_tag
+def relationship_priority_tag(priority, show_icon=True):
+    """
+    Generate relationship priority tag (SystemLogEntries).
+    Usage: {% relationship_priority_tag 3 show_icon=True %}
+    """
+    priority_config = {
+        1: {
+            "label": "Mention",
+            "icon": "fas fa-at",
+            "class": "priority-low"
+            },
+        2: {
+            "label": "Related",
+            "icon": "fas fa-paperclip",
+            "class": "priority-normal"
+            },
+        3: {
+            "label": "Primary",
+            "icon": "fas fa-link",
+            "class": "priority-high"
+            },
+        4: {
+            "label": "Critical",
+            "icon": "fas fa-exclamation-triangle",
+            "class": "priority-critical",
+        },
+    }
+
+    config = priority_config.get(priority, priority_config[2])
+
+    html = f"""
+    <span class="priority-tag {config["class"]}">
+        {f'<i class="{config["icon"]}"></i>' if show_icon else ""}
+        <span>{config["label"]}</span>
+    </span>
+    """
+    return mark_safe(html)
+
+
+@register.simple_tag
 def category_hexagon(code, color="", size="md"):
     """
     Generate hexagonal category badge.

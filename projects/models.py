@@ -769,15 +769,16 @@ class SystemModule(models.Model):
         help_text="Setup instructions and implementation details"
     )
     # TODO: May remove? Redundant and just another field to complete. Can address challenges w related DataLogs
+    # Keep this short, problem system solved, with solution as approach in a nutshell
     challenges = MarkdownxField(
         blank=True,
-        help_text="Development challenges faced and how they were overcome"
+        help_text="Development challenge this system solved, and solution/approach"
     )
-    # TODO: lean on connected features w implementation status of 'planned' or 'in progress'
-    future_enhancements = MarkdownxField(
-        blank=True,
-        help_text="Planned improvement and next steps"
-    )
+    # # lean on connected features w implementation status of 'planned' or 'in progress'
+    # future_enhancements = MarkdownxField(
+    #     blank=True,
+    #     help_text="Planned improvement and next steps"
+    # )
 
     # ================= CATEGORIZATION =================
     system_type = models.ForeignKey(
@@ -864,12 +865,12 @@ class SystemModule(models.Model):
         blank=True,
         help_text="Featured image for homepage (800x600px recommended)",
     )
-    architecture_diagram = models.ImageField(
-        upload_to="systems/diagrams/",
-        null=True,
-        blank=True,
-        help_text="System architecture diagram",
-    )
+    # architecture_diagram = models.ImageField(
+    #     upload_to="systems/diagrams/",
+    #     null=True,
+    #     blank=True,
+    #     help_text="System architecture diagram",
+    # )
 
     # ================= METADATA =================
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="systems")
@@ -977,9 +978,9 @@ class SystemModule(models.Model):
         """Return challenges field as HTML."""
         return markdownify(self.challenges)
 
-    def rendered_future_enhancements(self):
-        """Return future enhancements field as HTML."""
-        return markdownify(self.future_enhancements)
+    # def rendered_future_enhancements(self):
+    #     """Return future enhancements field as HTML."""
+    #     return markdownify(self.future_enhancements)
 
     # ================= STATUS AND HEALTH METHODS =================
     def get_health_status(self):
@@ -1073,11 +1074,11 @@ class SystemModule(models.Model):
         return "●" * self.complexity + "○" * (5 - self.complexity)
 
     def get_related_logs(self):
-        """Get all related system logs ordered by priority and date"""
+        """Get all related system logs ordered by relationship priority and date"""
         return (
             self.log_entries.all()
             .select_related("post")
-            .order_by("-priority", "-created_at")
+            .order_by("-relationship_priority", "-created_at")
         )
 
     def get_latest_log_entry(self):
@@ -1895,7 +1896,7 @@ class SystemModule(models.Model):
                     "date": milestone.date_achieved.date(),
                     "title": milestone.title,
                     "description": milestone.description,
-                    "confidence": milestone.confidence_boost,
+                    # "confidence": milestone.confidence_boost,
                 }
             )
 
@@ -2187,9 +2188,10 @@ class SystemSkillGain(models.Model):
     # Optional Context (keep minimal)
     how_learned = models.TextField(blank=True, help_text="Brief note on how this skill was used/learned in this project")
 
-    # Optional before/after tracking
-    skill_level_before = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level before project (1-5, optional)")
-    skill_level_after = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level after project (1-5, optional)")
+    # Remove - use queries to determine #119
+    # # Optional before/after tracking
+    # skill_level_before = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level before project (1-5, optional)")
+    # skill_level_after = models.IntegerField(choices=[(i, i) for i in range(1, 6)], blank=True, null=True, help_text="Skill level after project (1-5, optional)")
 
     # === New for Skill-Tech Models Rework ===
     technologies_used = models.ManyToManyField(
@@ -2234,15 +2236,17 @@ class SystemSkillGain(models.Model):
         }
         return colors.get(self.proficiency_gained, "#64B5F6")
 
-    def get_skill_improvement(self):
-        """Calculate improvement if before/after levels set"""
-        if self.skill_level_before and self.skill_level_after:
-            return self.skill_level_after - self.skill_level_before
-        return None
+    # Remove - use queries to determine #119
+    # def get_skill_improvement(self):
+    #     """Calculate improvement if before/after levels set"""
+    #     if self.skill_level_before and self.skill_level_after:
+    #         return self.skill_level_after - self.skill_level_before
+    #     return None
 
-    def has_improvement_data(self):
-        """Check if before/after tracking is available"""
-        return bool(self.skill_level_before and self.skill_level_after)
+    # Remove - use queries to determine #119
+    # def has_improvement_data(self):
+    #     """Check if before/after tracking is available"""
+    #     return bool(self.skill_level_before and self.skill_level_after)
 
     def get_learning_context(self):
         """Get learning context for dashboard display"""
@@ -2252,7 +2256,7 @@ class SystemSkillGain(models.Model):
             'proficiency_gained': self.get_proficiency_display_short(),
             'color': self.get_proficiency_color(),
             'how_learned': self.how_learned,
-            'improvement': self.get_skill_improvement(),
+            # 'improvement': self.get_skill_improvement(),
             'date': self.created_at,
         }
 
@@ -2285,18 +2289,19 @@ class LearningMilestone(models.Model):
     related_post = models.ForeignKey('blog.Post', on_delete=models.SET_NULL, null=True, blank=True, related_name='documented_milestones', help_text='DataLog entry about this milestone (optional)')
     related_skill = models.ForeignKey('core.Skill', on_delete=models.SET_NULL, null=True, blank=True, related_name='milestones', help_text='Primary skill this relates to (optional)')
 
-    # Learning impact (simple 1-5 scale)
-    difficulty_level = models.IntegerField(
-        choices=[(i, f"Level {i}") for i in range(1, 6)],
-        default=3,
-        help_text="How challenging was this to achieve? (1=Easy, 5=Very Hard)"
-    )
+    # Removing - not useful - #120
+    # # Learning impact (simple 1-5 scale)
+    # difficulty_level = models.IntegerField(
+    #     choices=[(i, f"Level {i}") for i in range(1, 6)],
+    #     default=3,
+    #     help_text="How challenging was this to achieve? (1=Easy, 5=Very Hard)"
+    # )
 
-    confidence_boost = models.IntegerField(
-        choices=[(i, f"{i} stars") for i in range(1, 6)],
-        default=3,
-        help_text="How much did this boost you confidence? (1-5 stars)"
-    )
+    # confidence_boost = models.IntegerField(
+    #     choices=[(i, f"{i} stars") for i in range(1, 6)],
+    #     default=3,
+    #     help_text="How much did this boost you confidence? (1-5 stars)"
+    # )
 
     # Sharing/Impact
     shared_publicly = models.BooleanField(default=False, help_text="Did you share this achievement? (blog, social media, etc)")
@@ -2341,13 +2346,14 @@ class LearningMilestone(models.Model):
         }
         return colors.get(self.milestone_type, "#64B5F6")
 
-    def get_difficulty_stars(self):
-        """Visual difficulty representation"""
-        return "★" * self.difficulty_level + "☆" * (5 - self.difficulty_level)
+    # Removing - #120
+    # def get_difficulty_stars(self):
+    #     """Visual difficulty representation"""
+    #     return "★" * self.difficulty_level + "☆" * (5 - self.difficulty_level)
 
-    def get_confidence_stars(self):
-        """Visual confidence boost representation"""
-        return "★" * self.confidence_boost + "☆" * (5 - self.confidence_boost)
+    # def get_confidence_stars(self):
+    #     """Visual confidence boost representation"""
+    #     return "★" * self.confidence_boost + "☆" * (5 - self.confidence_boost)
 
     def days_since_achieved(self):
         """Days since milestone was achieved"""
@@ -2366,8 +2372,8 @@ class LearningMilestone(models.Model):
             "type": self.get_milestone_type_display(),
             "system": self.system.title,
             "date": self.date_achieved,
-            "difficulty": self.difficulty_level,
-            "confidence_boost": self.confidence_boost,
+            # "difficulty": self.difficulty_level,
+            # "confidence_boost": self.confidence_boost,
             "icon": self.get_milestone_icon(),
             "color": self.get_milestone_color(),
             "days_ago": self.days_since_achieved(),

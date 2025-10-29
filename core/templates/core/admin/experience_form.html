@@ -38,6 +38,27 @@
     gap: 1rem;
     align-items: center;
 }
+
+.formset-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 100px;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--color-bg-secondary);
+    border-radius: 8px;
+}
+
+.formset-field label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--color-teal);
+    font-size: 0.9rem;
+}
+
+#skill-formset {
+    margin-top: 1rem;
+}
 </style>
 {% endblock %}
 
@@ -98,13 +119,13 @@
                         {% endif %}
                     </div>
                     
-                    <div>
+                    {% comment %} <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Employment Type</label>
                         {{ form.employment_type|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
                         {% if form.employment_type.errors %}
                             <div class="text-red-400 text-sm mt-1">{{ form.employment_type.errors.0 }}</div>
                         {% endif %}
-                    </div>
+                    </div> {% endcomment %}
                 </div>
             </div>
             
@@ -161,14 +182,14 @@
                     <div class="text-gray-400 text-sm mt-1">Overview of your role and responsibilities</div>
                 </div>
                 
-                <div>
+                {% comment %} <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Key Achievements</label>
                     {{ form.achievements|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
                     {% if form.achievements.errors %}
                         <div class="text-red-400 text-sm mt-1">{{ form.achievements.errors.0 }}</div>
                     {% endif %}
                     <div class="text-gray-400 text-sm mt-1">Major accomplishments and impact made</div>
-                </div>
+                </div> {% endcomment %}
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Technologies Used</label>
@@ -180,14 +201,44 @@
                 </div>
             </div>
             
-            <!-- Additional Information Section -->
+            <!-- Skills Applied Section -->
             <div class="form-section space-y-6">
                 <h3 class="text-lg font-bold text-purple-400 flex items-center">
                     <i class="fas fa-info-circle mr-2"></i>
-                    Additional Information
+                    Skills Applied
                 </h3>
+                <p class="form-help">Connect this experience to skills you developed or applied.</p>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{ skill_formset.management_form }}
+            
+                <div id="skill-formset">
+                    {% for form in skill_formset %}
+                        <div class="formset-row">
+                            {{ form.id }}
+                            
+                            <div class="formset-field">
+                                <label>Skill:</label>
+                                {{ form.skill|add_class:"form-control" }}
+                            </div>
+                            
+                            <div class="formset-field">
+                                <label>Application Level:</label>
+                                {{ form.application_level }}
+                            </div>
+                            
+                            <div class="formset-field">
+                                {{ form.DELETE }}
+                                {% if form.instance.pk %}
+                                    <label>Delete:</label>
+                                    {{ form.DELETE }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+                
+                {% comment %} <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Company Website</label>
                         {{ form.company_url|add_class:"w-full px-3 py-2 bg-black bg-opacity-30 border border-gray-600 rounded-lg text-white focus:border-teal-400 focus:outline-none" }}
@@ -218,7 +269,7 @@
                         Tech-Related Experience
                     </label>
                 </div>
-            </div>
+            </div> {% endcomment %}
 
             <!-- Form Actions -->
             <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-700">

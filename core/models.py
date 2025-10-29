@@ -80,8 +80,9 @@ class Skill(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # REMOVED: #121 - No need for 1-1 now that we have M2M relationship
     # Technology Relationship
-    related_technology = models.OneToOneField('projects.Technology', on_delete=models.SET_NULL, null=True, blank=True, related_name='skill_profile', help_text="Link to corresponding technology in projects app")
+    # related_technology = models.OneToOneField('projects.Technology', on_delete=models.SET_NULL, null=True, blank=True, related_name='skill_profile', help_text="Link to corresponding technology in projects app")
 
     # Experience Tracking
     years_experience = models.FloatField(default=0.0, help_text="Years of experience with this skill")
@@ -361,14 +362,14 @@ class Skill(models.Model):
                 'date': edu.start_date,
                 'type': 'education_start',
                 'title': f"Started learning in {edu.degree}",
-                'source': edu.platform or edu.institution,
+                'source': edu.institution,
             })
             if edu.end_date:
                 events.append({
                     'date': edu.end_date,
                     'type': 'education_complete',
                     'title': f"Completed {edu.degree}",
-                    'source': edu.platform or edu.institution,
+                    'source': edu.institution,
                 })
         
         # Project applications
@@ -403,6 +404,100 @@ class Skill(models.Model):
         score += min(20, self.proficiency * 4)
 
         return min(100, score)
+    
+    # NEW: Professional experience helper methods
+    def get_professional_applications_count(self):
+        """Count of professional roles where skill was applied"""
+        return self.professional_applications.count()
+    
+    def get_professional_applications_by_level(self):
+        """Get professional applications grouped by level"""
+        applications = self.professional_applications.select_related('experience').all()
+        grouped = {
+            3: [],  # Core
+            2: [],  # Regular
+            1: [],  # Occasional
+        }
+        for app in applications:
+            grouped[app.application_level].append(app)
+        return grouped
+    
+    def has_professional_experience(self):
+        """Check if skill has been used professionally"""
+        return self.professional_applications.exists()
+    
+    def get_professional_summary(self):
+        """Summary text for professional experience"""
+        count = self.get_professional_applications_count()
+        if count == 0:
+            return None
+        
+        core_count = self.professional_applications.filter(application_level=3).count()
+        
+        if core_count > 0:
+            return f"Core skill in {core_count} professional role{'s' if core_count != 1 else ''}"
+        else:
+            return f"Applied in {count} professional role{'s' if count != 1 else ''}"
+
+
+class ExperienceSkillApplication(models.Model):
+    """
+    Tracks skills applied in professional experience.
+    Minimal model for connecting non-dev experience to dev skills.
+    """
+
+    APPLICATION_LEVEL_CHOICES = [
+        (1, 'Occasional Use'),
+        (2, 'Regular Use'),
+        (3, 'Core Responsibility'),
+    ]
+
+    # Core relationships
+    experience = models.ForeignKey('Experience', on_delete=models.CASCADE, related_name='skill_applications')
+    skill = models.ForeignKey('Skill', on_delete=models.CASCADE, related_name='professional_applications')
+
+    # Single required field for context
+    application_level = models.IntegerField(choices=APPLICATION_LEVEL_CHOICES, default=2, help_text='How central was this skill to this role?')
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('experience', 'skill')
+        ordering = ['-application_level', 'skill__name']
+        verbose_name = 'Experience Skill Application'
+        verbose_name_plural = 'Experience Skill Applications'
+    
+    def __str__(self):
+        return f"{self.skill.name} in {self.experience.position}"
+    
+    def get_level_display_short(self):
+        """Short display for UI"""
+        display_map = {
+            1: 'Occasional',
+            2: 'Regular', 
+            3: 'Core',
+        }
+        return display_map.get(self.application_level, 'Regular')
+    
+    def get_level_badge_color(self):
+        """Color for UI badges"""
+        colors = {
+            1: '#9E9E9E',  # Gray - occasional
+            2: '#2196F3',  # Blue - regular  
+            3: '#4CAF50',  # Green - core
+        }
+        return colors.get(self.application_level, '#9E9E9E')
+    
+    def get_level_icon(self):
+        """Icon for application level"""
+        icons = {
+            1: 'fa-circle',
+            2: 'fa-circle-half-stroke',
+            3: 'fa-circle-check',
+        }
+        return icons.get(self.application_level, 'fa-circle')
 
 
 class SkillTechnologyRelation(models.Model):
@@ -473,10 +568,10 @@ class Education(models.Model):
     ]
 
     # ========== BASIC INFO ==========
-    institution = models.CharField(max_length=100)
+    institution = models.CharField(max_length=100, help_text="e.g., 'edX HarvardX', 'Udemy', 'University of Alabama'")
     slug = models.SlugField(unique=True, max_length=200)
     degree = models.CharField(max_length=100, help_text='Degree or course name')
-    field_of_study = models.CharField(max_length=100)
+    field_of_study = models.CharField(max_length=100, help_text="Computer Science, Web Development, etc.")
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
@@ -485,7 +580,8 @@ class Education(models.Model):
     # ===== NEW LEARNING JOURNEY FIELDS =====
 
     learning_type = models.CharField(max_length=20, choices=LEARNING_TYPE_CHOICES, default='formal_degree')
-    platform = models.CharField(max_length=100, blank=True, help_text="e.g., 'edX HarvardX', 'Udemy', 'University of Alabama'")
+    # Removed - consolidated w institution
+    # platform = models.CharField(max_length=100, blank=True, help_text="e.g., 'edX HarvardX', 'Udemy', 'University of Alabama'")
     certificate_url = models.URLField(blank=True, help_text='Link to certificate or completion proof')
     hours_completed = models.IntegerField(default=0, help_text="Total hours of instruction/study")
     
@@ -509,17 +605,19 @@ class Education(models.Model):
 
     # ========== LEARNING METRICS ==========
 
-    learning_intensity = models.IntegerField(
-        choices=[(i, f'Level {i}') for i in range(1, 6)],
-        default=3,
-        help_text='Learning intensity/difficulty (1=Easy, 5=Very Intense)'
-    )
+    # Removed - unnecessary
+    # learning_intensity = models.IntegerField(
+    #     choices=[(i, f'Level {i}') for i in range(1, 6)],
+    #     default=3,
+    #     help_text='Learning intensity/difficulty (1=Easy, 5=Very Intense)'
+    # )
 
-    career_relevance = models.IntegerField(
-        choices=[(i, f'{i} stars') for i in range(1, 6)],
-        default=4,
-        help_text='Relevance to software development career (1-5 stars)'
-    )
+    # Removed - unnecessary
+    # career_relevance = models.IntegerField(
+    #     choices=[(i, f'{i} stars') for i in range(1, 6)],
+    #     default=4,
+    #     help_text='Relevance to software development career (1-5 stars)'
+    # )
 
     class Meta:
         ordering = ["-end_date", "-start_date"]
@@ -554,14 +652,15 @@ class Education(models.Model):
     
     def get_learning_summary(self):
         """Get comprehensive learning summary"""
+        # Updated w Model Trimming #122
         return {
             'education_type': self.get_learning_type_display(),
-            'platform': self.platform,
+            'institution': self.institution,
             'duration_months': self.get_duration_months(),
             'skills_gained': self.get_skills_gained_count(),
             'projects_applied': self.get_projects_applied_count(),
             'hours_completed': self.hours_completed,
-            'career_relevance': self.career_relevance,
+            # 'career_relevance': self.career_relevance,
             'has_certificate': bool(self.certificate_url),
             'is_current': self.is_current,
         }
@@ -588,6 +687,7 @@ class EducationSkillDevelopment(models.Model):
     education = models.ForeignKey(Education, on_delete=models.CASCADE)
     skill = models.ForeignKey('Skill', on_delete=models.CASCADE)
 
+    # LEAVING since these are populated via logic on admin_views
     # Learning progression in this education
     proficiency_before = models.IntegerField(
         choices=[(i, i) for i in range(0, 6)],
@@ -655,6 +755,15 @@ class Experience(models.Model):
     is_current = models.BooleanField(default=False)
     technologies = models.CharField(max_length=200, blank=True, help_text="Comma-separated list of technologies used")
 
+    # NEW: M2M to Skills through ExperienceSkillApplication model
+    skills_applied = models.ManyToManyField(
+        'Skill',
+        through='ExperienceSkillApplication',
+        blank=True,
+        related_name='professional_experience',
+        help_text='Skills applied in this professional role'
+    )
+
     class Meta:
         ordering = ["-end_date", "-start_date"]
 
@@ -674,6 +783,27 @@ class Experience(models.Model):
         if not self.slug:
             self.slug = slugify(f"{self.position} {self.company}")
         super().save(*args, **kwargs)
+
+    # NEW: Helper methods for Skill-Experience M2M
+    def get_skills_by_level(self):
+        """Get skills grouped by application level"""
+        applications = self.skill_applications.select_related('skill').all()
+        grouped = {
+            3: [],  # Core
+            2: [],  # Regular
+            1: [],  # Occasional
+        }
+        for app in applications:
+            grouped[app.application_level].append(app)
+        return grouped
+    
+    def get_core_skills(self):
+        """Get skills marked as core responsibility"""
+        return self.skill_applications.filter(application_level=3).select_related('skill')
+    
+    def get_skills_count(self):
+        """Total number of skills applied"""
+        return self.skills_applied.count()
 
 
 class Contact(models.Model):
@@ -956,20 +1086,20 @@ class LearningJourneyManager:
     @staticmethod
     def get_learning_highlights():
         """Generate learning highlights from Education model"""
+        # Updated EDU fields w trims #122
         highlights = []
 
         # Get featured education entries
         education_entries = Education.objects.filter(
             learning_type__in=['online_course', 'certification'],
-            career_relevance__gte=4
-        ).order_by('-career_relevance', '-end_date')[:6]
+        ).order_by('-end_date')[:6]
 
         color_cycle = ["teal", "coral", "lavender", "mint", "yellow", "navy"]
 
         for i, edu in enumerate(education_entries):
             highlights.append({
                 'title': edu.degree,
-                'platform': edu.platform or edu.institution,
+                'institution': edu.institution,
                 'icon': 'fas fa-university' if edu.learning_type == 'formal_degree' else 'fas fa-certificate',
                 'color': color_cycle[i % len(color_cycle)],
                 'description': edu.description or f"Developed {edu.get_skills_gained_count()} technical skills",
@@ -1029,7 +1159,7 @@ class LearningJourneyManager:
                 'date': edu.end_date,
                 'type': 'education',
                 'title': f"Completed {edu.degree}",
-                'description': f"From {edu.platform or edu.institution}",
+                'description': f"From {edu.institution}",
                 'icon': 'fas fa-graduation_cap',
                 'color': 'teal',
                 'skills_gained': edu.get_skills_gained_count(),
@@ -1044,8 +1174,8 @@ class LearningJourneyManager:
                 'description': milestone.description[:100] + "..." if len(milestone.description) > 100 else milestone.description,
                 'icon': 'fas fa-trophy' if milestone.milestone_type == 'breakthrough' else 'fas fa-star',
                 'color': 'coral',
-                'difficulty': milestone.difficulty_level,
-                'confidence_boost': milestone.confidence_boost,
+                # 'difficulty': milestone.difficulty_level,
+                # 'confidence_boost': milestone.confidence_boost,
             })
         
         # Sort by date (most recent first)

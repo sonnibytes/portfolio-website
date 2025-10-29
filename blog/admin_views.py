@@ -443,7 +443,7 @@ class PostUpdateAdminView(BaseAdminUpdateView):
                         post=self.object,
                         system=system,
                         connection_type=self.request.POST.get(f'connection_type_{system_id}', 'development'),
-                        priority=int(self.request.POST.get(f'priority_{system_id}', 2)),
+                        relationship_priority=int(self.request.POST.get(f'priority_{system_id}', 2)),
                         log_entry_id=log_entry_id
                     )
                     print(f"DEBUG: Created system connection: {system.title} -> {connection.log_entry_id}")

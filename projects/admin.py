@@ -316,7 +316,7 @@ class SystemModuleAdmin(admin.ModelAdmin):
                     "usage_examples",
                     "setup_instructions",
                     "challenges",
-                    "future_enhancements",
+                    # "future_enhancements",
                 )
             },
         ),
@@ -380,7 +380,7 @@ class SystemModuleAdmin(admin.ModelAdmin):
                     "thumbnail",
                     "banner_image",
                     "featured_image",
-                    "architecture_diagram",
+                    # "architecture_diagram",
                 ),
                 "classes": ("collapse",),
             },
