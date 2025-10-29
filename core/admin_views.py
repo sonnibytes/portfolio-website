@@ -29,8 +29,8 @@ from django.http import HttpResponse
 
 from datetime import datetime, timedelta
 
-from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation
-from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactAdminForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm
+from .models import CorePage, Skill, Education, EducationSkillDevelopment, Experience, Contact, SocialLink, PortfolioAnalytics, SkillTechnologyRelation, ExperienceSkillApplication
+from .forms import CorePageForm, SkillForm, EducationForm, EducationSkillDevelopmentForm, ExperienceForm, ContactAdminForm, SocialLinkForm, PortfolioAnalyticsForm, SkillTechnologyRelationForm, ExperienceSkillApplicationFormSet
 from projects.models import ArchitectureComponent, ArchitectureConnection, SystemModule, Technology
 from blog.models import Post, Category
 
@@ -1043,7 +1043,9 @@ class ExperienceListAdminView(BaseAdminListView, BulkActionMixin):
     context_object_name = "experiences"
 
     def get_queryset(self):
-        queryset = Experience.objects.order_by("-start_date")
+        queryset = Experience.objects.annotate(
+            skills_count=Count('skills_appliedd', distinct=True)
+        ).order_by('-start_date')
 
         search_query = self.request.GET.get("search", "")
         if search_query:
@@ -1069,6 +1071,7 @@ class ExperienceListAdminView(BaseAdminListView, BulkActionMixin):
             {
                 "title": "Manage Experience",
                 "subtitle": "Work history and professional experience",
+                "total_skill_tracked": ExperienceSkillApplication.objects.count(),
             }
         )
         return context
@@ -1082,6 +1085,28 @@ class ExperienceCreateAdminView(SlugAdminCreateView):
     template_name = "core/admin/experience_form.html"
     success_url = reverse_lazy("aura_admin:experience_list")
 
+    # Updated w New Skill-Experience Relationship
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['skill_formset'] = ExperienceSkillApplicationFormSet(self.request.POST)
+        else:
+            context['skill_formset'] = ExperienceSkillApplicationFormSet()
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        skill_formset = context['skill_formset']
+
+        if skill_formset.is_valid():
+            self.object = form.save()
+            skill_formset.instance = self.object
+            skill_formset.save()
+            messages.success(self.request, f'Experience "{self.object}" created successfully!')
+            return redirect(self.success_url)
+        else:
+            return self.form_invalid(form)
+
 
 class ExperienceUpdateAdminView(BaseAdminUpdateView):
     """Edit existing experience."""
@@ -1090,6 +1115,27 @@ class ExperienceUpdateAdminView(BaseAdminUpdateView):
     form_class = ExperienceForm
     template_name = "core/admin/experience_form.html"
     success_url = reverse_lazy("aura_admin:experience_list")
+
+    # Updated w New Skill-Experience Relationship
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['skill_formset'] = ExperienceSkillApplicationFormSet(self.request.POST, instance = self.object)
+        else:
+            context['skill_formset'] = ExperienceSkillApplicationFormSet(instance=self.object)
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        skill_formset = context['skill_formset']
+
+        if skill_formset.is_valid():
+            self.object = form.save()
+            skill_formset.save()
+            messages.success(self.request, f'Experience "{self.object}" updated successfully!')
+            return redirect(self.success_url)
+        else:
+            return self.form_invalid(form)
 
 
 class ExperienceDeleteAdminView(BaseAdminDeleteView):
