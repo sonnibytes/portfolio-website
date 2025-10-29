@@ -587,7 +587,7 @@ class CoreAdminDashboardView(AdminAccessMixin, TemplateView):
         integration_stats = {
             "education_skill_connections": EducationSkillDevelopment.objects.count(),
             "skills_linked_to_projects": Skill.objects.filter(
-                skill_gains__isnull=False
+                project_gains__isnull=False
             ).distinct().count(),
             # "education_with_projects": Education.objects.filter(
             #     related_systems__isnull=False
