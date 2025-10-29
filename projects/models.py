@@ -1074,11 +1074,11 @@ class SystemModule(models.Model):
         return "●" * self.complexity + "○" * (5 - self.complexity)
 
     def get_related_logs(self):
-        """Get all related system logs ordered by priority and date"""
+        """Get all related system logs ordered by relationship priority and date"""
         return (
             self.log_entries.all()
             .select_related("post")
-            .order_by("-priority", "-created_at")
+            .order_by("-relationship_priority", "-created_at")
         )
 
     def get_latest_log_entry(self):

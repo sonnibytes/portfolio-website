@@ -216,25 +216,24 @@ class SystemLogEntryAdmin(admin.ModelAdmin):
         "post",
         "system",
         "connection_type",
-        "impact_display",
-        "hours_variance_display",
+        # "impact_display",
+        # "hours_variance_display",
         "priority_display",
-        "status_display",
+        # "status_display",
     )
     list_filter = (
         "connection_type",
-        "impact_level",
-        "priority",
-        "log_status",
+        # "impact_level",
+        "relationship_priority",
+        # "log_status",
         "system__system_type",
     )
     search_fields = (
         "post__title",
         "system__title",
         "log_entry_id",
-        "affected_components",
     )
-    readonly_fields = ("created_at", "updated_at", "hours_variance")
+    readonly_fields = ("created_at", "updated_at")
 
     fieldsets = (
         (
@@ -245,7 +244,6 @@ class SystemLogEntryAdmin(admin.ModelAdmin):
                     "system",
                     "connection_type",
                     "log_entry_id",
-                    "system_version",
                 )
             },
         ),
@@ -253,83 +251,83 @@ class SystemLogEntryAdmin(admin.ModelAdmin):
             "Impact Assessment",
             {
                 "fields": (
-                    "impact_level",
-                    "priority",
-                    "log_status",
-                    "affected_components",
+                    # "impact_level",
+                    "relationship_priority",
+                    # "log_status",
+                    # "affected_components",
                 )
             },
         ),
-        (
-            "Time Tracking",
-            {"fields": ("estimated_hours", "actual_hours", "hours_variance")},
-        ),
-        ("Resolution", {"fields": ("resolution_notes",)}),
+        # (
+        #     "Time Tracking",
+        #     {"fields": ("estimated_hours", "actual_hours", "hours_variance")},
+        # ),
+        # ("Resolution", {"fields": ("resolution_notes",)}),
         (
             "Timestamps",
             {
-                "fields": ("created_at", "updated_at", "resolved_at"),
+                "fields": ("created_at", "updated_at"),
                 "classes": ("collapse",),
             },
         ),
     )
 
-    def impact_display(self, obj):
-        colors = {
-            "low": "#27c93f",
-            "medium": "#ffbd2e",
-            "high": "#ff8a80",
-            "critical": "#f44336",
-        }
+    # def impact_display(self, obj):
+    #     colors = {
+    #         "low": "#27c93f",
+    #         "medium": "#ffbd2e",
+    #         "high": "#ff8a80",
+    #         "critical": "#f44336",
+    #     }
+    #     return format_html(
+    #         '<span style="color: {}; font-weight: bold;">{}</span>',
+    #         colors.get(obj.impact_level, "#808080"),
+    #         obj.get_impact_level_display(),
+    #     )
+
+    # impact_display.short_description = "Impact"
+
+    # def hours_variance_display(self, obj):
+    #     variance = obj.hours_variance()
+    #     if variance is not None:
+    #         if variance > 0:
+    #             return format_html(
+    #                 '<span style="color: #ff8a80;">+{} hrs</span>', variance
+    #             )
+    #         elif variance < 0:
+    #             return format_html(
+    #                 '<span style="color: #27c93f;">{} hrs</span>', variance
+    #             )
+    #         else:
+    #             return format_html('<span style="color: #27c93f;">On target</span>')
+    #     return "-"
+
+    # hours_variance_display.short_description = "Hours Variance"
+
+    def relationship_priority_display(self, obj):
+        colors = {1: "#00f0ff", 2: "#ffbd2e", 3: "#ff8a80"}
         return format_html(
-            '<span style="color: {}; font-weight: bold;">{}</span>',
-            colors.get(obj.impact_level, "#808080"),
-            obj.get_impact_level_display(),
+            '<span style="color: {};">Relationship Priority {}</span>',
+            colors.get(obj.relationship_priority, "#00f0ff"),
+            obj.relationship_priority,
         )
 
-    impact_display.short_description = "Impact"
+    relationship_priority_display.short_description = "Relationship Priority"
 
-    def hours_variance_display(self, obj):
-        variance = obj.hours_variance()
-        if variance is not None:
-            if variance > 0:
-                return format_html(
-                    '<span style="color: #ff8a80;">+{} hrs</span>', variance
-                )
-            elif variance < 0:
-                return format_html(
-                    '<span style="color: #27c93f;">{} hrs</span>', variance
-                )
-            else:
-                return format_html('<span style="color: #27c93f;">On target</span>')
-        return "-"
+    # def status_display(self, obj):
+    #     colors = {
+    #         "draft": "#808080",
+    #         "active": "#ffbd2e",
+    #         "resolved": "#27c93f",
+    #         "archived": "#b39ddb",
+    #     }
+    #     return format_html(
+    #         '<span style="color: {};">{}</span>',
+    #         colors.get(obj.log_status, "#808080"),
+    #         obj.get_log_status_display(),
+    #     )
 
-    hours_variance_display.short_description = "Hours Variance"
-
-    def priority_display(self, obj):
-        colors = {1: "#808080", 2: "#ffbd2e", 3: "#ff8a80", 4: "#f44336"}
-        return format_html(
-            '<span style="color: {};">Priority {}</span>',
-            colors.get(obj.priority, "#808080"),
-            obj.priority,
-        )
-
-    priority_display.short_description = "Priority"
-
-    def status_display(self, obj):
-        colors = {
-            "draft": "#808080",
-            "active": "#ffbd2e",
-            "resolved": "#27c93f",
-            "archived": "#b39ddb",
-        }
-        return format_html(
-            '<span style="color: {};">{}</span>',
-            colors.get(obj.log_status, "#808080"),
-            obj.get_log_status_display(),
-        )
-
-    status_display.short_description = "Status"
+    # status_display.short_description = "Status"
 
 
 @admin.register(PostView)

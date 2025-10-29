@@ -258,7 +258,7 @@ class Post(models.Model):
     def get_primary_system(self):
         """Get the highest priority system connection"""
         connection = self.system_connections.order_by(
-            "-priority", "-completion_impact"
+            "-relationship_priority"
         ).first()
         return connection.system if connection else None
 
@@ -479,19 +479,19 @@ class SystemLogEntry(models.Model):
         ("integration", "Integration Notes"),
     )
 
-    PRIORITY_LEVELS = (
-        (1, "Low"),
-        (2, "Normal"),
-        (3, "High"),
-        (4, "Critical"),
+    # Rework for finding primary system for posts - #126
+    RELATIONSHIP_PRIORITY = (
+        (1, "Mentioned"),
+        (2, "Related"),
+        (3, "Primary"),
     )
 
-    LOG_STATUS = (
-        ("draft", "Draft"),
-        ("active", "Active"),
-        ("resolved", "Resolved"),
-        ("archived", "Archived"),
-    )
+    # LOG_STATUS = (
+    #     ("draft", "Draft"),
+    #     ("active", "Active"),
+    #     ("resolved", "Resolved"),
+    #     ("archived", "Archived"),
+    # )
 
     post = models.ForeignKey(
         "Post", on_delete=models.CASCADE, related_name="system_connections"
@@ -504,13 +504,16 @@ class SystemLogEntry(models.Model):
     connection_type = models.CharField(
         max_length=20, choices=CONNECTION_TYPES, default="development"
     )
-    priority = models.IntegerField(choices=PRIORITY_LEVELS, default=2)
-    log_status = models.CharField(
-        max_length=20,
-        choices=LOG_STATUS,
-        default='active'
-    )
+    # Formerly priority - changing to system_relationship to determine primary system for posts
+    relationship_priority = models.IntegerField(choices=RELATIONSHIP_PRIORITY, default=2)
+    # Remove - #126
+    # log_status = models.CharField(
+    #     max_length=20,
+    #     choices=LOG_STATUS,
+    #     default='active'
+    # )
 
+    # Remove? - Post and Systems have ID already...used as unique id?
     # HUD-style identifiers
     log_entry_id = models.CharField(
         max_length=20, blank=True, help_text="Auto-generated log entry ID (e.g. SYS-001-LOG-042)"
@@ -519,61 +522,66 @@ class SystemLogEntry(models.Model):
     # Timestamps for the HUD feel
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    resolved_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="When this log entry was resolved/completed."
-    )
 
-    # Impact metrics
-    system_version = models.CharField(
-        max_length=20, blank=True, help_text="System version this log relates to (e.g. v1.2.3)"
-    )
+    # Remove - 'Issue' driven - #126
+    # resolved_at = models.DateTimeField(
+    #     null=True,
+    #     blank=True,
+    #     help_text="When this log entry was resolved/completed."
+    # )
 
-    # Impact assessment
-    impact_level = models.CharField(
-        max_length=20,
-        choices=[
-            ('low', 'Low Impact'),
-            ('medium', 'Medium Impact'),
-            ('high', 'High Impact'),
-            ('critical', 'Critical Impact'),
-        ],
-        default='medium'
-    )
+    # Remove - 'Issue' driven - #126
+    # # Impact metrics
+    # system_version = models.CharField(
+    #     max_length=20, blank=True, help_text="System version this log relates to (e.g. v1.2.3)"
+    # )
 
-    # Time tracking
-    estimated_hours = models.IntegerField(null=True, blank=True, help_text="Estimated hours to complete this work")
-    actual_hours = models.IntegerField(null=True, blank=True, help_text="Actual hours spent on this work")
+    # Remove - 'Issue' driven - #126
+    # # Impact assessment
+    # impact_level = models.CharField(
+    #     max_length=20,
+    #     choices=[
+    #         ('low', 'Low Impact'),
+    #         ('medium', 'Medium Impact'),
+    #         ('high', 'High Impact'),
+    #         ('critical', 'Critical Impact'),
+    #     ],
+    #     default='medium'
+    # )
 
-    completion_impact = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        default=0.00,
-        help_text="How much this log entry contributed to project completion (%)",
-    )
+    # Remove - 'Issue' driven - #126
+    # # Time tracking
+    # estimated_hours = models.IntegerField(null=True, blank=True, help_text="Estimated hours to complete this work")
+    # actual_hours = models.IntegerField(null=True, blank=True, help_text="Actual hours spent on this work")
 
-    # Technical details
-    affected_components = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Comma-separated list of affected system components"
-    )
+    # completion_impact = models.DecimalField(
+    #     max_digits=5,
+    #     decimal_places=2,
+    #     default=0.00,
+    #     help_text="How much this log entry contributed to project completion (%)",
+    # )
 
-    # Resolution Tracking
-    resolution_notes = models.TextField(blank=True, help_text="Notes on how this issue was resolved")
+    # # Technical details
+    # affected_components = models.CharField(
+    #     max_length=200,
+    #     blank=True,
+    #     help_text="Comma-separated list of affected system components"
+    # )
 
-    # For HUD dashboard display
-    performance_impact = models.CharField(
-        max_length=20,
-        choices=[
-            ('positive', 'Positive Impact'),
-            ('negative', 'Negative Impact'),
-            ('neutral', 'No Impact'),
-            ('unknown', 'Unknown'),
-        ],
-        default='neutral'
-    )
+    # # Resolution Tracking
+    # resolution_notes = models.TextField(blank=True, help_text="Notes on how this issue was resolved")
+
+    # # For HUD dashboard display
+    # performance_impact = models.CharField(
+    #     max_length=20,
+    #     choices=[
+    #         ('positive', 'Positive Impact'),
+    #         ('negative', 'Negative Impact'),
+    #         ('neutral', 'No Impact'),
+    #         ('unknown', 'Unknown'),
+    #     ],
+    #     default='neutral'
+    # )
 
     class Meta:
         ordering = ["-created_at"]
@@ -587,30 +595,31 @@ class SystemLogEntry(models.Model):
             count = SystemLogEntry.objects.filter(system=self.system).count()
             self.log_entry_id = f"{self.system.system_id}-LOG-{count + 1:03d}"
 
-        # Auto-resolve based on post status
-        if self.post.status == 'published' and self.log_status == 'draft':
-            self.log_status = 'active'
+        # Remove - 'Issue' driven - #126
+        # # Auto-resolve based on post status
+        # if self.post.status == 'published' and self.log_status == 'draft':
+        #     self.log_status = 'active'
 
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.log_entry_id}: {self.post.title}"
 
+    # Remove status - 'Issue' driven - #126
     def get_status_color(self):
         """Return color based on priority for HUD styling"""
-        if self.log_status == 'resolved':
-            return '#27c93f'  # Green
-        elif self.log_status == 'archived':
-            return '#666666'  # Gray
+        # if self.log_status == 'resolved':
+        #     return '#27c93f'  # Green
+        # elif self.log_status == 'archived':
+        #     return '#666666'  # Gray
 
         # Priority-based colors for active logs
         colors = {
-            1: "#5edfff",  # Low - Light Blue
-            2: "#00f0ff",  # Normal - Cyan
-            3: "#ffbd2e",  # High - Yellow
-            4: "#ff6b8b",  # Critical - Coral
+            1: "#00f0ff",  # Mention - Cyan
+            2: "#ffbd2e",  # Related - Yellow
+            3: "#ff6b8b",  # Primary - Coral
         }
-        return colors.get(self.priority, "#00f0ff")
+        return colors.get(self.relationship_priority, "#ffbd2e")
 
     def get_connection_icon(self):
         """Return appropriate icon for connection type."""
@@ -630,27 +639,30 @@ class SystemLogEntry(models.Model):
         }
         return icons.get(self.connection_type, "fa-file-alt")
 
-    def get_affected_components_list(self):
-        """Return affected components as a list"""
-        if self.affected_components:
-            return [comp.strip() for comp in self.affected_components.split(",")]
-        return []
+    # Remove - 'Issue' driven - #126
+    # def get_affected_components_list(self):
+    #     """Return affected components as a list"""
+    #     if self.affected_components:
+    #         return [comp.strip() for comp in self.affected_components.split(",")]
+    #     return []
 
-    def hours_variance(self):
-        """Calculate difference between estimated and actual hours"""
-        if self.estimated_hours and self.actual_hours:
-            return self.actual_hours - self.estimated_hours
-        return None
+    # Remove - 'Issue' driven - #126
+    # def hours_variance(self):
+    #     """Calculate difference between estimated and actual hours"""
+    #     if self.estimated_hours and self.actual_hours:
+    #         return self.actual_hours - self.estimated_hours
+    #     return None
 
-    def get_impact_color(self):
-        """Return color for impact level display"""
-        colors = {
-            "low": "#27c93f",
-            "medium": "#ffbd2e",
-            "high": "#ff8a80",
-            "critical": "#f44336",
-        }
-        return colors.get(self.impact_level, "#00f0ff")
+    # Remove - 'Issue' driven - #126
+    # def get_impact_color(self):
+    #     """Return color for impact level display"""
+    #     colors = {
+    #         "low": "#27c93f",
+    #         "medium": "#ffbd2e",
+    #         "high": "#ff8a80",
+    #         "critical": "#f44336",
+    #     }
+    #     return colors.get(self.impact_level, "#00f0ff")
 
     def get_absolute_url(self):
         return f"{self.post.get_absolute_url()}#log-{self.pk}"
