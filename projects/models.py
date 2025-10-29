@@ -1896,7 +1896,7 @@ class SystemModule(models.Model):
                     "date": milestone.date_achieved.date(),
                     "title": milestone.title,
                     "description": milestone.description,
-                    "confidence": milestone.confidence_boost,
+                    # "confidence": milestone.confidence_boost,
                 }
             )
 
@@ -2289,18 +2289,19 @@ class LearningMilestone(models.Model):
     related_post = models.ForeignKey('blog.Post', on_delete=models.SET_NULL, null=True, blank=True, related_name='documented_milestones', help_text='DataLog entry about this milestone (optional)')
     related_skill = models.ForeignKey('core.Skill', on_delete=models.SET_NULL, null=True, blank=True, related_name='milestones', help_text='Primary skill this relates to (optional)')
 
-    # Learning impact (simple 1-5 scale)
-    difficulty_level = models.IntegerField(
-        choices=[(i, f"Level {i}") for i in range(1, 6)],
-        default=3,
-        help_text="How challenging was this to achieve? (1=Easy, 5=Very Hard)"
-    )
+    # Removing - not useful - #120
+    # # Learning impact (simple 1-5 scale)
+    # difficulty_level = models.IntegerField(
+    #     choices=[(i, f"Level {i}") for i in range(1, 6)],
+    #     default=3,
+    #     help_text="How challenging was this to achieve? (1=Easy, 5=Very Hard)"
+    # )
 
-    confidence_boost = models.IntegerField(
-        choices=[(i, f"{i} stars") for i in range(1, 6)],
-        default=3,
-        help_text="How much did this boost you confidence? (1-5 stars)"
-    )
+    # confidence_boost = models.IntegerField(
+    #     choices=[(i, f"{i} stars") for i in range(1, 6)],
+    #     default=3,
+    #     help_text="How much did this boost you confidence? (1-5 stars)"
+    # )
 
     # Sharing/Impact
     shared_publicly = models.BooleanField(default=False, help_text="Did you share this achievement? (blog, social media, etc)")
@@ -2345,13 +2346,14 @@ class LearningMilestone(models.Model):
         }
         return colors.get(self.milestone_type, "#64B5F6")
 
-    def get_difficulty_stars(self):
-        """Visual difficulty representation"""
-        return "★" * self.difficulty_level + "☆" * (5 - self.difficulty_level)
+    # Removing - #120
+    # def get_difficulty_stars(self):
+    #     """Visual difficulty representation"""
+    #     return "★" * self.difficulty_level + "☆" * (5 - self.difficulty_level)
 
-    def get_confidence_stars(self):
-        """Visual confidence boost representation"""
-        return "★" * self.confidence_boost + "☆" * (5 - self.confidence_boost)
+    # def get_confidence_stars(self):
+    #     """Visual confidence boost representation"""
+    #     return "★" * self.confidence_boost + "☆" * (5 - self.confidence_boost)
 
     def days_since_achieved(self):
         """Days since milestone was achieved"""
@@ -2370,8 +2372,8 @@ class LearningMilestone(models.Model):
             "type": self.get_milestone_type_display(),
             "system": self.system.title,
             "date": self.date_achieved,
-            "difficulty": self.difficulty_level,
-            "confidence_boost": self.confidence_boost,
+            # "difficulty": self.difficulty_level,
+            # "confidence_boost": self.confidence_boost,
             "icon": self.get_milestone_icon(),
             "color": self.get_milestone_color(),
             "days_ago": self.days_since_achieved(),

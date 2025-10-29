@@ -1049,8 +1049,8 @@ class LearningJourneyManager:
                 'description': milestone.description[:100] + "..." if len(milestone.description) > 100 else milestone.description,
                 'icon': 'fas fa-trophy' if milestone.milestone_type == 'breakthrough' else 'fas fa-star',
                 'color': 'coral',
-                'difficulty': milestone.difficulty_level,
-                'confidence_boost': milestone.confidence_boost,
+                # 'difficulty': milestone.difficulty_level,
+                # 'confidence_boost': milestone.confidence_boost,
             })
         
         # Sort by date (most recent first)
