@@ -3,15 +3,10 @@
  * Version 1.0.1: New w Global aura_filters
 """
 import markdown
-from markdown.extensions.fenced_code import FencedCodeExtension
-from markdown.extensions.codehilite import CodeHiliteExtension
-from markdown.extensions.tables import TableExtension
-from markdown.extensions.nl2br import Nl2BrExtension
 from django import template
 from django.utils.safestring import mark_safe
 from ..models import SystemModule, Technology, SystemType
 from bs4 import BeautifulSoup
-# from markdownx.utils import markdownify as md
 from django.utils.text import slugify
 from django.template.loader import render_to_string
 import re
@@ -179,18 +174,25 @@ def is_dark_color(hex_color, threshold=0.4):
 @register.filter
 def markdownify(text):
     """
-    Filter to convert markdown text to HTML with proper support for:
-    - Fenced code blocks (```python, ```bash, etc.)
-    - Syntax highlighting
+    Simple markdown to HTML filter for SystemModule content.
+    
+    No BeautifulSoup processing needed since system markdown fields
+    don't require heading IDs for table of contents.
+    
+    Supports:
+    - Fenced code blocks with syntax highlighting
     - Tables
+    - Lists
+    - Bold, italic, links
     - Line breaks
-    - Heading IDs for table of contents
+    
+    Usage: {{ system.description|markdownify }}
     """
 
     if not text:
         return ""
     
-    # Configure markdown w all the extensions we need
+    # Create markdown instance with necessary extensions
     md_instance = markdown.Markdown(extensions=[
         'markdown.extensions.fenced_code',  # Enable ```code blocks```
         'markdown.extensions.codehilite',   # Syntax highlighting
@@ -205,22 +207,9 @@ def markdownify(text):
         }
     })
 
-    # First convert markdown to HTML
+    # Convert and return
     html_content = md_instance.convert(text)
-
-    # Use BeautifulSoup to parse and modify HTML
-    soup = BeautifulSoup(html_content, "html.parser")
-
-    # Find all heading elements (h1, h2, h3, etc.)
-    for heading in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
-        # Create an ID from heading text
-        heading_id = slugify(heading.get_text())
-
-        # Set ID attr on heading element
-        heading["id"] = heading_id
-
-    # Return modified HTML
-    return mark_safe(str(soup))
+    return mark_safe(html_content)
 
 
 # =========== Dashboard Panel Component  =========== #
