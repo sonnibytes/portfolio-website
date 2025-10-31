@@ -524,25 +524,37 @@ class ExperienceForm(forms.ModelForm):
 
         return slug
 
-    def clean_end_date(self):
-        """Validate end date logic."""
-        start_date = self.cleaned_data.get("start_date")
-        end_date = self.cleaned_data.get("end_date")
-        is_current = self.cleaned_data.get("is_current")
+    def clean(self):
+        """Cross-field validation for dates and current status."""
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+        is_current = cleaned_data.get("is_current")
 
+        # Validate end date logic based on is_current
         if is_current and end_date:
-            raise ValidationError("Current positions should not have an end date.")
+            raise ValidationError({
+                'end_date': "Current positions should not have an end date."
+            })
 
         if not is_current and not end_date:
-            raise ValidationError("Non-current positions must have an end date.")
+            raise ValidationError({
+                'end_date': "Non-current positions must have an end date."
+            })
 
+        # Validate date ordering
         if start_date and end_date and end_date < start_date:
-            raise ValidationError("End date cannot be before start date.")
+            raise ValidationError({
+                'end_date': "End date cannot be before start date."
+            })
 
+        # Validate end date is not in future
         if end_date and end_date > date.today():
-            raise ValidationError("End date cannot be in the future.")
+            raise ValidationError({
+                'end_date': "End date cannot be in the future."
+            })
 
-        return end_date
+        return cleaned_data
 
 
 # Formset for application levels
