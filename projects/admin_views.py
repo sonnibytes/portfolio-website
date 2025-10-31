@@ -981,7 +981,7 @@ class SystemDetailAdminView(BaseAdminView, DetailView):
             'completion': system.completion_percent,
             'progress_color': system.progress_color,
             'priority': system.priority,
-            'featured': system.is_featured,
+            'featured': system.featured,
             'portfolio_ready': system.portfolio_ready,
             'health': system.health_status,
         }
@@ -1120,12 +1120,14 @@ class SystemDetailAdminView(BaseAdminView, DetailView):
                 'icon': 'fa-edit',
                 'url': f"aura_admin:projects:system_edit",
                 'color': 'teal',
+                'ref': f'{system.pk}',
             },
             {
                 'label': 'Manage Architecture',
                 'icon': 'fa-project-diagram',
                 'url': f"aura_admin:projects:system_architecture",
                 'color': 'lavender',
+                'ref': f'{system.pk}',
             },
             {
                 'label': 'Add Technology',
@@ -1144,7 +1146,7 @@ class SystemDetailAdminView(BaseAdminView, DetailView):
                 'icon': 'fa-external-link-alt',
                 'url': f"projects:system_detail",
                 'color': 'yellow',
-                'external': True,
+                'ref': f'{system.slug}',
             },
         ]
 

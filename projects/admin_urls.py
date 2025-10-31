@@ -16,8 +16,12 @@ urlpatterns = [
     # System Management
     path('systems/', admin_views.SystemListAdminView.as_view(), name='system_list'),
     path('systems/create/', admin_views.SystemCreateAdminView.as_view(), name='system_create'),
+    # New system detail to manage system as a whole
+    path('systems/<slug:slug>/', admin_views.SystemDetailAdminView.as_view(), name='system_detail'),
     path('systems/<int:pk>/edit/', admin_views.SystemUpdateAdminView.as_view(), name='system_edit'),
     path('systems/<int:pk>/delete/', admin_views.SystemDeleteAdminView.as_view(), name='system_delete'),
+    
+
     
     # Technology Management
     path('technologies/', admin_views.TechnologyListAdminView.as_view(), name='technology_list'),

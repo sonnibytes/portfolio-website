@@ -1,0 +1,711 @@
+<!-- projects/templates/projects/admin/system_detail.html -->
+{% extends "admin/admin_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block admin_title %}{{ title }} - AURA Admin{% endblock %}
+
+{% block admin_css %}
+{{ block.super }}
+<style>
+/* Mission Control Layout */
+.mission-control-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .mission-control-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Status Panel */
+.status-panel {
+    background: linear-gradient(135deg, rgba(38, 198, 218, 0.1) 0%, rgba(179, 157, 219, 0.1) 100%);
+    border: 1px solid rgba(38, 198, 218, 0.3);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-teal), var(--color-lavender));
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-badge.deployed { background: rgba(38, 198, 218, 0.2); color: #26c6da; border: 1px solid rgba(38, 198, 218, 0.4); }
+.status-badge.published { background: rgba(165, 214, 167, 0.2); color: #a5d6a7; border: 1px solid rgba(165, 214, 167, 0.4); }
+.status-badge.in_development { background: rgba(255, 213, 79, 0.2); color: #ffd54f; border: 1px solid rgba(255, 213, 79, 0.4); }
+.status-badge.testing { background: rgba(179, 157, 219, 0.2); color: #b39ddb; border: 1px solid rgba(179, 157, 219, 0.4); }
+.status-badge.draft { background: rgba(255, 255, 255, 0.1); color: #e0e0e0; border: 1px solid rgba(255, 255, 255, 0.2); }
+
+/* Progress Bar */
+.progress-bar-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 1rem;
+    height: 2rem;
+    overflow: hidden;
+    position: relative;
+    margin: 1rem 0;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-teal), var(--color-lavender));
+    transition: width 1s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 1rem;
+}
+
+.progress-bar-text {
+    font-weight: 600;
+    color: white;
+    font-size: 0.875rem;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.metric-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(38, 198, 218, 0.3);
+    transform: translateY(-2px);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--color-teal), var(--color-lavender));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+}
+
+/* Panel Sections */
+.panel-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.panel-title i {
+    font-size: 1.25rem;
+    color: var(--color-teal);
+}
+
+.panel-count {
+    background: rgba(38, 198, 218, 0.2);
+    color: var(--color-teal);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Item Lists */
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.item-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.item-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(38, 198, 218, 0.3);
+    transform: translateX(4px);
+}
+
+.item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.item-content {
+    flex: 1;
+}
+
+.item-title {
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.item-meta {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+/* Quick Actions */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.quick-action-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+}
+
+.quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(38, 198, 218, 0.2);
+    text-decoration: none;
+}
+
+.quick-action-btn.teal:hover { border-color: var(--color-teal); }
+.quick-action-btn.lavender:hover { border-color: var(--color-lavender); }
+.quick-action-btn.coral:hover { border-color: var(--color-coral); }
+.quick-action-btn.mint:hover { border-color: var(--color-mint); }
+.quick-action-btn.yellow:hover { border-color: var(--color-yellow); }
+
+.quick-action-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.quick-action-label {
+    font-weight: 600;
+    color: white;
+}
+
+/* Suggestions */
+.suggestion-card {
+    background: rgba(255, 138, 128, 0.05);
+    border: 1px solid rgba(255, 138, 128, 0.2);
+    border-left: 4px solid var(--color-coral);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.suggestion-card.info {
+    background: rgba(38, 198, 218, 0.05);
+    border-color: rgba(38, 198, 218, 0.2);
+    border-left-color: var(--color-teal);
+}
+
+.suggestion-title {
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.suggestion-message {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Empty States */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--color-text-secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+/* Tech Stack Grid */
+.tech-stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+}
+
+.tech-badge {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.tech-badge:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(38, 198, 218, 0.3);
+    transform: scale(1.05);
+}
+
+.tech-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+}
+
+.tech-category {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 0.25rem;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    
+    <!-- ============== HEADER ============== -->
+    <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-rocket text-teal-400 mr-3"></i>
+                {{ system.title }}
+            </h1>
+            <p class="text-gray-400">{{ subtitle }}</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'aura_admin:projects:system_edit' system.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit mr-2"></i>
+                Edit System
+            </a>
+            <a href="{% url 'aura_admin:projects:system_list' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- ============== STATUS PANEL ============== -->
+    <div class="status-panel">
+        <div class="flex items-start justify-between mb-4">
+            <div>
+                <div class="text-gray-400 text-sm mb-2">System ID</div>
+                <div class="text-white font-mono text-lg">{{ system.system_id }}</div>
+            </div>
+            <div class="status-badge {{ status_data.status }}">
+                <i class="fas fa-circle text-xs"></i>
+                {{ status_data.status_display }}
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width: {{ status_data.completion }}%;">
+                <span class="progress-bar-text">{{ status_data.completion }}% Complete</span>
+            </div>
+        </div>
+
+        <!-- System Info Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div>
+                <div class="text-gray-400 text-sm">Priority</div>
+                <div class="text-white font-semibold">Level {{ status_data.priority }}</div>
+            </div>
+            <div>
+                <div class="text-gray-400 text-sm">Type</div>
+                <div class="text-white font-semibold">{{ metadata.system_type|default:"—" }}</div>
+            </div>
+            <div>
+                <div class="text-gray-400 text-sm">Featured</div>
+                <div class="text-white font-semibold">
+                    {% if status_data.featured %}
+                        <i class="fas fa-check text-mint"></i> Yes
+                    {% else %}
+                        <i class="fas fa-times text-gray-500"></i> No
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <div class="text-gray-400 text-sm">Updated</div>
+                <div class="text-white font-semibold">{{ metadata.updated|naturaltime }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============== METRICS OVERVIEW ============== -->
+    <div class="metrics-grid">
+        <div class="metric-card" style="justify-content: center;">
+            <div class="metric-value"> {{ metrics.technologies }}</div>
+            <div class="metric-label">Technologies</div>
+        </div>
+        <div class="metric-card" style="justify-content: center;">
+            <div class="metric-value">{{ metrics.skills }}</div>
+            <div class="metric-label">Skills</div>
+        </div>
+        <div class="metric-card" style="justify-content: center;">
+            <div class="metric-value">{{ metrics.datalogs }}</div>
+            <div class="metric-label">DataLogs</div>
+        </div>
+        <div class="metric-card" style="justify-content: center;">
+            <div class="metric-value">{{ metrics.components }}</div>
+            <div class="metric-label">Components</div>
+        </div>
+        <div class="metric-card" style="justify-content: center;">
+            <div class="metric-value">{{ metrics.commits }}</div>
+            <div class="metric-label">Commits</div>
+        </div>
+    </div>
+
+    <!-- ============== MAIN CONTENT GRID ============== -->
+    <div class="mission-control-grid">
+        
+        <!-- LEFT COLUMN -->
+        <div class="space-y-6">
+            
+            <!-- SUGGESTIONS -->
+            {% if has_suggestions %}
+            <div class="panel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-lightbulb"></i>
+                        Suggestions
+                    </div>
+                    <span class="panel-count">{{ suggestions|length }}</span>
+                </div>
+                {% for suggestion in suggestions %}
+                <div class="suggestion-card {{ suggestion.type }}">
+                    <div class="suggestion-title">{{ suggestion.title }}</div>
+                    <div class="suggestion-message">{{ suggestion.message }}</div>
+                    <a href="{% url suggestion.url system.pk %}" class="btn btn-sm btn-outline">
+                        {{ suggestion.action }}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- TECHNOLOGIES -->
+            <div class="panel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-tools"></i>
+                        Technology Stack
+                    </div>
+                    <span class="panel-count">{{ tech_count }}</span>
+                </div>
+                {% if technologies %}
+                <div class="tech-stack-grid">
+                    {% for tech in technologies %}
+                    <div class="tech-badge">
+                        <div class="tech-name">{{ tech.name }}</div>
+                        <div class="tech-category">{{ tech.get_category_display }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tools"></i>
+                    <p>No technologies added yet</p>
+                    <a href="{% url 'aura_admin:projects:technology_create' %}" class="btn btn-sm btn-primary mt-3">
+                        Add Technology
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- SKILLS DEMONSTRATED -->
+            <div class="panel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-brain"></i>
+                        Skills Demonstrated
+                    </div>
+                    <span class="panel-count">{{ skills_count }}</span>
+                </div>
+                {% if skills %}
+                <div class="item-list">
+                    {% for skill in skills %}
+                    <div class="item-card">
+                        <div class="item-icon" style="background: {{ skill.color }}22; color: {{ skill.color }};">
+                            <i class="fas {{ skill.icon }}"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">{{ skill.name }}</div>
+                            <div class="item-meta">
+                                {{ skill.get_category_display }} • 
+                                Level {{ skill.proficiency }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-brain"></i>
+                    <p>No skills linked yet</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- RELATED DATALOGS -->
+            <div class="panel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-file-alt"></i>
+                        Related DataLogs
+                    </div>
+                    <span class="panel-count">{{ posts_count }}</span>
+                </div>
+                {% if related_posts %}
+                <div class="item-list">
+                    {% for post in related_posts %}
+                    <div class="item-card">
+                        <div class="item-icon" style="background: rgba(179, 157, 219, 0.2); color: var(--color-lavender);">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">{{ post.title }}</div>
+                            <div class="item-meta">
+                                {{ post.category.name }} • 
+                                {{ post.published_date|date:"M d, Y" }}
+                            </div>
+                        </div>
+                        <a href="{% url 'aura_admin:blog:post_edit' post.pk %}" class="btn btn-sm btn-outline">
+                            Edit
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-alt"></i>
+                    <p>No DataLogs connected yet</p>
+                    <a href="{% url 'aura_admin:blog:discovery_create' %}" class="btn btn-sm btn-primary mt-3">
+                        Create DataLog
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="space-y-6">
+            
+            <!-- QUICK ACTIONS -->
+            <div class="panel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-bolt"></i>
+                        Quick Actions
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    {% for action in quick_actions %}
+                    <a href="{% if action.ref %}{% url action.url action.ref %}{% else %}{% url action.url %}{% endif %}" 
+                       class="quick-action-btn {{ action.color }}"
+                       {% if action.external %}target="_blank"{% endif %}>
+                        <div class="quick-action-icon {{ action.color }}">
+                            <i class="fas {{ action.icon }}"></i>
+                        </div>
+                        <div class="quick-action-label">{{ action.label }}</div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ARCHITECTURE -->
+            <div class="panel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-project-diagram"></i>
+                        Architecture
+                    </div>
+                    <span class="panel-count">{{ components_count }}</span>
+                </div>
+                {% if architecture_components %}
+                <div class="item-list">
+                    {% for component in architecture_components %}
+                    <div class="item-card">
+                        <div class="item-icon" style="background: rgba(255, 213, 79, 0.2); color: var(--color-yellow);">
+                            <i class="fas fa-cube"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">{{ component.name }}</div>
+                            <div class="item-meta">{{ component.get_component_type_display }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'aura_admin:projects:system_architecture' system.pk %}" class="btn btn-sm btn-primary mt-3 w-full">
+                    Manage Architecture
+                </a>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-project-diagram"></i>
+                    <p>No architecture defined</p>
+                    <a href="{% url 'aura_admin:projects:system_architecture' system.pk %}" class="btn btn-sm btn-primary mt-3">
+                        Add Components
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- DEPLOYMENT -->
+            <div class="panel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-cloud"></i>
+                        Deployment
+                    </div>
+                </div>
+                {% if deployment_data.has_deployment %}
+                <div class="space-y-2">
+                    {% if deployment_data.live_url %}
+                    <div class="item-card">
+                        <div class="item-content">
+                            <div class="item-title">Live URL</div>
+                            <a href="{{ deployment_data.live_url }}" target="_blank" class="text-teal-400 hover:underline text-sm">
+                                {{ deployment_data.live_url }}
+                            </a>
+                        </div>
+                        <i class="fas fa-external-link-alt text-teal-400"></i>
+                    </div>
+                    {% endif %}
+                    {% if deployment_data.demo_url %}
+                    <div class="item-card">
+                        <div class="item-content">
+                            <div class="item-title">Demo URL</div>
+                            <a href="{{ deployment_data.demo_url }}" target="_blank" class="text-teal-400 hover:underline text-sm">
+                                {{ deployment_data.demo_url }}
+                            </a>
+                        </div>
+                        <i class="fas fa-external-link-alt text-teal-400"></i>
+                    </div>
+                    {% endif %}
+                    {% if deployment_data.repository_url %}
+                    <div class="item-card">
+                        <div class="item-content">
+                            <div class="item-title">Repository</div>
+                            <a href="{{ deployment_data.repository_url }}" target="_blank" class="text-teal-400 hover:underline text-sm">
+                                {{ deployment_data.repository_url }}
+                            </a>
+                        </div>
+                        <i class="fab fa-github text-teal-400"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-cloud"></i>
+                    <p>No deployment information</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- REPOSITORIES -->
+            {% if repositories %}
+            <div class="panel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fab fa-github"></i>
+                        Repositories
+                    </div>
+                    <span class="panel-count">{{ repos_count }}</span>
+                </div>
+                <div class="item-list">
+                    {% for repo in repositories %}
+                    <div class="item-card">
+                        <div class="item-icon" style="background: rgba(255, 255, 255, 0.1); color: white;">
+                            <i class="fab fa-github"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">{{ repo.name }}</div>
+                            <div class="item-meta">{{ repo.primary_language }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
