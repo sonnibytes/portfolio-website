@@ -2,12 +2,16 @@
  * Systems-specific template tags and filters
  * Version 1.0.1: New w Global aura_filters
 """
-
+import markdown
+from markdown.extensions.fenced_code import FencedCodeExtension
+from markdown.extensions.codehilite import CodeHiliteExtension
+from markdown.extensions.tables import TableExtension
+from markdown.extensions.nl2br import Nl2BrExtension
 from django import template
 from django.utils.safestring import mark_safe
 from ..models import SystemModule, Technology, SystemType
 from bs4 import BeautifulSoup
-from markdownx.utils import markdownify as md
+# from markdownx.utils import markdownify as md
 from django.utils.text import slugify
 from django.template.loader import render_to_string
 import re
@@ -175,11 +179,34 @@ def is_dark_color(hex_color, threshold=0.4):
 @register.filter
 def markdownify(text):
     """
-    Filter to convert markdown text to HTML using markdownx util,
-    and add IDs to headings for table of contents links to work.
+    Filter to convert markdown text to HTML with proper support for:
+    - Fenced code blocks (```python, ```bash, etc.)
+    - Syntax highlighting
+    - Tables
+    - Line breaks
+    - Heading IDs for table of contents
     """
+
+    if not text:
+        return ""
+    
+    # Configure markdown w all the extensions we need
+    md_instance = markdown.Markdown(extensions=[
+        'markdown.extensions.fenced_code',  # Enable ```code blocks```
+        'markdown.extensions.codehilite',   # Syntax highlighting
+        'markdown.extensions.tables',       # Table support
+        'markdown.extensions.nl2br',        # Convert newlines to <br>
+        'markdown.extensions.extra',        # Extra features (includes several extensions)
+    ], extension_configs={
+        'markdown.extensions.codehilite': {
+            'css_class': 'highlight',
+            'linenums': False,
+            'guess_lang': True,
+        }
+    })
+
     # First convert markdown to HTML
-    html_content = md(text)
+    html_content = md_instance.convert(text)
 
     # Use BeautifulSoup to parse and modify HTML
     soup = BeautifulSoup(html_content, "html.parser")
