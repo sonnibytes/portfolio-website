@@ -942,3 +942,258 @@ class SystemsWithArchitectureView(BaseAdminListView):
             'subtitle': 'Browse and manage system architecture diagrams',
         })
         return context
+
+# NEW URL: SystemDetail - Admin System Control Panel
+
+class SystemDetailAdminView(BaseAdminView, DetailView):
+    """
+    Comprehensive System Detail View - Mission Control for Individual Systems
+    
+    This view provides a centralized dashboard for managing all aspects of a system:
+    - Overview and status
+    - Technology stack
+    - Skills demonstrated
+    - Related DataLogs
+    - Architecture components
+    - Deployment information
+    - Analytics and metrics
+    - Quick actions
+    """
+
+    model = SystemModule
+    template_name = "projects/admin/system_detail.html"
+    context_object_name = 'system'
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        system = self.object 
+
+        # ============== SYSTEM OVERVIEW ==============
+        context['title'] = f'System: {system.title}'
+        context['subtitle'] = f'{system.system_id} • Mission Control'
+
+        # ============== STATUS & PROGRESS ==============
+        context['status_data'] = {
+            'status': system.status,
+            'status_display': system.get_status_display(),
+            'status_color': system.status_badge_color,
+            'completion': system.completion_percent,
+            'progress_color': system.progress_color,
+            'priority': system.priority,
+            'featured': system.is_featured,
+            'portfolio_ready': system.portfolio_ready,
+            'health': system.health_status,
+        }
+
+        # ============== TECHNOLOGIES ==============
+        technologies = system.technologies.all().select_related()
+        context['technologies'] = technologies
+        context['tech_count'] = technologies.count()
+        context['tech_by_category'] = {}
+        for tech in technologies:
+            category = tech.category or 'Other'
+            if category not in context['tech_by_category']:
+                context['tech_by_category'][category] = []
+            context['tech_by_category'][category].append(tech)
+        
+        # ============== SKILLS DEMONSTRATED ==============
+        from core.models import Skill
+        skills = Skill.objects.filter(
+            project_gains__system=system
+        ).select_related().distinct()
+
+        context['skills'] = skills
+        context['skills_count'] = skills.count()
+
+        # Group skills by category
+        context['skills_by_category'] = {}
+        for skill in skills:
+            category = skill.get_category_display()
+            if category not in context['skills_by_category']:
+                context['skills_by_category'][category] = []
+            context['skills_by_category'][category].append(skill)
+        
+        # ============== RELATED DATALOGS ==============
+        from blog.models import Post
+        related_posts = Post.objects.filter(
+            related_systems=system,
+            status='published'
+        ).select_related('category', 'author').order_by('-published_date')[:10]
+
+        context['related_posts'] = related_posts
+        context['posts_count'] = related_posts.count()
+
+        # Group posts by connection type if SystemLogEntry exists
+        context['posts_by_type'] = {}
+        try:
+            from blog.models import SystemLogEntry
+            log_entries = SystemLogEntry.objects.filter(system=system).select_related('post')
+            for entry in log_entries:
+                conn_type = entry.get_connection_type_display()
+                if conn_type not in context['posts_by_type']:
+                    context['posts_by_type'][conn_type] = []
+                context['posts_by_type'][conn_type].append(entry.post)
+        except:
+            pass
+
+        # ============== ARCHITECTURE ==============
+        architecture_components = system.architecture_components.all().order_by('display_order', 'name')
+        context['architecture_components'] = architecture_components
+        context['components_count'] = architecture_components.count()
+        context['has_architecture'] = system.has_architecture_diagram() if hasattr(system, 'has_architecture_diagram') else None
+
+        # Group components by type
+        context['components_by_type'] = {}
+        for component in architecture_components:
+            comp_type = component.get_component_type_display()
+            if comp_type not in context['components_by_type']:
+                context['components_by_type'][comp_type] = []
+            context['components_by_type'][comp_type].append(component)
+        
+        # Architecture connections
+        try:
+            connections = ArchitectureConnection.objects.filter(
+                from_component__system=system
+            ).select_related('from_component', 'to_component')
+            context['architecture_connections'] = connections
+            context['connections_count'] = connections.count()
+        except:
+            context['architecture_connections'] = []
+            context['connections_count'] = 0
+        
+
+        # ============== DEPLOYMENT INFO ==============
+        context['deployment_data'] = {
+            'live_url': system.live_url,
+            'demo_url': system.demo_url,
+            'repository_url': system.github_url,
+            'has_deployment': bool(system.live_url or system.demo_url),
+        }
+
+        # ============== REPOSITORIES & COMMITS ==============
+        repos = system.github_repositories.all()
+        context['repositories'] = repos
+        context['repos_count'] = repos.count()
+
+        # Get recent commit activity
+        try:
+            from projects.models import GitHubCommitWeek
+            recent_commits = GitHubCommitWeek.objects.filter(
+                repository__system=system
+            ).order_by('-year', '-week')[:12]
+            context['recent_commits'] = recent_commits
+
+            # Calculate total commits
+            total_commits = sum(cw.commit_count for cw in recent_commits)
+            context['total_commits'] = total_commits
+
+        except:
+            context['recent_commits'] = []
+            context['total_commits'] = 0
+
+        
+        # ============== ANALYTICS & METRICS ==============
+        context['metrics'] = {
+            'technologies': context['tech_count'],
+            'skills': context['skills_count'],
+            'datalogs': context['posts_count'],
+            'components': context['components_count'],
+            'repositories': context['repos_count'],
+            'commits': context.get('total_commits', 0),
+        }
+
+
+        # ============== SYSTEM METADATA ==============
+        context['metadata'] = {
+            'created': system.created_at,
+            'updated': system.updated_at,
+            'author': system.author,
+            'system_type': system.system_type,
+            'complexity': system.get_complexity_display() if hasattr(system, 'complexity') else None,
+        }
+
+        # ============== QUICK ACTIONS ==============
+        context['quick_actions'] = [
+            {
+                'label': 'Edit System',
+                'icon': 'fa-edit',
+                'url': f"aura_admin:projects:system_edit",
+                'color': 'teal',
+            },
+            {
+                'label': 'Manage Architecture',
+                'icon': 'fa-project-diagram',
+                'url': f"aura_admin:projects:system_architecture",
+                'color': 'lavender',
+            },
+            {
+                'label': 'Add Technology',
+                'icon': 'fa-plus-circle',
+                'url': f"aura_admin:projects:technology_create",
+                'color': 'coral',
+            },
+            {
+                'label': 'Create DataLog',
+                'icon': 'fa-file-alt',
+                'url': f"aura_admin:blog:discovery_create",
+                'color': 'mint',
+            },
+            {
+                'label': 'View Public Page',
+                'icon': 'fa-external-link-alt',
+                'url': f"projects:system_detail",
+                'color': 'yellow',
+                'external': True,
+            },
+        ]
+
+
+        # ============== SUGGESTIONS & RECOMMENDATIONS ==============
+        suggestions = []
+
+        # Suggest adding tech if none exist
+        if context['tech_count'] == 0:
+            suggestions.append({
+                'type': 'warning',
+                'title': 'No technologies defined',
+                'message': 'Add technologies to showcase your tech stack',
+                'action': 'Add Technology',
+                'url': 'aura_admin:projects:technology_create',
+            })
+        
+        # Suggest documenting with DataLogs
+        if context['posts_count'] == 0:
+            suggestions.append({
+                'type': 'info',
+                'title': 'Document your journey',
+                'message': 'Create DataLog entries to document development process',
+                'action': 'Create DataLog',
+                'url': 'aura_admin:blog:discovery_create',
+            })
+        
+        # Suggest adding architecture if complex
+        if context['components_count'] == 0 and context['tech_count'] > 3:
+            suggestions.append({
+                'type': 'info',
+                'title': 'Visualize architecture',
+                'message': 'Your system uses multiple technologies - consider adding architecture diagram',
+                'action': 'Add Components',
+                'url': 'aura_admin:projects:system_architecture',
+            })
+        
+        # Suggest deployment if status is deployed but no url
+        if system.status in ['deployed', 'published'] and not system.live_url:
+            suggestions.append({
+                'type': 'warning',
+                'title': 'Missing deployment URL',
+                'message': 'System is marked as deployed but has no live URL',
+                'action': 'Update System',
+                'url': 'aura_admin:projects:system_edit',
+            })
+        
+
+        context['suggestions'] = suggestions
+        context['has_suggestions'] = len(suggestions) > 0
+
+        return context
